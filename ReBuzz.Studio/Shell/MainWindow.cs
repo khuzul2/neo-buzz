@@ -308,6 +308,8 @@ namespace ReBuzz.Studio.Shell
                 shell.Children.Add(mapLayer);
                 Content = shell;
                 mapLayer.Attach(this);
+                DockPanel.SetDock(mapLayer.Banner, Dock.Top);                       // the map-mode banner is a row under the top bar, so it hides nothing
+                root.Children.Insert(root.Children.IndexOf(body), mapLayer.Banner);
                 Views.Device.DeviceMenus.OpenMapPopover = (machine, p) => mapLayer?.OpenForTarget(ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
             }
             // Fork (ux-overhaul.md P4a): Tab reads the window as it is seen, not in the order the panels were docked.

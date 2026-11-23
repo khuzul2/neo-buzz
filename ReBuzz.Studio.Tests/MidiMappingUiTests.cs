@@ -384,5 +384,38 @@ namespace ReBuzz.Studio.Tests
             st.Window.Transport.Refresh();
             Assert.That(st.Window.Transport.Tracks.FreeText, Is.EqualTo("K7 is free on Bass"));
         }
+
+        // ------------------------------------------------------------------ the screens (saved as pictures for the gallery's look)
+
+        /// <summary>Draws the MM1 screens: map mode with badges and a control listening, the popover, the Inspector's page, the top bar. The gallery draws them on the demo song.</summary>
+        [AvaloniaTest]
+        public void TheScreensAreDrawn()
+        {
+            using var st = new Stage();
+            MidiEngine.SimulatedInputs = new[] { "Faders", "Pads" };
+            Mapping.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new MapSource("Faders", MapKind.ControlChange, 0, n)));
+            Mapping.SetSlot("track:Lead", 0, 3, MapTarget.Parameter("Lead", st.Params[4].Name), new MapDrive { Takeover = Takeover.Jump });
+            Mapping.MapControl(new MapSource("Pads", MapKind.ControlChange, 0, 74), KnobEncoding.Absolute, MapTarget.Parameter("Lead", st.Params[0].Name), MapScope.Global);
+            Mapping.MapControl(new MapSource("Pads", MapKind.Note, 9, 36), KnobEncoding.Absolute, MapTarget.Command(MapCommand.Play), MapScope.Global);
+            st.Window.Detail.ShowDevice();
+            st.Window.Transport.Refresh();
+            Settle();
+            st.Rescan();
+            Studio.Screenshot(st.Window, "mm1-1-badges");
+            st.Window.ToggleMapMode();
+            st.Rescan();
+            st.Layer.ArmTarget(MapTarget.Parameter("Lead", st.Params[1].Name));
+            Settle();
+            st.Rescan();
+            Assert.That(Studio.Screenshot(st.Window, "mm1-2-map-mode"), Does.EndWith(".png"));
+            st.Layer.Mode.Exit();
+            st.Layer.OpenForTarget(MapTarget.Parameter("Lead", st.Params[0].Name));
+            Settle();
+            Studio.Screenshot(st.Window, "mm1-3-popover");
+            st.Layer.Close();
+            Settle();
+            st.Window.Inspector.MidiPage.Refresh();
+            Studio.Screenshot(st.Window, "mm1-4-inspector");
+        }
     }
 }

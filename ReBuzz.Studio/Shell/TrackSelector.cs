@@ -16,8 +16,8 @@ namespace ReBuzz.Studio.Shell
     internal sealed class TrackSelector : Border
     {
         readonly Func<ReBuzzCore> core;
-        readonly Button previous = new Button { Content = "◀", Padding = new Thickness(6, 2), MinWidth = 26 };
-        readonly Button next = new Button { Content = "▶", Padding = new Thickness(6, 2), MinWidth = 26 };
+        readonly Button previous = new Button { Content = new TextBlock { Text = "◀" }, Padding = new Thickness(6, 2), MinWidth = 26 };
+        readonly Button next = new Button { Content = new TextBlock { Text = "▶" }, Padding = new Thickness(6, 2), MinWidth = 26 };
         readonly TextBlock name = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 70, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis, FontWeight = Avalonia.Media.FontWeight.SemiBold };
         readonly TextBlock followers = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption, MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis };
         readonly TextBlock free = new TextBlock { Text = "", VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush, FontSize = StudioTokens.FontCaption };

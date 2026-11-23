@@ -9,6 +9,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -56,8 +57,7 @@ namespace ReBuzz.Studio.Views.Inspector
             {
                 this.owner = owner;
                 Index = index;
-                Width = 66;
-                Height = 50;
+                Height = 46;
                 Margin = new Thickness(0, 0, 4, 4);
                 Padding = new Thickness(4, 2);
                 CornerRadius = new CornerRadius(6);
@@ -95,7 +95,8 @@ namespace ReBuzz.Studio.Views.Inspector
                 Info = info;
                 knob.Text = "K" + (Index + 1);
                 bool free = info.Target == null;
-                what.Text = free ? "free" : info.Target.Machine + " · " + info.Target.ParamName;
+                what.Text = free ? "free" : info.Target.ParamName;
+                ToolTip.SetTip(this, free ? null : info.Target.Machine + " · " + info.Target.ParamName);
                 value.Text = valueText ?? (free ? "" : info.Range == "full" ? "" : info.Range);
                 BorderBrush = free ? StudioTokens.SurfaceBorderBrush : info.Fallback ? StudioTokens.TextPlaceholderBrush : StudioTokens.AccentBrush;
                 BorderThickness = new Thickness(info.Fallback ? 1.5 : 1.5);
@@ -117,7 +118,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly Button add = new Button { Content = "+", Padding = new Thickness(8, 1) };
         readonly Button remove = new Button { Content = "−", Padding = new Thickness(8, 1) };
         readonly TextBlock pageName = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 60, FontSize = StudioTokens.FontCaption };
-        readonly WrapPanel slots = new WrapPanel { Orientation = Orientation.Horizontal };
+        readonly UniformGrid slots = new UniformGrid { Columns = 4 };
         readonly TextBlock status = new TextBlock { FontSize = StudioTokens.FontCaption, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
         readonly Button teach = new Button { Content = "Teach knobs", Padding = new Thickness(8, 2), Margin = new Thickness(0, 4, 8, 0) };
         readonly CheckBox autoArm = new CheckBox { Content = "Selecting a track arms it", FontSize = StudioTokens.FontCaption };
@@ -179,6 +180,8 @@ namespace ReBuzz.Studio.Views.Inspector
         }
 
         MidiMapping Mapping => core.MidiMapping;
+
+        string TrackName => Mapping?.SelectedGenerator?.Name;
 
         /// <summary>The slots, in knob order (tests).</summary>
         public IReadOnlyList<SlotView> Slots => views;

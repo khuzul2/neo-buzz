@@ -38,7 +38,7 @@ namespace ReBuzz.Studio.Views.Midi
         readonly Visual scan;
         readonly Surface surface;
         readonly Border banner;
-        readonly TextBlock bannerText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 520 };
+        readonly TextBlock bannerText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 760 };
         readonly RadioButton trackScope = new RadioButton { GroupName = "MapScope", VerticalAlignment = VerticalAlignment.Center };
         readonly RadioButton globalScope = new RadioButton { GroupName = "MapScope", Content = "Global", VerticalAlignment = VerticalAlignment.Center };
         readonly Button done = new Button { Content = "Done", VerticalAlignment = VerticalAlignment.Center };
@@ -71,18 +71,14 @@ namespace ReBuzz.Studio.Views.Midi
             banner = new Border
             {
                 Child = row,
-                Padding = new Thickness(12, 7),
-                CornerRadius = new CornerRadius(8),
-                BorderThickness = new Thickness(1),
+                Padding = new Thickness(12, 5),
+                BorderThickness = new Thickness(0, 0, 0, 2),
                 IsVisible = false,
                 BorderBrush = StudioTokens.AccentBrush,
                 Background = StudioTokens.SurfacePanelBrush,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(20, 54, 20, 0),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
             };
-            AutomationProperties.SetName(banner, "Map mode");
-            Children.Add(banner);
+            AutomationProperties.SetName(banner, "Map mode");      // the main window docks it under the top bar (Banner); it is not part of the layer
             trackScope.IsCheckedChanged += (s, e) => { if (!updating && trackScope.IsChecked == true) mode.Scope = MapScope.Track; };
             globalScope.IsCheckedChanged += (s, e) => { if (!updating && globalScope.IsChecked == true) mode.Scope = MapScope.Global; };
             done.Click += (s, e) => mode.Exit();
@@ -146,6 +142,7 @@ namespace ReBuzz.Studio.Views.Midi
                     if (origin == null) continue;
                     var rect = new Rect(origin.Value, c.Bounds.Size);
                     if (rect.Right < 0 || rect.Bottom < 0 || rect.X > Bounds.Width || rect.Y > Bounds.Height) continue;
+                    if (!InsideClips(c, rect)) continue;
                     next.Add(new Spot(c, rect, target, mm.BadgeOf(target)));
                 }
             }
@@ -158,6 +155,23 @@ namespace ReBuzz.Studio.Views.Midi
             dirty = false;
             var under = SpotAt(lastPointer)?.Control;
             if (!ReferenceEquals(under, hover)) { hover = under; surface.InvalidateVisual(); }
+        }
+
+        /// <summary>Whether the control's rectangle is in view: not scrolled out of a scroll viewer (or any clipping panel) it sits in.</summary>
+        bool InsideClips(AvControl c, Rect rect)
+        {
+            foreach (var a in c.GetVisualAncestors())
+            {
+                if (ReferenceEquals(a, scan)) break;
+                if (a is not AvControl ac || (ac is not ScrollViewer && !ac.ClipToBounds)) continue;
+                var at = ac.TranslatePoint(default, this);
+                if (at == null) continue;
+                var view = new Rect(at.Value, ac.Bounds.Size);
+                if (ac is ScrollViewer sv) view = new Rect(at.Value, sv.Viewport.Width > 0 ? new Size(Math.Min(sv.Viewport.Width, ac.Bounds.Width), Math.Min(sv.Viewport.Height, ac.Bounds.Height)) : ac.Bounds.Size);
+                var overlap = view.Intersect(rect);
+                if (overlap.Width < rect.Width * 0.6 || overlap.Height < rect.Height * 0.6) return false;
+            }
+            return true;
         }
 
         Spot SpotAt(Point p) => spots.LastOrDefault(s => s.Bounds.Contains(p));
@@ -178,8 +192,10 @@ namespace ReBuzz.Studio.Views.Midi
         {
             if (s.Badge == null) return default;
             var t = Text(s.Badge, StudioTokens.FontCaption, StudioTokens.TextPrimaryBrush);
-            double w = Math.Min(t.Width + 10, Math.Max(40, s.Bounds.Width + 8));
-            return new Rect(s.Bounds.Right - w + 2, s.Bounds.Bottom - 15, w, 14);
+            // On the cell's top edge, half out of it, as wide as its text (the cell's width at most); a small control (a transport button) gets it below.
+            bool small = s.Bounds.Width < 64;
+            double w = Math.Min(t.Width + 10, small ? 120 : s.Bounds.Width);
+            return small ? new Rect(s.Bounds.X, s.Bounds.Bottom - 2, w, 14) : new Rect(s.Bounds.Right - w, s.Bounds.Y - 5, w, 14);
         }
 
         /// <summary>The badge's rectangle of a control, for tests.</summary>
@@ -263,6 +279,15 @@ namespace ReBuzz.Studio.Views.Midi
             if (dirty) Rescan();
             if (SpotOf(control) is not { } s) return false;
             Arm(s);
+            return mode.Armed != null;
+        }
+
+        /// <summary>Arms the control that maps to a target, wherever it is on screen now (the gallery and the tests: cells are rebuilt, a target stays).</summary>
+        public bool ArmTarget(MapTarget target)
+        {
+            Rescan();
+            if (spots.FirstOrDefault(s => s.Target.Equals(target)) is not { } spot) return false;
+            Arm(spot);
             return mode.Armed != null;
         }
 
