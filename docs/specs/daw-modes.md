@@ -111,6 +111,8 @@
 
 ## 3. The model
 
+> **Superseded in part (2026-11-23, proposal).** The user decided that patterns and clips are one thing, called Clip, with one store for tracker, piano roll, arrangement and agent. D2 B (the MIDI column as the note store) and D3 A stay as the first two steps; the tracker's own data, its two players and the word "pattern" are covered by [clips.md](clips.md), which this section's tables (§3.1–§3.4) should be read with.
+
 ### 3.1 What a clip is
 
 | Option | For | Against |
