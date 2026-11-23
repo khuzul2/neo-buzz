@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Proposal** (2026-11-23). Analysis only: no product code changed. Four decisions open (section 10) |
+| Status | **Decided** (2026-11-23): the user's answers are in section 10. Analysis only: no product code changed yet |
 | Decision (binding) | "One store, one engine". "Make sure all new machines and our VST host take real notes." "For old machines, make them read-only": their clips are view-only until the machine is converted to a Neo one; they keep playing. "Add to our backlog a new phase: analyze all of them and decide a. which ones is worth to rebuild as Neo native machines and which ones can be converted on load and mapped to existing Neo machines. With this, we're moving away from ReBuzz and actually crafting more a spiritual successor than a fully backwards compatible one. The goal with old songs is to load them, accepting conversions (e.g. from Jeskola Verb to our Neo Reverb)." (the user, 2026-11-23) |
 | Scope | Every machine that is not a Neo machine (97 in the profile, plus the machines the repo's songs name that the package does not ship), the Neo family and its gaps, one recommendation per machine, the mapping tables of the most used, the conversion on open, the waves |
 | Code baseline | fork `9cd1dd36` (origin/main, 2026-11-23); `clips.md` as on branch `design/clips-cu0` |
@@ -305,10 +305,10 @@ After wave 2 another 16 instances are covered (Infector 5, Aggressor 303 3, Nois
 
 | Gap | What | Size | Why it is worth it |
 |---|---|---|---|
-| **G1 Tracker mode in Neo Sampler** | A mode where the notes lane's **MIDI channel selects the zone** (channel n plays zone n across the keys, root C-4 by the tracker convention), per-note volume as velocity, sample offset as start, tuning and finetune as tune. The converter allocates a channel per wave used; beyond 16 waves it adds a second Neo Sampler. Row effects a note list cannot carry (volume and pitch slides, retrigger, sample offset) become lanes where they map (volume slide to a parameter ramp on level, offset to start) and are otherwise **named in the loss report**. | 2 pw machine + 2 pw converter + 1 pw tests = **4 to 5 pw** | Trackers are the sample players of almost every Buzz song. Today none of them can be converted (machines.md) |
+| **G1 Tracker mode in Neo Sampler** | A mode where **each note carries a sample number** that selects the wave (root C-4 by the tracker convention), per-note volume as velocity, sample offset as start, tuning and finetune as tune. One Neo Sampler holds all of a song's waves; there is no 16-wave limit (decision D5 A: the channel stays free for routing). Row effects a note list cannot carry (volume and pitch slides, retrigger, sample offset) become lanes where they map (volume slide to a parameter ramp on level, offset to start) and are otherwise **named in the loss report**. | 2 pw machine + 2 pw converter + 1 pw tests = **4 to 5 pw** | Trackers are the sample players of almost every Buzz song. Today none of them can be converted (machines.md) |
 | **G2 Neo Lo-Fi** | Bit-depth and sample-rate reduction (with and without anti-alias), noise and crackle, wow and flutter light, detune; zero latency | **1.5 to 2 pw** | Saturn, Drum Matrix, Degrader; also a sound-design staple the family lacks. DSP is elementary and fully measurable |
 | **G3 Acid in Neo Poly** | F1 type "Diode 18" (a 3-pole ladder), an accent stage (velocity above a threshold adds to the filter envelope, shortens its decay, swells the amp), and a per-note slide flag in the notes lane (a legato overlap already is one) | **1 to 1.5 pw** as a Neo Poly extension; a separate Neo Acid machine would cost about 3 pw and add nothing the extension does not | Aggressor 303, Jeskola Bass 3 and Neo's own acid presets |
-| **G4 Neo Organ** | Drawbar organ, key click, rotary | 2 to 3 pw | Only if the census shows Jeskola Organ in real songs. Not planned |
+| **G4 Neo Organ** | Drawbar organ, key click, rotary | 2 to 3 pw | Planned in LM3 (decision D2 B) |
 | **G5 pitch and FFT effects** | Pitch shifter, spectral effects | – | Not planned; Neptune stays legacy |
 
 ---
@@ -324,7 +324,7 @@ The inventory table (3.1) gives each machine's recommendation and target. The ru
 5. **Keep as legacy** where the machine is closed or niche, has no Neo role, and converting it would invent behaviour. It plays on Windows, its clips are view-only, it is hidden from the browser, and its data is kept on every platform (a placeholder elsewhere).
 6. **Drop** only for a machine whose function is now a core feature (Jeskola Live, Loop Recorder, Note Matrix, SpectrumBlock) or a developer example. It loads as a silent placeholder with a warning; its data is kept in the song.
 
-**Keep as legacy, 16:** AudioBlock, Bigyo Wood One, EasyRec, Intoxicat ACloud15, Jeskola Organ, JumpLoop, KrimZon AY-3-8910, Polac MIDI Bus II, Polac VSTi 1.1, TrackScript, Yitten Mongoose (generators and controls), Joachims Chopper 2, Joachims Neptune 1.2, Pedal Drum Matrix, Polac MIDI In, Polac VST 1.1 (effects). Decision D4 asks whether these stay.
+**Keep as legacy, 16:** AudioBlock, Bigyo Wood One, EasyRec, Intoxicat ACloud15, Jeskola Organ, JumpLoop, KrimZon AY-3-8910, Polac MIDI Bus II, Polac VSTi 1.1, TrackScript, Yitten Mongoose (generators and controls), Joachims Chopper 2, Joachims Neptune 1.2, Pedal Drum Matrix, Polac MIDI In, Polac VST 1.1 (effects). Decision D4 B: they are dropped (a silent placeholder and a warning on open).
 
 **Licence notes for a public release.** Pedal's 16 unlicensed machines and the Jeskola six are the same blocker the ExternalMachines README names. This phase makes it smaller: after conversion a Pedal or Jeskola machine need not ship at all for songs to work (decision D3). The GPL machines (Pedal Juno106, SH101, Drum Matrix; Oomek's three) are not a source for any rebuild.
 
@@ -610,27 +610,15 @@ Dependencies: LM1 does not wait for the clips waves (the converter reads through
 
 ---
 
-## 10. Decisions for the user
+## 10. Decisions (the user, 2026-11-23)
 
-**D1. What happens when an old song opens?**
-- **A (recommended):** a dialog lists what will be converted, with the loss report; Convert is the default; Keep legacy per machine or for all. The file on disk is untouched; Save asks for a name. On macOS and Linux everything with a pair converts (the others have nothing to keep).
-- B: convert silently on open and show the report afterwards (fastest to the goal of "load them, accepting conversions"; a surprise on the first song).
-- C: never on open; the user converts per machine from the clip panel (safest; every old song is a read-only song until then).
+- **D1 B: convert on open, report afterwards.** An old song opens with every machine that has a pair already converted; the loss report shows after it opens, with **one button to go back to the old machines** for this song (it reopens the file with Keep legacy for all). The file on disk is untouched; Save asks for a name.
+- **D2 B: the gap machines, organ included.** G1 Tracker mode in Neo Sampler and the 303's accent and diode filter as a Neo Poly extension in LM2; G2 Neo Lo-Fi and **G4 Neo Organ** in LM3.
+- **D3 B+: the Pedal family goes.** Each Pedal machine is removed from the package once LM3 has its conversion; a Pedal machine with no pair (Drum Matrix) is lost from songs that use it, as D4. **Plus two new real-time machines**, so chords and arpeggios stay live rather than only baked: **Neo Chord** (a note in, a chord out: shape, inversion, spread, voicing, strum) and **Neo Arp** (a note or chord in, an arpeggio out: mode, rate in steps, gate, octaves, swing, latch). Both take and send real notes and run on every platform. Pedal Chord, PeerChord and GuitarChordBox convert to Neo Chord or Neo Arp where the settings map; the rest bake as section 5 says. Clean room. About 2 to 3 pw for the pair, in LM3.
+- **D4 B: drop the 16 machines with no Neo role now.** Each becomes a silent placeholder that keeps its connections, and the loss report names it.
+- **D5 A: a sample number per note** for the converted tracker (G1 above): one Neo Sampler per tracker, all waves in it, no channel limit.
 
-**D2. Which gap machines first?**
-- **A (recommended):** G1 Tracker mode in Neo Sampler (4 to 5 pw) and G2 Neo Lo-Fi (1.5 to 2 pw) in LM2 and LM3, and the 303's accent and diode filter as a Neo Poly extension (1 to 1.5 pw) in LM2. No Neo Organ.
-- B: the same, plus Neo Organ (2 to 3 pw) in LM3.
-- C: G1 only; Saturn, Drum Matrix and the 303 stay as they are (legacy or the closest Neo Poly preset).
-
-**D3. Does the Pedal family become Neo?**
-- **A (recommended):** map where Neo has the role (9 pairs exist; Juno106, SH101, FM, Tracker, MComp, Shaper get pairs; Chord and Peer Control bake), keep the Pedal machines playable on Windows and hidden, and decide at release whether they ship at all (16 of 19 have no licence).
-- B: remove the Pedal machines from the package as soon as LM3 has converted them: the repo loses its largest unlicensed block; songs that use a Pedal machine that has no pair (Drum Matrix) lose it.
-- C: rebuild each as a clean-room Neo machine: 19 machines, most of which Neo already covers; not worth it.
-
-**D4. The 16 machines with no Neo role: keep or drop?**
-- **A (recommended):** keep them as legacy: they play on Windows, their clips are view-only, they are hidden, their data is kept everywhere. Reviewed after the census.
-- B: drop them all now: a silent placeholder and a warning on open; the product is cleaner and smaller; some old songs lose a sound.
-- C: keep only those the census finds in your songs, drop the rest after LM4.
+Effect on the waves: LM3 grows by Neo Organ (2 to 3 pw) and Neo Chord with Neo Arp (2 to 3 pw), to about 13 to 16 pw; LM4 loses its Keep list and is the census plus Polac VST to Neo Plug.
 
 ---
 
