@@ -209,10 +209,8 @@ namespace ReBuzz.Core
                         int start = kv.Key * PatternEvent.TimeBase, end = start + span * PatternEvent.TimeBase;
                         int from = e.PlayedOffset * PatternEvent.TimeBase;
                         bool found = false;
-                        foreach (var column in e.Pattern.Columns)
+                        foreach (var column in EngineColumns(e.Pattern, param.Parameter, key.Track))
                         {
-                            if (column.Type != PatternColumnType.Parameter || column.Track != key.Track || !ReferenceEquals(column.Parameter, param.Parameter)) continue;
-                            if (column is not PatternColumnCore engine || !engine.EnginePlays) continue;
                             var events = column.GetEvents(int.MinValue, int.MaxValue);
                             if (!events.Any()) continue;
                             found = true;
@@ -244,11 +242,21 @@ namespace ReBuzz.Core
             return result;
         }
 
-        static bool Same(IMachine machine, (int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events) t, ColumnKey key) =>
+        internal static bool Same(IMachine machine, (int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events) t, ColumnKey key) =>
             t.Group == key.Group && t.Index == key.Index && t.Order == key.Track;
 
+        /// <summary>The engine automation columns of a pattern that hold a parameter (and track): the ones the song plays (S3), not the pattern editor's.</summary>
+        internal static IEnumerable<PatternColumnCore> EngineColumns(IPattern pattern, IParameter parameter, int track)
+        {
+            foreach (var column in pattern.Columns)
+            {
+                if (column.Type != PatternColumnType.Parameter || column.Track != track || !ReferenceEquals(column.Parameter, parameter)) continue;
+                if (column is PatternColumnCore { EnginePlays: true } engine) yield return engine;
+            }
+        }
+
         /// <summary>The pattern editor's parameter columns: which parameter (group, index) and, for a track parameter, which track (the columns of one parameter come in track order).</summary>
-        static List<(int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events)> TrackerColumns(
+        internal static List<(int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events)> TrackerColumns(
             Dictionary<IPattern, List<(int, int, IParameter, int, PatternEvent[])>> cache, IPattern pattern)
         {
             if (cache.TryGetValue(pattern, out var known)) return known;

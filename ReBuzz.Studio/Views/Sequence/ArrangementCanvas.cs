@@ -235,7 +235,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Changed();
         });
 
-        void OnStoreChanged() => OnUi(Changed);
+        void OnStoreChanged() => OnUi(() => { ClearCurves(); Changed(); });
         void OnTrackState(ISequence s) => OnUi(InvalidateVisual);
         void OnSessionChanged(object sender, PropertyChangedEventArgs e) => OnUi(InvalidateVisual);
         void OnPatternColourChanged(IPattern p) => OnUi(InvalidateVisual);
@@ -289,12 +289,14 @@ namespace ReBuzz.Studio.Views.Sequence
             watchedPatterns.Clear();
             UnwatchColumns();
             previews.Clear();
+            ClearCurves();
         }
 
         void OnPatternContentChanged(IPatternColumn c) => OnUi(() =>
         {
             if (c != null) WatchColumn(c);
             previews.Clear();
+            ClearCurves();
             RefreshLanes();
             InvalidateVisual();
         });
@@ -690,6 +692,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 else if (core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Automation) DrawAutomationLine(ctx, spec.Pattern, s, sx, sw, h);
                 else DrawPreview(ctx, spec.Pattern, s, sx, sw, h);
             }
+            if (envelopesOn && core.Arrangement?.RoleOf(item.Sequence) != LaneRole.Automation) DrawEnvelopes(ctx, item, segments, h);
 
             // The name, the loop and the shared badge, in a strip above the preview.
             var textBrush = Look.BlockText ?? Brushes.Black;
@@ -897,6 +900,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (item != null)
                 {
                     Select(item);
+                    if (TryOpenEnvelope(item, p)) return;
                     ClipOpened?.Invoke(item.Pattern);
                 }
                 else if (laneRow?.Lane != null)
@@ -1315,6 +1319,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.U: return MakeUnique();
                     case Key.R when IsAudioSelected: return ReverseSelected();
                     case Key.C: return CompAtCursor();
+                    case Key.E: Envelopes = !Envelopes; return true;
                     case Key.Return when selected != null: PatternDoubleClicked?.Invoke(selected.Pattern); return true;
                     case Key.P when selected != null: ClipOpened?.Invoke(selected.Pattern); return true;
                     case Key.Escape: ClearSelection(); return true;

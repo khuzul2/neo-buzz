@@ -162,7 +162,7 @@ namespace ReBuzz.Studio.Shell
                     return notes;
                 // The Tracker in the detail panel, when the keyboard is in it.
                 // The Audio page's waveform, when the keyboard is in it (WM1): Select All, Delete and Deselect are its markers', not the view behind it.
-                if (detail?.IsOpen == true && detail.IsAudio && detail.AudioPage is Views.Audio.AudioClipPage audioPage && audioPage.WaveFocused(FocusManager?.GetFocusedElement())) return audioPage;
+                if (detail?.IsOpen == true && detail.IsAudio && detail.AudioPage is Views.Audio.AudioClipPage audioPage && (audioPage.WaveFocused(FocusManager?.GetFocusedElement()) || audioPage.EnvelopeFocused)) return audioPage;
                 if (detail?.IsOpen == true && InDetail(FocusManager?.GetFocusedElement())) return detail.Page as IStudioEditTarget;
                 return (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
             }
@@ -270,6 +270,7 @@ namespace ReBuzz.Studio.Shell
                 StudioSelection.For(host.Core).Changed += FollowAudioSelection;
                 inspector.ShowAudio = () => { if (StudioSelection.For(host.Core).Pattern is { } p) OpenAudio(p); };
             }
+            Views.Detail.EnvelopeOpener.Open = OpenEnvelope;
             // Fork (ux-overhaul.md P3e): a double click on a machine with no editor of its own opens its device view here.
             Platform.StudioMachineUiHost.DeviceOpener = OpenDevice;
             { var weak = new WeakReference<MainWindow>(this); Views.Device.DeviceMenus.ShowArrangement = () => { if (weak.TryGetTarget(out var w)) w.ShowView("Arrangement"); }; }     // fork: the Device menu's Automate shows the lane
@@ -927,6 +928,24 @@ namespace ReBuzz.Studio.Shell
             return true;
         }
 
+        /// <summary>A double click on a clip's curve: the clip opens in the Detail panel with the lane of that parameter.</summary>
+        bool OpenEnvelope(IPattern pattern, ReBuzz.Core.Session.ColumnKey key)
+        {
+            if (detail == null || host.Core == null || pattern?.Machine == null) return false;
+            if (host.Core.SessionLayout?.IsAudioClip(pattern) == true && audioPage != null)
+            {
+                StudioSelection.For(host.Core).Set(pattern.Machine, pattern, this);
+                detail.ShowAudio(detail.IsMaximised);
+                audioPage.Refresh(force: true);
+                audioPage.ShowEnvelope(key);
+                return true;
+            }
+            if (PatternView.Page is not { } page) return false;
+            detail.ShowPage(true, detail.IsMaximised);
+            page.EditEnvelope(pattern, key);
+            return true;
+        }
+
         /// <summary>
         /// Selecting an audio clip with the detail panel open shows its Audio page (the Tracker has nothing to show for it); selecting another
         /// pattern puts the Tracker or the piano roll back.
@@ -1116,6 +1135,7 @@ namespace ReBuzz.Studio.Shell
             inspector?.Dispose();
             browser?.Dispose();
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
+            if (Views.Detail.EnvelopeOpener.Open == (Func<IPattern, ReBuzz.Core.Session.ColumnKey, bool>)OpenEnvelope) Views.Detail.EnvelopeOpener.Open = null;
             if (audioPage != null)
             {
                 if (Views.Audio.AudioClipPage.Opener == (Func<IPattern, bool>)OpenAudio) Views.Audio.AudioClipPage.Opener = null;

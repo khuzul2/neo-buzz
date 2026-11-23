@@ -29,6 +29,7 @@ namespace ReBuzz.Core
         readonly HashSet<string> folded = new HashSet<string>(StringComparer.Ordinal);
         readonly HashSet<string> takesHidden = new HashSet<string>(StringComparer.Ordinal);
         readonly List<(string Machine, Session.ColumnKey Key)> lanes = new List<(string, Session.ColumnKey)>();
+        readonly Dictionary<string, Session.ColumnKey> envelopes = new Dictionary<string, Session.ColumnKey>(StringComparer.Ordinal);
 
         internal ArrangementStore(ReBuzzCore buzz)
         {
@@ -85,6 +86,21 @@ namespace ReBuzz.Core
             }
         }
 
+        /// <summary>
+        /// EV1: the parameter whose envelope a track's clips draw in the Arrangement and the Session View, as its header chose it; null when it
+        /// did not (the views draw the first parameter that holds data, ClipEnvelopes.DefaultKey). Saved with the song.
+        /// </summary>
+        public Session.ColumnKey? EnvelopeChoice(string machine) => machine != null && envelopes.TryGetValue(machine, out var key) ? key : null;
+
+        public void SetEnvelopeChoice(string machine, Session.ColumnKey? key)
+        {
+            if (machine == null) return;
+            if (key is { } k ? envelopes.TryGetValue(machine, out var old) && old == k : !envelopes.ContainsKey(machine)) return;
+            if (key is { } chosen) envelopes[machine] = chosen;
+            else envelopes.Remove(machine);
+            Changed?.Invoke();
+        }
+
         /// <summary>A role or a fold changed (views redraw).</summary>
         public event Action Changed;
 
@@ -123,11 +139,12 @@ namespace ReBuzz.Core
         {
             Recorder.Clear();
             Takes.Reset();
-            if (roles.Count == 0 && folded.Count == 0 && lanes.Count == 0 && takesHidden.Count == 0) return;
+            if (roles.Count == 0 && folded.Count == 0 && lanes.Count == 0 && takesHidden.Count == 0 && envelopes.Count == 0) return;
             ClearRoles();
             folded.Clear();
             takesHidden.Clear();
             lanes.Clear();
+            envelopes.Clear();
             Changed?.Invoke();
         }
 
@@ -156,6 +173,9 @@ namespace ReBuzz.Core
             foreach (var (machine, key) in lanes)
                 if (machines.Contains(machine) && seen.Add((machine, key)))
                     root.Add(new XElement("Param", new XAttribute("machine", machine), new XAttribute("group", key.Group), new XAttribute("index", key.Index), new XAttribute("track", key.Track)));
+            foreach (var (machine, key) in envelopes.OrderBy(e => e.Key, StringComparer.Ordinal))
+                if (machines.Contains(machine))
+                    root.Add(new XElement("Envelope", new XAttribute("machine", machine), new XAttribute("group", key.Group), new XAttribute("index", key.Index), new XAttribute("track", key.Track)));
             return root.HasElements ? root : null;
         }
 
@@ -165,6 +185,7 @@ namespace ReBuzz.Core
             folded.Clear();
             takesHidden.Clear();
             lanes.Clear();
+            envelopes.Clear();
             Recorder.Clear();
             Takes.Reset();
             if (root == null || root.Name.LocalName != "Arrangement") return;
@@ -188,6 +209,12 @@ namespace ReBuzz.Core
                 if ((string)x.Attribute("machine") is { Length: > 0 } name && Num("group") >= 0 && Num("index") >= 0 && Num("track") >= 0
                     && !lanes.Contains((name, new Session.ColumnKey(Num("group"), Num("index"), Num("track")))))
                     lanes.Add((name, new Session.ColumnKey(Num("group"), Num("index"), Num("track"))));
+            }
+            foreach (var x in root.Elements("Envelope"))
+            {
+                int Num(string a) => int.TryParse((string)x.Attribute(a), NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) ? n : -1;
+                if ((string)x.Attribute("machine") is { Length: > 0 } name && Num("group") >= 0 && Num("index") >= 0 && Num("track") >= 0)
+                    envelopes[name] = new Session.ColumnKey(Num("group"), Num("index"), Num("track"));
             }
         }
 

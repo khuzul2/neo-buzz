@@ -42,6 +42,7 @@ namespace ReBuzz.Studio.Views.Session
             readonly TextBlock flags;
             readonly Audio.RecordingWave liveWave;   // NA4b: the growing waveform of a take being recorded
             readonly Audio.AudioSlotWave wave;        // NA3: an audio clip's mini waveform
+            readonly SlotCurve curve;                 // EV1: the track's chosen envelope, read only
             readonly Control stopButton;      // empty slot: stops the track
             readonly Control recordButton;    // empty slot of an armed track: records a take (0.7)
             readonly bool isAudioClip;
@@ -94,6 +95,13 @@ namespace ReBuzz.Studio.Views.Session
                     wave = new Audio.AudioSlotWave(audioView, pattern.Length / (double)Math.Max(1, view.buzz.TPB)) { LowerHalf = true };
                     Grid.SetColumnSpan(wave, 3);
                     grid.Children.Add(wave);
+                }
+
+                if (pattern != null && view.CurveKey(sequence?.Machine) is { } curveKey && SlotCurve.For(pattern, curveKey) is { } slotCurve)
+                {
+                    curve = slotCurve;
+                    Grid.SetColumnSpan(curve, 3);
+                    grid.Children.Add(curve);
                 }
 
                 if (pattern != null && settings?.Audio != null)
@@ -286,12 +294,31 @@ namespace ReBuzz.Studio.Views.Session
                 return actions + ", " + when;
             }
 
+            // EV1: a clip with no curve yet draws one when its first envelope column appears.
+            protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+            {
+                base.OnAttachedToVisualTree(e);
+                if (Pattern != null && curve == null) Pattern.ColumnAdded += OnColumnAdded;
+            }
+
+            protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+            {
+                if (Pattern != null) Pattern.ColumnAdded -= OnColumnAdded;
+                base.OnDetachedFromVisualTree(e);
+            }
+
+            void OnColumnAdded(IPatternColumn c) => Avalonia.Threading.Dispatcher.UIThread.Post(view.RebuildWhenSeen);
+
             void OnPressed(object sender, PointerPressedEventArgs e)
             {
                 if (!IsLeft(e, this)) return;
                 view.Select(Track, Scene);
                 if (e.ClickCount == 2)
                 {
+                    // EV1: a double click on the mini curve opens the clip's lane in the Detail panel.
+                    var at = e.GetPosition(this);
+                    if (curve != null && at.Y >= Bounds.Height - SlotCurve.Height - 2 && curve.DistanceAt(at.X, at.Y - (Bounds.Height - SlotCurve.Height - 2)) < 8
+                        && Detail.EnvelopeOpener.Open?.Invoke(Pattern, curve.Key) == true) { e.Handled = true; return; }
                     view.SlotDoubleClicked(this, Normalize(e.KeyModifiers));
                 }
                 else if (Pattern != null)
@@ -364,6 +391,7 @@ namespace ReBuzz.Studio.Views.Session
                 label.Foreground = text;
                 if (flags != null) flags.Foreground = text;
                 if (wave != null) wave.Foreground = WaveShade(background);
+                if (curve != null) curve.Foreground = text;
                 IBrush stateBrush = null;
                 bool waiting = false;
                 switch (state)
@@ -426,6 +454,7 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>What the slot shows now, for tests: its glyph and outline.</summary>
             internal string Glyph => glyph?.Text;
             internal Audio.AudioSlotWave Wave => wave;
+            internal SlotCurve Curve => curve;
             /// <summary>The name the slot shows now (tests).</summary>
             internal string LabelText => label?.Text;
             internal Audio.RecordingWave LiveWave => liveWave;
@@ -558,6 +587,11 @@ namespace ReBuzz.Studio.Views.Session
                         "(● in its empty slots records a take; ◉ Overdub records into what it plays)",
                         () => view.ToggleArm(Track));
                     chips.Children.Add(arm);
+                }
+                if (track >= 0 && machine != null)
+                {
+                    var curve = new Chip("\u223F", SessionPalette.Scene, "The parameter this track's clips draw as a curve along their bottom", () => view.ChooseCurve(this));
+                    chips.Children.Add(curve);
                 }
                 chips.Children.Add(mute);
                 chips.Children.Add(solo);
