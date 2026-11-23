@@ -54,6 +54,7 @@ namespace ReBuzz.AgentTests
             ["song_notes_write"] = new[] { "text", "mode" },
             ["gear_list"] = new[] { "kind", "search", "limit", "include_unhealthy" },
             ["machine_list"] = new string[0],
+            ["machine_tracks"] = new string[0],
             // K0 (agent-knowledge.md: ReBuzz.Agent/Guides/MachineCatalog.cs)
             ["machine_find"] = new[] { "intent", "category", "tag", "role", "kind", "limit" },
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
@@ -168,6 +169,8 @@ namespace ReBuzz.AgentTests
             ["arrangement_lane"] = new[] { "op", "machine", "role", "lane", "remove_clips" },
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
+            // EV1 (daw-modes.md §8.8: ReBuzz/Agent/ClipEnvelopeTools.cs)
+            ["clip_envelope"] = new[] { "op", "machine", "pattern", "scene", "lane", "clip", "at", "param", "track", "points", "shape", "replace", "from", "to", "allow_unsafe" },
             // NA4b (neo-audio.md "Takes and comping": ReBuzz/Agent/ArrangementTools.cs)
             ["takes"] = new[] { "op", "machine", "take", "from", "to", "ranges" },
             ["machine_clone"] = new[] { "machines", "with_patterns" },

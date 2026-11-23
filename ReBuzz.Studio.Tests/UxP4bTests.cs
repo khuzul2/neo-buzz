@@ -328,8 +328,8 @@ namespace ReBuzz.Studio.Tests
             var arrow = StudioTokens.TextSecondary;
             double Lum(object lit) => StudioTokens.Luminance(((ISolidColorBrush)((IPen)lit.GetType().GetField("Item1")!.GetValue(lit)!).Brush!).Color);
             double silent = StudioTokens.Luminance(track);
-            double quiet = Lum(litWire.Invoke(null, new object[] { 0.667, track, arrow })!);       // -20 dB on the -60..0 scale
-            double loud = Lum(litWire.Invoke(null, new object[] { 0.95, track, arrow })!);
+            double quiet = Lum(litWire.Invoke(null, new object[] { 0.667, track, arrow, false, false })!);       // -20 dB on the -60..0 scale
+            double loud = Lum(litWire.Invoke(null, new object[] { 0.95, track, arrow, false, false })!);
             Assert.That(silent / quiet, Is.GreaterThan(1.1), "a wire at -20 dB is darker (stronger) than a silent one");
             Assert.That(silent / loud, Is.GreaterThan(1.6), "a loud wire is much stronger than a silent one");
             Assert.That(loud, Is.LessThan(quiet));

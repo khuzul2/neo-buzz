@@ -395,6 +395,7 @@ namespace ReBuzz.Studio.Views.Session
             // Hidden views (another tab) don't follow the song: they rebuild when shown (0.6.3).
             layout.Changed += RebuildWhenSeen;
             layout.RecordingChanged += OnRecordingChanged;
+            if (buzz.Arrangement is { } store) store.Changed += RebuildWhenSeen;
             StudioTheme.Changed += RebuildWhenSeen;       // P4b: the cells took their text colours from the old theme
             if (midi != null)
             {
@@ -417,6 +418,7 @@ namespace ReBuzz.Studio.Views.Session
             timer.Stop();
             layout.Changed -= RebuildWhenSeen;
             layout.RecordingChanged -= OnRecordingChanged;
+            if (buzz.Arrangement is { } store2) store2.Changed -= RebuildWhenSeen;
             StudioTheme.Changed -= RebuildWhenSeen;
             if (midi != null)
             {
@@ -492,14 +494,43 @@ namespace ReBuzz.Studio.Views.Session
 
         // ------------------------------------------------------------------ structure
 
-        void RebuildWhenSeen()
+        internal void RebuildWhenSeen()
         {
             if (attached) Rebuild();
+        }
+
+        readonly Dictionary<IMachine, ReBuzz.Core.Session.ColumnKey?> curveKeys = new();
+
+        /// <summary>The parameter a track's slots draw as a curve (EV1: the song's choice for the track, else the first with data).</summary>
+        internal ReBuzz.Core.Session.ColumnKey? CurveKey(IMachine machine)
+        {
+            if (machine == null) return null;
+            if (!curveKeys.TryGetValue(machine, out var key)) curveKeys[machine] = key = ClipEnvelopes.ChoiceOf(buzz, machine);
+            return key;
+        }
+
+        /// <summary>The picker of the last curve chip pressed (tests drive it).</summary>
+        internal Sequence.ParameterPicker LastCurvePicker { get; private set; }
+
+        internal void ChooseCurve(TrackHeader header)
+        {
+            var machine = header.Machine;
+            if (machine == null) return;
+            var picker = new Sequence.ParameterPicker(machine, "Show");
+            var flyout = new Flyout { Content = picker, Placement = Avalonia.Controls.PlacementMode.BottomEdgeAlignedLeft };
+            picker.Chosen += param =>
+            {
+                buzz.Arrangement?.SetEnvelopeChoice(machine.Name, param.Key);
+                flyout.Hide();
+            };
+            LastCurvePicker = picker;
+            flyout.ShowAt(header);
         }
 
         /// <summary>Rebuilds the grid from the layout (auto-filling one for songs without).</summary>
         internal void Rebuild()
         {
+            curveKeys.Clear();
             var doc = layout.Ensure();
             SyncSettings();
 

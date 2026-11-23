@@ -80,6 +80,7 @@ namespace ReBuzz.Studio.Views.Sequence
         // Fork (daw-modes.md AR5): recording and the way back from the Session View. Shown in the arrangement mode.
         readonly ToggleButton record = new ToggleButton { Content = "● Rec", Width = 58 };
         readonly ToggleButton loopRecord = new ToggleButton { Content = "Loop rec", Width = 58 };
+        readonly ToggleButton envelopes = new ToggleButton { Content = "Envelopes", Width = 118 };
         readonly ToggleButton overdub = new ToggleButton { Content = "Overdub", Width = 58 };
         readonly Button backToArrangement = new Button { Content = "Back to Arr.", Width = 58 };
         StackPanel recordRows;
@@ -105,7 +106,7 @@ namespace ReBuzz.Studio.Views.Sequence
             patternList.Foreground = look.ListText;
             patternList.BorderBrush = look.ListBorder;
             status.Foreground = look.HeaderText;
-            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode, verticalMode, record, loopRecord, overdub, backToArrangement })
+            foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode, verticalMode, record, loopRecord, overdub, backToArrangement, envelopes })
             {
                 c.Background = look.ControlBack;
                 c.Foreground = look.ControlText;
@@ -311,6 +312,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 (record, "Record arrangement", "Record: the armed tracks (R in a track's header) write what you play at the play position into a new clip; stop to finish"),
                 (loopRecord, "Loop recording", "Loop recording: each pass of the song's loop is a take on a take lane; Shift-drag or C on a take comps it onto the main lane"),
                 (overdub, "Overdub", "Overdub: recording over a clip adds the notes to its pattern instead of making a new clip"),
+                (envelopes, "Envelopes on clips", "Envelopes: every clip draws the curve of the parameter its track's header chose (the ∿ button), read only; a double click on a curve opens the clip's lane in the Detail panel (E)"),
                 (backToArrangement, "Back to arrangement", "Back to Arrangement: the tracks the Session View took over play the arrangement again"),
             })
             {
@@ -324,6 +326,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 {
                     new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { record, loopRecord } },
                     new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { overdub, backToArrangement } },
+                    new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { envelopes } },
                 },
             };
             DockPanel.SetDock(recordRows, Dock.Top);
@@ -363,6 +366,10 @@ namespace ReBuzz.Studio.Views.Sequence
             trackerMode.Click += (s, e) => SetArrangementMode(false);
             arrangementMode.Click += (s, e) => SetArrangementMode(true);
             record.Click += (s, e) => ToggleRecording();
+            envelopes.Click += (s, e) => Arrangement.Envelopes = envelopes.IsChecked == true;
+            Arrangement.EnvelopesChanged += () => { envelopes.IsChecked = Arrangement.Envelopes; SequenceEnvelopes.Remember(Arrangement.Envelopes); };
+            Arrangement.EnvelopeOpened += (p, key) => Detail.EnvelopeOpener.Open?.Invoke(p, key);
+            Arrangement.Envelopes = SequenceEnvelopes.On;
             overdub.Click += (s, e) => { if (core.Arrangement != null) core.Arrangement.Takes.Overdub = overdub.IsChecked == true; };
             backToArrangement.Click += (s, e) => core.Arrangement?.Links.BackToArrangement();
             Arrangement.ViewChanged += Sync;

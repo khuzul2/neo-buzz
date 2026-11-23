@@ -170,6 +170,19 @@ namespace ReBuzz.Studio.Tests
                     canvas.TickMeters(1);
                     Frame($"meters on, a level on every wire (round {round})");
                 }
+                // MT1: the Tracks mode (a colour and a pen per box and wire; the lit track dims the rest), against the same frame with it off.
+                for (int round = 1; round <= 2; round++)
+                {
+                    canvas.TracksOn = false;
+                    Frame($"tracks off (round {round})");
+                    canvas.TracksOn = true;
+                    Frame($"tracks on (round {round})");
+                    var first = canvas.TrackModel.Entries.First().Head.Tag as IMachine;
+                    canvas.Pin(ReBuzz.Studio.Views.Machines.TrackTarget.Entry(first));
+                    Frame($"tracks on, one lit (round {round})");
+                    canvas.Pin(null);
+                }
+                canvas.TracksOn = false;
                 lines.Add($"taking the peaks (30 a second): {Median(300, () => canvas.TickMeters(1.0 / 30)):0.000} ms");
             }
             finally

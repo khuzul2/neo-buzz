@@ -681,6 +681,25 @@ namespace ReBuzz.Studio.Tests
                     window.Detail.Close();
                     Settle();
                 });
+                Try("029b-master-device-docked", () =>
+                {
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).SelectMachine(demo.Master, window);
+                    window.Detail.ShowDevice();
+                    Settle();
+                    Shot(window, "029b-master-device-docked", "Detail > Device with the Master selected: what the Master shows today.", "Select the Master; Detail > Device.");
+                    window.Detail.Close();
+                    Settle();
+                });
+                Try("029c-master-floating", () =>
+                {
+                    var page = new ReBuzz.Studio.Views.Device.DevicePage(demo.Master, floating: true);
+                    page.SetEditor(false, remember: false);
+                    var w = new Window { Width = 900, Height = 620, Content = page };
+                    w.Show();
+                    Settle();
+                    Shot(w, "029c-master-floating", "The Master's parameters floating: what a double click or Parameters... opens today.", "Double-click the Master, or right-click it > Parameters...");
+                    w.Close();
+                });
                 Try("023-machines-amp", () =>
                 {
                     var wire = demo.Delay.Outputs.First(o => o.Destination == demo.Verb);
@@ -756,6 +775,58 @@ namespace ReBuzz.Studio.Tests
                     Shot(window, "024-machines-zoomed", "Machines zoomed in (zoom slider at 3).", "⌘ + scroll wheel, a pinch, or the zoom slider (top right).");
                     machines.ZoomSlider.Value = 0;
                     Settle();
+                });
+                Try("035-machines-tracks", () =>
+                {
+                    // MT1 (ux-overhaul.md §11): the Tracks mode on the demo song: the chip bar under the top bar, boxes and wires in their track's
+                    // colour, a split stripe on a machine that several tracks feed; then one track lit (the rest at about 35 %) with its card; then many chips.
+                    ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = true;
+                    try
+                    {
+                        Settle();
+                        Shot(window, "035-machines-tracks", "Machines with Tracks on (MT1): a chip for each track, group and return under the top bar, every box and wire in its track's colour, a split stripe on a machine several tracks feed, the boxes where they were.",
+                            "Tracks, in the top bar of the Machines view.");
+                        var chip = machines.Tracks.ChipOf(demo.Lead);
+                        Assert.That(chip, Is.Not.Null, "a chip for Lead");
+                        machines.Canvas.Pin(ReBuzz.Studio.Views.Machines.TrackTarget.Entry(demo.Lead));
+                        Settle();
+                        Shot(window, "035-machines-track-lit", "Machines with Lead's track lit (MT1): its path in full colour, everything else dimmed to about 35 %, the card under its first machine with the chain, mute, solo, arm and a meter.",
+                            "Point at, focus or click a chip.");
+                        machines.Canvas.Pin(null);
+                        Settle();
+
+                        var song = Core.SongCore;
+                        var added = new List<MachineCore>();
+                        try
+                        {
+                            var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+                            for (int i = 0; i < 26; i++)
+                            {
+                                string name = "Track " + (i + 1);
+                                song.CreateMachine("Neo Poly", null, name, null, null, null, -1, -0.95f + 0.07f * (i % 6), 0.55f + 0.1f * (i / 6));
+                                var m = song.MachinesList.First(x => x.Name == name);
+                                added.Add(m);
+                                song.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                            }
+                            Settle();
+                            Shot(window, "035-machines-many-chips", "Machines with Tracks on and many chips (MT1): 26 more generators into the Master (30 chips in all); the bar stops at two rows and the rest is behind a +N chip that opens a list with a filter; every chip is reachable with Tab and the arrow keys.",
+                                "Tracks, with many generators in the song.");
+                        }
+                        finally
+                        {
+                            foreach (var m in added)
+                            {
+                                Core.UiHost.ReleaseMachine(m);
+                                song.DeleteMachines(new[] { m });
+                            }
+                            Settle();
+                        }
+                    }
+                    finally
+                    {
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        Settle();
+                    }
                 });
 
                 Try("030-sequence", () =>
@@ -2639,6 +2710,79 @@ namespace ReBuzz.Studio.Tests
                 LiveBeforeCapture = null;
                 ReBuzz.Studio.Views.Session.TrackInputView.PausePolling = false;
                 Core.EngineInput.Close();
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        // ------------------------------------------------------------------ 350-352: clip envelopes (daw-modes.md EV1)
+
+        [AvaloniaTest, Order(10)]
+        public void ClipEnvelopes()
+        {
+            BeforeAll();
+            var demo = LoadDemo();
+            var window = Open();
+            try
+            {
+                var lead = (MachineCore)Core.Song.Machines.First(m => m.Name == "Bass");
+                var hook = lead.Patterns.First(p => p.Name == "Line A");
+                var param = AutomationParams.List(lead).First(p => p.Name == "F1 cutoff");
+                var env = ReBuzz.Core.ClipEnvelopes.Read(hook, param.Key);
+                int span = param.Max - param.Min;
+                int V(double f) => param.Min + (int)(span * f);
+                var editor = new ReBuzz.Core.ClipEnvelopeEditor(Core);
+                // A cutoff that opens over the first bar, closes in steps, and opens again.
+                Assert.That(editor.Replace(env, new[]
+                {
+                    new AutoPoint(0, V(0.15), true), new AutoPoint(10 * 240, V(0.85), true), new AutoPoint(16 * 240, V(0.35), false),
+                    new AutoPoint(22 * 240, V(0.6), false), new AutoPoint(28 * 240, V(0.2), true),
+                }), Is.Null);
+                Settle();
+
+                Try("350-clip-envelope-lane", () =>
+                {
+                    window.Detail.ShowPage(true, true);
+                    Settle();
+                    Assert.That(ReBuzz.Studio.Views.Detail.EnvelopeOpener.Open(hook, param.Key), Is.True);
+                    Wait(250);
+                    var lane = PatternView.Page.Roll.Envelopes.LaneFor(param.Key);
+                    Assert.That(lane, Is.Not.Null);
+                    lane.SelectTimes(new[] { 16 * 240, 22 * 240 });
+                    Settle();
+                    // The pointer rests on the third point: its value tooltip.
+                    window.MouseMove(lane.TranslatePoint(lane.PointOf(10 * 240), window)!.Value);
+                    Wait(100);
+                    Shot(window, "350-clip-envelope-lane", "The Detail panel's envelope lane (EV1) under the piano roll of Bass's Line A clip: the Envelopes header (the parameter chooser, + Envelope, Ramp and Step for the selection, the count), the F1 cutoff curve on the piano roll's own time axis (ramps are circles, steps squares), two points selected, and the value tooltip on the point under the pointer.",
+                        "Double-click a curve on a clip; or Detail > Piano roll, then + Envelope.");
+                });
+
+                Try("351-arrangement-envelope-curves", () =>
+                {
+                    window.Detail.Close();
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    seq.Arrangement.Envelopes = true;
+                    Settle();
+                    Shot(window, "351-arrangement-envelope-curves", "The Arrangement with the Envelopes toggle on (EV1, key E): each clip of a track draws the parameter its header chose (the ∿ button; here Bass's F1 cutoff, the first parameter with data), read only, the repeats of a looped clip fainter.",
+                        "The Arrangement, then the Envelopes button in the right panel (E).");
+                    seq.Arrangement.Envelopes = false;
+                    seq.SetArrangementMode(false);
+                });
+
+                Try("352-session-envelope-curves", () =>
+                {
+                    window.ShowView("Session");
+                    var session = Tab<SessionView>(window, "Session");
+                    session.Rebuild();
+                    Settle();
+                    Shot(window, "352-session-envelope-curves", "The Session View (EV1): a slot whose clip holds an envelope draws it as a mini curve along its bottom; the ∿ chip in the track header chooses the parameter.",
+                        "Draw an envelope in the Detail panel's lane, then look at the Session View.");
+                });
+            }
+            finally
+            {
                 Close(window);
             }
             AfterAll();

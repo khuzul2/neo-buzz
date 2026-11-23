@@ -32,20 +32,20 @@ namespace ReBuzz.Studio.Tests
     public class AutomationLaneTests
     {
         const int TB = PatternEvent.TimeBase;
-        const string Cutoff = "F1 cutoff";
+        internal const string Cutoff = "F1 cutoff";
 
-        static ReBuzzCore Core => Studio.Host.Core;
+        internal static ReBuzzCore Core => Studio.Host.Core;
 
         static RawInputModifiers Cmd => OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
 
-        static void Settle()
+        internal static void Settle()
         {
             Dispatcher.UIThread.RunJobs();
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
             Dispatcher.UIThread.RunJobs();
         }
 
-        sealed class Rig : IDisposable
+        internal sealed class Rig : IDisposable
         {
             public MainWindow Window { get; }
             public SequenceView View { get; }
@@ -195,7 +195,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static void Notes(IPattern p, int length)
+        internal static void Notes(IPattern p, int length)
         {
             var notes = Enumerable.Range(0, length / 2).Select(i => new ClipNote(i * 2 * TB, TB, 48 + 3 * (i % 7), 100)).ToArray();
             Core.SessionLayout.EditNotes(p, null, notes);
@@ -205,7 +205,7 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ rendering
 
-        static float[] Render(int ticks, IParameter trace = null, int[] traced = null)
+        internal static float[] Render(int ticks, IParameter trace = null, int[] traced = null)
         {
             foreach (var m in Core.SongCore.MachinesList)
             {

@@ -37,4 +37,25 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The setting changed the orientation: open sequence views follow.</summary>
         public static event Action<bool> Changed;
     }
+
+    /// <summary>Whether the arrangement's clips draw their envelope curves (EV1): remembered like the orientation.</summary>
+    internal static class SequenceEnvelopes
+    {
+        public const string Key = "ClipEnvelopes", Section = "Studio";
+
+        public static bool On
+        {
+            get
+            {
+                try { return StudioHost.Current?.Registry?.Read(Key, false, Section) ?? false; }
+                catch (Exception) { return false; }
+            }
+        }
+
+        public static void Remember(bool on)
+        {
+            try { StudioHost.Current?.Registry?.Write(Key, on, Section); }
+            catch (Exception) { /* the choice lasts this session */ }
+        }
+    }
 }

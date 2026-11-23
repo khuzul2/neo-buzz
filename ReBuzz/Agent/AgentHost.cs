@@ -58,12 +58,14 @@ namespace ReBuzz.Agent
             MachineCatalog.Register(tools, () => Described(core).Select(x => x.Manifest).ToList());   // K0 (agent-knowledge.md): machine_find
             MachineTools.Register(tools, this);
             MachineEditTools.Register(tools, this); // K3b: machine_clone, machine_group, machine_latency, machine_attributes, machine_command
+            TrackTools.Register(tools, this);       // MT1 (ux-overhaul.md §11): machine_tracks
             ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
             ReplaceTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
             ParamTools.Register(tools, this);
             ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);
             ArrangementTools.Register(tools, this);   // K3b (agent-knowledge.md §11): arrangement_clip, arrangement_lane, arrangement_automation, arrangement_takes
+            ClipEnvelopeTools.Register(tools, this);  // EV1 (daw-modes.md §8.8): clip_envelope
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);
             MasteringTools.Register(tools, this);   // mastering-tools.md §6: target_build, eq_fit
