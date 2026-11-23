@@ -26,12 +26,12 @@ Knob moves are recorded as automation through `RecordControlChange`. A message a
 
 ## Selection
 
-Selecting a track arms it exclusively (hand-armed tracks stay armed). The top bar shows "◀ track name ▶" and a muted chip ("2 devices"; which ones is its tooltip), so it stays one row at 1440 px; the "K7 is free" notice takes the chip's place for a few seconds; Alt+Up / Alt+Down (and two mappable commands) select the previous / next track.
+Selecting a track arms it exclusively (hand-armed tracks stay armed). The track selector "◀ track name ▶" with a muted chip ("2 devices"; which ones is its tooltip) sits at the right end of the view strip's row under the top bar: in the transport bar it wrapped Lock, Keys and the device picker onto a second row at 1440 px, and shifted every view under it at 1280 px, so the bar keeps the height it had; the "K7 is free" notice takes the chip's place for a few seconds; Alt+Up / Alt+Down (and two mappable commands) select the previous / next track.
 
 ## Studio
 
 - **Map mode** (Edit, Map MIDI controls). The key is Ctrl+Alt+K (Alt+Cmd+K on a Mac), not the briefed Cmd+M: Cmd+M minimises on a Mac and mutes in the Arrangement: every mappable control outlined; a click arms it, the next control moved maps to it. Esc ends, Delete unmaps the armed control. Badges on mapped controls, in a short form that lies inside the control ("K3", "CC74", "N36"); the full source with the device ("Note 36 ch10 · Pads") is the badge's tooltip and the popover's text; right-click for Edit / Unmap. The "Listening…" chip is drawn inside the armed card, never over the group header above it. The banner is one line ("Listening for Lead · PEG rate 1: move any control · Delete: unmap · Esc: done").
-- **MIDI popover**: scope, range (one row: from and to, in percent, with "20% to 60% of the parameter's range" below), invert, takeover, the listening state. Opened by map mode, a control's MIDI button, a badge's Edit and the old "Bind to MIDI Controller" item.
+- **MIDI popover**: scope, range (one row: from and to, in percent, with "20% to 60% of the parameter's range" below), invert, takeover, the listening state. Opened by map mode, a control's MIDI button (shown on hover where it is clear of the control's middle; the small transport buttons are mapped in map mode), a badge's Edit and the old "Bind to MIDI Controller" item.
 - **Inspector MIDI page**: slots laid out as the knobs, drag a parameter onto a slot, right-click "Free this knob".
 
 ## Agent
