@@ -2389,15 +2389,15 @@ namespace ReBuzz.Studio.Tests
                 window.RefreshNow();
                 Settle();
                 var pattern = machine.Patterns.First(p => p.Name == "P");
-                Try("590-clips-old-machine-tracker", () =>
+                Try("600-clips-old-machine-tracker", () =>
                 {
                     window.Detail.Show(true);
                     PatternView.Edit(pattern);
                     window.ShowView("Pattern");
                     Wait(300);
-                    Shot(window, "590-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open: the columns are views of the pattern's lanes (the Level step at row 16, the note at row 16); the machine is an old one, so its clip is view only.", "Open a song of old machines; F2.", Song);
+                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open: the columns are views of the pattern's lanes (the Level step at row 16, the note at row 16); the machine is an old one, so its clip is view only.", "Open a song of old machines; F2.", Song);
                 });
-                Try("591-clips-old-machine-refused", () =>
+                Try("601-clips-old-machine-refused", () =>
                 {
                     // Walk right and type a digit until a column of the machine refuses it (the Level column's lane is the old machine's).
                     bool refused = false;
@@ -2418,9 +2418,9 @@ namespace ReBuzz.Studio.Tests
                     Wait(200);
                     Wait(200);
                     window.RefreshNow();
-                    Shot(window, "591-clips-old-machine-refused", "A key typed into the old machine's clip: the edit is refused and the status line says why in one line (\"Convert this machine to edit its clips\"); the machine still plays.", "Type in the Tracker on a machine without clipEdit.", Song);
+                    Shot(window, "601-clips-old-machine-refused", "A key typed into the old machine's clip: the edit is refused and the status line says why in one line (\"Convert this machine to edit its clips\"); the machine still plays.", "Type in the Tracker on a machine without clipEdit.", Song);
                 });
-                Try("592-clips-loss-panel", () =>
+                Try("602-clips-loss-panel", () =>
                 {
                     var report = new ReBuzz.Core.ClipOpenReport();
                     report.Log.Loss(ClipTags.PxpSpDropped, "Probe", "P", null, 12);
@@ -2431,7 +2431,7 @@ namespace ReBuzz.Studio.Tests
                     window.RefreshProblems();
                     window.ShowView("Machines");
                     Wait(200);
-                    Shot(window, "592-clips-loss-panel", "The notice after opening a song that lost something in the move to the store: what was dropped and what changed, by cause, in plain words; × hides it. (The losses shown are made up for the picture.)", "Open an old song with PatternXP sub-pattern columns.", Song);
+                    Shot(window, "602-clips-loss-panel", "The notice after opening a song that lost something in the move to the store: what was dropped and what changed, by cause, in plain words; × hides it. (The losses shown are made up for the picture.)", "Open an old song with PatternXP sub-pattern columns.", Song);
                 });
             }
             finally
