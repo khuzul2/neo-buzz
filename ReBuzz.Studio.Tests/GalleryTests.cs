@@ -2377,7 +2377,9 @@ namespace ReBuzz.Studio.Tests
         public void ClipsOfOldSongs()
         {
             BeforeAll();
-            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
+            bool allowAll = ClipEditPolicy.AllowAll;
+            ClipEditPolicy.AllowAll = false;            // CI's switch for the song builders is off for this picture: an old machine is view only
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; ClipEditPolicy.AllowAll = allowAll; });
             NewSong();
             var window = Open("Machines");
             try

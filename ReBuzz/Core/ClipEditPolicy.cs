@@ -34,9 +34,12 @@ namespace ReBuzz.Core
         /// <summary>Whether the clips of the machine may be edited (the answer without the reason).</summary>
         public static bool CanEdit(IMachine machine) => CanEdit(machine, out _);
 
+        /// <summary>A switch for the tools that build songs with the agent (CI's generators and checks write notes into classic machines): NEOBUZZ_CLIP_EDIT_ALL=1 allows every machine. Tests of the rule set it false.</summary>
+        internal static bool AllowAll { get; set; } = Environment.GetEnvironmentVariable("NEOBUZZ_CLIP_EDIT_ALL") == "1";
+
         static string Default(IMachine machine)
         {
-            if (machine == null || !PatternColumnCore.PlaysEveryLane) return null;
+            if (machine == null || AllowAll || !PatternColumnCore.PlaysEveryLane) return null;
             return IsWritable(machine) ? null : UiReason;
         }
 

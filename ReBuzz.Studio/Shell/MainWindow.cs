@@ -70,7 +70,8 @@ namespace ReBuzz.Studio.Shell
         {
             this.host = host;
             // The tracker refused an edit of an old machine's clips (clips.md §5.7): the status line says why, in one line.
-            BuzzGUI.Common.ClipDerived.Refused = why => Avalonia.Threading.Dispatcher.UIThread.Post(() => Notice(why));
+            var weakSelf = new WeakReference<MainWindow>(this);       // a static hook must not keep a closed window alive
+            BuzzGUI.Common.ClipDerived.Refused = why => Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (weakSelf.TryGetTarget(out var w)) w.Notice(why); });
             Title = StudioHost.AppTitle;
             Width = 1280;
             Height = 820;

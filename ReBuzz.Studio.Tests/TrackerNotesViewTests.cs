@@ -244,6 +244,9 @@ namespace ReBuzz.Studio.Tests
             finally { Close(s); }
         }
 
+        /// <summary>The editor's data without the derived blob's stamp (clips.md 7.2: the store's hash, which follows every lane, the Notes lane too).</summary>
+        static byte[] NoStamp(byte[] data) => data != null && data.Length > 37 && data[^37] == (byte)'N' && data[^36] == (byte)'B' && data[^35] == (byte)'S' && data[^34] == (byte)'T' ? data[..^37] : data;
+
         [AvaloniaTest]
         public void TheEditorsDataAndTheSongsFileAreNotChangedByTheLanes()
         {
@@ -255,7 +258,7 @@ namespace ReBuzz.Studio.Tests
                 // The editor's own data: its Note column typed, and a MIDI lane's note, as an old song has them.
                 Key(s, PhysicalKey.Tab);
                 Key(s, PhysicalKey.Z);
-                var editorBefore = Core.MachineManager.GetMachineData(s.Machine.EditorMachine);
+                var editorBefore = NoStamp(Core.MachineManager.GetMachineData(s.Machine.EditorMachine));
                 var editorEvents = s.Pattern.PatternEditorMachineEvents.Select(c => (c.Parameter.Name, Events: c.Events.Select(e => (e.Time, e.Value, e.Duration)).OrderBy(e => e).ToArray())).ToList();
 
                 Take(s.Pattern, ATake());
@@ -263,7 +266,7 @@ namespace ReBuzz.Studio.Tests
                 var (bv, br) = Where(ATake(), ATake()[2]);
                 At(s, 0, br, set: bv);
                 Key(s, PhysicalKey.X);                  // an edit in the lanes
-                Assert.That(Core.MachineManager.GetMachineData(s.Machine.EditorMachine), Is.EqualTo(editorBefore), "the lanes aren't in the editor's data");
+                Assert.That(NoStamp(Core.MachineManager.GetMachineData(s.Machine.EditorMachine)), Is.EqualTo(editorBefore), "the lanes aren't in the editor's data (the derived blob's stamp is the store's hash, which they do change)");
                 Assert.That(s.Pattern.PatternEditorMachineEvents.Select(c => (c.Parameter.Name, Events: c.Events.Select(e => (e.Time, e.Value, e.Duration)).OrderBy(e => e).ToArray())).ToList(), Is.EqualTo(editorEvents));
 
                 var notes = Column(s.Pattern);
@@ -279,7 +282,7 @@ namespace ReBuzz.Studio.Tests
                     var machine = Core.SongCore.MachinesList.First(m => m.Name == "AR3 Bytes");
                     s.Machine = machine;
                     s.Pattern = machine.Patterns.First();
-                    Assert.That(Core.MachineManager.GetMachineData(machine.EditorMachine), Is.EqualTo(editorBefore), ext + ": the editor's data, byte for byte");
+                    Assert.That(NoStamp(Core.MachineManager.GetMachineData(machine.EditorMachine)), Is.EqualTo(editorBefore), ext + ": the editor's data, byte for byte");
                     Assert.That(Column(s.Pattern), Is.EqualTo(notes), ext + ": the MIDI column's notes, exactly");
                 }
                 PatternView.Edit(s.Pattern);

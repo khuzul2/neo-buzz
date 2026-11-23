@@ -53,7 +53,7 @@ namespace ReBuzz.Core
             var report = new ClipOpenReport();
             foreach (var machine in song.MachinesList.ToList())
             {
-                if (machine.PatternsList.Count == 0) continue;
+                if (machine.PatternsList.Count == 0 || machine.DLL?.IsMissing == true) continue;       // a placeholder keeps its data as the file gave it
                 try
                 {
                     Migrate(buzz, song, machine, lanesInStore, report);

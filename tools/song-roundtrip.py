@@ -293,6 +293,9 @@ def parse_mpe(hexdata):
     if r.u8() != 255 or r.u8() != 1:
         return None
     size = r.i32()
+    # Clips CU2/CU3 (clips.md 7.2): the derived blob ends with the store's stamp (magic "NBST" 1, then a SHA-256), after what the size covers.
+    if len(r.d) == size + 37 and r.d[size:size + 5] == b"NBST\x01":
+        r.d = r.d[:size]
     if size != len(r.d):
         raise Unparseable(f"editor data says {size} bytes, has {len(r.d)}")
     patterns = []
