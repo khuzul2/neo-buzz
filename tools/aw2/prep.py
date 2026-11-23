@@ -48,7 +48,7 @@ def main():
         wav = jp[:-5] + ".wav"
         base = name.split("__")[0]
         # AW2b: a validation split apart from the test halves (thresholds and choices are set on it): Slakh's own, else one track in eight by hash (a track with its stem remixes).
-        if meta["split"] == "train" and meta["dataset"] != "slakh" and meta["dataset"] != "generated" and fnv(base) % 8 == 1:
+        if meta["split"] == "train" and meta["dataset"] not in ("slakh", "generated", "egmd") and fnv(base) % 8 == 1:
             meta["split"] = "val"
         if meta["split"] in ("test", "val"):
             if a.eval_dir:
