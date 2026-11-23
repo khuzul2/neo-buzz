@@ -240,7 +240,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | audio_import | 3 | 2 | yes |
 | audio_separate | 2 | 2 | yes |
 | audio_set | 3 | 5 | yes |
-| audio_slice_to_midi | 2 | 3 | yes |
+| audio_slice_to_midi | 2 | 2 | yes |
 | audio_status | 5 | 1 | yes |
 | audio_warp_markers | 1 | 1 | yes |
 | automation_read | 2 | 2 | yes |
@@ -345,7 +345,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | theory | 4 | 13 | yes |
 | track_input | 5 | 9 | yes |
 | transport | 7 | 9 | yes |
-| undo | 13 | 1 | yes |
+| undo | 12 | 1 | yes |
 | view_show | 1 | 2 | yes |
 | wave_from_render | 3 | 2 | yes |
 | wave_import | 5 | 6 | yes |
