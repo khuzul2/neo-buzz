@@ -150,6 +150,13 @@ namespace ReBuzz.AgentTests
             ["settings_reset"] = new[] { "key", "section", "all" },
             ["settings_history"] = new[] { "key", "limit" },
             ["midi_bindings_list"] = new[] { "machine" },
+            // MM1 (ReBuzz/Agent/MidiMapTools.cs)
+            ["controller_list"] = new string[0],
+            ["midi_map_list"] = new[] { "scope", "track_id" },
+            ["midi_map_set"] = new[] { "op", "scope", "track_id", "device", "kind", "channel", "number", "encoder", "machine", "parameter", "track", "command", "index", "min", "max", "invert", "takeover", "first_number", "count", "numbers", "keys", "own" },
+            ["midi_map_clear"] = new[] { "device", "kind", "channel", "number", "machine", "parameter", "track", "command", "index", "all", "scope", "track_id" },
+            ["track_page_get"] = new[] { "track_id" },
+            ["track_page_set"] = new[] { "track_id", "page", "slots", "add_page", "select_page", "remove_page" },
             ["midi_bind"] = new[] { "machine", "parameter", "channel", "controller", "track" },
             ["midi_unbind"] = new[] { "machine", "parameter", "track", "all" },
             ["midi_learn"] = new[] { "machine", "parameter", "track", "timeout_seconds" },

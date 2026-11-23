@@ -50,6 +50,7 @@ namespace ReBuzz.AppViews
             buzz.ArrangementEvents = new Core.ArrangementEventStore(buzz);
             buzz.MarkerStore = new Core.SongMarkerStore(buzz);
             buzz.PinStore = new Core.MachinePinStore(buzz);        // fork (ux-overhaul.md, the parameter panel)
+            buzz.MidiMapping = new Core.MidiMapping(buzz, registryEx);     // fork (midi-mapping.md, MM1): after the pins and the session layout it follows
             buzz.Arrangement = new Core.ArrangementStore(buzz);     // fork (daw-modes.md S5)
             buzz.SongNotes = new Core.Notes.SongNotesStore(buzz);   // fork (machine-safety.md §3.5)
 

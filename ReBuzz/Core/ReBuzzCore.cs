@@ -119,6 +119,7 @@ namespace ReBuzz.Core
 
         // MIDI control of the Session View (0.2); created with the layout.
         internal SessionMidi SessionMidi { get; set; }
+        internal MidiMapping MidiMapping { get; set; }          // fork (docs/specs/midi-mapping.md, MM1): MIDI mapping for any controller
 
         // Fork (0.8): Link, MIDI clock in and out; created with the layout.
         internal SessionSync SessionSync { get; set; }
@@ -1991,7 +1992,13 @@ namespace ReBuzz.Core
             // Fork: notes and CCs mapped to the Session View control the session only
             // (docs/specs/session-view.md 0.2). The session handles them here, on the MIDI thread
             // (0.4.1), so launches don't wait for the UI.
-            bool sessionOnly = SessionMidi?.OnMidiThread(data) == true;
+            // Fork (midi-mapping.md, MM1): a control being mapped or taught takes the message first; then the session's map; then the mapping's own
+            // (the selected track's page, the global maps, a pinned device's keys). Each runs on this thread and allocates nothing.
+            var mapping = MidiMapping;
+            bool mapped = mapping != null && mapping.IsListening && mapping.OnMidiThread(device, data);
+            bool sessionOnly = !mapped && SessionMidi?.OnMidiThread(data) == true;
+            if (!mapped && !sessionOnly && mapping != null) mapped = mapping.OnMidiThread(device, data);
+            sessionOnly |= mapped;
 
             // Fork (0.7): armed tracks take the keyboard: their machines play it and it is recorded.
             if (!sessionOnly && SessionCore.OnMidiInput(device, data))
@@ -2530,7 +2537,10 @@ namespace ReBuzz.Core
                     string oldName = machine.Name;
                     machine.Name = MachineManager.GetNewMachineName(name);
                     if (!string.IsNullOrEmpty(oldName) && SongCore.MachinesList.Contains(machine))
+                    {
                         PinStore?.Rename(oldName, machine.Name);     // fork (ux-overhaul.md): pins and locks follow a renamed machine
+                        MidiMapping?.RenameMachine(oldName, machine.Name);     // fork (midi-mapping.md): so do its mappings and its track's pages
+                    }
                     Modified = true;
 
                     return true;
@@ -2715,6 +2725,7 @@ namespace ReBuzz.Core
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
             PinStore?.Clear();                  // fork (ux-overhaul.md, the parameter panel)
+            MidiMapping?.Clear();               // fork (midi-mapping.md, MM1)
             Arrangement?.Clear();               // fork (daw-modes.md S5)
             Clips.Reset();                      // fork (daw-modes.md S2)
             SongMeter.Reset();                  // fork (daw-modes.md S1)
