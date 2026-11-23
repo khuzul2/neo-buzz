@@ -111,6 +111,12 @@ namespace NeoBuzz.Dsp
         public int Unison = 1;
         /// <summary>Glide between notes: off, always, or (poly/mono) only when notes overlap.</summary>
         public bool GlideAlways, GlideLegatoOnly;
+        /// <summary>
+        /// Slide (mono and legato): a note that overlaps the one before glides to its pitch without retriggering, whatever the glide mode;
+        /// while the voices are handed it, <see cref="SlideNow"/> is true so they glide in the slide time. Poly mode is not affected.
+        /// </summary>
+        public bool SlideOverlap;
+        public bool SlideNow { get; private set; }
 
         public int VoiceCount => voices.Length;
 
@@ -315,14 +321,17 @@ namespace NeoBuzz.Dsp
                 stackCount++;
             }
             int unison = Math.Clamp(Unison, 1, voices.Length);
-            bool glide = GlideAlways || (GlideLegatoOnly && wasHeld);
-            if (wasHeld && Mode == VoiceMode.Legato && AnyMonoVoiceHeld(unison))
+            bool slide = SlideOverlap && wasHeld && AnyMonoVoiceHeld(unison);
+            bool glide = GlideAlways || (GlideLegatoOnly && wasHeld) || slide;
+            if (wasHeld && (Mode == VoiceMode.Legato || slide) && AnyMonoVoiceHeld(unison))
             {
+                SlideNow = slide;
                 for (int u = 0; u < unison; u++)
                 {
                     voiceKey[u] = key;
                     voices[u].Legato(note, glide);
                 }
+                SlideNow = false;
             }
             else
             {
@@ -359,14 +368,17 @@ namespace NeoBuzz.Dsp
                 // Back to the previous held note.
                 int top = stackCount - 1;
                 float note = stackNote[top];
-                bool glide = GlideAlways || GlideLegatoOnly;
-                if (Mode == VoiceMode.Legato)
+                bool slide = SlideOverlap;
+                bool glide = GlideAlways || GlideLegatoOnly || slide;
+                if (Mode == VoiceMode.Legato || slide)
                 {
+                    SlideNow = slide;
                     for (int u = 0; u < unison; u++)
                     {
                         voiceKey[u] = stackKey[top];
                         voices[u].Legato(note, glide);
                     }
+                    SlideNow = false;
                 }
                 else
                 {

@@ -3,7 +3,7 @@
 namespace NeoBuzz.Poly
 class NeoPolyMachine
 tracks 16
-summary Virtual analog polysynth: three oscillators, two filters (ladder and SVF), amp, filter and mod envelopes, two LFOs and a mod matrix. Use it for pads, basses, leads, plucks, brass and keys.
+summary Virtual analog polysynth: three oscillators, two filters (ladder and SVF), amp, filter and mod envelopes, two LFOs and a mod matrix. Use it for pads, basses, leads, plucks, brass and keys, and for acid lines (Diode 18 filter, accent and slide).
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
@@ -114,13 +114,13 @@ NoiseColor  "Noise colour"  0 1000 0    pct                             | White 
     sound White noise is bright and hissy, and pink is softer and more like wind or rumble.
 
 group Filter 1
-F1Type      "F1 type"       0 5    0    enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch | Filter 1 model
-    how Chooses the model of filter 1: a 24 or 12 dB ladder, or a state-variable low-pass, band-pass, high-pass or notch.
-    sound The ladder is warm and smooth, and the state-variable types are cleaner and more flexible.
+F1Type      "F1 type"       0 6    0    enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch Diode_18 | Filter 1 model
+    how Chooses the model of filter 1: a 24 or 12 dB ladder, a state-variable low-pass, band-pass, high-pass or notch, or Diode 18, a three-pole diode ladder for acid lines.
+    sound The ladder is warm and smooth, the state-variable types are cleaner and more flexible, and Diode 18 is thinner and rubbery, squelching as the resonance rises.
 F1Cutoff    "F1 cutoff"     0 1000 700  freq 20 20000                   | Cutoff
     how Sets the cutoff frequency of filter 1, from 20 Hz to 20 kHz.
     sound Low values make the sound dark and muffled, and high values open it up.
-F1Reso      "F1 reso"       0 1000 150  pct                             | Resonance (the ladder self-oscillates at the top)
+F1Reso      "F1 reso"       0 1000 150  pct                             | Resonance (the ladders self-oscillate at the top)
     how Sets the resonance of filter 1, from 0 to 100 %; the ladder rings by itself at the top.
     sound More resonance puts a whistling peak at the cutoff, and the top turns it into a sine tone.
 F1Drive     "F1 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
@@ -298,3 +298,29 @@ M8Dst "M8 dest"   0 23 0 enum Off Pitch Osc_1_pitch Osc_2_pitch Osc_3_pitch Osc_
 M8Amt "M8 amount" 0 1000 500 bip | Amount
     how Sets how strongly slot 8 moves its destination, from minus 100 % to plus 100 %.
     sound Positive values push the destination up, negative values push it down, and zero does nothing.
+
+# Acid extension (AC1, docs/specs/legacy-machines.md G3). Appended: a song that did not save these keeps the defaults, which change nothing.
+group Voice
+AccentThr   "Accent threshold" 0 126 99  int 1                          | Notes at or above this velocity are accented
+    how Sets the velocity from which a note counts as accented, from 1 to 127.
+    sound Lower values accent more notes of a line, and 127 accents only the hardest.
+Accent      "Accent"        0 1000 0    pct                             | Extra filter envelope depth on accented notes
+    how Adds to the filter envelope's depth on accented notes, from 0 to 100 % (100 % is six octaves at the peak).
+    sound Accented notes open the filter further and bite harder than the rest of the line.
+Slide       "Slide"         0 1    0    switch                          | Overlapping notes glide at the slide time
+    how Turns on slides: a note that starts before the previous one ends glides to its pitch in the slide time, whatever the glide mode.
+    sound Slides join notes into the squirming, singing lines of acid bass; use Legato voice mode so they do not retrigger.
+SlideTime   "Slide time"    0 1000 500  time 0.006 0.6                  | How long a slide takes
+    how Sets the time a slide takes, from 6 to 600 ms, the same for any interval.
+    sound Short slides snap, longer ones sweep.
+group Filter 1
+AccentDecay "Accent decay"  0 1000 1000 time 0.0005 20                  | Filter decay on accented notes (never longer than the filter decay)
+    how Sets the filter envelope's decay on accented notes; it can only shorten the filter decay, and the top leaves it as it is.
+    sound Short values make accents snap shut with a sharp, vocal blip.
+AccentSweep "Accent sweep"  0 1000 0    lin 0 3 oct 2                   | Accents in quick succession swell the filter, up to this much
+    how Sets how far a run of accents in quick succession can raise the filter envelope's depth, up to 3 octaves; it relaxes between accents.
+    sound More makes a run of accents climb and squeal, and zero keeps every accent the same.
+group Amp env
+AccentLevel "Accent level"  0 1000 0    lin 0 12 dB 1                   | Extra level on accented notes
+    how Sets how much louder accented notes play, from 0 to 12 dB.
+    sound Accents punch out of the line.

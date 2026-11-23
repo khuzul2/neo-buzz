@@ -40,6 +40,15 @@ namespace NeoBuzz.Poly
         public ModDest[] MatrixDst = new ModDest[8];
         public float[] MatrixAmt = new float[8];
         public int Version;
+        // Acid (docs/specs/legacy-machines.md G3). Defaults change nothing: no accent depth, sweep, level or decay, no slide.
+        public int AccentThreshold = 100;
+        public float AccentDepth;          // octaves added to the filter envelope's depth on an accented note
+        public float AccentDecay;          // s, the filter decay of an accented note
+        public bool AccentDecayOn;         // false: the knob is at its top, the decay stays as it is
+        public float AccentSweepCap;       // octaves a run of accents can add at most
+        public float AccentGain = 1f;     // amp factor of an accented note
+        public bool Slide;
+        public float SlideTime = 0.06f;
     }
 
     internal sealed class PolyEngine : INoteSink
@@ -55,6 +64,10 @@ namespace NeoBuzz.Poly
         internal readonly PolySettings S = new PolySettings();
         float sampleRate = 48000;
         double bpm = 120;
+        // The accent sweep: octaves of swell a run of accents has built (it relaxes with SweepRelax between accents).
+        const float SweepRelax = 0.35f;
+        float sweep;
+        long clock, lastAccentClock;
         Smoother volume;
         readonly Lfo globalLfo1 = new Lfo(11), globalLfo2 = new Lfo(23);
         int controlCounter;
@@ -142,6 +155,14 @@ namespace NeoBuzz.Poly
             s.NoiseColor = values.F(P.NoiseColor);
 
             s.F1Type = values.Choice(P.F1Type);
+            s.AccentThreshold = (int)values.Value(P.AccentThr);
+            s.AccentDepth = values.F(P.Accent) * 6;
+            s.AccentDecay = values.F(P.AccentDecay);
+            s.AccentDecayOn = values[P.AccentDecay] < 1000;
+            s.AccentSweepCap = values.F(P.AccentSweep);
+            s.AccentGain = (float)DspMath.DbToGain(values.Value(P.AccentLevel));
+            s.Slide = values.On(P.Slide);
+            s.SlideTime = values.F(P.SlideTime);
             s.F1Cutoff = values.F(P.F1Cutoff);
             s.F1Reso = values.F(P.F1Reso);
             s.F1Drive = (float)DspMath.DbToGain(values.Value(P.F1Drive));
@@ -173,6 +194,7 @@ namespace NeoBuzz.Poly
             alloc.Unison = s.Unison;
             alloc.GlideAlways = s.GlideAlways;
             alloc.GlideLegatoOnly = s.GlideLegato;
+            alloc.SlideOverlap = s.Slide;
             volume.Target = s.Volume;
             s.Version++;
             values.Clean();
@@ -197,7 +219,28 @@ namespace NeoBuzz.Poly
 
         // ── notes ───────────────────────────────────────────────────────────
 
-        public void NoteOn(int key, int note, float velocity) { Update(false); alloc.NoteOn(key, note, velocity); }
+        public void NoteOn(int key, int note, float velocity)
+        {
+            Update(false);
+            // Accent: a note at or above the threshold (MIDI velocity 1 … 127). A run of them swells the filter up to the cap, and it relaxes between.
+            NoteAccented = (int)MathF.Round(velocity * 127f) >= S.AccentThreshold;
+            NoteSweep = 0;
+            if (NoteAccented && S.AccentSweepCap > 0)
+            {
+                float dt = (clock - lastAccentClock) / sampleRate;
+                sweep = sweep > 0 ? sweep * PortableMathF.Exp(-dt / SweepRelax) : 0;
+                sweep = Math.Min(S.AccentSweepCap, sweep + S.AccentSweepCap / 3f);
+                lastAccentClock = clock;
+                NoteSweep = sweep;
+            }
+            alloc.NoteOn(key, note, velocity);
+        }
+
+        /// <summary>The note being started: accented, and the accent sweep it carries (octaves). Read by the voice that takes it.</summary>
+        internal bool NoteAccented;
+        internal float NoteSweep;
+        /// <summary>True while the allocator hands a slide (an overlapping note in Slide) to a voice: the voice glides in the slide time.</summary>
+        internal bool SlideNow => alloc.SlideNow;
         public void NoteOff(int key) => alloc.NoteOff(key);
         public void ModWheel(float value) => ModWheelValue = value;
         public void PitchBend(float value) => PitchBendSemis = value * S.BendRange;
@@ -216,6 +259,7 @@ namespace NeoBuzz.Poly
                 DecodeLfo(1, P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
             }
             Update(false);
+            clock += n;
             Array.Clear(left, 0, n);
             Array.Clear(right, 0, n);
             bool any = false;
@@ -261,6 +305,7 @@ namespace NeoBuzz.Poly
         readonly Adsr ampEnv = new Adsr(), fltEnv = new Adsr(), modEnv = new Adsr();
         readonly Lfo lfo1, lfo2;
         Ladder ladder;
+        Diode18 diode;
         Svf svf1, svf2;
         Rng rng;
         PinkNoise pink;
@@ -274,6 +319,11 @@ namespace NeoBuzz.Poly
         bool pending, pendRelease;
         float pendNote, pendVel, pendGlideFrom;
         int pendUni, pendUniCount;
+
+        // Accent: the note's flag and the sweep it carries (octaves of filter envelope depth); the peak the envelope reached, for tests and meters.
+        bool accented, pendAccented;
+        float accentSweep, pendSweep;
+        float envPeakOct, envNowOct, envPeakLevel;
 
         // Drift (slow random walk).
         float driftPitch, driftCut, driftPitchTarget, driftCutTarget;
@@ -307,9 +357,17 @@ namespace NeoBuzz.Poly
         public bool Pending => pending;
         public float Loudness => ampEnv.Level;
         public float Pitch => pitch;
+        /// <summary>The filter envelope's largest contribution to filter 1's cutoff since this note started (octaves; its level then is in <see cref="EnvDepthOct"/>).</summary>
+        internal float EnvPeakOct => envPeakOct;
+        internal float EnvNowOct => envNowOct;
+        /// <summary>The depth (octaves) the filter envelope scales by on this note: its contribution at the envelope's peak.</summary>
+        internal float EnvDepthOct => envPeakLevel > 0 ? envPeakOct / envPeakLevel : 0;
+        internal bool Accented => accented;
 
         public void NoteOn(float n, float vel, int unisonIndex, int unisonCount, float glideFrom)
         {
+            pendAccented = engine.NoteAccented;
+            pendSweep = engine.NoteSweep;
             if (ampEnv.IsActive && ampEnv.Level > 0.001f && !pending)
             {
                 // Steal: fade the old note out, then start this one.
@@ -334,11 +392,16 @@ namespace NeoBuzz.Poly
             velocity = vel;
             unisonPos = unisonCount > 1 ? 2f * unisonIndex / (unisonCount - 1) - 1f : 0f;
             randomValue = rng.NextBipolar();
+            accented = pendAccented;
+            accentSweep = pendSweep;
+            envPeakOct = 0;
+            envPeakLevel = 0;
             pitchTarget = n;
-            if (!float.IsNaN(glideFrom) && s.GlideTime > 0.0005f)
+            float glideTime = engine.SlideNow ? s.SlideTime : s.GlideTime;
+            if (!float.IsNaN(glideFrom) && glideTime > 0.0005f)
             {
                 pitch = glideFrom;
-                glideStep = Math.Abs(pitchTarget - pitch) / (s.GlideTime * sr);
+                glideStep = Math.Abs(pitchTarget - pitch) / (glideTime * sr);
             }
             else
             {
@@ -350,6 +413,7 @@ namespace NeoBuzz.Poly
             if (!ampEnv.IsActive)
             {
                 ladder.Reset();
+                diode.Reset();
                 svf1.Reset();
                 svf2.Reset();
             }
@@ -366,8 +430,12 @@ namespace NeoBuzz.Poly
             var s = engine.S;
             note = n;
             pitchTarget = n;
-            if (glide && s.GlideTime > 0.0005f)
-                glideStep = Math.Abs(pitchTarget - pitch) / (s.GlideTime * sr);
+            // An accent on a legato note changes the note's accent state but does not retrigger the envelopes.
+            accented = engine.NoteAccented;
+            accentSweep = engine.NoteSweep;
+            float glideTime = engine.SlideNow ? s.SlideTime : s.GlideTime;
+            if (glide && glideTime > 0.0005f)
+                glideStep = Math.Abs(pitchTarget - pitch) / (glideTime * sr);
             else
             {
                 pitch = n;
@@ -404,7 +472,7 @@ namespace NeoBuzz.Poly
             if (!force && envVersion == s.Version) return;
             envVersion = s.Version;
             ampEnv.Set(s.AmpEnv[0], s.AmpEnv[1], s.AmpEnv[2], s.AmpEnv[3]);
-            fltEnv.Set(s.FltEnv[0], s.FltEnv[1], s.FltEnv[2], s.FltEnv[3]);
+            fltEnv.Set(s.FltEnv[0], accented && s.AccentDecayOn ? Math.Min(s.FltEnv[1], s.AccentDecay) : s.FltEnv[1], s.FltEnv[2], s.FltEnv[3]);
             modEnv.Set(s.ModEnv[0], s.ModEnv[1], s.ModEnv[2], s.ModEnv[3]);
         }
 
@@ -499,11 +567,16 @@ namespace NeoBuzz.Poly
             // Filters: cutoff in octaves from the knob, key, envelope, velocity, matrix, drift.
             float key = (note - 60f) / 12f;
             float velOct = s.F1Vel * (velocity - 1f);
-            float oct1 = key * s.F1Key + fenv * s.F1Env + velOct + dst[(int)ModDest.F1Cutoff] * 6f + driftCut;
+            float depth = accented ? s.F1Env + s.AccentDepth + accentSweep : s.F1Env;
+            float envOct = fenv * depth;
+            envNowOct = envOct;
+            if (envOct > envPeakOct) { envPeakOct = envOct; envPeakLevel = fenv; }
+            float oct1 = key * s.F1Key + envOct + velOct + dst[(int)ModDest.F1Cutoff] * 6f + driftCut;
             float cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
             float reso1 = DspMath.Clamp(s.F1Reso + dst[(int)ModDest.F1Reso], 0, 1);
             float g1 = Svf.Prewarp(cut1, sr);
             if (s.F1Type <= 1) ladder.Set(g1, reso1);
+            else if (s.F1Type == 6) diode.Set(g1, reso1);
             else
             {
                 svf1.Mode = s.F1Type == 2 ? SvfMode.LowPass : s.F1Type == 3 ? SvfMode.BandPass : s.F1Type == 4 ? SvfMode.HighPass : SvfMode.Notch;
@@ -521,6 +594,7 @@ namespace NeoBuzz.Poly
             // Amp: velocity, matrix; pan: unison spread, matrix.
             float velGain = 1f - s.VelAmp * (1f - velocity);
             ampMod = velGain * DspMath.Clamp(1f + dst[(int)ModDest.Amp], 0, 2);
+            if (accented && s.AccentGain != 1f) ampMod *= s.AccentGain;
             float pan = DspMath.Clamp(unisonPos * s.UniSpread + dst[(int)ModDest.Pan], -1, 1);
             DspMath.PanGains(pan, out panL, out panR);
         }
@@ -558,6 +632,7 @@ namespace NeoBuzz.Poly
 
                 float y1;
                 if (f1 <= 1) y1 = ladder.Process(x, drive, lp12);
+                else if (f1 == 6) y1 = diode.Process(x, drive);
                 else
                 {
                     float xd = drive > 1.01f ? DspMath.FastTanh(x * drive) / MathF.Sqrt(drive) : x;
@@ -596,6 +671,7 @@ namespace NeoBuzz.Poly
                 right[offset + i] += o * panR;
             }
             ladder.Flush();
+            diode.Flush();
             svf1.Flush();
             svf2.Flush();
             if (!ampEnv.IsActive && !steal.Fading && !pending)

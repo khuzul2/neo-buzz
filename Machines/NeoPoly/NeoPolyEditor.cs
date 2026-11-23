@@ -43,7 +43,8 @@ namespace NeoBuzz.Poly
                 Build.Knobs(ctx, 3, D, P.F2Cutoff, P.F2Reso, P.F2Env)));
             var voice = S("Voice", Layout.Column(
                 Layout.Row(new ParamChoice(ctx, P.VoiceMode, cellWidth: 50), Layout.Gap(6), new ParamChoice(ctx, P.GlideMode, cellWidth: 50)),
-                Build.Knobs(ctx, 5, D, P.Polyphony, P.Unison, P.UniDetune, P.UniSpread, P.Glide, P.BendRange, P.Drift, P.VelAmp, P.Volume)));
+                Build.Knobs(ctx, 6, D, P.Polyphony, P.Unison, P.UniDetune, P.UniSpread, P.Glide, P.BendRange, P.Drift, P.VelAmp, P.Volume, P.AccentThr, P.Accent, P.SlideTime),
+                new ParamChoice(ctx, P.Slide, "Slide", 40)));
 
             UIElement MakeEnv(string title, int a, int d, int s, int r) => S(title, Layout.Column(
                 Build.Envelope(ctx, a, d, s, r, 4 * 64, 46),
@@ -78,8 +79,12 @@ namespace NeoBuzz.Poly
 
             var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 150);
 
-            var ampEnv = MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR);
-            var fltEnv = MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR);
+            // The acid controls sit beside the knobs of the envelope they belong to: the room is there, the section does not grow taller.
+            UIElement MakeEnvPlus(string title, int a, int d, int s, int r, params int[] extra) => S(title, Layout.Column(
+                Build.Envelope(ctx, a, d, s, r, 4 * 64, 46),
+                Layout.Row(Build.Knobs(ctx, 4, D, a, d, s, r), Layout.Gap(8), Build.Knobs(ctx, extra.Length, D, extra))));
+            var ampEnv = MakeEnvPlus("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR, P.AccentLevel);
+            var fltEnv = MakeEnvPlus("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR, P.AccentDecay, P.AccentSweep);
             var modEnv = MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR);
             var lfo1 = MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
             var lfo2 = MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);

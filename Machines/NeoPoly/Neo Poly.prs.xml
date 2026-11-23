@@ -94,6 +94,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -193,6 +200,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -292,6 +306,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -391,6 +412,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -490,6 +518,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -589,6 +624,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -688,6 +730,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -787,6 +836,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -886,6 +942,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -985,6 +1048,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1084,6 +1154,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1183,6 +1260,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1282,6 +1366,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1381,6 +1472,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1480,6 +1578,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1579,6 +1684,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1678,6 +1790,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1777,6 +1896,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1876,6 +2002,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1975,6 +2108,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2074,6 +2214,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2173,6 +2320,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2272,6 +2426,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2371,6 +2532,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2470,6 +2638,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2569,6 +2744,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2668,6 +2850,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2767,6 +2956,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2866,6 +3062,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2965,6 +3168,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3064,6 +3274,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3163,6 +3380,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3262,6 +3486,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3361,6 +3592,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3460,6 +3698,13 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3559,9 +3804,652 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Acid — Squelch">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="50" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="826" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="300" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="382" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="780" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="250" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="810" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="200" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="500" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="414" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="574" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="0" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="550" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="466" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="400" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+      </Parameters>
+      <Attributes />
+      <Comment>Resonant diode bass with accents that bite and slides: play it in a line, hard notes accented.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Acid — Rubber">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="120" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="826" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="426" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="620" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="125" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="725" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="250" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="500" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="479" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="131" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="618" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="50" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="350" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="651" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="538" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="267" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="167" />
+      </Parameters>
+      <Attributes />
+      <Comment>A softer, stretchier acid: longer slides, a rounder filter and a gentle accent.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Acid — Screamer">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="30" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="739" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="250" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="504" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="920" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="500" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="850" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="150" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="500" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="386" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="597" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="0" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="700" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="438" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="435" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="733" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="333" />
+      </Parameters>
+      <Attributes />
+      <Comment>Near self-oscillation on a square wave: accents climb and squeal.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Acid — Deep">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="80" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="804" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="300" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="333" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="1" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="600" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="310" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="600" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="167" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="710" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="100" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="131" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="500" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="452" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="131" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="604" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="0" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="450" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="562" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="500" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="333" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+      </Parameters>
+      <Attributes />
+      <Comment>A dark, heavy acid bass with a sub underneath.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Acid — Plucky">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="50" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="804" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="300" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="441" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="700" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="208" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="825" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="300" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="65" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="574" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="435" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="65" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="490" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="0" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="500" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="383" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="414" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="467" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+      </Parameters>
+      <Attributes />
+      <Comment>Short, snappy acid notes that die away quickly.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Acid — Sub">
+    <Preset Machine="Neo Poly">
+      <Parameters>
+        <Parameter Name="Voice mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Polyphony" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Unison" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Uni detune" Group="1" Index="3" Track="0" Value="200" />
+        <Parameter Name="Uni spread" Group="1" Index="4" Track="0" Value="600" />
+        <Parameter Name="Glide mode" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="60" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="826" />
+        <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="200" />
+        <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="333" />
+        <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="O1 octave" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="O1 semi" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="O1 fine" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="O1 level" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="O2 shape" Group="1" Index="17" Track="0" Value="667" />
+        <Parameter Name="O2 PW" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="O2 octave" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="O2 semi" Group="1" Index="20" Track="0" Value="12" />
+        <Parameter Name="O2 fine" Group="1" Index="21" Track="0" Value="540" />
+        <Parameter Name="O2 level" Group="1" Index="22" Track="0" Value="350" />
+        <Parameter Name="O2 sync" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="FM 1 → 2" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="O3 shape" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="O3 octave" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="O3 semi" Group="1" Index="27" Track="0" Value="12" />
+        <Parameter Name="O3 fine" Group="1" Index="28" Track="0" Value="500" />
+        <Parameter Name="O3 level" Group="1" Index="29" Track="0" Value="0" />
+        <Parameter Name="Ring 1×2" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Noise" Group="1" Index="31" Track="0" Value="0" />
+        <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
+        <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="271" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="450" />
+        <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="125" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="650" />
+        <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="100" />
+        <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="F2 cutoff" Group="1" Index="41" Track="0" Value="800" />
+        <Parameter Name="F2 reso" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="F2 env" Group="1" Index="43" Track="0" Value="500" />
+        <Parameter Name="Routing" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Amp attack" Group="1" Index="45" Track="0" Value="169" />
+        <Parameter Name="Amp decay" Group="1" Index="46" Track="0" Value="500" />
+        <Parameter Name="Amp sustain" Group="1" Index="47" Track="0" Value="1000" />
+        <Parameter Name="Amp release" Group="1" Index="48" Track="0" Value="500" />
+        <Parameter Name="Flt attack" Group="1" Index="49" Track="0" Value="169" />
+        <Parameter Name="Flt decay" Group="1" Index="50" Track="0" Value="586" />
+        <Parameter Name="Flt sustain" Group="1" Index="51" Track="0" Value="100" />
+        <Parameter Name="Flt release" Group="1" Index="52" Track="0" Value="450" />
+        <Parameter Name="Mod attack" Group="1" Index="53" Track="0" Value="300" />
+        <Parameter Name="Mod decay" Group="1" Index="54" Track="0" Value="600" />
+        <Parameter Name="Mod sustain" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Mod release" Group="1" Index="56" Track="0" Value="500" />
+        <Parameter Name="LFO1 shape" Group="1" Index="57" Track="0" Value="0" />
+        <Parameter Name="LFO1 rate" Group="1" Index="58" Track="0" Value="500" />
+        <Parameter Name="LFO1 sync" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="LFO1 retrig" Group="1" Index="60" Track="0" Value="1" />
+        <Parameter Name="LFO1 fade" Group="1" Index="61" Track="0" Value="0" />
+        <Parameter Name="LFO2 shape" Group="1" Index="62" Track="0" Value="1" />
+        <Parameter Name="LFO2 rate" Group="1" Index="63" Track="0" Value="300" />
+        <Parameter Name="LFO2 sync" Group="1" Index="64" Track="0" Value="0" />
+        <Parameter Name="LFO2 retrig" Group="1" Index="65" Track="0" Value="0" />
+        <Parameter Name="LFO2 fade" Group="1" Index="66" Track="0" Value="0" />
+        <Parameter Name="M1 source" Group="1" Index="67" Track="0" Value="1" />
+        <Parameter Name="M1 dest" Group="1" Index="68" Track="0" Value="0" />
+        <Parameter Name="M1 amount" Group="1" Index="69" Track="0" Value="500" />
+        <Parameter Name="M2 source" Group="1" Index="70" Track="0" Value="8" />
+        <Parameter Name="M2 dest" Group="1" Index="71" Track="0" Value="0" />
+        <Parameter Name="M2 amount" Group="1" Index="72" Track="0" Value="500" />
+        <Parameter Name="M3 source" Group="1" Index="73" Track="0" Value="3" />
+        <Parameter Name="M3 dest" Group="1" Index="74" Track="0" Value="0" />
+        <Parameter Name="M3 amount" Group="1" Index="75" Track="0" Value="500" />
+        <Parameter Name="M4 source" Group="1" Index="76" Track="0" Value="2" />
+        <Parameter Name="M4 dest" Group="1" Index="77" Track="0" Value="0" />
+        <Parameter Name="M4 amount" Group="1" Index="78" Track="0" Value="500" />
+        <Parameter Name="M5 source" Group="1" Index="79" Track="0" Value="0" />
+        <Parameter Name="M5 dest" Group="1" Index="80" Track="0" Value="0" />
+        <Parameter Name="M5 amount" Group="1" Index="81" Track="0" Value="500" />
+        <Parameter Name="M6 source" Group="1" Index="82" Track="0" Value="0" />
+        <Parameter Name="M6 dest" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="M6 amount" Group="1" Index="84" Track="0" Value="500" />
+        <Parameter Name="M7 source" Group="1" Index="85" Track="0" Value="0" />
+        <Parameter Name="M7 dest" Group="1" Index="86" Track="0" Value="0" />
+        <Parameter Name="M7 amount" Group="1" Index="87" Track="0" Value="500" />
+        <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
+        <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
+        <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="300" />
+        <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
+        <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="588" />
+        <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="517" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="200" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="167" />
+      </Parameters>
+      <Attributes />
+      <Comment>A round, low acid line that stays mostly sub, with a little filter movement.</Comment>
     </Preset>
   </Item>
 </PresetDictionary>
