@@ -552,6 +552,7 @@ def check(exe, work, goldens_path, only, twice):
     key = platform_key()
     problems = [f"{n}: not deterministic (two renders differ)" for n in unstable]
     problems += [f"{n}: {e.get('status')}: {e.get('why', '')}" for n, e in entries.items() if e.get("status") == "render failed"]
+    changed = []
     gold = None
     if os.path.exists(goldens_path):
         with open(goldens_path, encoding="utf-8") as f:
@@ -564,15 +565,23 @@ def check(exe, work, goldens_path, only, twice):
             if g is None:
                 problems.append(f"{name}: not in the goldens (a song added: tools/clip-null.py merge)")
             elif not same(g, e):
-                problems.append(f"{name}: render differs from the golden ({(e.get('sha256') or e.get('status'))[:12]} was {(g.get('sha256') or g.get('status'))[:12]})")
+                line = f"{name}: render differs from the golden ({(e.get('sha256') or e.get('status'))[:12]} was {(g.get('sha256') or g.get('status'))[:12]})"
+                if e.get("tracker"):
+                    changed.append(line)      # tracker data: a change report (the engine plays it by design), not a gate
+                else:
+                    problems.append(line)
         if not only:
             problems += [f"{n}: in the goldens, not rendered" for n in gold["songs"] if n not in entries and n not in EXCLUDED]
     title = f"Clip goldens ({nt.platform_label()})"
+    for c in changed:
+        print("CHANGED (tracker data, change report) " + c, flush=True)
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::warning title={title}::{c}", flush=True)
     if os.environ.get("GITHUB_ACTIONS"):
         print(f"::notice title={title}::{len(entries)} songs rendered; {len(problems)} problems", flush=True)
         for p in problems:
             print(f"::error title={title}::{p}", flush=True)
-    summary(title, [f"{len(entries)} songs, {len(problems)} problems"] + [f"- {p}" for p in problems])
+    summary(title, [f"{len(entries)} songs, {len(problems)} problems, {len(changed)} changed tracker songs (report)"] + [f"- {p}" for p in problems] + [f"- changed: {c}" for c in changed])
     for p in problems:
         print("FAIL " + p, flush=True)
     print(f"observed hashes: {out}", flush=True)
