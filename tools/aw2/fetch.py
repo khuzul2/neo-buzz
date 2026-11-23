@@ -2,7 +2,7 @@
 """Fetches the AW2 pilot's training and evaluation data onto the runner (docs/specs/neo-audio.md, AW2 as built). Every source is licence-checked at fetch time
 (the record's licence, and for FSL10K each loop's own); anything that is not CC BY, CC0 or public domain is dropped and the drop is logged. Nothing is committed.
 
-    fetch.py gmd|guitarset|candombe|aam|fsl10k OUT [--limit N]
+    fetch.py gmd|egmd|guitarset|candombe|aam|fsl10k OUT [--limit N]
 
 Writes OUT/NAME.wav (mono, 22.05 kHz) and OUT/NAME.json ({beats, downbeats, beats_per_bar, split: train|test, dataset, licence, source}) and OUT/licences.tsv.
 The split is by who played (GMD: two held-out drummers; GuitarSet: two held-out players), by performance (Candombe) or by a hash of the name (AAM, FSL10K).
@@ -34,6 +34,39 @@ def gmd(out, limit):
         save_item(out, name, x, beats, beats[::4], 4, split, "gmd", "CC-BY-4.0", "Groove MIDI Dataset v1.0.0 (Magenta), " + r["drummer"], {"bpm": bpm})
         n[split] += 1
     print("gmd:", dict(n), flush=True)
+
+
+def egmd(out, limit):
+    """E-GMD, the Expanded Groove MIDI Dataset (Callender, Hawthorne, Hawthorne; ICML 2020; Magenta; CC BY 4.0): the Groove MIDI Dataset's performances played on 43 drum-kit
+    sounds of a Roland TD-17, so the same grooves (same MIDI, same beats) on many kits. AW2c uses a subset spread over the kits for training only: the drummers held out of GMD
+    (drummer5 and drummer9) are left out altogether, so no held-out performance is trained on in another sound. 4/4 'beat' recordings, 8 to 120 s."""
+    z = Zip("https://storage.googleapis.com/magentadata/datasets/e-gmd/v1.0.0/e-gmd-v1.0.0.zip")
+    names = z.names()
+    csvn = next(n for n in names if n.endswith(".csv"))
+    prefix = csvn.rsplit("/", 1)[0] + "/" if "/" in csvn else ""
+    rows = list(csv.DictReader(io.TextIOWrapper(io.BytesIO(z.read(csvn)), "utf-8")))
+    rows = [r for r in rows if r["audio_filename"] and r["time_signature"] == "4-4" and r["beat_type"] == "beat" and 8 < float(r["duration"]) < 120 and r["drummer"] not in ("drummer5", "drummer9")]
+    rows.sort(key=lambda r: fnv(r["id"] + "e"))
+    by_kit = collections.defaultdict(list)
+    for r in rows:
+        by_kit[r["kit_name"]].append(r)
+    kits = sorted(by_kit)
+    print(f"egmd: {len(rows)} usable recordings, {len(kits)} kits", flush=True)
+    pick = []
+    for i in range(limit):
+        pool = by_kit[kits[i % len(kits)]]
+        if pool:
+            pick.append(pool.pop(0))
+    n = 0
+    for r in pick:
+        x, rate = sf.read(io.BytesIO(z.read(prefix + r["audio_filename"])))
+        x = to_mono22k(x, rate)
+        bpm = float(r["bpm"])
+        beats = [k * 60 / bpm for k in range(int(len(x) / RATE * bpm / 60) + 1)]
+        name = "egmd_" + re.sub(r"[^A-Za-z0-9_.-]", "_", r["audio_filename"].rsplit(".", 1)[0])      # the id is the performance (shared by the kits): the audio file is per kit
+        save_item(out, name, x, beats, beats[::4], 4, "train", "gmd", "CC-BY-4.0", "E-GMD (Callender et al., Magenta), " + r["drummer"] + ", " + r["kit_name"], {"bpm": bpm})
+        n += 1
+    print("egmd:", n, "items over", len(kits), "kits", flush=True)
 
 
 def guitarset(out, limit):
@@ -122,7 +155,7 @@ def aam_stems(out, tid, beats, downs, bpb, mt):
         save_item(out, f"aam_{tid}__{g}", mix, beats, downs, bpb, "train", "aam", "CC-BY-4.0", f"AAM track {tid}, stems {'+'.join(sorted(ks))}", {"stem_dropout": g})
 
 
-def aam(out, limit, stems=0, part=0):
+def aam(out, limit, stems=0, part=0, offset=1, eval_only=False):
     """AAM, Artificial Audio Multitracks (Zenodo 5794629, CC BY 4.0): mixes of tracks 0001-1000 (every third one, up to LIMIT), beats and downbeats from the beatinfo files
     (bar count and quarter count). One in ten (by hash) is the test."""
     meta, files = zenodo_files(5794629)
@@ -135,12 +168,14 @@ def aam(out, limit, stems=0, part=0):
     multitracks = Zip(files[rng + "-audio-multitracks.zip"]["links"]["self"]) if stems else None
     n = collections.Counter()
     names = sorted(x for x in z.names() if x.endswith("_mix.flac"))
-    names = [x for i, x in enumerate(names) if i % (3 if part == 0 and limit <= 100 else 4) == 1]      # the pilot's pick for 100 tracks; AW2b's 250 per zip
+    names = [x for i, x in enumerate(names) if i % (3 if part == 0 and limit <= 100 and offset == 1 else 4) == offset]      # the pilot's pick for 100 tracks; AW2b's 250 per zip
     for name in names:
         tid = os.path.basename(name)[:4]
         split = "test" if fnv(tid) % 10 == 0 else "train"
         if n[split] >= (limit if split == "train" else max(8, limit // 8)):
             continue
+        if eval_only and split == "train" and fnv("aam_" + tid) % 8 != 1:
+            continue                                         # AW2c: only the test items and the validation ones (prep.py makes them from the hash)
         try:
             rows = [l.split(",") for l in ann.read(tid + "_beatinfo.arff").decode().splitlines() if l.strip() and l[0] not in "@%"]
         except KeyError:
@@ -226,9 +261,9 @@ def fsl10k(out, limit):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("dataset"); ap.add_argument("out"); ap.add_argument("--limit", type=int, default=100); ap.add_argument("--stems", type=int, default=0); ap.add_argument("--part", type=int, default=0)
+    ap.add_argument("dataset"); ap.add_argument("out"); ap.add_argument("--limit", type=int, default=100); ap.add_argument("--stems", type=int, default=0); ap.add_argument("--part", type=int, default=0); ap.add_argument("--offset", type=int, default=1); ap.add_argument("--eval-only", action="store_true")
     a = ap.parse_args()
     if a.dataset == "aam":
-        aam(a.out, a.limit, a.stems, a.part)
+        aam(a.out, a.limit, a.stems, a.part, a.offset, a.eval_only)
     else:
-        {"gmd": gmd, "guitarset": guitarset, "candombe": candombe, "fsl10k": fsl10k}[a.dataset](a.out, a.limit)
+        {"gmd": gmd, "egmd": egmd, "guitarset": guitarset, "candombe": candombe, "fsl10k": fsl10k}[a.dataset](a.out, a.limit)

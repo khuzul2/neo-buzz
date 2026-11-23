@@ -88,7 +88,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("shards", nargs="+"); ap.add_argument("--out", required=True); ap.add_argument("--minutes", type=float, default=55)
     ap.add_argument("--resume", action="store_true"); ap.add_argument("--d", type=int, default=64); ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--lr", type=float, default=2e-3); ap.add_argument("--seed", type=int, default=1234); ap.add_argument("--total-minutes", type=float, default=0)
+    ap.add_argument("--lr", type=float, default=2e-3); ap.add_argument("--seed", type=int, default=1234); ap.add_argument("--total-minutes", type=float, default=0); ap.add_argument("--init", help="start from the weights of this AW2M file (AW2c: the shipped model)")
     a = ap.parse_args()
     torch.manual_seed(a.seed); random.seed(a.seed)
     torch.set_num_threads(os.cpu_count() or 2)
@@ -98,7 +98,12 @@ def main():
         by_ds[it["ds"]].append(i)
     hours = sum(it["X"].shape[0] for it in items) / FPS / 3600
     print(f"{len(items)} shards, {hours:.1f} h of features, datasets {({k: len(v) for k, v in by_ds.items()})}, threads {torch.get_num_threads()}", flush=True)
-    net = Net(d=a.d)
+    if a.init:
+        from export import from_bytes
+        net = from_bytes(open(a.init, "rb").read())
+        print("initialised from", a.init, flush=True)
+    else:
+        net = Net(d=a.d)
     opt = torch.optim.AdamW(net.parameters(), a.lr, weight_decay=1e-2)
     elapsed, step = 0.0, 0
     if a.resume and os.path.exists(a.out):

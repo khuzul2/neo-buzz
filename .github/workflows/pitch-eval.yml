@@ -112,6 +112,14 @@ on:
         description: 'AW2b: full data, chained training, tuning on validation, evaluation (with the tools; turn the other jobs off)'
         type: boolean
         default: false
+      aw2c:
+        description: 'AW2c: more data (E-GMD, new AAM tracks), training continued from the shipped model, tuning of the tempo prior and the phase check on validation, shipped model against the candidate (with the tools; turn the other jobs off)'
+        type: boolean
+        default: false
+      aw2c_measure:
+        description: 'AW2c: the measure-only sets (GTZAN, Ballroom; RWC is skipped): "check" fetches and matches only (nothing is scored), "true" scores AW1 and the model compiled into this build (at most two such runs in all); metrics only leave the runner'
+        type: string
+        default: 'false'
       aw2b_pack:
         description: 'AW2b: the listening pack and the timing of the model compiled into this build (BeatModelData.cs), on a few held-out items'
         type: boolean
@@ -557,7 +565,7 @@ jobs:
         if-no-files-found: ignore
 
   aw2-tools:
-    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' }}
+    if: ${{ github.event.inputs.aw2 == 'true' || github.event.inputs.aw2b == 'true' || github.event.inputs.aw2b_pack == 'true' || github.event.inputs.aw2c == 'true' || github.event.inputs.aw2c_measure == 'true' || github.event.inputs.aw2c_measure == 'check' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -1096,14 +1104,14 @@ jobs:
         pip install --quiet numpy scipy soundfile remotezip requests
         sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
         cd tools/aw2
-        for s in gmd guitarset candombe fsl10k; do python3 fetch.py $s /mnt/aw2/items-$s --limit 12; done
-        python3 fetch.py aam /mnt/aw2/items-aam --limit 6 --part 1
+        for s in gmd guitarset candombe fsl10k; do python3 fetch.py $s /mnt/aw2/items-$s --limit 40; done
+        python3 fetch.py aam /mnt/aw2/items-aam --limit 24 --part 1
         cd ../..
         python3 - <<'PY'
         import glob, json, os
-        pick = [("gmd", 2), ("guitarset", 1), ("candombe", 1), ("aam", 2), ("fsl10k", 2)]
+        pick = [("gmd", 6), ("guitarset", 5), ("candombe", 3), ("aam", 5), ("fsl10k", 5)]
         bpms = [100, 110, 120, 128, 90, 140, 105, 115]
-        rows, readme = [], ["Auto-warp AW2b listening pack: each item is a held-out clip (never trained on), a 40 s window, played at its own song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--aw1 is AW1's DSP tracker, --aw2 the shipped beat model with its DSP-or-model choice. Slakh2100 held-out items are not in the pack (the stream cannot be sampled by track); AAM stands in.", ""]
+        rows, readme = [], ["Auto-warp AW2c listening pack: only clips where AW1 and AW2 differ; each item is a held-out clip (never trained on), a 40 s window, played at its own song tempo against a click on the song's grid", "(a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's Pro warp, so the pitch stays put).", "--aw1 is AW1's DSP tracker, --aw2 the shipped beat model with its DSP-or-model choice. Slakh2100 held-out items are not in the pack (the stream cannot be sampled by track); AAM stands in.", ""]
         for ds, cnt in pick:
             got = 0
             for j in sorted(glob.glob(f"/mnt/aw2/items-{ds}/*.json")):
@@ -1111,16 +1119,17 @@ jobs:
                 if m["split"] != "test" or "__" in os.path.basename(j):
                     continue
                 rows.append(f"{j[:-5]}.wav\t{bpms[len(rows) % 8]}")
-                readme.append(f"{len(rows):02d}-{os.path.basename(j)[:-5]}: {m['source']}; licence {m['licence']}; song tempo {bpms[(len(rows) - 1) % 8]} BPM")
+                readme.append(f"{os.path.basename(j)[:-5]}: {m['source']}; licence {m['licence']}; song tempo {bpms[(len(rows) - 1) % 8]} BPM")
                 got += 1
                 if got == cnt:
                     break
         open("pack-list.txt", "w").write("\n".join(rows) + "\n")
         open("pack-readme.txt", "w").write("\n".join(readme) + "\n")
         PY
-        dotnet aw2-tools/AutoWarpEval.dll --pack2 aw2-pack embedded aw2-tools/aw2warp pack-list.txt | tee pack-log.txt
-        cp pack-readme.txt aw2-pack/README.txt
-        cat pack-log.txt >> aw2-pack/README.txt
+        dotnet aw2-tools/AutoWarpEval.dll --pack2 aw2-pack embedded aw2-tools/aw2warp pack-list.txt 8 | tee pack-log.txt
+        head -4 pack-readme.txt > aw2-pack/README.txt
+        for f in aw2-pack/*--aw2.wav; do b=$(basename $f --aw2.wav); n=${b#*-}; grep "^$n:" pack-readme.txt | sed "s/^/${b%%-*}-/" >> aw2-pack/README.txt; done
+        grep -v '^skipped' pack-log.txt >> aw2-pack/README.txt
     - uses: actions/upload-artifact@v6
       if: always()
       with:
@@ -1129,3 +1138,275 @@ jobs:
           aw2-pack/
           timing-shipped.txt
         retention-days: 14
+
+  aw2c-measure:
+    if: ${{ github.event.inputs.aw2c_measure == 'true' || github.event.inputs.aw2c_measure == 'check' }}
+    needs: aw2-tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2-tools
+        path: aw2-tools
+    - name: Fetch the measure-only sets (runner only) and score AW1 and the model
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile mir_eval requests
+        sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
+        python3 -u tools/aw2/measure.py /mnt/aw2/measure gtzan ballroom 2>&1 | tee measure-log.txt
+        if [ "${{ github.event.inputs.aw2c_measure }}" = "check" ]; then ls /mnt/aw2/measure/* | head -5 | tee -a measure-log.txt; exit 0; fi
+        mkdir -p results
+        for s in gtzan ballroom; do
+          if ls /mnt/aw2/measure/$s/*.json > /dev/null 2>&1; then
+            dotnet aw2-tools/AutoWarpEval.dll --dir /mnt/aw2/measure/$s --set $s --model embedded --out results/$s.json
+          else
+            echo "$s: no items (skipped)" | tee -a measure-log.txt
+          fi
+        done
+        if ls results/*.json > /dev/null 2>&1; then python3 tools/aw2/score2.py results/*.json --out measure-report.md; fi
+        # Only the metrics table is kept: no audio, no per-file results, no labels.
+        rm -rf /mnt/aw2/measure results
+    - name: Job summary
+      if: always()
+      run: |
+        for f in measure-log.txt measure-report.md; do [ -f $f ] && { echo "## $f"; tail -c 20000 $f; } >> "$GITHUB_STEP_SUMMARY"; done || true
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw2c-measure-report
+        path: |
+          measure-report.md
+          measure-log.txt
+        retention-days: 14
+
+  # ---------------------------------------------------------------------------------------- AW2c
+  aw2c-prep:
+    if: ${{ github.event.inputs.aw2c == 'true' }}
+    needs: aw2-tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: gmd, set: gmd, limit: 1000, args: '', variants: 2 }
+          - { name: egmd, set: egmd, limit: 450, args: '', variants: 1 }
+          - { name: guitarset, set: guitarset, limit: 1000, args: '', variants: 2 }
+          - { name: candombe, set: candombe, limit: 1000, args: '', variants: 2 }
+          - { name: fsl10k, set: fsl10k, limit: 300, args: '', variants: 2 }
+          - { name: generated, set: generated, limit: 0, args: '', variants: 0 }
+          - { name: aamnew, set: aam, limit: 90, args: '--part 2 --offset 3 --stems 10', variants: 1 }
+          - { name: aamev0, set: aam, limit: 40, args: '--part 0 --offset 1 --eval-only', variants: 0 }
+          - { name: aamev1, set: aam, limit: 40, args: '--part 1 --offset 1 --eval-only', variants: 0 }
+          - { name: aamev2, set: aam, limit: 40, args: '--part 2 --offset 1 --eval-only', variants: 0 }
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2-tools
+        path: aw2-tools
+    - name: Fetch and prepare
+      run: |
+        set -euo pipefail
+        chmod +x aw2-tools/aw2warp
+        pip install --quiet numpy scipy soundfile remotezip requests
+        sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
+        if [ "${{ matrix.set }}" = "generated" ]; then
+          dotnet aw2-tools/AutoWarpEval.dll --gen-train /mnt/aw2/items 240
+        else
+          (cd tools/aw2 && python3 fetch.py ${{ matrix.set }} /mnt/aw2/items --limit ${{ matrix.limit }} ${{ matrix.args }})
+        fi
+        mkdir -p prep-out/shards prep-out/eval prep-out/licences
+        cd tools/aw2
+        python3 prep.py /mnt/aw2/items ../../prep-out/shards --eval-dir ../../prep-out/eval --variants ${{ matrix.variants }} \
+          --eval-exe "$GITHUB_WORKSPACE/aw2-tools/AutoWarpEval.dll" --warp "$GITHUB_WORKSPACE/aw2-tools/aw2warp"
+        cp /mnt/aw2/items/licences.tsv ../../prep-out/licences/${{ matrix.name }}-licences.tsv
+        if [ -f /mnt/aw2/items/attribution.tsv ]; then cp /mnt/aw2/items/attribution.tsv ../../prep-out/licences/${{ matrix.name }}-attribution.tsv; fi
+        du -sh ../../prep-out/* | cat
+    - uses: actions/upload-artifact@v6
+      with:
+        name: prep-${{ matrix.name }}
+        path: |
+          prep-out/shards
+          prep-out/licences
+        retention-days: 1
+    - uses: actions/upload-artifact@v6
+      with:
+        name: evalprep-${{ matrix.name }}
+        path: |
+          prep-out/eval
+          prep-out/licences
+        retention-days: 1
+
+  aw2c-train1:
+    needs: [aw2-tools, aw2c-prep]
+    if: ${{ always() && github.event.inputs.aw2c == 'true' && needs.aw2c-prep.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: prep-*
+        path: prep
+        merge-multiple: true
+    - name: Continue the shipped model, first half of the schedule
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile
+        pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
+        cd tools/aw2
+        python3 - <<'PY'
+        import base64, re
+        d = open("../../ReBuzz/Core/Clips/BeatModelData.cs").read()
+        open("../../shipped.aw2m", "wb").write(base64.b64decode("".join(re.findall(r'^\s+"([A-Za-z0-9+/=]+)",$', d, re.M))))
+        PY
+        T=${{ github.event.inputs.aw2b_train }}
+        python3 -u train.py ../../prep/shards --out ../../ckpt.pt --init ../../shipped.aw2m --lr 6e-4 --minutes $T --total-minutes $(( 2 * T )) --seed 4321 | tee ../../train1.log
+    - uses: actions/upload-artifact@v6
+      with:
+        name: aw2c-ckpt
+        path: |
+          ckpt.pt
+          train1.log
+        retention-days: 2
+
+  aw2c-train2:
+    needs: [aw2c-train1]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: prep-*
+        path: prep
+        merge-multiple: true
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2c-ckpt
+        path: ck
+    - name: Second half (resumed)
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile
+        pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
+        cd tools/aw2
+        cp ../../ck/ckpt.pt ../../ckpt.pt
+        T=${{ github.event.inputs.aw2b_train }}
+        python3 -u train.py ../../prep/shards --out ../../ckpt.pt --resume --lr 6e-4 --minutes $T --total-minutes $(( 2 * T )) --seed 4321 | tee ../../train2.log
+        python3 export.py --ckpt ../../ckpt.pt --out ../../cand.aw2m --version 3
+    - uses: actions/upload-artifact@v6
+      with:
+        name: aw2c-model
+        path: |
+          cand.aw2m
+          train2.log
+          ck/train1.log
+        retention-days: 7
+
+  aw2c-eval:
+    needs: [aw2-tools, aw2c-train2]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: evalprep-*
+        path: prep
+        merge-multiple: true
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2-tools
+        path: aw2-tools
+    - uses: actions/download-artifact@v7
+      with:
+        name: aw2c-model
+        path: model
+    - name: Tune the tempo prior and the phase check on validation (candidate), then the shipped model and the candidate on the same items
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile mir_eval requests
+        T="dotnet aw2-tools/AutoWarpEval.dll"
+        python3 - <<'PY'
+        import glob, json, os
+        for j in glob.glob("prep/eval/*.json"):
+            m = json.load(open(j)); half = "val" if m.get("split") == "val" else "test"
+            k = "genval" if m["dataset"] == "generated" else m["dataset"]
+            d = f"eval-sets/{half}-{k}"
+            os.makedirs(d, exist_ok=True)
+            for ext in (".json", ".wav"):
+                os.symlink(os.path.abspath(j[:-5] + ext), d + "/" + os.path.basename(j[:-5]) + ext)
+        print(sorted(os.listdir("eval-sets")))
+        PY
+        # the grid: the tempo prior's sigma (0 = off) and the phase check's ratio (0 = off); the DSP thresholds stay as shipped
+        for s in 0 0.6 0.35; do for g in 0 0.6; do
+          mkdir -p tuning/${s}_${g}
+          for d in eval-sets/val-*; do $T --dir $d --set $(basename $d | sed 's/^val-//') --model model/cand.aw2m --tempo-prior $s --dsp-phase $g --out tuning/${s}_${g}/$(basename $d).json; done
+        done; done
+        python3 tools/aw2/tune.py tuning --out tune.json
+        P=$(python3 -c "import json;print(json.load(open('tune.json'))['steady'])"); G=$(python3 -c "import json;print(json.load(open('tune.json'))['agree'])")
+        mkdir -p res-shipped res-cand
+        for d in eval-sets/*; do
+          s=$(basename $d | sed 's/^[a-z]*-//')
+          $T --dir $d --set $s --model embedded --out res-shipped/$(basename $d).json
+          $T --dir $d --set $s --model model/cand.aw2m --tempo-prior $P --dsp-phase $G --out res-cand/$(basename $d).json
+        done
+        $T --generated --model embedded --out res-shipped/generated.json
+        $T --generated --model model/cand.aw2m --tempo-prior $P --dsp-phase $G --out res-cand/generated.json
+        python3 tools/aw2/score2.py res-shipped/*.json --out report-shipped.md --csv per-file-shipped.csv
+        python3 tools/aw2/score2.py res-cand/*.json --out report-cand.md --csv per-file-cand.csv
+    - name: Time the candidate
+      run: dotnet aw2-tools/AutoWarpEval.dll --bench model/cand.aw2m 600 | tee timing-cand.txt
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw2c-report
+        path: |
+          report-shipped.md
+          report-cand.md
+          per-file-shipped.csv
+          per-file-cand.csv
+          tune.json
+          tuning/
+          timing-cand.txt
+          prep/licences/
+        retention-days: 14
+
+  aw2c-cleanup:
+    needs: [aw2c-eval]
+    if: ${{ always() && github.event.inputs.aw2c == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+    - name: Delete the intermediate artifacts
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        for id in $(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --paginate --jq '.artifacts[] | select(.name=="aw2-tools" or .name=="aw2c-ckpt" or (.name|startswith("prep-")) or (.name|startswith("evalprep-"))) | .id'); do
+          gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id && echo "deleted $id"
+        done

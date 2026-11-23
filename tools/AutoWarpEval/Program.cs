@@ -49,6 +49,8 @@ namespace NeoBuzz.AutoWarpEval
                     case "--feat": return Aw2Commands.Feat(Next());
                     case "--gen-train": { string gd = Next(); return Aw2Commands.GenTrain(gd, int.Parse(Next(), CultureInfo.InvariantCulture)); }
                     case "--dsp-steady": BeatTracker.DspSteadyTolerance = double.Parse(Next(), CultureInfo.InvariantCulture); break;
+                    case "--tempo-prior": BeatModelTracker.TempoPriorSigma = double.Parse(Next(), CultureInfo.InvariantCulture); break;
+                    case "--dsp-phase": BeatTracker.DspPhaseRatio = double.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--dsp-agree": BeatTracker.DspAgreeTolerance = double.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--bench": return Aw2Commands.Bench(Next(), args.Length > i + 1 ? args[i + 1] : "600");
                     case "--limit": limit = int.Parse(Next(), CultureInfo.InvariantCulture); break;
@@ -228,7 +230,7 @@ namespace NeoBuzz.AutoWarpEval
                 WarpMap map2 = r2.Found && r2.Markers.Count >= 2
                     ? new WarpMap(r2.Markers.Select(m => new WarpMarker(m.Sample, m.Beat)))
                     : WarpMap.Straight(src.Length, seconds * (r2.Found ? r2.Bpm : todayBpm) / 60);
-                aw2 = Method(map2, rate, src.Length, bpb, gtBeats, r2.Found ? r2.Bpm : 0, new Dictionary<string, object> { ["found"] = r2.Found, ["steady"] = r2.Steady, ["loop"] = r2.Loop, ["markers"] = r2.Markers.Count, ["analysis_ms"] = Math.Round(ms2, 1) });
+                aw2 = Method(map2, rate, src.Length, bpb, gtBeats, r2.Found ? r2.Bpm : 0, new Dictionary<string, object> { ["found"] = r2.Found, ["steady"] = r2.Steady, ["loop"] = r2.Loop, ["from_model"] = r2.FromModel, ["markers"] = r2.Markers.Count, ["analysis_ms"] = Math.Round(ms2, 1) });
             }
             var item = new Dictionary<string, object>
             {
