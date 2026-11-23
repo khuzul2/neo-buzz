@@ -95,9 +95,11 @@ namespace ReBuzz.Core.Tracks
         Group,
         /// <summary>A shared machine that no track needs: its feeders reach the Master another way, and their wires into it are sends.</summary>
         Return,
+        /// <summary>The machines every routed track passes through on its way to the Master (an EQ and a limiter after the mix): the Master's own chain.</summary>
+        MasterChain,
     }
 
-    public enum TrackPlace { Master, Track, Group, Return, Unrouted }
+    public enum TrackPlace { Master, MasterChain, Track, Group, Return, Unrouted }
 
     public enum UnroutedReason
     {
@@ -135,9 +137,11 @@ namespace ReBuzz.Core.Tracks
         public TrackNode Head { get; }
 
         /// <summary>"track:Bass", "group:Drum bus", "return:Verb": the kind and the head's name (an agent's handle; the studio keys on <see cref="Head"/>).</summary>
-        public string Id => (Kind == TrackKind.Track ? "track:" : Kind == TrackKind.Group ? "group:" : "return:") + Head.Name;
+        public string Id => Kind == TrackKind.MasterChain ? "master:Master"
+            : (Kind == TrackKind.Track ? "track:" : Kind == TrackKind.Group ? "group:" : "return:") + Head.Name;
 
-        public string Name => Head.Name;
+        /// <summary>The head's name; "Master" for the Master's chain.</summary>
+        public string Name => Kind == TrackKind.MasterChain ? "Master" : Head.Name;
 
         /// <summary>Every machine that lands here, the head first, in signal order. A group's own machines only: its members have theirs.</summary>
         public IReadOnlyList<TrackNode> Machines => machines;
@@ -205,6 +209,7 @@ namespace ReBuzz.Core.Tracks
     {
         readonly TrackEntry[] byNode;       // the entry each node landed in (null: the Master, or unrouted)
         readonly UnroutedMachine[] unroutedOf;
+        TrackEntry masterEntry;
         readonly Dictionary<(int, int), bool> sendWires = new Dictionary<(int, int), bool>();
 
         TrackModel(TrackGraph graph, int count)
@@ -226,6 +231,9 @@ namespace ReBuzz.Core.Tracks
 
         public IReadOnlyList<TrackEntry> Groups => Entries.Where(e => e.Kind == TrackKind.Group).ToList();
 
+        /// <summary>The Master's own chain (the machines every track passes through before the Master), or null when there are none.</summary>
+        public TrackEntry MasterChain => Entries.FirstOrDefault(e => e.Kind == TrackKind.MasterChain);
+
         public IReadOnlyList<TrackEntry> Returns => Entries.Where(e => e.Kind == TrackKind.Return).ToList();
 
         public IReadOnlyList<UnroutedMachine> Unrouted { get; private set; } = Array.Empty<UnroutedMachine>();
@@ -239,7 +247,7 @@ namespace ReBuzz.Core.Tracks
             if (node == Master && node != null) return TrackPlace.Master;
             var e = EntryOf(node);
             if (e == null) return TrackPlace.Unrouted;
-            return e.Kind == TrackKind.Track ? TrackPlace.Track : e.Kind == TrackKind.Group ? TrackPlace.Group : TrackPlace.Return;
+            return e.Kind == TrackKind.MasterChain ? TrackPlace.MasterChain : e.Kind == TrackKind.Track ? TrackPlace.Track : e.Kind == TrackKind.Group ? TrackPlace.Group : TrackPlace.Return;
         }
 
         public UnroutedMachine UnroutedOf(TrackNode node) => node == null || node.Index >= unroutedOf.Length ? null : unroutedOf[node.Index];
@@ -326,6 +334,7 @@ namespace ReBuzz.Core.Tracks
             var entries = new List<TrackEntry>();
             var ownerOf = new TrackEntry[n];
             var shared = new List<TrackEntry>();
+            var roots = new List<int>();
             foreach (int i in queue)
             {
                 TrackEntry owner = null;
@@ -339,7 +348,10 @@ namespace ReBuzz.Core.Tracks
                 }
                 TrackEntry mine;
                 if (owner == null)
+                {
                     mine = new TrackEntry(TrackKind.Track, nodes[i]);
+                    roots.Add(i);
+                }
                 else if (several)
                 {
                     mine = new TrackEntry(TrackKind.Return, nodes[i]);
@@ -356,6 +368,7 @@ namespace ReBuzz.Core.Tracks
             // 4. Members and sends: for each shared machine, who can reach the Master without it?
             var seen = new int[n];
             int stamp = 0;
+            TrackEntry masterChain = null;
             foreach (var s in shared)
             {
                 int h = s.Head.Index;
@@ -366,6 +379,8 @@ namespace ReBuzz.Core.Tracks
                 while (top > 0)
                     foreach (var src in nodes[stack[--top]].sources)
                         if (src.Index != h && seen[src.Index] != stamp && routed[src.Index]) { seen[src.Index] = stamp; stack[top++] = src.Index; }
+                // Every root behind it: nothing reaches the Master without it, so it is on the Master's own chain (the first such machine).
+                if (masterChain == null && !roots.Any(r => seen[r] == stamp)) masterChain = s;
                 var feeders = new List<TrackEntry>();
                 foreach (var src in s.Head.sources)
                 {
@@ -391,7 +406,19 @@ namespace ReBuzz.Core.Tracks
                 if (s.members.Count > 0) s.Kind = TrackKind.Group;
             }
 
-            // 5. Depth, then the one list: tracks, groups, returns.
+            // 4b. The Master's chain: its feeders are plain tracks and groups of their own, not its members.
+            if (masterChain != null)
+            {
+                foreach (var m in masterChain.members) m.Parent = null;
+                foreach (var f in masterChain.senders) f.sendsTo.Remove(masterChain);
+                masterChain.members.Clear();
+                masterChain.senders.Clear();
+                foreach (var src in masterChain.Head.sources) model.sendWires.Remove((src.Index, masterChain.Head.Index));
+                masterChain.Kind = TrackKind.MasterChain;
+                model.masterEntry = masterChain;
+            }
+
+            // 5. Depth, then the one list: tracks, groups, returns, then the Master's chain.
             foreach (var e in entries)
             {
                 int depth = 0;
@@ -402,6 +429,7 @@ namespace ReBuzz.Core.Tracks
             ordered.AddRange(entries.Where(e => e.Kind == TrackKind.Track).OrderBy(e => e.Head.Index));
             ordered.AddRange(entries.Where(e => e.Kind == TrackKind.Group).OrderBy(e => e.Head.Index));
             ordered.AddRange(entries.Where(e => e.Kind == TrackKind.Return).OrderBy(e => e.Head.Index));
+            if (masterChain != null) ordered.Add(masterChain);
             model.Entries = ordered;
 
             // 6. Everything else is unrouted.
@@ -434,6 +462,7 @@ namespace ReBuzz.Core.Tracks
                 sb.Append(Stages(cur));
                 if (cur.Parent != null) { cur = cur.Parent; continue; }
                 if (ReachesMasterDirectly(cur)) { sb.Append(" → ").Append(Master?.Name ?? "Master"); break; }
+                if (masterEntry != null && cur != masterEntry && cur.machines.Any(m => m.destinations.Any(d => EntryOf(d) == masterEntry))) { sb.Append(" → Master chain"); break; }
                 if (cur.sendsTo.Count > 0) { cur = cur.sendsTo[0]; continue; }
                 break;
             }

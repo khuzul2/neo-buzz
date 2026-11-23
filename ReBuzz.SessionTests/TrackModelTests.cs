@@ -62,8 +62,8 @@ namespace ReBuzz.SessionTests
         [Test]
         public void FanInToAGroup()
         {
-            var b = new Built("G Kick; G Snare; F Bus; F Comp; M Master", "Kick>Bus; Snare>Bus; Bus>Comp>Master");
-            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Snare", "group:Bus" }));
+            var b = new Built("G Kick; G Snare; G Bass; F Bus; F Comp; M Master", "Kick>Bus; Snare>Bus; Bus>Comp>Master; Bass>Master");
+            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Snare", "track:Bass", "group:Bus" }));
             var bus = b.Entry("Bus");
             Assert.That(bus.Kind, Is.EqualTo(TrackKind.Group));
             Assert.That(b.Members("Bus"), Is.EqualTo("Kick,Snare"));
@@ -109,7 +109,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void GroupsNest()
         {
-            var b = new Built("G Kick; G Snare; G Bass; F Drums; F Mix; M Master", "Kick>Drums; Snare>Drums; Drums>Mix; Bass>Mix; Mix>Master");
+            var b = new Built("G Kick; G Snare; G Bass; G Lead; F Drums; F Mix; M Master", "Kick>Drums; Snare>Drums; Drums>Mix; Bass>Mix; Mix>Master; Lead>Master");
             Assert.That(b.Entry("Mix").Kind, Is.EqualTo(TrackKind.Group));
             Assert.That(b.Members("Mix"), Is.EqualTo("Bass,Drums"));
             Assert.That(b.Members("Drums"), Is.EqualTo("Kick,Snare"));
@@ -117,8 +117,64 @@ namespace ReBuzz.SessionTests
             Assert.That(b.Entry("Drums").Parent, Is.SameAs(b.Entry("Mix")));
             Assert.That(b.Entry("Kick").Depth, Is.EqualTo(2));
             Assert.That(b.Entry("Kick").Chain, Is.EqualTo("Kick → Drums → Mix → Master"));
-            Assert.That(b.Entry("Mix").AllMachines.Count, Is.EqualTo(6 - 1), "all but the Master");
-            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Snare", "track:Bass", "group:Drums", "group:Mix" }));
+            Assert.That(b.Entry("Mix").AllMachines.Count, Is.EqualTo(5), "all but the Master and Lead");
+            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Snare", "track:Bass", "track:Lead", "group:Drums", "group:Mix" }));
+        }
+
+        [Test]
+        public void ThePartsEveryTrackPassesThroughAreTheMastersOwnChainNotAGroup()
+        {
+            var b = new Built("G Kick; G Snare; G Bass; F Bus; F Eq; F Limiter; M Master", "Kick>Bus; Snare>Bus; Bus>Eq; Bass>Eq; Eq>Limiter>Master");
+            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Snare", "track:Bass", "group:Bus", "master:Master" }), "the Master's chain is last");
+            var master = b.Model.MasterChain!;
+            Assert.That(master.Kind, Is.EqualTo(TrackKind.MasterChain));
+            Assert.That(master.Name, Is.EqualTo("Master"));
+            Assert.That(master.Head.Name, Is.EqualTo("Eq"), "its key is its first machine");
+            Assert.That(string.Join(",", master.Machines.Select(m => m.Name)), Is.EqualTo("Eq,Limiter"));
+            Assert.That(master.Chain, Is.EqualTo("Eq → Limiter → Master"));
+            Assert.That(master.Members, Is.Empty);
+            Assert.That(master.Senders, Is.Empty);
+            Assert.That(b.Model.PlaceOf(b["Eq"]), Is.EqualTo(TrackPlace.MasterChain));
+            Assert.That(b.Model.PlaceOf(b["Limiter"]), Is.EqualTo(TrackPlace.MasterChain));
+            Assert.That(b.Model.PlaceOf(b["Master"]), Is.EqualTo(TrackPlace.Master));
+            // The group before it stays a group; the tracks' chains stop at the Master's chain.
+            Assert.That(b.Entry("Bus").Kind, Is.EqualTo(TrackKind.Group));
+            Assert.That(b.Entry("Bus").Parent, Is.Null);
+            Assert.That(b.Entry("Kick").Parent, Is.SameAs(b.Entry("Bus")));
+            Assert.That(b.Entry("Kick").Chain, Is.EqualTo("Kick → Bus → Master chain"));
+            Assert.That(b.Entry("Bass").Chain, Is.EqualTo("Bass → Master chain"));
+            Assert.That(b.Model.IsSend(b["Bass"], b["Eq"]), Is.False);
+            // Lighting a track lights the Master's chain after it; lighting the Master's chain lights it and the Master only.
+            Assert.That(b.Model.PathOf(b.Entry("Bass")).Select(m => m.Name), Is.EquivalentTo(new[] { "Bass", "Eq", "Limiter", "Master" }));
+            Assert.That(b.Model.PathOf(master).Select(m => m.Name), Is.EquivalentTo(new[] { "Eq", "Limiter", "Master" }));
+        }
+
+        [Test]
+        public void ARunOfTheMastersChainCanBeOneMachine()
+        {
+            var b = new Built("G Kick; G Bass; F Limiter; M Master", "Kick>Limiter; Bass>Limiter; Limiter>Master");
+            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Bass", "master:Master" }));
+            Assert.That(b.Model.MasterChain!.Chain, Is.EqualTo("Limiter → Master"));
+            Assert.That(b.Entry("Kick").Chain, Is.EqualTo("Kick → Master chain"));
+            Assert.That(b.Entry("Kick").Parent, Is.Null);
+        }
+
+        [Test]
+        public void AGroupThatEveryTrackGoesThroughIsTheMastersChain()
+        {
+            var b = new Built("G Kick; G Snare; F Bus; F Comp; M Master", "Kick>Bus; Snare>Bus; Bus>Comp>Master");
+            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Snare", "master:Master" }));
+            Assert.That(b.Model.MasterChain!.Chain, Is.EqualTo("Bus → Comp → Master"));
+        }
+
+        [Test]
+        public void NoMasterChainWhenOneTrackGoesAround()
+        {
+            var b = new Built("G Kick; G Bass; F Limiter; M Master", "Kick>Limiter>Master; Bass>Master");
+            Assert.That(b.Model.MasterChain, Is.Null);
+            Assert.That(b.Model.Entries.Select(e => e.Id), Is.EqualTo(new[] { "track:Kick", "track:Bass" }));
+            var one = new Built("G Kick; F Limiter; M Master", "Kick>Limiter>Master");
+            Assert.That(one.Model.MasterChain, Is.Null, "one track: the limiter is its own");
         }
 
         [Test]

@@ -21,7 +21,7 @@ namespace ReBuzz.Agent
                 var o = new JsonObject
                 {
                     ["id"] = e.Id,
-                    ["kind"] = e.Kind == TrackKind.Track ? "track" : e.Kind == TrackKind.Group ? "group" : "return",
+                    ["kind"] = e.Kind == TrackKind.Track ? "track" : e.Kind == TrackKind.Group ? "group" : e.Kind == TrackKind.MasterChain ? "master" : "return",
                     ["name"] = e.Name,
                     ["machines"] = Names(e.Machines.Select(m => m.Name)),
                     ["chain"] = e.Chain,
@@ -47,7 +47,7 @@ namespace ReBuzz.Agent
                     "The song's tracks as the Machines view's Tracks mode shows them, worked out from the wires (nothing is saved). A track is a generator and the " +
                     "machines only it feeds, up to the Master or a shared machine. A shared machine has feeders from several tracks: it is a group when some of them " +
                     "reach the Master only through it (its members), and a return when none do; the others send to it (wires into it are sends). A group can also " +
-                    "receive sends, and groups nest. Control machines and anything that never reaches the Master are unrouted. Every machine is in exactly one place. " +
+                    "receive sends, and groups nest. The shared machines every track passes through before the Master (an EQ and a limiter after the mix) are the Master's own chain: one entry, \"master:Master\", listed last, with a chain such as \"Eq → Limiter → Master\"; a track's chain then ends \"→ Master chain\". Control machines and anything that never reaches the Master are unrouted. Every machine is in exactly one place. " +
                     "A bus that only one track sends to is a branch of that track, not a return. Each entry has an id (\"track:Bass\", \"group:Drums\", \"return:Hall\"), " +
                     "its machines in signal order and its chain (\"Bass → Drive → Eq → Master\"). A wire at zero volume still counts, and so do muted and bypassed machines. " +
                     "Example: machine_tracks().",
@@ -55,14 +55,14 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Req("tracks", Array(Object(null,
                         Req("id", String("kind:name, such as track:Bass")),
-                        Req("kind", String("track, group or return", "track", "group", "return")),
+                        Req("kind", String("track, group, return or master", "track", "group", "return", "master")),
                         Req("name", String("The generator's name (a group's or a return's: its machine's)")),
                         Req("machines", Array(String("A machine"), "Machines in this entry, in signal order (a group's own, not its members')")),
                         Req("chain", String("The way to the Master")),
                         Opt("member_of", String("The group this entry's machines reach the Master through")),
                         Opt("members", Array(String("An id"), "A group: the entries that go through it")),
                         Opt("receives_sends_from", Array(String("An id"), "A group or a return: the entries that send to it")),
-                        Opt("sends_to", Array(String("An id"), "The shared machines this entry sends to"))), "Tracks first, then groups, then returns")),
+                        Opt("sends_to", Array(String("An id"), "The shared machines this entry sends to"))), "Tracks first, then groups, then returns, then the Master's chain")),
                     Req("unrouted", Array(Object(null, Req("machine", String("Machine")), Req("why", String("control only, not wired, no way to the Master or in a loop"))), "Machines with no place in a track")),
                     Opt("master", String("The Master's name"))),
                 Annotations = ToolAnnotations.Read,

@@ -790,7 +790,7 @@ namespace ReBuzz.Studio.Tests
                                 song.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                             }
                             Settle();
-                            Shot(window, "035-machines-many-chips", "Machines with Tracks on and many chips (MT1): 26 more generators into the Master; the bar wraps to a second row and scrolls when it is taller than three rows, every chip reachable with Tab.",
+                            Shot(window, "035-machines-many-chips", "Machines with Tracks on and many chips (MT1): 26 more generators into the Master (30 chips in all); the bar stops at two rows and the rest is behind a +N chip that opens a list with a filter; every chip is reachable with Tab and the arrow keys.",
                                 "Tracks, with many generators in the song.");
                         }
                         finally

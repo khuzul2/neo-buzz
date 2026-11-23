@@ -626,7 +626,7 @@ namespace ReBuzz.Studio.Tests
                         Wire("Extra " + i + ">Master");
                     }
                 Settle();
-                Assert.That(view.Tracks.Chips.Count, Is.EqualTo(28));
+                Assert.That(view.Tracks.EntryCount, Is.EqualTo(28));
                 Assert.That(live.Passes - passes, Is.LessThanOrEqualTo(3), "a burst of events is one pass, not forty");
                 Song.DeleteMachines(Song.Machines.Where(x => x.Name.StartsWith("Extra ")).ToList());
                 Settle();
@@ -640,7 +640,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ManyChipsWrapAndScrollAndStayInReach()
+        public void ManyChipsStopAtTwoRowsAndTheRestIsBehindAPlusNChipThatFilters()
         {
             using var restore = Studio.AfterTest(Reset);
             Reset();
@@ -654,13 +654,49 @@ namespace ReBuzz.Studio.Tests
                     Wire("Voice number " + i + ">Master");
                 }
                 Settle();
-                Assert.That(view.Tracks.Chips.Count, Is.EqualTo(60));
-                Assert.That(view.Tracks.Bounds.Height, Is.LessThanOrEqualTo(TrackBar.MaxHeight3Rows + 1), "three rows, then it scrolls");
-                Assert.That(view.Tracks.Bounds.Height, Is.GreaterThan(60), "and it wraps");
-                var last = view.Tracks.Chips[^1];
-                last.Focus();
+                var bar = view.Tracks;
+                Assert.That(bar.EntryCount, Is.EqualTo(60));
+                Assert.That(bar.MoreChip, Is.Not.Null, "what does not fit in two rows is behind a +N chip");
+                Assert.That(bar.Chips[^1], Is.SameAs(bar.MoreChip), "the +N chip comes last in the keyboard order");
+                int shown = bar.Chips.Count - 1;
+                Assert.That(shown, Is.GreaterThan(4).And.LessThan(60));
+                Assert.That(bar.HiddenCount, Is.EqualTo(60 - shown));
+                Assert.That(Avalonia.Automation.AutomationProperties.GetName(bar.MoreChip), Is.EqualTo($"+{60 - shown} more tracks"));
+                Assert.That(bar.Bounds.Height, Is.LessThanOrEqualTo(TrackBar.MaxHeight2Rows + 2), "two rows");
+                Assert.That(bar.Bounds.Height, Is.GreaterThan(60), "and it wraps to the second");
+                Assert.That(bar.Chips.Take(shown).All(c => c.Focusable), Is.True);
+                for (int i = 0; i < shown; i++)
+                    Assert.That(((TrackTarget)bar.Chips[i].Tag).Head, Is.SameAs(M("Voice number " + i)), "the bar keeps the model's order");
+
+                // The keyboard: the arrow keys reach the +N chip, and Enter opens the list.
+                bar.Chips[0].Focus();
                 Settle();
-                Assert.That(view.Canvas.Lit, Is.EqualTo((TrackTarget?)TrackTarget.Entry(M("Voice number 59"))), "the keyboard reaches the last chip");
+                for (int i = 0; i < shown; i++) bar.Chips[i].RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Right });
+                Settle();
+                Assert.That(bar.MoreChip.IsFocused, Is.True, "Right, to the end, lands on +N");
+                bar.MoreChip.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Settle();
+                Assert.That(bar.MoreOpen, Is.True);
+                var items = bar.MoreItems;
+                Assert.That(items.Count, Is.EqualTo(60 - shown), "every hidden track, in the same order");
+                Assert.That(((TrackTarget)items[0].Tag).Head, Is.SameAs(M("Voice number " + shown)));
+                Assert.That(((TrackTarget)items[^1].Tag).Head, Is.SameAs(M("Voice number 59")));
+
+                bar.MoreFilter.Text = "number 59";
+                Settle();
+                Assert.That(bar.MoreItems.Count, Is.EqualTo(1));
+                bar.MoreFilter.Text = "nothing like it";
+                Settle();
+                Assert.That(bar.MoreItems.Count, Is.EqualTo(0), "no match: a line says so");
+                bar.MoreFilter.Text = "NUMBER 59";
+                Settle();
+                var item = bar.MoreItems.Single();
+                item.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Settle();
+                Assert.That(bar.MoreOpen, Is.False, "choosing closes the list");
+                Assert.That(view.Canvas.Pinned, Is.EqualTo((TrackTarget?)TrackTarget.Entry(M("Voice number 59"))), "and lights the track");
+                Assert.That(StudioSelection.For(Core).Machine, Is.SameAs(M("Voice number 59")), "and selects its generator");
+                Assert.That(bar.MoreChip.BorderThickness.Left, Is.EqualTo(2), "the +N chip is outlined while the selection is behind it");
                 Studio.Screenshot(window, "mt1-many-chips");
             }
             finally
@@ -669,6 +705,94 @@ namespace ReBuzz.Studio.Tests
                 Close(window);
             }
         }
+
+        [AvaloniaTest]
+        public void TheMastersChainIsOneChipWithItsOwnCardAndTheTracksEndAtIt()
+        {
+            using var restore = Studio.AfterTest(Reset);
+            Reset();
+            var window = ShowMachines(out var view);
+            try
+            {
+                MachineTracksPreference.On = true;
+                Put("Neo Poly", "Kick", -0.8, -0.5);
+                Put("Neo Poly", "Bass", -0.8, 0.3);
+                Put("Neo EQ", "Eq", 0.1, -0.1);
+                Put("Neo Comp", "Limiter", 0.5, -0.1);
+                Wire("Kick>Eq");
+                Wire("Bass>Eq");
+                Wire("Eq>Limiter>Master");
+                Settle();
+                Assert.That(Ids(Model), Is.EqualTo("track:Kick,track:Bass,master:Master"));
+                Assert.That(view.Tracks.Chips.Select(c => Avalonia.Automation.AutomationProperties.GetName(c)), Is.EqualTo(new[] { "Kick", "Bass", "Master" }), "a chip Master, not an Eq group");
+                Chip(window, view, "Eq", click: false);
+                var card = view.Card;
+                Assert.That(card.IsVisible, Is.True);
+                Assert.That(card.Title, Is.EqualTo("Master chain"));
+                Assert.That(card.ChainText, Is.EqualTo("Eq → Limiter → Master"));
+                Assert.That(view.Canvas.IsDimmed(M("Kick")), Is.True, "the Master's chain lights itself, not the tracks");
+                Assert.That(view.Canvas.IsDimmed(M("Limiter")), Is.False);
+                Chip(window, view, "Bass", click: false);
+                Assert.That(card.ChainText, Is.EqualTo("Bass → Master chain"));
+                Assert.That(view.Canvas.IsDimmed(M("Limiter")), Is.False, "a track lights the Master's chain after it");
+                Assert.That(view.Canvas.IsDimmed(M("Kick")), Is.True);
+            }
+            finally
+            {
+                MachineTracksPreference.On = false;
+                Close(window);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheCardSitsWhereItCoversNoBoxAndNoWire()
+        {
+            using var restore = Studio.AfterTest(Reset);
+            Reset();
+            var window = ShowMachines(out var view);
+            try
+            {
+                MachineTracksPreference.On = true;
+                PopSong();
+                Settle();
+                var canvas = view.Canvas;
+                Rect Card() => new Rect(card_TopLeft(view), view.Card.Bounds.Size);
+                foreach (var name in new[] { "Bass", "Kick", "Pad", "Lead", "Verb" })
+                {
+                    Chip(window, view, name, click: false);
+                    Settle();
+                    var r = Card();
+                    Assert.That(view.Card.IsVisible, Is.True);
+                    foreach (var m in Song.Machines)
+                    {
+                        var b = canvas.BoxOf(m);
+                        var box = new Rect(canvas.ToView(b.TopLeft), canvas.ToView(b.BottomRight));
+                        Assert.That(r.Intersects(box), Is.False, $"the card for {name} covers {m.Name}");
+                    }
+                    foreach (var c in canvas.Wires)
+                    {
+                        var a = canvas.ToView(canvas.BoxOf(c.Source).Center);
+                        var z = canvas.ToView(canvas.BoxOf(c.Destination).Center);
+                        for (int i = 0; i <= 40; i++)
+                            Assert.That(r.Contains(new Point(a.X + (z.X - a.X) * i / 40, a.Y + (z.Y - a.Y) * i / 40)), Is.False, $"the card for {name} covers the wire {c.Source.Name} to {c.Destination.Name}");
+                    }
+                }
+                // The spot is fixed: it does not follow the lit track.
+                Chip(window, view, "Bass", click: false);
+                Settle();
+                var at = Card();
+                Chip(window, view, "Lead", click: false);
+                Settle();
+                Assert.That(Card().TopLeft, Is.EqualTo(at.TopLeft));
+            }
+            finally
+            {
+                MachineTracksPreference.On = false;
+                Close(window);
+            }
+        }
+
+        static Point card_TopLeft(MachineView view) => new Point(Avalonia.Controls.Canvas.GetLeft(view.Card), Avalonia.Controls.Canvas.GetTop(view.Card));
 
         // ------------------------------------------------------------------ Classic and the off state
 

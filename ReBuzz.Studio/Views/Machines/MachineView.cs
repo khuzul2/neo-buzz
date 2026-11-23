@@ -4,6 +4,7 @@
 // machines come from the canvas's context menu.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -296,24 +297,74 @@ namespace ReBuzz.Studio.Views.Machines
             UpdateCard();
         }
 
-        /// <summary>The card follows what is lit: under the lit track's first machine (above it when there is no room below).</summary>
+        /// <summary>
+        /// The card follows what is lit. It sits in a fixed spot that covers no box and no wire: a corner of the canvas (the one nearest the top
+        /// left that is free), then the edges and the middle of the sides; with no free spot, the one that covers least. It never follows the path.
+        /// </summary>
         void UpdateCard()
         {
             var entry = Canvas.TracksOn ? Canvas.LitEntry : null;
             card.Show(entry);
-            if (entry?.Head.Tag is not IMachine head) return;
-            card.Measure(Size.Infinity);
-            var size = card.DesiredSize;
-            var box = Canvas.BoxOf(head);
-            var top = Canvas.ToView(box.TopLeft);
-            var bottom = Canvas.ToView(box.BottomLeft);
+            if (entry?.Head.Tag is not IMachine) return;
+            // One width and one reference height: the spot does not depend on the text, so it does not move from track to track.
+            card.Width = 280;
+            var size = new Size(280, 150);
             double w = Canvas.Bounds.Width, h = Canvas.Bounds.Height;
-            double x = Math.Clamp(top.X, 4, Math.Max(4, w - size.Width - 4));
-            double y = bottom.Y + 8;
-            if (y + size.Height > h - 4) y = top.Y - size.Height - 8;
-            y = Math.Clamp(y, 4, Math.Max(4, h - size.Height - 4));
+            const double Gap = 8;
+            var boxes = new List<Rect>();
+            foreach (var m in Canvas.Machines)
+            {
+                var b = Canvas.BoxOf(m);
+                boxes.Add(new Rect(Canvas.ToView(b.TopLeft), Canvas.ToView(b.BottomRight)).Inflate(4));
+            }
+            var wires = new List<(Point, Point)>();
+            foreach (var c in Canvas.Wires)
+            {
+                var from = Canvas.BoxOf(c.Source);
+                var to = Canvas.BoxOf(c.Destination);
+                wires.Add((Canvas.ToView(from.Center), Canvas.ToView(to.Center)));
+            }
+            double xs = Math.Max(Gap, w - size.Width - Gap), ys = Math.Max(Gap, h - size.Height - Gap);
+            var spots = new List<Point>
+            {
+                new Point(Gap, ys), new Point(xs, ys), new Point(xs, Gap), new Point(Gap, Gap),
+                new Point((xs + Gap) / 2, ys), new Point((xs + Gap) / 2, Gap), new Point(Gap, ys / 2), new Point(xs, ys / 2),
+            };
+            // Then every free place on a coarse grid, from the bottom left up.
+            for (double gy = ys; gy >= Gap; gy -= 24)
+                for (double gx = Gap; gx <= xs; gx += 24)
+                    spots.Add(new Point(gx, gy));
+            Point best = spots[0];
+            double bestCost = double.MaxValue;
+            foreach (var spot in spots)
+            {
+                var r = new Rect(spot, size);
+                double cost = 0;
+                foreach (var b in boxes)
+                {
+                    var i = r.Intersect(b);
+                    if (i.Width > 0 && i.Height > 0) cost += 1000 + i.Width * i.Height;
+                }
+                foreach (var (a, z) in wires)
+                    if (SegmentHits(r, a, z)) cost += 500;
+                if (cost < bestCost) { bestCost = cost; best = spot; }
+                if (cost == 0) break;
+            }
+            double x = best.X, y = best.Y;
             Avalonia.Controls.Canvas.SetLeft(card, x);
             Avalonia.Controls.Canvas.SetTop(card, y);
+        }
+
+        /// <summary>A line from a to z crosses the rectangle (it is inside it, or crosses one of its sides).</summary>
+        static bool SegmentHits(Rect r, Point a, Point z)
+        {
+            if (r.Contains(a) || r.Contains(z)) return true;
+            bool Cross(Point p1, Point p2, Point p3, Point p4)
+            {
+                double d(Point p, Point q, Point t) => (q.X - p.X) * (t.Y - p.Y) - (q.Y - p.Y) * (t.X - p.X);
+                return d(p1, p2, p3) * d(p1, p2, p4) < 0 && d(p3, p4, p1) * d(p3, p4, p2) < 0;
+            }
+            return Cross(a, z, r.TopLeft, r.TopRight) || Cross(a, z, r.TopRight, r.BottomRight) || Cross(a, z, r.BottomRight, r.BottomLeft) || Cross(a, z, r.BottomLeft, r.TopLeft);
         }
 
         /// <summary>The Tracks toggle (tests).</summary>

@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(M, "Tracks button", "colour the machines by track (a generator and what only it feeds, up to the Master or a shared machine) and show a chip for each; your boxes stay where they are");
             yield return new ViewKey(M, "A chip: point at it, or Tab to it", "light that track's path and dim the rest (a card shows its chain, mute, solo, arm and level)");
             yield return new ViewKey(M, "Click a chip, or Enter on it", "select the track's generator in every view, and keep the track lit; click it again, or " + K("Esc") + ", to let go");
-            yield return new ViewKey(M, "← → Home End", "from chip to chip, in the bar of the Tracks button");
+            yield return new ViewKey(M, "← → Home End", "from chip to chip, in the bar of the Tracks button; the +N chip at the end opens the rest in a list you can filter");
 
             const string A = "Sequence (the arrangement)";
             yield return new ViewKey(A, "Arrows, Page Up/Down, Home, End", "move the cursor (Shift: select)");

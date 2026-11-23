@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md §11, MT1): the Machines view's Tracks bar and card.
-// The bar: a chip for every track, group and return and an "Unrouted N" chip. It wraps (and scrolls past three rows), Tab reaches every chip
-// and the arrow keys move along them. A chip the pointer is on or that has the focus lights its track (the canvas dims the rest);
+// The bar: a chip for every track, group and return, the Master's chain and an "Unrouted N" chip. It wraps to two rows at most: what does not
+// fit goes behind a "+N" chip that opens a filterable list (the same order). Tab reaches every chip and the arrow keys move along them. A chip the pointer is on or that has the focus lights its track (the canvas dims the rest);
 // a click selects the track's generator in the studio's selection (so every view follows) and keeps the track lit until another click.
 // The card: on the lit track, its chain (A → B → Master), mute, solo, arm and a meter, using the machine's own mute, solo and arm.
 
@@ -28,12 +28,22 @@ namespace ReBuzz.Studio.Views.Machines
         readonly ReBuzzCore core;
         readonly MachineCanvas canvas;
         readonly WrapPanel wrap = new WrapPanel { Orientation = Orientation.Horizontal };
-        readonly List<Button> chips = new();
+        readonly List<Button> chips = new();          // the chips in the bar (the "+N" chip last), in keyboard order
+        readonly List<(TrackTarget Target, TrackEntry Entry)> all = new();   // every entry, in order
+        readonly List<double> widths = new();
         readonly ScrollViewer scroll;
+        readonly Popup popup;
+        readonly TextBox filter = new TextBox { Watermark = "Filter tracks", FontSize = StudioTokens.FontBody, Margin = new Thickness(0, 0, 0, 6) };
+        readonly StackPanel list = new StackPanel { Spacing = 2 };
+        Button more;
+        int shown;
+        double laidOutFor = -1;
         bool attached;
 
-        /// <summary>Three rows of chips; more scroll.</summary>
-        public const double MaxHeight3Rows = 3 * 30 + 2 * 4 + 12;
+        /// <summary>Two rows of chips; the rest is behind the "+N" chip.</summary>
+        public const int MaxRows = 2;
+        const double RowHeight = 30;
+        public const double MaxHeight2Rows = MaxRows * (RowHeight + 2) + 12;
 
         public TrackBar(ReBuzzCore core, MachineCanvas canvas)
         {
@@ -44,11 +54,12 @@ namespace ReBuzz.Studio.Views.Machines
                 Content = wrap,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                MaxHeight = MaxHeight3Rows,
+                MaxHeight = MaxHeight2Rows + 2,
                 Focusable = false,
             };
+            popup = new Popup { IsLightDismissEnabled = true, Placement = PlacementMode.BottomEdgeAlignedLeft, Child = BuildPopup() };
             wrap.Margin = new Thickness(8, 6, 8, 6);
-            Child = scroll;
+            Child = new Grid { Children = { scroll, popup } };
             BorderThickness = new Thickness(0, 0, 0, 1);
             BorderBrush = StudioTokens.SurfaceBorderBrush;
             Background = StudioTokens.SurfacePanelBrush;
@@ -56,7 +67,87 @@ namespace ReBuzz.Studio.Views.Machines
             Avalonia.Automation.AutomationProperties.SetName(this, "Tracks");
         }
 
+        /// <summary>The chips in the bar, in keyboard order (the "+N" chip last when something does not fit).</summary>
         public IReadOnlyList<Button> Chips => chips;
+
+        /// <summary>The "+N" chip, or null when every chip fits.</summary>
+        public Button MoreChip => more;
+
+        /// <summary>How many entries are behind the "+N" chip.</summary>
+        public int HiddenCount => all.Count - shown;
+
+        public bool MoreOpen => popup.IsOpen;
+
+        /// <summary>The buttons in the open list (tests): every hidden entry that matches the filter.</summary>
+        public IReadOnlyList<Button> MoreItems => list.Children.OfType<Button>().ToList();
+
+        public TextBox MoreFilter => filter;
+
+        /// <summary>How many entries there are (chips in the bar and behind the "+N" chip).</summary>
+        public int EntryCount => all.Count;
+
+        Control BuildPopup()
+        {
+            var scrollList = new ScrollViewer { Content = list, MaxHeight = 280, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+            filter.TextChanged += (s, e) => FillList();
+            filter.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Down && list.Children.FirstOrDefault() is Button first) { first.Focus(NavigationMethod.Directional); e.Handled = true; }
+                else if (e.Key == Key.Escape) { CloseMore(); e.Handled = true; }
+            };
+            var border = new Border
+            {
+                Background = StudioTokens.SurfacePanelBrush,
+                BorderBrush = StudioTokens.SurfaceBorderBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(8),
+                MinWidth = 220,
+                Child = new StackPanel { Children = { filter, scrollList } },
+            };
+            border.KeyDown += (s, e) => { if (e.Key == Key.Escape) { CloseMore(); e.Handled = true; } };
+            Avalonia.Automation.AutomationProperties.SetName(border, "More tracks");
+            return border;
+        }
+
+        /// <summary>Opens the list behind the "+N" chip (its filter has the focus).</summary>
+        public void OpenMore()
+        {
+            if (more == null) return;
+            filter.Text = "";
+            FillList();
+            popup.PlacementTarget = more;
+            popup.IsOpen = true;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => filter.Focus(), Avalonia.Threading.DispatcherPriority.Input);
+        }
+
+        public void CloseMore()
+        {
+            if (!popup.IsOpen) return;
+            popup.IsOpen = false;
+            more?.Focus();
+        }
+
+        void FillList()
+        {
+            list.Children.Clear();
+            string q = (filter.Text ?? "").Trim();
+            foreach (var (target, entry) in all.Skip(shown))
+            {
+                string name = target.Unrouted ? "Unrouted" : EntryText(entry);
+                if (q.Length > 0 && name.IndexOf(q, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                var item = target.Unrouted ? MakeUnrouted(canvas.TrackModel) : Make((IMachine)entry.Head.Tag, entry);
+                item.HorizontalAlignment = HorizontalAlignment.Stretch;
+                item.HorizontalContentAlignment = HorizontalAlignment.Left;
+                item.Margin = new Thickness(0);
+                item.Click += (s, e) => CloseMore();
+                list.Children.Add(item);
+            }
+            if (list.Children.Count == 0)
+                list.Children.Add(new TextBlock { Text = "Nothing matches", FontSize = StudioTokens.FontBody, Foreground = StudioTokens.TextSecondaryBrush, Margin = new Thickness(4) });
+        }
+
+        static string EntryText(TrackEntry e) => e.Name + (e.Kind == TrackKind.Group ? " · group" : e.Kind == TrackKind.Return ? " · return" : "");
 
         /// <summary>The chip of an entry (by its head machine), or the Unrouted chip.</summary>
         public Button ChipOf(IMachine head) => chips.FirstOrDefault(c => c.Tag is TrackTarget t && !t.Unrouted && t.Head == head);
@@ -92,18 +183,120 @@ namespace ReBuzz.Studio.Views.Machines
             if (!attached || !IsVisible) return;
             var model = canvas.TrackModel;
             if (model == null) return;
-            chips.Clear();
-            wrap.Children.Clear();
+            popup.IsOpen = false;
+            cap = int.MaxValue;
+            all.Clear();
             foreach (var e in model.Entries)
-                if (e.Head.Tag is IMachine head) Add(Make(head, e));
-            if (model.Unrouted.Count > 0) Add(MakeUnrouted(model));
+                if (e.Head.Tag is IMachine head) all.Add((TrackTarget.Entry(head), e));
+            if (model.Unrouted.Count > 0) all.Add((TrackTarget.AllUnrouted, null));
+            MakeChips(model);
             Mark();
         }
 
-        void Add(Button chip)
+        /// <summary>Makes the chips for the room there is: two rows, then "+N" for the rest (the same order).</summary>
+        void MakeChips(TrackModel model)
         {
-            chips.Add(chip);
-            wrap.Children.Add(chip);
+            double avail = Bounds.Width > 40 ? Bounds.Width - 16 : 1000;
+            laidOutFor = Bounds.Width;
+            var made = new List<Button>(all.Count);
+            widths.Clear();
+            foreach (var (target, entry) in all)
+            {
+                var chip = target.Unrouted ? MakeUnrouted(model) : Make((IMachine)entry.Head.Tag, entry);
+                made.Add(chip);
+                widths.Add(EstimateWidth(chip) + 6);
+            }
+            int fit = Math.Min(FitCount(avail, out double moreWidth, made.Count), cap);
+            chips.Clear();
+            wrap.Children.Clear();
+            more = null;
+            shown = fit;
+            for (int i = 0; i < fit; i++)
+            {
+                chips.Add(made[i]);
+                wrap.Children.Add(made[i]);
+            }
+            if (fit < made.Count)
+            {
+                more = MakeMore(made.Count - fit);
+                chips.Add(more);
+                wrap.Children.Add(more);
+            }
+            Avalonia.Threading.Dispatcher.UIThread.Post(Verify, Avalonia.Threading.DispatcherPriority.Loaded);
+        }
+
+        int cap = int.MaxValue;
+
+        /// <summary>The widths are estimated before the chips are laid out; once they are, a third row (the estimate was short) takes chips back out.</summary>
+        void Verify()
+        {
+            if (!attached || !IsVisible || chips.Count == 0 || Bounds.Width < 40) return;
+            UpdateLayout();
+            var rows = chips.Select(c => Math.Round(c.Bounds.Y)).Distinct().OrderBy(y => y).ToList();
+            if (rows.Count <= MaxRows) return;
+            int over = chips.Count(c => Math.Round(c.Bounds.Y) >= rows[MaxRows]);
+            cap = Math.Max(1, shown - over - 1);
+            var model = canvas.TrackModel;
+            if (model == null) return;
+            MakeChips(model);
+            Mark();
+        }
+
+        static double EstimateWidth(Button chip)
+        {
+            double w = 2 + 20;      // the border and the padding
+            var content = chip.Content;
+            var text = content as TextBlock ?? (content as StackPanel)?.Children.OfType<TextBlock>().FirstOrDefault();
+            if (content is StackPanel sp) w += sp.Children.Count > 1 ? 9 + sp.Spacing : 0;
+            if (text != null)
+            {
+                var ft = new FormattedText(text.Text ?? "", System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, new Typeface(text.FontFamily, text.FontStyle, text.FontWeight), text.FontSize, Brushes.Black);
+                w += Math.Min(ft.Width, text.MaxWidth > 0 && !double.IsInfinity(text.MaxWidth) ? text.MaxWidth : ft.Width);
+            }
+            return w;
+        }
+
+        Button MakeMore(int n)
+        {
+            var chip = NewChip(new TextBlock { Text = "+" + n, FontSize = StudioTokens.FontBody, VerticalAlignment = VerticalAlignment.Center }, TrackTarget.AllUnrouted, "+" + n + " more tracks");
+            chip.Tag = "more";
+            // The chip stands for no track: it lights nothing and opens the list.
+            ToolTip.SetTip(chip, "Show the other " + n + " in a list you can filter");
+            return chip;
+        }
+
+        int FitCount(double avail, out double moreWidth, int count)
+        {
+            moreWidth = 60;
+            if (Fits(count, avail, 0)) return count;
+            int k = count;
+            while (k > 0 && !Fits(k, avail, moreWidth)) k--;
+            return k;
+        }
+
+        /// <summary>The first k chips (and room for a "+N" chip after them) fit in the rows.</summary>
+        bool Fits(int k, double avail, double extra)
+        {
+            int rows = 1;
+            double x = 0;
+            for (int i = 0; i < k + (extra > 0 ? 1 : 0); i++)
+            {
+                double w = i < k ? widths[i] : extra;
+                if (x + w > avail && x > 0) { rows++; x = 0; }
+                x += w;
+            }
+            return rows <= MaxRows;
+        }
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (change.Property == BoundsProperty && attached && IsVisible && Math.Abs(Bounds.Width - laidOutFor) > 0.5)
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    var model = canvas.TrackModel;
+                    if (attached && IsVisible && model != null && Math.Abs(Bounds.Width - laidOutFor) > 0.5) { cap = int.MaxValue; MakeChips(model); Mark(); }
+                }, Avalonia.Threading.DispatcherPriority.Loaded);
         }
 
         Button Make(IMachine head, TrackEntry e)
@@ -150,11 +343,16 @@ namespace ReBuzz.Studio.Views.Machines
                 Foreground = StudioTokens.TextPrimaryBrush,
             };
             Avalonia.Automation.AutomationProperties.SetName(chip, name);
-            chip.PointerEntered += (s, e) => canvas.SetHoverLit(target);
-            chip.PointerExited += (s, e) => canvas.SetHoverLit(null);
-            chip.GotFocus += (s, e) => canvas.SetFocusLit(target);
-            chip.LostFocus += (s, e) => canvas.SetFocusLit(null);
-            chip.Click += (s, e) => Choose(target);
+            if (name.EndsWith("more tracks"))
+                chip.Click += (s, e) => OpenMore();
+            else
+            {
+                chip.PointerEntered += (s, e) => canvas.SetHoverLit(target);
+                chip.PointerExited += (s, e) => canvas.SetHoverLit(null);
+                chip.GotFocus += (s, e) => canvas.SetFocusLit(target);
+                chip.LostFocus += (s, e) => canvas.SetFocusLit(null);
+                chip.Click += (s, e) => Choose(target);
+            }
             chip.KeyDown += (s, e) => OnChipKey(chip, e);
             return chip;
         }
@@ -195,9 +393,15 @@ namespace ReBuzz.Studio.Views.Machines
                 mine = model.EntryOf(node);
             }
             var lit = canvas.Lit;
+            bool mineHidden = mine != null && all.Skip(shown).Any(a => !a.Target.Unrouted && a.Target.Head == mine.Head.Tag);
             foreach (var chip in chips)
             {
-                var t = (TrackTarget)chip.Tag;
+                if (chip.Tag is not TrackTarget t)
+                {
+                    chip.BorderBrush = mineHidden ? StudioTokens.AccentBrush : StudioTokens.SurfaceBorderBrush;
+                    chip.BorderThickness = new Thickness(mineHidden ? 2 : 1);
+                    continue;
+                }
                 bool isMine = mine != null && !t.Unrouted && t.Head == mine.Head.Tag;
                 bool isLit = lit is { } l && Equals(l, t);
                 chip.BorderBrush = isMine ? StudioTokens.AccentBrush : StudioTokens.SurfaceBorderBrush;
@@ -331,7 +535,7 @@ namespace ReBuzz.Studio.Views.Machines
             watching = m;
             m.PropertyChanged += OnMachine;
             string kind = entry.Kind == TrackKind.Track ? "Track" : entry.Kind == TrackKind.Group ? "Group" : "Return";
-            title.Text = kind + ": " + entry.Name;
+            title.Text = entry.Kind == TrackKind.MasterChain ? "Master chain" : kind + ": " + entry.Name;
             dot.Background = new SolidColorBrush(MachineCanvas.ColourOfHead(m)).ToImmutable();
             chain.Text = entry.Chain;
             var more = new List<string>();
