@@ -24,7 +24,7 @@ namespace ReBuzz.Agent.Guides
             ("Parameters, presets and snapshots", new[] { "param_*", "machine_pin", "preset_*", "snapshot_*", "modulate", "modulation_*" }),
             ("Neo Patch", new[] { "patch_*" }),
             ("Patterns and notes", new[] { "pattern_*", "notes_*", "theory" }),
-            ("Arrangement and automation", new[] { "arrangement_*", "automation_*", "takes" }),
+            ("Arrangement and automation", new[] { "arrangement_*", "automation_*", "clip_envelope", "takes" }),
             ("Session View and live play", new[] { "session_*", "transport", "midi_play", "track_input", "meters_read", "machine_readings" }),
             ("Render and analysis", new[] { "render", "analyze", "analyze_mix", "compare", "plot", "target_build", "eq_fit" }),
             ("Waves", new[] { "wave_*" }),
