@@ -1525,6 +1525,10 @@ jobs:
         dotnet build tools/AutoWarpEval -c Release -o aw3-tool 2>&1 | tail -3
         g++ -O2 -std=c++17 -I NeoStretch/third_party tools/aw2/warp.cpp -o aw3-tool/aw2warp
     - name: The pack list and the renders
+      env:
+        AW3_REACH: '25'
+        AW3_P95: '30'
+        AW3_MAX: '60'
       run: |
         set -euo pipefail
         pip install --quiet numpy scipy soundfile
