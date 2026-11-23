@@ -147,8 +147,20 @@ def row_times(beat_rows):
     return times
 
 
-def patch_editor(path, machine, patterns):
-    """Put the editor's data (patterns: [{name, beats, rpb, columns}]) in the song saved at path, as the editor of machine keeps it."""
+def build_pxp(patterns):
+    """PatternXP's data, version 3 (PatternEditorUtils.ParsePatternXPData): rows, not pattern time. patterns: [{name, rpb, columns}], events (row, value)."""
+    out = bytearray(struct.pack("<i", len(patterns)))
+    for p in patterns:
+        out += p["name"].encode("ascii") + b"\0" + struct.pack("<ii", p["rpb"], len(p["columns"]))
+        for c in p["columns"]:
+            out += c["machine"].encode("ascii") + b"\0" + struct.pack("<iiBi", c["index"], c["track"], 0, len(c["events"]))
+            for row, value in c["events"]:
+                out += struct.pack("<ii", row, value)
+    return bytes([3]) + bytes(out)
+
+
+def patch_editor(path, machine, patterns, data=None):
+    """Put the editor's data (patterns: [{name, beats, rpb, columns}], or data as it is) in the song saved at path, as the editor of machine keeps it."""
     tree = ET.parse(path)
     root = tree.getroot()
     model = {m["name"]: m for m in rt.parse_bmxml(path)["machines"]}
@@ -157,7 +169,7 @@ def patch_editor(path, machine, patterns):
         raise RuntimeError(f"{machine} has no pattern editor in {path}")
     for me in root.find("Machines"):
         if rt.model_name(me.findtext("Name")) == editor:
-            me.find("Data").text = base64.b64encode(rt.build_mpe(patterns)).decode()
+            me.find("Data").text = base64.b64encode(data if data is not None else rt.build_mpe(patterns)).decode()
             tree.write(path, encoding="utf-8", xml_declaration=True)
             return
     raise RuntimeError(f"{editor} is not in {path}")
@@ -382,6 +394,46 @@ def _(b, path):
     b.call("arrangement_clip", op="loop", machine="Lead", at=0, on=True)
     b.call("arrangement_clip", op="trim", machine="Lead", at=0, end=16)
     b.save(path)
+    return path
+
+
+@generated("gen/chord4", "a chord of 4 notes on one row (4 tracks of a tracker), and 4 notes at one time on MIDI lanes (4 voices)")
+def _(b, path):
+    return tracker_song(b, path, tracks=4, rows=16, note_rows=[0, 8], cmd=False)
+
+
+@generated("gen/chord4-midi", "4 notes on one row of the editor's MIDI note lanes, 4 voices (a Neo Poly), with a cut on the last")
+def _(b, path):
+    b.call("song_set", tempo_bpm=TEMPO)
+    b.call("machine_add", gear="Neo Poly", name="Lead")
+    b.call("pattern_create", machine="Lead", name="A", length_beats=4)
+    b.call("arrangement_place", machine="Lead", pattern="A", at=[0])
+    b.call("song_set", song_end_beats=4)
+    b.save(path)
+    beat_rows = [2] * 4
+    times = row_times(beat_rows)
+    cols = []
+    for t, note in enumerate([0x41, 0x44, 0x47, 0x51]):
+        cols += [column("Lead", MIDI_NOTE, t, [(times[0], note), (times[4], note + 2)], beat_rows),
+                 column("Lead", MIDI_VELOCITY, t, [(times[0], 90 - 10 * t), (times[4], 100)], beat_rows)]
+    cols.append(column("Lead", MIDI_CUT, 3, [(times[0], 70)], beat_rows))
+    patch_editor(path, "Lead", [{"name": "A", "beats": 4, "rpb": 2, "columns": cols}])
+    return path
+
+
+@generated("gen/pxp-blob", "PatternXP's data (version 3, rows) on a tracker: ordinary columns, and its special columns (global and track Trigger, Effect, Effect Data) the editor can't place")
+def _(b, path):
+    tracker_song(b, path, tracks=2, rows=16, cmd=False)
+    idx = {n: param_index(path, "Trk", n)[0] for n in ("Wave", "Volume")}
+    note = idx["Wave"] - 1
+    cols = []
+    for t in range(2):
+        cols.append({"machine": "Trk", "index": note, "track": t, "events": [(0 + t, SCALE[t]), (4 + t, SCALE[t + 2]), (8, OFF), (10, SCALE[t + 4])]})
+        cols.append({"machine": "Trk", "index": idx["Volume"], "track": t, "events": [(0 + t, 120), (4 + t, 160)]})
+    # PatternXP's own columns (PatternEditorUtils.InternalParameter): global and track Trigger, Effect 1, Effect 1 Data.
+    for index, track in ((-10, 0), (-11, 0), (-12, 0), (-110, 0), (-111, 0), (-112, 0), (-110, 1)):
+        cols.append({"machine": "Trk", "index": index, "track": track, "events": [(2, 3), (6, 1)]})
+    patch_editor(path, "Trk", None, data=build_pxp([{"name": "A", "rpb": 4, "columns": cols}]))
     return path
 
 
