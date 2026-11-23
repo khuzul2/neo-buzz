@@ -23,6 +23,7 @@ def main():
         items += json.load(open(p))
     rows = collections.defaultdict(list)
     per = []
+    path = collections.defaultdict(lambda: [0, 0])      # (set, half) -> [items where AW1's DSP track was kept, items]
     for it in items:
         # Labels from the sets can repeat or be out of order (an annotator's duplicate, a tie in a hash): mir_eval wants them strictly increasing.
         for key in ("gt_beats", "gt_downbeats"):
@@ -31,6 +32,10 @@ def main():
             if method in it:
                 for key in ("beats", "downbeats"):
                     it[method][key] = sorted(set(it[method][key]))
+        if "aw2" in it and "from_model" in it["aw2"]:
+            c = path[(it["set"], it["half"])]
+            c[1] += 1
+            c[0] += 0 if it["aw2"]["from_model"] else 1
         for method in ("auto", "aw2"):
             if method not in it:
                 continue
@@ -51,6 +56,9 @@ def main():
                     continue
                 g = [e["grid"] for e in es]
                 out.append(f"| {s} | {half} | {name[m]} | {len(es)} | {fmt(mean([e['F'] for e in es]))} | {fmt(mean([e['CMLt'] for e in es]))} | {fmt(mean([e['AMLt'] for e in es]))} | {fmt(mean([e['down'] for e in es]))} | {fmt(pct(g, 50), 1)} | {fmt(pct(g, 95), 1)} |")
+    out += ["\n## How often AW1's DSP track is kept (the model-or-DSP choice)\n", "| set | half | items | DSP track kept | share |", "|---|---|---|---|---|"]
+    for (s, h), (k, n_) in sorted(path.items()):
+        out.append(f"| {s} | {h} | {n_} | {k} | {k / max(1, n_):.0%} |")
     out += ["\n## Gates (test halves, AW2 model)\n", "| gate | AW1 | AW2 | needed | met |", "|---|---|---|---|---|"]
     for s, (bf, df) in GATES.items():
         e2, e1 = rows.get((s, "test", "aw2"), []), rows.get((s, "test", "auto"), [])

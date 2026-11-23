@@ -163,7 +163,7 @@ namespace ReBuzz.Core.Clips
             var sorted = (double[])conf.Clone();
             Array.Sort(sorted);
             if (sorted[n / 2] < MinConfidence) return null;
-            var track = new BeatTrack { Rate = rate, Length = length, Beats = beats, Down = down, FromModel = true, ModelVersion = version, Low = (double[])conf.Clone(), Full = (double[])conf.Clone(), Change = new double[n] };
+            var track = new BeatTrack { Rate = rate, Length = length, Beats = beats, Down = down, FromModel = true, ModelVersion = version, Act = a, Low = (double[])conf.Clone(), Full = (double[])conf.Clone(), Change = new double[n] };
             var intervals = new List<double>(n);
             for (int i = 1; i < n; i++) intervals.Add(beats[i] - beats[i - 1]);
             intervals.Sort();
@@ -173,6 +173,16 @@ namespace ReBuzz.Core.Clips
         }
 
         // ------------------------------------------------------------------ the tempo
+
+        /// <summary>AW2c: a log-normal prior on the tempo, centred at 120 BPM, on the choice between a pulse and its octave or ratio (0: off). Set on the validation split. It is a weight on the emission, so a strong reading still wins over it anywhere in 55 to 215 BPM.</summary>
+        internal static double TempoPriorSigma = 0, TempoPriorCentre = 120;
+
+        static double Prior(double bpm)
+        {
+            if (TempoPriorSigma <= 0) return 1;
+            double z = Math.Log(bpm / TempoPriorCentre) / TempoPriorSigma;
+            return Math.Exp(-0.5 * z * z);
+        }
 
         /// <summary>The beat period in frames at every frame (from the activation's autocorrelation, the model's tempo distribution and a Viterbi path), or null for no pulse.</summary>
         static double[] TempoCurve(Activations act, double[] bpm, int tempoBins)
@@ -224,7 +234,7 @@ namespace ReBuzz.Core.Clips
                     // A tempo whose half-period is itself a strong period is the slower octave of a faster pulse: the faster one is the beat.
                     double hl = lag * 0.5;
                     if (hl >= 3) { int hi2 = (int)hl; double hf = hl - hi2; s -= 0.35 * Math.Max(0, r[hi2] * (1 - hf) + r[hi2 + 1] * hf); }
-                    e[k] = Math.Max(0, s) * (0.2 + 0.8 * model[k]);
+                    e[k] = Math.Max(0, s) * (0.2 + 0.8 * model[k]) * Prior(bpm[k]);
                     if (e[k] > best) best = e[k];
                 }
                 if (best <= 0) { Array.Clear(e); continue; }

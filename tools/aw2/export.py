@@ -26,6 +26,31 @@ def tensors(net):
     return out
 
 
+def from_bytes(data):
+    """The inverse of to_bytes: a Net with the weights of an AW2M file (AW2c continues the training of the shipped model from them)."""
+    assert data[:4] == b"AW2M"
+    fmt, version, c1, c2, c3, d, k, ratio, blocks, bins = struct.unpack("<10i", data[4:44])[0:10] if False else struct.unpack("<iiiiiiiiii", data[4:44])
+    dil = list(struct.unpack("<%di" % blocks, data[44:44 + 4 * blocks]))
+    net = Net(c1=c1, c2=c2, c3=c3, d=d, k=k, ratio=ratio, dil=dil)
+    off = 44 + 4 * blocks
+    names = []
+    for i in (1, 2, 3):
+        names += ["conv%d.weight" % i, "conv%d.bias" % i]
+    names += ["proj.weight", "proj.bias", "ln0.ln.weight", "ln0.ln.bias"]
+    for b in range(blocks):
+        p = "blocks.%d." % b
+        names += [p + n for n in ("dw.weight", "dw.bias", "ln.ln.weight", "ln.ln.bias", "p1.weight", "p1.bias", "p2.weight", "p2.bias")]
+    names += ["lnf.ln.weight", "lnf.ln.bias", "head.weight", "head.bias", "tempo.weight", "tempo.bias"]
+    sd = net.state_dict()
+    for n in names:
+        cnt = sd[n].numel()
+        sd[n] = torch.from_numpy(np.frombuffer(data, "<f4", cnt, off).copy()).reshape(sd[n].shape)
+        off += 4 * cnt
+    assert off == len(data), "the file has more numbers than the network"
+    net.load_state_dict(sd)
+    return net
+
+
 def to_bytes(net, version):
     c = net.cfg
     head = b"AW2M" + struct.pack("<iiiiiiiiii", 1, version, c["c1"], c["c2"], c["c3"], c["d"], c["k"], c["ratio"], len(c["dil"]), TEMPO_BINS)

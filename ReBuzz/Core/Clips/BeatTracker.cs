@@ -34,6 +34,8 @@ namespace ReBuzz.Core.Clips
         public bool FromModel;
         public int ModelVersion;
         public double[] Down;
+        /// <summary>From the beat model: the beat activation per frame (50 a second), for checking another track's phase against it.</summary>
+        public float[] Act;
         public bool Found => Beats.Length >= 4;
         /// <summary>Whether the audio is short enough to be one clip's worth of loop (kept for callers that ask).</summary>
         public double Seconds => Length / (double)Math.Max(1, Rate);
@@ -152,6 +154,27 @@ namespace ReBuzz.Core.Clips
 
         /// <summary>AW2b: AW1's DSP track is kept when it is steady (every 16-beat window within this of the line through the beats) and the model's tempo agrees with it up to an octave or a 3:2 or 4:3 ratio. Set on the validation split.</summary>
         internal static double DspSteadyTolerance = 0.005, DspAgreeTolerance = 0.04;
+        /// <summary>AW2c: the DSP track also has to sit on the model's beat activations: the mean activation at its beats (best of 2 frames either side) over the mean at the model's own beats must reach this (0: not checked). Set on the validation split.</summary>
+        internal static double DspPhaseRatio = 0;
+
+        /// <summary>The mean beat activation at the DSP track's beats over that at the model's own beats: near 1 when the DSP beats are where the model hears them, low for an off-beat lock.</summary>
+        internal static double DspPhaseScore(BeatTrack dsp, BeatTrack model)
+        {
+            var a = model.Act;
+            double At(double sample)
+            {
+                int f = (int)Math.Round(sample / dsp.Rate * 50.0);
+                double m = 0;
+                for (int u = Math.Max(0, f - 2); u <= Math.Min(a.Length - 1, f + 2); u++) m = Math.Max(m, a[u]);
+                return m;
+            }
+            double d = 0, mo = 0;
+            foreach (double s in dsp.Beats) d += At(s);
+            foreach (double s in model.Beats) mo += At(s);
+            d /= Math.Max(1, dsp.Beats.Length); mo /= Math.Max(1, model.Beats.Length);
+            return mo > 1e-6 ? d / mo : 1;
+        }
+
         static readonly double[] AgreeRatios = { 1, 2, 0.5, 1.5, 2.0 / 3, 4.0 / 3, 0.75 };
 
         static BeatTrack TrackBest(AudioSource source, BeatModelNet net)
@@ -181,8 +204,10 @@ namespace ReBuzz.Core.Clips
             for (int w = 0; w + win < b.Length; w += Math.Max(1, win / 4))
                 if (Math.Abs((b[w + win] - b[w]) / win / per - 1) > DspSteadyTolerance) return false;
             double r = model.MedianBpm / dsp.MedianBpm;
-            foreach (double k in AgreeRatios) if (Math.Abs(r / k - 1) <= DspAgreeTolerance) return true;
-            return false;
+            bool agree = false;
+            foreach (double k in AgreeRatios) if (Math.Abs(r / k - 1) <= DspAgreeTolerance) { agree = true; break; }
+            if (!agree) return false;
+            return DspPhaseRatio <= 0 || model.Act == null || DspPhaseScore(dsp, model) >= DspPhaseRatio;
         }
 
         sealed class Frames

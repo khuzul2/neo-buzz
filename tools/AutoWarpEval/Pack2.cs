@@ -1,5 +1,5 @@
 // The listening pack of AW2b: --pack2 OUT MODEL WARPTOOL LIST. LIST has "clip.wav<TAB>song BPM" per line. Each clip (a 40 s window) is analysed by AW1's DSP tracker and by
-// the beat model, played at its song tempo against a click on the song's grid (a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's
+// the beat model (AW2c: only clips where the two differ, at most 2 per source set and MAX in all), played at its song tempo against a click on the song's grid (a higher, louder tick on each bar line), warped with Signalsmith Stretch (the library of the app's
 // Pro warp: the pitch stays put) between the markers each found. Files are NN-name--aw1.wav and NN-name--aw2.wav.
 using System.Diagnostics;
 using System.Globalization;
@@ -16,23 +16,30 @@ namespace NeoBuzz.AutoWarpEval
             string outDir = a[at], model = a[at + 1], warp = a[at + 2], list = a[at + 3];
             Directory.CreateDirectory(outDir);
             var net = Aw2Commands.LoadModel(model);
+            int max = a.Length > at + 4 ? int.Parse(a[at + 4], CultureInfo.InvariantCulture) : int.MaxValue;
+            var perGroup = new Dictionary<string, int>();
             int n = 0;
             foreach (var line in File.ReadLines(list))
             {
                 var p = line.Split('\t');
-                if (p.Length < 2) continue;
-                n++;
+                if (p.Length < 2 || n >= max) continue;
                 var (x, rate) = Wav.Read(p[0]);
                 int s0 = Math.Min(x.Length / 4, 10 * rate), len = Math.Min(x.Length - s0, 40 * rate);
                 var w = new float[len];
                 Array.Copy(x, s0, w, 0, len);
                 double song = double.Parse(p[1], CultureInfo.InvariantCulture);
                 string name = Path.GetFileNameWithoutExtension(p[0]);
-                foreach (var which in new[] { "aw1", "aw2" })
+                string group = name.Split('_')[0];
+                perGroup.TryGetValue(group, out int have);
+                AutoWarpResult r1, r2;
+                using (BeatModel.Scope(null)) r1 = AudioAnalysis.AutoWarp(new AudioSource(w, w, rate), 4);
+                using (BeatModel.Scope(net)) r2 = AudioAnalysis.AutoWarp(new AudioSource(w, w, rate), 4);
+                bool differ = r1.Found != r2.Found || (r1.Found && (r2.FromModel || Math.Abs(r1.Bpm - r2.Bpm) > 0.003 * r1.Bpm));
+                if (!differ || have >= 2) { Console.WriteLine($"skipped {name}: {(differ ? "enough of its set" : "AW2 gives the same as AW1")}"); continue; }
+                perGroup[group] = have + 1;
+                n++;
+                foreach (var (which, r) in new[] { ("aw1", r1), ("aw2", r2) })
                 {
-                    var src = new AudioSource(w, w, rate);
-                    AutoWarpResult r;
-                    using (BeatModel.Scope(which == "aw1" ? null : net)) r = AudioAnalysis.AutoWarp(src, 4);
                     var o = Render(w, rate, r, song, warp);
                     Pack.WriteWav(Path.Combine(outDir, $"{n:00}-{name}--{which}.wav"), o, rate);
                     Console.WriteLine($"{n:00}-{name}--{which}: {(r.Found ? $"{r.Bpm:0.0} BPM, {r.Markers.Count} markers" : "no beats found")}; song {song} BPM");
