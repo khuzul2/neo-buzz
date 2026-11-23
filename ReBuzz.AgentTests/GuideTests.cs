@@ -54,6 +54,7 @@ namespace ReBuzz.AgentTests
             ["song_notes_write"] = new[] { "text", "mode" },
             ["gear_list"] = new[] { "kind", "search", "limit", "include_unhealthy" },
             ["machine_list"] = new string[0],
+            ["machine_tracks"] = new string[0],
             // K0 (agent-knowledge.md: ReBuzz.Agent/Guides/MachineCatalog.cs)
             ["machine_find"] = new[] { "intent", "category", "tag", "role", "kind", "limit" },
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },

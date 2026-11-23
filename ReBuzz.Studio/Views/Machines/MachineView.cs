@@ -52,7 +52,7 @@ namespace ReBuzz.Studio.Views.Machines
             Canvas.Amp = Amp;
 
             // MT1 (ux-overhaul.md §11): the Tracks toggle, the bar of chips under the top bar, and the card of the lit track.
-            tracksButton = Shell.Design.StudioButtons.KeepFocus(new Button { Content = "Tracks", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1), Padding = new Thickness(10, 2), FontSize = Shell.Design.StudioTokens.FontBody });
+            tracksButton = Shell.Design.StudioButtons.KeepFocus(new Button { Content = "Tracks", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1), Padding = new Thickness(10, 3), FontSize = Shell.Design.StudioTokens.FontBody });
             Avalonia.Automation.AutomationProperties.SetName(tracksButton, "Tracks");
             ToolTip.SetTip(tracksButton, "Colour the machines by track: a generator and what only it feeds, up to the Master or a shared machine. Hover or click a chip to light one track");
             tracksButton.Click += (s, e) => MachineTracksPreference.On = !MachineTracksPreference.On;
