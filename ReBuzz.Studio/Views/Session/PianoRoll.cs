@@ -513,9 +513,9 @@ namespace ReBuzz.Studio.Views.Session
         internal static readonly IBrush NoteSelected = SessionPalette.Pair("#F0C24B", "#8F6200");
         static readonly IBrush OutOfClip = SessionPalette.Pair("#141417", "#D8D8E0");
         static readonly IPen RowLine = SessionPalette.PairPen("#26262B", "#E8E8EE", 1);
-        static readonly IPen TickLine = SessionPalette.PairPen("#24242A", "#ECECF1", 1);
-        static readonly IPen BeatLine = SessionPalette.PairPen("#34343C", "#DCDCE3", 1);
-        static readonly IPen BarLine = SessionPalette.PairPen("#55555F", "#B4B4BF", 1);
+        internal static readonly IPen TickLine = SessionPalette.PairPen("#24242A", "#ECECF1", 1);      // (EV1: the envelope lanes draw the same grid)
+        internal static readonly IPen BeatLine = SessionPalette.PairPen("#34343C", "#DCDCE3", 1);
+        internal static readonly IPen BarLine = SessionPalette.PairPen("#55555F", "#B4B4BF", 1);
         static readonly IPen NoteEdge = SessionPalette.PairPen("#101012", "#101012", 1);
         static readonly IPen BoxPen = SessionPalette.PairPen("#F0C24B", "#8F6200", 1, DashStyle.Dash);
         static readonly IPen PlayheadPen = SessionPalette.PairPen("#6FD98A", "#008A20", 1.5);

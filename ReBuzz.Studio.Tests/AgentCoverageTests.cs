@@ -236,6 +236,68 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ClipEnvelopesAreReadWrittenAndClearedForSessionAndArrangementClipsAsOneUndoStepEach()
+        {
+            var window = Song(out var restore);
+            using var _ = restore;
+            var core = Host.Core;
+            var machine = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
+            var param = SongModel.Params(machine).First(p => !p.IsTrack && p.Parameter.MaxValue - p.Parameter.MinValue > 20 &&
+                AutomationParams.Find(machine, new ColumnKey(p.Group, p.Parameter.IndexInGroup, 0)) != null);
+            int lo = param.Parameter.MinValue, hi = param.Parameter.MaxValue;
+            var key = new ColumnKey(param.Group, param.Parameter.IndexInGroup, 0);
+            JsonArray Points(int a, int b) => new(new JsonObject { ["at"] = 0, ["value"] = $"raw:{a}" }, new JsonObject { ["at"] = 3, ["value"] = $"raw:{b}" });
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0), ("length_beats", 8)));
+            var verse = machine.Patterns.Single(p => p.Name == "Verse");
+
+            // An arrangement clip, by a position inside it.
+            int steps = Steps;
+            var written = Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("lane", 0), ("at", 1), ("param", param.Name), ("points", Points(lo, hi))));
+            Assert.That(Steps, Is.EqualTo(steps + 1), "one undo step");
+            Assert.That(written["pattern"]!.GetValue<string>(), Is.EqualTo("Verse"));
+            Assert.That(written["envelopes"]![0]!["points"]!.AsArray(), Has.Count.EqualTo(2));
+            Assert.That(written["envelopes"]![0]!["points"]![0]!["ramp"]!.GetValue<bool>(), Is.True, "linear: a ramp to the next point");
+            // The lane's model holds the same points: what the agent wrote is what a person sees in the Detail lane.
+            var model = ClipEnvelopes.Read(verse, key);
+            Assert.That(model.Points.Select(p => p.Value), Is.EqualTo(new[] { lo, hi }));
+
+            // Read: by pattern, and the same envelope.
+            var read = Call("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("pattern", "Verse")));
+            Assert.That(read["envelopes"]!.AsArray(), Has.Count.EqualTo(1));
+            Assert.That(read["envelopes"]![0]!["param"]!.GetValue<string>(), Is.EqualTo(param.Parameter.Name));
+
+            // Steps, and a second write between the same beats replaces those points (no third).
+            Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name), ("shape", "step"), ("points", Points(hi, lo))));
+            model = ClipEnvelopes.Read(verse, key);
+            Assert.That(model.Points.Select(p => (p.Value, p.Ramp)), Is.EqualTo(new[] { (hi, false), (lo, false) }));
+
+            // A Session clip, by its scene.
+            var layout = core.SessionLayout;
+            layout.Ensure();
+            int track = Enumerable.Range(0, layout.TrackCount).First(t => layout.SequenceOf(t)?.Machine == machine);
+            var session = layout.CreateClip(track, 0);
+            Assert.That(session, Is.Not.Null);
+            var inSession = Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("scene", 1), ("param", param.Name), ("points", Points(lo, hi))));
+            Assert.That(inSession["pattern"]!.GetValue<string>(), Is.EqualTo(session.Name));
+            Assert.That(ClipEnvelopes.Read(session, key).Points, Has.Count.EqualTo(2));
+            Assert.That(ClipEnvelopes.Read(verse, key).Points.Select(p => p.Value), Is.EqualTo(new[] { hi, lo }), "the other clip is not touched");
+
+            // Clear is one step; undo brings the points back.
+            int before = Steps;
+            Call("clip_envelope", Args(("op", "clear"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name)));
+            Assert.That(Steps, Is.EqualTo(before + 1));
+            Assert.That(ClipEnvelopes.Read(verse, key).Points, Is.Empty);
+            core.SongCore.ActionStack.Undo();
+            Assert.That(ClipEnvelopes.Read(verse, key).Points, Has.Count.EqualTo(2), "undo");
+
+            // The same refusals as the lane's limits.
+            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name), ("points", new JsonArray(new JsonObject { ["at"] = 9, ["value"] = $"raw:{lo}" })))), Does.Contain("outside the clip"));
+            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", "No Such Knob"), ("points", Points(lo, hi)))), Does.Contain("No Such Knob"));
+            Assert.That(Err("clip_envelope", Args(("op", "read"), ("machine", "Bass"))), Does.Contain("Say which clip"));
+            Assert.That(Err("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("scene", 9))), Does.Contain("scene"));
+        }
+
+        [AvaloniaTest]
         public void ATakeIsCompedOntoTheMainLaneAndRecordingNeedsAnArmedTrack()
         {
             var window = Song(out var restore);

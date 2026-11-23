@@ -64,6 +64,7 @@ namespace ReBuzz.Agent
             ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);
             ArrangementTools.Register(tools, this);   // K3b (agent-knowledge.md §11): arrangement_clip, arrangement_lane, arrangement_automation, arrangement_takes
+            ClipEnvelopeTools.Register(tools, this);  // EV1 (daw-modes.md §8.8): clip_envelope
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);
             MasteringTools.Register(tools, this);   // mastering-tools.md §6: target_build, eq_fit

@@ -182,6 +182,7 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(A, K("Cmd+T"), "time signature from the cursor");
             yield return new ViewKey(A, K("Cmd+R"), "rename the track's machine");
             yield return new ViewKey(A, K("Cmd+Enter"), "the menu");
+            yield return new ViewKey(A, "E", "show / hide the envelope curves on the clips (each track's header chooses the parameter; a double click on a curve opens the clip's lane in the Detail panel)");
             yield return new ViewKey(A, K("Esc"), "deselect");
 
             const string S = "Session";
@@ -210,6 +211,17 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(R, "Up / Down", "transpose the selected notes by a semitone (Shift: an octave; " + K("Cmd+Up") + " / " + K("Cmd+Down") + ": velocity)");
             yield return new ViewKey(R, K("Cmd+D"), "duplicate the selected notes after themselves (docked piano roll)");
             yield return new ViewKey(R, "Q", "quantize the selected notes");
+
+            const string EN = "Clip envelopes (the Detail panel's lane)";
+            yield return new ViewKey(EN, "Click", "add a point (a ramp to the next point); a double click on a point deletes it");
+            yield return new ViewKey(EN, "Drag a point", "move it in time and value (Shift: off the grid); a selection moves together");
+            yield return new ViewKey(EN, "Drag on empty space", "select the points inside the box");
+            yield return new ViewKey(EN, "Shift or " + (mac ? "⌘" : "Ctrl") + " + click", "add a point to the selection, or take it out");
+            yield return new ViewKey(EN, K("Cmd+A") + " · Esc · Delete", "select all points · clear the selection · delete the selected points");
+            yield return new ViewKey(EN, "R", "the line after the selected points: ramp or step");
+            yield return new ViewKey(EN, K("Cmd+C") + " · " + K("Cmd+X") + " · " + K("Cmd+V"), "copy, cut, paste points (they land where you last pointed)");
+            yield return new ViewKey(EN, (mac ? "⌘" : "Ctrl") + " + wheel · Shift + wheel", "zoom · scroll (the same axis as the piano roll)");
+            yield return new ViewKey(EN, K("Cmd+Z"), "every gesture is one step of the song's history");
 
             const string AW = "Audio clip (warp markers)";
             string alt = mac ? "⌥" : "Alt";

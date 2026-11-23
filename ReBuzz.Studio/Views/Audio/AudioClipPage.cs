@@ -70,6 +70,9 @@ namespace ReBuzz.Studio.Views.Audio
         readonly CheckBox follow;
         readonly CheckBox loop, reverse;
         readonly TextBlock regionText;
+        readonly Views.Detail.EnvelopeStack envelopes;      // EV1: the clip's envelope lanes under the waveform
+        readonly WaveAxis axis;
+        int envelopeTick;
         readonly DispatcherTimer playTimer;
         bool loading;
         bool disposed;
@@ -194,9 +197,15 @@ namespace ReBuzz.Studio.Views.Audio
             var right = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(tools, Dock.Top);
             DockPanel.SetDock(hintText, Dock.Bottom);
+            // Fork (daw-modes.md EV1): the clip's envelopes under the waveform, on its beats.
+            axis = new WaveAxis(this);
+            envelopes = new Views.Detail.EnvelopeStack(core, axis);
+            DockPanel.SetDock(envelopes, Dock.Bottom);
             right.Children.Add(tools);
             right.Children.Add(hintText);
+            right.Children.Add(envelopes);
             right.Children.Add(wave);
+            right.SizeChanged += (s, e) => envelopes.MaxLanesHeight = e.NewSize.Height * 0.45;
 
             body = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(12, 0, 12, 8) };
             Grid.SetColumn(left, 0);
@@ -229,6 +238,17 @@ namespace ReBuzz.Studio.Views.Audio
         internal Where Context => where;
         internal ClipItem Arranged => item;
         internal WarpEditor Wave => wave;
+        internal Views.Detail.EnvelopeStack Envelopes => envelopes;
+
+        /// <summary>Shows the clip with the envelope lane of a parameter (a double click on a curve of an audio clip).</summary>
+        internal void ShowEnvelope(ColumnKey key)
+        {
+            if (shown != null) envelopes.Show(shown, key);
+            envelopes.LaneFor(key)?.Focus();
+        }
+
+        /// <summary>Whether the keyboard is in an envelope lane (the Edit commands are the lane's then).</summary>
+        internal bool EnvelopeFocused => envelopes.OwnsFocus;
         internal ComboBox WarpBox => warp;
         internal ComboBox PreserveBox => preserve;
         internal bool PreserveShown => preserveRow.IsVisible;
@@ -269,9 +289,12 @@ namespace ReBuzz.Studio.Views.Audio
         internal bool WaveFocused(object focused) => ReferenceEquals(focused, wave);
         bool IStudioEditTarget.Undo() => false;
         bool IStudioEditTarget.Redo() => false;
-        bool IStudioEditTarget.Delete() { if (wave.SelectedIndices.Count == 0) return false; wave.DeleteSelected(); return true; }
-        bool IStudioEditTarget.SelectAll() { if (!wave.HasClip) return false; wave.SelectAll(); return true; }
-        bool IStudioEditTarget.DeselectAll() { wave.ClearSelection(); return true; }
+        bool IStudioEditTarget.Delete() { if (envelopes.OwnsFocus) return envelopes.Delete(); if (wave.SelectedIndices.Count == 0) return false; wave.DeleteSelected(); return true; }
+        bool IStudioEditTarget.SelectAll() { if (envelopes.OwnsFocus) return envelopes.SelectAll(); if (!wave.HasClip) return false; wave.SelectAll(); return true; }
+        bool IStudioEditTarget.DeselectAll() { if (envelopes.OwnsFocus) return envelopes.DeselectAll(); wave.ClearSelection(); return true; }
+        bool IStudioEditTarget.Cut() => envelopes.OwnsFocus && envelopes.Cut();
+        bool IStudioEditTarget.Copy() => envelopes.OwnsFocus && envelopes.Copy();
+        bool IStudioEditTarget.Paste() => envelopes.OwnsFocus && envelopes.Paste();
 
         /// <summary>Which view the window shows now ("Session", "Arrangement"…): a clip in both is edited as the view that is shown has it.</summary>
         public Func<string> ViewShown { get; set; }
@@ -392,6 +415,7 @@ namespace ReBuzz.Studio.Views.Audio
                     title.Text = "Audio";
                     info.Text = "";
                     wave.Load(null, null, TicksPerBeat, BeatsPerBar, 1, default);
+                    envelopes.Show(null);
                     return;
                 }
                 var settings = Layout.ClipOf(shown);
@@ -441,6 +465,7 @@ namespace ReBuzz.Studio.Views.Audio
                 strength.Text = Layout.QuantizeStrength.ToString(CultureInfo.InvariantCulture);
                 wave.Load(view, Layout.TransientsOf(shown), TicksPerBeat, BeatsPerBar, length, (r.Start, r.LoopStart, r.LoopEnd, r.Loop));
                 UpdateSegments();
+                envelopes.Show(shown);
             }
             finally
             {
@@ -478,6 +503,51 @@ namespace ReBuzz.Studio.Views.Audio
                 beat = double.NaN;
             }
             wave.ShowPlayhead(beat);
+            axis.Playhead = double.IsNaN(beat) ? -1 : (int)Math.Round(beat * TicksPerBeat * PatternEvent.TimeBase);
+            axis.Poll();
+            if (++envelopeTick % 3 == 0) envelopes.Refresh();
+        }
+
+        /// <summary>The waveform's beats as the time axis of the envelope lanes (EV1): its zoom, its scroll and its beat grid.</summary>
+        sealed class WaveAxis : Views.Detail.IEnvelopeAxis
+        {
+            readonly AudioClipPage page;
+            (double, double) seen;
+
+            public WaveAxis(AudioClipPage page) => this.page = page;
+
+            public event Action Changed;
+
+            public int Playhead { get; set; } = -1;
+
+            double Unit => page.TicksPerBeat * (double)PatternEvent.TimeBase;
+
+            public double Gutter => 0;
+
+            public double X(int time) => page.wave.X(time / Unit);
+
+            public int TimeAt(double x) => (int)Math.Round(Math.Max(0, page.wave.BeatAt(x)) * Unit);
+
+            public int GridUnits => Math.Max(1, (int)Math.Round(page.wave.SnapStep * Unit));
+
+            public int BeatUnits => (int)Unit;
+
+            public int BarUnits => (int)Unit * page.BeatsPerBar;
+
+            public (int From, int To)? Loop => null;
+
+            public void Zoom(double factor) => page.wave.Zoom(Math.Max(1, page.wave.Bounds.Width / 2), factor);
+
+            public void ScrollBy(double pixels) => page.wave.Scroll(pixels);
+
+            /// <summary>The waveform was zoomed or scrolled (it has no event for it): the lanes draw again.</summary>
+            public void Poll()
+            {
+                var now = (page.wave.X(0), page.wave.X(1));
+                if (now == seen) return;
+                seen = now;
+                Changed?.Invoke();
+            }
         }
 
         // ------------------------------------------------------------------ edits
