@@ -223,5 +223,23 @@ namespace ReBuzz.SessionTests.AutoWarp
             }
             Assert.That(BeatThis.Found(), Is.SameAs(net), "the model is loaded once and kept");
         }
+
+        [Test]
+        public void ABarWithAMissedOrAnExtraBeatGetsTheGridsBeatsBetweenItsDownbeats()
+        {
+            // Bars of 4 beats at 1 s a beat; the bar from 8 s has one beat missed (3 beats), the bar from 12 s has one added (5): both get 4 beats evenly spaced.
+            var beats = new List<double>(); var down = new List<double>();
+            void Bar(double t0, int count, double len) { for (int j = 0; j < count; j++) { beats.Add(t0 + len * j / count); down.Add(j == 0 ? 1 : 0); } }
+            Bar(0, 4, 4); Bar(4, 4, 4); Bar(8, 3, 4); Bar(12, 5, 4); Bar(16, 4, 4); Bar(20, 4, 4);
+            var r = AudioAnalysis.BarsByDownbeats(beats.ToArray(), down.ToArray(), 4);
+            Assert.That(r, Is.Not.Null);
+            var (b, d) = r.Value;
+            for (int i = 0; i < 20; i++) Assert.That(b[i], Is.EqualTo(i).Within(1e-9), $"beat {i}");
+            for (int i = 0; i < 20; i++) Assert.That(d[i], Is.EqualTo(i % 4 == 0 ? 1 : 0), $"downbeat flag {i}");
+            // A piece whose usual bar is 3 beats long is not a piece for a grid of 4: left as it is.
+            var three = new List<double>(); var dn3 = new List<double>();
+            for (int i = 0; i < 12; i++) { three.Add(i); dn3.Add(i % 3 == 0 ? 1 : 0); }
+            Assert.That(AudioAnalysis.BarsByDownbeats(three.ToArray(), dn3.ToArray(), 4), Is.Null);
+        }
     }
 }

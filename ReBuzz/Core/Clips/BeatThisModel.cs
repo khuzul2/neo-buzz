@@ -215,6 +215,9 @@ namespace ReBuzz.Core.Clips
         /// <summary>AW4: how far (ms) a beat may be moved to the attack near it (<see cref="BeatModelTracker"/>'s AW3 setting); 0: not moved (the network's own beats, 20 ms frames).</summary>
         internal static double AttackReachMs = 0;
 
+        /// <summary>AW4: the grid's bars follow the picked downbeats (see <see cref="AudioAnalysis"/>'s BarsByDownbeats); off: the beats as the network gave them.</summary>
+        internal static bool BarsFromDownbeats = true;
+
         /// <summary>The raw answer: logits for every frame, and the beats and downbeats (frames of 20 ms) the reference's post-processor takes from them.</summary>
         internal sealed class Result
         {
@@ -256,7 +259,7 @@ namespace ReBuzz.Core.Clips
                 down[i] = (isDown ? 1.0 : 0.0) + 0.01 / (1.0 + Math.Exp(-ld));         // the picked downbeats vote; the activation settles a tie
                 conf[i] = 1.0 / (1.0 + Math.Exp(-lb));
             }
-            var track = new BeatTrack { Rate = rate, Length = src.Length, Beats = beats, Down = down, FromModel = true, ModelVersion = BeatThis.Version, Source = "beatthis",
+            var track = new BeatTrack { Rate = rate, Length = src.Length, Beats = beats, Down = down, FromModel = true, ModelVersion = BeatThis.Version, Source = "beatthis", BarsFromDownbeats = BarsFromDownbeats,
                                         Low = (double[])conf.Clone(), Full = (double[])conf.Clone(), Change = new double[n] };
             if (AttackReachMs > 0) BeatModelTracker.SnapToAttacks(src, track, AttackReachMs);
             var intervals = new System.Collections.Generic.List<double>(n);

@@ -77,7 +77,9 @@ namespace NeoBuzz.AutoWarpEval
                 // 5. Our whole chain: beats and downbeats within one frame of the upstream's.
                 var r = BeatThisTracker.Run(src, net);
                 bool beatsOk = Within(r.BeatFrames, refBeats), downOk = Within(r.DownFrames, refDowns);
-                bool spectOk = dSpect <= 1e-4 || dExact <= 1e-4 || rate != BeatThisFront.Rate;          // another sample rate goes through our resampler, the reference's is another one: only the beats are compared
+                // Within 1e-4 of the package's, or of the float64 recompute; a loud, dense file lifts the package's own float32 rounding past 1e-4 in the quietest bins (aam_0010: 3e-4), and then
+                // ours may be as far from the exact one as 3 times the package's is (the reference's own noise floor).
+                bool spectOk = dSpect <= 1e-4 || dExact <= 1e-4 || dExact <= 3 * dPackage || rate != BeatThisFront.Rate;          // another sample rate goes through our resampler, the reference's is another one: only the beats are compared
                 Console.WriteLine($"{name}: {rate} Hz, {frames} frames; spectrogram max diff {dSpect:0.0e+0} (against the exact one {dExact:0.0e+0}, the package's own rounding {dPackage:0.0e+0}); logits max diff {dLogit:0.0e+0}; post-processing on upstream logits {(postOk ? "identical" : "DIFFERENT")}; beats {r.BeatFrames.Length} vs {refBeats.Length} ({(beatsOk ? "within a frame" : "MISMATCH")}); downbeats {r.DownFrames.Length} vs {refDowns.Length} ({(downOk ? "within a frame" : "MISMATCH")})");
                 if (rate == BeatThisFront.Rate) worstSpect = Math.Max(worstSpect, Math.Min(dSpect, double.IsInfinity(dExact) ? dSpect : Math.Max(dExact, 0)));
                 worstLogit = Math.Max(worstLogit, dLogit);
@@ -176,21 +178,24 @@ namespace NeoBuzz.AutoWarpEval
                 sw.Restart();
                 var act = BeatThisTracker.Run(s4, bt);
                 double network = sw.Elapsed.TotalMilliseconds;
-                foreach (double reach in reaches)
+                var variants = reaches.Select(rc => (reach: rc, bars: true)).ToList();
+                variants.Add((0, false));                                           // aw4_plain: the network's beats as it gave them, the grid's bars not made to follow its downbeats
+                foreach (var (reach, bars) in variants)
                 {
                     BeatThisTracker.AttackReachMs = reach;
+                    BeatThisTracker.BarsFromDownbeats = bars;
                     sw.Restart();
                     var t = BeatThisTracker.TrackFrom(s4, act);
                     var r4 = t == null ? new AutoWarpResult { BeatsPerBar = bpb } : AudioAnalysis.FromTrack(s4, t, bpb);
                     double rest = sw.Elapsed.TotalMilliseconds;
-                    string key = reach == 0 ? "aw4" : $"aw4_r{reach:0}";
+                    string key = !bars ? "aw4_plain" : reach == 0 ? "aw4" : $"aw4_r{reach:0}";
                     ms[key] = network + rest;
                     var d = Aw3Commands.Describe(s4, r4, rate, bpb);
                     d["source"] = r4.Source;
                     res[key] = d;
-                    if (t != null) res["bt_raw" + (reach == 0 ? "" : $"_r{reach:0}")] = new Dictionary<string, object> { ["beats"] = Aw3Commands.Round(t.Beats.Select(v => v / rate)), ["bpm"] = Math.Round(t.MedianBpm, 3), ["downbeats"] = Aw3Commands.Round(act.DownFrames.Select(v => v / BeatThisFront.Fps)) };
+                    if (t != null) res["bt_raw" + (!bars ? "_plain" : reach == 0 ? "" : $"_r{reach:0}")] = new Dictionary<string, object> { ["found"] = true, ["markers"] = 0, ["steady"] = false, ["beats"] = Aw3Commands.Round(t.Beats.Select(v => v / rate)), ["bpm"] = Math.Round(t.MedianBpm, 3), ["downbeats"] = Aw3Commands.Round(act.DownFrames.Select(v => v / BeatThisFront.Fps)) };
                 }
-                BeatThisTracker.AttackReachMs = 0;
+                BeatThisTracker.AttackReachMs = 0; BeatThisTracker.BarsFromDownbeats = true;
                 item["res"] = res;
                 if (onsets) item["onsets"] = Aw3Commands.Onsets(s4);
                 item["ms"] = ms.ToDictionary(k => k.Key, k => Math.Round(k.Value, 1));

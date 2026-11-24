@@ -12,7 +12,7 @@ import argparse, collections, json
 import numpy as np
 import aw3score as s3
 
-METHODS = ["aw1", "aw2", "aw3", "aw4", "aw4_r25"]
+METHODS = ["aw1", "aw2", "aw3", "aw4", "aw4_r25", "aw4_plain", "bt_raw"]
 
 
 def bar1(gd, down):

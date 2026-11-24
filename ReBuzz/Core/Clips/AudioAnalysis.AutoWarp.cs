@@ -66,11 +66,13 @@ namespace ReBuzz.Core.Clips
 
             // The tempo octave as Tempo has it: 80 to 160 BPM.
             var (beats, low, full, change) = track.FromModel ? (track.Beats, track.Low, track.Full, track.Change) : Octave(track);
+            double[] downs = track.Down;
+            if (track.FromModel && track.BarsFromDownbeats && BarsByDownbeats(beats, track.Down, bpb) is (double[] rb, double[] rd)) { beats = rb; downs = rd; }
             int n = beats.Length;
             if (n < 4) return result;
 
             // The downbeat: the phase of the beats per bar that is accented most over the piece.
-            int phase = track.FromModel ? ModelPhase(track.Down, bpb) : DownbeatPhase(low, full, change, bpb);
+            int phase = track.FromModel ? ModelPhase(downs, bpb) : DownbeatPhase(low, full, change, bpb);
             double from = Math.Max(0, fromSeconds) * rate;
             int i0 = -1;
             for (int i = 0; i < n; i++)
@@ -226,6 +228,37 @@ namespace ReBuzz.Core.Clips
         }
 
         const double WeightLow = 1.0, WeightFull = 0.6, WeightChange = 0.9;
+
+        /// <summary>
+        /// AW4: the beats of a network that finds the downbeats too, made to fit the grid's bars. Between two picked downbeats the grid needs <paramref name="bpb"/> beats: a bar with
+        /// more or fewer (a beat the network missed or added) gets <paramref name="bpb"/> beats evenly spaced from one downbeat to the next, so one slip does not move every later bar.
+        /// Null (the beats stay as they are) when the piece's usual bar is not that long (another time signature than the grid's) or has too few downbeats.
+        /// </summary>
+        internal static (double[] Beats, double[] Down)? BarsByDownbeats(double[] beats, double[] down, int bpb)
+        {
+            if (bpb < 2 || down == null || down.Length != beats.Length) return null;
+            var d = new List<int>();
+            for (int i = 0; i < beats.Length; i++) if (down[i] >= 0.5) d.Add(i);
+            if (d.Count < 3) return null;
+            var counts = new List<int>();
+            for (int k = 0; k + 1 < d.Count; k++) counts.Add(d[k + 1] - d[k]);
+            counts.Sort();
+            if (counts[counts.Count / 2] != bpb) return null;
+            var nb = new List<double>(beats.Length + bpb);
+            var nd = new List<double>(beats.Length + bpb);
+            for (int i = 0; i < d[0]; i++) { nb.Add(beats[i]); nd.Add(0); }
+            for (int k = 0; k + 1 < d.Count; k++)
+            {
+                int c = d[k + 1] - d[k];
+                for (int j = 0; j < bpb; j++)
+                {
+                    nb.Add(c == bpb ? beats[d[k] + j] : beats[d[k]] + (beats[d[k + 1]] - beats[d[k]]) * j / bpb);
+                    nd.Add(j == 0 ? 1 : 0);
+                }
+            }
+            for (int i = d[d.Count - 1]; i < beats.Length; i++) { nb.Add(beats[i]); nd.Add(i == d[d.Count - 1] ? 1 : 0); }
+            return (nb.ToArray(), nd.ToArray());
+        }
 
         /// <summary>Which beat (0 to bpb-1) of the beats is the first of its bar: the phase whose beats are accented most.</summary>
         static int DownbeatPhase(double[] low, double[] full, double[] change, int bpb)

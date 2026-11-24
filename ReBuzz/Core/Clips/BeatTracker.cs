@@ -36,6 +36,8 @@ namespace ReBuzz.Core.Clips
         /// <summary>Where the beats came from: "beatthis" (AW4's pretrained network), "aw2" (the shipped network) or "dsp" (AW1's tracker).</summary>
         public string Source = "dsp";
         public double[] Down;
+        /// <summary>AW4: the downbeats are trusted over the beat count: a bar between two downbeats that does not have the grid's beats a bar gets them evenly spaced between them (see <see cref="AudioAnalysis"/>).</summary>
+        public bool BarsFromDownbeats;
         /// <summary>From the beat model: the beat activation per frame (50 a second), for checking another track's phase against it.</summary>
         public float[] Act;
         public bool Found => Beats.Length >= 4;
