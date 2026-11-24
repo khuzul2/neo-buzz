@@ -19309,6 +19309,101 @@
    "generated": false,
    "health": "ok"
   },
+  "Neo Chip": {
+   "gear": "Neo Chip",
+   "kind": "generator",
+   "load_seconds": 0.0,
+   "gear_info": {
+    "file": "Generators/Neo Chip.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 4,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 41,
+   "track_parameters": 0,
+   "inferred": 41,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 41,
+    "of": 41
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 3,
+    "polyphony_levels": {
+     "1": -18.3,
+     "2": -15.3,
+     "3": -13.5
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -18.5,
+    "sample_peak_dbfs": -16.8,
+    "true_peak_dbtp": -16.5
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -16.8,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -120.0,
+      "growth_db": 0.0,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -0.96,
+      "growth_db": 0.0,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [],
+    "renders": 3
+   },
+   "sweeps": {},
+   "denormal": {
+    "playing_ms_per_s": 14.6,
+    "silent_ms_per_s": 1.5,
+    "silent_worst_ms_per_s": 1.7,
+    "windows_ms_per_s": [
+     14.6,
+     1.7,
+     1.5,
+     1.5,
+     1.5,
+     1.5,
+     1.5,
+     1.5,
+     1.5,
+     1.5,
+     1.5
+    ]
+   },
+   "seconds": 2.0,
+   "platform": "linux",
+   "date": "2026-11-24",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "kibibu Green Milk": {
    "gear": "kibibu Green Milk",
    "kind": "generator",
