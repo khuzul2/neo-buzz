@@ -118,7 +118,7 @@ namespace NeoBuzz.MachineTests
             }
             if (before != null)
             {
-                md.Append("\n## Per step, busy line, before (pack 2) and after (this build): largest second difference in the step, and near a note start/end\n\n");
+                md.Append("\n## Per step, busy line, before (pack 2) and after (this build): the step's worst boundary ratio (limit 2.0x) and the burst above 6 kHz at the note start, in dB over its 30 to 80 ms\n\n");
                 foreach (var name in Acid)
                 {
                     var old = NeoPolyAcidGateTests.ReadWav24(Path.Combine(before, "named", $"{Safe(name)}-busy-line.wav"));
