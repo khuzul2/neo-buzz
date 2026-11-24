@@ -241,5 +241,18 @@ namespace ReBuzz.SessionTests.AutoWarp
             for (int i = 0; i < 12; i++) { three.Add(i); dn3.Add(i % 3 == 0 ? 1 : 0); }
             Assert.That(AudioAnalysis.BarsByDownbeats(three.ToArray(), dn3.ToArray(), 4), Is.Null);
         }
+
+        [Test]
+        public void SubFrameTimingFindsTheTopOfTheParabola()
+        {
+            // A logit that is a parabola with its top at frame 10.3: the refined position is 10.3, and a flat top stays where it is.
+            var l = new float[21];
+            for (int i = 0; i < l.Length; i++) l[i] = (float)(5 - 0.8 * (i - 10.3) * (i - 10.3));
+            var r = BeatThisFront.Refine(l, new double[] { 10 });
+            Assert.That(r[0], Is.EqualTo(10.3).Within(1e-5));
+            var flat = new float[] { 1, 2, 2, 2, 1 };
+            Assert.That(BeatThisFront.Refine(flat, new double[] { 2 })[0], Is.EqualTo(2).Within(1e-9));
+            Assert.That(BeatThisFront.Refine(flat, new double[] { 1.5 })[0], Is.EqualTo(1.5).Within(1e-9), "a mean of two neighbouring peaks stays");
+        }
     }
 }

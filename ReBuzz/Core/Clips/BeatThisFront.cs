@@ -214,6 +214,31 @@ namespace ReBuzz.Core.Clips
             downbeats = kept.ToArray();
         }
 
+        /// <summary>
+        /// AW4b: the beats' positions to a fraction of a frame (20 ms): each position (a frame or the mean of neighbours) is moved to the top of the parabola through the logit at its
+        /// nearest frame and the two beside it, by at most half a frame. The picked frames themselves (and so the parity with the reference) are not changed.
+        /// </summary>
+        public static double[] Refine(float[] logit, double[] frames)
+        {
+            var r = new double[frames.Length];
+            for (int i = 0; i < frames.Length; i++)
+            {
+                int c = (int)Math.Round(frames[i]);
+                // the largest of the logit within a frame of the position: the parabola is taken around the top
+                int top = Math.Max(0, Math.Min(logit.Length - 1, c));
+                for (int u = Math.Max(0, c - 1); u <= Math.Min(logit.Length - 1, c + 1); u++) if (logit[u] > logit[top]) top = u;
+                double d = 0;
+                if (top > 0 && top < logit.Length - 1)
+                {
+                    double a = logit[top - 1], b = logit[top], g = logit[top + 1];
+                    double den = a - 2 * b + g;
+                    if (den < -1e-9) d = Math.Max(-0.5, Math.Min(0.5, 0.5 * (a - g) / den));
+                }
+                r[i] = frames[i] == c ? top + d : frames[i];           // a position that is the mean of neighbouring peaks (a plateau) stays
+            }
+            return r;
+        }
+
         /// <summary>The frames whose logit is the largest within 3 frames either side and above 0 (a probability over one half).</summary>
         static List<int> Peaks(float[] x)
         {

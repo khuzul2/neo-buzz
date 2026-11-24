@@ -218,11 +218,17 @@ namespace ReBuzz.Core.Clips
         /// <summary>AW4: the grid's bars follow the picked downbeats (see <see cref="AudioAnalysis"/>'s BarsByDownbeats); off: the beats as the network gave them.</summary>
         internal static bool BarsFromDownbeats = true;
 
+        /// <summary>AW4b: beats to a fraction of a frame (a parabola through the logit's top), off: the picked frames.</summary>
+        internal static bool SubFrame = true;
+
+        /// <summary>AW4b: ms added to every beat (negative: earlier). The network's beats sit late against the attacks; this is the measured median (docs/specs/neo-audio.md, AW4b).</summary>
+        internal static double ShiftMs = 0;
+
         /// <summary>The raw answer: logits for every frame, and the beats and downbeats (frames of 20 ms) the reference's post-processor takes from them.</summary>
         internal sealed class Result
         {
             public float[] Beat, Down;
-            public double[] BeatFrames, DownFrames;
+            public double[] BeatFrames, DownFrames, RefinedFrames;
             public int Frames;
         }
 
@@ -233,6 +239,7 @@ namespace ReBuzz.Core.Clips
             var r = new Result { Frames = frames };
             net.Predict(spect, frames, out r.Beat, out r.Down);
             BeatThisFront.PickPeaks(r.Beat, r.Down, out r.BeatFrames, out r.DownFrames);
+            r.RefinedFrames = BeatThisFront.Refine(r.Beat, r.BeatFrames);
             return r;
         }
 
@@ -250,7 +257,7 @@ namespace ReBuzz.Core.Clips
             int di = 0;
             for (int i = 0; i < n; i++)
             {
-                beats[i] = r.BeatFrames[i] / BeatThisFront.Fps * rate;
+                beats[i] = ((SubFrame && r.RefinedFrames != null ? r.RefinedFrames[i] : r.BeatFrames[i]) / BeatThisFront.Fps + ShiftMs / 1000.0) * rate;
                 while (di < r.DownFrames.Length && r.DownFrames[di] < r.BeatFrames[i] - 1e-9) di++;
                 bool isDown = di < r.DownFrames.Length && Math.Abs(r.DownFrames[di] - r.BeatFrames[i]) < 1e-9;
                 int f = (int)Math.Round(r.BeatFrames[i]);

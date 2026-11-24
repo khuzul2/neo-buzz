@@ -179,24 +179,29 @@ namespace NeoBuzz.AutoWarpEval
                 sw.Restart();
                 var act = BeatThisTracker.Run(s4, bt);
                 double network = sw.Elapsed.TotalMilliseconds;
-                var variants = reaches.Select(rc => (reach: rc, bars: true)).ToList();
-                variants.Add((0, false));                                           // aw4_plain: the network's beats as it gave them, the grid's bars not made to follow its downbeats
-                foreach (var (reach, bars) in variants)
+                // The default settings are "aw4"; the others vary one thing each (AW4b): "aw4_old" is AW4 as the user heard it (frames of 20 ms, no shift), "aw4_plain" the network's
+                // beats without the bars following its downbeats, "aw4_s<N>" the beats N ms earlier, "_r<N>" the attack reach.
+                double defShift = BeatThisTracker.ShiftMs, defReach = BeatThisTracker.AttackReachMs; bool defSub = BeatThisTracker.SubFrame;
+                var variants = new List<(string key, bool sub, double shift, double reach, bool bars)>
                 {
-                    BeatThisTracker.AttackReachMs = reach;
-                    BeatThisTracker.BarsFromDownbeats = bars;
+                    ("aw4", defSub, defShift, defReach, true), ("aw4_old", false, 0, 0, true), ("aw4_plain", defSub, defShift, defReach, false),
+                    ("aw4_sub", true, 0, 0, true), ("aw4_s6", true, -6, 0, true), ("aw4_s10", true, -10, 0, true), ("aw4_s14", true, -14, 0, true),
+                    ("aw4_s10_r15", true, -10, 15, true), ("aw4_s10_r25", true, -10, 25, true), ("aw4_r25", true, 0, 25, true),
+                };
+                foreach (var (key, sub, shift, reach, bars) in variants)
+                {
+                    BeatThisTracker.AttackReachMs = reach; BeatThisTracker.BarsFromDownbeats = bars; BeatThisTracker.SubFrame = sub; BeatThisTracker.ShiftMs = shift;
                     sw.Restart();
                     var t = BeatThisTracker.TrackFrom(s4, act);
                     var r4 = t == null ? new AutoWarpResult { BeatsPerBar = bpb } : AudioAnalysis.FromTrack(s4, t, bpb);
                     double rest = sw.Elapsed.TotalMilliseconds;
-                    string key = !bars ? "aw4_plain" : reach == 0 ? "aw4" : $"aw4_r{reach:0}";
                     ms[key] = network + rest;
                     var d = Aw3Commands.Describe(s4, r4, rate, bpb);
                     d["source"] = r4.Source;
                     res[key] = d;
-                    if (t != null) res["bt_raw" + (!bars ? "_plain" : reach == 0 ? "" : $"_r{reach:0}")] = new Dictionary<string, object> { ["found"] = true, ["markers"] = 0, ["steady"] = false, ["beats"] = Aw3Commands.Round(t.Beats.Select(v => v / rate)), ["bpm"] = Math.Round(t.MedianBpm, 3), ["downbeats"] = Aw3Commands.Round(act.DownFrames.Select(v => v / BeatThisFront.Fps)) };
+                    if (t != null && (key == "aw4" || key == "aw4_old")) res[key == "aw4" ? "bt_raw" : "bt_raw_old"] = new Dictionary<string, object> { ["found"] = true, ["markers"] = 0, ["steady"] = false, ["beats"] = Aw3Commands.Round(t.Beats.Select(v => v / rate)), ["bpm"] = Math.Round(t.MedianBpm, 3), ["downbeats"] = Aw3Commands.Round(act.DownFrames.Select(v => v / BeatThisFront.Fps + shift / 1000.0)) };
                 }
-                BeatThisTracker.AttackReachMs = 0; BeatThisTracker.BarsFromDownbeats = true;
+                BeatThisTracker.AttackReachMs = defReach; BeatThisTracker.BarsFromDownbeats = true; BeatThisTracker.SubFrame = defSub; BeatThisTracker.ShiftMs = defShift;
                 item["res"] = res;
                 if (onsets) item["onsets"] = Aw3Commands.Onsets(s4);
                 item["ms"] = ms.ToDictionary(k => k.Key, k => Math.Round(k.Value, 1));
