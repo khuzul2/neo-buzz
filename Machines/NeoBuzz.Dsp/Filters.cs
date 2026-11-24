@@ -191,6 +191,66 @@ namespace NeoBuzz.Dsp
         }
     }
 
+    /// <summary>
+    /// A three-pole diode ladder, low-pass, 18 dB/octave (Neo Poly's "Diode 18"; our own design from the literature on diode ladders).
+    /// Three one-pole stages in series with feedback from the third to the input, solved without delay (the same form as
+    /// <see cref="Ladder"/>: the stage's trapezoidal one-pole, the loop closed on the linear solution, a tanh at the input).
+    /// Three equal poles reach −180° where each is at −60°, not at −45° as four do, so the stages sit at tan(60°)⁻¹ = 1/√3 of the
+    /// cutoff: the loop then oscillates at the cutoff itself and the cutoff tracks pitch as the 24 dB ladder's does. A pole's gain
+    /// at −60° is ½, so the loop's gain is k/8: 1 at k = 8, and the top of the resonance goes a little over it (8.4).
+    /// Less of the bass goes than in the 24 dB ladder at the same setting: the passband loss 1/(1+k) is given back by 1 + 0.85k
+    /// (the 24 dB ladder gives back half of its k), so resonance thins the lows less and the level stays near.
+    /// </summary>
+    internal struct Diode18
+    {
+        float s1, s2, s3;
+        float G, k, gainComp;
+        float c1, c2, c3, g3, invDen;
+
+        const float Stage = 0.57735026918962576f;   // 1 / tan(60°): the stages' cutoff against the filter's
+
+        /// <summary><paramref name="g"/> = tan(π f / fs) at the cutoff; <paramref name="resonance"/> 0 … 1 (1 self-oscillates).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Set(float g, float resonance)
+        {
+            float gs = g * Stage;
+            G = gs / (1f + gs);
+            k = 8.4f * DspMath.Clamp(resonance, 0f, 1f);
+            gainComp = 1f + 0.85f * k;
+            // Each stage: y = G x + (1−G) s; the cascade's output in terms of its input u is G³u + G²(1−G)s1 + G(1−G)s2 + (1−G)s3.
+            float gg = G, g2 = gg * gg, om = 1f - gg;
+            g3 = g2 * gg;
+            c1 = g2 * om;
+            c2 = gg * om;
+            c3 = om;
+            invDen = 1f / (1f + k * g3);
+        }
+
+        /// <summary>One sample; levels as in <see cref="Ladder.Process"/> (half scale inside, a tanh at the input, drive pushing into it).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Process(float x, float drive)
+        {
+            float g = G;
+            float sigma = c1 * s1 + c2 * s2 + c3 * s3;
+            float d = drive > 1f ? drive * 0.5f : 0.5f;
+            float xin = x * gainComp * d;
+            float y3est = (g3 * xin + sigma) * invDen;
+            float u = DspMath.FastTanh(xin - k * y3est);
+
+            float v = (u - s1) * g; float y1 = v + s1; s1 = y1 + v;
+            v = (y1 - s2) * g; float y2 = v + s2; s2 = y2 + v;
+            v = (y2 - s3) * g; float y3 = v + s3; s3 = y3 + v;
+            return y3 * (drive > 1f ? 2f / drive : 2f);
+        }
+
+        public void Reset() { s1 = s2 = s3 = 0; }
+
+        public void Flush()
+        {
+            s1 = DspMath.Flush(s1); s2 = DspMath.Flush(s2); s3 = DspMath.Flush(s3);
+        }
+    }
+
     /// <summary>One-pole low/high-pass, trapezoidal.</summary>
     internal struct OnePole
     {

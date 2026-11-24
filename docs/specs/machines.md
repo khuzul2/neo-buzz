@@ -289,7 +289,7 @@ The **shimmer guard** keeps the loop to the rule the network keeps without it (L
 
 ### Neo Poly (virtual analog)
 
-16 notes × unison up to 7 (32-voice pool), mono/legato/glide. Per voice: 3 oscillators (shape morph sine→triangle→saw→square→pulse, PWM, Osc 2 sync to Osc 1, Osc 1 → Osc 2 linear FM, ring), noise, drift; filter 1 (ladder LP24/LP12, SVF LP/BP/HP/notch) with drive, filter 2 (SVF), serial/parallel; amp, filter and mod envelopes; 2 LFOs; 8-slot mod matrix; velocity, key tracking, mod wheel, pitch bend.
+16 notes × unison up to 7 (32-voice pool), mono/legato/glide. Per voice: 3 oscillators (shape morph sine→triangle→saw→square→pulse, PWM, Osc 2 sync to Osc 1, Osc 1 → Osc 2 linear FM, ring), noise, drift; filter 1 (ladder LP24/LP12, SVF LP/BP/HP/notch, Diode 18) with drive, filter 2 (SVF), serial/parallel; amp, filter and mod envelopes; 2 LFOs; 8-slot mod matrix; velocity, key tracking, mod wheel, pitch bend.
 
 | Criterion | Target | Measured |
 |---|---|---|
@@ -301,6 +301,24 @@ The **shimmer guard** keeps the loop to the rule the network keeps without it (L
 | Voice stealing | no step larger than −40 dBFS at the steal (fade) | passes |
 | Silence | `Work` returns false within one block after the last release ends | passes |
 | CPU | 16 voices, all oscillators, ladder: ≥ 10× on x64, ≥ 7.4× on arm64 (a throughput guard, §4: × real time at the reference's speed; on the Linux, Windows and macOS runners and locally, 20 runs quiet and 20 with every core busy each); the guard was ≥ 5× as timed | Linux 13.3–13.7, Windows 12.5–13.6, macOS 10.2–10.8, locally 16.0–16.6; with twice the work at most 8.2 (as timed: 4.9–13.8 on Linux, 2.7–13.1 locally) |
+
+**Acid (AC1, legacy-machines.md G3).** The acid role of the old Aggressor 303 and Jeskola Bass 3 (removed later, decision 2026-11-23) is Neo Poly's: a filter type, an accent stage and a slide, all off or neutral at their defaults, so nothing that existed changes. Clean room: the diode ladder is our own design from the published literature on diode ladders (no legacy machine's code or tables, no GPL source read for the DSP).
+
+- **Diode 18** (F1 type; `Diode18` in `Filters.cs`): three one-pole stages in series, feedback from the third to the input solved without delay, a tanh at the input, at Neo Poly's own rate as the 24 dB ladder is (it has no oversampling; the three stages sit at 1/√3 of the cutoff so that the loop turns at the cutoff itself). Resonance 0–100 % is a feedback of 0–8.4 (oscillation from 8); the passband loss 1/(1+k) is given back by 1 + 0.85k (the 24 dB ladder gives back 1 + 0.5k), so the bass stays.
+- **Accent** (Voice: `Accent threshold` 110, `Accent` 0 %; Filter 1: `Accent decay`, `Accent sweep`; Amp: `Accent level`): a note at or above the threshold (velocity 1–127) adds `Accent` × 6 octaves to the filter envelope's depth, takes the shorter of the filter decay and `Accent decay` (its top leaves the decay alone), and lifts the amp by `Accent level` dB. Accented notes in quick succession build a swell: each adds a third of `Accent sweep` (octaves) on top of what is left of the last, which relaxes with a 0.35 s time constant, up to `Accent sweep`; a plain note takes none. Filter 1 only. An accent on a legato note changes the depth and level but does not retrigger the envelopes or shorten their decay.
+- **Slide** (`Slide`, `Slide time` 6–600 ms, 60 default): in Mono and Legato voice modes a note that starts while the one before is held glides to its pitch in `Slide time`, in a straight line whatever the interval, without retriggering the envelopes, whatever the glide mode; the glide modes work as before. Releasing a note back to a held one slides too. A per-note slide flag in the notes lane waits for the clip store (CU3+): until then a slide is an overlap.
+- **State.** Version 1 (§3.2): F1 type grew by one choice and 7 parameters were appended (indices 91–97); a song saved before loads them at defaults that change nothing. `NeoPolyUnchangedTests` holds hashes of 36 factory presets and 14 settings cases (every filter type, legato and mono glide, steals, velocity) taken from origin/main before the change: the renders are the same bits (no repo song uses Neo Poly: the two song templates use Dye Essence).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Diode 18 slope, resonance 0 | −18 dB/oct ± 1.5 | −17.97 (cutoff 250 Hz, 1–2 kHz), −18.32 (500 Hz, 2–4 kHz), −18.76 (1 kHz, 3–6 kHz) |
+| Diode 18 self-oscillation, top of Resonance | at the cutoff ± 1 %, tracks pitch | within 0.25 % at 200 Hz, 500 Hz (notes 48, 60, 72) and 2 kHz |
+| Bass under a 1 kHz cutoff at 30, 50, 70 % resonance (40 Hz) | less loss than the 24 dB ladder | −1.05, −1.19, −1.27 dB; the ladder −2.91, −3.67, −4.13 dB |
+| Accent | filter envelope peak rises by Accent (40 % = 2.4 oct) on accented notes only | +2.400 octaves on velocities 100 and 127; 0.000 on 99 and 60 |
+| Accent run | rises to the cap and no further | +0.500, 0.852, 1.100, 1.275, 1.398, 1.485, then 1.500 for the rest of 12 notes (cap 1.5, 125 ms apart); 3 s later back to a third of the cap |
+| Slide | glide time within ±5 % of Slide time, no envelope retrigger | 60.3 ms for 60, 8.0 for 8, 199.7 for 199.6, 549.7 for 549.7 (and 60.0 across a second, 2-semitone interval); the amp envelope goes on, one voice |
+| Cost | Diode 18 ≤ 1.5× the 24 dB ladder per voice | 0.91× (8 voices, interleaved, fastest of 9) |
+| Allocation | 0 bytes per buffer | 0 |
 
 ### Neo Wave (wavetable)
 

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Poly
@@ -24,6 +25,27 @@ namespace NeoBuzz.Poly
         }
 
         internal PolyEngine Engine { get; private set; }
+
+        // State version 1 (machines.md §3.2): F1 type gained Diode 18 (a wider range; every value a song saved means what it did) and the acid
+        // parameters were appended. Nothing a song saved moves: the new ones take their defaults, which change nothing.
+        static readonly StateMigrations PolyChain = new StateMigrations(Params.Table)
+            .Step(new[]
+            {
+                "VoiceMode", "Polyphony", "Unison", "UniDetune", "UniSpread", "GlideMode", "Glide", "BendRange",
+                "Drift", "Volume", "VelAmp", "O1Shape", "O1PW", "O1Oct", "O1Semi", "O1Fine",
+                "O1Level", "O2Shape", "O2PW", "O2Oct", "O2Semi", "O2Fine", "O2Level", "O2Sync",
+                "O2Fm", "O3Shape", "O3Oct", "O3Semi", "O3Fine", "O3Level", "RingLevel", "NoiseLevel",
+                "NoiseColor", "F1Type", "F1Cutoff", "F1Reso", "F1Drive", "F1Env", "F1Key", "F1Vel",
+                "F2Type", "F2Cutoff", "F2Reso", "F2Env", "Routing", "AmpA", "AmpD", "AmpS",
+                "AmpR", "FltA", "FltD", "FltS", "FltR", "ModA", "ModD", "ModS",
+                "ModR", "L1Shape", "L1Rate", "L1Sync", "L1Retrig", "L1Fade", "L2Shape", "L2Rate",
+                "L2Sync", "L2Retrig", "L2Fade", "M1Src", "M1Dst", "M1Amt", "M2Src", "M2Dst",
+                "M2Amt", "M3Src", "M3Dst", "M3Amt", "M4Src", "M4Dst", "M4Amt", "M5Src",
+                "M5Dst", "M5Amt", "M6Src", "M6Dst", "M6Amt", "M7Src", "M7Dst", "M7Amt",
+                "M8Src", "M8Dst", "M8Amt",
+            }, s => { });
+
+        internal override StateMigrations Migrations => PolyChain;
 
         internal override void Restart()
         {
@@ -55,9 +77,11 @@ namespace NeoBuzz.Poly
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Poly — polyphonic virtual analog: three band-limited oscillators with sync, FM and " +
-                        "ring, ladder and state-variable filters, three envelopes, two LFOs and an 8-slot " +
+                        "ring, ladder, diode and state-variable filters, three envelopes, two LFOs and an 8-slot " +
                         "modulation matrix. 16 tracks (Note, Velocity) and MIDI (mod wheel, pitch bend, " +
-                        "sustain, aftertouch).\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Poly"),
+                        "sustain, aftertouch).\n\nAcid: the Diode 18 filter, Accent (hard notes open the filter further, " +
+                        "close faster and play louder; a run of accents swells) and Slide (an overlapping note glides " +
+                        "without retriggering, in Mono or Legato mode).\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Poly"),
                 },
             },
         };

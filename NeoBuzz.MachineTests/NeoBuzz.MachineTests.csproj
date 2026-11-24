@@ -51,6 +51,7 @@
     <!-- Versioned machine state (machines.md §3.4): the interface the engine calls and the saved envelope, plain data. -->
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\MachineInterface\IVersionedMachine.cs" Link="Explain\IVersionedMachine.cs" />
     <None Include="Layouts\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Golden\**" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
     <!-- The throughput guards time a render against a reference workload in the same run (Throughput.cs; machines.md §6). -->
     <Compile Include="..\ReBuzzTests\Automation\Throughput.cs" Link="Automation\Throughput.cs" />

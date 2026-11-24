@@ -237,7 +237,8 @@ namespace ReBuzz.Studio.Tests
             NewSong();
             try
             {
-                foreach (var gear in new[] { "Neo Comp", "Neo Poly", "Neo Learn FM", "Neo Filter" })
+                // Neo Poly left this list at AC1: it has a version now (1, F1 type grew a choice and the acid parameters were appended), see NeoPolyAcidSaveIsVersioned.
+                foreach (var gear in new[] { "Neo Comp", "Neo Learn FM", "Neo Filter" })
                 {
                     Core.SongCore.CreateMachine(gear, null, "V0 " + gear, null, null, null, -1, 0.5f, 0.5f);
                     var m = Core.SongCore.MachinesList.Last(x => x.Name == "V0 " + gear);
@@ -249,6 +250,24 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(vm.StateVersion, Is.EqualTo(0));
                     Assert.That(vm.ParameterKeys.Count, Is.EqualTo(m.ParameterGroups[1].Parameters.Count(p => p.Flags.HasFlag(ParameterFlags.State))), gear + ": one key per saved parameter");
                 }
+            }
+            finally
+            {
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoPolyAcidSaveIsVersioned()
+        {
+            NewSong();
+            try
+            {
+                Core.SongCore.CreateMachine("Neo Poly", null, "V1 Poly", null, null, null, -1, 0.5f, 0.5f);
+                var m = Core.SongCore.MachinesList.Last(x => x.Name == "V1 Poly");
+                var (_, version, _) = State(m);
+                Assert.That(version, Is.EqualTo(1), "Neo Poly is at state version 1 (docs/specs/machines.md, Neo Poly acid)");
+                Assert.That(((IVersionedMachine)m.ManagedMachine).StateVersion, Is.EqualTo(1));
             }
             finally
             {
