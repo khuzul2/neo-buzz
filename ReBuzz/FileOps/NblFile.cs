@@ -49,7 +49,7 @@ namespace ReBuzz.FileOps
         internal static readonly HashSet<string> KnownStores = new(StringComparer.Ordinal)
         {
             SessionDocument.SubSectionName, ArrangementStore.SubSectionName, ArrangementEventStore.SubSectionName,
-            SongMarkerStore.SubSectionName, SongNotesStore.SubSectionName, SongMeterStore.SubSectionName, MachinePinStore.SubSectionName,
+            SongMarkerStore.SubSectionName, SongNotesStore.SubSectionName, SongMeterStore.SubSectionName, MachinePinStore.SubSectionName, TrackColourStore.SubSectionName, MidiMapping.SubSectionName,
             "ModernSequenceEditor", "ModernSequenceEditorHorizontal",
         };
 
@@ -87,6 +87,7 @@ namespace ReBuzz.FileOps
                 var manifest = JsonNode.Parse(reader.Manifest) as JsonObject ?? throw new InvalidDataException("The song file's manifest isn't a JSON object.");
                 if ((string)manifest["format"] != FormatName) throw new InvalidDataException("Not a NeoBuzz Live song.");
                 var ctx = new NblReadContext(reader) { Path = path };
+                if (!import) buzz.OpenedNativeVersion = NblMigrations.VersionOf(manifest);      // before the steps bring it up: 3 says the lanes are in the store
                 NblMigrations.Default.Migrate(manifest, ctx);
                 audioAssets = NblAudio.Read(manifest, ctx);
                 (stream, carry) = ToBmxLayout(manifest, ctx, import);
@@ -253,8 +254,14 @@ namespace ReBuzz.FileOps
             try
             {
                 List<(uint Magic, byte[] Data)> parts;
-                using (BMXFile.Utf8Strings())
-                    parts = inner.BuildSections(true);
+                // Fork (clips.md §7.2, CU3): a native song holds its clips as lanes in the pattern columns, so its pattern editors' data holds no events.
+                ClipDerived.Native = true;
+                try
+                {
+                    using (BMXFile.Utf8Strings())
+                        parts = inner.BuildSections(true);
+                }
+                finally { ClipDerived.Native = false; }
                 var blobs = new NblBlobSet();
                 var manifest = BuildManifest(buzz, parts, blobs, buzz.NativeCarry);
                 NblContainer.WriteAtomic(filename, Encoding.UTF8.GetBytes(manifest.ToJsonString(ManifestJson)), blobs);
@@ -319,6 +326,10 @@ namespace ReBuzz.FileOps
                 root[NblAudio.Member] = audio;
                 root["minReaderVersion"] = 2;
             }
+            // Fork (clips.md §7.2, CU3): a song whose tracker data is lanes in the store (which an older build does not play: its editor data holds no events)
+            // needs a reader of format 3: an older build refuses and says so, rather than open the song without them.
+            if (ClipDerived.Direct && ClipStore.HoldsTrackerLanes(buzz.SongCore))
+                root["minReaderVersion"] = Math.Max((int)root["minReaderVersion"], 3);
             if (history != null) root["history"] = history;
             if (carry != null)
                 foreach (var m in carry.Members.OrderBy(m => m.Key, StringComparer.Ordinal))

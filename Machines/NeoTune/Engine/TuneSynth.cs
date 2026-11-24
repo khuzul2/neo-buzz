@@ -75,12 +75,14 @@ namespace NeoBuzz.Tune
             return false;
         }
 
+        long trCPtr;
+
         void RefreshRatio(long next)
         {
             bool voiced = ShiftAt(rA, ref rPtr, out double shift);
             if (shift > 12) shift = 12; else if (shift < -12) shift = -12;
             double e = rA - next;
-            if (evOn && (spCount & 255) == 1) Log(next, TuneEventKind.Trace, shift, e, fading ? 1 : 0);
+            if (evOn && (spCount & 255) == 1) { double f0t = 0; ContourAt(rA, ref trCPtr, out f0t, out double shT); Log(next, TuneEventKind.Trace, shift, e, fading ? 1 : 0, f0t); }
             rho = shift == 0 ? 1.0 : PortableMath.Exp2(shift / 12.0);
             zeroRun = shift == 0 ? zeroRun + 8 : 0;
             if (!fading && Math.Abs(e) > 1e-3 && next > 0 && shift == 0)
@@ -108,6 +110,7 @@ namespace NeoBuzz.Tune
             long next = t + 1;
             if ((spCount++ & 7) == 0) RefreshRatio(t);
             float y = Interp(rA);
+            if (trRho != null && t >= 0 && t < trRho.Length) { trRho[t] = (float)rho; trPos[t] = rA; }
             if (fading)
             {
                 float b = Interp(rB);

@@ -258,6 +258,12 @@ namespace ReBuzz.Studio.Views.Device
             if (face is DeviceKnob k) k.TypeRequested += BeginType;
             Width = p.Kind == DeviceKind.Slider || face.Width < CellWidth ? CellWidth : face.Width + 4;     // a knob is one column wide: a wider one wraps the last knob of a row (PP3)
             Height = p.Kind == DeviceKind.Slider ? Math.Max(face.Height, DeviceKnob.Diameter + 18) : face.Height + 4;
+            // Fork (MM1): a parameter a controller can drive: map mode outlines the cell, the MIDI button and the badge sit on it, and Alt+drag carries it to an Inspector MIDI page slot.
+            if (p.Parameter != null && !p.IsInput && p.Parameter.Type != ParameterType.Note)
+            {
+                ReBuzz.Studio.Views.Midi.MidiMap.SetTarget(this, () => ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
+                AddHandler(PointerPressedEvent, OnAltPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            }
             lockMark = new LockMark { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 1, 0), IsVisible = false };
             face.HorizontalAlignment = HorizontalAlignment.Center;
             face.VerticalAlignment = VerticalAlignment.Top;
@@ -288,6 +294,16 @@ namespace ReBuzz.Studio.Views.Device
         }
 
         public DeviceParam Param => p;
+
+        /// <summary>Alt+press on the cell starts a drag of its parameter (the Inspector's MIDI page takes it); the knob's own drag is for the plain press.</summary>
+        async void OnAltPressed(object sender, PointerPressedEventArgs e)
+        {
+            if (!e.KeyModifiers.HasFlag(KeyModifiers.Alt) || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            e.Handled = true;
+            var target = ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track);
+            try { await DragDrop.DoDragDropAsync(e, ReBuzz.Studio.Views.Inspector.MidiTargetDrag.Package(target), DragDropEffects.Copy); }
+            catch (Exception) { /* a drag the platform refused is not worth a failed click */ }
+        }
 
         public Control Face => face;
 

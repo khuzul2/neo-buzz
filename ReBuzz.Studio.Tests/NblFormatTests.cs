@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             return b;
         }
 
-        static JsonObject ManifestOf(string path)
+        internal static JsonObject ManifestOf(string path)
         {
             using var r = new NblContainer.Reader(path);
             return (JsonObject)JsonNode.Parse(r.Manifest);
@@ -212,7 +212,7 @@ namespace ReBuzz.Studio.Tests
 
             var manifest = ManifestOf(a);
             Assert.That((string)manifest["format"], Is.EqualTo("neobuzz-live-song"));
-            Assert.That((int)manifest["formatVersion"], Is.EqualTo(2));
+            Assert.That((int)manifest["formatVersion"], Is.EqualTo(NblMigrations.Current));
             Assert.That(manifest["stores"]["SongMarkers"]["kind"].ToString(), Is.EqualTo("xml"), "markers are manifest fields");
             Assert.That(manifest["stores"]["SongNotes"]["kind"].ToString(), Is.EqualTo("xml"));
             Assert.That(manifest["index"]["machines"].AsArray().Select(m => (string)m["name"]).ToArray(), Does.Contain("Lead").And.Contain("Bass"));
@@ -274,7 +274,7 @@ namespace ReBuzz.Studio.Tests
             var back = ManifestOf(again);
             Assert.That((string)back["future"]["hello"], Is.EqualTo("world"), "an unknown top-level member");
             Assert.That(back["stores"]["FutureStore"], Is.Not.Null, "an unknown store");
-            Assert.That((int)back["formatVersion"], Is.EqualTo(2), "written as this build's version");
+            Assert.That((int)back["formatVersion"], Is.EqualTo(NblMigrations.Current), "written as this build's version");
             using (var r = new NblContainer.Reader(again))
             {
                 var joined = back["future"]["data"].AsArray().SelectMany(x => r.Get((string)x["blob"])).ToArray();

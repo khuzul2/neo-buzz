@@ -414,6 +414,8 @@ namespace WDE.ModernPatternEditor
                         }
                     }
 
+                    if (StoreAttached) ApplyStoreView();
+
                     if (MPEPatternsDB.GetPatterns().Count() == 0 && TargetMachine.Patterns.Count() > 0)
                     {
                         // Code never goes here?
@@ -443,6 +445,45 @@ namespace WDE.ModernPatternEditor
                 MPEPatternsDB.RemovePattern(pattern);
             }
         }
+        // ---- Fork (docs/specs/clips.md §6, CU3): the tracker views the store. After the song's tracker data is migrated into the pattern's
+        // columns, the editor lets go of what it held and its columns read and write the lanes. The engine plays every lane, so the editor's
+        // own player is not built for the Studio, and its note columns are the engine's Notes lane (shown by the note host).
+        public bool StoreAttached { get; private set; }
+
+        public void AttachClipStore()
+        {
+            lock (syncLock)
+            {
+                StoreAttached = true;
+                ApplyStoreView();
+            }
+        }
+
+        void ApplyStoreView()
+        {
+            foreach (var p in MPEPatternsDB.GetPatterns())
+            {
+                p.MPEPatternColumns.RemoveAll(c => c.Parameter is MPEInternalParameter);
+                foreach (var c in p.MPEPatternColumns)
+                {
+                    c.LetGoOfOwnEvents();
+                    c.TakeViewFromStore();
+                }
+                p.MPEPatternColumnsDict.Clear();
+                for (int i = 0; i < p.MPEPatternColumns.Count; i++) p.MPEPatternColumnsDict[i] = p.MPEPatternColumns[i];
+            }
+        }
+
+        /// <summary>The editor data of the song as it saves: where the editor views the store, the blob derived from the lanes (older builds read it).</summary>
+        byte[] DerivedEditorData()
+        {
+#if !WINDOWS
+            if (StoreAttached && TargetMachine != null && ClipDerived.Provider != null)
+                return ClipDerived.Provider(TargetMachine) ?? Array.Empty<byte>();
+#endif
+            return null;
+        }
+
         byte[] patternEditorData;
         // From native
         public void SetPatternEditorData(byte[] data)
@@ -461,6 +502,8 @@ namespace WDE.ModernPatternEditor
         // From native
         public byte[] GetPatternEditorData()
         {
+            var derived = DerivedEditorData();
+            if (derived != null) return derived;
             if (Settings.PXPDataFormat)
                 return PatternEditorUtils.CreatePatternXPPatternData(MPEPatternsDB.GetPatterns());
             else
@@ -855,7 +898,9 @@ namespace WDE.ModernPatternEditor
                 {
                     if (Global.Buzz.Playing && TargetMachine != null)
                     {
+#if WINDOWS
                         playRecordManager.Play(songTime);
+#endif
                     }
                 }
 

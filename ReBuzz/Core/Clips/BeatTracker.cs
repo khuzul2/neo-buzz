@@ -710,7 +710,7 @@ namespace ReBuzz.Core.Clips
         /// between it is a mix.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        static double[] Smooth(double[] pos, double[] attack)
+        internal static double[] Smooth(double[] pos, double[] attack)
         {
             int n = pos.Length;
             var result = (double[])pos.Clone();
@@ -745,21 +745,28 @@ namespace ReBuzz.Core.Clips
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         static double[] Refine(AudioSource src, Frames fr, int[] frames, out double[] strength)
         {
+            // The frame's centre is the middle of the window the flux saw; an attack is within the half window of it.
+            var rough = new long[frames.Length];
+            for (int i = 0; i < frames.Length; i++) rough[i] = (long)frames[i] * fr.Hop * fr.Decimation + (long)Window / 2 * fr.Decimation;
+            return RefineAt(src, rough, 0.035, out strength);
+        }
+
+        /// <summary>AW3: the attacks near given sample positions (the model's beats), as AW1 places its own: within <paramref name="reachSeconds"/> of each.</summary>
+        internal static double[] RefineAt(AudioSource src, long[] rough, double reachSeconds, out double[] strength)
+        {
             const int Block = 64, Hop = 16;
             int rate = src.SampleRate;
-            int reach = (int)(0.035 * rate);
-            var pos = new double[frames.Length];
-            strength = new double[frames.Length];
+            int reach = (int)(reachSeconds * rate);
+            var pos = new double[rough.Length];
+            strength = new double[rough.Length];
             int span = 2 * reach + 3 * Block;
             var l = new float[span];
             var r = src.IsMono ? null : new float[span];
             var d = new double[span];
             var cs = new double[span + 1];
-            for (int i = 0; i < frames.Length; i++)
+            for (int i = 0; i < rough.Length; i++)
             {
-                // The frame's centre is the middle of the window the flux saw; an attack is within the half window of it.
-                long rough = (long)frames[i] * fr.Hop * fr.Decimation + (long)Window / 2 * fr.Decimation;
-                long start = rough - reach - Block;
+                long start = rough[i] - reach - Block;
                 src.CopyExact(0, start, l);
                 if (r != null) src.CopyExact(1, start, r);
                 double prev = 0;

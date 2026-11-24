@@ -56,6 +56,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `dye-essence-in-depth`, `dye-essence-analysis`, `dye-essence-effects`, `neo-eq-in-depth` | the parts of those two machines that their pages leave out |
 | `build-a-synth` | learning Neo Patch: the empty patch to sound in three steps, then each template node by node |
 | `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV, clone, groups, latency, recording the Master |
+| `midi-mapping` | MIDI controllers, maps and track pages: map a knob, key or pad to a parameter or a command |
 | `live-performance` | the Session View played live: scenes, clips, controllers, levels, a safe restore |
 | `dye-sound-design` | Dye Essence's seven engines: which for what, what to move, what to measure |
 | `migrating-songs` | classic machines onto their Neo successors with `machine_replace` |

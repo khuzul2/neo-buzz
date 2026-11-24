@@ -97,7 +97,8 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>A machine's identity colour as a brush (P3h), or null for a machine with none (the Master, a return).</summary>
-        public static IBrush IdentityBrush(BuzzGUI.Interfaces.IMachine machine) => MachineIdentity.CategoryOf(machine) is { } c ? StudioTokens.IdentityBrush(c) : null;
+        // Fork (MX1): the track's own colour (the user's, else the one it was given), else the machine kind's identity colour.
+        public static IBrush IdentityBrush(BuzzGUI.Interfaces.IMachine machine) => Mixer.TrackColour.BrushOf(machine);
 
         /// <summary>The fill of a clip that has no colour of its own: its machine's identity colour, else the neutral clip blue.</summary>
         public static IBrush DefaultFill(BuzzGUI.Interfaces.IMachine machine) => IdentityBrush(machine) ?? Clip;

@@ -378,11 +378,11 @@ namespace ReBuzz.Agent
             tools.Add(new ToolDef
             {
                 Name = "machine_set",
-                Title = "Rename, mute, solo, bypass",
+                Title = "Rename, mute, solo, bypass, colour",
                 Description =
                     "Changes a machine's name, mute, solo, bypass (effects pass the sound through untouched) or track count. One undo step. " +
                     "Mute and solo change the song (" + Product.Name + "'s solo: soloing an effect silences the generators). To hear parts alone without " +
-                    "changing the song, use render(solo=[…]). reset=true is Reset and unmute for a machine whose guard tripped (machine_list " +
+                    "changing the song, use render(solo=[…]). colour sets the track's colour (the one the mixer, the Session and Arrangement views and the machine view's track chips draw it in; machine_list shows it). reset=true is Reset and unmute for a machine whose guard tripped (machine_list " +
                     "and machine_describe show diverged: NaN, infinity or above +60 dBFS): it is stopped and plays again, and the guard trips " +
                     "again if it is still broken. " +
                     "Example: machine_set(machine=\"Pad\", rename=\"Strings\", mute=false).",
@@ -393,6 +393,7 @@ namespace ReBuzz.Agent
                     Opt("reset", Boolean("Reset and unmute a diverged machine (its guard tripped)")),
                     Opt("solo", Boolean("Hear only soloed machines")),
                     Opt("bypass", Boolean("Effects: pass the input through")),
+                    Opt("colour", String("The track's colour: a palette name (Red, Slate Blue, ...) or its number; \"auto\" gives it the first colour no other track uses")),
                     Opt("tracks", Integer("Number of tracks", 1, 256))),
                 Output = Object(null, Req("machine", Object(null, Req("name", String("Its name now"))))),
                 Annotations = ToolAnnotations.WriteIdempotent,
@@ -411,6 +412,14 @@ namespace ReBuzz.Agent
                             int lo = m.DLL.Info.MinTracks, hi = Math.Max(lo, m.DLL.Info.MaxTracks);
                             if (t < lo || t > hi) throw new ToolError($"{m.Name} ({m.DLL.Name}) takes {lo}–{hi} tracks.");
                             if (t != m.TrackCount) AgentActions.Do(core, new SetTrackCountAction(m, t));
+                        }
+                        if (c.String("colour")?.Trim() is { Length: > 0 } colourText)
+                        {
+                            if (SongModel.IsMaster(m)) throw new ToolError("Master has no track colour.");
+                            int colourIndex = string.Equals(colourText, "auto", StringComparison.OrdinalIgnoreCase) ? -1 : TrackColourStore.Parse(colourText);
+                            if (colourIndex < 0 && !string.Equals(colourText, "auto", StringComparison.OrdinalIgnoreCase))
+                                throw new ToolError($"colour: \"{colourText}\" is not a palette colour. Names: " + string.Join(", ", Enumerable.Range(0, TrackColourStore.PaletteSize).Select(TrackColourStore.NameOf)) + ".");
+                            core.TrackColours?.SetByUser(m, colourIndex);
                         }
                         if (c.Bool("mute") is bool mute && mute != m.IsMuted) AgentActions.SetFlag(core, m, AgentActions.Flag.Mute, mute);
                         if (c.Bool("solo") is bool solo && solo != m.IsSoloed) AgentActions.SetFlag(core, m, AgentActions.Flag.Solo, solo);

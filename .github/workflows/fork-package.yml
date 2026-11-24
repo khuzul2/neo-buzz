@@ -63,7 +63,19 @@ jobs:
     # build.ps1 bundles it into the package from here; the tests need it installed.
     - name: Install VC++ 2010 runtime
       shell: pwsh
-      run: choco install vcredist2010 -y --no-progress *> vcredist.log; if (-not (Test-Path "$env:WINDIR\System32\msvcr100.dll")) { Get-Content vcredist.log -Tail 20; throw 'msvcr100.dll (x64) not installed' }
+      # Chocolatey's feed is sometimes down (503/504): three tries, then Microsoft's own installer.
+      run: |
+        $dll = "$env:WINDIR\System32\msvcr100.dll"
+        for ($i = 1; $i -le 3 -and -not (Test-Path $dll); $i++) {
+          choco install vcredist2010 -y --no-progress *> vcredist.log
+          if (-not (Test-Path $dll)) { Write-Host "choco try $i failed"; Start-Sleep -Seconds 20 }
+        }
+        if (-not (Test-Path $dll)) {
+          Write-Host 'Installing the VC++ 2010 SP1 x64 runtime from download.microsoft.com'
+          Invoke-WebRequest -Uri 'https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x64.exe' -OutFile vcredist_x64.exe
+          Start-Process -FilePath .\vcredist_x64.exe -ArgumentList '/q', '/norestart' -Wait
+        }
+        if (-not (Test-Path $dll)) { if (Test-Path vcredist.log) { Get-Content vcredist.log -Tail 20 }; throw 'msvcr100.dll (x64) not installed' }
 
     # The C++ projects target v145 (VS 2026). build.ps1 falls back to v143 when the
     # runner image only has VS 2022.
@@ -349,6 +361,42 @@ jobs:
         name: null-test-references
         path: null-ref/*.wav
         if-no-files-found: error
+
+    # The clip goldens (docs/specs/clips.md §10.1, CU1) with the real machines: the repo's songs and one generated song a feature of a
+    # clip, rendered by NeoBuzzLive.exe twice and compared with the hashes of windows-x64 in eval/clip-goldens.json. A difference fails the
+    # step and names the song. Open times of the largest songs are reported.
+    - name: Clip goldens
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 40
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
+        python tools/clip-null.py --audio clip-audio check $exe.FullName clip-work --twice
+        $code = $LASTEXITCODE
+        python tools/clip-null.py opentime $exe.FullName clip-open
+        exit $code
+
+    - name: Upload the clip goldens observed
+      if: always() && hashFiles('clip-work/observed.json') != ''
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-goldens-windows
+        path: |
+          clip-work/observed.json
+          clip-open/open-times.json
+        if-no-files-found: ignore
+
+    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
+    - name: Upload the clip renders (audio)
+      if: always() && hashFiles('clip-audio/*.wav') != ''
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-audio-windows
+        path: clip-audio/*.wav
+        retention-days: 30
+        compression-level: 6
+        if-no-files-found: ignore
 
     # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts
     # branch: viewable in the repo (and fetchable with git) without downloading artifacts. Among

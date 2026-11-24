@@ -104,10 +104,6 @@ on:
         description: 'AW2: model width d (64 or 96)'
         type: string
         default: '64'
-      aw2_slakh:
-        description: 'AW2: test the Slakh2100 stream (first 5 GB, forced reconnect)'
-        type: string
-        default: 'true'
       aw2b:
         description: 'AW2b: full data, chained training, tuning on validation, evaluation (with the tools; turn the other jobs off)'
         type: boolean
@@ -140,6 +136,10 @@ on:
         description: 'AW2b: training minutes per chained job (two jobs)'
         type: string
         default: '120'
+      aw3:
+        description: 'AW3 (turn the other jobs off): words "sweep" (the timing fixes on the halves of half=, default val; reach=0,25,35 is the attack reach in ms, resid=inf:inf,30:60 the residual bounds p95:max in ms) and/or "pack" (the listening pack v2)'
+        type: string
+        default: ''
       guitarset_every:
         description: 'Neo Audio to MIDI: one GuitarSet solo take of the held-out players 03 to 05 in this many (the tuning used players 00 to 02)'
         type: string
@@ -686,7 +686,7 @@ jobs:
         retention-days: 1
 
   aw2-slakh:
-    if: ${{ github.event.inputs.aw2 == 'true' && github.event.inputs.aw2_slakh == 'true' }}
+    if: ${{ github.event.inputs.aw2 == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -1404,3 +1404,142 @@ jobs:
         for id in $(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --paginate --jq '.artifacts[] | select(.name=="aw2-tools" or .name=="aw2c-ckpt" or (.name|startswith("prep-")) or (.name|startswith("evalprep-"))) | .id'); do
           gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id && echo "deleted $id"
         done
+
+  # ---------------------------------------------------------------------------------------- AW3
+  # The items of the validation and test halves of the AW2 sets (nothing else is fetched), kept in the Actions cache by set; no audio leaves the runner but as one-day artifacts.
+  aw3-items:
+    if: ${{ github.event.inputs.aw3 != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: gmd, set: gmd, part: 0 }
+          - { name: guitarset, set: guitarset, part: 0 }
+          - { name: candombe, set: candombe, part: 0 }
+          - { name: aam0, set: aam, part: 0 }
+          - { name: aam1, set: aam, part: 1 }
+          - { name: aam2, set: aam, part: 2 }
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - name: Items from the cache
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: aw3-items
+        key: aw3-items-v1-${{ matrix.name }}
+    - name: Fetch the validation and test items
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile remotezip requests
+        sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
+        cd tools/aw2
+        extra=""; limit=1000
+        if [ "${{ matrix.set }}" = "aam" ]; then extra="--part ${{ matrix.part }}"; limit=150; fi
+        python3 fetch.py ${{ matrix.set }} /mnt/aw2/items --limit "$limit" --eval-only $extra
+        mkdir -p ../../aw3-items
+        python3 prep.py /mnt/aw2/items ../../aw3-items/shards-unused --eval-dir ../../aw3-items/eval --variants 0 --eval-exe none --warp none
+        rm -rf ../../aw3-items/shards-unused
+        ls ../../aw3-items/eval | wc -l
+        du -sh ../../aw3-items
+    - uses: actions/upload-artifact@v6
+      with:
+        name: aw3-items-${{ matrix.name }}
+        path: aw3-items/eval
+        retention-days: 1
+
+  aw3-eval:
+    if: ${{ contains(github.event.inputs.aw3, 'sweep') }}
+    needs: aw3-items
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - name: Build the tool
+      run: dotnet build tools/AutoWarpEval -c Release -o aw3-tool 2>&1 | tail -3
+    - name: Sweep the settings, score
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile mir_eval
+        mkdir -p results sets
+        for set in gmd guitarset candombe aam; do mkdir -p sets/$set; done
+        cp items/aw3-items-gmd/* sets/gmd/; cp items/aw3-items-guitarset/* sets/guitarset/; cp items/aw3-items-candombe/* sets/candombe/
+        for p in 0 1 2; do cp items/aw3-items-aam$p/* sets/aam/; done
+        ARGS="${{ github.event.inputs.aw3 }}"
+        half=$(echo "$ARGS" | grep -o 'half=[^ ]*' | cut -d= -f2 || true); half=${half:-val}
+        reach=$(echo "$ARGS" | grep -o 'reach=[^ ]*' | cut -d= -f2 || true); reach=${reach:-0,25,35}
+        resid=$(echo "$ARGS" | grep -o 'resid=[^ ]*' | cut -d= -f2 || true); resid=${resid:-inf:inf,30:60,20:40,15:30}
+        echo "half $half reach $reach resid $resid"
+        for set in gmd guitarset candombe aam; do
+          dotnet aw3-tool/AutoWarpEval.dll --aw3 sets/$set $set embedded results/$set.json --half "$half" --reach "$reach" --resid "$resid" --onsets
+        done
+        python3 tools/aw2/aw3score.py results/*.json --out aw3-report.md --csv aw3-per-file.csv --hist-sets gmd,guitarset,candombe,aam
+    - name: Job summary
+      if: always()
+      run: |
+        [ -f aw3-report.md ] && { echo "## aw3-report.md"; tail -c 60000 aw3-report.md; } >> "$GITHUB_STEP_SUMMARY" || true
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw3-report
+        path: |
+          aw3-report.md
+          aw3-per-file.csv
+          results/
+        retention-days: 14
+
+  aw3-pack:
+    if: ${{ contains(github.event.inputs.aw3, 'pack') }}
+    needs: aw3-items
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - name: Build the tools
+      run: |
+        dotnet build tools/AutoWarpEval -c Release -o aw3-tool 2>&1 | tail -3
+        g++ -O2 -std=c++17 -I NeoStretch/third_party tools/aw2/warp.cpp -o aw3-tool/aw2warp
+    - name: The pack list and the renders
+      env:
+        AW3_REACH: '25'
+        AW3_P95: '30'
+        AW3_MAX: '60'
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile
+        mkdir -p all; for d in items/*; do cp $d/* all/; done
+        python3 tools/aw2/aw3packlist.py all pack-list.txt pack-readme.txt
+        dotnet aw3-tool/AutoWarpEval.dll --pack3 aw3-pack aw3-tool/aw2warp pack-list.txt | tee pack-log.txt
+        cp pack-readme.txt aw3-pack/README.txt
+        cat pack-log.txt >> aw3-pack/README.txt
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw3-pack
+        path: aw3-pack/
+        retention-days: 14

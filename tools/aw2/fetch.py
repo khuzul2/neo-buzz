@@ -13,7 +13,7 @@ import soundfile as sf
 from common import *
 
 
-def gmd(out, limit):
+def gmd(out, limit, eval_only=False):
     """Groove MIDI Dataset v1.0.0 (Magenta, CC BY 4.0). The official splits are by session and every drummer is in all of them, so the held-out drummers are our own:
     drummer5 and drummer9 are the test, the other eight the training; 4/4 recordings of the 'beat' type only, as AW1 used. Beats come from the MIDI's tempo."""
     z = Zip("https://storage.googleapis.com/magentadata/datasets/groove/groove-v1.0.0.zip")
@@ -26,6 +26,8 @@ def gmd(out, limit):
         split = "test" if test else "train"
         if n[split] >= (limit if not test else max(8, limit // 3)):
             continue
+        if eval_only and split == "train" and fnv("gmd_" + r["id"].replace("/", "_")) % 8 != 1:
+            continue                                         # AW3: only the test items and the validation ones (prep.py makes them from the hash)
         x, rate = sf.read(io.BytesIO(z.read("groove/" + r["audio_filename"])))
         x = to_mono22k(x, rate)
         bpm = float(r["bpm"])
@@ -76,7 +78,7 @@ def egmd(out, limit):
     print("egmd:", n, "items over", len(kits), "kits", flush=True)
 
 
-def guitarset(out, limit):
+def guitarset(out, limit, eval_only=False):
     """GuitarSet (Zenodo 3371780, CC BY 4.0): the mono microphone recordings, beats and downbeats from the JAMS beat_position annotations. Players 04 and 05 are the test."""
     meta, files = zenodo_files(3371780)
     lic = zenodo_licence(meta)
@@ -95,6 +97,8 @@ def guitarset(out, limit):
         split = "test" if player in ("04", "05") else "train"
         if n[split] >= (limit if split == "train" else max(8, limit // 3)):
             continue
+        if eval_only and split == "train" and fnv("gs_" + base) % 8 != 1:
+            continue
         j = json.loads(jams[base])
         bp = [a for a in j["annotations"] if a["namespace"] == "beat_position"]
         if not bp:
@@ -109,7 +113,7 @@ def guitarset(out, limit):
     print("guitarset:", dict(n), flush=True)
 
 
-def candombe(out, limit):
+def candombe(out, limit, eval_only=False):
     """Uruguayan candombe drumming (Zenodo 6533068, CC BY 4.0): expert beats and downbeats (bar.beat labels). A quarter of the performances (by name hash) are the test."""
     meta, files = zenodo_files(6533068)
     lic = zenodo_licence(meta)
@@ -136,6 +140,8 @@ def candombe(out, limit):
         if len(beats) < 8:
             continue
         split = "test" if fnv(base) % 4 == 0 else "train"
+        if eval_only and split == "train" and fnv("cd_" + base) % 8 != 1:
+            continue
         x, rate = sf.read(io.BytesIO(z.read(name)))
         save_item(out, "cd_" + base, to_mono22k(x, rate), beats, downs, 4, split, "candombe", "CC-BY-4.0", "Candombe beat and downbeat tracking dataset (Nunes et al.)")
         n[split] += 1
@@ -179,9 +185,10 @@ def aam(out, limit, stems=0, part=0, offset=1, eval_only=False):
     for name in names:
         tid = os.path.basename(name)[:4]
         split = "test" if fnv(tid) % 10 == 0 else "train"
-        if n[split] >= (limit if split == "train" else max(8, limit // 8)):
+        if n[split] + n["skipped"] * (split == "train") >= (limit if split == "train" else max(8, limit // 8)):
             continue
         if eval_only and split == "train" and fnv("aam_" + tid) % 8 != 1:
+            n["skipped"] += 1                                # AW3: skipped items still count against the cap, so the items are the ones AW2b's run had
             continue                                         # AW2c: only the test items and the validation ones (prep.py makes them from the hash)
         try:
             rows = [l.split(",") for l in ann.read(tid + "_beatinfo.arff").decode().splitlines() if l.strip() and l[0] not in "@%"]
@@ -273,4 +280,7 @@ if __name__ == "__main__":
     if a.dataset == "aam":
         aam(a.out, a.limit, a.stems, a.part, a.offset, a.eval_only)
     else:
-        {"gmd": gmd, "egmd": egmd, "guitarset": guitarset, "candombe": candombe, "fsl10k": fsl10k}[a.dataset](a.out, a.limit)
+        if a.dataset in ("gmd", "guitarset", "candombe"):
+            {"gmd": gmd, "guitarset": guitarset, "candombe": candombe}[a.dataset](a.out, a.limit, a.eval_only)
+        else:
+            {"egmd": egmd, "fsl10k": fsl10k}[a.dataset](a.out, a.limit)
