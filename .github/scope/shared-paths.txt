@@ -1,0 +1,20 @@
+# Shared registration files a task that adds or changes a machine may touch, besides the
+# paths its issue lists. One glob per line ("*" stays inside a folder, "**" crosses folders).
+# Read by .github/workflows/scope-guard.yml. Changing this file is itself out of scope for task branches.
+FORK.md
+ReBuzz.sln
+Machines/Manifests/machine-catalog.json
+Machines/Manifests/machine-profile.json
+NeoBuzz.MachineTests/Layouts/state-layouts.txt
+NeoBuzz.MachineTests/PresetTests.cs
+NeoBuzz.MachineTests/ModulationCostTests.cs
+ReBuzzTests/NeoMachineTests.cs
+ReBuzz.Agent/Model/Values.cs
+ReBuzz.AgentTests/GuideTests.cs
+ReBuzz.AgentEval/Tasks/KnowledgeTasks.cs
+ReBuzz.Studio.Tests/GalleryTests.cs
+ReBuzz.Studio.Tests/NeoEditorTests.cs
+docs/agent-coverage.md
+docs/machine-health.md
+docs/specs/machines.md
+tools/null-test.py
