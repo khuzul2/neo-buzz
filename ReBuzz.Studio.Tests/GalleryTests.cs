@@ -1768,11 +1768,11 @@ namespace ReBuzz.Studio.Tests
                     File.WriteAllBytes(broken, Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
                     DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened. What happened in words; the exception under Details (closed).", "File ▸ Open… a damaged file.");
                 });
-                Try("339-error-old-format", () =>
+                Try("349-error-old-format", () =>
                 {
                     string old = Path.Combine(SongFolder, "Old song.bmx");
                     File.WriteAllBytes(old, Encoding.ASCII.GetBytes("Buzz\0an old song"));
-                    DialogOnOpen(window, () => _ = SongFiles.Open(old), "339-error-old-format", "Opening a .bmx: one plain message, NeoBuzz Live opens .nbl songs only.", "File ▸ Open, choose a .bmx.");
+                    DialogOnOpen(window, () => _ = SongFiles.Open(old), "349-error-old-format", "Opening a .bmx: one plain message, NeoBuzz Live opens .nbl songs only.", "File ▸ Open, choose a .bmx.");
                 });
             }
             finally
