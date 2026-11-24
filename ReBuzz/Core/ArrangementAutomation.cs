@@ -251,7 +251,7 @@ namespace ReBuzz.Core
             foreach (var column in pattern.Columns)
             {
                 if (column.Type != PatternColumnType.Parameter || column.Track != track || !ReferenceEquals(column.Parameter, parameter)) continue;
-                if (column is PatternColumnCore { EnginePlays: true } engine) yield return engine;
+                if (column is PatternColumnCore { IsMarkedAutomation: true } engine) yield return engine;
             }
         }
 
@@ -261,6 +261,24 @@ namespace ReBuzz.Core
         {
             if (cache.TryGetValue(pattern, out var known)) return known;
             var list = new List<(int, int, IParameter, int, PatternEvent[])>();
+            // CU3 (one store, one engine): where the engine plays every lane, the tracker's data is the pattern's unmarked parameter lanes (the
+            // editor's columns are views of them), so they are the one source: the editor is not read as well, which would list everything twice.
+            if (PatternColumnCore.PlaysEveryLane)
+            {
+                var groups2 = pattern.Machine?.ParameterGroups;
+                foreach (var c in pattern.Columns)
+                {
+                    if (c is not PatternColumnCore { Type: PatternColumnType.Parameter, IsMarkedAutomation: false } core || core.Parameter?.Group == null || groups2 == null) continue;
+                    int g = -1;
+                    for (int i = 0; i < groups2.Count && g < 0; i++)
+                        if (ReferenceEquals(groups2[i], core.Parameter.Group)) g = i;
+                    if (g < 0) continue;
+                    var events = core.GetEvents(int.MinValue, int.MaxValue).ToArray();
+                    if (events.Length > 0) list.Add((g, core.Parameter.IndexInGroup, core.Parameter, core.Track, events));
+                }
+                cache[pattern] = list;
+                return list;
+            }
             try
             {
                 var counts = new Dictionary<(int, int), int>();

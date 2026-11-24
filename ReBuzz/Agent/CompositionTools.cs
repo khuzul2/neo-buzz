@@ -164,6 +164,7 @@ namespace ReBuzz.Agent
                     var r = await host.Engine("automation_write", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
+                        if (ClipEditPolicy.AgentRefusal(m) is { } why) throw new ToolError(why);       // clips.md §5.7: an old machine's clips are view only
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
                         // U2 in depth (mcp-server.md §12.12): a track parameter that holds no value (a drum's trigger) takes events too,
                         // where no parameter that holds one has the name.

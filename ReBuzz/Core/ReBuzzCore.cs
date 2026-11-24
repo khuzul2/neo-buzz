@@ -1615,6 +1615,9 @@ namespace ReBuzz.Core
 
         volatile bool restoringSnapshot;
 
+        /// <summary>Fork (clips.md §7.4, CU3): the format version of the .nbl being opened (0 for another kind of file); 3 and above hold their lanes in the store.</summary>
+        internal int OpenedNativeVersion { get; set; }
+
         /// <summary>Fork (history-snapshots.md HS3): the live restore waiting for its boundary or gliding; the audio thread reads it each tick and block.</summary>
         internal volatile SongHistory.LiveRestorePlan ActiveRestore;
         /// <summary>Added to by each WorkManager: rebuilds its cached work order now, on the calling (UI) thread, so the audio thread meets it already built.</summary>
@@ -1678,6 +1681,7 @@ namespace ReBuzz.Core
                     };
 
                     OpenFile.Invoke(filename);
+                    OpenedNativeVersion = 0;
                     bmxFile.Load(filename);
                 }
                 catch (Exception e)
@@ -1690,6 +1694,11 @@ namespace ReBuzz.Core
                     NewSong();
                     return false;
                 }
+
+                // Fork (docs/specs/clips.md §7.1, CU3): after the machines and the engine columns, the clips of every machine move into the
+                // store, in memory (the file is never written), and each pattern editor is told to view it. Where the engine plays every lane.
+                if (PatternColumnCore.PlaysEveryLane)
+                    ClipOpen.Run(this, OpenedNativeVersion >= 3);
 
                 SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
                 if (!restore)
@@ -2413,6 +2422,15 @@ namespace ReBuzz.Core
             // Link machine to editor. Maybe specific call?
             MachineManager.SetPatternEditorPattern(peMachine, machineToUseEditor.Patterns.FirstOrDefault());
             machineToUseEditor.EditorMachine = peMachine;
+
+            // Fork (clips.md §6, CU3): a machine made while no song is loading has no clips to move: its editor views the store from the start.
+            // (A song's machines are attached by ClipOpen after the load.)
+            if (PatternColumnCore.PlaysEveryLane && !SongLoading && (patterneditordata == null || patterneditordata.Length == 0) && machineToUseEditor.PatternsList.Count <= 1 && machineToUseEditor.PatternsList.All(p => p.BuiltInData == null))
+            {
+                peMachine.LoadedEditorData = null;
+                if (MachineManager.AttachClipStore(machineToUseEditor))
+                    machineToUseEditor.ClipsAttached = true;
+            }
         }
 
         public string GetNewEditorName()

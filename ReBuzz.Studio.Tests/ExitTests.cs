@@ -194,7 +194,7 @@ namespace ReBuzz.Studio.Tests
                 foreach (var p in m.Patterns.OrderBy(p => p.Name, StringComparer.Ordinal))
                 {
                     lines.Add($"{at}pattern {p.Name}: {p.Length} ticks");
-                    foreach (var c in p.PatternEditorMachineEvents)
+                    foreach (var c in p.PatternEditorMachineEvents.Where(c => c.Events.Any()))       // clips CU3: an editor that views the store holds no empty columns of its own
                         lines.Add($"{at}pattern {p.Name}, editor column {c.Parameter.Name}: {string.Join(" ", c.Events.Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");
                     foreach (var c in p.Columns)
                         lines.Add($"{at}pattern {p.Name}, column {c.Type} {c.Machine?.Name} {c.Parameter?.Name}[{c.Track}]: {string.Join(" ", c.GetEvents(0, int.MaxValue).Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");

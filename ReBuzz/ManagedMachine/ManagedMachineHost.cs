@@ -88,6 +88,9 @@ namespace ReBuzz.ManagedMachine
 
         private delegate void ActivateDelegate();
 
+        // Fork (docs/specs/clips.md §6, CU3): a pattern editor that views the store (the song's clips are its data) is told when the song's clips are in it.
+        private delegate void AttachClipStoreDelegate();
+
         private delegate void ReleaseDelegate();
 
         private delegate int GetTicksPerBeatDelegate(IPattern pattern, int playPosition);
@@ -161,6 +164,8 @@ namespace ReBuzz.ManagedMachine
         private GetPatternEditorEventsDelegate GetPatternEditorEventsFunction;
 
         private ActivateDelegate ActivateFunction;
+
+        private AttachClipStoreDelegate AttachClipStoreFunction;
 
         private ReleaseDelegate ReleaseFunction;
 
@@ -271,6 +276,7 @@ namespace ReBuzz.ManagedMachine
             GetPatternEditorEventsFunction = (GetPatternEditorEventsDelegate)GetMethod(typeof(GetPatternEditorEventsDelegate), "GetPatternEditorEvents");
             DescribeValueFunction = (DescribeValueDelegate)GetMethod(typeof(DescribeValueDelegate), "DescribeValue");
             ActivateFunction = (ActivateDelegate)GetMethod(typeof(ActivateDelegate), "Activate");
+            AttachClipStoreFunction = (AttachClipStoreDelegate)GetMethod(typeof(AttachClipStoreDelegate), "AttachClipStore");
             ReleaseFunction = (ReleaseDelegate)GetMethod(typeof(ReleaseDelegate), "Release");
             GetTicksPerBeatFunction = (GetTicksPerBeatDelegate)GetMethod(typeof(GetTicksPerBeatDelegate), "GetTicksPerBeat");
             UpdateWaveReferencesFunction = (UpdateWaveReferencesDelegate)GetMethod(typeof(UpdateWaveReferencesDelegate), "UpdateWaveReferences");
@@ -797,6 +803,11 @@ namespace ReBuzz.ManagedMachine
                 ActivateFunction();
             }
         }
+
+        /// <summary>Fork (clips.md §6, CU3): whether this pattern editor views the store, and tells it that the song's clips are there now.</summary>
+        internal bool HasClipStore => AttachClipStoreFunction != null;
+
+        internal void AttachClipStore() => AttachClipStoreFunction?.Invoke();
 
         internal void Release()
         {

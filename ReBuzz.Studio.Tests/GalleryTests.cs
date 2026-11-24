@@ -24,6 +24,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
@@ -2362,6 +2363,37 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here (auto-warp from that moment: it follows the tempo changes, AW1), Warp from here, straight (one tempo), Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
                     CloseMenus();
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        /// <summary>Clips CU3 (clips.md §7.1): a song whose tracker data was moved into the store on open: the tracker views the lanes.</summary>
+        [AvaloniaTest, Order(8)]
+        public void ClipsOfOldSongs()
+        {
+            BeforeAll();
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
+            NewSong();
+            var window = Open("Machines");
+            try
+            {
+                const string Song = "a song with one old machine (Clip Probe) whose pattern data was moved into the store on open";
+                var machine = ClipOpenTests.MigratedProbe();
+                window.RefreshNow();
+                Settle();
+                var pattern = machine.Patterns.First(p => p.Name == "P");
+                Try("600-clips-old-machine-tracker", () =>
+                {
+                    window.Detail.Show(true);
+                    PatternView.Edit(pattern);
+                    window.ShowView("Pattern");
+                    Wait(300);
+                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open (the clip conversion): the columns are views of the pattern's lanes, the Level step and the note at row 4, the MIDI note at row 8 on the Notes lane.", "Open a song of old machines; F2.", Song);
                 });
             }
             finally

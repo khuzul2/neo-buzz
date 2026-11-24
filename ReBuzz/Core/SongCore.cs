@@ -20,6 +20,10 @@ namespace ReBuzz.Core
         int playPosition = 0;
         internal int PlayPositionSetNextTick = -1; // Update this in the next tick
         internal bool AdjustPositionOnTick = false;
+        /// <summary>Fork (clips.md §7.1, CU3): what opening the song did to its clips (the loss report), and whether any clip was moved into the store (in memory only).</summary>
+        internal ClipOpenReport ClipOpen { get; set; }
+        internal bool ClipsMigrated { get; set; }
+
         public int PlayPosition
         {
             get { return playPosition; }

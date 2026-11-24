@@ -241,7 +241,7 @@ namespace ReBuzz.FileOps
                 foreach (var pattern in machine.PatternsList)
                     foreach (var column in pattern.ColumnsList.OfType<PatternColumnCore>())
                     {
-                        if (!column.EnginePlays) continue;
+                        if (!column.IsMarkedAutomation) continue;      // CU3: a tracker lane goes to upstream in the derived blob, not as automation
                         int n = column.GetEvents(0, int.MaxValue).Count();
                         if (n == 0) continue;
                         string target = $"{column.Machine?.Name}.{column.Parameter?.Name}" + (column.Track > 0 ? $" track {column.Track + 1}" : "");

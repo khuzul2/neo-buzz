@@ -223,7 +223,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void DrawAutomationLine(DrawingContext ctx, IPattern p, ClipSegment s, double sx, double sw, double h)
         {
             if (p.Length <= 0) return;
-            var column = p.Columns.FirstOrDefault(c => c.Type == PatternColumnType.Parameter && c.Parameter != null && c is PatternColumnCore { EnginePlays: true });
+            var column = p.Columns.FirstOrDefault(c => c.Type == PatternColumnType.Parameter && c.Parameter != null && c is PatternColumnCore { IsMarkedAutomation: true });
             if (column == null) return;
             Watch(p);
             var pts = AutomationMath.PointsOf(column.GetEvents(int.MinValue, int.MaxValue), true);
