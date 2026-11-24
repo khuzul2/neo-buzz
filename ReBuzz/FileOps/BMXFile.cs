@@ -692,7 +692,9 @@ namespace ReBuzz.FileOps
         {
             var paramtersTo = machineTo.ParameterGroupsList[group].ParametersList;
             var paramtersFrom = machineFrom.ParameterGroupsList[group].ParametersList;
-            for (int i = 0; i < paramtersTo.Count; i++)
+            // Fork: a song saved before a machine appended parameters (machines.md §3.2: a version-0 machine loads by position) has
+            // fewer than the machine: the appended ones keep their defaults, as BMXML's loader and Buzz do.
+            for (int i = 0; i < paramtersTo.Count && i < paramtersFrom.Count; i++)
             {
                 // Set the defaul/saved state of parameters. Skip non-state, notes and input group
                 if (paramtersTo[i].Flags.HasFlag(ParameterFlags.State) && paramtersTo[i].Type != ParameterType.Note && group != 0)

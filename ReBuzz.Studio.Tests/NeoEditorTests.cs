@@ -36,35 +36,35 @@ namespace ReBuzz.Studio.Tests
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 703),   // P5a: two pages in the studio (the classic editor's one screen is 950 x 972)
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
-            ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
-            ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
+            ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 315),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (880 x 294 before)
+            ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 810, 322),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (746 x 322 before)
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 892, 598),
             ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 940, 363),
-            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 296),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before)
+            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 367),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before); FX1: Amount and Mix, two 40 px knobs, under its channel switches (679 x 296 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
-            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
+            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 1069, 343),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (994 x 343 before)
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1170, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1126, 484),   // P5a: the pads, the selected pad's panel and the mix strip (the classic editor is 1232 x 738)
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
-            ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
+            ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 341),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (956 x 277 before)
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
-            ("Neo Low End", "NeoLowEndEditor", "neo-low-end-editor", 1032, 277),
-            ("Neo Imager", "NeoImagerEditor", "neo-imager-editor", 1034, 277),
-            ("Neo Exciter", "NeoExciterEditor", "neo-exciter-editor", 977, 277),
+            ("Neo Low End", "NeoLowEndEditor", "neo-low-end-editor", 1032, 299),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (1032 x 277 before)
+            ("Neo Imager", "NeoImagerEditor", "neo-imager-editor", 1034, 299),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (1034 x 277 before)
+            ("Neo Exciter", "NeoExciterEditor", "neo-exciter-editor", 977, 299),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (977 x 277 before)
             ("Neo Tape", "NeoTapeEditor", "neo-tape-editor", 879, 351),
-            ("Neo De-esser", "NeoDeEsserEditor", "neo-deesser-editor", 833, 300),
-            ("Neo Gate", "NeoGateEditor", "neo-gate-editor", 1000, 277),
+            ("Neo De-esser", "NeoDeEsserEditor", "neo-deesser-editor", 833, 341),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (833 x 300 before)
+            ("Neo Gate", "NeoGateEditor", "neo-gate-editor", 1000, 299),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (1000 x 277 before)
             ("Neo Spectral", "NeoSpectralEditor", "neo-spectral-editor", 1004, 300),
             ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 836),   // the live view, key, pitch, triggers with the Train panel, chords and expression
-            ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 341),
+            ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Fx amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
-            ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 605),
+            ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 675),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (966 x 605 before)
         };
 
         static ReBuzzCore Core => Studio.Host.Core;

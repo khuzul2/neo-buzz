@@ -526,5 +526,52 @@ namespace ReBuzz.Studio.Tests
             TestContext.Progress.WriteLine(table.ToString());
             Assert.That(opened, Is.GreaterThanOrEqualTo(Math.Min(6, songs.Count)), "most of the demo songs open here (the rest need machines this platform lacks)");
         }
+
+        /// <summary>
+        /// Mix and Amount (machines.md, "Mix and Amount"): the song templates were saved before every Neo effect gained the two
+        /// parameters (appended, version 0: their core holds fewer globals than the machines have now). They open, every value they
+        /// saved comes back, and the appended Amount and Mix stand at 100 %, so they sound as they did (FxGoldenTests: bit for bit).
+        /// </summary>
+        [AvaloniaTest]
+        public void SongsSavedBeforeMixAndAmountOpenWithTheirValuesAndBothAt100Percent()
+        {
+            string root = RepoRoot();
+            if (root == null) Assert.Inconclusive("the repository isn't beside the tests");
+            var core = Studio.Host.Core;
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
+            var templates = Directory.GetFiles(Path.Combine(root, "Other", "Templates", "Songs"), "*.nbl").OrderBy(p => p, StringComparer.Ordinal).ToList();
+            Assert.That(templates, Is.Not.Empty);
+            int effects = 0;
+            foreach (var path in templates)
+            {
+                JsonArray saved;
+                using (var r = new NblContainer.Reader(path))
+                    saved = (JsonArray)((JsonObject)JsonNode.Parse(r.Manifest))["machines"];
+                core.Modified = false;
+                Dialogs.Responder = (m, c, b) => UserAnswer.No;
+                Assert.That(core.TryOpenSongFile(path), Is.True, Path.GetFileName(path) + " opens");
+                foreach (var entry in saved)
+                {
+                    var m = core.SongCore.MachinesList.First(x => x.Name == (string)entry["name"]);
+                    var v = (IVersionedMachine)m.ManagedMachine;
+                    var globals = m.ParameterGroupsList[1].ParametersList;
+                    var keys = v.ParameterKeys;
+                    var values = (JsonObject)entry["params"];
+                    foreach (var kv in values)
+                    {
+                        int i = keys.ToList().IndexOf(kv.Key);
+                        Assert.That(i, Is.GreaterThanOrEqualTo(0), $"{m.Name}: {kv.Key} is a parameter");
+                        Assert.That(globals[i].GetValue(0), Is.EqualTo((int)kv.Value), $"{Path.GetFileName(path)}: {m.Name}'s {kv.Key} comes back");
+                    }
+                    string amount = keys.Contains("FxAmount") ? "FxAmount" : keys.Contains("Amount") && !values.ContainsKey("Amount") ? "Amount" : null;
+                    if (amount == null || m.DLL.Info.Type != MachineType.Effect) continue;
+                    effects++;
+                    Assert.That(globals[keys.ToList().IndexOf(amount)].GetValue(0), Is.EqualTo(1000), $"{m.Name}: Amount at 100 %");
+                    if (!values.ContainsKey("Mix")) Assert.That(globals[keys.ToList().IndexOf("Mix")].GetValue(0), Is.EqualTo(1000), $"{m.Name}: Mix at 100 %");
+                }
+            }
+            Assert.That(effects, Is.GreaterThanOrEqualTo(5), "the templates' Neo effects were checked");
+            TestContext.Out.WriteLine($"{templates.Count} templates, {effects} Neo effects with Amount and Mix at 100 % and every saved value back");
+        }
     }
 }
