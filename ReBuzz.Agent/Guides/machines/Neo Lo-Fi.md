@@ -19,8 +19,7 @@ Lo-fi in one effect, with no latency. The chain runs in this order: the pitch mo
 | Parameter | Value | Why |
 |---|---|---|
 | Bits | 8 bit | 12 is a gentle grain, 8 is gritty, 4 and below is a buzz; 24 is off |
-| Rate | 11 kHz | the hold rate; lower is more metallic, 200 Hz is a toy |
-| Anti-alias | On | off for the raw alias, on for the clean, dull sound of a sampler's output filter |
+| Rate | 11 kHz | the hold rate; lower is more metallic, 200 Hz is a toy; Anti-alias on trades the raw alias for a sampler's clean, dull output |
 | Hiss | -55 dB | -70 is faint, -45 is a worn tape |
 | Crackle | 12 /s | a few a second is dust, 60 is a worn record |
 | Wow | 10 ct | 5-15 is a tired cassette, 25 and more is seasick |
