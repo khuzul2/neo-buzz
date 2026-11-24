@@ -26,6 +26,7 @@ A pitch corrector for one voice or one melodic line. It follows the pitch of the
 | Amount | 100 % | lower it to hide the correction |
 | Formant preserve | On | the vowel stays put when the pitch moves |
 | Range | Quality | Low latency only for playing live |
+| Fx amount | 100% | scales correction strength and retune speed (the older Amount stays the correction strength); 0 % is the bypassed dry, 200 % exaggerates. |
 
 ## Starting points
 

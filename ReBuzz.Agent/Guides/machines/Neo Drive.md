@@ -28,6 +28,7 @@ Path: `Low cut` (before the shaper), `Drive`, the oversampled shaper (`Quality` 
 | Auto gain | On | the level stays put as Drive changes |
 | Mix | 40% | 25-50 % for parallel saturation |
 | Quality | 4× | 8x for high drive on bright material; 2x for light colour on many tracks |
+| Amount | 100% | scales drive and bias; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
 
 ## Starting points
 

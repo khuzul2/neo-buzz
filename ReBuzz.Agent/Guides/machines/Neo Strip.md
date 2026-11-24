@@ -22,6 +22,7 @@ A channel strip in one machine: gate, EQ, compressor, drive, clipper and limiter
 | Comp ratio | 2:1 | gentle bus level; 4:1 for control |
 | Drive | 4 dB | with Drive on; Drive mix sets the parallel share |
 | Ceiling | -1 dB | shared by the clipper and the limiter (the limiter stops at -12 dB) |
+| Amount, Mix | 100% | scales gate range, comp ratio and makeup, drive, EQ gains and ceiling; 0 % is the bypassed dry, 200 % exaggerates. |
 
 ## Starting points
 

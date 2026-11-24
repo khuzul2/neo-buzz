@@ -22,6 +22,7 @@ A harmonic exciter. The input is split into four bands; each band goes through a
 | Crossover 3 | 8 kHz | where the top band begins (the default) |
 | Shelf gain | 0 dB | brightens (+) or softens (-) only the added harmonics |
 | Auto gain | Off | On keeps a fair comparison |
+| Amount, Mix | 100% | scales drive, shelf gain and the band amounts; 0 % is the bypassed dry, 200 % exaggerates. |
 
 ## Starting points
 

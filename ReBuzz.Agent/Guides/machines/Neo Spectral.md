@@ -24,6 +24,7 @@ A resonance suppressor that works on a short-time spectrum: every frame (2048 sa
 | Release | 150 ms | longer is smoother, shorter follows the signal |
 | Low limit | 150 Hz | keep the body of the sound out of it |
 | High limit | 12000 Hz | keep the air out of it |
+| Amount | 100% | scales depth, lift and tilt; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
 
 ## Starting points
 

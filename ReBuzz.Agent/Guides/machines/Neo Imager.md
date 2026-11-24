@@ -20,6 +20,7 @@ A stereo imager in four bands. In each band the signal is split into its mid (wh
 | Stereoize 4 | 20% | widens a narrow band without changing the mono sum |
 | Recover sides | On | keeps the level when a band is narrowed |
 | Output | 0 dB | lower it, or use Match, if widening made it louder |
+| Amount, Mix | 100% | scales width and stereo distance from 100 %; 0 % is the bypassed dry, 200 % exaggerates. |
 
 ## Starting points
 

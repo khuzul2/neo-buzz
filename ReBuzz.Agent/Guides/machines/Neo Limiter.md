@@ -26,6 +26,7 @@ In the limiter: `Slow stage` (with `Slow release`) holds part of the sustained r
 | Lookahead | 2 ms | 4-5 ms is smoother on bass-heavy material |
 | Auto release | On | fast on short peaks, slow under sustained limiting |
 | Stereo link | 100% | the image stays put |
+| Amount, Mix | 100% | scales input gain, ceiling, upward, transients and slow stage; 0 % is the bypassed dry, 200 % exaggerates. |
 
 There is no loudness-target mode. Set the ceiling, render, read `integrated_lufs`, raise Input gain by the difference, render again and check the true peak and the reduction. Keep it to 3-4 dB of reduction for streaming, 6-8 dB for club; more should come from the mix.
 

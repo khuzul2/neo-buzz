@@ -22,6 +22,7 @@ A transient shaper: two followers of the level find the onset of every hit and i
 | Lookahead | 3 ms | set before playing; 0 for live |
 | Mode | Attack_Sustain | Impact for four bands |
 | Mix | 100% | lower for a subtler effect |
+| Amount | 100% | scales attack, sustain and the band impacts; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
 
 ## Starting points
 

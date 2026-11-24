@@ -22,6 +22,7 @@ A de-esser: a band-pass detector on the sibilance band (`Frequency`, `Width` oct
 | Ratio | 4:1 | 3-4 is natural; higher lisps |
 | Max reduction | 6 dB | the most it takes out; lower it first if it lisps |
 | Action | Split | only the band is reduced; Split linear for no phase shift |
+| Amount, Mix | 100% | scales the ratio and range; 0 % is the bypassed dry, 200 % exaggerates. |
 
 ## Starting points
 
