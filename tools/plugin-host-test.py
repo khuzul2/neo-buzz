@@ -23,6 +23,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 import xml.etree.ElementTree as ET
 
 ap = argparse.ArgumentParser()
@@ -389,6 +390,41 @@ if args.fixtures:
     ok, _, r1m = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Voice"], "name": "midi-on"})
     lvl = probe_levels(r1m).get("Voice", (None, True))
     check(lvl[1] is False, f"Voice plays what the Octaver sends it ({lvl[0]} LUFS)")
+
+    # --- Note names (NM1): Test Drums names its keys, Test Drums Morph's change at run time ------------------------------
+    def note_map(machine):
+        ok, _, d = call("machine_describe", machine=machine)
+        nm = d.get("note_map") or {}
+        return ok, {k.get("key"): k.get("name") for k in nm.get("keys", [])}, nm
+    call("song_new", discard_unsaved=True)
+    ok, _, _ = call("machine_add", gear="Neo Plug", plugin=resolve("Test Drums (", gen_names, "instrument"), name="Drums", tracks=1)
+    check(ok, "machine_add Test Drums")
+    ok, names, nm = note_map("Drums")
+    check(names == {36: "Test Kick", 38: "Test Snare", 42: "Test Hat"}, f"Test Drums names its keys in machine_describe's note_map: {names}")
+    check(nm.get("playable") == 3 and nm.get("source") == "machine", f"three playable keys, from the machine: {nm.get('playable')}, {nm.get('source')}")
+    ok, _, _ = call("machine_add", gear="Neo Plug", plugin=resolve("Test Drums Morph", gen_names, "instrument"), name="Morph", tracks=1)
+    check(ok, "machine_add Test Drums Morph")
+    ok, names, _ = note_map("Morph")
+    check(names.get(36) == "Test Kick", f"Morph starts with Kit A: {names}")
+    ok, _, d = call("machine_describe", machine="Morph", all=True)
+    kit = next((p["name"] for p in d.get("parameters", []) if p["name"].endswith("Kit")), None)
+    check(kit is not None, "Morph has a Kit parameter")
+    if kit:
+        call("param_set", machine="Morph", changes=[{"param": kit, "value": "Kit B"}])
+        call("render", **{"from": 0, "to": 1, "tail_seconds": 0.3, "name": "morph-Kit-B"})   # (the plug-in takes the value in its next audio block, as in a host)
+        names = {}
+        for _ in range(40):
+            ok, names, _ = note_map("Morph")
+            if names.get(36) == "Test Tom": break
+            time.sleep(0.15)
+        check(names == {36: "Test Tom", 38: "Test Rim", 42: "Test Shaker", 46: "Test Bell"}, f"Morph's names follow its Kit parameter at run time: {names}")
+        call("param_set", machine="Morph", changes=[{"param": kit, "value": "No names"}])
+        call("render", **{"from": 0, "to": 1, "tail_seconds": 0.3, "name": "morph-No-names"})   # (the plug-in takes the value in its next audio block, as in a host)
+        for _ in range(40):
+            ok, names, nm = note_map("Morph")
+            if not names: break
+            time.sleep(0.15)
+        check(not names and "note_map" not in (call("machine_describe", machine="Morph")[2] or {}), "a plug-in that names no key has no note_map")
 
 if args.fixtures and placed != "inprocess":
     # --- H2, the sandbox: Test Crasher crashes on command (its Crash parameter); the crash must take only its own server -----------

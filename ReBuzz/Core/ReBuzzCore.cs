@@ -907,6 +907,7 @@ namespace ReBuzz.Core
             this.machineDllScanner = machineDllScanner;
             this.dispatcher = dispatcher;
             this.userMessages = userMessages;
+            global::ReBuzz.Core.Notes.NoteMapSources.Install(dispatcher);      // fork (daw-modes.md §8.9, NM1): the note maps' manifest reader and UI thread
             SafeMaster.Load(registryEx);                // fork (machine-safety.md §3.3)
             ReBuzz.Agent.ModulationHost.Install();      // fork (neo-patch.md §3): the modulators' safe ranges
             ClearMasterOverCommand = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => ClearMasterOver() };

@@ -56,6 +56,10 @@ namespace ReBuzz.Agent
                     Opt("modulator", Object("For a Neo LFO, Envelope, Step or Macro: its targets", Req("kind", String("LFO, Envelope, Step or Macro")), Req("targets", Array(Object("A target", Req("target_machine", String("Machine")), Req("param", String("Parameter"))), "Its targets")))),
                     Opt("state_version", Integer("A Neo machine whose layout has changed since songs first saved it: the version of the layout listed here (older songs are migrated to it on load; parameters are always listed in the current layout)")),
                     Opt("gear_info", Object("The gear: its file, track range, how it takes notes", Req("file", String("Its DLL, under Gear")))),
+                    Opt("note_map", Object("A machine that plays sounds on notes and says which keys do (a sample kit, a drum machine, a plug-in with named keys): the keys that make a sound, with their names",
+                        Req("playable", Integer("How many keys make a sound")), Req("ranges", String("The playable keys as note-number ranges (\"36-40, 60\")")),
+                        Req("keys", Array(Object("A playable key", Req("key", Integer("MIDI note number, as a pattern's Note column and a note_write's pitch")), Req("note", String("Its note name")), Opt("name", String("What the machine calls it (Kick)")), Opt("group", String("Its group"))), "The playable keys, at most 64 (more: truncated)")),
+                        Opt("truncated", Boolean("There are more keys than listed")), Req("source", String("machine or manifest")))),
                     Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
                     Opt("successors", Array(Object("A Neo successor", Req("gear", String("Its gear")), Req("how", String("The call that moves the song onto it"))), "machine_replace moves the machine onto these")),
                     Req("groups", Array(String("Group"), "All parameter groups")),
@@ -116,6 +120,7 @@ namespace ReBuzz.Agent
                             o["health"] = h;
                         }
                         o["gear_info"] = GearInfo(m);
+                        if (group == null && NoteMapJson(m) is JsonObject noteMap) o["note_map"] = noteMap;
                         if (m.ManagedMachine is Buzz.MachineInterface.IVersionedMachine { StateVersion: > 0 } versioned) o["state_version"] = versioned.StateVersion;
                         if (ModulationTools.Incoming(core, m) is JsonArray incoming) o["modulations"] = incoming;
                         if (ModulationTools.Own(core, m) is JsonObject own) o["modulator"] = own;
@@ -501,6 +506,25 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>The gear's file (under Gear), its tracks, and how it can take notes.</summary>
+        /// <summary>The machine's note map (NM1, docs/specs/daw-modes.md §8.9) for machine_describe: null when it reports none.</summary>
+        internal static JsonObject NoteMapJson(IMachine m)
+        {
+            var map = NoteMaps.For(m);
+            if (map.IsEmpty) return null;
+            var keys = new JsonArray();
+            foreach (var e in map.Entries())
+            {
+                if (keys.Count >= 64) break;
+                var k = new JsonObject { ["key"] = e.Key, ["note"] = BuzzGUI.Common.NoteNames.Name(e.Key) };
+                if (!string.IsNullOrEmpty(map.NameOf(e.Key))) k["name"] = map.NameOf(e.Key);
+                if (!string.IsNullOrEmpty(map.GroupOf(e.Key))) k["group"] = map.GroupOf(e.Key);
+                keys.Add(k);
+            }
+            var o = new JsonObject { ["playable"] = map.PlayableCount, ["ranges"] = map.Ranges(), ["keys"] = keys, ["source"] = map.Source };
+            if (map.PlayableCount > keys.Count) o["truncated"] = true;
+            return o;
+        }
+
         internal static JsonObject GearInfo(MachineCore m)
         {
             var dll = m.DLL;

@@ -36,6 +36,15 @@ cmake --build "$B" --config Release -j 4
 ls -la "$B/bin"
 echo "::endgroup::"
 
+# Note names (NM1): the VST3 adapter against a fake IUnitInfo (the SDK's examples name no pitch), and the CLAP test plug-ins' names through
+# the C ABI: static names, then names that change at run time and are signalled (np_poll's NP_POLL_NOTE_NAMES).
+echo "::group::Note names (VST3 fake, CLAP test plug-ins)"
+"$B/bin/neoplug-notenames-test$X"
+export LD_LIBRARY_PATH="$B/bin${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" DYLD_LIBRARY_PATH="$B/bin${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}" PATH="$B/bin:$PATH"
+"$B/bin/neoplug-probe$X" names "$B/bin/neoplug-test.clap" --id neoplug.test.drums | tee "$OUT/note-names-drums.json" | grep -q '"Test Kick"'
+"$B/bin/neoplug-probe$X" names "$B/bin/neoplug-test.clap" --id neoplug.test.drums-morph --set 3=1 | tee "$OUT/note-names-morph.json" | grep -q '"signalled":true.*"Test Tom"'
+echo "::endgroup::"
+
 echo "::group::Surge XT (a test fixture on the runner only)"
 $PY tools/get-surge.py "$T/surge" "$T/surge.txt"
 echo "::endgroup::"

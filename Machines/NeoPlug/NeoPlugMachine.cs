@@ -22,6 +22,9 @@ namespace NeoBuzz.Plug
     [MachineDecl(Name = "Neo Plug", ShortName = "Plug", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
 #endif
     public partial class NeoPlugMachine : IBuzzMachine, IBuzzMachineInstrument, IBuzzMachineManifest, IBuzzMachineNativeEditor, IDisposable
+#if !FX
+        , INoteMapProvider
+#endif
     {
 #if FX
         const bool Effect = true;
@@ -158,6 +161,22 @@ namespace NeoBuzz.Plug
         // --- The plug-in's editor (H3) ----------------------------------------------------------------------
 
         public int EditorSupport(string api) => core.EditorSupport(api);
+
+#if !FX
+        // --- Note names (docs/specs/daw-modes.md §8.9, NM1): what the hosted plug-in calls its keys, for the piano roll ------------------
+        // The core reads them on PlugMain (CLAP's note-name extension, VST3's program pitch names) when the plug-in opens, loads state or
+        // says they changed; this hands out the immutable result. The effect has no keys.
+
+        public int NoteMapVersion => core.NoteNameVersion;
+
+        public IReadOnlyList<NoteMapEntry> ReadNoteMap(int channel) => core.ReadNoteMap(channel);
+
+        public event Action NoteMapChanged
+        {
+            add => core.NoteNamesChanged += value;
+            remove => core.NoteNamesChanged -= value;
+        }
+#endif
 
         public INativeEditorSession OpenEditor(string api, bool floating, IntPtr parent, double scale, string title, out string error) =>
             PlugEditorSession.Open(core, api, floating, parent, scale, title, out error);

@@ -22,6 +22,7 @@ namespace WDE.ModernPatternEditor
         long checkedAt;
         object source;
         IReadOnlyDictionary<int, string> full, shortNames;
+        NoteMap map = NoteMap.None;
         readonly Dictionary<int, string> derived = new();
 
         MachineNoteNames(IMachine machine) { this.machine = machine; }
@@ -33,6 +34,10 @@ namespace WDE.ModernPatternEditor
             checkedAt = now;
             try
             {
+                // The note map first (NM1: a Neo machine's, a hosted plug-in's, a manifest's); the machine's own KeyNames after (the older way).
+                var was = map;
+                map = NoteMaps.For(machine);
+                if (!ReferenceEquals(was, map) && derived.Count > 0) derived.Clear();
                 var m = machine.ManagedMachine;
                 source = m;
                 full = m?.GetType().GetProperty("KeyNames", BindingFlags.Public | BindingFlags.Instance)?.GetValue(m) as IReadOnlyDictionary<int, string>;
@@ -46,12 +51,14 @@ namespace WDE.ModernPatternEditor
         }
 
         /// <summary>Whether the machine names any of its notes (it plays drums).</summary>
-        public bool Any { get { Refresh(); return full != null && full.Count > 0; } }
+        public bool Any { get { Refresh(); return map.HasNames || (full != null && full.Count > 0); } }
 
         /// <summary>The name of a MIDI note as the machine gives it ("Kick"), or null (a pitch).</summary>
         public string Name(int midi)
         {
             Refresh();
+            var named = map.NameOf(midi);
+            if (named != null) return named;
             return full != null && full.TryGetValue(midi, out var n) && !string.IsNullOrEmpty(n) ? n : null;
         }
 

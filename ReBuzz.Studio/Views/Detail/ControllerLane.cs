@@ -95,12 +95,12 @@ namespace ReBuzz.Studio.Views.Detail
             foreach (double f in new[] { 0.25, 0.5, 0.75, 1.0 })
             {
                 double y = Math.Round(TopOf((int)(Max * f))) + 0.5;
-                dc.DrawLine(GuidePen, new Point(PianoRoll.KeysWidth, y), new Point(w, y));
+                dc.DrawLine(GuidePen, new Point(roll.KeyColumn, y), new Point(w, y));
             }
             if (Controller == ControllerPoint.PitchBend)
             {
                 double y = Math.Round(TopOf(ControllerPoint.BendCentre)) + 0.5;
-                dc.DrawLine(new Pen(StudioTokens.TextSecondaryBrush, 1, DashStyle.Dash), new Point(PianoRoll.KeysWidth, y), new Point(w, y));
+                dc.DrawLine(new Pen(StudioTokens.TextSecondaryBrush, 1, DashStyle.Dash), new Point(roll.KeyColumn, y), new Point(w, y));
             }
             var shown = points.ToList();
             if (dragFrom is { } from) shown.Remove(from);
@@ -111,15 +111,15 @@ namespace ReBuzz.Studio.Views.Detail
             {
                 double x = XOf(shown[i]), y = TopOf(shown[i].Value);
                 double next = i + 1 < shown.Count ? XOf(shown[i + 1]) : roll.X(roll.Source.Length) - offsetX;
-                if (next >= PianoRoll.KeysWidth && x <= w)
-                    dc.DrawLine(line, new Point(Math.Max(x, PianoRoll.KeysWidth), y), new Point(Math.Min(next, w), y));
-                if (x >= PianoRoll.KeysWidth && x <= w)
+                if (next >= roll.KeyColumn && x <= w)
+                    dc.DrawLine(line, new Point(Math.Max(x, roll.KeyColumn), y), new Point(Math.Min(next, w), y));
+                if (x >= roll.KeyColumn && x <= w)
                 {
                     bool active = dragTo is { } d && d == shown[i];
                     dc.DrawEllipse(active ? PianoRoll.NoteSelected : PianoRoll.NoteFill, null, new Point(x, y), 3.5, 3.5);
                 }
             }
-            dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 1, PianoRoll.KeysWidth, h - 1));
+            dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 1, roll.KeyColumn, h - 1));
             var title = new FormattedText(ControllerPoint.NameOf(Controller), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
             dc.DrawText(title, new Point(3, 4));
             if (dragTo is { } cur)
@@ -155,7 +155,7 @@ namespace ReBuzz.Studio.Views.Detail
             base.OnPointerPressed(e);
             if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
             var p = e.GetPosition(this);
-            if (p.X < PianoRoll.KeysWidth) return;
+            if (p.X < roll.KeyColumn) return;
             refusal = null;
             int hit = HitTest(p);
             if (e.ClickCount == 2)

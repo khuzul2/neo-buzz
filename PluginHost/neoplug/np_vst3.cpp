@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <atomic>
 #include "np_internal.h"
+#include "np_vst3_names.h"
 
 #include "public.sdk/source/common/memorystream.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
@@ -26,6 +27,7 @@
 #include "pluginterfaces/vst/vstspeaker.h"
 #include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/vst/ivstnoteexpression.h"
+#include "pluginterfaces/vst/ivstunits.h"
 
 #include <algorithm>
 #include <mutex>
@@ -88,10 +90,13 @@ static void dbgParam(const char* src, uint32_t id, double v)
     if (on && count.fetch_add(1) < 1500) std::fprintf(stderr, "[neoplug] vst3 %s: param %u = %.6f\n", src, id, v);
 }
 
-class Handler : public U::Implements<U::Directly<IComponentHandler>>
+class Handler : public U::Implements<U::Directly<IComponentHandler, IUnitHandler>>
 {
 public:
     explicit Handler(Vst3Plugin* o) : owner(o) {}
+    // IUnitHandler: the plug-in's program lists changed (a rename, a load, new pitch names): the note names are read again.
+    tresult PLUGIN_API notifyUnitSelection(UnitID) override { return kResultOk; }
+    tresult PLUGIN_API notifyProgramListChange(ProgramListID listId, int32 programIndex) override;
     tresult PLUGIN_API beginEdit(ParamID) override { return kResultOk; }
     tresult PLUGIN_API performEdit(ParamID id, ParamValue v) override;
     tresult PLUGIN_API endEdit(ParamID) override { return kResultOk; }
@@ -143,6 +148,9 @@ public:
     ParamRing toProcessor, toController;
     ParamRing fromEditor;   // the plug-in's own view reported these through IComponentHandler::performEdit (several threads produce; idle() consumes)
     std::atomic<int32> restartFlags{0};
+    std::atomic<bool> noteNamesChanged{false};      // ABI 5: a program list changed, or the program in use did
+    std::vector<ParamID> programParams;             // set when the plugin is opened, read from any thread after
+    bool isProgramParam(ParamID id) const { return std::find(programParams.begin(), programParams.end(), id) != programParams.end(); }
     bool active = false, processing = false;
     int latencySamples = 0;
 
@@ -201,6 +209,11 @@ public:
                 controller->setComponentState(&s);
             }
             int n = controller->getParameterCount();
+            for (int i = 0; i < n; i++)         // the program-change parameters: a change of one may name the pitches differently (ABI 5)
+            {
+                ParameterInfo pi{};
+                if (controller->getParameterInfo(i, pi) == kResultOk && (pi.flags & ParameterInfo::kIsProgramChange)) programParams.push_back(pi.id);
+            }
             paramsIn.setMaxParameters(std::max(64, std::min(n, 4096)));
             paramsOut.setMaxParameters(std::max(64, std::min(n, 4096)));
             // An instrument by its category; or a plugin with notes in and no audio in. (Instruments
@@ -684,7 +697,7 @@ public:
     void idle() override
     {
         ParamRing::Item it;
-        while (toController.pop(it)) { dbgParam("controller set", it.id, it.value); controller->setParamNormalized(it.id, it.value); }
+        while (toController.pop(it)) { dbgParam("controller set", it.id, it.value); controller->setParamNormalized(it.id, it.value); if (isProgramParam(it.id)) noteNamesChanged = true; }
         while (fromEditor.pop(it)) { dbgParam("controller set (edit)", it.id, it.value); controller->setParamNormalized(it.id, it.value); }
     }
 
@@ -695,7 +708,33 @@ public:
         if (flags & kLatencyChanged) { latencySamples = (int)processor->getLatencySamples(); r |= NP_POLL_LATENCY; }
         if (flags & (kParamTitlesChanged | kParamValuesChanged)) r |= NP_POLL_PARAMS;
         if (flags & (kReloadComponent | kIoChanged)) r |= NP_POLL_RESTART;
+        // The program in use may be a different one now (its parameter's value changed): its pitch names may be too.
+        if (noteNamesChanged.exchange(false) || (flags & kParamValuesChanged)) r |= NP_POLL_NOTE_NAMES;
         return r;
+    }
+
+    /// The program the unit's program-change parameter selects (its normalized value over its steps), 0 when it has none. Main thread.
+    int32 currentProgram(UnitID unit)
+    {
+        if (!controller) return 0;
+        int32 count = controller->getParameterCount();
+        for (int32 i = 0; i < count; i++)
+        {
+            ParameterInfo pi{};
+            if (controller->getParameterInfo(i, pi) != kResultOk) continue;
+            if (!(pi.flags & ParameterInfo::kIsProgramChange) || pi.unitId != unit) continue;
+            return (int32)std::lround(controller->getParamNormalized(pi.id) * pi.stepCount);
+        }
+        return 0;
+    }
+
+    /// The plugin's pitch names for the program in use (IUnitInfo on its controller, or its component): see np_vst3_names.h.
+    int noteNames(std::vector<np_note_name>& out) override
+    {
+        auto units = U::cast<IUnitInfo>(controller);
+        if (!units) units = U::cast<IUnitInfo>(component);
+        if (!units) return 0;
+        return readVst3PitchNames(units.get(), [this](UnitID unit, ProgramListID) { return currentProgram(unit); }, out);
     }
 
     double paramPlain(uint32_t id, double v) override { return controller->normalizedParamToPlain(id, v); }
@@ -820,9 +859,16 @@ tresult PLUGIN_API Handler::performEdit(ParamID id, ParamValue v)
 {
     dbgParam("controller edit", id, v);
     owner->toProcessor.pushShared(id, v);
+    if (owner->isProgramParam(id)) owner->noteNamesChanged = true;     // another program: maybe other pitch names
     // A plug-in that is its own controller, like a clap-wrapper module, does not set the value it reports: the host's component handler
     // is the one that has to (the controller's own getParamNormalized is what Neo Plug's slots read). Done in idle(), on the main thread.
     owner->fromEditor.pushShared(id, v);
+    return kResultOk;
+}
+
+tresult PLUGIN_API Handler::notifyProgramListChange(ProgramListID, int32)
+{
+    owner->noteNamesChanged = true;
     return kResultOk;
 }
 

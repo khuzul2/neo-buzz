@@ -103,7 +103,8 @@ enum {
     NP_POLL_PARAMS = 2,       /* parameter names, ranges or the list changed: rescan */
     NP_POLL_RESTART = 4,      /* the plugin asks to be deactivated and activated again (ports changed) */
     NP_POLL_DIRTY = 8,        /* the plugin's state changed */
-    NP_POLL_FLUSH = 16        /* the plugin asked for a parameter flush (its own window changed a value): call np_flush with the block gate held */
+    NP_POLL_FLUSH = 16,       /* the plugin asked for a parameter flush (its own window changed a value): call np_flush with the block gate held */
+    NP_POLL_NOTE_NAMES = 32   /* the plugin's note names changed (CLAP note-name changed, VST3 program list change): read np_note_names again */
 };
 
 typedef struct np_plugin np_plugin;
@@ -211,9 +212,22 @@ NP_API void np_gui_close_window(np_plugin* p);
 /* macOS: the audio device's os_workgroup_t, so the servers' audio threads join it (NULL = none). Other platforms ignore it. */
 NP_API void np_set_workgroup(void* os_workgroup, double period_seconds);
 
+/* Note names, ABI 5 (docs/specs/daw-modes.md §8.9, NM1): what a plug-in calls its keys ("Kick" on 36), so a piano roll can name its rows and fold to
+ * the keys that make a sound. CLAP: the note-name extension (the plugin tells the host it changed: NP_POLL_NOTE_NAMES). VST3: IUnitInfo's program pitch
+ * names for the program the plugin's program-change parameter selects (IUnitHandler::notifyProgramListChange, and a value change of that parameter:
+ * NP_POLL_NOTE_NAMES). channel is 0 to 15, or -1 for every channel. Main thread only, never in a block; the sandbox answers from its own cache of the
+ * plugin's names, so it costs no more than one round trip. */
+typedef struct np_note_name {
+    int32_t key;              /* 0..127 */
+    int32_t channel;          /* -1 = every channel */
+    char name[64];            /* UTF-8 */
+} np_note_name;
+/* Fills out (up to cap entries) with the names the plugin gives now. Returns how many there are (it may exceed cap), 0 when it names none. */
+NP_API int np_note_names(np_plugin* p, np_note_name* out, int cap);
+
 NP_API const char* np_version(void);
 /* The library's ABI number (managed callers refuse a different one). */
-#define NP_ABI 4
+#define NP_ABI 5
 NP_API int np_abi(void);
 
 #ifdef __cplusplus

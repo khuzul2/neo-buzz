@@ -72,24 +72,102 @@ namespace NeoBuzz.Sampler
         /// <summary>
         /// Hosts (the keyboard under the machine's window, docs/specs/studio-mvp.md §3.12): in Kit mode, the key each zone
         /// with a wave plays (Kit base + zone − 1) by its wave's name ("Kick", a song wave's own); null in Instrument mode,
-        /// where every key plays.
+        /// where every key plays. The same names as the note map's (docs/specs/daw-modes.md §8.9).
         /// </summary>
         public IReadOnlyDictionary<int, string> KeyNames
         {
             get
             {
-                if (Values.Choice(P.Mode) != 1) return null;
-                int first = (int)Values.Value(P.KitBase);
+                if (Raw(P.Mode) != 1) return null;
                 var names = new Dictionary<int, string>();
-                for (int z = 0; z < SamplerEngine.ZoneCount; z++)
-                {
-                    int raw = Values[SamplerEngine.ZoneParam(z, SamplerEngine.FWave)], key = first + z;
-                    if (raw <= 0 || key < 0 || key > 127) continue;
-                    string name = SamplerText.Wave(raw);
-                    names[key] = name.StartsWith("Built-in ", StringComparison.Ordinal) ? name.Substring("Built-in ".Length) : name;
-                }
+                foreach (var e in BuildNoteMap(-1) ?? Array.Empty<NoteMapEntry>())
+                    if (e.Name != null) names[e.Key] = e.Name;
                 return names;
             }
+        }
+
+        // ---- Note map (docs/specs/daw-modes.md §8.9, NM1): the keys that make a sound, from the zones --------------------------------
+
+        /// <summary>
+        /// Kit mode: the key of each zone that has a wave (Kit base + zone − 1), named by its wave ("Kick"). Instrument mode: every key
+        /// inside a zone's key range (a zone with a wave and a velocity range that plays something), grouped by the first zone's wave.
+        /// Keys outside every zone make no sound. Read from the host's parameter values (a value just set shows at once), off the audio thread.
+        /// </summary>
+        internal override IReadOnlyList<NoteMapEntry> BuildNoteMap(int channel)
+        {
+            var entries = new List<NoteMapEntry>();
+            bool kit = Raw(P.Mode) == 1;
+            int first = Math.Clamp(Raw(P.KitBase), 0, 127);
+            var seen = new bool[128];
+            for (int z = 0; z < SamplerEngine.ZoneCount; z++)
+            {
+                int wave = Raw(SamplerEngine.ZoneParam(z, SamplerEngine.FWave));
+                if (wave <= 0) continue;
+                string name = ZoneName(wave);
+                if (kit)
+                {
+                    int key = first + z;
+                    if (key <= 127 && !seen[key]) { seen[key] = true; entries.Add(new NoteMapEntry(key, name, "Kit")); }
+                    continue;
+                }
+                int velLo = Raw(SamplerEngine.ZoneParam(z, SamplerEngine.FVelLo)), velHi = Raw(SamplerEngine.ZoneParam(z, SamplerEngine.FVelHi));
+                if (Math.Max(velLo, velHi) < 1) continue;       // no velocity plays it
+                int lo = Raw(SamplerEngine.ZoneParam(z, SamplerEngine.FKeyLo)), hi = Raw(SamplerEngine.ZoneParam(z, SamplerEngine.FKeyHi));
+                for (int key = Math.Max(0, Math.Min(lo, hi)); key <= Math.Min(127, Math.Max(lo, hi)); key++)
+                    if (!seen[key]) { seen[key] = true; entries.Add(new NoteMapEntry(key, null, name)); }
+            }
+            entries.Sort((a, b) => a.Key.CompareTo(b.Key));
+            return entries;
+        }
+
+        /// <summary>A hash of what the map follows (mode, Kit base, each zone's wave, name and ranges): cheap, so the host can poll it.</summary>
+        internal override int NoteMapSignature()
+        {
+            int h = NoteMapHash.Add(NoteMapHash.Seed, Raw(P.Mode));
+            h = NoteMapHash.Add(h, Raw(P.KitBase));
+            for (int z = 0; z < SamplerEngine.ZoneCount; z++)
+            {
+                int wave = Raw(SamplerEngine.ZoneParam(z, SamplerEngine.FWave));
+                h = NoteMapHash.Add(h, wave);
+                if (wave <= 0) continue;
+                h = NoteMapHash.Add(h, ZoneName(wave));
+                for (int f = SamplerEngine.FKeyLo; f <= SamplerEngine.FVelHi; f++) h = NoteMapHash.Add(h, Raw(SamplerEngine.ZoneParam(z, f)));
+            }
+            return h;
+        }
+
+        /// <summary>A zone's wave as a key name: a built-in sample's ("Kick"), a song wave's own name, or "Slot 12" when it has none.</summary>
+        string ZoneName(int wave)
+        {
+            if (wave > SampleBank.SongSlots)
+            {
+                int n = wave - SampleBank.SongSlots;
+                return n <= BuiltIns.Count ? BuiltIns.Names[n - 1] : "Sample " + n;
+            }
+            string name = Source.NameOf(wave);
+            return string.IsNullOrWhiteSpace(name) ? "Slot " + wave : name.Trim();
+        }
+
+        IParameter[] globals;
+
+        /// <summary>A global parameter's value as the host holds it (a value just set, before the engine's next tick); the engine's when there is no host.</summary>
+        int Raw(int index)
+        {
+            try
+            {
+                var list = globals ??= HostGlobals();
+                if (list != null && index < list.Length) return list[index].GetValue(0);
+            }
+            catch (Exception) { }
+            return Values[index];
+        }
+
+        IParameter[] HostGlobals()
+        {
+            var groups = host?.Machine?.ParameterGroups;
+            if (groups == null || groups.Count < 2) return null;
+            var found = new List<IParameter>(groups[1].Parameters);
+            return found.Count == Params.Table.Length ? found.ToArray() : null;
         }
 
         IParameter[] zoneWaves;
