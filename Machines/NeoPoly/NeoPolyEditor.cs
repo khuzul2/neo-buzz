@@ -78,16 +78,13 @@ namespace NeoBuzz.Poly
 
             var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 150);
 
-            // The acid controls sit beside the knobs of the envelope they belong to (short labels, no uniform grid): the room is there,
-            // so the section grows neither taller nor wider than the page.
-            UIElement Extra(int index, string label) => new ParamKnob(ctx, index, label, D);
-            UIElement MakeEnvPlus(string title, int a, int d, int s, int r, params UIElement[] extra) => S(title, Layout.Column(
-                Build.Envelope(ctx, a, d, s, r, 4 * 64, 46),
-                Layout.Row(Build.Knobs(ctx, 4, D, a, d, s, r), Layout.Gap(8), Layout.Row(extra))));
-            var ampEnv = MakeEnvPlus("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR,
-                Extra(P.AccentLevel, "Acc level"), Extra(P.SlideTime, "Slide time"), new ParamChoice(ctx, P.Slide, "Slide", 40));
-            var fltEnv = MakeEnvPlus("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR,
-                Extra(P.AccentThr, "Acc thresh"), Extra(P.AccentDecay, "Acc decay"), Extra(P.AccentSweep, "Acc sweep"));
+            var ampEnv = MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR);
+            var fltEnv = MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR);
+            // Acid: accent and slide in their own small section beside the two envelopes they belong to. The studio page's third row has the
+            // room (its width is set by the filter row), so the page stays as wide and as tall as it was.
+            var acid = S("Accent · Slide", Layout.Column(
+                Build.Knobs(ctx, 3, D, P.AccentThr, P.AccentDecay, P.AccentSweep, P.AccentLevel, P.SlideTime),
+                new ParamChoice(ctx, P.Slide, "Slide", 40)));
             var modEnv = MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR);
             var lfo1 = MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
             var lfo2 = MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
@@ -97,7 +94,7 @@ namespace NeoBuzz.Poly
             var synth = Layout.Column(
                 Layout.Row(osc1, osc2, osc3),
                 Layout.Row(f1, f2, voice, S("Out", meter)),
-                Layout.Row(ampEnv, fltEnv));
+                Layout.Row(ampEnv, fltEnv, acid));
             var modulation = Layout.Column(
                 Layout.Row(modEnv, lfo1, lfo2),
                 Layout.Row(S("Modulation matrix", matrix)));
@@ -112,7 +109,7 @@ namespace NeoBuzz.Poly
             return Layout.Column(
                 Layout.Row(osc1, osc2, osc3),
                 Layout.Row(f1, f2, voice, S("Out", meter)),
-                Layout.Row(ampEnv, fltEnv, modEnv),
+                Layout.Row(ampEnv, fltEnv, modEnv, acid),
                 Layout.Row(lfo1, lfo2, S("Modulation matrix", matrix)));
 #endif
         }
