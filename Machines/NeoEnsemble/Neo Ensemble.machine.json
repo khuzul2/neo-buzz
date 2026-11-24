@@ -261,7 +261,7 @@
    "b": 200.0,
    "unit": "%",
    "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
-   "how": "Scales the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "how": "Scales the wet mix, the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
    "sound": "Turn it down for a calmer, subtler movement, up for a deeper, more obvious sweep."
   }
  ]

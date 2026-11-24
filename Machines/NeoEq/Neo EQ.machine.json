@@ -3304,7 +3304,7 @@
    "b": 200.0,
    "unit": "%",
    "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
-   "how": "Scales every band's gain in dB (and the graphic sliders): 0 % is flat. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "how": "Scales every band's gain in dB (and the graphic sliders) toward flat. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
    "sound": "Turn it down to ease every boost and cut towards flat, up to exaggerate the whole curve."
   },
   {

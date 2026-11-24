@@ -1910,6 +1910,32 @@ namespace ReBuzz.Studio.Tests
                     var pads = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "InteractiveGraph" && System.Math.Abs(c.Bounds.Width - 480) < 1);
                     ClickIn(w, pads, 6 + 1 * (((480 - 12 - 5 * 6) / 6.0) + 6) + 10, 20);
                 }, "Neo Drums' editor with the snare's pad selected (P5a): its panel alone, the mix strip with every pad's level and pan, the pad lit by the hit it played.", "Double-click Neo Drums, then click the snare's pad.");
+                // FX1 (machines.md, "Mix and Amount"): every Neo effect's editor has Amount and Mix, Amount first, in its Output (or last) section.
+                // Set off their defaults (the values before the editor opens) so the knobs and the graphs show them.
+                void FxShot(string id, string gear, string name, (string Param, int Raw)[] values, string what)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add(gear, name);
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        foreach (var (param, raw) in values) group.Parameters.First(p => p.Name == param).SetValue(0, raw);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, what, "Double-click the effect; Amount and Mix are the last two knobs of its Output section.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                FxShot("650-editor-neo-comp-amount-mix", "Neo Comp", "FX Comp", new[] { ("Amount", 1500), ("Mix", 700) },
+                    "Neo Comp's editor with Amount at 150 % and Mix at 70 %: the Output section has Amount and Mix side by side (Amount first) above Makeup and Character; the static curve shows the steeper ratio the Amount makes.");
+                FxShot("651-editor-neo-eq-amount-mix", "Neo EQ", "FX EQ", new[] { ("B2 gain", 360), ("Amount", 500), ("Mix", 1000) },
+                    "Neo EQ's editor with band 2 at +12 dB and Amount at 50 %: the curve shows the +6 dB the Amount makes; Amount and Mix in the Output section.");
+                FxShot("652-editor-neo-verb-amount-mix", "Neo Verb", "FX Verb", new[] { ("Amount", 1500), ("Mix", 300) },
+                    "Neo Verb's editor with Amount at 150 % and its own Mix at 30 %: Amount and Mix in the Output section (Width moved beside Shimmer); the decay picture follows the Amount.");
+                FxShot("653-editor-neo-utility-amount-mix", "Neo Utility", "FX Utility", new[] { ("Amount", 1000), ("Mix", 500) },
+                    "Neo Utility's editor with Mix at 50 %: Amount and Mix after the channel controls, the same size and order as every Neo effect's.");
 
                 // The generic parameter window: a Neo machine, a Pedal synth, a Pedal effect.
                 void Parameters(string id, MachineCore m, string what, string how)
