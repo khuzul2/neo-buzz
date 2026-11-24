@@ -1,0 +1,98 @@
+# Neo Lo-Fi factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLoFi
+# A preset that does not name a parameter takes its default: Bits 12, Rate off, everything else off or flat. Bits = 24 turns the crusher off.
+machine "Neo Lo-Fi"
+
+preset "Crush — 8-bit"
+comment "Eight bits held at 22 kHz with the aliasing left in: the gritty, hard-edged sound of an early home computer or a handheld game."
+Bits = 8
+Rate = 22050
+Output = -2
+
+preset "Crush — 12-bit sampler"
+comment "Twelve bits at 26 kHz behind an anti-alias filter, a little noise and a darker top: the gentle, slightly dirty sound of an early hardware sampler."
+Bits = 12
+Rate = 26000
+Anti-alias = On
+Hiss = -78
+Tone = -15
+
+preset "Crush — Crushed drums"
+comment "Six bits and 14 kHz with a little clock jitter, blended 60 percent into the original: a drum loop that snaps and fizzes but keeps its punch."
+Bits = 6
+Rate = 14000
+Jitter = 8
+Mix = 60
+Output = -3
+
+preset "Crush — Broken toy"
+comment "Four bits at 2.2 kHz with jitter, a slow wobble and a dull top: a melody that sounds as if it comes from a dying toy."
+Bits = 4
+Rate = 2200
+Jitter = 20
+Wow = 6
+Drift = 6
+Tone = -25
+Output = -6
+
+preset "Tape — Cassette"
+comment "A used cassette: hiss, a slow wow, a little flutter and a rolled-off top."
+Bits = 24
+Hiss = -52
+Wow = 12
+Wow rate = 0.8
+Flutter = 6
+Drift = 3
+Tone = -35
+
+preset "Tape — Worn tape"
+comment "Tape at the end of its life: a deep wow, a nervous flutter, a wandering pitch, strong hiss and a dull top."
+Bits = 24
+Hiss = -46
+Wow = 22
+Wow rate = 0.5
+Flutter = 12
+Drift = 10
+Tone = -50
+
+preset "Vinyl — Dusty vinyl"
+comment "A well-played record: a few pops a second, a soft hiss, a faint wobble and a slightly dark top. Fourteen bits with dither keep the quiet parts alive."
+Bits = 14
+Dither = On
+Hiss = -62
+Crackle = 14
+Crackle level = -34
+Wow = 3
+Wow rate = 0.55
+Tone = -20
+
+preset "Radio — AM radio"
+comment "A small AM radio: eleven kilohertz, a narrow top, a steady hiss that follows the music and a little flutter."
+Bits = 10
+Rate = 11000
+Anti-alias = On
+Hiss = -48
+Hiss follow = On
+Flutter = 3
+Tone = -70
+Output = 3
+
+preset "Radio — Telephone"
+comment "A telephone line: eight bits at 8 kHz, dithered, anti-aliased and narrow, with a faint hiss and the odd pop."
+Bits = 8
+Dither = On
+Rate = 8000
+Anti-alias = On
+Hiss = -58
+Crackle = 3
+Crackle level = -40
+Tone = -55
+Output = 2
+
+preset "Warm — Gentle warmth"
+comment "Almost nothing: a barely moving pitch, a trace of hiss and a slightly softer top, for taking the digital edge off a part."
+Bits = 24
+Hiss = -76
+Wow = 4
+Wow rate = 0.7
+Drift = 5
+Tone = -12

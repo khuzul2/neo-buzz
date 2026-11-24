@@ -1,0 +1,58 @@
+# Neo Lo-Fi parameters (docs/specs/neo-lofi.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoLoFi
+namespace NeoBuzz.LoFi
+class NeoLoFiMachine
+summary Lo-fi in one effect, with zero latency: bit-depth reduction (1 to 24 bits, fractional, optional TPDF dither), sample-and-hold rate reduction down to 200 Hz with an optional anti-alias filter and hold-clock jitter, hiss (optionally following the input), vinyl crackle, light wow, flutter and drift, a tone control, Mix and Output. Everything is smoothed; with every stage off, or Mix at 0, the input passes bit for bit. Use it for 8-bit and early-sampler grit, cassette and radio colour, dusty vinyl, telephone and small-speaker sounds.
+
+group Crush
+Bits        "Bits"          0 2300 1100   lin 1 24 bit 1                  | Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels
+    how Sets the word length from 1 to 24 bits, in fractions of a bit; 24 turns the crusher off.
+    sound Fewer bits give coarser steps: at 12 it is grainy on quiet parts, at 8 it is gritty, at 4 and below it is a harsh buzz of noise and distortion.
+Dither      "Dither"        0 1     0     switch                          | TPDF dither (one step peak to peak each side) before the rounding
+    how Adds triangular dither before the bit reduction.
+    sound Off the quantisation error is crunchy distortion that follows the signal; on it turns into a smooth hiss, and quiet tails stay alive.
+Rate        "Rate"          0 1000  1000  freq 200 192000                  | Sample-and-hold rate in Hz; at or above the host's sample rate it is off
+    how Sets the rate the signal is held at, from 200 Hz up; the top of the range, at or above the song's sample rate, turns the reducer off.
+    sound Lower rates sound crunchy and metallic as the top end folds back into the audible range; very low rates turn music into an electronic toy.
+AntiAlias   "Anti-alias"    0 1     0     switch                          | A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold
+    how Filters everything above the new Nyquist frequency away before the hold.
+    sound Off, the fold-over aliasing makes the sound harsh and inharmonic; on, the sound is duller but clean, like a period sampler's output filter.
+Jitter      "Jitter"        0 1000  0     pct                             | Random timing error of the hold clock (up to 25% of a hold period at 100%)
+    how Shakes the moment each sample is taken by a small random amount.
+    sound A little roughens the aliasing into noise; more adds a rough, unstable grain.
+group Noise
+Hiss        "Hiss"          0 700   0     db -90 -20 inf                  | Hiss level in dBFS (RMS); off at its minimum
+    how Adds a steady hiss from -90 to -20 dB, or turns it off at the minimum.
+    sound A little hiss gives a worn tape or old preamp feel; more covers quiet passages.
+HissFollow  "Hiss follow"   0 1     0     switch                          | The hiss follows the input's level, and closes when the input is silent (below -70 dBFS)
+    how Makes the hiss follow the loudness of the input, gated off when nothing plays.
+    sound The hiss rises and falls with the music, like noise that comes from the signal itself; silence stays silent.
+Crackle     "Crackle"       0 1000  0     lin 0 100 /s 1                  | Vinyl dust: pops per second
+    how Sets how many pops per second are added, from 0 to 100.
+    sound A few pops a second sound like a dusty record; many sound like a worn one.
+CrackleLevel "Crackle level" 0 540  300   db -60 -6                       | Peak level of the loudest pops in dBFS
+    how Sets the level of the crackle pops, from -60 to -6 dB.
+    sound Low levels are a faint dust under the music; high levels are loud clicks.
+group Motion
+Wow         "Wow"           0 500   0     lin 0 50 ct 1                   | Slow pitch variation: peak deviation in cents (the modulated read delays the sound by a few ms, never reported as latency)
+    how Sets a slow pitch wobble of up to 50 cents.
+    sound It gives a worn, unstable tape or turntable feel, with slow bending of long notes.
+WowRate     "Wow rate"      0 1000  402   exp 0.3 6 Hz 2                  | The wow's rate
+    how Sets the speed of the slow pitch wobble, from 0.3 to 6 Hz.
+    sound Slow rates drift lazily and faster ones sound like a warble.
+Flutter     "Flutter"       0 500   0     lin 0 50 ct 1                   | Fast pitch variation (7.3 and 11.9 Hz): peak deviation in cents
+    how Sets a fast pitch wobble of up to 50 cents.
+    sound It adds a fine, nervous shimmer to the pitch, like a tired transport.
+Drift       "Drift"         0 250   0     lin 0 25 ct 1                   | Very slow random detune (three incommensurate slow waves, 0.12 to 0.31 Hz): peak deviation in cents
+    how Sets a very slow, irregular detune of up to 25 cents.
+    sound The pitch wanders slowly and never repeats exactly, like an unsteady oscillator or a warped record.
+group Output
+Tone        "Tone"          0 1000  500   bip                             | After the chain: left of centre a low-pass (20 kHz down to 600 Hz), right of centre a high-frequency lift (up to 9 dB)
+    how Tilts the tone after everything else: darker to the left, brighter to the right, flat in the middle.
+    sound Turn it down to soften the harsh edges of the crushing; turn it up to bring back air.
+Mix         "Mix"           0 1000  1000  pct                             | Dry/wet (the dry signal is not delayed: there is no latency)
+    how Blends the processed signal with the dry input.
+    sound Lower values keep the original and add the lo-fi as a layer.
+Output      "Output"        0 1000  500   db -24 24                       | Output level
+    how Sets the final level in dB, from -24 to +24.
+    sound It makes the sound louder or quieter without changing its character.
