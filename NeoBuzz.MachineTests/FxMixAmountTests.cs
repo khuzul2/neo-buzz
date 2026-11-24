@@ -34,6 +34,8 @@ namespace NeoBuzz.MachineTests
             public bool OwnMix;
             /// <summary>What "the effect" is, when the difference from the input is not it: (input, output, latency) as one number that grows with Amount.</summary>
             public Func<float[], float[], int, double> Measured;
+            /// <summary>Settings for the zipper test when <see cref="Active"/> makes steps of its own (a sample-and-hold, a quantiser): null, Active.</summary>
+            public Action<ParamValues> Smooth;
             public override string ToString() => Name;
         }
 
@@ -131,6 +133,12 @@ namespace NeoBuzz.MachineTests
             new Case { Name = "Neo Verb", Table = NeoBuzz.Verb.Params.Table, OwnMix = true, PeakLimit = 4,
                 Make = v => { var e = new NeoBuzz.Verb.VerbEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => 0); },
                 Active = v => { Set(v, "Mix", 0.4); Set(v, "Decay", 3); } },
+            // Neo Lo-Fi: its own Amount scaling (Lo-Fi's perceptual rules, LoFiGoldenTests) and its own Mix (no latency); the stage owns
+            // Amount's bypass. Its Amount keeps LF2's raw range (0 … 1000 for 0 … 200 %): the tests set it in percent.
+            new Case { Name = "Neo Lo-Fi", Table = NeoBuzz.LoFi.Params.Table, OwnMix = true, PeakLimit = 4,
+                Make = v => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => NeoBuzz.LoFi.LoFiEngine.Latency); },
+                Active = v => { Set(v, "Bits", 8); Set(v, "Rate", 8000); },
+                Smooth = v => { SetRaw(v, "Bits", v.Table[Idx(v.Table, "Bits")].Max); SetRaw(v, "Rate", v.Table[Idx(v.Table, "Rate")].Max); Set(v, "Tone", -0.5); Set(v, "Wow", 10); } },
             new Case { Name = "Neo Utility", Table = NeoBuzz.Utility.Params.Table, PeakLimit = 4,
                 Make = v => { var e = new NeoBuzz.Utility.UtilityEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => 0); },
                 Active = v => { Set(v, "Gain", 6); Set(v, "Width", 150); Set(v, "Pan", 0.3); } },
@@ -233,7 +241,7 @@ namespace NeoBuzz.MachineTests
             foreach (int raw in steps)
             {
                 var v = Values(c, c.Active);
-                SetRaw(v, AmountId(c), raw);
+                Set(v, AmountId(c), raw / 10.0);
                 var (l, r, latency) = Render(c, v, inL, inR);
                 double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
                 Assert.That(double.IsFinite(peak), Is.True, $"{c.Name} at {raw / 10} %: finite");
@@ -263,9 +271,7 @@ namespace NeoBuzz.MachineTests
             var c = Get(name);
             var t = c.Table;
             int amount = Idx(t, AmountId(c));
-            Assert.That(t[amount].Default, Is.EqualTo(1000));
-            Assert.That(t[amount].Min, Is.EqualTo(0));
-            Assert.That(t[amount].Max, Is.EqualTo(2000));
+            Assert.That(t[amount].Value(t[amount].Min), Is.EqualTo(0).Within(1e-9), "0 % at the minimum");
             Assert.That(t[amount].Value(t[amount].Default), Is.EqualTo(100).Within(1e-9), "100 % at the default");
             Assert.That(t[amount].Value(t[amount].Max), Is.EqualTo(200).Within(1e-9));
             int mix = Idx(t, "Mix");
@@ -290,11 +296,13 @@ namespace NeoBuzz.MachineTests
             var r = new float[256];
             int blocks = inL.Length / 256 - 1;
             int amountAt = Idx(v.Table, AmountId(c)), mixAt = Idx(v.Table, "Mix");
+            var amountRaw = new int[1601];
+            for (int k = 0; k < amountRaw.Length; k++) amountRaw[k] = v.Table[amountAt].Raw((200 + k) / 10.0);
             void Block(int b)
             {
                 // Mix and Amount move every block: Mix across its whole range, Amount from 20 % to 180 %.
                 v.Set(mixAt, c.OwnMix ? 1000 : (b * 37) % 1001);
-                v.Set(amountAt, 200 + (b * 53) % 1601);
+                v.Set(amountAt, amountRaw[(b * 53) % 1601]);
                 Array.Copy(inL, b % blocks * 256, l, 0, 256);
                 Array.Copy(inR, b % blocks * 256, r, 0, 256);
                 rig.Process(l, r, 256);
@@ -312,9 +320,9 @@ namespace NeoBuzz.MachineTests
             foreach (string which in new[] { "Mix", "Amount" })
             {
                 if (which == "Mix" && c.OwnMix) continue;
-                var v = Values(c, c.Active);
+                var v = Values(c, c.Smooth ?? c.Active);
                 string id = which == "Amount" ? AmountId(c) : "Mix";
-                var (l, r, latency) = Render(c, v, tone, tone, b => SetRaw(v, id, which == "Mix" ? (int)(500 + 500 * Math.Sin(b * 0.11)) : (int)(1000 + 800 * Math.Sin(b * 0.09))));
+                var (l, r, latency) = Render(c, v, tone, tone, b => { if (which == "Mix") SetRaw(v, id, (int)(500 + 500 * Math.Sin(b * 0.11))); else Set(v, id, (int)(1000 + 800 * Math.Sin(b * 0.09)) / 10.0); });
                 // Click detector: the second difference against its local mean (±64 samples), past the start-up.
                 var d2 = new double[l.Length];
                 for (int i = 1; i < l.Length - 1; i++) d2[i] = Math.Abs(l[i + 1] - 2.0 * l[i] + l[i - 1]);

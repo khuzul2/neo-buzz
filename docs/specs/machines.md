@@ -1058,6 +1058,7 @@ Every Neo effect has **Amount** (0 - 200 %, default 100 %) and **Mix** (0 - 100 
 | Gate | ratio reduction, Range | stage | no |
 | Imager | band Widths toward 100 %, Stereo 1 - 4 toward 0 | stage | no |
 | Limiter | Input gain, Ceiling (toward 0 dB), Upward, Transients, Slow stage | stage | no |
+| Lo-Fi | its own rules (LF2): bits removed from 24, octaves of rate reduction, hiss and crackle in dB, wow, flutter and drift in cents, the tone cut (`LoFiEngine.Update`); the stage owns 0 % and the fade to 5 % | its own (no latency) | no |
 | Low End | Punch, Sustain, Contrast, Balance | stage | no |
 | Multiband | per band ratio reduction, upward ratio, Range, Makeup | its own | no |
 | Spectral | Depth, Lift, Tilt | its own | no |
@@ -1068,7 +1069,7 @@ Every Neo effect has **Amount** (0 - 200 %, default 100 %) and **Mix** (0 - 100 
 | Verb | wet Mix toward 0 and Decay (log, from 0.2 s) | its own | no |
 | Utility | Gain and Pan toward 0, Width toward 100 % | stage | no |
 
-Notes: Clipper's and Limiter's Ceiling goes toward 0 dB, so Amount 0 is not a louder signal than the input. Dither's engine sets the level and depth from Amount directly (no rule). Neo Lo-Fi and Neo Poly are not part of this (their own branches); analysers, scopes, audio in and the generators have none.
+Notes: Clipper's and Limiter's Ceiling goes toward 0 dB, so Amount 0 is not a louder signal than the input. Dither's engine sets the level and depth from Amount directly (no rule). Neo Lo-Fi (LF2) joined after: its Amount keeps LF2's raw range (0 … 1000 for 0 … 200 %, whole per cent) and its own perceptual scaling, which the user approved by ear; the stage gives it the same bit-exact 0 % and fade as the others, and `LoFiGoldenTests` holds its ten presets (and the defaults) at 100, 50 and 150 % bit-identical to LF2's head 120d54b3. Neo Poly is not part of this (its own branch); analysers, scopes, audio in and the generators have none.
 
 ## 6. Phases
 

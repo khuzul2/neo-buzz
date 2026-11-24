@@ -48,10 +48,12 @@ namespace NeoBuzz.LoFi
                 Layout.Gap(4),
                 new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 120));
 
-            // Amount (the strength of the whole effect) first, with Mix (dry/wet) under it; then the tone and the level.
+            // Amount (the strength of the whole effect) and Mix (dry/wet) side by side, Amount first, the same size as on every Neo
+            // effect (machines.md, "Mix and Amount"); the tone and the level under them.
             var output = Layout.Row(
-                Layout.Column(new ParamKnob(ctx, P.Amount), new ParamKnob(ctx, P.Mix)),
-                Layout.Column(new ParamKnob(ctx, P.Tone), new ParamKnob(ctx, P.Output)),
+                Layout.Column(
+                    Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
+                    Layout.Row(new ParamKnob(ctx, P.Tone), new ParamKnob(ctx, P.Output))),
                 Layout.Gap(6),
                 meters);
 
