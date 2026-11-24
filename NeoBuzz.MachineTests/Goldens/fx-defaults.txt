@@ -263,14 +263,14 @@ Neo Transient	Bus — Glue the Sustain	f552cb110ff356ee	52d5a0e4187f3547
 Neo Transient	Mid/Side — Punch the Mid	9cb284be139b1e02	f0e488039b626b5f
 Neo Transient	Live — No Latency	779137b25419f4d2	5be4795923547b6d
 Neo Tune	(defaults)	6fbf49cbf5d95c63	d6d185437036e100
-Neo Tune	Lead — Hard effect	7d4e409f11b8d5ff	d6d185437036e100
-Neo Tune	Lead — Pop polish	4f95b948e5c1d6d7	d6d185437036e100
+Neo Tune	Lead — Hard effect	44f2d06be0258550	d6d185437036e100
+Neo Tune	Lead — Pop polish	d65783d8c82f331b	d6d185437036e100
 Neo Tune	Lead — Natural	6fbf49cbf5d95c63	d6d185437036e100
 Neo Tune	Lead — Transparent	6fbf49cbf5d95c63	d6d185437036e100
 Neo Tune	Live — Low Latency Natural	98295ab3c744f5a8	b76011f762e2694c
 Neo Tune	Special — MIDI-led	88cb69a643b3b5f9	57dd692c5da8b62e
-Neo Tune	Special — Robot	021aeb94fe24735f	57dd692c5da8b62e
-Neo Tune	Special — Thick	2845ea1b9411d2ae	9b10efb3c7a3fd16
+Neo Tune	Special — Robot	c4dd8784a600332f	57dd692c5da8b62e
+Neo Tune	Special — Thick	ddf7abc7b6160785	9b10efb3c7a3fd16
 Neo Verb	(defaults)	ea04a233d67a941a	084e47b98368caf1
 Neo Verb	Hall — Concert	f06e1588470f51e5	79988473e7b43cc9
 Neo Verb	Hall — Cathedral	cd87ef76c356fc09	3fd9630d72804861
