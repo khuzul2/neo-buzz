@@ -51,6 +51,7 @@ Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named
 | Neo Clipper | linux | hot (loud but steady) with Output at its maximum (+24.0 dB): +14.4 dBFS peak |  |
 | Neo Comp | windows | hot (loud but steady) with Makeup at its maximum (24.0 dB): +12.3 dBFS peak; Output at its maximum (+24.0 dB): +12.2 dBFS peak |  |
 | Neo De-esser | linux | hot (loud but steady) with Output at its maximum (+24.0 dB): +15.8 dBFS peak |  |
+| Neo Lo-Fi | linux | hot (loud but steady) with Output at its maximum (+24.0 dB): +14.8 dBFS peak |  |
 | Neo Delay | windows | hot (loud but steady) with Output at its maximum (+12.0 dB): +1.3 dBFS peak |  |
 | Neo Drive | windows | hot (loud but steady) with Output at its maximum (+24.0 dB): +12.4 dBFS peak |  |
 | Neo Ensemble | windows | hot (loud but steady) with Output at its maximum (+12.0 dB): +1.6 dBFS peak |  |
@@ -510,6 +511,7 @@ Drafts:
 | Neo Strip | utility | 0.0 | 504 | 0.01 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.7 | hot |
 | Neo Tape | distortion | -2.22 | 59 | 0.01 | 9.25 s |  | 21 Hz – 3.3 kHz | 3.0 | 0.524 | hot |
 | Neo Transient | utility | 0.0 | 132 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.505 | hot |
+| Neo Lo-Fi | utility | -0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.488 | hot |
 | Neo Tune | utility | -0.01 | 1235 | 0.03 |  |  | 21 Hz – 0.3 kHz | 1.0 | 0.671 | ok |
 | Neo Utility | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.37 | hot |
 | Neo Verb | reverb | -2.8 | 0 | 1.52 | 2.22 s | 35 ms | 21 Hz – 18.8 kHz | 15.6 | 0.383 | hot |
