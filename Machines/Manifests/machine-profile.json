@@ -30441,7 +30441,7 @@
   "Neo Organ": {
    "gear": "Neo Organ",
    "kind": "generator",
-   "load_seconds": 0.41,
+   "load_seconds": 0.39,
    "gear_info": {
     "file": "Generators/Neo Organ.NET.dll",
     "managed": true,
@@ -30470,23 +30470,23 @@
     },
     "polyphony": 8,
     "polyphony_levels": {
-     "1": -26,
-     "2": -23.4,
-     "4": -20.8,
-     "8": -17.9
+     "1": -20.6,
+     "2": -18,
+     "4": -15.4,
+     "8": -12.5
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -27,
-    "sample_peak_dbfs": -20.43,
-    "true_peak_dbtp": -20.43
+    "integrated_lufs": -21.6,
+    "sample_peak_dbfs": -15.72,
+    "true_peak_dbtp": -15.72
    },
-   "cpu_ms_per_s": 3.5,
+   "cpu_ms_per_s": 0.0,
    "type": "polysynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -20.07,
+     "peak_dbfs": -14.67,
      "growth_db": -1.44,
      "verdict": "ok"
     },
@@ -30503,11 +30503,11 @@
     }
    },
    "envelope": {
-    "peak_db": -26.31,
+    "peak_db": -20.91,
     "attack_s": 0.73,
     "final_db": -1.3,
     "length_s": null,
-    "release_s": 0.015,
+    "release_s": 0.02,
     "release_past_window": false,
     "bright_mid_hz": 493.7,
     "bright_early_hz": 451.4,
@@ -30521,31 +30521,31 @@
     "db_per_doubling": 0.03,
     "curve": "none (velocity doesn't change its level)",
     "levels_db": {
-     "16": -27.82,
-     "32": -26.75,
-     "64": -26.62,
-     "127": -27.77
+     "16": -22.42,
+     "32": -21.35,
+     "64": -21.22,
+     "127": -22.37
     }
    },
    "denormal": {
-    "playing_ms_per_s": 17.787,
-    "silent_ms_per_s": 0.818,
-    "silent_worst_ms_per_s": 1.933,
+    "playing_ms_per_s": 17.703,
+    "silent_ms_per_s": 0.554,
+    "silent_worst_ms_per_s": 1.794,
     "windows_ms_per_s": [
-     17.787,
-     1.933,
-     0.813,
-     0.812,
-     0.818,
-     0.805,
-     0.82,
-     0.812,
-     0.82,
-     0.81,
-     0.829
+     17.703,
+     1.794,
+     0.548,
+     0.556,
+     0.554,
+     0.524,
+     0.528,
+     0.517,
+     0.554,
+     0.58,
+     0.566
     ]
    },
-   "seconds": 2.3,
+   "seconds": 2.0,
    "platform": "linux",
    "date": "2026-11-24",
    "problems": [],
