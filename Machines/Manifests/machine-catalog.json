@@ -50,6 +50,8 @@
   "multiband": "Works on separate frequency bands",
   "saturation": "Soft harmonic warmth and gentle overdrive",
   "distortion": "Hard clipping, folding or other strong distortion",
+  "bitcrush": "Reduces bit depth or sample rate for lo-fi grit",
+  "noise": "Noise as the main material",
   "exciter": "Adds harmonics for air and presence",
   "wah": "Swept resonant filter",
   "chorus": "Thickens by mixing in detuned, delayed copies",
@@ -604,6 +606,17 @@
     "midi"
    ],
    "use_for": "Pitch correction for a lead vocal or a solo line: moves the voice to a key and scale (or to MIDI notes), hard or natural, with formant control, transpose and added vibrato."
+  },
+  "Neo Lo-Fi": {
+   "category": "Distortion",
+   "tags": [
+    "bitcrush",
+    "noise",
+    "vintage",
+    "gritty",
+    "tape"
+   ],
+   "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
   }
  }
 }
