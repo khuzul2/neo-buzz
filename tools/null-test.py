@@ -416,6 +416,10 @@ CASES = [
     fx("spectral-vocal", "Neo Spectral", "Vocal — Gentle Resonance Control"),
     fx("spectral-balance", "Neo Spectral", "Master — Gentle Balance"),
     fx("spectral-stabilize-delta", "Neo Spectral", "Mix Bus — Stabilize the Tone", [("Mix", "50%")], auto=[("Delta", [(2, "On")])]),
+    # Neo Lo-Fi (docs/specs/neo-lofi.md): the crush (hold, quantiser), the cassette (the modulated read) and the vinyl (hiss, pops); the seeded noise and the portable maths are the same on both.
+    fx("lofi-8bit", "Neo Lo-Fi", "Crush — 8-bit"),
+    fx("lofi-cassette", "Neo Lo-Fi", "Tape — Cassette"),
+    fx("lofi-vinyl", "Neo Lo-Fi", "Vinyl — Dusty vinyl"),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),
