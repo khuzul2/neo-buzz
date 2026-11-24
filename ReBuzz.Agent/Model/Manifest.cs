@@ -71,7 +71,7 @@ namespace ReBuzz.Agent.Model
     /// <summary>
     /// The roles a curated manifest gives its parameters (mcp-server.md §12.2, §12.9): what a parameter does,
     /// the same word on every machine, so a cutoff maps to a cutoff and a wet level to a wet level
-    /// (machine_replace, U5). Dotted: area, then what.
+    /// (the manifests, U5). Dotted: area, then what.
     /// </summary>
     public static class ManifestRoles
     {

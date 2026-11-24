@@ -83,10 +83,10 @@ namespace ReBuzz.AgentTests
             })
                 hits.AddRange(Hits($"prompt {prompt}", GuideLibrary.Prompts().Single(p => p.Name == prompt).Render(args)));
 
-            // The manifests and successor notes, as the manuals and machine_replace serve them.
+            // The manifests, as the manuals serve them.
             string machines = Path.Combine(RepoRoot(), "Machines");
             foreach (var file in Directory.GetFiles(machines, "*.json", SearchOption.AllDirectories)
-                         .Where(f => f.EndsWith(MachineManifest.Suffix) || f.EndsWith(SuccessorMap.Suffix)))
+                         .Where(f => f.EndsWith(MachineManifest.Suffix)))
             {
                 foreach (var value in Strings(JsonNode.Parse(File.ReadAllText(file))))
                     if (value != "ReBuzz's example of a managed multi-input, multi-output effect: a clean input, a noise input that gets noise added, a delay input with feedback; a mix out and each part on its own output.")
@@ -143,7 +143,7 @@ namespace ReBuzz.AgentTests
             var allowed = new Regex(@"GetFolderPath|SpecialFolder|Application Support|Software\\\\ReBuzz|AppDataPath|FormerVirtualName|""ReBuzz "" \+ key|ReBuzz XML|clr-namespace:ReBuzz");
             string root = RepoRoot();
             var hits = new List<string>();
-            foreach (var dir in new[] { "ReBuzz", "ReBuzz.Studio", "ReBuzz.Host", "ReBuzz.Headless", Path.Combine("ReBuzzGUI", "BuzzGUI.ToolBar"), Path.Combine("Machines", "NeoBuzz.Editor.Avalonia") })
+            foreach (var dir in new[] { "ReBuzz", "ReBuzz.Studio", "ReBuzz.Host", "ReBuzz.Headless", Path.Combine("Machines", "NeoBuzz.Editor.Avalonia") })
             {
                 foreach (var file in Directory.GetFiles(Path.Combine(root, dir), "*.*", SearchOption.AllDirectories))
                 {

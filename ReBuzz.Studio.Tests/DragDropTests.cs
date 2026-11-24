@@ -597,7 +597,7 @@ namespace ReBuzz.Studio.Tests
         static BrowserDragData Preset(int skip = 0)
         {
             var model = MachineBrowserModel.For(Core, Studio.Host.Registry);
-            var p = model.PresetItems().Where(x => x.Id == "Pedal Juno106").Skip(skip).First();
+            var p = model.PresetItems().Where(x => x.Id == "Neo Poly").Skip(skip).First();
             return p.Drag;
         }
 
@@ -609,13 +609,13 @@ namespace ReBuzz.Studio.Tests
             var made = s.OnEmpty(One(first), 1);
             Assert.That(made.Ok, Is.True, made.Message);
             Assert.That(made.Action, Is.EqualTo(DropAction.NewTrackWithPreset));
-            Assert.That(made.Machine.DLL.Name, Is.EqualTo("Pedal Juno106"));
+            Assert.That(made.Machine.DLL.Name, Is.EqualTo("Neo Poly"));
             Assert.That(Core.SongCore.Sequences.Any(q => q.Machine == made.Machine), Is.True, "with a track");
             var loaded = made.Machine.AllNonInputParameters().Select(p => p.GetValue(0)).ToList();
             AssertOneStep(before);
 
             // On a track of that machine: it loads.
-            var juno = AddTrack("Pedal Juno106", "Juno");
+            var juno = AddTrack("Neo Poly", "Juno");
             Settle();
             var plain = juno.AllNonInputParameters().Select(p => p.GetValue(0)).ToList();
             string beforeLoad = State();
@@ -634,7 +634,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
             var plan = s.PlanTrack(lead, One(first));
             Assert.That(plan.Allowed, Is.False);
-            Assert.That(plan.Refusal, Does.Contain("isn't a Pedal Juno106"));
+            Assert.That(plan.Refusal, Does.Contain("isn't a Neo Poly"));
         }
 
         [AvaloniaTest] public void APresetIsANewTrackWithItOrLoadsIntoItsMachineInTheArrangement() => PresetRows("arrangement");

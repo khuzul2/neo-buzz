@@ -239,12 +239,12 @@ namespace ReBuzz.Studio.Tests
                 Menu(window, view, view.PointOf(-0.8, -0.5, window), null, "New", "Generators", "Neo Poly");
                 var poly = MachineOf("Neo Poly");
                 Assert.That(poly, Is.Not.Null, "Neo Poly from the gear menu: " + Graph());
-                Menu(window, view, view.PointOf(-0.8, 0.45, window), null, "New", "Generators", "Pedal SH101");
-                var bass = MachineOf("Pedal SH101");
-                Assert.That(bass, Is.Not.Null, "Pedal SH101 from the gear menu: " + Graph());
-                Menu(window, view, view.PointOf(-0.35, 0, window), null, "New", "Effects", "Pedal Chorus");
-                var chorus = MachineOf("Pedal Chorus");
-                Assert.That(chorus, Is.Not.Null, "Pedal Chorus from the gear menu");
+                Menu(window, view, view.PointOf(-0.8, 0.45, window), null, "New", "Generators", "Keys Test");
+                var bass = MachineOf("Keys Test");
+                Assert.That(bass, Is.Not.Null, "Keys Test from the gear menu: " + Graph());
+                Menu(window, view, view.PointOf(-0.35, 0, window), null, "New", "Effects", "Neo Ensemble");
+                var chorus = MachineOf("Neo Ensemble");
+                Assert.That(chorus, Is.Not.Null, "Neo Ensemble from the gear menu");
                 Menu(window, view, view.PointOf(0.15, 0, window), null, "New", "Effects", "Neo Verb");
                 var verb = MachineOf("Neo Verb");
                 Assert.That(verb, Is.Not.Null, "Neo Verb from the gear menu");
@@ -270,14 +270,14 @@ namespace ReBuzz.Studio.Tests
                 string chain = $"{poly.Name}→{chorus.Name}; {bass.Name}→{chorus.Name}; {chorus.Name}→{verb.Name}; {verb.Name}→Master";
                 Assert.That(Graph().Split("; ").Where(x => x.Contains('→')).OrderBy(x => x), Is.EqualTo(chain.Split("; ").OrderBy(x => x)), "the chain");
 
-                // A wire's amp: SH101 → Chorus, its arrow pressed and dragged down (the amp knob); and the
+                // A wire's amp: Keys Test → Ensemble, its arrow pressed and dragged down (the amp knob); and the
                 // pan of Verb → Master (a stereo input) with the pan knob. Leaving the control commits.
                 var arrow = view.ArrowOf(Wire(bass.Name, chorus.Name), window);
                 Drag(window, arrow, arrow + new Vector(0, 20));
                 Assert.That(view.Amp.AmpTextValue, Is.EqualTo("-12.2dB"));
                 window.MouseMove(arrow + new Vector(300, 250));
                 Settle();
-                Assert.That(Wire(bass.Name, chorus.Name).Amp, Is.EqualTo(4025), "SH101's wire at -12.2 dB");
+                Assert.That(Wire(bass.Name, chorus.Name).Amp, Is.EqualTo(4025), "Keys Test's wire at -12.2 dB");
                 var verbOut = view.ArrowOf(Wire(verb.Name, "Master"), window);
                 Click(window, verbOut, MouseButton.Right);
                 Assert.That(view.Amp.IsVisible, Is.True);
@@ -313,33 +313,6 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(changed[0].GetValue(0), Is.GreaterThan(before[globals.IndexOf(changed[0])]), "up, brighter");
                 Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(undoSteps + 1), "one undo step");
                 Studio.Screenshot(editor, "exit-3-neo-poly-editor");
-
-                // A slider in Pedal SH101's parameter window. It has no GUI of its own here, so a double click opens its
-                // manifest editor (mcp-server.md §12.11, U4: curated); the plain list is on its menu, Parameters...
-                DoubleClick(window, view.PointOf(bass, window) + new Vector(12, 8));
-                var face = StudioMachineUiHost.EditorWindowOf(bass);
-                Assert.That(face?.IsVisible, Is.True, "a double click opens SH101's manifest editor");
-                Assert.That(StudioMachineUiHost.ContentOf(face)?.GetType().Name, Is.EqualTo("ManifestEditor"));
-                face.Close();
-                Settle();
-                Menu(window, view, view.PointOf(bass, window) + new Vector(12, 8), null, "Parameters...");
-                var parameters = StudioMachineUiHost.ParameterWindowOf(bass);
-                Assert.That(parameters?.IsVisible, Is.True, "Parameters... opens SH101's Device window");
-                SessionRig.Quiet(parameters!);
-                Dispatcher.UIThread.RunJobs();
-                parameters.UpdateLayout();
-                var device = DeviceTestKit.PageOf(parameters).Parameters;
-                var cutoff = DeviceTestKit.Param(device, "Cutoff");
-                var cutoffKnob = DeviceTestKit.Knob(parameters, device, "Cutoff");
-                int cutoffBefore = cutoff.Value;
-                var grip = DeviceTestKit.Centre(parameters, cutoffKnob);
-                parameters.MouseDown(grip, MouseButton.Left);
-                parameters.MouseMove(grip + new Point(0, 25), RawInputModifiers.LeftMouseButton);
-                parameters.MouseMove(grip + new Point(0, 60), RawInputModifiers.LeftMouseButton);
-                parameters.MouseUp(grip + new Point(0, 60), MouseButton.Left);
-                Settle();
-                Assert.That(cutoff.Value, Is.LessThan(cutoffBefore - 10), "the knob lowered SH101's cutoff");
-                Studio.Screenshot(parameters, "exit-4-sh101-parameters");
 
                 // ---- The Pattern tab (F2): notes typed into each synth's pattern. A click on empty space
                 // in the machine view first: the keyboard follows the window clicked last.
@@ -379,13 +352,13 @@ namespace ReBuzz.Studio.Tests
                 TypeNotes(PhysicalKey.X, down, PhysicalKey.V, down, down, PhysicalKey.N, down, down, down, down, PhysicalKey.X, down, down, PhysicalKey.Digit1);
                 Assert.That(Notes(poly01), Is.EqualTo(new[] { (0, BuzzNote.Parse("D-4")), (2 * Row, BuzzNote.Parse("F-4")), (5 * Row, BuzzNote.Parse("A-4")), (10 * Row, BuzzNote.Parse("D-4")), (13 * Row, BuzzNote.Off) }));
 
-                // SH101's 00, in its Note column (the Pedal synths play notes only from there).
+                // Keys Test's 00, in its Note column (it plays notes only from there).
                 Choose(machineBox, bass.Name);
                 Choose(patternBox, "00");
                 TypeNotes(PhysicalKey.Z, down, PhysicalKey.Digit1, down, PhysicalKey.B, down, PhysicalKey.Digit1, down, PhysicalKey.Z, down, PhysicalKey.Digit1, down, PhysicalKey.N, down, PhysicalKey.Digit1);
                 var bass00 = bass.Patterns.Single(p => p.Name == "00");
                 Assert.That(Notes(bass00).Length, Is.EqualTo(8), "four notes and their offs");
-                Studio.Screenshot(window, "exit-6-pattern-sh101");
+                Studio.Screenshot(window, "exit-6-pattern-keys");
 
                 // ---- The Sequence tab (F4): the patterns placed by their keys, then the loop and the song end.
                 Key(window, PhysicalKey.F4);
@@ -477,7 +450,7 @@ namespace ReBuzz.Studio.Tests
                 var slot = session.Slots.First(s => s.Track == 1 && s.Pattern == null && s.Scene > 0);
                 int scene = slot.Scene;
                 ClickControl(slot, MouseButton.Right, fx: 0.6);
-                Assert.That(session.ClickMenuItem("Assign pattern/00"), Is.True, "the slot's menu assigns SH101's 00");
+                Assert.That(session.ClickMenuItem("Assign pattern/00"), Is.True, "the slot's menu assigns Keys Test's 00");
                 Settle();
                 Assert.That(layout.PatternAt(1, scene), Is.SameAs(bass00), "the slot holds it");
                 SessionCore.Timestamp = () => 1_000_000;          // heard = rendered, as SessionRig does

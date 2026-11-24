@@ -17,7 +17,7 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "midi-mapping", "live-performance", "dye-sound-design", "migrating-songs", "teaching", "performance", "recipes", "troubleshooting" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "midi-mapping", "live-performance", "dye-sound-design", "teaching", "performance", "recipes", "troubleshooting" };
         static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
@@ -57,7 +57,6 @@ namespace ReBuzz.AgentTests
             ["machine_find"] = new[] { "intent", "category", "tag", "role", "kind", "limit" },
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
             ["machine_remove"] = new[] { "machines", "keep_chain" },
-            ["machine_replace"] = new[] { "machine", "with", "name", "keep_old", "dry_run", "compare", "from", "to", "section" },
             ["machine_set"] = new[] { "machine", "rename", "mute", "reset", "solo", "bypass", "tracks", "colour" },
             ["connect"] = new[] { "from", "to", "gain_db", "pan", "input" },
             ["disconnect"] = new[] { "from", "to" },
@@ -230,11 +229,11 @@ namespace ReBuzz.AgentTests
 
         /// <summary>Every manifest with exact units: the Neo machines' and the curated ones (U3), by gear name.</summary>
         static Dictionary<string, MachineManifest> Exact() =>
-            exact ??= Manifests().Values.Concat(CuratedManifestTests.Curated().Values).ToDictionary(m => m.Gear);
+            exact ??= Manifests().Values.ToDictionary(m => m.Gear);
 
         /// <summary>
         /// A manifest's parameters by name (as a table shows it: trimmed) or, curated, by plain name; global and track
-        /// (Pedal M1 has a global and a track Volume).
+        /// (a machine can have a global and a track parameter of one name).
         /// </summary>
         static List<ManifestParameter> Named(MachineManifest m, string name)
         {
@@ -243,16 +242,12 @@ namespace ReBuzz.AgentTests
             return found.Count > 0 ? found : all.Where(p => p.PlainName.Length > 0 && p.PlainName == name).ToList();
         }
 
-        /// <summary>
-        /// The factory presets by gear: the Neo machines' (Machines/*/Presets.txt) and, U4 (mcp-server.md §12.11), the curated
-        /// machines' (Machines/Manifests/*/&lt;Gear&gt;.presets.txt).
-        /// </summary>
+        /// <summary>The factory presets by gear: the Neo machines' (Machines/*/Presets.txt).</summary>
         static Dictionary<string, List<string>> Presets()
         {
             if (presets != null) return presets;
             presets = new Dictionary<string, List<string>>();
-            var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "Presets.txt", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(Path.Combine(RepoRoot(), "Machines", "Manifests"), "*" + FactoryPresets.SourceSuffix, SearchOption.AllDirectories));
+            var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "Presets.txt", SearchOption.AllDirectories);
             foreach (var file in files)
             {
                 string? gear = null;
@@ -275,26 +270,11 @@ namespace ReBuzz.AgentTests
         };
 
         /// <summary>Every text an agent reads: the guides, the curated pages, the built manuals and the prompts (with arguments).</summary>
-        /// <summary>
-        /// The presets some Pedal machines ship themselves (ExternalMachines/source/thepedal/*/*.prs.xml: Buzz's preset dictionaries,
-        /// one Item per preset), which their pages (K2) may name.
-        /// </summary>
-        static IEnumerable<string> OwnPresets()
-        {
-            string dir = Path.Combine(RepoRoot(), "ExternalMachines", "source", "thepedal");
-            if (!Directory.Exists(dir)) yield break;
-            foreach (var file in Directory.GetFiles(dir, "*.prs.xml", SearchOption.AllDirectories))
-                foreach (Match m in Regex.Matches(File.ReadAllText(file), "<Item Key=\"([^\"]+)\""))
-                    yield return System.Net.WebUtility.HtmlDecode(m.Groups[1].Value);
-        }
-
         static IEnumerable<(string Where, string Text, string? Gear)> Texts()
         {
             foreach (var t in Topics) yield return ($"guide {t}", GuideLibrary.Get(t)!, null);
             foreach (var g in MachineManual.CuratedGear) yield return ($"curated page {g}", MachineManual.Curated(g)!, g);
             foreach (var m in Manifests().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, Presets().GetValueOrDefault(m.Gear)), m.Gear);
-            // U3: the curated manifests' manuals (their pages, if any, come with them); U4: with their factory presets.
-            foreach (var m in CuratedManifestTests.Curated().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, Presets().GetValueOrDefault(m.Gear)), m.Gear);
             foreach (var (name, args) in PromptCases()) yield return ($"prompt {name}({string.Join(", ", args.Select(a => a.Key + "=" + a.Value))})", Render(name, args), null);
         }
 
@@ -316,8 +296,6 @@ namespace ReBuzz.AgentTests
             ("perform", new Dictionary<string, string>()),
             ("teach", new Dictionary<string, string> { ["topic"] = "FM depth", ["machine"] = "Neo Learn FM", ["level"] = "beginner" }),
             ("teach", new Dictionary<string, string> { ["topic"] = "filter resonance" }),
-            ("migrate", new Dictionary<string, string> { ["machines"] = "Reverb, Bass", ["keep_old"] = "yes" }),
-            ("migrate", new Dictionary<string, string>()),
         };
 
         static string Render(string prompt, IReadOnlyDictionary<string, string> args) =>
@@ -350,10 +328,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryNeoMachineHasACuratedPageAndAManual()
         {
-            // K2: and every other packaged machine but Dye Essence (KnowledgeFamilies), each with a curated manifest too.
-            var family = CuratedManifestTests.Curated().Keys.Where(KnowledgeFamilies.Covers).ToArray();
-            Assert.That(family.Length, Is.GreaterThanOrEqualTo(97));
-            var pages = NeoGear.Concat(family).ToArray();
+            var pages = NeoGear;
             Assert.That(MachineManual.CuratedGear, Is.EquivalentTo(pages));
             Assert.That(Manifests().Keys, Is.EquivalentTo(NeoGear));
             foreach (var gear in pages)
@@ -545,7 +520,7 @@ namespace ReBuzz.AgentTests
                 {
                     int level = heading.Groups[1].Value.Length;
                     stack.RemoveAll(s => s.Level >= level);
-                    var named = NeoGear.Concat(PendingGear).Concat(CuratedManifestTests.Curated().Keys).Where(g => heading.Groups[2].Value.Contains(g)).ToList();
+                    var named = NeoGear.Concat(PendingGear).Where(g => heading.Groups[2].Value.Contains(g)).ToList();
                     stack.Add((level, named.Count == 1 ? named[0] : stack.LastOrDefault().Gear ?? pageGear));
                     inParameterTable = false;
                     continue;
@@ -626,7 +601,6 @@ namespace ReBuzz.AgentTests
                 }
             Assert.That(problems, Is.Empty, string.Join("\n", problems));
             Assert.That(checkedValues, Is.GreaterThan(300), $"{checkedNames} names, {checkedValues} values checked");
-            Assert.That(curatedValues, Is.GreaterThan(400), $"{curatedNames} curated names, {curatedValues} curated values checked");
         }
 
         [Test]
@@ -650,7 +624,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryPresetTheGuidesNameExists()
         {
-            var all = Presets().Values.SelectMany(p => p).Concat(OwnPresets()).ToHashSet();
+            var all = Presets().Values.SelectMany(p => p).ToHashSet();
             var problems = new List<string>();
             foreach (var (where, text, _) in Texts())
             {
@@ -668,7 +642,7 @@ namespace ReBuzz.AgentTests
         public void PromptsRenderWithTheirArguments()
         {
             var prompts = GuideLibrary.Prompts();
-            Assert.That(prompts.Select(p => p.Name).ToList(), Is.EquivalentTo(new[] { "compose", "design-sound", "mix", "master", "critique", "arrange", "perform", "teach", "migrate" }));
+            Assert.That(prompts.Select(p => p.Name).ToList(), Is.EquivalentTo(new[] { "compose", "design-sound", "mix", "master", "critique", "arrange", "perform", "teach" }));
 
             string compose = Render("compose", new Dictionary<string, string> { ["genre"] = "synthwave", ["mood"] = "melancholic", ["tempo"] = "92", ["length"] = "2 minutes" });
             Assert.That(compose, Does.StartWith("Compose a melancholic synthwave track in NeoBuzz Live at 92 BPM, 2 minutes long."));
@@ -707,7 +681,7 @@ namespace ReBuzz.AgentTests
             Assert.That(Render("critique", new Dictionary<string, string> { ["scope"] = "Drop" }), Does.Contain("render(section=\"Drop\")"));
             Assert.That(!Render("critique", new Dictionary<string, string> { ["scope"] = "mix" }).Contains("guide(topic=\"mastering\")"), "a scope picks its checklists");
 
-            // K4: arrange, perform, teach and migrate.
+            // K4: arrange, perform and teach.
             string arrange = Render("arrange", new Dictionary<string, string> { ["form"] = "house", ["goals"] = "a long build into the drop" });
             Assert.That(arrange, Does.StartWith("Arrange the current song in NeoBuzz Live to the House form, with these goals: a long build into the drop."));
             Assert.That(arrange, Does.Contain("# Composition").And.Contain("# Recipes"), "the guides come with it");
@@ -726,29 +700,8 @@ namespace ReBuzz.AgentTests
             Assert.That(teach, Does.Contain("rebuzz://machines/neo-learn-fm/manual"), "the machine's page comes with it");
             Assert.That(Render("teach", new Dictionary<string, string> { ["topic"] = "filter resonance" }), Does.Contain("at beginner level").And.Contain("choose the Neo Learn machine for the idea"));
 
-            string migrate = Render("migrate", new Dictionary<string, string> { ["machines"] = "Reverb, Bass", ["keep_old"] = "yes" });
-            Assert.That(migrate, Does.StartWith("Move the current song's classic machines onto their Neo successors in NeoBuzz Live: Reverb, Bass."));
-            Assert.That(migrate, Does.Contain("Each old machine is left muted").And.Contain("# Migrating old songs to Neo"));
-            string migrateAll = Render("migrate", new Dictionary<string, string>());
-            Assert.That(migrateAll, Does.Contain("every machine that has one").And.Not.Contain("Each old machine is left muted"));
             foreach (var p in prompts.Where(p => p.Arguments.Any(a => a.Required)))
                 Assert.That(p.Name is "compose" or "design-sound" or "teach", Is.True, $"{p.Name} has a required argument");
-        }
-
-        /// <summary>Gear named in the migration guide's pairs table: "Neo Verb" row, "Jeskola Reverb, Pedal Plate" cell.</summary>
-        [Test]
-        public void TheMigrationGuidesPairsAreTheSuccessorMappings()
-        {
-            string guide = GuideLibrary.Get("migrating-songs")!.Replace("\r\n", "\n");
-            string table = guide.Substring(guide.IndexOf("## The pairs", StringComparison.Ordinal));
-            table = table.Substring(0, table.IndexOf("\n## ", 5, StringComparison.Ordinal));
-            var named = new HashSet<(string From, string To)>();
-            foreach (Match row in Regex.Matches(table, @"^\| (Neo [^|]+?) \| ([^|]+) \|$", RegexOptions.Multiline).Where(r => r.Groups[1].Value != "Neo successor"))
-                foreach (var machine in row.Groups[2].Value.Split(", ").Select(m => Regex.Replace(m, @" \(.*\)$", "").Trim()))
-                    named.Add((machine, row.Groups[1].Value));
-            var actual = ReBuzz.Agent.Model.SuccessorLibrary.All.Select(m => (m.From, m.To)).ToHashSet();
-            Assert.That(named.Except(actual).ToList(), Is.Empty, "pairs the guide names that have no mapping");
-            Assert.That(actual.Except(named).ToList(), Is.Empty, "mappings the guide's table lacks");
         }
 
         [Test]
@@ -822,7 +775,7 @@ namespace ReBuzz.AgentTests
             var both = TestTools.CallTool(server, "guide", new JsonObject { ["machine"] = "Neo Verb", ["topic"] = "mixing" });
             Assert.That(both.Error, Is.True);
             var list = TestTools.CallTool(server, "guide", new JsonObject());
-            Assert.That(list.Data["manuals"]!.AsArray().Count, Is.EqualTo(NeoGear.Length + CuratedManifestTests.Curated().Keys.Count(KnowledgeFamilies.Covers)), "a page per Neo machine and per other packaged machine");
+            Assert.That(list.Data["manuals"]!.AsArray().Count, Is.EqualTo(NeoGear.Length), "a page per Neo machine and per other packaged machine");
             Assert.That(TestTools.CallTool(server, "guide", new JsonObject { ["topic"] = "mastering" }).Data["markdown"]!.GetValue<string>(), Does.StartWith("# Mastering"));
 
             // With the ReBuzz side's provider, the full manual (manifest and presets) is served.
@@ -841,14 +794,9 @@ namespace ReBuzz.AgentTests
             var server2 = new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, gear);
             var listed = TestTools.CallTool(server2, "guide", new JsonObject()).Data["manuals"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
             Assert.That(listed, Is.SupersetOf(profiled.Keys).And.SupersetOf(NeoGear));
-            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "bigyo wood one" });   // a draft: none left, K2 batch d curated the last
-            Assert.That(draft.Error, Is.False, draft.Text);
-            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Bigyo Wood One manual").And.Contain("exact units from a curated manifest"));
-            var sh101 = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH101" }).Data["markdown"]!.GetValue<string>();
-            Assert.That(sh101, Does.Contain("**Filter cutoff** (`filter.cutoff`)").And.Contain("## Quirks"));
-            var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH-1O1" });
+            var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Neo Verbe" });
             Assert.That(typo.Error, Is.True);
-            Assert.That(typo.Text, Does.Contain("Did you mean \"Pedal SH101\""));
+            Assert.That(typo.Text, Does.Contain("Did you mean \"Neo Verb\""));
         }
     }
 }

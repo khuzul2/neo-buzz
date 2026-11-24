@@ -104,7 +104,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheKnobsAreCardsASectionEachAndTheTracksTableIsTheLastCard()
         {
-            var m = Add("Pedal Gain Multi", "PP1 Tracks");
+            var m = Add("Neo Poly", "PP1 Tracks");
             var (window, page, view) = Stage(m, floating: true);
             try
             {
@@ -302,7 +302,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void EveryOldEntryPointOpensTheDevicePanelFloating()
         {
-            var m = Add("Pedal Gain", "PP1 Retired");
+            var m = Add("Neo Utility", "PP1 Retired");
             try
             {
                 Core.UiHost.OpenParameterWindow(m, null);                       // "Parameters..."

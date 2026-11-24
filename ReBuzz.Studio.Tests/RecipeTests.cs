@@ -249,15 +249,6 @@ namespace ReBuzz.Studio.Tests
         });
 
         [AvaloniaTest]
-        public void ReplaceAClassic() => Check("replace-a-classic", steps =>
-        {
-            Assert.That(Of(steps, "machine_replace", 0).Data["to"]!.GetValue<string>(), Is.EqualTo("Neo Verb"));
-            Assert.That(Of(steps, "machine_replace", 1).Data["comparison"], Is.Not.Null, "the renders were compared: " + Of(steps, "machine_replace", 1).Text);
-            Assert.That(Of(steps, "machine_list", 0).Data.ToJsonString(), Does.Contain("Neo Verb"));
-            Assert.That(Of(steps, "machine_list", 1).Data.ToJsonString(), Does.Contain("Pedal Plate"));
-        });
-
-        [AvaloniaTest]
         public void CheckTheLoad() => Check("check-the-load", steps =>
         {
             var cpu = Of(steps, "render").Data["cpu"]!.AsArray();

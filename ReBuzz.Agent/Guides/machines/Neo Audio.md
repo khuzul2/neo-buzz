@@ -49,7 +49,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (W
 
 ## Pairs well with
 
-- ReBuzz Audio In or any instrument connected to it for takes; the Session View's mixer for levels and sends.
+- Any instrument connected to it for takes; the Session View's mixer for levels and sends.
 
 ## Checklist
 

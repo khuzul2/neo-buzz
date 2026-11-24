@@ -353,10 +353,10 @@ namespace ReBuzz.Studio.Tests
         public void TrackerColumnNotesFollowTrackerRules()
         {
             using var rig = new SessionRig();
-            var bass = rig.Add("Pedal SH101", "Bass");
+            var bass = rig.Add("Keys Test", "Bass");
             var p = rig.Pattern(bass, "Line", 16);
             var source = TrackerColumnNotes.For(rig.Core, p);
-            Assert.That(source, Is.Not.Null, "Pedal SH101 has a Note track parameter");
+            Assert.That(source, Is.Not.Null, "Keys Test has a Note track parameter");
             int tracks = Math.Max(1, bass.TrackCount);
 
             Assert.That(source.Edit(null, new[] { new ClipNote(0, 4 * TB, 36, 100), new ClipNote(4 * TB, 2 * TB, 43, 100) }), Is.Null);

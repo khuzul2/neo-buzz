@@ -145,7 +145,7 @@ namespace ReBuzz.Studio.Tests
         public void AManifestsGroupsAreTheHeadersAndTheTrackParametersATable()
         {
             var poly = Add("Neo Poly", "P3e Poly");
-            var chord = Add("Pedal Chord", "P3e Chord");
+            var chord = Add("Keys Test", "P3e Chord");
             try
             {
                 var l = DeviceLayout.Build(poly);
@@ -157,7 +157,7 @@ namespace ReBuzz.Studio.Tests
                 var t = DeviceLayout.Build(chord);
                 var table = t.Sections.Single(s => s.IsTable);
                 Assert.That(table.Name, Is.EqualTo("Tracks"));
-                Assert.That(table.Params.Select(p => p.Name), Does.Contain("Chord"));
+                Assert.That(table.Params.Select(p => p.Name), Does.Contain("Velocity"));
                 Assert.That(t.Sections.Select(s => s.Name), Is.EqualTo(new[] { "Tracks" }), "no globals: the table alone");
             }
             finally
@@ -171,14 +171,14 @@ namespace ReBuzz.Studio.Tests
         public void AnEffectsInputsAreTheirOwnSection()
         {
             var gen = Add("Neo Poly", "P3e Src");
-            var fx = Add("Pedal Comp", "P3e Comp");
+            var fx = Add("Neo Comp", "P3e Comp");
             try
             {
                 Core.SongCore.ConnectMachines(gen, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                 var l = DeviceLayout.Build(fx);
                 Assert.That(l.Sections[0].Name, Is.EqualTo("Inputs"));
                 Assert.That(l.Sections[0].Params.First().IsInput, Is.True);
-                Assert.That(l.Sections.Select(s => s.Name), Does.Contain("Compressor"), "then its own groups");
+                Assert.That(l.Sections.Count, Is.GreaterThan(1), "then its own parameters");
             }
             finally
             {
@@ -519,7 +519,8 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TrackParametersAreATableARowPerTrack()
         {
-            var m = Add("Pedal Gain Multi", "P3e Table");
+            var m = Add("Keys Test", "P3e Table");
+            m.TrackCount = 3;
             var (window, page, view) = Stage(m, 760, 500);
             try
             {
@@ -575,7 +576,7 @@ namespace ReBuzz.Studio.Tests
                 int n = m.ParameterGroups[1].Parameters.Count(p => p.Flags.HasFlag(ParameterFlags.State));
                 Assert.That(n, Is.GreaterThanOrEqualTo(433));
                 // A small machine first (JIT'd), then this one: the list is a layout of one panel, not a control per row.
-                var small = Add("Pedal Comp", "P3e Warm");
+                var small = Add("Neo Comp", "P3e Warm");
                 Stage(small).Window.Close();
                 Remove(small);
                 var sw = Stopwatch.StartNew();
@@ -713,7 +714,7 @@ namespace ReBuzz.Studio.Tests
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
                 Song = new SessionRig("Bass");
                 Bass = Song.Machine("Bass");
-                Comp = Song.Add("Pedal Comp", "Comp", track: false);
+                Comp = Song.Add("Neo Comp", "Comp", track: false);
                 StudioSelection.For(Song.Core).Clear(this);
                 Window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
                 Window.Show();
