@@ -1129,6 +1129,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Separate Stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(c.CursorPattern), null, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
                     // Fork (docs/specs/pitch.md section 9): an audio clip into MIDI on a new track.
                     ReBuzz.Studio.Shell.ConvertFlow.Menu(() => c.CursorPattern, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
+                    // Fork (docs/specs/audio-to-midi.md, SL1): an audio clip cut into slices played from a Neo Sampler on a new MIDI track.
+                    ReBuzz.Studio.Shell.SliceFlow.Menu(() => c.CursorPattern, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
                     new Separator(),
                     colour,
                     new Separator(),

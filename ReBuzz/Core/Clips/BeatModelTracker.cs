@@ -116,8 +116,36 @@ namespace ReBuzz.Core.Clips
 
         public static BeatTrack Track(AudioSource src, BeatModelNet net)
         {
-            var act = Run(src, net);
-            return Decode(act, src.SampleRate, src.Length, net.Version, net.TempoBins);
+            return TrackFrom(src, Run(src, net), net);
+        }
+
+        /// <summary>The track of activations already computed (the evaluation tool varies the settings after this point).</summary>
+        internal static BeatTrack TrackFrom(AudioSource src, Activations act, BeatModelNet net)
+        {
+            var track = Decode(act, src.SampleRate, src.Length, net.Version, net.TempoBins);
+            if (track != null && AttackReachMs > 0) SnapToAttacks(src, track);
+            return track;
+        }
+
+        /// <summary>AW3: how far (ms) a beat of the model may be moved to the attack near it, as AW1's tracker places its own beats (BeatTracker.RefineAt); 0: not moved. Set on the validation split.</summary>
+        internal static double AttackReachMs = 0;
+
+        /// <summary>The model's beats sit on a 20 ms frame grid with the training loss's tolerance of one frame; the ear hears an attack. Each beat goes to the attack within the reach (a soft attack stays near its neighbours' line, BeatTracker.Smooth).</summary>
+        static void SnapToAttacks(AudioSource src, BeatTrack track)
+        {
+            var an = src.ForAnalysis();
+            int n = track.Beats.Length;
+            var rough = new long[n];
+            for (int i = 0; i < n; i++) rough[i] = (long)Math.Round(track.Beats[i]);
+            double[] pos = BeatTracker.RefineAt(an, rough, AttackReachMs / 1000.0, out double[] attack);
+            pos = BeatTracker.Smooth(pos, attack);
+            for (int i = 1; i < n; i++) if (pos[i] <= pos[i - 1]) return;      // never reorder beats: leave the frame positions
+            track.Beats = pos;
+            var intervals = new List<double>(n);
+            for (int i = 1; i < n; i++) intervals.Add(pos[i] - pos[i - 1]);
+            intervals.Sort();
+            double med = intervals[intervals.Count / 2];
+            track.MedianBpm = med > 0 ? 60.0 * track.Rate / med : track.MedianBpm;
         }
 
         public static BeatTrack Decode(Activations act, int rate, int length, int version, int tempoBins)

@@ -23,6 +23,13 @@ namespace NeoBuzz.PitchEval
             public string Cause = "";    // filled in by the cause attribution when the engine's event log is at hand
             public bool Step;            // an intended pitch step (see TuneArtefacts.Classify): not counted as an artefact
             public double StepSemis;     // the size of the shift step around it, semitones
+            // NT4 attribution (TuneArtefacts.Attribute): is the hit made by the engine, or would an ideal resampler along the same ratio path make it too?
+            public bool InNull;          // the null render (ideal resampling, no splice) has a hit within 6 ms
+            public double NullExcess;    // the excess (output residual over the input's) the null render has within 6 ms (0 when none above 1)
+            public double SrcTime;       // the input time the output at the hit reads, seconds
+            public double ShiftRange;    // the range of the shift within 8 ms of the hit, semitones
+            public double InputRoughDb;  // the input's own residual at the source, relative to its local level, dB
+            public string Class = "";    // "engine", "voice" (null render hits, the shift about constant), "ratio step" (null render hits at a ratio change)
         }
 
         public const double DefaultK = 2.2, RelLevel = 0.25;
@@ -147,13 +154,20 @@ namespace NeoBuzz.PitchEval
             return o;
         }
 
-        public static List<Hit> Detect(float[] input, float[] output, int rate, double k = DefaultK, float[] inResidual = null)
+        public static List<Hit> Detect(float[] input, float[] output, int rate, double k = DefaultK, float[] inResidual = null, double[] srcPos = null)
         {
             int n = Math.Min(input.Length, output.Length);
             var xi = input.Length == n ? input : input[..n]; var xo = output.Length == n ? output : output[..n];
             var qi = inResidual ?? Residual(xi, rate); var qo = Residual(xo, rate);
             var ei = Envelope(qi, rate); var eo = Envelope(qo, rate);
             var mi = MaxFilter(ei, (int)(0.008 * rate));
+            if (srcPos != null)
+            {
+                // the output at i reads the input at srcPos[i]: the input's own residual is looked up there (a resampled copy has drifted from the input's timeline)
+                var mm = new float[n];
+                for (int i = 0; i < n; i++) { int p = (int)Math.Round(srcPos[Math.Min(i, srcPos.Length - 1)]); mm[i] = mi[Math.Clamp(p, 0, n - 1)]; }
+                mi = mm;
+            }
             // local signal level of the output, 10 ms RMS
             var lv = Envelope(xo, rate, 10.0);
             var hits = new List<Hit>();

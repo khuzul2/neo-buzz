@@ -16,7 +16,9 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.Session;
+using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Views.Mixer;
 
 namespace ReBuzz.Studio.Views.Session
 {
@@ -24,10 +26,6 @@ namespace ReBuzz.Studio.Views.Session
 
     internal sealed partial class SessionView
     {
-        const double SendRowHeight = 18;
-        const double PanRowHeight = 18;
-        const double FaderHeight = 116;
-        const double MeterFallPerSecond = 0.9;       // of the meter's 66 dB range per second
 
         enum ColumnKind { Track, Group, Return }
 
@@ -44,17 +42,17 @@ namespace ReBuzz.Studio.Views.Session
 
         readonly List<Column> columns = new List<Column>();
         int[] trackColumn = Array.Empty<int>();
-        readonly List<MixerStrip> strips = new List<MixerStrip>();
+        readonly List<MixerStripView> strips = new List<MixerStripView>();
         readonly List<GroupSlotCell> groupSlots = new List<GroupSlotCell>();
         readonly List<GroupHeader> groupHeaders = new List<GroupHeader>();
         IReadOnlyList<IMachine> returns = Array.Empty<IMachine>();
         string structureKey = "";
-        bool metering;
-        long lastMeterTicks;
+        IDisposable ticker;
         readonly Control mixerSection;
         readonly Control masterSection;       // the master strip, under the scene column
-        // The meters move on a timer of their own (the WPF view used the render loop): ~40 fps.
-        readonly DispatcherTimer meterTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(25) };
+        // The meters move on the one ticker every mixer shares (MixerTicker, ~40 fps).
+        MixerOptions mixerOptions;
+        ICollection<IMachine> returnSet = new HashSet<IMachine>();
 
         // ------------------------------------------------------------------ columns
 
@@ -113,14 +111,14 @@ namespace ReBuzz.Studio.Views.Session
             return string.Join(";", parts);
         }
 
-        static string ReturnLetter(int r) => r < 26 ? ((char)('A' + r)).ToString() : (r + 1).ToString();
+        static string ReturnLetter(int r) => MixerModel.ReturnLetter(r);
 
         List<int> VisibleTracks() => columns.Where(c => c.Kind == ColumnKind.Track).Select(c => c.Track).ToList();
 
         // For tests and diagnostics.
-        internal IReadOnlyList<MixerStrip> MixerStrips => strips;
+        internal IReadOnlyList<MixerStripView> MixerStrips => strips;
         internal IReadOnlyList<GroupSlotCell> GroupSlots => groupSlots;
-        internal bool IsMetering => metering;
+        internal bool IsMetering => ticker != null;
         internal GroupHeader FindGroupHeader(string name) => groupHeaders.FirstOrDefault(h => h.Group.Name == name);
 
         /// <summary>The columns as text: "[Group]" (or "[Group ▸]" folded), track machines, "A:Return".</summary>
@@ -176,6 +174,7 @@ namespace ReBuzz.Studio.Views.Session
         void BuildMixer(SessionDocument doc)
         {
             mixerGrid.Children.Clear();
+            mixerOptions = null;
             mixerGrid.ColumnDefinitions.Clear();
             masterHolder.Child = null;
             strips.Clear();
@@ -190,6 +189,7 @@ namespace ReBuzz.Studio.Views.Session
                 return;
             }
 
+            returnSet = new HashSet<IMachine>(returns);
             for (int c = 0; c < columns.Count; c++)
             {
                 mixerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColumnWidth + Gap) });
@@ -203,16 +203,25 @@ namespace ReBuzz.Studio.Views.Session
                 string name = col.Kind switch
                 {
                     ColumnKind.Group => col.Group.Name,
-                    ColumnKind.Return => ReturnLetter(col.Return) + "  " + col.Machine?.Name,
+                    ColumnKind.Return => col.Machine?.Name,
                     _ => col.Machine?.Name ?? doc.Tracks[col.Track].Machine
                 };
-                var strip = new MixerStrip(this, kind, col.Machine, name, returns);
+                string subtitle = col.Kind switch
+                {
+                    ColumnKind.Group => $"group {(doc.CollapsedGroups.Contains(col.Group.Name) ? "▸" : "▾")} {col.Members.Count} track{(col.Members.Count == 1 ? "" : "s")}",
+                    ColumnKind.Return => "return " + ReturnLetter(col.Return),
+                    _ => "track"
+                };
+                var spec = new StripSpec { Kind = kind, Id = (kind == StripKind.Group ? "group:" : kind == StripKind.Return ? "return:" : "track:") + name, Machine = col.Machine, Name = name, Subtitle = subtitle };
+                var strip = new MixerStripView(this, spec, MixerDensity.Compact);
                 strips.Add(strip);
                 Grid.SetColumn(strip, c);
                 mixerGrid.Children.Add(strip);
             }
-            var master = new MixerStrip(this, StripKind.Master, null, "Master", returns);
+            var masterSpec = new StripSpec { Kind = StripKind.Master, Id = "master:Master", Machine = buzz.SongCore.MachinesList.FirstOrDefault(m => m.DLL?.Info?.Type == MachineType.Master), Name = "Master", Subtitle = "master" };
+            var master = new MixerStripView(this, masterSpec, MixerDensity.Compact);
             strips.Add(master);
+            master.Width = SceneColumnWidth;
             masterHolder.Child = master;          // under the scene column, frozen with it
             UpdateMetering();
         }
@@ -253,32 +262,15 @@ namespace ReBuzz.Studio.Views.Session
         void UpdateMetering()
         {
             bool want = attached && layout.Document?.ShowMixer == true && strips.Count > 0;
-            if (want == metering) return;
-            metering = want;
-            SessionMixer.UseMeters(want);
-            if (want)
-            {
-                lastMeterTicks = 0;
-                meterTimer.Start();
-            }
-            else
-            {
-                meterTimer.Stop();
-            }
-        }
-
-        void OnMeterTick()
-        {
-            long now = Environment.TickCount64;
-            double seconds = lastMeterTicks == 0 ? 0.033 : Math.Min(0.2, (now - lastMeterTicks) / 1000.0);
-            lastMeterTicks = now;
-            RefreshMeters(seconds);
+            if (want == (ticker != null)) return;
+            if (want) ticker = MixerTicker.Add(f => RefreshMeters(f / MixerView.MeterFallPerSecond), null);
+            else { ticker.Dispose(); ticker = null; }
         }
 
         /// <summary>Takes the peaks since the last call and moves the meters (falling at a fixed rate).</summary>
         internal void RefreshMeters(double elapsedSeconds = 0.033)
         {
-            double fall = MeterFallPerSecond * elapsedSeconds;
+            double fall = MixerView.MeterFallPerSecond * elapsedSeconds;
             foreach (var strip in strips)
                 strip.RefreshMeter(fall);
         }
@@ -287,7 +279,32 @@ namespace ReBuzz.Studio.Views.Session
         {
             foreach (var strip in strips)
                 strip.Refresh();
+            if (strips.Count > 0 && strips[^1].Crossfader is { } cf)
+            {
+                var learn = midi?.LearnTarget;
+                cf.Opacity = learn is { } l && l.Target == SessionTarget.Crossfader ? 0.6 : 1.0;
+            }
         }
+
+        // ------------------------------------------------------------------ the shared mixer's host (the Session View's own options)
+
+        ReBuzzCore IMixerHost.Core => buzz;
+        IReadOnlyList<IMachine> IMixerHost.Returns => returns;
+        ICollection<IMachine> IMixerHost.ReturnSet => returnSet;
+        MixerOptions IMixerHost.Options => mixerOptions ??= new MixerOptions
+        {
+            Sends = true, Arm = true, Cue = true, Crossfader = true, IO = layout.Document?.ShowIO == true,
+            Width = ColumnWidth, CrossfaderMenu = ShowCrossfaderMenu, CrossfaderTip = () => Tip("Crossfader: fades between the tracks assigned to A and to B (the A/B chips); others play on.\n" +
+                                      "drag or wheel · Shift for fine · double-click: centre · right-click: curve", SessionTarget.Crossfader, 0, 0),
+        };
+
+        void IMixerHost.ToggleFold(string groupId)
+        {
+            string name = groupId.StartsWith("group:") ? groupId.Substring(6) : groupId;
+            layout.SetGroupCollapsed(name, !layout.Ensure().CollapsedGroups.Contains(name));
+        }
+
+        void IMixerHost.OpenDevice(IMachine machine) => StudioSelection.For(buzz).SelectMachine(machine, this);
 
         internal IMachine CueMachine => layout.MachineNamed(layout.Document?.CueMachine);
 
@@ -480,568 +497,6 @@ namespace ReBuzz.Studio.Views.Session
                 glyph.Foreground = lit ? SessionPalette.Playing : text;
                 BorderBrush = lit ? SessionPalette.Playing : SessionPalette.Transparent;
             }
-        }
-
-        internal enum StripKind { Track, Group, Return, Master }
-
-        /// <summary>
-        /// Mixer strip: a send per return (tracks only), pan, fader with a stereo peak meter and
-        /// its dB value, the crossfader (side chips, or on the master the crossfader itself), then
-        /// mute, solo, cue and the name. Values are polled (<see cref="Refresh"/>), the meter on a
-        /// timer (<see cref="RefreshMeter"/>).
-        /// </summary>
-        internal sealed class MixerStrip : Border
-        {
-            readonly SessionView view;
-            readonly IReadOnlyList<IMachine> returns;
-            readonly List<MixerBar> sends = new List<MixerBar>();
-            readonly MixerBar pan;
-            readonly MixerBar fader;
-            readonly MeterBar meter;
-            readonly TextBlock dbText;
-            readonly Chip mute;
-            readonly Chip solo;
-            readonly Chip cue;
-            readonly Chip sideA;
-            readonly Chip sideB;
-            readonly MixerBar crossfader;
-            double levelL, levelR;
-
-            public StripKind Kind { get; }
-            public IMachine Machine { get; }
-            internal MixerBar Fader => fader;
-            internal MixerBar PanBar => pan;
-            internal IReadOnlyList<MixerBar> Sends => sends;
-            internal MeterBar Meter => meter;
-            internal string DbText => dbText.Text;
-            internal MixerBar Crossfader => crossfader;
-            internal Chip SideA => sideA;
-            internal Chip SideB => sideB;
-            internal Chip Mute => mute;
-            internal Chip Solo => solo;
-            internal Chip Cue => cue;
-
-            SessionDocument Doc => view.layout.Document;
-
-            public MixerStrip(SessionView view, StripKind kind, IMachine machine, string name, IReadOnlyList<IMachine> returns)
-            {
-                this.view = view;
-                this.returns = returns;
-                Kind = kind;
-                Machine = machine;
-                Background = SessionPalette.MixerBack;
-                Margin = new Thickness(0, 0, Gap, 0);
-                Padding = new Thickness(4, 4, 4, 3);
-
-                var stack = new StackPanel();
-
-                // Inputs (docs/specs/neo-audio.md "Inputs and arm"): the I/O row, for the strips of machines that can be armed; the others keep the space.
-                if (view.layout.Document?.ShowIO == true)
-                {
-                    if (kind == StripKind.Track && SessionLayout.CanArm(machine))
-                        stack.Children.Add(new TrackInputView(view.buzz, machine, InputLayoutKind.Strip) { Margin = new Thickness(0, 0, 0, 6) });
-                    else
-                        stack.Children.Add(new Border { Height = TrackInputView.StripHeight + 6 });
-                }
-
-                // Sends (tracks only; others keep the space so the rows line up)
-                for (int r = 0; r < returns.Count; r++)
-                {
-                    if (kind == StripKind.Track)
-                    {
-                        var target = returns[r];
-                        var send = new MixerBar(false, false, SessionPalette.Send)
-                        {
-                            Height = SendRowHeight - 2,
-                            Margin = new Thickness(0, 0, 0, 2),
-                            Caption = ReturnLetter(r),
-                            DefaultValue = 0,
-                        };
-                        ToolTip.SetTip(send, $"Send to {target.Name} (return {ReturnLetter(r)})\ndrag or wheel · Shift for fine · double-click: off");
-                        send.Changed += v =>
-                        {
-                            SessionMixer.SetSend(Machine, target, SessionMixer.AmpOf(v));
-                            // The text follows the drag, as the fader's does (not the next refresh).
-                            int s = SessionMixer.GetSend(Machine, target);
-                            send.ValueText = s <= 0 ? "off" : SessionMixer.FormatAmp(s);
-                        };
-                        sends.Add(send);
-                        stack.Children.Add(send);
-                    }
-                    else
-                    {
-                        stack.Children.Add(new Border { Height = SendRowHeight });
-                    }
-                }
-
-                // Pan
-                if (kind != StripKind.Master)
-                {
-                    pan = new MixerBar(false, true, SessionPalette.Pan)
-                    {
-                        Height = PanRowHeight - 2,
-                        Margin = new Thickness(0, 0, 0, 4),
-                        Caption = "Pan",
-                        DefaultValue = 0.5,
-                    };
-                    ToolTip.SetTip(pan, "Pan: the pan of the machine's output connection(s)\ndrag or wheel · Shift for fine · double-click: centre");
-                    pan.Changed += v =>
-                    {
-                        SessionMixer.SetPan(Doc, Machine, SessionMixer.PanValue(v * 2 - 1));
-                        // The text follows the drag, as the fader's does (not the next refresh).
-                        int p = SessionMixer.GetPan(Doc, Machine);
-                        pan.ValueText = p >= 0 ? SessionMixer.FormatPan(p) : "";
-                    };
-                    stack.Children.Add(pan);
-                }
-                else
-                {
-                    stack.Children.Add(new Border { Height = PanRowHeight + 2 });
-                }
-
-                // Fader and meter
-                fader = new MixerBar(true, false, kind == StripKind.Master ? SessionPalette.Thumb : SessionPalette.Fader)
-                {
-                    Width = 26,
-                    Height = FaderHeight,
-                    DefaultValue = kind == StripKind.Master ? 1 : SessionMixer.UnityFader,
-                    Mark = kind == StripKind.Master ? null : SessionMixer.UnityFader,
-                };
-                ToolTip.SetTip(fader, kind == StripKind.Master
-                    ? "Master volume (the toolbar's)\ndrag or wheel · Shift for fine · double-click: 0 dB"
-                    : "Volume: the amp of the machine's output connection(s), the same as in the Machine View\ndrag or wheel · Shift for fine · double-click: 0 dB");
-                fader.Changed += v =>
-                {
-                    if (Kind == StripKind.Master)
-                        view.buzz.MasterVolume = SessionMixer.MasterGainOf(v);
-                    else
-                        SessionMixer.SetAmp(Doc, Machine, SessionMixer.AmpOf(v));
-                    UpdateDbText();
-                };
-                meter = new MeterBar { Width = 11, Height = FaderHeight, Margin = new Thickness(6, 0, 0, 0) };
-                var faderRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
-                faderRow.Children.Add(fader);
-                faderRow.Children.Add(meter);
-                stack.Children.Add(faderRow);
-
-                dbText = new TextBlock
-                {
-                    FontFamily = Mono,
-                    FontSize = 11,
-                    Foreground = SessionPalette.DimText,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 2, 0, 3)
-                };
-                stack.Children.Add(dbText);
-
-                // Crossfader (0.6): A/B assignment on the strips, the crossfader on the master.
-                var crossRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Height = 18, Margin = new Thickness(0, 0, 0, 3) };
-                if (kind == StripKind.Master)
-                {
-                    crossfader = new MixerBar(false, true, SessionPalette.Thumb)
-                    {
-                        Width = SceneColumnWidth - 12,
-                        Height = 16,
-                        Caption = "A  ·  B",
-                        DefaultValue = 0.5,
-                    };
-                    ToolTip.SetTip(crossfader, view.Tip("Crossfader: fades between the tracks assigned to A and to B (the A/B chips); others play on.\n" +
-                                                        "drag or wheel · Shift for fine · double-click: centre · right-click: curve", SessionTarget.Crossfader, 0, 0));
-                    crossfader.Changed += v =>
-                    {
-                        crossfader.ValueText = CrossfaderText(v);
-                        view.layout.SetCrossfaderPosition(v);
-                    };
-                    OnRightClick(crossfader, () => view.ShowCrossfaderMenu(crossfader));
-                    crossRow.Children.Add(crossfader);
-                }
-                else if (machine != null)
-                {
-                    sideA = new Chip("A", SessionPalette.CrossA, "Crossfader side A: the crossfader fades this track out towards B", () => ToggleSide("A"));
-                    sideB = new Chip("B", SessionPalette.CrossB, "Crossfader side B: the crossfader fades this track out towards A", () => ToggleSide("B"));
-                    crossRow.Children.Add(sideA);
-                    crossRow.Children.Add(sideB);
-                }
-                stack.Children.Add(crossRow);
-
-                // Mute, solo, cue and name
-                var bottom = new DockPanel { LastChildFill = true, Height = 18 };
-                if (kind != StripKind.Master)
-                {
-                    mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; }) { Margin = new Thickness(0, 0, 2, 0) };
-                    solo = new Chip("S", SessionPalette.Solo, "Solo", () => { if (Machine != null) Machine.IsSoloed = !Machine.IsSoloed; }) { Margin = new Thickness(0, 0, 2, 0) };
-                    cue = new Chip("C", SessionPalette.Cue, "Cue: also play this to the cue output (⚙ → Cue output)", ToggleCue) { Margin = new Thickness(0, 0, 5, 0) };
-                    foreach (var chip in new[] { mute, solo, cue })
-                    {
-                        DockPanel.SetDock(chip, Dock.Left);
-                        bottom.Children.Add(chip);
-                    }
-                }
-                bottom.Children.Add(new TextBlock
-                {
-                    Text = name,
-                    FontSize = 11,
-                    Foreground = kind == StripKind.Master ? SessionPalette.Text : SessionPalette.DimText,
-                    FontWeight = kind == StripKind.Master ? FontWeight.SemiBold : FontWeight.Normal,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextAlignment = kind == StripKind.Master ? TextAlignment.Center : TextAlignment.Left,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                });
-                stack.Children.Add(bottom);
-
-                Child = stack;
-                Refresh();
-            }
-
-            void ToggleSide(string side)
-            {
-                if (Machine == null) return;
-                view.layout.SetCrossfade(Machine, view.layout.CrossfadeOf(Machine) == side ? null : side);
-            }
-
-            static string CrossfaderText(double v) =>
-                Math.Abs(v - 0.5) < 0.005 ? "centre" : v < 0.5 ? $"A {(int)Math.Round((0.5 - v) * 200)}%" : $"B {(int)Math.Round((v - 0.5) * 200)}%";
-
-            void ToggleCue()
-            {
-                var cueMachine = view.CueMachine;
-                if (Machine == null || cueMachine == null) return;
-                SessionMixer.SetCue(Machine, cueMachine, !SessionMixer.IsCued(Machine, cueMachine));
-                Refresh();
-            }
-
-            void UpdateDbText()
-            {
-                if (Kind == StripKind.Master)
-                {
-                    double gain = view.buzz.MasterVolume;
-                    dbText.Text = gain <= 0 ? "-inf dB" : SessionMixer.FormatDb(BuzzGUI.Common.Decibel.FromAmplitude(gain)) + " dB";
-                    return;
-                }
-                int amp = SessionMixer.GetAmp(Doc, Machine);
-                dbText.Text = amp < 0 ? "–" : SessionMixer.FormatAmp(amp) + " dB";
-            }
-
-            /// <summary>Reads volume, pan, sends and cue from the machine graph.</summary>
-            public void Refresh()
-            {
-                var doc = Doc;
-                if (Kind == StripKind.Master)
-                {
-                    if (!fader.IsDragging)
-                        fader.Value = SessionMixer.MasterFaderOf(view.buzz.MasterVolume);
-                    UpdateDbText();
-                    if (!crossfader.IsDragging)
-                        crossfader.Value = doc?.CrossfaderPosition ?? 0.5;
-                    crossfader.ValueText = CrossfaderText(crossfader.Value);
-                    var learn = view.midi?.LearnTarget;
-                    crossfader.Opacity = learn is { } l && l.Target == SessionTarget.Crossfader ? 0.6 : 1.0;
-                    return;
-                }
-                if (sideA != null)
-                {
-                    string side = view.layout.CrossfadeOf(Machine);
-                    sideA.SetActive(side == "A");
-                    sideB.SetActive(side == "B");
-                }
-
-                int amp = SessionMixer.GetAmp(doc, Machine);
-                fader.IsEnabled = amp >= 0;
-                if (amp >= 0 && !fader.IsDragging)
-                    fader.Value = SessionMixer.FaderOf(amp);
-                UpdateDbText();
-
-                int p = SessionMixer.GetPan(doc, Machine);
-                pan.IsEnabled = p >= 0;
-                if (p >= 0 && !pan.IsDragging)
-                    pan.Value = (SessionMixer.PanOf(p) + 1) / 2;
-                pan.ValueText = p >= 0 ? SessionMixer.FormatPan(p) : "";
-
-                for (int r = 0; r < sends.Count; r++)
-                {
-                    var send = sends[r];
-                    var target = returns[r];
-                    bool can = SessionMixer.CanSend(Machine, target);
-                    send.IsEnabled = can;
-                    int s = SessionMixer.GetSend(Machine, target);
-                    if (!send.IsDragging)
-                        send.Value = SessionMixer.FaderOf(s);
-                    send.ValueText = !can ? "" : s <= 0 ? "off" : SessionMixer.FormatAmp(s);
-                }
-
-                mute.IsEnabled = solo.IsEnabled = Machine != null;
-                mute.Opacity = solo.Opacity = Machine != null ? 1 : 0.4;
-                mute.SetActive(Machine?.IsMuted == true);
-                solo.SetActive(Machine?.IsSoloed == true);
-
-                var cueMachine = view.CueMachine;
-                bool canCue = Machine != null && cueMachine != null && Machine != cueMachine;
-                cue.IsEnabled = canCue;
-                cue.Opacity = canCue ? 1 : 0.4;
-                cue.SetActive(canCue && SessionMixer.IsCued(Machine, cueMachine));
-            }
-
-            /// <summary>Moves the meter to the latest peak; it falls by at most <paramref name="fall"/>.</summary>
-            public void RefreshMeter(double fall)
-            {
-                double l, r;
-                if (Kind == StripKind.Master)
-                {
-                    // The master's meter data (ReBuzz's VU meter, 0..1 over -80..0 dB).
-                    var vu = view.buzz.VUMeterLevel;
-                    l = vu == null || vu.Item1 <= 0 ? 0 : SessionMixer.LevelOfDb(vu.Item1 * 80 - 80);
-                    r = vu == null || vu.Item2 <= 0 ? 0 : SessionMixer.LevelOfDb(vu.Item2 * 80 - 80);
-                }
-                else
-                {
-                    var peak = SessionMixer.MainPeak(Doc, Machine);
-                    l = SessionMixer.MeterLevel(peak.Left);
-                    r = SessionMixer.MeterLevel(peak.Right);
-                }
-                levelL = Math.Max(l, levelL - fall);
-                levelR = Math.Max(r, levelR - fall);
-                meter.Set(levelL, levelR);
-            }
-        }
-
-        /// <summary>
-        /// Slider drawn in one pass: horizontal (sends, pan; caption and value inside) or
-        /// vertical (fader with a thumb). Dragging is relative, so a click doesn't jump; Shift
-        /// is fine control; the wheel steps; double-click resets.
-        /// </summary>
-        internal sealed class MixerBar : Control
-        {
-            static readonly Cursor SizeNS = new Cursor(StandardCursorType.SizeNorthSouth);
-            static readonly Cursor SizeWE = new Cursor(StandardCursorType.SizeWestEast);
-
-            readonly bool vertical;
-            readonly bool bipolar;
-            readonly IBrush fill;
-            double current;
-            string valueText = "";
-            Point? last;
-            const double ThumbHeight = 10;
-
-            public double DefaultValue { get; set; }
-            public double? Mark { get; set; }
-            public string Caption { get; set; } = "";
-            public bool IsDragging => last != null;
-
-            /// <summary>Raised when the user changes the value (not when it's set from code).</summary>
-            public event Action<double> Changed;
-
-            /// <summary>Raised when a drag ends (the clip panel commits a dragged value then).</summary>
-            public event Action DragEnded;
-
-            public MixerBar(bool vertical, bool bipolar, IBrush fill)
-            {
-                this.vertical = vertical;
-                this.bipolar = bipolar;
-                this.fill = fill;
-                Cursor = vertical ? SizeNS : SizeWE;
-                ClipToBounds = true;
-            }
-
-            protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-            {
-                base.OnPropertyChanged(change);
-                if (change.Property == IsEnabledProperty)
-                {
-                    Opacity = IsEnabled ? 1.0 : 0.35;
-                    InvalidateVisual();
-                }
-            }
-
-            public double Value
-            {
-                get => current;
-                set
-                {
-                    double v = Math.Clamp(value, 0, 1);
-                    if (Math.Abs(v - current) < 1e-9) return;
-                    current = v;
-                    InvalidateVisual();
-                }
-            }
-
-            public string ValueText
-            {
-                get => valueText;
-                set
-                {
-                    value ??= "";
-                    if (value == valueText) return;
-                    valueText = value;
-                    InvalidateVisual();
-                }
-            }
-
-            /// <summary>Sets the value as the user would (raises <see cref="Changed"/>).</summary>
-            internal void SetByUser(double v)
-            {
-                v = Math.Clamp(v, 0, 1);
-                if (Math.Abs(v - current) < 1e-9) return;
-                Value = v;
-                Changed?.Invoke(v);
-            }
-
-            protected override void OnPointerPressed(PointerPressedEventArgs e)
-            {
-                base.OnPointerPressed(e);
-                if (!IsEnabled || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-                if (e.ClickCount == 2)
-                {
-                    SetByUser(DefaultValue);
-                }
-                else
-                {
-                    last = e.GetPosition(this);
-                    e.Pointer.Capture(this);
-                }
-                e.Handled = true;
-            }
-
-            protected override void OnPointerMoved(PointerEventArgs e)
-            {
-                base.OnPointerMoved(e);
-                if (last is not Point from) return;
-                var p = e.GetPosition(this);
-                double length = vertical ? Math.Max(1, Bounds.Height - ThumbHeight) : Math.Max(1, Bounds.Width);
-                double delta = vertical ? from.Y - p.Y : p.X - from.X;
-                double scale = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? 0.1 : 1.0;
-                last = p;
-                SetByUser(current + delta / length * scale);
-            }
-
-            protected override void OnPointerReleased(PointerReleasedEventArgs e)
-            {
-                base.OnPointerReleased(e);
-                if (e.InitialPressMouseButton != MouseButton.Left) return;
-                EndDrag();
-                e.Handled = true;
-            }
-
-            protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
-            {
-                base.OnPointerCaptureLost(e);
-                EndDrag();
-            }
-
-            void EndDrag()
-            {
-                if (last == null) return;
-                last = null;
-                DragEnded?.Invoke();
-            }
-
-            protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
-            {
-                base.OnPointerWheelChanged(e);
-                if (!IsEnabled) return;
-                double step = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? 0.005 : 0.02;
-                double delta = Math.Abs(e.Delta.Y) >= Math.Abs(e.Delta.X) ? e.Delta.Y : e.Delta.X;
-                SetByUser(current + Math.Sign(delta) * step);
-                e.Handled = true;
-            }
-
-            public override void Render(DrawingContext dc)
-            {
-                double w = Bounds.Width, h = Bounds.Height;
-                if (w <= 0 || h <= 0) return;
-                dc.FillRectangle(SessionPalette.Transparent, new Rect(0, 0, w, h));   // hit area
-
-                if (vertical)
-                {
-                    double travel = h - ThumbHeight;
-                    double y = ThumbHeight / 2 + (1 - current) * travel;
-                    var groove = new Rect(w / 2 - 2, ThumbHeight / 2, 4, travel);
-                    dc.FillRectangle(SessionPalette.Groove, groove);
-                    dc.FillRectangle(fill, new Rect(w / 2 - 2, y, 4, Math.Max(0, groove.Bottom - y)));
-                    if (Mark is double mark)
-                    {
-                        double my = ThumbHeight / 2 + (1 - mark) * travel;
-                        dc.FillRectangle(SessionPalette.DimText, new Rect(0, Math.Round(my), 5, 1));
-                        dc.FillRectangle(SessionPalette.DimText, new Rect(w - 5, Math.Round(my), 5, 1));
-                    }
-                    dc.DrawRectangle(SessionPalette.Thumb, null, new Rect(2, y - ThumbHeight / 2, w - 4, ThumbHeight), 2, 2);
-                    dc.FillRectangle(SessionPalette.Groove, new Rect(4, Math.Round(y), w - 8, 1));
-                    return;
-                }
-
-                dc.DrawRectangle(SessionPalette.Groove, null, new Rect(0, 0, w, h), 2, 2);
-                if (bipolar)
-                {
-                    double x0 = w / 2, x1 = current * w;
-                    dc.FillRectangle(fill, new Rect(Math.Min(x0, x1), 0, Math.Max(1, Math.Abs(x1 - x0)), h));
-                }
-                else if (current > 0)
-                {
-                    using (dc.PushOpacity(0.6))
-                        dc.DrawRectangle(fill, null, new Rect(0, 0, current * w, h), 2, 2);
-                }
-
-                if (!string.IsNullOrEmpty(Caption))
-                {
-                    var caption = MakeText(Caption, 11, SessionPalette.Text);
-                    dc.DrawText(caption, new Point(4, (h - caption.Height) / 2));
-                }
-                if (!string.IsNullOrEmpty(valueText))
-                {
-                    var text = MakeText(valueText, 11, SessionPalette.Text);
-                    dc.DrawText(text, new Point(Math.Max(0, w - text.Width - 4), (h - text.Height) / 2));
-                }
-            }
-        }
-
-        static FormattedText MakeText(string text, double size, IBrush brush) =>
-            new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, Typeface.Default, size, brush);
-
-        /// <summary>Stereo peak meter: green, yellow from -12 dB, red above 0 dB.</summary>
-        internal sealed class MeterBar : Control
-        {
-            static readonly double Yellow = SessionMixer.LevelOfDb(-12);
-            static readonly double Red = SessionMixer.LevelOfDb(0);
-
-            double left, right;
-
-            public double Left => left;
-            public double Right => right;
-
-            public MeterBar()
-            {
-                ToolTip.SetTip(this, "Peak, post-fader (-60 … +6 dB)");
-            }
-
-            public void Set(double l, double r)
-            {
-                if (Math.Abs(l - left) < 0.002 && Math.Abs(r - right) < 0.002) return;
-                left = l;
-                right = r;
-                InvalidateVisual();
-            }
-
-            public override void Render(DrawingContext dc)
-            {
-                double w = Bounds.Width, h = Bounds.Height;
-                if (w <= 0 || h <= 0) return;
-                double bar = Math.Floor((w - 1) / 2);
-                Draw(dc, 0, bar, h, left);
-                Draw(dc, bar + 1, bar, h, right);
-                double zero = Math.Round((1 - Red) * h);
-                dc.FillRectangle(SessionPalette.DimText, new Rect(0, zero, w, 1));
-            }
-
-            static void Draw(DrawingContext dc, double x, double width, double h, double level)
-            {
-                dc.FillRectangle(SessionPalette.Groove, new Rect(x, 0, width, h));
-                if (level <= 0) return;
-                Segment(dc, x, width, h, 0, Math.Min(level, Yellow), SessionPalette.MeterLow);
-                if (level > Yellow) Segment(dc, x, width, h, Yellow, Math.Min(level, Red), SessionPalette.MeterMid);
-                if (level > Red) Segment(dc, x, width, h, Red, level, SessionPalette.MeterHigh);
-            }
-
-            static void Segment(DrawingContext dc, double x, double width, double h, double from, double to, IBrush brush) =>
-                dc.FillRectangle(brush, new Rect(x, (1 - to) * h, width, Math.Max(0, (to - from) * h)));
         }
     }
 }

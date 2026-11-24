@@ -38,8 +38,21 @@ namespace ReBuzz.Core
         /// </summary>
         internal const string SessionAutomationKey = "SessionAutomation";
 
-        /// <summary>Fork (0.7): a parameter column the engine plays (session automation).</summary>
-        internal bool EnginePlays => Type == PatternColumnType.Parameter && metadata.ContainsKey(SessionAutomationKey);
+        /// <summary>
+        /// Fork (docs/specs/clips.md §5.6, CU3): the host plays every parameter lane of a clip from the engine, marked or not (one store,
+        /// one engine). The Studio and rebuzz-headless set it when they start (EngineHost.PrepareProcess); Classic's WPF app does not, and
+        /// there the pattern editor still plays its own data and the engine only the marked columns, as before.
+        /// </summary>
+        internal static volatile bool PlaysEveryLane;
+
+        /// <summary>
+        /// Fork (0.7, CU3): a parameter column the engine plays: a marked one (session automation), and with <see cref="PlaysEveryLane"/> every
+        /// one (the mark only says whether an older build may play it).
+        /// </summary>
+        internal bool EnginePlays => Type == PatternColumnType.Parameter && (PlaysEveryLane || metadata.ContainsKey(SessionAutomationKey));
+
+        /// <summary>The mark of session automation, for the derived blob and the old builds: a column the engine played before CU3.</summary>
+        internal bool IsMarkedAutomation => Type == PatternColumnType.Parameter && metadata.ContainsKey(SessionAutomationKey);
 
         /// <summary>
         /// Fork (docs/specs/daw-modes.md S3): whether an event has a Duration above 0, which in a

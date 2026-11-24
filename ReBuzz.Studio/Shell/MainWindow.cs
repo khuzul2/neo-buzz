@@ -69,6 +69,9 @@ namespace ReBuzz.Studio.Shell
         public MainWindow(StudioHost host)
         {
             this.host = host;
+            // The tracker refused an edit of an old machine's clips (clips.md §5.7): the status line says why, in one line.
+            var weakSelf = new WeakReference<MainWindow>(this);       // a static hook must not keep a closed window alive
+            BuzzGUI.Common.ClipDerived.Refused = why => Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (weakSelf.TryGetTarget(out var w)) w.Notice(why); });
             Title = StudioHost.AppTitle;
             Width = 1280;
             Height = 820;
@@ -199,6 +202,14 @@ namespace ReBuzz.Studio.Shell
 
         public TransportBar Transport => transport;
 
+        Views.Midi.MapLayer mapLayer;
+
+        /// <summary>The MIDI map layer (MM1): map mode, badges, the MIDI button and the popover.</summary>
+        internal Views.Midi.MapLayer MapLayer => mapLayer;
+
+        /// <summary>Map mode on or off (Edit &gt; MIDI Map Mode).</summary>
+        internal void ToggleMapMode() => mapLayer?.Mode.Toggle();
+
         /// <summary>The window's own menu (null on a Mac, where the menu bar has it).</summary>
         public Menu WindowMenu => menu;
 
@@ -255,7 +266,16 @@ namespace ReBuzz.Studio.Shell
             // Fork (neo-audio.md NA3): the Audio page of the detail panel, for the audio clip selected in the Session or the Arrangement.
             audioPage = host.Core != null ? new Views.Audio.AudioClipPage(host.Core) { ViewShown = () => SelectedTitle } : null;
             detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) },
-                host.Core != null ? new Views.Device.DeviceDock(host.Core) : null, audioPage);
+                host.Core != null ? new Views.Device.DeviceDock(host.Core) : null, audioPage,
+                host.Core != null ? new Views.Mixer.MixerView(host.Core, Views.Mixer.MixerDensity.Compact) : null);
+            if (host.Core != null)
+            {
+                // Fork (ux-overhaul.md §11, MX1): the one mixer: a strip's insert opens in Detail ▸ Device; the Master: a click shows the Mixer, a double click the Full one.
+                Views.Mixer.MixerView.DeviceOpener = m => ShowDevice();
+                Platform.StudioMachineUiHost.MasterOpener = OpenMasterMixer;
+                Views.Mixer.TrackColour.Install();
+                StudioSelection.For(host.Core).Changed += FollowMasterSelection;
+            }
             if (audioPage != null)
             {
                 Views.Audio.AudioClipPage.Opener = OpenAudio;
@@ -279,8 +299,15 @@ namespace ReBuzz.Studio.Shell
             };
             tabs.SelectionChanged += (s, e) => switcher.Select(SelectedTitle);
             switcher.Select(SelectedTitle);
-            DockPanel.SetDock(switcher, Dock.Top);
-            viewHost.Children.Add(switcher);
+            // Fork (MM1b): the track selector "◀ Lead ▶" sits at the right end of the view strip's row, where there is room: in the transport bar it
+            // pushed Lock, Keys and the device picker onto a second row of their own.
+            var strip = new Grid();
+            strip.Children.Add(switcher);
+            transport.Tracks.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
+            transport.Tracks.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+            strip.Children.Add(transport.Tracks);
+            DockPanel.SetDock(strip, Dock.Top);
+            viewHost.Children.Add(strip);
             viewHost.Children.Add(tabs);
             Grid.SetRow(viewHost, 0);
             Grid.SetRow(detail, 1);
@@ -290,6 +317,23 @@ namespace ReBuzz.Studio.Shell
             body.Children.Add(inspector);
             body.Children.Add(centre);
             root.Children.Add(body);
+            // Fork (MM1): MIDI mapping drawn over the controls (map mode, badges, the MIDI button) and the studio's selection one with the mapping's track.
+            if (host.Core.MidiMapping != null)
+            {
+                Views.Midi.SelectionBridge.Attach(host.Core);
+                var shell = new Grid();
+                Content = null;
+                shell.Children.Add(root);
+                mapLayer = new Views.Midi.MapLayer(host.Core, root);
+                shell.Children.Add(mapLayer);
+                Content = shell;
+                mapLayer.Attach(this);
+                DockPanel.SetDock(mapLayer.Banner, Dock.Top);                       // the map-mode banner is a row under the top bar, so it hides nothing
+                root.Children.Insert(root.Children.IndexOf(body), mapLayer.Banner);
+                Action<IMachine, Views.Device.DeviceParam> openPopover = (machine, p) => mapLayer?.OpenForTarget(ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
+                Views.Device.DeviceMenus.OpenMapPopover = openPopover;
+                Closed += (s, e) => { if (Views.Device.DeviceMenus.OpenMapPopover == openPopover) Views.Device.DeviceMenus.OpenMapPopover = null; };   // a static must not keep the closed window
+            }
             // Fork (ux-overhaul.md P4a): Tab reads the window as it is seen, not in the order the panels were docked.
             Avalonia.Input.KeyboardNavigation.SetTabIndex(transport, 1);
             Avalonia.Input.KeyboardNavigation.SetTabIndex(problems, 2);
@@ -468,6 +512,11 @@ namespace ReBuzz.Studio.Shell
             yield return Command("edit.deselect", mac, DeselectAll);
             yield return MenuEntry.Separator;
             yield return Command("edit.rename", mac, Rename);
+            yield return MenuEntry.Separator;
+            yield return Command("edit.mapmode", mac, ToggleMapMode, () => host.Core?.MidiMapping != null, () => mapLayer?.Mode.Active == true);
+            yield return Command("track.previous", mac, () => transport.Tracks.Step(-1), () => host.Core?.MidiMapping != null);
+            yield return Command("track.next", mac, () => transport.Tracks.Step(1), () => host.Core?.MidiMapping != null);
+            yield return MenuEntry.Separator;
             yield return Command("edit.songproperties", mac, () => _ = Tools.SongPropertiesDialog.Ask(host.Core), () => host.Core?.SongCore != null);
             if (!mac)
             {
@@ -528,6 +577,7 @@ namespace ReBuzz.Studio.Shell
             yield return Command("view.pianoroll", mac, ShowPianoRoll, () => detail != null, () => detail?.IsOpen == true && detail.IsPianoRoll);
             yield return Command("view.maximise", mac, () => ToggleTrackerMaximised(), () => detail != null, () => detail?.IsMaximised == true);
             yield return Command("view.device", mac, ShowDevice, () => detail?.DevicePage != null, () => detail?.IsOpen == true && detail.IsDevice);
+            yield return Command("view.detailmixer", mac, ShowMixer, () => detail?.MixerPage != null, () => detail?.IsOpen == true && detail.IsMixer);
             yield return Command("device.find", mac, FindParameter, () => detail?.DevicePage != null);
             yield return Command("view.samples", mac, () => Views.Samples.SamplesWindow.Open(this), () => host.Core != null);
             yield return Command("view.modulation", mac, () => Views.Modulation.ModulationMatrixWindow.Open(null, this), () => host.Core != null);
@@ -743,6 +793,9 @@ namespace ReBuzz.Studio.Shell
             Bind("edit.selectall", SelectAll);
             Bind("edit.deselect", DeselectAll, Modified);
             Bind("edit.rename", Rename);
+            Bind("edit.mapmode", ToggleMapMode);
+            Bind("track.previous", () => transport.Tracks.Step(-1));
+            Bind("track.next", () => transport.Tracks.Step(1));
             Bind("transport.play", () => transport.Play());
             Bind("transport.stop", () => transport.Stop());
             Bind("transport.record", () => transport.ToggleRecord(), Modified2);
@@ -760,6 +813,7 @@ namespace ReBuzz.Studio.Shell
             Bind("view.inspector", () => inspector?.Toggle());
             Bind("view.detail", () => detail?.Toggle());
             Bind("view.device", ShowDevice);
+            Bind("view.detailmixer", ShowMixer);
             Bind("device.find", FindParameter);
             Bind("view.mixer", ToggleSessionMixer);
             Bind("help.shortcuts", ShowShortcuts);
@@ -870,6 +924,65 @@ namespace ReBuzz.Studio.Shell
             dock.Follow();
         }
 
+        /// <summary>The detail panel on its Mixer page: Compact docked, Full when the panel is maximised.</summary>
+        internal void ShowMixer()
+        {
+            if (detail?.MixerPage == null) return;
+            detail.ShowMixer(detail.IsMaximised);
+        }
+
+        /// <summary>A double click on the Master: the full mixer over the window, the Master's strip in view and selected.</summary>
+        bool OpenMasterMixer(IMachine master)
+        {
+            if (detail?.MixerPage == null || host.Core == null) return false;
+            masterClick?.Stop();               // the single click that came first is part of this double click
+            StudioSelection.For(host.Core).SelectMachine(master, this);
+            detail.ShowMixer(maximise: true);
+            detail.MixerPage.Rebuild();
+            detail.MixerPage.RevealMaster();
+            return true;
+        }
+
+        /// <summary>A click that selects the Master shows Detail ▸ Mixer (Compact), with its strip in view; another selection leaves the panel as it is.</summary>
+        void FollowMasterSelection(object source)
+        {
+            if (detail?.MixerPage == null || host.Core == null || source is Views.Mixer.MixerStripView or Views.Mixer.MixerView) return;
+            var selected = StudioSelection.For(host.Core).Machine;
+            if (selected?.DLL?.Info?.Type != MachineType.Master) return;
+            if (source is not Views.Machines.MachineCanvas) return;
+            if (detail.IsMixer && detail.IsOpen) { detail.MixerPage.RevealMaster(); return; }
+            // The panel opens once the click is known not to be the first half of a double click: it takes room from the machine view,
+            // and the Master would move from under the second click.
+            masterSource = source as Views.Machines.MachineCanvas;
+            masterAt = selected.Position;
+            masterClick ??= new Avalonia.Threading.DispatcherTimer();
+            masterClick.Stop();
+            masterClick.Interval = MasterClickDelay;
+            masterClick.Tick -= OnMasterClickTimer;
+            masterClick.Tick += OnMasterClickTimer;
+            masterClick.Start();
+        }
+
+        /// <summary>How long a click on the Master waits for a second one before it shows Detail > Mixer (for tests).</summary>
+        internal static TimeSpan MasterClickDelay { get; set; } = TimeSpan.FromMilliseconds(320);
+
+        Avalonia.Threading.DispatcherTimer masterClick;
+        Views.Machines.MachineCanvas masterSource;
+        Tuple<float, float> masterAt;
+
+        void OnMasterClickTimer(object sender, EventArgs e)
+        {
+            masterClick?.Stop();
+            if (masterSource?.IsDragging == true) { masterClick?.Start(); return; }     // the Master is being dragged: not a click yet
+            if (detail?.MixerPage == null || host.Core == null) return;
+            var master = StudioSelection.For(host.Core).Machine;
+            if (master?.DLL?.Info?.Type != MachineType.Master) return;
+            if (!Equals(master.Position, masterAt)) return;                    // it was dragged, not clicked
+            if (detail.IsMixer && detail.IsOpen) { detail.MixerPage.RevealMaster(); return; }
+            detail.ShowMixer(detail.IsMaximised);
+            detail.MixerPage.RevealMaster();
+        }
+
         /// <summary>⌘F: the Device page's search box.</summary>
         internal void FindParameter()
         {
@@ -940,7 +1053,7 @@ namespace ReBuzz.Studio.Shell
         {
             if (detail == null) return;
             detail.ToggleMaximised();
-            if (detail.IsMaximised) PatternView.Show();
+            if (detail.IsMaximised && !detail.IsMixer) PatternView.Show();
         }
 
         void ShowPreferences() => PreferencesWindow.Open(host);
@@ -962,6 +1075,7 @@ namespace ReBuzz.Studio.Shell
             if (core == null) return;
             transport.Refresh();
             inspector?.Refresh();
+            mapLayer?.Refresh();
             if (detail?.IsAudio == true && detail.IsOpen) audioPage?.Refresh();
             browser?.Refresh();
             undo.Refresh();
@@ -1100,10 +1214,16 @@ namespace ReBuzz.Studio.Shell
         protected override void OnClosed(EventArgs e)
         {
             refresh.Stop();
+            mapLayer?.Detach();
             inspector?.Dispose();
             browser?.Dispose();
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
             if (Views.Detail.EnvelopeOpener.Open == (Func<IPattern, ReBuzz.Core.Session.ColumnKey, bool>)OpenEnvelope) Views.Detail.EnvelopeOpener.Open = null;
+            if (Platform.StudioMachineUiHost.MasterOpener == (Func<IMachine, bool>)OpenMasterMixer) Platform.StudioMachineUiHost.MasterOpener = null;
+            masterClick?.Stop();
+            masterSource = null;
+            if (Views.Mixer.MixerView.DeviceOpener != null) Views.Mixer.MixerView.DeviceOpener = null;
+            if (host.Core != null) StudioSelection.For(host.Core).Changed -= FollowMasterSelection;
             if (audioPage != null)
             {
                 if (Views.Audio.AudioClipPage.Opener == (Func<IPattern, bool>)OpenAudio) Views.Audio.AudioClipPage.Opener = null;

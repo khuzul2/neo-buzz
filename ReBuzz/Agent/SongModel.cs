@@ -313,6 +313,12 @@ namespace ReBuzz.Agent
                 o["tracks"] = m.TrackCount;
                 o["patterns"] = m.Patterns.Count;
             }
+            // Fork (ux-overhaul.md §11, MX1): a track's colour, the palette colour every view draws it in (machine_set(colour=...) sets it).
+            if (!IsMaster(m) && core.TrackColours is { } colours && colours.IndexOf(m) is int ci && ci >= 0)
+            {
+                o["colour"] = TrackColourStore.NameOf(ci);
+                o["colour_index"] = ci;
+            }
             if (m.Latency > 0) o["latency_samples"] = m.Latency;
             if (m.DLL != null && (m.DLL.IsMissing || m.DLL.IsCrashed)) o["health"] = m.DLL.IsMissing ? "missing" : "crashed";
             return o;

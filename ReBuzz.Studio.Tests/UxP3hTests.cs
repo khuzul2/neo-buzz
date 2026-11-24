@@ -26,6 +26,7 @@ using ReBuzz.Studio.Shell.Preferences;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Inspector;
 using ReBuzz.Studio.Views.Machines;
+using ReBuzz.Studio.Views.Mixer;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
 using static ReBuzz.Studio.Tests.MachineViewTests;
@@ -198,7 +199,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ P3h: colour per machine
 
         [AvaloniaTest]
-        public void EachMachinesBoxTrackAndClipsWearItsCategorysIdentityColour()
+        public void EachMachinesBoxWearsItsCategorysIdentityColourAndItsTrackAndClipsTheTracks()
         {
             using var rig = new SessionRig("Lead", "Drums");
             var lead = rig.Machine("Lead");                         // Neo Poly: Synth
@@ -247,16 +248,18 @@ namespace ReBuzz.Studio.Tests
                 Settle(window);
                 var session = window.Tabs.Items.Cast<TabItem>().Select(t => t.Content).OfType<SessionView>().First();
                 Assert.That(PatternColors.Get(hook), Is.EqualTo(-1), "the clip has no colour of its own");
+                // MX1 (option A): the track's colour, the one it was given, is what the tracks and their clips wear; the box keeps the kind's colour.
+                var track = TrackColour.Of(lead)!.Value;
                 var cell = session.SlotAt(0, 0);
-                Assert.That(((ISolidColorBrush)cell.Background!).Color, Is.EqualTo(StudioTokens.Identity(MachineCategory.Synth)), "its fill is its machine's identity colour");
+                Assert.That(((ISolidColorBrush)cell.Background!).Color, Is.EqualTo(track), "its fill is its track's colour");
                 var strip = session.Headers[0].GetVisualDescendants().OfType<Border>().First(b => b.Height == 3);
-                Assert.That(((ISolidColorBrush)strip.Background!).Color, Is.EqualTo(StudioTokens.Identity(MachineCategory.Synth)), "and so is its track's strip");
+                Assert.That(((ISolidColorBrush)strip.Background!).Color, Is.EqualTo(track), "and so is its track's strip");
 
                 // The Arrangement: a block with no colour of its own.
                 window.ShowView("Sequence");
                 Settle(window);
                 var seq = window.Tabs.Items.Cast<TabItem>().Select(t => t.Content).OfType<SequenceView>().First();
-                Assert.That(seq.Canvas.BlockColour(0, hook), Is.EqualTo(StudioTokens.Identity(MachineCategory.Synth)));
+                Assert.That(seq.Canvas.BlockColour(0, hook), Is.EqualTo(track));
 
                 // Nothing is written into the song (§3.4): the indices stay "none".
                 Assert.That(PatternColors.Get(hook), Is.EqualTo(-1));
@@ -272,7 +275,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(seq.Canvas.BlockColour(0, hook), Is.EqualTo(own), "in the Arrangement too");
                 rig.Layout.SetClipColor(hook, -1);
                 Settle(window);
-                Assert.That(((ISolidColorBrush)session.SlotAt(0, 0).Background!).Color, Is.EqualTo(StudioTokens.Identity(MachineCategory.Synth)), "None gives the machine's colour back");
+                Assert.That(((ISolidColorBrush)session.SlotAt(0, 0).Background!).Color, Is.EqualTo(Color.FromUInt32(SessionColourChoices.Choices[7].Argb)), "None gives the track's colour back (the one the user picked for the track)");
             }
             finally
             {

@@ -14,10 +14,11 @@ namespace NeoBuzz.PitchEval
         {
             if (args.Length == 3 && args[0] == "--onsets") { Avp.Debug(args[1], args[2]); return 0; }
             if (args.Length >= 5 && args[0] == "--tune-render") { TuneArtefacts.RenderCommand(args[1], double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture), args[3], args[4], args.Length > 5 ? int.Parse(args[5]) : 1); return 0; }
+            if (args.Length == 5 && args[0] == "--tune-resid") { TuneArtefacts.ResidCommand(args[1], args[2], args[3], args[4]); return 0; }
             if (args.Length >= 3 && args[0] == "--tune-detect") { TuneArtefacts.DetectCommand(args[1], args[2], args.Length > 3 ? double.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture) : TuneDetector.DefaultK); return 0; }
             if (args.Length >= 3 && args[0] == "--tune-artefacts") { TuneArtefacts.RunCommand(args[1], args[2], args.Length > 3 ? args[3] : null); return 0; }
             if (args.Length == 3 && args[0] == "--tune-hypotheses") { TuneArtefacts.HypothesesCommand(args[1], args[2]); return 0; }
-            if (args.Length == 4 && args[0] == "--tune-pack") { TuneArtefacts.PackCommand(args[1], args[2], args[3]); return 0; }
+            if (args.Length >= 4 && args[0] == "--tune-pack") { TuneArtefacts.PackCommand(args[1], args[2], args[3], args.Length > 4 ? args[4] : null); return 0; }
             if (args.Length == 4 && args[0] == "--pack") { TuneGates.PackDir(args[1], args[2], args[3]); return 0; }
             if (args.Length == 4 && args[0] == "--track") { Dbg.Track(args[1], args[2], int.Parse(args[3])); return 0; }
             if (args.Length == 5 && args[0] == "--am1-trace") { Am1.Trace(args[1], double.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture), double.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture), int.Parse(args[4])); return 0; }

@@ -4,6 +4,7 @@
 // of the session (SessionLayout); markers apply at once to a playing clip, the rest on its next
 // launch. Audio clips' section (1.0) isn't here: the studio has no Session Clip Player yet.
 
+using ReBuzz.Studio.Views.Mixer;
 using System;
 using Avalonia;
 using Avalonia.Controls;

@@ -57,7 +57,7 @@ namespace NeoBuzz.AutoWarpEval
             return 0;
         }
 
-        static float[] Render(float[] w, int rate, AutoWarpResult r, double song, string warp)
+        internal static float[] Render(float[] w, int rate, AutoWarpResult r, double song, string warp)
         {
             double perBeat = 60.0 / song;
             float[] y;

@@ -57,6 +57,8 @@ namespace NeoBuzz.AutoWarpEval
                     case "--beats-per-bar": bpb = int.Parse(Next(), CultureInfo.InvariantCulture); break;
                     case "--pack": return Pack.Run(args, i + 1);
                     case "--pack2": return Pack2.Run(args, i + 1);
+                    case "--pack3": return Pack3.Run(args, i + 1);
+                    case "--aw3": return Aw3Commands.Run(args, i + 1);
                     case "--dump":
                         {
                             var l = Variant(Enum.Parse<WarpSignals.Tempo>(Next(), true), Enum.Parse<WarpSignals.Style>(Next(), true), int.Parse(Next()));

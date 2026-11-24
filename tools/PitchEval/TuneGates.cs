@@ -207,6 +207,8 @@ namespace NeoBuzz.PitchEval
                 if (Environment.GetEnvironmentVariable("NOTES") == v.Key) Console.WriteLine(id + " sung " + string.Join(" ", TuneNotes.Long(sung)) + "\n   out " + string.Join(" ", TuneNotes.Long(outSegs)));
                 var (flat, _) = TuneNotes.Flatness(to, outSegs);
                 var delays = TuneNotes.StepDelays(ti, to, sung);
+                if (!PooledDelays.ContainsKey(v.Name)) PooledDelays[v.Name] = new List<double>();
+                PooledDelays[v.Name].AddRange(delays.Select(d => d * 1000));
                 double dmed = delays.Count == 0 ? double.NaN : delays.OrderBy(d => d).ToList()[delays.Count / 2] * 1000;
                 double ce = TuneNotes.CentreError(to, sung);
                 var viOut = new List<double>();
@@ -241,6 +243,8 @@ namespace NeoBuzz.PitchEval
             }
         }
 
+        internal static readonly Dictionary<string, List<double>> PooledDelays = new();
+
         /// <summary>Local use: the originals of a listening pack (a folder of *-original.wav) measured inside the notes, the report to a file and the pitch tracks to a folder.</summary>
         public static void PackDir(string dir, string outMd, string csvDir)
         {
@@ -255,6 +259,8 @@ namespace NeoBuzz.PitchEval
                 InNotes(id, x, rate, old[Math.Min(n, 5)] == "hard" ? 1 : old[Math.Min(n, 5)] == "natural" ? 2 : 3, md, csvDir);
                 n++;
             }
+            md.AppendLine();
+            md.AppendLine("Step delay pooled over all steps of the six excerpts (ms, median / mean / steps): " + string.Join("; ", PooledDelays.Select(kv => { var l = kv.Value.OrderBy(q => q).ToList(); return l.Count == 0 ? kv.Key + " -" : $"{kv.Key} {l[l.Count / 2]:F0} / {l.Average():F0} / {l.Count}"; })));
             File.WriteAllText(outMd, md.ToString());
         }
 

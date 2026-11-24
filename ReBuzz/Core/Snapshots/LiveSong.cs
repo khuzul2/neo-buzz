@@ -130,7 +130,7 @@ namespace ReBuzz.Core.SongHistory
                     lm.EditorGear = m.PatternEditorDLL?.Name;
                     if (m.EditorMachine != null)
                     {
-                        try { lm.EditorData = m.PatternEditorData; } catch (Exception) { lm.EditorData = null; }
+                        try { lm.EditorData = m.ClipsAttached ? null : m.PatternEditorData; } catch (Exception) { lm.EditorData = null; }       // clips CU3: where the editor views the store its data is derived from the lanes, which the columns of the patterns carry
                     }
                 }
                 for (int g = 1; g <= 2 && g < m.ParameterGroups.Count; g++)

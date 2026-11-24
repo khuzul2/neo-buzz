@@ -610,6 +610,7 @@ namespace ReBuzz.Studio.Views.Session
                 {
                     menu.Items.Add(Item("Separate stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(pattern), tag: "Separate stems"));
                     menu.Items.Add(ReBuzz.Studio.Shell.ConvertFlow.Menu(() => pattern));   // Fork (docs/specs/pitch.md section 9)
+                    menu.Items.Add(ReBuzz.Studio.Shell.SliceFlow.Menu(() => pattern));     // Fork (docs/specs/audio-to-midi.md, SL1)
                 }
                 menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i), MachineColourName));
                 int notes = layout.RecordedNoteCount(pattern);

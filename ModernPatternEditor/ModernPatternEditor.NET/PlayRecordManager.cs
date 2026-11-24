@@ -96,6 +96,8 @@ namespace WDE.ModernPatternEditor
             internal int midiChannel;
         }
 
+        // Fork (docs/specs/clips.md §5.6, CU3): one store, one engine. In the Studio build the engine plays every lane of a clip (parameter lanes before
+        // the tick, the Notes lane through SendMidiInput) and the editor plays nothing: Play and what it fires are Classic's (WPF) build only.
         internal void RefreshPlayPosData()
         {
             lock (Editor.syncLock)
@@ -110,6 +112,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+#if WINDOWS
         internal void Play(SongTime songTime)
         {
             // Fork (audio hygiene): the song's sequences by index (its collection is kept while the
@@ -189,6 +192,8 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+#endif
+
         internal void Stop()
         {
             lock (Editor.syncLock)
@@ -228,6 +233,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+#if WINDOWS
         private void FireCollectedEvents(List<CollectedEventState> collectEvents)
         {
             // Fork (audio hygiene): the machines in order of their first event (as the dictionary's
@@ -362,6 +368,8 @@ namespace WDE.ModernPatternEditor
                 }
             }
         }
+
+#endif
 
         internal int GetPositionInPattern(out IPattern? pat, ISequence seq, IMachine target)
         {

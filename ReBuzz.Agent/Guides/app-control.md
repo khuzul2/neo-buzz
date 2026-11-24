@@ -7,6 +7,7 @@ You can do what a person does in the app: change preferences, bind MIDI controll
 | Area | Tools | Modes |
 |---|---|---|
 | Settings | `settings_get`, `settings_set`, `settings_reset`, `settings_history` | all |
+| MIDI controllers, maps and track pages | see guide `midi-mapping` | all |
 | MIDI bindings | `midi_bindings_list`, `midi_bind`, `midi_unbind`, `midi_learn` | all (learn needs a MIDI input) |
 | Audio output | `audio_status`, `audio_devices`, `audio_set` | studio and live (headless renders only: they say so) |
 | The studio window | `view_show`, `machine_open_editor`, `select`, `panel_set`, `window_layout` | studio only: elsewhere they answer "Studio only" |
