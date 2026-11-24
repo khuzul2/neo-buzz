@@ -3290,6 +3290,36 @@
    "description": "Curve layer point 32 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)",
    "how": "Sets point 32 of 32 on a smooth correction curve from 20 Hz to 20 kHz, from -24 to +24 dB (linear phase only).",
    "sound": "It adds a detailed overall tone correction, such as a matching curve, on top of the bands."
+  },
+  {
+   "index": 195,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales every band's gain in dB (and the graphic sliders): 0 % is flat. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down to ease every boost and cut towards flat, up to exaggerate the whole curve."
+  },
+  {
+   "index": 196,
+   "id": "Mix",
+   "name": "Mix",
+   "group": "Output",
+   "min": 0,
+   "max": 1000,
+   "default": 1000,
+   "kind": "percent",
+   "unit": "%",
+   "description": "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)",
+   "how": "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.",
+   "sound": "Lower values keep more of the original sound, so the effect works as a parallel layer."
   }
  ],
  "readings": [

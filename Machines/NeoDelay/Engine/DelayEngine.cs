@@ -107,6 +107,7 @@ namespace NeoBuzz.Delay
         }
 
         readonly ParamValues values;
+        readonly FxStage fx;
         readonly Line[] lines = { new Line(), new Line() };
         float sampleRate = 48000;
 
@@ -128,9 +129,16 @@ namespace NeoBuzz.Delay
         float lastPeak;
         int quietSamples;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Feedback, 0), AmountRule.Lin(P.Mix, 0),
+        };
+
         public DelayEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -144,6 +152,7 @@ namespace NeoBuzz.Delay
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int max = DelayDesign.LineSamples(sr);
             foreach (var l in lines) l.Data = new DelayLine(max);
@@ -172,6 +181,7 @@ namespace NeoBuzz.Delay
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var l in lines) l.Clear();
             env = 0;
             quietSamples = 0;
@@ -290,6 +300,13 @@ namespace NeoBuzz.Delay
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

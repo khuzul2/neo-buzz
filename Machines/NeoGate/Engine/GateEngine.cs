@@ -32,6 +32,7 @@ namespace NeoBuzz.Gate
         enum State { Closed, Attack, Open, Hold, Release }
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         readonly KeyDetector key = new KeyDetector();
         DelayLineF delayL, delayR;
@@ -52,9 +53,16 @@ namespace NeoBuzz.Gate
         double pubGain, pubMatch = double.NaN;
         int pubOpen, pubLatency;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Ratio(P.Ratio), AmountRule.Lin(P.Range, 0),
+        };
+
         public GateEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules, deltaIndex: P.Delta, listenIndex: P.Listen);
+            this.values = fx.Effective;
             Delta = new DeltaListen((int)Math.Ceiling(MaxLookahead * 192000) + 4, 48000);
             Match = new GainMatch(48000);
         }
@@ -68,6 +76,7 @@ namespace NeoBuzz.Gate
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int max = (int)Math.Ceiling(MaxLookahead * sr) + 2;
             delayL = new DelayLineF(max);
@@ -84,6 +93,7 @@ namespace NeoBuzz.Gate
 
         public void Reset()
         {
+            fx.Reset();
             key.Reset();
             delayL.Reset();
             delayR.Reset();
@@ -129,6 +139,13 @@ namespace NeoBuzz.Gate
 
         /// <summary>Gates a stereo block in place; <paramref name="keyL"/> and <paramref name="keyR"/> are the external key (null: the input is the key).</summary>
         public void Process(float[] left, float[] right, float[] keyL, float[] keyR, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, keyL, keyR, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, float[] keyL, float[] keyR, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

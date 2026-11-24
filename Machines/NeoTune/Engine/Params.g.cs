@@ -33,7 +33,8 @@ namespace NeoBuzz.Tune
         public const int Glide = 22;
         public const int Stick = 23;
         public const int Method = 24;
-        public const int Count = 25;
+        public const int FxAmount = 25;
+        public const int Count = 26;
     }
 
     internal static class Params
@@ -68,6 +69,7 @@ namespace NeoBuzz.Tune
             new ParamDef(P.Glide, "Glide", "Transition", 0, 1000, 600, MapKind.Percent, group: "Natural", description: "Between notes: 0 % snaps at the midpoint, 100 % leaves the singer's own glide untouched", how: "Sets how note changes are handled, from a snap (0 %) to the singer's own glide kept (100 %): the correction fades while the pitch of the note centre is moving fast.", sound: "Snap sounds like the effect; glide keeps slides between notes as sung."),
             new ParamDef(P.Stick, "Stick", "Note stickiness", 0, 1000, 600, MapKind.Percent, group: "Natural", description: "How hard it is to leave a note: how far past the midpoint, and for how long, the pitch has to be before the target changes", how: "Sets the hysteresis (in cents past the midpoint) and the minimum time before the target note changes, from low (0 %) to high (100 %).", sound: "High stickiness stops a wide vibrato or a wobble from flipping between neighbouring notes; low follows quick note changes."),
             new ParamDef(P.Method, "Method", "Method", 0, 2, 0, MapKind.Enum, names: new[] { "Auto", "Splice", "PSOLA" }, group: "Engine", description: "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine", how: "Chooses how the sound is re-synthesised: Auto, the splice engine (resample and repeat or drop whole periods, the most transparent) or PSOLA (grains, with formant control).", sound: "Splice keeps the singer's voice almost untouched for corrections under about 2 semitones; PSOLA can move formants and transpose widely."),
+            new ParamDef(P.FxAmount, "FxAmount", "Fx amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the correction: its strength (up to full) and the retune time. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to let the natural pitch through, up to correct faster and harder."),
         };
     }
 }

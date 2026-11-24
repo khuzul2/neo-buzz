@@ -281,6 +281,22 @@
    "description": "Hear only what the shaper changes: the output minus the input, delayed to match (gliding over 10 ms)",
    "how": "Plays only the difference between the output and the input.",
    "sound": "You hear only what the shaper adds or removes, which shows how much the hits have changed."
+  },
+  {
+   "index": 17,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales the attack and sustain gains in dB and the four impact amounts. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down for a gentler reshaping of the hits, up for a more pronounced one."
   }
  ],
  "readings": [

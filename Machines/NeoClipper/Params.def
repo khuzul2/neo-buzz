@@ -58,3 +58,7 @@ reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 
 reading clip_db           dB    | How far the driven signal went over the ceiling, at most
 reading clipped_percent   %     | Samples the curve bent (over the knee, or the ceiling in Hard)
 reading latency_samples   samples | The clipper's latency, reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales how hard the clipper works: the drive, the ceiling's distance from 0 dB and each band's drive. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to ease off the clipping, up to clip harder without touching the other controls.

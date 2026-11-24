@@ -22,7 +22,8 @@ namespace NeoBuzz.Ensemble
         public const int Tone = 11;
         public const int Mix = 12;
         public const int Output = 13;
-        public const int Count = 14;
+        public const int Amount = 14;
+        public const int Count = 15;
     }
 
     internal static class Params
@@ -46,6 +47,7 @@ namespace NeoBuzz.Ensemble
             new ParamDef(P.Tone, "Tone", "Tone", 0, 1000, 862, MapKind.Freq, a: 500, b: 20000, group: "Sound", description: "One-pole high cut, −3 dB at this frequency, on the wet signal and in the feedback loop (Chorus, Flanger) or in the loop (Phaser); at its top (20 kHz) it is open", how: "Rolls off the highs of the wet signal from 500 Hz to 20 kHz.", sound: "Lowering it makes the effect darker and softer, and fully open it stays bright."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 500, MapKind.Percent, group: "Output", description: "Dry against wet: 50 % the deepest comb or notches, 100 % only the wet (vibrato)", how: "Blends the dry sound with the effect from 0 to 100 %.", sound: "Around 50 % gives the deepest notches, while 100 % leaves only the pitch-wobbling wet sound."),
             new ParamDef(P.Output, "Output", "Output", 0, 240, 120, MapKind.Db, a: -12, b: 12, group: "Output", description: "Output gain, −12 … +12 dB in 0.1 dB steps", how: "Sets the output gain, from minus 12 to plus 12 dB.", sound: "Use it to match the level with the dry sound."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a calmer, subtler movement, up for a deeper, more obvious sweep."),
         };
     }
 }

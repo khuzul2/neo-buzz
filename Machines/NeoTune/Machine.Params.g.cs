@@ -81,5 +81,8 @@ namespace NeoBuzz.Tune
 
         [ParameterDecl(Name = "Method", Description = "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int Method { get => Values[P.Method]; set => Values.Set(P.Method, value); }
+
+        [ParameterDecl(Name = "Fx amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int FxAmount { get => Values[P.FxAmount]; set => Values.Set(P.FxAmount, value); }
     }
 }

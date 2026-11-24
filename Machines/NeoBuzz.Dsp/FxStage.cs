@@ -153,7 +153,7 @@ namespace NeoBuzz.Dsp
         public ParamValues Effective => eff;
 
         /// <summary>Amount now, 1 = 100 %.</summary>
-        public double Amount => raw.Value(amountIndex) * 0.01;
+        public double Amount => raw.Value(amountIndex) / 100.0;
 
         /// <summary>Mix now, 0 … 1 (1 when the effect mixes itself).</summary>
         public double Mix => mixIndex >= 0 ? raw.Value(mixIndex) : 1.0;
@@ -186,7 +186,7 @@ namespace NeoBuzz.Dsp
         {
             var table = raw.Table;
             for (int i = 0; i < table.Length; i++) into.Set(i, raw[i]);
-            double a = raw.Value(amountIndex) * 0.01;
+            double a = raw.Value(amountIndex) / 100.0;
             if (a == 1.0)
             {
                 for (int i = 0; i < rules.Length; i++) into.ClearPhysical(rules[i].Index);

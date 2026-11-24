@@ -57,3 +57,10 @@ Delta      "Delta"        0 1     0     switch                             | Hea
 reading added_db          dB    | Level of the added harmonics against the input (RMS, dB); −100 when nothing is added
 reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
 reading latency_samples   samples | The oversampling's delay, constant, reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the drive, the four band amounts and the air shelf's gain. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for less sparkle, up for more harmonics and air.
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)
+    how Blends the processed signal with the dry signal, which is delayed to match the effect's latency.
+    sound Lower values keep more of the original sound, so the effect works as a parallel layer.

@@ -64,6 +64,7 @@ namespace NeoBuzz.Ensemble
         }
 
         readonly ParamValues values;
+        readonly FxStage fx;
         readonly Channel[] ch = { new Channel(), new Channel() };
         float sampleRate = 48000;
 
@@ -89,9 +90,16 @@ namespace NeoBuzz.Ensemble
         float wetScale = 1, invVoices = 1;
         int depthMode = -1;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Depth, 0), AmountRule.Lin(P.Feedback, 0),
+        };
+
         public EnsembleEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -106,6 +114,7 @@ namespace NeoBuzz.Ensemble
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int max = (int)Math.Ceiling(EnsembleDesign.MaxDelaySeconds * sr) + 8;
             foreach (var c in ch) c.Line = new FracDelay(max);
@@ -128,6 +137,7 @@ namespace NeoBuzz.Ensemble
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var c in ch) c.Clear();
         }
 
@@ -248,6 +258,13 @@ namespace NeoBuzz.Ensemble
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

@@ -16,6 +16,7 @@ namespace NeoBuzz.Drive
         const double TubeNegLevel = 0.72;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         readonly Channel[] channels = { new Channel(), new Channel() };
         float sampleRate = 48000;
         int factor = 4;
@@ -45,9 +46,16 @@ namespace NeoBuzz.Drive
         // Deterministic pink noise (RMS 1, Gaussian) for the auto-gain estimate.
         static readonly float[] Probe = MakeProbe();
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Drive, 0), AmountRule.Lin(P.Bias, 0),
+        };
+
         public DriveEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -61,6 +69,7 @@ namespace NeoBuzz.Drive
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             drive.Setup(0.02, sr);
             bias.Setup(0.02, sr);
@@ -74,6 +83,7 @@ namespace NeoBuzz.Drive
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var c in channels) c.Reset();
         }
 
@@ -268,6 +278,13 @@ namespace NeoBuzz.Drive
 
         /// <summary>Processes a stereo block in place (±1 floats).</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

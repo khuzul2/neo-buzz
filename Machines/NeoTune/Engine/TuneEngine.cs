@@ -36,6 +36,7 @@ namespace NeoBuzz.Tune
         const int HannSize = 1024;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         double sr = 48000;
         PitchTracker[] trackers;
         OnsetDetector onsets;
@@ -94,9 +95,18 @@ namespace NeoBuzz.Tune
         double dispIn0, dispOut0, dispCentre0;
         double dispStep;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            // The strength of the correction (its own Amount control, 0-100 %) scales, capped at full; the retune time shortens towards instant as it grows.
+            AmountRule.Fun(P.Amount, (raw, a) => raw.Value(P.Amount) * a, 0, 1),
+            AmountRule.Lin(P.Retune, 400),
+        };
+
         public TuneEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.FxAmount, -1, AmountRules);
+            this.values = fx.Effective;
             hann = new float[HannSize + 2];
             for (int i = 0; i <= HannSize + 1; i++)
                 hann[i] = i > HannSize ? 0f : (float)(0.5 * (1.0 + PortableMath.Cos(Math.PI * i / HannSize)));
@@ -177,6 +187,7 @@ namespace NeoBuzz.Tune
 
         public void SetSampleRate(float rate)
         {
+            fx.SetSampleRate(rate);
             sr = rate;
             trackers = new[]
             {
@@ -208,6 +219,7 @@ namespace NeoBuzz.Tune
 
         public void Reset()
         {
+            fx.Reset();
             Array.Clear(ring, 0, ring.Length);
             Array.Clear(dryL, 0, dryL.Length);
             Array.Clear(dryR, 0, dryR.Length);
@@ -308,6 +320,13 @@ namespace NeoBuzz.Tune
 
         /// <summary>Corrects a stereo block in place: the wet is the voice, mono, on both channels, blended with the delayed input.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             Update(false);
             int done = 0;

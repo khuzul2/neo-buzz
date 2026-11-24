@@ -433,6 +433,22 @@
    "description": "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine",
    "how": "Chooses how the sound is re-synthesised: Auto, the splice engine (resample and repeat or drop whole periods, the most transparent) or PSOLA (grains, with formant control).",
    "sound": "Splice keeps the singer's voice almost untouched for corrections under about 2 semitones; PSOLA can move formants and transpose widely."
+  },
+  {
+   "index": 25,
+   "id": "FxAmount",
+   "name": "Fx amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales the correction: its strength (up to full) and the retune time. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down to let the natural pitch through, up to correct faster and harder."
   }
  ],
  "readings": [

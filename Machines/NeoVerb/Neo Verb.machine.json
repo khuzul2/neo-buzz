@@ -281,6 +281,22 @@
    "description": "Dry/wet (100 % for a send)",
    "how": "Blends the dry sound with the reverb from 0 to 100 %.",
    "sound": "Use a low value as an insert, or 100 % when the reverb sits on a send."
+  },
+  {
+   "index": 17,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales the reverb: the wet level (the Mix) and the decay time, in octaves from the shortest. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down for a smaller, drier space, up for a bigger and wetter one."
   }
  ]
 }

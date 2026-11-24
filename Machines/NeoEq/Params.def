@@ -627,3 +627,10 @@ reading b7_dynamic_db dB | Band 7's dynamic gain change now (negative: down), 0 
 reading b8_dynamic_db dB | Band 8's dynamic gain change now (negative: down), 0 while static
 reading q_capped_bands  | Bands whose Q linear phase limits (a band too narrow for its frequency: its ringing would not fit the FIR), 0 in minimum phase
 reading pre_ringing_db  dB | Linear phase: the energy of the FIR's response before its centre, relative to all of it (left to left), -inf (-300) when the EQ is flat
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales every band's gain in dB (and the graphic sliders): 0 % is flat. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to ease every boost and cut towards flat, up to exaggerate the whole curve.
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)
+    how Blends the processed signal with the dry signal, which is delayed to match the effect's latency.
+    sound Lower values keep more of the original sound, so the effect works as a parallel layer.

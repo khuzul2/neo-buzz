@@ -24,7 +24,9 @@ namespace NeoBuzz.Limiter
         public const int Unlink = 13;
         public const int Unity = 14;
         public const int Delta = 15;
-        public const int Count = 16;
+        public const int Amount = 16;
+        public const int Mix = 17;
+        public const int Count = 18;
     }
 
     internal static class Params
@@ -50,6 +52,8 @@ namespace NeoBuzz.Limiter
             new ParamDef(P.Unlink, "Unlink", "Transient unlink", 0, 1000, 0, MapKind.Percent, group: "Stages", description: "Transients limited per channel (v2): on hits the stereo link drops by this much, so one side's transient doesn't duck the other; sustained sound stays linked. 0 %: as v1", how: "Limits transients on each channel separately by up to this amount, from 0 to 100 %.", sound: "A loud hit on one side no longer ducks the other side, so the stereo image stays wider."),
             new ParamDef(P.Unity, "Unity", "Unity listen", 0, 1, 0, MapKind.Switch, group: "Stages", description: "Monitor at the input's loudness (v2): the output trimmed by the gain-match reading (short-term loudness out − in), to judge what limiting does at equal loudness. Off for rendering", how: "Plays the output at the input's loudness by taking off the loudness limiting added.", sound: "You can judge the limiter's effect on tone and punch rather than just hearing it louder; switch it off before rendering."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Stages", description: "Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms", how: "Plays only the difference between the output and the input, at the input's level.", sound: "You hear exactly what the limiting removes, such as crackle, pumping or lost punch."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales how hard it limits: the input gain, the ceiling's distance from 0 dB, the upward and transient stages and the slow stage. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a lighter touch, up to push harder into the ceiling."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

@@ -12,6 +12,7 @@ namespace NeoBuzz.Dither
     {
         public const int MaxBlock = 256;
         readonly ParamValues values;
+        readonly FxStage fx;
         readonly Dsp.Dither[] ch = new Dsp.Dither[2];
         float sampleRate = 48000;
         bool blank;
@@ -19,9 +20,13 @@ namespace NeoBuzz.Dither
         public readonly LevelMeter InMeter = new LevelMeter();
         public readonly LevelMeter OutMeter = new LevelMeter();
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules = Array.Empty<AmountRule>();
+
         public DitherEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules);
+            this.values = fx.Effective;
             ch[0] = new Dsp.Dither(16, true, DitherShape.Off, 1);
             ch[1] = new Dsp.Dither(16, true, DitherShape.Off, 2);
         }
@@ -33,6 +38,7 @@ namespace NeoBuzz.Dither
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             InMeter.SetSampleRate(sr);
             OutMeter.SetSampleRate(sr);
@@ -42,6 +48,7 @@ namespace NeoBuzz.Dither
 
         public void Reset()
         {
+            fx.Reset();
             ch[0].Reset();
             ch[1].Reset();
             zeros = 0;
@@ -55,6 +62,9 @@ namespace NeoBuzz.Dither
             var shape = (DitherShape)values.Choice(P.Shaping);
             ch[0].Configure(bits, tpdf, shape);
             ch[1].Configure(bits, tpdf, shape);
+            double amount = values.Value(P.Amount) / 100.0;
+            ch[0].Level = ch[1].Level = amount;
+            ch[0].Depth = ch[1].Depth = amount;
             blank = values.On(P.Blank);
             blankAfter = (long)Math.Round(values.Value(P.BlankAfter) * sampleRate);
             values.Clean();
@@ -62,6 +72,13 @@ namespace NeoBuzz.Dither
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update();

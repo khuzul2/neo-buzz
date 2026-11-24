@@ -25,7 +25,8 @@ namespace NeoBuzz.Transient
         public const int Mix = 14;
         public const int Output = 15;
         public const int Delta = 16;
-        public const int Count = 17;
+        public const int Amount = 17;
+        public const int Count = 18;
     }
 
     internal static class Params
@@ -52,6 +53,7 @@ namespace NeoBuzz.Transient
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (the dry signal is delayed to match)", how: "Blends the shaped signal with the dry signal.", sound: "Lower values give a subtler effect that keeps more of the original dynamics."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the shaper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the shaper.", sound: "It matches the loudness to the untreated sound so you judge the punch fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the shaper changes: the output minus the input, delayed to match (gliding over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear only what the shaper adds or removes, which shows how much the hits have changed."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the attack and sustain gains in dB and the four impact amounts. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a gentler reshaping of the hits, up for a more pronounced one."),
         };
     }
 }

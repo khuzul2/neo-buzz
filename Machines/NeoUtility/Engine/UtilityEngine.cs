@@ -26,6 +26,7 @@ namespace NeoBuzz.Utility
         const double CorrelationSeconds = 0.3;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
 
         // Ramps: gain, pan gains, mono amount (pan law), width, bass mono, swap, polarity, DC, the matrix's encode and decode.
@@ -39,9 +40,16 @@ namespace NeoBuzz.Utility
         // Correlation of the output (one-pole averages).
         double sLR, sLL, sRR, corrCoeff;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Gain, 0), AmountRule.Lin(P.Pan, 0), AmountRule.Lin(P.Width, 100),
+        };
+
         public UtilityEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -57,6 +65,7 @@ namespace NeoBuzz.Utility
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             gain.Setup(GlideSeconds, sr);
             panL.Setup(GlideSeconds, sr);
@@ -83,6 +92,7 @@ namespace NeoBuzz.Utility
 
         public void Reset()
         {
+            fx.Reset();
             dcL.Reset(); dcR.Reset(); side1.Reset(); side2.Reset();
             sLR = sLL = sRR = 0;
         }
@@ -151,6 +161,13 @@ namespace NeoBuzz.Utility
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, 0);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

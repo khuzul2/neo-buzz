@@ -65,3 +65,7 @@ reading gain_max_db       dB    | The largest gain applied (to one band, in Impa
 reading gain_min_db       dB    | The smallest gain applied (negative: the most it took away)
 reading transient_percent %     | How much of the time the audio was in an onset (Attack/Sustain mode)
 reading latency_samples   samples | The lookahead, reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the attack and sustain gains in dB and the four impact amounts. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for a gentler reshaping of the hits, up for a more pronounced one.

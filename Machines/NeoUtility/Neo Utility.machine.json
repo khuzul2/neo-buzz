@@ -196,6 +196,36 @@
    "description": "Mid/side for the machines between two Utilities. Encode M/S: after the other stages, the output carries mid (L + R)/2 on the left and side (L − R)/2 on the right. Decode M/S: before them, the input is read as mid and side and turned back into L = M + S, R = M − S. Off: left and right as they are",
    "how": "Turns left/right into mid/side (Encode) or back (Decode), for processing between two Utilities.",
    "sound": "Between an encode and a decode, a machine in the chain works on the centre and the sides separately."
+  },
+  {
+   "index": 11,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales the gain and the pan away from 0 and the width away from 100 %. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down to bring the signal back to unity, up to push the gain, pan and width further."
+  },
+  {
+   "index": 12,
+   "id": "Mix",
+   "name": "Mix",
+   "group": "Output",
+   "min": 0,
+   "max": 1000,
+   "default": 1000,
+   "kind": "percent",
+   "unit": "%",
+   "description": "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)",
+   "how": "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.",
+   "sound": "Lower values keep more of the original sound, so the effect works as a parallel layer."
   }
  ]
 }

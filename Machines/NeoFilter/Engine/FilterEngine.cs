@@ -101,6 +101,7 @@ namespace NeoBuzz.Filter
         }
 
         readonly ParamValues values;
+        readonly FxStage fx;
         readonly Channel[] channels = { new Channel(), new Channel() };
         double sampleRate = 48000;
         IirHalfbandDesign[] stages;
@@ -132,9 +133,32 @@ namespace NeoBuzz.Filter
         double frac;
         int quietSamples;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            // Low-pass types open towards 20 kHz and high-pass types towards 20 Hz as Amount falls (octaves scale); band types keep their cutoff.
+            AmountRule.Fun(P.Cutoff, (raw, a) =>
+            {
+                double c = raw.Value(P.Cutoff);
+                int type = raw.Choice(P.Type);
+                if (type == 0 || type == 1 || type == 2) return 20000 * PortableMath.Pow(c / 20000, a);
+                if (type == 4) return 20 * PortableMath.Pow(c / 20, a);
+                return c;
+            }),
+            // Resonance of the band, notch and peak types scales in octaves from the lowest Q.
+            AmountRule.Fun(P.Resonance, (raw, a) =>
+            {
+                double q = raw.Value(P.Resonance);
+                int type = raw.Choice(P.Type);
+                return type == 3 || type == 6 ? 0.5 * PortableMath.Pow(q / 0.5, a) : q;
+            }),
+            AmountRule.Lin(P.Drive, 0), AmountRule.Lin(P.EnvAmount, 0), AmountRule.Lin(P.LfoDepth, 0),
+        };
+
         public FilterEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -151,6 +175,7 @@ namespace NeoBuzz.Filter
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             stages = FilterDesign.Halfbands(sr);
             foreach (var c in channels)
@@ -172,6 +197,7 @@ namespace NeoBuzz.Filter
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var c in channels) c.Reset();
             env = 0;
             envLevel = 0;
@@ -341,6 +367,13 @@ namespace NeoBuzz.Filter
         /// <summary>Processes a stereo block in place.</summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

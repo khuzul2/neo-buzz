@@ -189,6 +189,22 @@
    "description": "Oversampling",
    "how": "Chooses the oversampling: 2x, 4x or 8x.",
    "sound": "Higher settings keep high-frequency distortion clean and free of aliasing, but use more processing power."
+  },
+  {
+   "index": 11,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales the drive in dB and the bias. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down to ease the saturation in, up to push the sound harder."
   }
  ]
 }
