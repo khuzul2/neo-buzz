@@ -1430,6 +1430,17 @@
     "midi"
    ],
    "use_for": "Pitch correction for a lead vocal or a solo line: moves the voice to a key and scale (or to MIDI notes), hard or natural, with formant control, transpose and added vibrato."
+  },
+  "Neo Lo-Fi": {
+   "category": "Distortion",
+   "tags": [
+    "bitcrush",
+    "noise",
+    "vintage",
+    "gritty",
+    "tape"
+   ],
+   "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
   }
  }
 }
