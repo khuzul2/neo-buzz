@@ -40,27 +40,39 @@ namespace ReBuzz.Core.Clips
             {
                 if (filterWeights != null) return;
                 int bins = FftSize / 2 + 1;
-                var f = new double[Mels + 2];
-                double m0 = Mel(FMin), m1 = Mel(FMax);
-                for (int i = 0; i < f.Length; i++) f[i] = Hz(m0 + (m1 - m0) * i / (Mels + 1));
+                // The filterbank as the reference's library makes it: in float32, step by step (its mel points, their Hz, the slopes), so that its rounding is ours (it is up to 1e-4 of
+                // the log-mel in the quietest bins, and the spectrogram is asked to be within 1e-4 of it).
+                float[] Lin(float start, float end, int steps)
+                {
+                    var v = new float[steps];
+                    float step = (end - start) / (steps - 1);                       // the step in float32, each point from the nearer end, summed wide and rounded once
+                    for (int i = 0; i < steps; i++) v[i] = (float)(i < steps / 2 ? (double)start + (double)step * i : (double)end - (double)step * (steps - i - 1));
+                    return v;
+                }
+                float[] all = Lin(0f, Rate / 2, bins);
+                float[] mp = Lin((float)Mel(FMin), (float)Mel(FMax), Mels + 2);
+                float fsp = (float)FSp, minLogHz = (float)MinLogHz, minLogMel = (float)MinLogMel, logStep = (float)LogStep;
+                var f = new float[Mels + 2];
+                for (int i = 0; i < f.Length; i++)
+                    f[i] = mp[i] >= minLogMel ? minLogHz * MathF.Exp(logStep * (mp[i] - minLogMel)) : fsp * mp[i];
                 var w = new float[Mels][];
                 var st = new int[Mels];
                 for (int b = 0; b < Mels; b++)
                 {
                     int a = -1, z = -1;
-                    var row = new double[bins];
+                    var row = new float[bins];
+                    float dDown = f[b + 1] - f[b], dUp = f[b + 2] - f[b + 1];
                     for (int k = 0; k < bins; k++)
                     {
-                        double hz = k * (Rate / 2.0) / (bins - 1);
-                        double down = (hz - f[b]) / (f[b + 1] - f[b]);              // rising slope
-                        double up = (f[b + 2] - hz) / (f[b + 2] - f[b + 1]);        // falling slope
-                        double v = Math.Max(0, Math.Min(down, up));
+                        float down = (-1.0f * (f[b] - all[k])) / dDown;              // rising slope
+                        float up = (f[b + 2] - all[k]) / dUp;                        // falling slope
+                        float v = MathF.Max(0f, MathF.Min(down, up));
                         row[k] = v;
                         if (v > 0) { if (a < 0) a = k; z = k; }
                     }
                     if (a < 0) { a = 0; z = 0; }
                     var r = new float[z - a + 1];
-                    for (int k = a; k <= z; k++) r[k - a] = (float)row[k];
+                    Array.Copy(row, a, r, 0, z - a + 1);
                     w[b] = r; st[b] = a;
                 }
                 window = new double[FftSize];
