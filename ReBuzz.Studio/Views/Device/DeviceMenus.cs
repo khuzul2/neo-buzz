@@ -114,12 +114,8 @@ namespace ReBuzz.Studio.Views.Device
             items.Add(Check("_Hide", p.Hidden, () => { ParameterVisibility.SetVisible(p.Parameter, p.Hidden); changed?.Invoke(); }, p.CanLock,
                 "Out of view while \"Show hidden\" is off (kept for this kind of machine)"));
             items.Add(new Separator());
-            var bindItems = new List<Control> { Item("Bind...", async () => await BindLearned(p)), new Separator() };
-            var controllers = core?.MIDIControllers;
-            if (controllers != null && controllers.Count > 0)
-                bindItems.AddRange(controllers.Select((name, index) => (Control)Item(name, () => p.Parameter.BindToMIDIController(p.Track, index))));
-            else bindItems.Add(Item("(no controllers defined)", () => { }, enabled: false));
-            items.Add(new MenuItem { Header = "_Bind to MIDI Controller", ItemsSource = bindItems });
+            // Fork (MM1): the old Bind menu is the MIDI popover now (scope, range, takeover, listening); an old binding shows there as a global map on any device.
+            items.Add(Item("_Bind to MIDI Controller", () => OpenMapPopover?.Invoke(machine, p), !p.IsInput && p.Parameter.Type != ParameterType.Note && OpenMapPopover != null));
             items.Add(Item("_Unbind All", () => machine.UnbindAllMIDIControllers()));
             items.Add(new MenuItem { Header = "_Attributes", IsEnabled = machine.Attributes.Count > 0, ItemsSource = AttributeItems(machine) });
             int tracks = machine.TrackCount;
@@ -131,6 +127,9 @@ namespace ReBuzz.Studio.Views.Device
             }
             return new ContextMenu { FontSize = 12, ItemsSource = items };
         }
+
+        /// <summary>Opens the MIDI popover of a parameter (the main window sets it, MM1).</summary>
+        public static Action<IMachine, DeviceParam> OpenMapPopover { get; set; }
 
         static async Task BindLearned(DeviceParam p)
         {

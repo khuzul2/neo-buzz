@@ -137,11 +137,19 @@ namespace ReBuzz.Midi
                 // Fork (docs/specs/neo-audio.md "Inputs and arm"): its messages say which device they came from (the name is the identity).
                 string name = null;
                 try { name = backend.InputName(selectedDeviceIndex); } catch (Exception) { }
-                var device = new MidiDevice(selectedDeviceIndex, name ?? "");
+                // Fork (midi-mapping.md, MM1): a second device of the same name is "Name #2" (its place among the open ones with that name).
+                int instance = 0;
+                lock (midiInLock)
+                {
+                    foreach (var other in midiIns)
+                        if (other.Key != selectedDeviceIndex && string.Equals(other.Value.ProductName, name, StringComparison.OrdinalIgnoreCase)) instance++;
+                }
+                var device = new MidiDevice(selectedDeviceIndex, name ?? "") { Key = instance == 0 || string.IsNullOrEmpty(name) ? null : name + " #" + (instance + 1) };
                 var midiIn = backend.OpenInput(selectedDeviceIndex, message => buzz.SendMIDIInput(device, message));
                 lock (midiInLock)
                 {
                     midiIns[selectedDeviceIndex] = midiIn;
+                    deviceKeys[selectedDeviceIndex] = device.Id;
                 }
             }
             catch (Exception e)
@@ -150,6 +158,20 @@ namespace ReBuzz.Midi
             }
         }
 
+        readonly Dictionary<int, string> deviceKeys = new Dictionary<int, string>();
+
+        /// <summary>Fork (midi-mapping.md, MM1): the identity (name, " #2" for a duplicate) of every MIDI input that is open now.</summary>
+        public IReadOnlyList<string> OpenInputKeys()
+        {
+            List<string> keys;
+            lock (midiInLock) keys = midiIns.Keys.OrderBy(i => i).Select(i => deviceKeys.TryGetValue(i, out var k) ? k : midiIns[i].ProductName).ToList();
+            if (SimulatedInputs != null) keys.AddRange(SimulatedInputs.Where(k => !keys.Contains(k)));
+            return keys;
+        }
+
+        /// <summary>Names of controllers that count as open, for the tests and the gallery (no driver opens them): scripted devices send through Core.SendMIDIInput.</summary>
+        internal static IReadOnlyList<string> SimulatedInputs { get; set; }
+
         public void DisposeMidiIn()
         {
             List<IMidiInput> devices;
@@ -157,6 +179,7 @@ namespace ReBuzz.Midi
             {
                 devices = midiIns.Values.ToList();
                 midiIns.Clear();
+                deviceKeys.Clear();
             }
             foreach (var md in devices)
             {

@@ -824,6 +824,12 @@ namespace ReBuzz.FileOps
                     machine.PatternsList[first + j].BuiltInData = contents[j].Data;
                 }
             }
+            else
+            {
+                // Fork (clips.md CU2): what the editor's data dropped, for the migration log only.
+                for (int j = 0; j < contents.Count && first + j < machine.PatternsList.Count; j++)
+                    machine.PatternsList[first + j].LostInputCells = contents[j].Data.InputCells();
+            }
         }
 
         // Fork (mac-engine.md M2): a pattern's built-in contents for BMXML. A machine keeping them

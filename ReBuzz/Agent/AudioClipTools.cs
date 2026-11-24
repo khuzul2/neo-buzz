@@ -1,7 +1,8 @@
 // Agent server (docs/specs/neo-audio.md, NA1): audio in the song. audio_import brings a WAV, AIFF, FLAC, OGG or MP3 file into the song's
 // audio store and puts it on a Neo Audio track (in a Session slot, in the arrangement, or both); audio_clip_get and audio_clip_set read
 // and change an audio clip's warp, tempo, transposition, gain, region and loop; audio_separate splits a clip or a file into stems on new tracks
-// (docs/specs/stem-separation.md); audio_convert_to_midi turns a clip's melody, harmony or drums into a MIDI clip on a new track (docs/specs/pitch.md section 9).
+// (docs/specs/stem-separation.md); audio_convert_to_midi turns a clip's melody, harmony or drums into a MIDI clip on a new track (docs/specs/pitch.md section 9);
+// audio_slice_to_midi cuts a clip into up to 16 slices played from a Neo Sampler on a new MIDI track (docs/specs/audio-to-midi.md, SL1).
 
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ using ReBuzz.Core;
 using ReBuzz.Core.AudioLibrary;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Core.AudioLibrary.Stems;
+using ReBuzz.Core.Clips;
 using ReBuzz.Core.Session;
 using static ReBuzz.Agent.Mcp.Schema;
 
@@ -537,6 +539,109 @@ namespace ReBuzz.Agent
                     if (r.Scene >= 0) output["slot"] = r.Scene + 1;
                     if (r.Ticks.Count > 0) output["at_beats"] = new JsonArray(r.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
                     return ToolResult.Ok($"{result.Summary} {r.Instrument} plays {r.Notes} of them on the new track \"{r.Machine.Name}\" (clip \"{r.Pattern.Name}\").", output);
+                },
+            });
+            tools.Add(new ToolDef
+            {
+                Name = "audio_slice_to_midi",
+                Title = "Slice audio to a MIDI track",
+                Description =
+                    "Cuts an audio clip of the song (machine + pattern, or machine + slot: its Session scene, from 1) into at most 16 slices and plays them from a new MIDI track: each slice " +
+                    "becomes a wave of the wavetable (the first free slots, named \"<clip> 01\"…, cut from the audio as the clip plays it: its gain, reversed if it is, not warped, with a 1 ms fade in " +
+                    "unless it starts on a zero crossing and a 2 ms fade out), the track holds a Neo Sampler in Kit mode (zone n plays slice n on key 36 + n - 1, all in choke group 1 so " +
+                    "it is monophonic like the loop; the clip's transpose and detune retune the zones), and a MIDI clip of one note per slice (velocity 100, as long as the slice as the clip is warped) sits " +
+                    "where the source is (its Session scene, arrangement positions, region and loop). The source clip stays as it is. One undo step. by: transients (default: the 16 strongest " +
+                    "attacks, the weaker merged into the slice before them), warp_markers, bar, 1/4, 1/8 or 1/16 (a beat is a quarter; refused when it would make more than 16 slices). " +
+                    "Only the part the clip plays is cut: its loop, else its region. apply=false only reports the slices and changes nothing. " +
+                    "Example: audio_slice_to_midi(machine=\"Drums audio\", pattern=\"loop\", by=\"transients\").",
+                Input = Object(null,
+                    Req("machine", String("The Neo Audio machine of the clip (its track)")),
+                    Opt("pattern", String("The audio clip's pattern")),
+                    Opt("slot", Integer("Or the clip in this Session scene of the track, from 1", 1, 999)),
+                    Opt("by", String("Where to cut (default transients)", "transients", "warp_markers", "bar", "1/4", "1/8", "1/16")),
+                    Opt("apply", Boolean("false: only report the slices (default true)"))),
+                Output = Object(null,
+                    Req("by", String("What cut it")), Req("count", Integer("How many slices")), Req("found", Integer("How many the choice found before the limit of 16")),
+                    Req("capped", Boolean("Weaker transients were merged into the slice before them")), Req("summary", String("What was cut, in a line")),
+                    Req("slices", Array(Object(null, Req("slot", Integer("The wavetable slot, from 1")), Req("start", Integer("Samples into the audio as the clip plays it")), Req("length", Integer("Samples")),
+                        Req("key", Integer("MIDI note that plays it")), Req("beat", Number("Where its note is, beats of the clip"))), "The slices")),
+                    Opt("machine", String("The new MIDI machine (Neo Sampler)")), Opt("pattern", String("Its clip")),
+                    Opt("slot", Integer("The Session scene of the new clip, from 1")), Opt("at_beats", Array(Number("A position"), "Positions of the clip in the arrangement, in beats"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    string machineName = c.RequiredString("machine"), patternName = c.String("pattern");
+                    int? sceneArg = c.Int("slot");
+                    if ((patternName != null) == (sceneArg != null)) throw new ToolError("Give the clip as pattern or as slot (its Session scene, from 1), one of the two.");
+                    if (!SliceMath.TryParse(c.String("by") ?? "transients", out var by)) throw new ToolError("by: transients, warp_markers, bar, 1/4, 1/8 or 1/16.");
+                    bool write = c.Bool("apply") ?? true;
+                    var source = await host.Engine("audio_slice_to_midi", false, _ =>
+                    {
+                        var layout = Layout(core);
+                        var m = SongModel.Machine(core, machineName);
+                        IPattern clip;
+                        if (patternName != null) clip = SongModel.Pattern(m, patternName);
+                        else
+                        {
+                            int track = TrackOf(layout, m);
+                            if (track < 0) throw new ToolError($"{m.Name} has no session track.");
+                            clip = layout.PatternAt(track, sceneArg!.Value - 1) ?? throw new ToolError($"{m.Name} has no clip in scene {sceneArg}.");
+                        }
+                        var s = layout.SliceSourceOfClip(clip, out string error);
+                        if (s == null) throw new ToolError(error);
+                        return s;
+                    }, c.Cancellation);
+                    var layout0 = Layout(core);
+                    SlicePlan plan;
+                    try { plan = await layout0.PlanSlicesAsync(source, by, c.Cancellation); }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception e) when (e is InvalidOperationException or ArgumentException or System.IO.InvalidDataException or System.IO.IOException)
+                    {
+                        throw new ToolError("Couldn't slice: " + e.Message);
+                    }
+                    if (!plan.Ok) throw new ToolError(plan.Why ?? "There is nothing to slice.");
+                    string Line(int count) => $"Cut \"{source.Name}\" ({source.Region}) into {count} slices by {SliceMath.Label(by).ToLowerInvariant()}" +
+                        (plan.Capped ? $" (the {plan.Found} transients were merged to the {count} strongest)" : "") + ".";
+                    JsonObject Common(IEnumerable<SliceWave> list)
+                    {
+                        var arr = new JsonArray();
+                        foreach (var s in list)
+                            arr.Add(new JsonObject { ["slot"] = s.Slot, ["name"] = s.Name, ["start"] = s.Start, ["length"] = s.Length, ["key"] = s.Key, ["beat"] = Math.Round(s.Beat, 4) });
+                        return new JsonObject
+                        {
+                            ["by"] = SliceMath.Key(by), ["count"] = plan.Slices.Count, ["found"] = plan.Found, ["capped"] = plan.Capped, ["slices"] = arr,
+                        };
+                    }
+                    if (!write)
+                    {
+                        var preview = await host.Engine("audio_slice_to_midi", false, _ =>
+                        {
+                            var layout = Layout(core);
+                            string blocker = layout.SliceBlocker(plan.Slices.Count);
+                            var o = Common(plan.Slices.Select((s, i) => new SliceWave { Slot = 0, Name = $"{source.Name} {i + 1:00}", Start = s.Start, Length = s.Length, Key = SessionLayout.SliceKeyBase + i, Beat = s.Beat, Beats = s.Beats }));
+                            o["summary"] = Line(plan.Slices.Count) + " (nothing was changed)" + (blocker != null ? " " + blocker : "");
+                            return o;
+                        }, c.Cancellation);
+                        return ToolResult.Ok((string)preview["summary"]!, preview);
+                    }
+                    var r = await host.Engine("audio_slice_to_midi", true, _ =>
+                    {
+                        var layout = Layout(core);
+                        var doc = layout.Ensure();
+                        var before = doc.CloneLayout();
+                        var outcome = layout.ApplySlices(source, plan, out string error) ?? throw new ToolError(error);
+                        var after = layout.Document.CloneLayout();
+                        AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
+                        return outcome;
+                    }, c.Cancellation);
+                    var output = Common(r.Slices);
+                    output["machine"] = r.Machine.Name;
+                    output["pattern"] = r.Pattern.Name;
+                    if (r.Scene >= 0) output["slot"] = r.Scene + 1;
+                    if (r.Ticks.Count > 0) output["at_beats"] = new JsonArray(r.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
+                    string summary = $"{Line(r.Slices.Count)} {r.Instrument} plays them on the new track \"{r.Machine.Name}\" (clip \"{r.Pattern.Name}\"; waves {r.Slices[0].Slot}–{r.Slices[^1].Slot}, keys {r.Slices[0].Key}–{r.Slices[^1].Key}).";
+                    output["summary"] = summary;
+                    return ToolResult.Ok(summary, output);
                 },
             });
         }

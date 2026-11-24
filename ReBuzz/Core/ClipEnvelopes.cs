@@ -83,7 +83,7 @@ namespace ReBuzz.Core
             var groups = machine.ParameterGroups;
             foreach (var column in pattern.Columns)
             {
-                if (column.Type != PatternColumnType.Parameter || column.Parameter?.Group == null || column is not PatternColumnCore { EnginePlays: true }) continue;
+                if (column.Type != PatternColumnType.Parameter || column.Parameter?.Group == null || column is not PatternColumnCore { IsMarkedAutomation: true }) continue;
                 int g = IndexOfGroup(groups, column.Parameter.Group);
                 if (g < 0 || !column.GetEvents(int.MinValue, int.MaxValue).Any()) continue;
                 var key = new ColumnKey(g, column.Parameter.IndexInGroup, column.Track);

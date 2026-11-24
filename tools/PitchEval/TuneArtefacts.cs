@@ -15,6 +15,7 @@ namespace NeoBuzz.PitchEval
             public TuneEvent[] Events;
             public int Latency;
             public long Dropped;
+            public float[] Rho; public double[] Pos;      // the splice reader's speed and position per output sample (NT4, for the null render)
         }
 
         /// <summary>Runs the engine over x in 256-sample blocks at Natural <paramref name="natural"/> (the six fine controls written by the map, chromatic scale, Quality range), output aligned to the input.</summary>
@@ -31,6 +32,7 @@ namespace NeoBuzz.PitchEval
             e.EnableEventLog(1 << 17);
             int latency = e.Latency;
             int total = x.Length + latency + 256;
+            e.EnableReaderTrace(total);
             var o = new float[x.Length];
             var l = new float[256]; var r = new float[256];
             for (int pos = 0; pos < total; pos += 256)
@@ -41,7 +43,8 @@ namespace NeoBuzz.PitchEval
                 for (int i = 0; i < n; i++) { int at = pos + i - latency; if (at >= 0 && at < o.Length) o[at] = l[i]; }
             }
             var ev = e.Events(out long dropped);
-            return new Render { Out = o, Events = ev, Latency = latency, Dropped = dropped };
+            e.ReaderTrace(out var trR, out var trP);
+            return new Render { Out = o, Events = ev, Latency = latency, Dropped = dropped, Rho = trR, Pos = trP };
         }
 
         internal static string EventsCsv(Render rd, int rate)
@@ -57,7 +60,8 @@ namespace NeoBuzz.PitchEval
         {
             var (x, rate) = Wav.Read(inPath);
             var rd = RenderFile(x, rate, natural, range);
-            TuneEval.WriteWav(outWav, rd.Out, rate);
+            TuneEval.WriteWav(outWav, TuneDetector.LevelMatch(x, rd.Out), rate);      // level-matched to the input, as the detector sees it (NT4)
+            TuneEval.WriteWav(Path.ChangeExtension(outWav, ".null.wav"), TuneDetector.LevelMatch(x, NullRender(x, rd).Y), rate);
             File.WriteAllText(csv, EventsCsv(rd, rate));
             Console.WriteLine($"{Path.GetFileName(inPath)} natural {natural}: {rd.Events.Length} events (dropped {rd.Dropped}), latency {rd.Latency}");
         }
@@ -69,6 +73,20 @@ namespace NeoBuzz.PitchEval
             var (y, _) = Wav.Read(outPath);
             var hits = TuneDetector.Detect(x, y, rate, k);
             Console.WriteLine($"{Path.GetFileName(outPath)}: {hits.Count} events: " + string.Join(" ", hits.Select(h => $"{h.Time:F3}s(x{h.Excess:F0},{h.LevelDb:F0}dB)")));
+        }
+
+        /// <summary>--tune-resid IN.wav OUT1.wav OUT2.wav CSV: the 1 ms residual envelopes (input and the two outputs, each against its own period) every 0.5 ms, for the diagnosis plots (NT4).</summary>
+        internal static void ResidCommand(string inPath, string out1, string out2, string csv)
+        {
+            var (x, rate) = Wav.Read(inPath);
+            var (y1, _) = Wav.Read(out1); var (y2, _) = Wav.Read(out2);
+            var e0 = TuneDetector.Envelope(TuneDetector.Residual(x, rate), rate);
+            var e1 = TuneDetector.Envelope(TuneDetector.Residual(y1, rate), rate);
+            var e2 = TuneDetector.Envelope(TuneDetector.Residual(y2, rate), rate);
+            var sb = new StringBuilder("t,input,a,b\n");
+            for (int i = 0; i < x.Length && i < y1.Length && i < y2.Length; i += rate / 2000)
+                sb.AppendLine(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{i / (double)rate:F5},{e0[i]:G4},{e1[i]:G4},{e2[i]:G4}"));
+            File.WriteAllText(csv, sb.ToString());
         }
 
         static readonly (TuneEventKind Kind, double Before, double After)[] Windows =
@@ -116,6 +134,72 @@ namespace NeoBuzz.PitchEval
             h.Step = stepCause && sum >= 0.2;
         }
 
+        /// <summary>
+        /// The null render (NT4): the input read by an ideal resampler (the engine's 16-tap sinc) at the engine's own reading speed per sample, with no splice, no crossfade and no ease. Where the
+        /// engine's reader is at the nominal position and its speed is 1 (no correction) the null path is the input itself. Returns the signal and the input position it reads per sample.
+        /// What the detector finds in it, at the same output time, is not the engine's: it is the voice (or the change of ratio) itself.
+        /// </summary>
+        internal const double DefaultNullShare = 0.5;
+
+        internal static (float[] Y, double[] Src) NullRender(float[] x, Render rd)
+        {
+            int n = x.Length;
+            var y = new float[n]; var src = new double[n];
+            var tab = TuneSinc.Table;
+            double p = 0;
+            for (int t = 0; t < n; t++)
+            {
+                double rho = t < rd.Rho.Length && rd.Rho[t] > 0 ? rd.Rho[t] : 1.0;
+                double ePos = t < rd.Pos.Length ? rd.Pos[t] : t;
+                if (rho == 1.0 && Math.Abs(ePos - t) < 0.5) p = t;      // no correction: the input as it is
+                src[t] = p;
+                long pi = (long)Math.Floor(p); double f = p - pi;
+                double ph = f * TuneSinc.Phases; int i = (int)ph; float u = (float)(ph - i);
+                int b0 = i * TuneSinc.Taps, b1 = b0 + TuneSinc.Taps;
+                float s0 = 0, s1 = 0;
+                for (int k = 0; k < TuneSinc.Taps; k++)
+                {
+                    long q = pi - 7 + k;
+                    if (q < 0 || q >= n) continue;
+                    s0 += tab[b0 + k] * x[q]; s1 += tab[b1 + k] * x[q];
+                }
+                y[t] = s0 + u * (s1 - s0);
+                p += rho;
+            }
+            return (y, src);
+        }
+
+        /// <summary>
+        /// Attribution of the hits of one render (NT4): each hit is looked up in the null render. A hit that the null render has within 6 ms is not made by the engine (class "voice" when the
+        /// shift is about constant around it, "ratio step" when it changes by 0.2 semitones or more within 8 ms); the rest are "engine".
+        /// </summary>
+        internal static void Attribute(float[] x, int rate, Render rd, float[] qi, List<TuneDetector.Hit> hits)
+        {
+            var (y0, src) = NullRender(x, rd);
+            var nullLow = TuneDetector.Detect(x, TuneDetector.LevelMatch(x, y0), rate, 1.0, qi, src);
+            var ei = TuneDetector.Envelope(qi, rate);
+            var lvIn = TuneDetector.Envelope(x, rate, 10.0);
+            foreach (var h in hits)
+            {
+                int i = (int)(h.Time * rate);
+                // the same disturbance is a few ms apart in the two renders (the splice moves the reader by a period), so +-25 ms (a disturbance lasts two or three periods); the null render explains a hit when it has half of its excess
+                h.NullExcess = nullLow.Where(q => Math.Abs(q.Time - h.Time) <= 0.025).Select(q => q.Excess).DefaultIfEmpty(0).Max();
+                h.InNull = h.NullExcess >= DefaultNullShare * h.Excess;
+                h.SrcTime = (i < src.Length ? src[i] : i) / rate;
+                double lo = 1e9, hi = -1e9;
+                for (int k = Math.Max(0, i - (int)(0.008 * rate)); k < Math.Min(rd.Rho.Length, i + (int)(0.008 * rate)); k += 8)
+                {
+                    double r = rd.Rho[k] > 0 ? rd.Rho[k] : 1.0, sh = 12 * Math.Log2(r);
+                    lo = Math.Min(lo, sh); hi = Math.Max(hi, sh);
+                }
+                h.ShiftRange = hi >= lo ? hi - lo : 0;
+                int si = Math.Clamp((int)(h.SrcTime * rate), 0, x.Length - 1);
+                double best = 0; for (int k = Math.Max(0, si - (int)(0.004 * rate)); k < Math.Min(x.Length, si + (int)(0.004 * rate)); k++) best = Math.Max(best, ei[k]);
+                h.InputRoughDb = 20 * Math.Log10((best + 1e-9) / (lvIn[si] + 1e-9));
+                h.Class = !h.InNull ? "engine" : h.ShiftRange >= 0.2 || h.Step ? "ratio step" : "voice";
+            }
+        }
+
         internal static readonly double[] Naturals = { 0.0, 0.25, 0.5, 0.75, 1.0 };
 
         internal sealed class FileResult
@@ -149,6 +233,7 @@ namespace NeoBuzz.PitchEval
                     if (wavDir != null) TuneEval.WriteWav(Path.Combine(wavDir, $"{id}--{tag}natural-{(int)Math.Round(n * 100):000}.wav"), y, rate);
                     var hits = TuneDetector.Detect(x, y, rate, TuneDetector.DefaultK, qi);
                     foreach (var h in hits) { h.Cause = Cause(h.Time, rd.Events, rate); Classify(h, rd.Events, rate); }
+                    Attribute(x, rate, rd, qi, hits);
                     var r = new FileResult { Id = id, Natural = n, Count = hits.Count(h => !h.Step), Steps = hits.Count(h => h.Step), Hits = hits, Events = rd.Events };
                     all.Add(r);
                     md?.AppendLine($"| {id} | {n * 100:F0} | {r.Count} + {r.Steps} steps | " + string.Join(", ", hits.Where(h => !h.Step).Select(h => $"{h.Time:F3} {h.Cause} {h.LevelDb:F0}dB")) + " |");
@@ -165,6 +250,22 @@ namespace NeoBuzz.PitchEval
             md.AppendLine();
             var causes = res.SelectMany(r => r.Hits).Where(h => !h.Step).GroupBy(h => h.Cause.Split('+')[0]).OrderByDescending(g => g.Count()).Select(g => $"{g.Key} {g.Count()}");
             md.AppendLine($"Artefacts {res.Sum(r => r.Count)}, intended steps {res.Sum(r => r.Steps)}.");
+            md.AppendLine();
+            md.AppendLine("Attribution by the null render (an ideal resampler along the engine's own ratio path, no splice): engine = not in the null render; voice = in it, the shift about constant; ratio step = in it, the shift moving by 0.2 st or more.");
+            md.AppendLine();
+            md.AppendLine("| Natural | hits | not intended steps (NT3 count) | engine-made | voice's own | ratio step |");
+            md.AppendLine("|---:|---:|---:|---:|---:|---:|");
+            foreach (var g in res.GroupBy(r => r.Natural).OrderBy(g => g.Key))
+            {
+                var hs = g.SelectMany(r => r.Hits).ToList();
+                md.AppendLine($"| {g.Key * 100:F0} | {hs.Count} | {hs.Count(h => !h.Step)} | {hs.Count(h => h.Class == "engine")} | {hs.Count(h => h.Class == "voice")} | {hs.Count(h => h.Class == "ratio step")} |");
+            }
+            md.AppendLine();
+            md.AppendLine("| Excerpt | Natural | time (s) | reads input (s) | class | nearest engine event | shift range (st) | input's own residual (dB re level) | hit level (dB) | excess (engine / null) |");
+            md.AppendLine("|---|---:|---:|---:|---|---|---:|---:|---:|---:|");
+            foreach (var r in res.Where(r => r.Natural <= 0.5))
+                foreach (var h in r.Hits)
+                    md.AppendLine($"| {r.Id} | {r.Natural * 100:F0} | {h.Time:F3} | {h.SrcTime:F3} | {h.Class} | {h.Cause} | {h.ShiftRange:F2} | {h.InputRoughDb:F0} | {h.LevelDb:F0} | {h.Excess:F1} / {h.NullExcess:F1} |");
             md.AppendLine("Artefacts by nearest cause: " + string.Join(", ", causes));
             File.WriteAllText(outMd, md.ToString());
             Console.Write(md.ToString());
@@ -215,11 +316,12 @@ namespace NeoBuzz.PitchEval
         static readonly double[] PickedNatural = { 1.0, 1.0, 0.5, 1.0, 0.5, 1.0 };
 
         /// <summary>
-        /// --tune-pack LABEL ORIGDIR OUTDIR: for each NN-*-original.wav, the engine this binary was built with ("nt2" or "nt3" in LABEL) at Natural 0 and at the picked Natural, scaled to the
+        /// --tune-pack LABEL ORIGDIR OUTDIR [N1,N2,..]: for each NN-*-original.wav, the engine this binary was built with ("nt2" or "nt3" in LABEL) at Natural 0 and at the picked Natural, scaled to the
         /// original's RMS as the NT2 pack was, written as NN-excerpt--LABEL-natural-XXX.wav (the original is copied once as NN-excerpt--original.wav).
         /// </summary>
-        internal static void PackCommand(string label, string dir, string outDir)
+        internal static void PackCommand(string label, string dir, string outDir, string naturals = null)
         {
+            double[] fixedN = naturals == null ? null : naturals.Split(',').Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
             Directory.CreateDirectory(outDir);
             foreach (var f in Directory.GetFiles(dir, "*-original.wav").OrderBy(x => x, StringComparer.Ordinal))
             {
@@ -228,7 +330,7 @@ namespace NeoBuzz.PitchEval
                 var (x, rate) = Wav.Read(f);
                 double rms0 = Math.Sqrt(x.Sum(v => (double)v * v) / Math.Max(1, x.Length));
                 TuneEval.WriteWav(Path.Combine(outDir, id + "--original.wav"), x, rate);
-                foreach (var n in new[] { 0.0, PickedNatural[Math.Clamp(no, 0, 5)] })
+                foreach (var n in fixedN ?? new[] { 0.0, PickedNatural[Math.Clamp(no, 0, 5)] })
                 {
                     var y = RenderFile(x, rate, n).Out;
                     double ry = Math.Sqrt(y.Sum(v => (double)v * v) / Math.Max(1, y.Length));

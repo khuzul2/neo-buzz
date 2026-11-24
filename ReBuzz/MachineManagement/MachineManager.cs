@@ -183,6 +183,7 @@ namespace ReBuzz.MachineManagement
 
             if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
             {
+                machine.LoadedEditorData = data;        // fork (clips.md §7.1, CU3): what the song file gave the editor
                 managedMachineHost.SetPatternEditorData(data);
             }
             else
@@ -953,6 +954,7 @@ namespace ReBuzz.MachineManagement
                 var machineHost = ManagedMachines[machine];
                 if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
                 {
+                    machine.LoadedEditorData = value;      // fork (clips.md §7.1, CU3): the migration on open reads what the file gave
                     machineHost.SetPatternEditorData(value);
                 }
                 else if (value != null)
@@ -1283,6 +1285,15 @@ namespace ReBuzz.MachineManagement
                 return machineHost.GetPatternCloumnEvents(patternCore, 0, int.MaxValue);
             }
             return new List<IPatternEditorColumn>();
+        }
+
+        /// <summary>Fork (clips.md §6, CU3): tells the machine's pattern editor that the song's clips are in the store: it drops what it held and views the store. False when it has no such editor.</summary>
+        internal bool AttachClipStore(MachineCore machine)
+        {
+            var em = machine?.EditorMachine;
+            if (em == null || !managedMachines.TryGetValue(em, out var host) || !host.HasClipStore) return false;
+            host.AttachClipStore();
+            return true;
         }
 
         internal void ActivateEditor(MachineCore em)

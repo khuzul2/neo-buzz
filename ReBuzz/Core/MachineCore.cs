@@ -680,6 +680,12 @@ namespace ReBuzz.Core
             }
         }
 
+        /// <summary>Fork (clips.md §6, CU3): this machine's pattern editor views the store (the song's clips are lanes in the pattern's columns).</summary>
+        internal bool ClipsAttached { get; set; }
+
+        /// <summary>Fork (clips.md §7.1, CU3): for a pattern editor machine, the data the song file gave it (what the migration reads and checks the stamp of); null once the clips are in the store.</summary>
+        internal byte[] LoadedEditorData { get; set; }
+
         public byte[] PatternEditorData
         {
             get

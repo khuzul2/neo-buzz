@@ -82,6 +82,13 @@ namespace ReBuzz.Core.Session
         public static double MasterGainOf(double fader) =>
             fader <= 0 ? 0 : Math.Clamp(Decibel.ToAmplitude(Math.Min(fader, 1) * MinDb - MinDb), 0, 1);
 
+        /// <summary>The Master's Volume parameter (0 loudest .. <paramref name="max"/> silent, the song's gain is 1 - value / max) in dB, as "-6.0 dB".</summary>
+        public static string MasterVolumeText(int value, int max)
+        {
+            double gain = max <= 0 ? 1 : 1 - Math.Clamp(value, 0, max) / (double)max;
+            return gain <= 0 ? "-inf dB" : FormatDb(Decibel.FromAmplitude(gain)) + " dB";
+        }
+
         /// <summary>Meter level (0..1 over <see cref="MeterFloorDb"/>..<see cref="MeterTopDb"/>) of a peak in sample units.</summary>
         public static double MeterLevel(float peak)
         {
@@ -94,26 +101,30 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ connections
 
-        static bool IsAux(SessionDocument doc, IMachine destination) =>
-            destination != null && doc != null &&
-            (doc.Returns.Contains(destination.Name) || (doc.CueMachine.Length > 0 && destination.Name == doc.CueMachine));
+        static bool IsAux(SessionDocument doc, IMachine destination, ICollection<IMachine> returns = null) =>
+            destination != null &&
+            ((doc != null && (doc.Returns.Contains(destination.Name) || (doc.CueMachine.Length > 0 && destination.Name == doc.CueMachine)))
+             || (returns != null && returns.Contains(destination)));
 
-        /// <summary>Output connections that carry the machine's own mix (not sends or cue).</summary>
-        public static IReadOnlyList<IMachineConnection> MainOutputs(SessionDocument doc, IMachine machine)
+        /// <summary>
+        /// Output connections that carry the machine's own mix (not sends or cue). <paramref name="returns"/>: more machines whose
+        /// inputs are sends (the track model's returns, MX1); the document's own returns and its cue machine always are.
+        /// </summary>
+        public static IReadOnlyList<IMachineConnection> MainOutputs(SessionDocument doc, IMachine machine, ICollection<IMachine> returns = null)
         {
             if (machine == null) return Array.Empty<IMachineConnection>();
-            var outs = machine.Outputs.Where(o => o.Destination != null && !IsAux(doc, o.Destination)).ToList();
+            var outs = machine.Outputs.Where(o => o.Destination != null && !IsAux(doc, o.Destination, returns)).ToList();
             return outs;
         }
 
         /// <summary>Volume (connection amp) of the machine, or -1 when it has no main output.</summary>
-        public static int GetAmp(SessionDocument doc, IMachine machine) =>
-            MainOutputs(doc, machine).FirstOrDefault()?.Amp ?? -1;
+        public static int GetAmp(SessionDocument doc, IMachine machine, ICollection<IMachine> returns = null) =>
+            MainOutputs(doc, machine, returns).FirstOrDefault()?.Amp ?? -1;
 
         /// <summary>Sets the volume: the first main output to <paramref name="amp"/>, the others by the same ratio.</summary>
-        public static void SetAmp(SessionDocument doc, IMachine machine, int amp)
+        public static void SetAmp(SessionDocument doc, IMachine machine, int amp, ICollection<IMachine> returns = null)
         {
-            var outs = MainOutputs(doc, machine);
+            var outs = MainOutputs(doc, machine, returns);
             if (outs.Count == 0) return;
             amp = Math.Clamp(amp, 0, MaxAmp);
             int reference = outs[0].Amp;
@@ -125,13 +136,13 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Pan of the first main output, or -1 when it has none (or no stereo input to pan into).</summary>
-        public static int GetPan(SessionDocument doc, IMachine machine) =>
-            MainOutputs(doc, machine).FirstOrDefault(o => o.HasPan)?.Pan ?? -1;
+        public static int GetPan(SessionDocument doc, IMachine machine, ICollection<IMachine> returns = null) =>
+            MainOutputs(doc, machine, returns).FirstOrDefault(o => o.HasPan)?.Pan ?? -1;
 
-        public static void SetPan(SessionDocument doc, IMachine machine, int pan)
+        public static void SetPan(SessionDocument doc, IMachine machine, int pan, ICollection<IMachine> returns = null)
         {
             pan = Math.Clamp(pan, 0, MaxPan);
-            foreach (var o in MainOutputs(doc, machine).Where(o => o.HasPan))
+            foreach (var o in MainOutputs(doc, machine, returns).Where(o => o.HasPan))
                 o.Pan = pan;
         }
 
@@ -204,10 +215,10 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Peak of the machine's main outputs (the loudest), per channel.</summary>
-        public static (float Left, float Right) MainPeak(SessionDocument doc, IMachine machine)
+        public static (float Left, float Right) MainPeak(SessionDocument doc, IMachine machine, ICollection<IMachine> returns = null)
         {
             float l = 0, r = 0;
-            foreach (var o in MainOutputs(doc, machine))
+            foreach (var o in MainOutputs(doc, machine, returns))
             {
                 var p = PeakOf(o);
                 l = Math.Max(l, p.Left);

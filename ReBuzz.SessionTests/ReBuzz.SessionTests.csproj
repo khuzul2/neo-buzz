@@ -31,6 +31,7 @@
     <Compile Include="..\ReBuzz\Core\Session\SessionTake.cs" Link="Engine\SessionTake.cs" />
     <Compile Include="..\ReBuzz\Core\Session\TrackInputs.cs" Link="Engine\TrackInputs.cs" />
     <Compile Include="..\ReBuzz\Midi\MidiDevice.cs" Link="Engine\MidiDevice.cs" />
+    <Compile Include="..\ReBuzz\Midi\Mapping\*.cs" Link="Engine\Mapping\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzz\Audio\EngineInput.cs" Link="Engine\EngineInput.cs" />
     <Compile Include="..\ReBuzz\Core\Session\ClipNotes.cs" Link="Engine\ClipNotes.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\TrackerNotes.cs" Link="Engine\TrackerNotes.cs" />
@@ -47,6 +48,7 @@
     <Compile Include="..\ReBuzz\Core\Control\BuiltInScripts.cs" Link="Engine\BuiltInScripts.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioClip.cs" Link="Engine\AudioClip.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\SliceMath.cs" Link="Engine\SliceMath.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\ReBuzz\Core\Clips\BeatTracker.cs;..\ReBuzz\Core\Clips\AutoWarpPolicy.cs;..\ReBuzz\Core\Clips\BeatFront.cs;..\ReBuzz\Core\Clips\BeatModelNet.cs;..\ReBuzz\Core\Clips\BeatModelTracker.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzz\Core\Clips\WarpEditing.cs" Link="Engine\WarpEditing.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioCapture.cs" Link="Engine\AudioCapture.cs" />

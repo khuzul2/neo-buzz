@@ -113,7 +113,7 @@ namespace ReBuzz.Core.Session
             if (isLearning)
             {
                 if (isPress) Remember(control, consumed ? Consumed : PassedOn);
-                buzz.dispatcher.BeginInvoke(() => Learn(control, isPress));
+                PostLearn(control, isPress);
                 return consumed;
             }
 
@@ -127,7 +127,7 @@ namespace ReBuzz.Core.Session
 
             if (target == SessionTarget.Quantization)
             {
-                buzz.dispatcher.BeginInvoke(() => SetQuantizationFromMidi(control, value, isPress));
+                PostQuantization(control, value, isPress);
                 return consumed;
             }
             if (target == SessionTarget.Crossfader)
@@ -137,7 +137,7 @@ namespace ReBuzz.Core.Session
                 {
                     double position = value / 127.0;
                     (buzz.Session as SessionCore)?.SetCrossfader(position);
-                    buzz.dispatcher.BeginInvoke(() => layout.NoteCrossfaderPosition(position));
+                    PostCrossfader(position);
                 }
                 return consumed;
             }
@@ -161,6 +161,14 @@ namespace ReBuzz.Core.Session
                 ReleaseNow(track, scene, launchMap);
             return consumed;
         }
+
+        // Fork (MM1): the posts are methods of their own: a lambda that captures OnMidiThread's locals makes the compiler allocate its closure on
+        // entry of OnMidiThread, for every message, whether it posts or not (0 bytes per MIDI message, docs/specs/midi-mapping.md).
+        void PostLearn(MidiControl control, bool isPress) => buzz.dispatcher.BeginInvoke(() => Learn(control, isPress));
+
+        void PostQuantization(MidiControl control, int value, bool isPress) => buzz.dispatcher.BeginInvoke(() => SetQuantizationFromMidi(control, value, isPress));
+
+        void PostCrossfader(double position) => buzz.dispatcher.BeginInvoke(() => layout.NoteCrossfaderPosition(position));
 
         // ------------------------------------------------------------------ held controls (0.6.3)
 

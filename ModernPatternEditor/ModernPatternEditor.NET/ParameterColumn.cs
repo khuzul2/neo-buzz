@@ -113,7 +113,7 @@ namespace WDE.ModernPatternEditor
                 int t = GetRowTime(row);
                 MPEPattern mpePattern = column.Set.Pattern.Editor.MPEPatternsDB.GetMPEPattern(column.Set.Pattern.Pattern);
                 MPEPatternColumn mpeColumn = mpePattern.GetColumn(column.PatternColumn);
-                return mpeColumn.GetEvents(t, t + 1).Any();
+                return mpeColumn != null && mpeColumn.GetEvents(t, t + 1).Any();
             }
 
             public BuzzAction SetValue(int row, int value)
