@@ -180,6 +180,15 @@ internal override StateMigrations Migrations => Chain;
 
 **Known limits.** A song's **pattern data** (the pattern editor's columns are saved by parameter index), **MIDI bindings**, **automation targets** and the **modulators' targets** (the canvas modulators name a parameter) are not rewritten by the loaders yet; `MapParameterIndex` and `MigrateKeyed` are what the loaders and `.nbl` use to do it. Until a machine's first step exists nothing changes for any of them. **User presets** are saved by parameter name, group and index, so a preset made before a rename or reorder loads by its old names. `machine_describe` reports the current layout and `state_version` (when above 0); `param_set` takes current names and `#index`.
 
+### 3.3 Note maps (NM1)
+
+A machine that plays sounds on notes says which keys make a sound and what to call them, and the piano roll names its rows and offers **Fold: playable** (`docs/specs/daw-modes.md` §8.9). Two ways, no view code:
+
+- **In code (a machine whose keys depend on its state):** override `BuildNoteMap(int channel)` in the machine (`NeoMachineBase`, in the Neo machine library, so the SDK gives it to every Neo machine) and return the playable keys as `NoteMapEntry` (key, name, group, colour; null for none). Read the machine's own parameters (the host's values: `Raw(index)` in Neo Sampler), never an audio-thread buffer. The base hashes the built map and bumps `NoteMapVersion` when it changes, raising `NoteMapChanged`, so the studio takes a renamed or moved key within a quarter of a second; a machine whose map depends on something the hash can't see (the song's waves) overrides `NoteMapSignature()` to fold it in. Neo Sampler: in Kit mode key Kit base + zone for each zone that holds a wave, named by the wave; in Instrument mode each zone's key range, grouped by the zone's wave. Neo Drums: its voices on the keys `DrumsEngine.VoiceOfKey` plays, named, grouped (Kick, Snare and clap, Hats, Toms, Percussion, Cymbals) and coloured.
+- **In the manifest (a fixed map):** `note_map` in the `.machine.json`: `[{"key": 36, "name": "Kick", "group": "Drums", "color": "#E0457B"}, {"key": "C3", "to": "B3"}]` (a key is a number or a pitch name, `to` makes a range, the rest is optional). For a machine made with `tools/gen-machine-params.py`, write `notekey 36 "Kick" Drums` and `notekey 48 59 Keys` lines in its Params.def. A machine with its own map in code uses that; the manifest is used when the code has none; the profiler's `notes.map` counts as a manifest map.
+
+The map is never saved with the song or a preset. A machine with neither has no map and the views behave as they did. Plug-ins hosted by Neo Plug provide theirs from the plug-in (`plugin-host.md` §12).
+
 ## 4. Shared foundation (M0)
 
 **DSP library (`NeoBuzz.Dsp`)**

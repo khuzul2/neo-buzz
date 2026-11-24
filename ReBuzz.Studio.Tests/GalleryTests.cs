@@ -270,6 +270,26 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Takes a shot, or lists why not and goes on.</summary>
+        /// <summary>A machine of the gear with a pattern of notes, shown in the piano roll maximised, Fold: playable chosen (the note-map shots).</summary>
+        static object NoteMapShot(MainWindow window, string gear, string name, System.Action<MachineCore, System.Action<MachineCore, string, int>> setup, (int Tick, int Key)[] notes, int extra = -1)
+        {
+            Core.SongCore.CreateMachine(gear, null, name, null, null, null, -1, 0.3f, 0.3f);
+            var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
+            setup(machine, (m, p, v) => m.ParameterGroups[1].Parameters.First(x => x.Name == p).SetValue(0, v));
+            machine.CreatePattern("Beat", 16);
+            window.Detail.ShowPage(true, true);
+            PatternView.Edit(machine.PatternsList.First(p => p.Name == "Beat"));
+            Wait(250);
+            var roll = PatternView.Page.Roll;
+            roll.Poll();
+            foreach (var (tick, key) in notes) roll.Roll.AddNote(tick * PatternEvent.TimeBase, key);
+            if (extra >= 0) roll.Roll.AddNote(12 * PatternEvent.TimeBase, extra);
+            Wait(150);
+            roll.FoldBox.SelectedIndex = 3;
+            Wait(250);
+            return machine;
+        }
+
         static void Try(string id, System.Action shot)
         {
             try
@@ -1247,6 +1267,30 @@ namespace ReBuzz.Studio.Tests
                     Wait(100);
                     Shot(window, "058-piano-roll", "Piano roll: Bass's Line A, the same pattern as the Tracker (the notes of its MIDI lanes), maximised over the window, all notes selected.",
                         "The Piano roll button in the detail bar (Alt+Cmd+4), after choosing a pattern.");
+                    window.Detail.SetPage(false);
+                });
+
+                // Note maps (daw-modes.md §8.9, NM1): the key column names the rows of a machine that says which keys play, and Fold: playable
+                // shows those keys (and any key that holds notes): a Neo Sampler kit of six zones, and Neo Drums.
+                Try("059-piano-roll-note-map-kit", () =>
+                {
+                    NoteMapShot(window, "Neo Sampler", "Kit", (m, set) =>
+                    {
+                        set(m, "Mode", 1);
+                        set(m, "Kit base", 36);
+                        int[] waves = { 201, 203, 204, 206, 207, 205 };
+                        for (int z = 0; z < 16; z++) set(m, $"Z{z + 1} wave", z < waves.Length ? waves[z] : 0);
+                    }, new (int, int)[] { (0, 36), (4, 41), (8, 36), (8, 37), (12, 39), (14, 39), (2, 39), (6, 39), (10, 39), (10, 41) }, extra: 61);
+                    Shot(window, "059-piano-roll-note-map-kit", "Piano roll on a Neo Sampler kit of six zones (Kick, Snare, Clap, Closed hat, Open hat, Rim): the key column names each row with its key, and Fold: playable shows the six keys that make a sound plus the one row that holds a note on a key with no sound (dimmed, 61).",
+                        "Open a Neo Sampler's pattern in the Piano roll; the fold box ▸ Fold: playable.");
+                    window.Detail.SetPage(false);
+                });
+                Try("061-piano-roll-note-map-drums", () =>
+                {
+                    NoteMapShot(window, "Neo Drums", "Drums", (m, set) => { },
+                        new (int, int)[] { (0, 36), (4, 38), (8, 36), (12, 38), (0, 42), (2, 42), (4, 42), (6, 42), (8, 42), (10, 42), (12, 42), (14, 46), (15, 49) });
+                    Shot(window, "061-piano-roll-note-map-drums", "Piano roll on Neo Drums: its voices by name on their keys (kick, snare, hats, toms, cymbals), Fold: playable showing only the keys the drum machine plays.",
+                        "Open a Neo Drums pattern in the Piano roll; the fold box ▸ Fold: playable.");
                     window.Detail.SetPage(false);
                 });
 
