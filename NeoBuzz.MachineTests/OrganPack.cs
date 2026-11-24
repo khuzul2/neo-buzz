@@ -144,6 +144,32 @@ namespace NeoBuzz.MachineTests
             return count;
         }
 
+        /// <summary>
+        /// The review's check, with no exemptions: the largest |second difference| in each 1 ms window (both channels), against the
+        /// median of those over the take. Returns how many windows are above 20 times the median, and the largest value.
+        /// </summary>
+        static (int Windows, double Max) D2Windows(float[] l, float[] r)
+        {
+            int w = Rate / 1000, count = l.Length / w;
+            var m = new double[count];
+            double max = 0;
+            for (int k = 0; k < count; k++)
+            {
+                double v = 0;
+                for (int i = Math.Max(1, k * w); i < Math.Min(l.Length - 1, (k + 1) * w); i++)
+                {
+                    v = Math.Max(v, Math.Abs(l[i + 1] - 2.0 * l[i] + l[i - 1]));
+                    v = Math.Max(v, Math.Abs(r[i + 1] - 2.0 * r[i] + r[i - 1]));
+                }
+                m[k] = v;
+                max = Math.Max(max, v);
+            }
+            var sorted = (double[])m.Clone();
+            Array.Sort(sorted);
+            double median = sorted[count / 2];
+            return (m.Count(v => v > 20 * median), max);
+        }
+
         static void WriteWav(string path, float[] l, float[] r)
         {
             using var fs = File.Create(path);
@@ -179,7 +205,7 @@ namespace NeoBuzz.MachineTests
             var dir = Environment.GetEnvironmentVariable("ORGAN_PACK");
             Assert.That(dir, Is.Not.Null.And.Not.Empty, "ORGAN_PACK names the folder");
             Directory.CreateDirectory(dir!);
-            var report = new StringBuilder("take\trms dBFS\tpeak dBFS\tclicks\tclicks (key click 0)\tstrict candidates\tstrict (key click 0)\n");
+            var report = new StringBuilder("take\trms dBFS\tpeak dBFS\tclicks\tclicks (key click 0)\tstrict candidates\tstrict (key click 0)\t1-ms windows > 20x median\tmax |d2|\n");
             int clicks = 0;
             void Take(string file, string name, Dictionary<int, int> values, Action<ParamValues, int> atBar = null)
             {
@@ -191,9 +217,10 @@ namespace NeoBuzz.MachineTests
                 int q = Clicks(ql, false) + Clicks(qr, false);
                 int sc = Clicks(l, true) + Clicks(r, true);
                 int sq = Clicks(ql, true) + Clicks(qr, true);
-                clicks += c + q;
+                var (windows, maxD2) = D2Windows(l, r);
+                clicks += c + q + windows;
                 WriteWav(Path.Combine(dir!, file), l, r);
-                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{name}\t{lv.RmsDb:0.0}\t{lv.PeakDb:0.0}\t{c}\t{q}\t{sc}\t{sq}"));
+                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"{name}\t{lv.RmsDb:0.0}\t{lv.PeakDb:0.0}\t{c}\t{q}\t{sc}\t{sq}\t{windows}\t{maxD2:0.000}"));
             }
             var presets = Presets();
             foreach (var (name, values) in presets) Take(Slug(name) + ".wav", name, values);
@@ -202,7 +229,8 @@ namespace NeoBuzz.MachineTests
             Take("rotary-slow-fast-slow.wav", "Rotary Slow-Fast-Slow (Jazz Trio)", jazz, (v, bar) => v.Set(P.Speed, bar < 2 ? 0 : bar < 5 ? 1 : 0));
             File.WriteAllText(Path.Combine(dir!, "levels.txt"), report.ToString());
             TestContext.Progress.WriteLine(report.ToString());
-            Assert.That(clicks, Is.EqualTo(0), "clicks in the pack's renders");
+            File.WriteAllText(Path.Combine(dir!, "click-table.txt"), OrganClickFigures.Table());
+            Assert.That(clicks, Is.EqualTo(0), "clicks in the pack's renders (the detector's, and 1-ms windows above 20 times the median)");
         }
     }
 }

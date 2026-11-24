@@ -17,17 +17,17 @@ A polyphonic tonewheel organ with a stereo output, 16 tracks. It is an instrumen
 - A manual of 61 keys, MIDI notes 36 to 96. A key's 8' pitch is its own note; the nine drawbars take the wheel 16': -12, 5 1/3': +7, 8': 0, 4': +12, 2 2/3': +19, 2': +24, 1 3/5': +28, 1 1/3': +31, 1': +36 semitones from it. A footage above wheel 91 folds back an octave (repeatedly), as on the instrument. Notes outside the manual sound in the nearest octave inside it.
 - Each key switches wheels onto the nine busses; the sum over wheels is built once per sample from a per-wheel coefficient array, so the cost depends on the 91 wheels and not on the number of keys (61 keys held cost 1.00 times one key). The key gains are rebuilt every 16 samples while a key or a drawbar changes and ramped linearly between.
 - Drawbars are integer steps 0 to 8 at 3 dB a step (8 is 0 dB, 1 is -21 dB, 0 is off), smoothed.
-- Key envelope: a linear ramp of 3 ms on and 6 ms off.
+- Key envelope: a smoothstep of 6 ms on and 10 ms off (smooth enough that the tone itself starts with no more power above 6 kHz than it has once it sounds; the click is added on top).
 - Leakage: every sounding wheel leaks a trace (up to 0.15 % a contact) into its neighbours' wheels.
 
 ## 3. Around the tone
 
 1. **Percussion**: a 2nd (the 4' wheel) or 3rd (the 2 2/3' wheel) harmonic with an exponential decay of 0.2 s (Fast) or 0.7 s (Slow) to -20 dB, Soft (8 dB below Normal) or Normal. Single trigger: only a key pressed when none is held starts it. While it is on, the 1' drawbar is not used, as on the instrument.
-2. **Key click**: a short high-passed noise burst at note on (and a half-level one at note off), level 0 to 100 % (0 is silent: the machine adds nothing).
+2. **Key click**: a contact transient, not a burst of white noise (OR1 review). A key closing starts 2 to 4 contact bounces at random times within about 3 ms and at random, falling levels; each bounce is a smooth Hann pulse of 1.2 to 2.5 ms shaping its own noise, and a band-pass (4th-order 1.2 kHz high-pass, 8th-order 3.5 kHz low-pass) keeps the sum between about 1.2 and 3.5 kHz: -48 dB at 6 kHz, nothing above 8 kHz. Its level is relative to the key's own level (its drawbars summed by power), times the square of `Key click` (100 % is about 12 dB under one key's steady peak, 30 % about 33 dB); 0 adds nothing at all. A key opening makes one or two bounces 16 dB lower (about 28 dB under the press, as measured).
 3. **Scanner vibrato and chorus**: a delay line read with a triangle sweep, six settings: V1, V2, V3 (pitch swing of about ±6, ±12 and ±24 cents at 6.8 Hz) and C1, C2, C3 (the same sweep mixed with the dry sound at 0.5).
 4. **Drive**: a tube-style overdrive (asymmetric soft saturation, 2x oversampled) with level compensation at -14 dBFS, before the speaker.
 5. **Rotary speaker**: a horn (highs) and a drum (lows), each a rotor with its own slow and fast speed and its own acceleration (first-order lag; Stop brakes them to rest). Each makes an amplitude swell, a directivity change and a Doppler shift (a fractional delay); two virtual microphones at an angle (Mic spread) make the stereo; Horn/drum balances the two. `Speed` is Slow / Fast / Stop, so a mapped knob or pad switches it. With `Rotary` off the dry organ is in both channels.
-6. **Output**: `Expression` (a swell pedal before the drive and the speaker, gain the square of the setting) and `Volume` (dB), a soft limiter at 0.9.
+6. **Output**: `Expression` (a swell pedal before the drive and the speaker, gain the square of the setting) and `Volume` (dB, default 0 dB: one note at the defaults is about -21 LUFS, as Neo Poly), a soft limiter at 0.9.
 
 ## 4. Documented values and gates
 
@@ -38,7 +38,10 @@ A polyphonic tonewheel organ with a stereo output, 16 tracks. It is an instrumen
 | Percussion 2nd, 3rd | 523.25 Hz, 783.99 Hz (note 60) | 523.27 Hz, 783.97 Hz |
 | Percussion decay (-20 dB) | 0.2 s, 0.7 s | 0.21 s, 0.71 s |
 | Single trigger | no percussion on a legato note | -600 dB against -19.8 dB for a fresh note |
-| Key click | 0 gives none | energy above 6 kHz: -78.6 dB at 0, -25.0 dB at 30 %, -14.7 dB at 100 % |
+| Key click level | 0 gives none; relative to the note; the square of the setting | peak re one key's steady peak: none at 0, -32.8 dB at 30 %, -11.9 dB at 100 %; the same (-20.8 dB at 60 %) with the 8' at 8 or at 2 |
+| Key click band | about 1 - 6 kHz, nothing above 8 kHz | 95 % of its energy between 1 and 6 kHz, -71 dB above 8 kHz, -45 dB below 500 Hz; over within 8 ms; it fades in |
+| Release click | much quieter than the press | -27.6 dB re the press |
+| Every preset, a Cmaj7 chord | click peak 20 dB under the chord's steady peak (12 dB for Funk Stabs and Reggae Bubble); power above 6 kHz in the first 10 ms at most 6 dB over the 30 - 80 ms window (floor 60 dB under the chord) | see the table below; all pass |
 | Vibrato swing | ±6, ±12, ±24 cents | ±6.4, ±12.8, ±25.7 |
 | Horn swells | 0.8 Hz slow, 6.7 Hz fast | 0.805, 6.709 |
 | Drum swells | 0.67 Hz slow, 5.7 Hz fast | 0.671, 5.695 |

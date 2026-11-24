@@ -56,7 +56,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="100" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="200" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="200" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="1" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="3" />
@@ -96,7 +96,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="150" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="250" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="250" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="4" />
@@ -136,7 +136,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="350" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="450" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="250" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="1" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="5" />
@@ -176,7 +176,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="250" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="350" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="600" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="1" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="1" />
@@ -216,7 +216,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="200" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="300" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="250" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="1" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="4" />
@@ -256,7 +256,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="50" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="100" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="150" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="1" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="0" />
@@ -296,7 +296,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="120" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="150" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="250" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="1" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="2" />
@@ -336,7 +336,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="400" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="150" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="500" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="4" />
@@ -376,7 +376,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="1" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="1" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="600" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="550" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="250" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="4" />
@@ -416,7 +416,7 @@
         <Parameter Name="Perc harmonic" Group="1" Index="10" Track="0" Value="0" />
         <Parameter Name="Perc decay" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Perc level" Group="1" Index="12" Track="0" Value="1" />
-        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="800" />
+        <Parameter Name="Key click" Group="1" Index="13" Track="0" Value="900" />
         <Parameter Name="Leakage" Group="1" Index="14" Track="0" Value="100" />
         <Parameter Name="Vibrato" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Vibrato type" Group="1" Index="16" Track="0" Value="4" />

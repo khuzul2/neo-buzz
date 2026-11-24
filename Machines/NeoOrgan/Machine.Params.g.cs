@@ -97,7 +97,7 @@ namespace NeoBuzz.Organ
         [ParameterDecl(Name = "Horn/drum", Description = "Balance between the horn (highs, above 800 Hz) and the drum (lows): -100 % is all drum, +100 % is 6 dB more horn and 6 dB less drum", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Balance { get => Values[P.Balance]; set => Values.Set(P.Balance, value); }
 
-        [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 750)]
+        [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 833)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
         [ParameterDecl(Name = "Expression", Description = "A swell pedal before the overdrive and the speaker: the gain is the square of the setting, so 50 % is -12 dB", MinValue = 0, MaxValue = 1000, DefValue = 1000)]

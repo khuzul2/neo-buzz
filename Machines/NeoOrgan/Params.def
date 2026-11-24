@@ -102,7 +102,7 @@ Balance     "Horn/drum"     0 1000  500   bip                             | Bala
     how Sets the balance between the horn and the drum, from drum to horn.
     sound Towards the horn the swirl is brighter and more fluttery; towards the drum it is darker and rounder.
 group Output
-Volume      "Volume"        0 1000  750   db -60 12 inf                   | Output level
+Volume      "Volume"        0 1000  833   db -60 12 inf                   | Output level
     how Sets the final level in dB, from off to +12.
     sound It makes the organ louder or quieter without changing its character.
 Expression  "Expression"   0 1000  1000  pct                             | A swell pedal before the overdrive and the speaker: the gain is the square of the setting, so 50 % is -12 dB

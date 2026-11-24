@@ -314,52 +314,135 @@ namespace NeoBuzz.MachineTests
 
         // ------------------------------------------------------------------------------------------ the click
 
-        /// <summary>Energy above 6 kHz in the first 12 ms of a note, relative to the note's level.</summary>
-        static double AttackHashDb(OrganEngine e)
+        /// <summary>One note pressed at 0 (and released at <paramref name="offAt"/>), with the click as set and with Key click at 0: the
+        /// difference is the click alone (the engine is otherwise deterministic). Returns the note without the click and the click.</summary>
+        static (float[] Note, float[] Click) NoteAndClick(Action<ParamValues> setup, int length, int offAt = -1, int note = 60)
         {
-            On(e, 60);
-            var y = RenderL(e, 4096);
-            int n = 512;
-            var w = new float[n];
-            for (int i = 0; i < n; i++) w[i] = y[i] * (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / n));
-            var mag = Measure.Spectrum(w, 0, n);
-            double hi = 0, all = 0;
+            float[] Run(bool click)
+            {
+                var (e, v) = Make(setup);
+                if (!click) v.Set(P.KeyClick, 0);
+                On(e, note);
+                return RenderL(e, length, pos => { if (pos == offAt) Off(e, note); });
+            }
+            var with = Run(true);
+            var without = Run(false);
+            var d = new float[length];
+            for (int i = 0; i < length; i++) d[i] = with[i] - without[i];
+            return (without, d);
+        }
+
+        /// <summary>Energy of <paramref name="x"/> in [<paramref name="lo"/>, <paramref name="hi"/>) Hz over the first <paramref name="n"/> samples (zero-padded FFT).</summary>
+        static double BandEnergy(float[] x, int from, int n, double lo, double hi)
+        {
+            var mag = Measure.Spectrum(x, from, n);
+            double e = 0;
             for (int k = 1; k < mag.Length; k++)
             {
                 double f = (double)k * Rate / n;
-                all += mag[k] * mag[k];
-                if (f > 6000) hi += mag[k] * mag[k];
+                if (f >= lo && f < hi) e += mag[k] * mag[k];
             }
-            return 10 * Math.Log10(Math.Max(1e-30, hi) / Math.Max(1e-30, all));
+            return e;
         }
 
         [Test]
         public void TheKeyClickIsAbsentAtZeroAndMeasurableWhenSet()
         {
-            var (none, _) = Make(v => v.Set(P.B8, 8));
-            var (some, _) = Make(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 300); });
-            var (loud, _) = Make(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 1000); });
-            double a = AttackHashDb(none), b = AttackHashDb(some), c = AttackHashDb(loud);
-            Measure.Report($"Neo Organ attack, energy above 6 kHz re the whole: click 0 {a:F1} dB, 30 % {b:F1} dB, 100 % {c:F1} dB");
-            Assert.That(a, Is.LessThan(-70), "no click: a smooth contact");
-            Assert.That(b, Is.GreaterThan(a + 25));
-            Assert.That(c, Is.GreaterThan(b + 5));
+            static double ClickDb(int keyClick)
+            {
+                var (note, click) = NoteAndClick(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, keyClick); }, 24000);
+                return Measure.Db(Measure.Peak(click, 0, 2400) / Measure.Peak(note, 12000, 12000));
+            }
+            double a = ClickDb(0), b = ClickDb(300), c = ClickDb(1000);
+            Measure.Report($"Neo Organ key click, its peak re the note's steady peak (one key, 8' at 8): 0 % {a:F1} dB, 30 % {b:F1} dB, 100 % {c:F1} dB");
+            Assert.That(a, Is.LessThan(-200), "0 is no click at all");
+            Assert.That(b, Is.GreaterThan(-50), "30 % is there");
+            Assert.That(c - b, Is.EqualTo(20 * Math.Log10(1 / 0.09)).Within(1.5), "the level goes with the square of Key click");
+            Assert.That(c, Is.InRange(-18.0, -10.0), "100 % is a clear contact, still well under the note");
         }
 
         [Test]
-        public void TheKeyClickAlsoSoundsAtNoteOff()
+        public void TheKeyClickIsAContactTransientBetweenOneAndFiveKilohertz()
         {
+            var (_, click) = NoteAndClick(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 1000); }, 8192);
+            double all = BandEnergy(click, 0, 4096, 0, Rate / 2.0);
+            double band = BandEnergy(click, 0, 4096, 1000, 6000);
+            double above8 = BandEnergy(click, 0, 4096, 8000, Rate / 2.0);
+            double below500 = BandEnergy(click, 0, 4096, 0, 500);
+            // It is over within a few ms: 99 % of its energy in the first 8 ms.
+            double first8 = 0, total = 0;
+            for (int i = 0; i < 4096; i++) { total += click[i] * (double)click[i]; if (i < 8 * Rate / 1000) first8 += click[i] * (double)click[i]; }
+            Measure.Report($"Neo Organ key click spectrum: 1 - 6 kHz {10 * Math.Log10(band / all):F2} dB of the whole, above 8 kHz {10 * Math.Log10(above8 / all):F1} dB, " +
+                           $"below 500 Hz {10 * Math.Log10(below500 / all):F1} dB; {100 * first8 / total:F1} % of its energy in the first 8 ms");
+            Assert.That(10 * Math.Log10(band / all), Is.GreaterThan(-0.5), "between 1 and 6 kHz");
+            Assert.That(10 * Math.Log10(above8 / all), Is.LessThan(-30), "nothing above 8 kHz");
+            Assert.That(10 * Math.Log10(below500 / all), Is.LessThan(-20), "no thump");
+            Assert.That(first8 / total, Is.GreaterThan(0.99), "a few ms");
+            // A smooth envelope: no sample jumps from silence; the first samples rise gently.
+            int first = Array.FindIndex(click, x => Math.Abs(x) > 1e-6f);
+            Assert.That(Measure.Peak(click, first, 8), Is.LessThan(0.1 * Measure.Peak(click, 0, 4096)), "it fades in");
+        }
+
+        [Test]
+        public void TheKeyClickFollowsTheNotesLevel()
+        {
+            static double Ratio(int step)
+            {
+                var (note, click) = NoteAndClick(v => { v.Set(P.B8, step); v.Set(P.KeyClick, 600); }, 24000);
+                return Measure.Db(Measure.Peak(click, 0, 2400) / Measure.Peak(note, 12000, 12000));
+            }
+            double loud = Ratio(8), soft = Ratio(2);
+            Measure.Report($"Neo Organ key click re the note: 8' at 8 {loud:F2} dB, at 2 {soft:F2} dB");
+            Assert.That(soft, Is.EqualTo(loud).Within(0.5), "the click is relative to the key's own level");
+            // No drawbar out: no sound, no click.
+            var (_, none) = NoteAndClick(v => v.Set(P.KeyClick, 1000), 4800);
+            Assert.That(Measure.Peak(none, 0, 4800), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TheReleaseClickIsMuchQuieterThanThePress()
+        {
+            var (_, click) = NoteAndClick(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 1000); }, 24000 + 4800, offAt: 24064);
+            double press = Measure.Peak(click, 0, 2400), release = Measure.Peak(click, 24064, 2400);
+            Measure.Report($"Neo Organ key click at note off: {Measure.Db(release / press):F1} dB re the press");
+            Assert.That(Measure.Db(release / press), Is.InRange(-30.0, -12.0), "a release contact, much quieter");
+        }
+
+        [Test]
+        public void EachPressBouncesDifferently()
+        {
+            // The same key pressed twice: the contacts bounce at other times and levels, so the two clicks differ.
+            var (_, click) = NoteAndClick(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 1000); }, 48000, offAt: 12032);
             var (e, _) = Make(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 1000); });
-            On(e, 60);
-            RenderL(e, 24000);
-            Off(e, 60);
-            var y = RenderL(e, 512);
-            var w = new float[512];
-            for (int i = 0; i < 512; i++) w[i] = y[i] * (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / 512));
-            var mag = Measure.Spectrum(w, 0, 512);
-            double hi = 0;
-            for (int k = 1; k < mag.Length; k++) if ((double)k * Rate / 512 > 6000) hi += mag[k] * mag[k];
-            Assert.That(10 * Math.Log10(hi + 1e-30), Is.GreaterThan(-60), "a release click");
+            var (eq, vq) = Make(v => { v.Set(P.B8, 8); v.Set(P.KeyClick, 1000); });
+            vq.Set(P.KeyClick, 0);
+            float[] Twice(OrganEngine x) { On(x, 60); return RenderL(x, 48000, pos => { if (pos == 12032) Off(x, 60); if (pos == 24064) On(x, 60); }); }
+            var a = Twice(e);
+            var b = Twice(eq);
+            var second = new float[2400];
+            for (int i = 0; i < 2400; i++) second[i] = a[24064 + i] - b[24064 + i];
+            double diff = 0, peak = Measure.Peak(click, 0, 2400);
+            for (int i = 0; i < 2400; i++) diff = Math.Max(diff, Math.Abs(click[i] - second[i]));
+            Assert.That(Measure.Peak(second, 0, 2400), Is.GreaterThan(0.2 * peak), "the second press clicks too");
+            Assert.That(diff, Is.GreaterThan(0.3 * peak), "but not the same way");
+        }
+
+        static IEnumerable<string> PresetNames() => OrganClickFigures.Presets().Select(p => p.Name);
+
+        /// <summary>
+        /// Every preset's click is felt, not a pop: on a chord at the preset's settings the click's peak stays 20 dB under the chord's
+        /// steady peak (12 dB for Funk Stabs and Reggae Bubble, built on the click), and the first 10 ms of the chord carry no more
+        /// than 6 dB more power above 6 kHz than its 30 - 80 ms window. No exemptions.
+        /// </summary>
+        [TestCaseSource(nameof(PresetNames))]
+        public void EveryPresetsClickIsFeltNotAPop(string preset)
+        {
+            var values = OrganClickFigures.Presets().First(p => p.Name == preset).Values;
+            var f = OrganClickFigures.Of(values);
+            Measure.Report(string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                $"Neo Organ {preset}: click {f.BurstDb:F1} dB re the chord's steady peak (limit {OrganClickFigures.BurstLimitDb(preset)}); above 6 kHz, the first 10 ms {f.HfOnsetOverSteadyDb:+0.0;-0.0} dB over 30 - 80 ms ({f.HfOnsetReChordDb:F1} / {f.HfSteadyReChordDb:F1} dB re the chord)"));
+            Assert.That(f.BurstDb, Is.LessThanOrEqualTo(OrganClickFigures.BurstLimitDb(preset)), "the click under the note");
+            Assert.That(f.HfOnsetOverSteadyDb, Is.LessThanOrEqualTo(6.0), "no hash above 6 kHz at the chord's start");
         }
 
         // ------------------------------------------------------------------------------------------ vibrato and chorus

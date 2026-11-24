@@ -16,7 +16,18 @@ namespace NeoBuzz.Organ
         public const int Tick = 16;
         public const float ToneGain = 0.12f;
         const float LeakPerContact = 0.0015f;
-        const float ClickGain = 0.25f;
+        // The key click (docs/specs/neo-organ.md §3): a contact transient, not a burst of white noise. A key closing starts 2 to 4
+        // contact bounces at random times (within about 3 ms) and levels; each is a smooth (Hann) pulse of 1.2 to 2.5 ms that
+        // shapes its own noise, and a band-pass keeps the sum between about 1.2 and 3.5 kHz (a 4th-order 1.2 kHz high-pass, an
+        // 8th-order 3.5 kHz low-pass: -48 dB at 6 kHz, nothing above 8 kHz). Its level is the key's own level (its drawbars) times
+        // ClickAtFull times the square of Key click; a key opening makes one or two bounces 16 dB lower.
+        const float ClickAtFull = 0.9f;
+        const float ReleaseClick = 0.16f;
+        const double ClickLowHz = 1200, ClickHighHz = 3500;
+        const int MaxBounces = 128, HannSize = 256;
+        // A key's contacts fade its wheels in and out along a smoothstep this long: smooth enough that the tone itself starts with
+        // no more power above 6 kHz than it has once it sounds (the click, if asked for, is added on top).
+        const float KeyAttack = 0.006f, KeyRelease = 0.010f;
         const float PercFast = 0.2f, PercSlow = 0.7f;   // seconds to fall by 20 dB
         const float PercSoft = 0.4f, PercNormal = 1f;
         const int Sources = 16 + 128;
@@ -46,9 +57,13 @@ namespace NeoBuzz.Organ
         Sm perc2, perc3, percOnS, leakAmp, leakGate;
         // Percussion and click.
         float percEnv, percDecayTick;
-        float clickEnv, clickDecay, clickLevel;
-        Rng clickRng = new Rng(0xC11C4u);
-        OnePole clickHp;
+        float clickGain, keyLevel;
+        Rng clickRng = new Rng(0xC11C4u), bounceRng = new Rng(0xB0B0Cu);
+        readonly int[] bWait = new int[MaxBounces], bPos = new int[MaxBounces], bLen = new int[MaxBounces];
+        readonly float[] bAmp = new float[MaxBounces];
+        int bounces, clickTail, clickTailSamples;
+        readonly Biquad[] clickBand = new Biquad[6];
+        static readonly float[] Hann = MakeHann();
         // Stages.
         readonly Scanner scanner = new Scanner();
         readonly TubeDrive drive = new TubeDrive();
@@ -91,14 +106,19 @@ namespace NeoBuzz.Organ
             sr = rate;
             for (int w = 1; w <= Tonewheels.Count; w++)
                 inc[w] = (uint)(long)Math.Round(Tonewheels.WheelHz(w) / rate * 4294967296.0);
-            attackStep = Tick / (0.003f * rate);
-            releaseStep = Tick / (0.006f * rate);
+            attackStep = Tick / (KeyAttack * rate);
+            releaseStep = Tick / (KeyRelease * rate);
             for (int b = 0; b < Tonewheels.Bars; b++) bar[b].Setup(0.015, rate);
             perc2.Setup(0.01, rate); perc3.Setup(0.01, rate); percOnS.Setup(0.01, rate);
             leakAmp.Setup(0.02, rate); leakGate.Setup(0.005, rate);
             expression.Setup(0.02, rate); volume.Setup(0.02, rate);
-            clickDecay = (float)PortableMath.Exp(-1.0 / (0.0015 * rate));
-            clickHp.Set(1500, rate);
+            clickBand[0].Set(BiquadType.HighPass, ClickLowHz, rate, 0.5412);    // 4th-order Butterworth high-pass
+            clickBand[1].Set(BiquadType.HighPass, ClickLowHz, rate, 1.3066);
+            clickBand[2].Set(BiquadType.LowPass, ClickHighHz, rate, 0.5098);    // 8th-order Butterworth low-pass
+            clickBand[3].Set(BiquadType.LowPass, ClickHighHz, rate, 0.6013);
+            clickBand[4].Set(BiquadType.LowPass, ClickHighHz, rate, 0.9000);
+            clickBand[5].Set(BiquadType.LowPass, ClickHighHz, rate, 2.5629);
+            clickTailSamples = (int)(0.004 * rate);
             tailSamples = (int)(0.1 * rate);
             scanner.SetSampleRate(rate);
             drive.SetSampleRate(rate);
@@ -128,7 +148,16 @@ namespace NeoBuzz.Organ
             percOnS.T = percOn ? 1f : 0f;
             float t20 = values.Choice(P.PercDecay) == 0 ? PercFast : PercSlow;
             percDecayTick = (float)PortableMath.Exp(-Tick * 2.302585092994046 / (t20 * sr));
-            clickLevel = values.F(P.KeyClick);
+            float kc = values.F(P.KeyClick);
+            clickGain = ClickAtFull * kc * kc;
+            // A key's own level: its drawbars' gains summed by power (the 1' is silent while the percussion is on).
+            double pow = 0;
+            for (int b = 0; b < Tonewheels.Bars; b++)
+            {
+                double g = bar[b].T * (b == Tonewheels.Bars - 1 && percOn ? 0.0 : 1.0);
+                pow += g * g;
+            }
+            keyLevel = ToneGain * (float)Math.Sqrt(pow);
             leakAmp.T = values.F(P.Leakage) * LeakPerContact;
             scanner.Set(values.On(P.VibOn), values.Choice(P.VibMode));
             drive.Set(values.F(P.Drive));
@@ -160,13 +189,67 @@ namespace NeoBuzz.Organ
             held[k]++;
             if (totalHeld == 0) percEnv = 1f;                  // single trigger: only when no other key is held
             totalHeld++;
-            clickEnv = Math.Min(3f, clickEnv + clickLevel);
+            Contact(clickGain * keyLevel, 2 + (int)(bounceRng.NextUnipolar() * 3));
         }
 
         public void NoteOff(int key)
         {
             int s = Slot(key);
-            if (sourceKey[s] >= 0) { Release(s); clickEnv = Math.Min(3f, clickEnv + clickLevel * 0.5f); }
+            if (sourceKey[s] >= 0) { Release(s); Contact(clickGain * keyLevel * ReleaseClick, 1 + (int)(bounceRng.NextUnipolar() * 2)); }
+        }
+
+        /// <summary>A key's contacts closing or opening: <paramref name="count"/> bounces at random times and levels, the first at
+        /// <paramref name="amp"/> (about), each later one weaker.</summary>
+        void Contact(float amp, int count)
+        {
+            if (amp <= 0f) return;
+            float t = bounceRng.NextUnipolar() * 0.4f;                     // ms
+            for (int i = 0; i < count && bounces < MaxBounces; i++)
+            {
+                int j = bounces++;
+                bWait[j] = (int)(t * 0.001f * sr);
+                bPos[j] = 0;
+                bLen[j] = Math.Max(8, (int)((1.2f + 1.3f * bounceRng.NextUnipolar()) * 0.001f * sr));
+                bAmp[j] = amp * (0.8f + 0.4f * bounceRng.NextUnipolar());
+                t += 0.3f + 0.9f * bounceRng.NextUnipolar();
+                amp *= 0.4f + 0.35f * bounceRng.NextUnipolar();
+            }
+        }
+
+        static float[] MakeHann()
+        {
+            var h = new float[HannSize + 1];
+            for (int i = 0; i <= HannSize; i++) h[i] = (float)(0.5 - 0.5 * PortableMath.Cos(2 * Math.PI * i / HannSize));
+            return h;
+        }
+
+        /// <summary>The click for one sample: every sounding bounce's Hann pulse times its own noise, through the band-pass.</summary>
+        float ClickSample()
+        {
+            float x = 0f;
+            for (int j = 0; j < bounces; j++)
+            {
+                if (bWait[j] > 0) { bWait[j]--; continue; }
+                float f = (float)bPos[j] * HannSize / bLen[j];
+                int k = (int)f;
+                float env = Hann[k] + (Hann[k + 1] - Hann[k]) * (f - k);
+                x += clickRng.NextBipolar() * env * bAmp[j];
+                if (++bPos[j] >= bLen[j])
+                {
+                    bounces--;
+                    bWait[j] = bWait[bounces]; bPos[j] = bPos[bounces]; bLen[j] = bLen[bounces]; bAmp[j] = bAmp[bounces];
+                    j--;
+                }
+            }
+            for (int f = 0; f < clickBand.Length; f++) x = clickBand[f].Process(x);
+            return x > -1e-20f && x < 1e-20f ? 0f : x;                 // the filters' tail never reaches a denormal
+        }
+
+        void ResetClick()
+        {
+            bounces = 0;
+            clickTail = 0;
+            for (int f = 0; f < clickBand.Length; f++) clickBand[f].Reset();
         }
 
         void Release(int s)
@@ -186,7 +269,8 @@ namespace NeoBuzz.Organ
             for (int s = 0; s < Sources; s++) if (sourceKey[s] >= 0) Release(s);
             if (!hard) return;
             Array.Clear(keyEnv);
-            percEnv = 0; clickEnv = 0;
+            percEnv = 0;
+            ResetClick();
             Array.Clear(cur); Array.Clear(target); Array.Clear(step);
             ramping = false; forceTarget = true;
             scanner.Reset();
@@ -196,7 +280,7 @@ namespace NeoBuzz.Organ
 
         bool SourcesActive()
         {
-            if (totalHeld > 0 || percEnv > 0 || clickEnv > 1e-6f || leakGate.V > 0 || ramping) return true;
+            if (totalHeld > 0 || percEnv > 0 || bounces > 0 || clickTail > 0 || leakGate.V > 0 || ramping) return true;
             for (int k = 0; k < Tonewheels.Keys; k++) if (keyEnv[k] > 0) return true;
             return false;
         }
@@ -355,21 +439,21 @@ namespace NeoBuzz.Organ
             scanner.Process(mono, n);
             for (int i = 0; i < n; i++)
             {
-                if (clickEnv > 1e-6f)
+                if (bounces > 0 || clickTail > 0)
                 {
-                    mono[i] += clickHp.HighPass(clickRng.NextBipolar()) * clickEnv * ClickGain;
-                    clickEnv *= clickDecay;
+                    mono[i] += ClickSample();
+                    if (bounces > 0) clickTail = clickTailSamples;
+                    else if (--clickTail == 0) ResetClick();             // the filters have rung out: start clean next time
                 }
-                else clickEnv = 0f;
-                mono[i] *= expression.Next();
+                mono[i] = DspMath.Flush(mono[i] * expression.Next());     // a release's tail reaches the drive and the speaker as 0, not as denormals
             }
             drive.Process(mono, n);
             rotary.Process(mono, left, right, n);
             for (int i = 0; i < n; i++)
             {
                 float v = volume.Next();
-                left[i] = SoftLimit(left[i] * v);
-                right[i] = SoftLimit(right[i] * v);
+                left[i] = DspMath.Flush(SoftLimit(left[i] * v));
+                right[i] = DspMath.Flush(SoftLimit(right[i] * v));
             }
             OutMeter.Feed(left, right, n);
             return true;

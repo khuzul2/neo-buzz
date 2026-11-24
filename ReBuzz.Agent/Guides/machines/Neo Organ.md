@@ -27,7 +27,7 @@ Around the tone: Percussion (a single-trigger 2nd or 3rd harmonic, only when no 
 | Drive | 0% | 30 to 70% for blues and rock grit |
 | Speed | Fast | Slow is the chorale, Fast the tremolo; Stop holds the rotors |
 | Depth | 75% | how much the speaker moves the sound |
-| Volume | -6 dB | check `peak_db` with Drive up |
+| Volume | 0 dB | the default; check `peak_db` with Drive up |
 
 ## Starting points
 
@@ -41,6 +41,7 @@ Around the tone: Percussion (a single-trigger 2nd or 3rd harmonic, only when no 
 
 - Freshly added only 8' and 4' are out: pull more drawbars for a full sound.
 - Drawbar values are whole steps 0 to 8 (not percentages).
+- `Key click` is a short contact tick that follows the note's level and the square of the setting: 20 to 50 % is felt on most sounds, 90 to 100 % is for stabs.
 - Percussion triggers only on a key pressed with no other key held: legato playing gets none.
 - `Rotary` off gives the plain dry organ in both channels; `Stop` brakes the rotors to rest, which sounds like a fixed room position.
 - Speed changes take about a second to settle (the horn is quicker than the drum); that is the inertia, not a fault.
