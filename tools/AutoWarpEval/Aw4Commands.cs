@@ -62,7 +62,9 @@ namespace NeoBuzz.AutoWarpEval
                     {
                         var exact = ReadFloats(exactFile);
                         dExact = dPackage = 0;
-                        for (int k = 0; k < mine.Length; k++) { dExact = Math.Max(dExact, Math.Abs(mine[k] - exact[k])); dPackage = Math.Max(dPackage, Math.Abs(refSpect[k] - exact[k])); }
+                        int worstAt = 0;
+                        for (int k = 0; k < mine.Length; k++) { double e = Math.Abs(mine[k] - exact[k]); if (e > dExact) { dExact = e; worstAt = k; } dPackage = Math.Max(dPackage, Math.Abs(refSpect[k] - exact[k])); }
+                        if (dExact > 1e-4) Console.WriteLine($"  worst: frame {worstAt / BeatThisFront.Mels} of {frames}, mel {worstAt % BeatThisFront.Mels}: ours {mine[worstAt]:0.000000}, exact {exact[worstAt]:0.000000}, package {refSpect[worstAt]:0.000000}; samples {mono.Length}, peak {mono.Max(Math.Abs):0.0000}");
                     }
                 }
                 // 2. The network on the upstream's spectrogram, against the upstream's logits (the network and the windows alone), and 3. on ours.
