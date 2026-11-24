@@ -66,6 +66,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Exciter"] = (NeoBuzz.Exciter.Params.Table, v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, v => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, v => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
+            ["Neo Organ"] = (NeoBuzz.Organ.Params.Table, v => Synth(new NeoBuzz.Organ.OrganEngine(v), (e, l, r, n) => ((NeoBuzz.Organ.OrganEngine)e).Process(l, r, n))),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, v => Synth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n))),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, v =>
             {

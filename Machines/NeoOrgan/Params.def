@@ -1,0 +1,110 @@
+# Neo Organ parameters (docs/specs/neo-organ.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoOrgan
+namespace NeoBuzz.Organ
+class NeoOrganMachine
+tracks 16
+summary A tonewheel organ with nine drawbars: 91 shared sine wheels switched onto the drawbar busses by every key held, a single-trigger percussion (2nd or 3rd harmonic), key click, a scanner vibrato and chorus (V1 - V3, C1 - C3), a tube-style overdrive and a rotary speaker with horn and drum rotors that speed up and slow down with their own inertia. Every key can sound at once (the cost does not grow with the number of keys). Use it for gospel, jazz, blues, rock and reggae organ, church sounds, flute stops and organ stabs.
+
+group Drawbars
+B16         "16'"           0 8 0    int 0                           | Drawbar 16': the sub-octave, one octave below the played note. Steps 0 - 8, about 3 dB a step
+    how Sets the level of the 16 foot drawbar from 0 (off) to 8 (full), 3 dB a step.
+    sound It adds a deep, round weight an octave below the notes; pulled out alone it sounds like a pipe organ's bass.
+B513        "5 1/3'"        0 8 0    int 0                           | Drawbar 5 1/3': the fifth above the 16', a fifth above the played note
+    how Sets the level of the 5 1/3 foot drawbar from 0 to 8, 3 dB a step.
+    sound It gives a hollow, reedy fifth under the note; with the 16' and 8' it makes the classic jazz registration.
+B8          "8'"            0 8 8    int 0                           | Drawbar 8': the played note itself
+    how Sets the level of the 8 foot drawbar from 0 to 8, 3 dB a step.
+    sound It is the fundamental: a pure, round flute-like tone and the body of every registration.
+B4          "4'"            0 8 5    int 0                           | Drawbar 4': the octave above the played note
+    how Sets the level of the 4 foot drawbar from 0 to 8, 3 dB a step.
+    sound It adds a light octave and a flute-like brightness over the fundamental.
+B223        "2 2/3'"        0 8 0    int 0                           | Drawbar 2 2/3': the twelfth, an octave and a fifth above the played note
+    how Sets the level of the 2 2/3 foot drawbar from 0 to 8, 3 dB a step.
+    sound It adds a hollow, nasal twelfth that makes a tone sound reedy or like a clarinet.
+B2          "2'"            0 8 0    int 0                           | Drawbar 2': two octaves above the played note
+    how Sets the level of the 2 foot drawbar from 0 to 8, 3 dB a step.
+    sound It adds a bright, pipe-like edge.
+B135        "1 3/5'"        0 8 0    int 0                           | Drawbar 1 3/5': the major third, two octaves and a third above the played note
+    how Sets the level of the 1 3/5 foot drawbar from 0 to 8, 3 dB a step.
+    sound It adds a sharp, reedy third that gives a trumpet or oboe edge.
+B113        "1 1/3'"        0 8 0    int 0                           | Drawbar 1 1/3': the fifth, two octaves and a fifth above the played note
+    how Sets the level of the 1 1/3 foot drawbar from 0 to 8, 3 dB a step.
+    sound It adds a thin, glassy brightness.
+B1          "1'"            0 8 0    int 0                           | Drawbar 1': three octaves above the played note (it is muted while Percussion is on)
+    how Sets the level of the 1 foot drawbar from 0 to 8, 3 dB a step; Percussion silences it, as on the original instrument.
+    sound It adds a shimmering, whistling top that makes the sound cut through a band.
+group Percussion
+PercOn      "Percussion"    0 1     0     switch                          | Percussion: a decaying 2nd or 3rd harmonic added to the held keys; it fires only when no other key is held (single trigger) and mutes the 1' drawbar
+    how Switches the percussion on; it plays on the first note of a phrase only, and the 1 foot drawbar goes quiet while it is on.
+    sound It adds a bell- or marimba-like pluck at the start of a phrase; played legato, only the first note gets it.
+PercHarm    "Perc harmonic" 0 1     1     enum 2nd 3rd                    | Which harmonic the percussion plays: 2nd (the 4' wheel, an octave up) or 3rd (the 2 2/3' wheel, an octave and a fifth up)
+    how Chooses the percussion's pitch: the 2nd harmonic (an octave above the note) or the 3rd (a twelfth above).
+    sound The 2nd is round and woody; the 3rd is brighter and more bell-like.
+PercDecay   "Perc decay"    0 1     0     enum Fast Slow                  | Percussion decay: fast 0.2 s or slow 0.7 s to fall by 20 dB
+    how Chooses how quickly the percussion fades: fast (0.2 s to fall 20 dB) or slow (0.7 s).
+    sound Fast is a short tick that sits in the attack; slow rings on like a struck bar.
+PercLevel   "Perc level"    0 1     1     enum Soft Normal                | Percussion level: soft is 8 dB below normal
+    how Chooses the percussion's loudness: soft (8 dB down) or normal.
+    sound Soft tucks the pluck under the drawbars; normal makes it stand out.
+group Key
+KeyClick    "Key click"     0 1000  300   pct                             | Level of the click each key makes as it closes and opens; 0 is no click
+    how Sets the loudness of the contact click at note on and note off, from 0 to 100 %.
+    sound Off the notes start smoothly like a pipe organ; more adds the percussive chiff of a tonewheel organ's contacts.
+Leakage     "Leakage"       0 1000  250   pct                             | Crosstalk: every wheel leaks a trace of its signal into the unpressed keys (up to -56 dB each)
+    how Sets how much of every tonewheel leaks into the other keys, from 0 to 100 %.
+    sound A little makes the tone slightly alive and fuzzy under the notes, as a real tonewheel organ is; none is a perfectly clean generator.
+group Vibrato
+VibOn       "Vibrato"       0 1     0     switch                          | Scanner vibrato or chorus on or off
+    how Switches the scanner vibrato or chorus on.
+    sound It adds a gentle wobble in pitch (V) or a swirling doubling (C) to everything you play.
+VibMode     "Vibrato type"  0 5     4     enum V1 V2 V3 C1 C2 C3          | V1 - V3: vibrato of 6, 12 and 24 cents; C1 - C3: the same sweep mixed with the dry sound as chorus
+    how Chooses the scanner setting: V1, V2, V3 are vibrato from light to deep; C1, C2, C3 are chorus from light to deep.
+    sound V settings wobble the pitch like a singer; C settings thicken the sound with a slow, shimmering doubling.
+group Drive
+Drive       "Drive"         0 1000  0     pct                             | Tube-style overdrive before the rotary speaker, with level compensation (a -14 dBFS sine keeps its peak level at any setting); 0 is clean
+    how Sets how hard the sound is pushed into a tube-style overdrive, from 0 (clean) to 100 %.
+    sound More drive adds warm, singing harmonics and a growl on the low drawbars; the loudness stays about the same.
+group Rotary
+Rotary      "Rotary"        0 1     1     switch                          | Rotary speaker on or off (off is a plain stereo pair of the dry sound)
+    how Switches the rotary speaker on; off gives the dry organ in both channels.
+    sound On, the sound swirls around the room; off it is direct and static.
+Speed       "Speed"         0 2     0     enum Slow Fast Stop             | The rotors' target speed: Slow (chorale), Fast (tremolo) or Stop (they brake to rest)
+    how Chooses the speed the horn and drum turn towards: Slow, Fast or Stop; they speed up and slow down with their own inertia.
+    sound Fast is a fast tremolo and swirl, Slow a gentle chorus, Stop a fixed room-like sound; the change itself is the sound of the speaker spinning up or down.
+HornSlow    "Horn slow"     0 1000  512   exp 0.2 3 Hz 2                  | The horn's slow speed in revolutions per second (0.8 Hz is 48 rpm)
+    how Sets how fast the high-frequency horn turns at Slow, from 0.2 to 3 Hz.
+    sound It sets the pace of the gentle chorale swirl in the highs.
+HornFast    "Horn fast"     0 1000  622   exp 2 14 Hz 2                   | The horn's fast speed in revolutions per second (6.7 Hz is 400 rpm)
+    how Sets how fast the horn turns at Fast, from 2 to 14 Hz.
+    sound It sets the speed of the fast tremolo in the highs.
+DrumSlow    "Drum slow"     0 1000  447   exp 0.2 3 Hz 2                  | The drum's slow speed in revolutions per second (0.67 Hz is 40 rpm)
+    how Sets how fast the low-frequency drum turns at Slow, from 0.2 to 3 Hz.
+    sound It sets the pace of the slow pulse in the lows and mids.
+DrumFast    "Drum fast"     0 1000  584   exp 2 12 Hz 2                   | The drum's fast speed in revolutions per second (5.7 Hz is 342 rpm)
+    how Sets how fast the drum turns at Fast, from 2 to 12 Hz.
+    sound It sets the speed of the fast pulse in the lows and mids.
+HornAccel   "Horn accel"    0 1000  454   time 0.05 8                     | The horn's inertia: the time constant of its speed change (it covers 63 % of the change in this time; 90 % of the fast speed from Slow takes about 2.2 times as long)
+    how Sets how quickly the horn changes speed, as a time constant from 0.05 to 8 s.
+    sound Short times make the swirl jump to the new speed; long times give a slow, heavy run-up.
+DrumAccel   "Drum accel"    0 1000  608   time 0.1 20                     | The drum's inertia: the time constant of its speed change (the drum is heavier, so its default is five times the horn's)
+    how Sets how quickly the drum changes speed, as a time constant from 0.1 to 20 s.
+    sound The drum lags behind the horn when you switch speed, which is much of the speaker's charm.
+RotDepth    "Depth"         0 1000  750   pct                             | How deeply the rotors change the loudness as they turn past the microphones
+    how Sets the depth of the loudness swirl, from 0 to 100 %.
+    sound More depth gives a stronger tremolo; less sounds more like a chorus.
+Doppler     "Doppler"       0 1000  500   lin 0 200 % 0                   | The pitch change of the moving sources, in percent of the real geometry (100 % is about 36 cents at the horn's fast speed)
+    how Sets the strength of the Doppler pitch wobble, from 0 to 200 % of the real size.
+    sound It adds the typical shimmering detune of a rotating speaker; zero leaves only the loudness swirl.
+Spread      "Mic spread"    0 1000  800   pct                             | The angle between the two virtual microphones (0 % is the same place, 100 % is opposite sides)
+    how Sets how far apart the two virtual microphones stand, from 0 to 100 %.
+    sound More spread makes the swirl travel between the left and right speakers; none is mono.
+Balance     "Horn/drum"     0 1000  500   bip                             | Balance between the horn (highs, above 800 Hz) and the drum (lows): -100 % is all drum, +100 % is 6 dB more horn and 6 dB less drum
+    how Sets the balance between the horn and the drum, from drum to horn.
+    sound Towards the horn the swirl is brighter and more fluttery; towards the drum it is darker and rounder.
+group Output
+Volume      "Volume"        0 1000  750   db -60 12 inf                   | Output level
+    how Sets the final level in dB, from off to +12.
+    sound It makes the organ louder or quieter without changing its character.
+Expression  "Expression"   0 1000  1000  pct                             | A swell pedal before the overdrive and the speaker: the gain is the square of the setting, so 50 % is -12 dB
+    how Sets the swell pedal from 0 to 100 %, before the overdrive and the rotary speaker.
+    sound Rolling it back softens the whole organ and cleans up the overdrive, as pulling back on a swell pedal does.

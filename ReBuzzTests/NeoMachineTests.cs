@@ -84,6 +84,7 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Comp = new("Neo Comp", "Comp", false, multiIo: true);
         internal static readonly NeoInfo Verb = new("Neo Verb", "Verb", false);
         internal static readonly NeoInfo Poly = new("Neo Poly", "Poly", true);
+        internal static readonly NeoInfo Organ = new("Neo Organ", "Organ", true);
         internal static readonly NeoInfo Wave = new("Neo Wave", "Wave", true);
         internal static readonly NeoInfo Fm6 = new("Neo FM6", "FM6", true);
         // Mix and master batch (docs/specs/machines.md §5, MCP A4).
@@ -1863,7 +1864,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Tune, Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
+            foreach (var info in new[] { Tune, Drive, Comp, Verb, Poly, Organ, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
