@@ -44,11 +44,11 @@ namespace ReBuzz.Studio.Tests
             public TrackerRoll Roll => Page.Roll;
             public PianoRoll Notes => Roll.Roll;
 
-            public Rig(int ticks = 16)
+            public Rig(int ticks = 16, string gear = "Neo Poly")
             {
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                Song = new SessionRig("Lead");
-                Lead = Song.Machine("Lead");
+                Song = gear == "Neo Poly" ? new SessionRig("Lead") : new SessionRig();
+                Lead = gear == "Neo Poly" ? Song.Machine("Lead") : Song.Add(gear, "Lead");
                 Lead.CreatePattern("00", ticks);
                 Pattern = Lead.PatternsList.Single(p => p.Name == "00");
                 StudioSelection.For(Song.Core).Clear(this);

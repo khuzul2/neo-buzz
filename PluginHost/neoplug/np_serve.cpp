@@ -362,6 +362,15 @@ void handle(uint32_t op, int instId, Rd& r, Wr& w, int32_t& rc, bool& quit)
             in.window = nullptr;
         }
         break;
+    case OpNoteNames:
+    {
+        static const int Cap = 512;
+        std::vector<np_note_name> names((size_t)Cap);
+        int n = np_note_names(p, names.data(), Cap);
+        rc = n > Cap ? Cap : n;
+        if (rc > 0) w.raw(names.data(), (size_t)rc * sizeof(np_note_name));
+        break;
+    }
     case OpOutCount: rc = np_out_count(p); break;
     case OpOutInfo:
     {
