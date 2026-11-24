@@ -118,6 +118,9 @@ namespace ReBuzz.Core.Clips
             }
         }
 
+        /// <summary>Forgets what was found, so the next use searches again (the tests that change the search path).</summary>
+        internal static void Forget() { lock (gate) { found = null; searched = false; } }
+
         /// <summary>The folders searched for the file, in order (the first has the path of NEO_BEAT_THIS_MODEL).</summary>
         public static string[] Candidates() => new[]
         {

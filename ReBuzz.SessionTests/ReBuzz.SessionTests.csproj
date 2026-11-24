@@ -49,7 +49,7 @@
     <Compile Include="..\ReBuzz\Core\Clips\AudioClip.cs" Link="Engine\AudioClip.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\SliceMath.cs" Link="Engine\SliceMath.cs" />
-    <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\ReBuzz\Core\Clips\BeatTracker.cs;..\ReBuzz\Core\Clips\AutoWarpPolicy.cs;..\ReBuzz\Core\Clips\BeatFront.cs;..\ReBuzz\Core\Clips\BeatModelNet.cs;..\ReBuzz\Core\Clips\BeatModelTracker.cs" Link="Engine\%(Filename)%(Extension)" />
+    <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\ReBuzz\Core\Clips\BeatTracker.cs;..\ReBuzz\Core\Clips\AutoWarpPolicy.cs;..\ReBuzz\Core\Clips\BeatFront.cs;..\ReBuzz\Core\Clips\BeatModelNet.cs;..\ReBuzz\Core\Clips\BeatModelTracker.cs;..\ReBuzz\Core\Clips\BeatThisFront.cs;..\ReBuzz\Core\Clips\BeatThisModel.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzz\Core\Clips\WarpEditing.cs" Link="Engine\WarpEditing.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioCapture.cs" Link="Engine\AudioCapture.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\TakeFile.cs" Link="Engine\TakeFile.cs" />
@@ -116,5 +116,6 @@
 
   <ItemGroup>
     <None Include="AutoWarp\aw2-parity.bin" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="AutoWarp\beat-this-golden.bin;AutoWarp\beat-this-golden.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

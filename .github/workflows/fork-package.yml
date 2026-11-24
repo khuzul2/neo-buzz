@@ -77,6 +77,23 @@ jobs:
         }
         if (-not (Test-Path $dll)) { if (Test-Path vcredist.log) { Get-Content vcredist.log -Tail 20 }; throw 'msvcr100.dll (x64) not installed' }
 
+    # AW4 (docs/specs/neo-audio.md): the pretrained beat network. The weights are never committed: the pinned upstream checkpoint is downloaded here (its SHA-256 checked), exported
+    # to ONNX with the pinned toolchain, checked against PyTorch, and the file is embedded in ReBuzz.Engine.dll (ReBuzz.Engine.csproj, the 3rdParty/beat-this folder). The app loads
+    # it only if its SHA-256 is the pinned one; without it Auto-warp uses the AW2 network.
+    - name: Setup Python (the beat network's export)
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+
+    - name: Fetch, export and check the beat network
+      shell: pwsh
+      run: |
+        python -m pip install --quiet torch==2.11.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+        python -m pip install --quiet -r tools/autowarp/beat_this_requirements.txt
+        python tools/autowarp/beat_this_model.py fetch 3rdParty/beat-this --strict *>&1 | Where-Object { $_ -notmatch 'Warning' } | Tee-Object -FilePath beat-this-export.log
+        if ($LASTEXITCODE -ne 0) { throw 'the beat network could not be fetched and exported (see beat-this-export.log)' }
+        Remove-Item 3rdParty/beat-this/*.ckpt -ErrorAction SilentlyContinue
+
     # The C++ projects target v145 (VS 2026). build.ps1 falls back to v143 when the
     # runner image only has VS 2022.
     - name: Build and package

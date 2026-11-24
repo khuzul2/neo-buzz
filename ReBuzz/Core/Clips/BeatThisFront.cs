@@ -177,24 +177,29 @@ namespace ReBuzz.Core.Clips
         {
             beats = Dedupe(Peaks(beat));
             var d = Dedupe(Peaks(down));
+            var kept = new List<double>();
             if (beats.Length > 0)
             {
-                for (int i = 0; i < d.Length; i++)
+                // Each downbeat goes to the nearest beat, measured in seconds as the reference does (so that ties fall as they fall there), the first of equals.
+                var bt = new double[beats.Length];
+                for (int j = 0; j < bt.Length; j++) bt[j] = beats[j] / Fps;
+                int last = -1;
+                foreach (double frame in d)
                 {
+                    double t = frame / Fps;
                     int best = 0;
-                    double bd = Math.Abs(beats[0] - d[i]);
-                    for (int j = 1; j < beats.Length; j++)
+                    double bd = Math.Abs(bt[0] - t);
+                    for (int j = 1; j < bt.Length; j++)
                     {
-                        double dd = Math.Abs(beats[j] - d[i]);
+                        double dd = Math.Abs(bt[j] - t);
                         if (dd < bd) { bd = dd; best = j; }
-                        else if (beats[j] > d[i]) break;
+                        else if (bt[j] > t) break;
                     }
-                    d[i] = beats[best];
+                    if (best != last) { kept.Add(beats[best]); last = best; }
                 }
             }
-            var u = new List<double>();
-            foreach (double v in d) if (u.Count == 0 || v != u[u.Count - 1]) u.Add(v);
-            downbeats = u.ToArray();
+            else kept.AddRange(d);
+            downbeats = kept.ToArray();
         }
 
         /// <summary>The frames whose logit is the largest within 3 frames either side and above 0 (a probability over one half).</summary>

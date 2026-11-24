@@ -65,6 +65,13 @@
     <EmbeddedResource Include="..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" Link="BasicPitch\nmp.onnx" />
   </ItemGroup>
 
+  <!-- Fork (docs/specs/neo-audio.md, AW4 as built): the pretrained beat network (3rdParty/beat-this), embedded when its file is here. The weights are never committed:
+       tools/autowarp/beat_this_model.py fetch 3rdParty/beat-this makes the file (the package workflow does it), and without it the build has no such network (Auto-warp
+       then uses the AW2 network and AW1's DSP). The app loads it only if its SHA-256 is the pinned one (BeatThis.PinnedSha256). -->
+  <ItemGroup Condition="Exists('..\3rdParty\beat-this\beat_this_small.onnx')">
+    <EmbeddedResource Include="..\3rdParty\beat-this\beat_this_small.onnx" LogicalName="ReBuzz.BeatThis.beat_this_small.onnx" Link="BeatThis\beat_this_small.onnx" />
+  </ItemGroup>
+
   <!-- Fork (docs/specs/stem-separation.md): ONNX Runtime (MIT) runs the stem-separation models, on the CPU everywhere (CoreML on request on macOS).
        The models themselves are not in the repository or the package. -->
   <ItemGroup>
