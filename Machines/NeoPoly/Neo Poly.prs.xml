@@ -4438,7 +4438,7 @@
         <Parameter Name="Noise colour" Group="1" Index="32" Track="0" Value="0" />
         <Parameter Name="F1 type" Group="1" Index="33" Track="0" Value="6" />
         <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="441" />
-        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="700" />
+        <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="600" />
         <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="208" />
         <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="790" />
         <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="300" />
@@ -4495,11 +4495,11 @@
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
         <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
-        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="900" />
+        <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="720" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="383" />
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="517" />
-        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="667" />
+        <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="500" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
         <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="797" />
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />

@@ -64,6 +64,40 @@ namespace NeoBuzz.MachineTests
             Assert.That(AcidGate.WorstRatio(rows), Is.LessThanOrEqualTo(AcidGate.MaxRatio));
         }
 
+        /// <summary>
+        /// Round 3: the cutoff path itself. The boundary gate looks at ±5 ms of each note edge; a rate limit with a corner in it (the cutoff rising until it meets the decaying
+        /// envelope, then turning at once to falling) pings 20 to 35 ms into the note, inside the gate's "interior". The curvature of the cutoff, in octaves per second squared over
+        /// 1 ms, is bounded at every Filter range (<see cref="AcidCutoff.MaxCurvature"/>); the corner build measured 340000 to 540000 on every preset, the follower's worst is below 110000.
+        /// </summary>
+        [TestCaseSource(nameof(Cases))]
+        public void TheCutoffPathHasNoCornerInsideTheNote(string name, int filter, string line, int block, double range)
+        {
+            if (block != 16) Assert.Ignore("the cutoff is logged once per control block of 16 samples");
+            var ev = Line(line);
+            var (_, rows) = AcidCutoff.RenderTrace(Presets[name], filter, ev, Seconds(line), range == 0 ? null : v => Set(v, P.AcidRange, range), block);
+            Assert.That(AcidCutoff.Worst(rows), Is.LessThanOrEqualTo(AcidCutoff.MaxCurvature), AcidCutoff.Flags(rows));
+        }
+
+        [Test]
+        public void TheCurvatureBoundFlagsACornerAndPassesTheFollower()
+        {
+            // A cutoff that climbs at 350 oct/s until it meets a target falling at 115 oct/s (the Squelch accent at 22 ms), then follows it: a corner of 465 oct/s.
+            const int block = 16; const double dt = block / (double)Rate;
+            var corner = new List<(int Pos, int Voice, float Age, float Oct, float Hz)>();
+            var smooth = new List<(int Pos, int Voice, float Age, float Oct, float Hz)>();
+            double c = 0, s1 = 0, s2 = 0, target0 = 4.06, k = dt / (0.4 * 0.0035 + dt);
+            for (int i = 0; i < 400; i++)
+            {
+                double t = i * dt, target = target0 - 115 * Math.Max(0, t - 0.022);
+                c = Math.Min(target, c + 350 * dt);
+                s1 += k * (c - s1); s2 += k * (s1 - s2);
+                corner.Add((i * block, 0, (float)t, (float)c, 1000)); smooth.Add((i * block, 0, (float)t, (float)s2, 1000));
+            }
+            var ons = new List<int> { 0 };
+            Assert.That(AcidCutoff.Worst(AcidCutoff.Curvature(corner, ons, block)), Is.GreaterThan(AcidCutoff.MaxCurvature * 2), "the corner is found");
+            Assert.That(AcidCutoff.Worst(AcidCutoff.Curvature(smooth, ons, block)), Is.LessThan(AcidCutoff.MaxCurvature), "the follower's output passes");
+        }
+
         /// <summary>Filter 1's cutoff, logged every sample while the voice renders, for the notes of <paramref name="line"/>.</summary>
         static float MaxCutoff(Dictionary<int, int> preset, int filter, List<Ev> ev, double seconds, Action<ParamValues> tweak = null)
         {

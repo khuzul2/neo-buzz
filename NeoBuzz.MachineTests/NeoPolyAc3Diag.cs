@@ -49,6 +49,151 @@ namespace NeoBuzz.MachineTests
         }
     
 
+
+        [Test]
+        public void CutCurvature()
+        {
+            if (Environment.GetEnvironmentVariable("NEO_DIAG") == null) Assert.Ignore("diag");
+            string only = Environment.GetEnvironmentVariable("NEO_PRESET");
+            foreach (var name in Presets.Keys.Where(k => k.StartsWith("Acid") && (only == null || k == only)).OrderBy(k => k))
+                foreach (int filter in new[] { 6, 0 })
+                {
+                    var ev = Sequence(Pack, 2);
+                    var cut = new List<double>(); var age = new List<double>();
+                    var (l, r, _) = Render(Presets[name], filter, ev, LineSeconds(2), null, 16, (e, pos) =>
+                    {
+                        double best = double.NaN, ba = 1e9;
+                        for (int i = 0; i < PolyEngine.VoiceCount; i++) { var v = e.Voice(i); if (!v.IsActive) continue; double a = Convert.ToDouble(F(v, "noteAge")); if (a < ba) { ba = a; best = Convert.ToDouble(F(v, "cutSm2")); } }
+                        cut.Add(best); age.Add(ba);
+                    });
+                    var m = Mid(l, r);
+                    var rows = new List<string>();
+                    const int K = 3; double dt = K * 16.0 / 48000;
+                    for (int step = 1; step <= 32; step++)
+                    {
+                        int on = (int)((step - 1) * Step); int b0 = on / 16;
+                        double worst = 0; int wat = 0;
+                        for (int b = b0 + 3 * K; b < b0 + (int)(Step * 0.5 / 16) && b + K < cut.Count; b++)
+                        {
+                            if (double.IsNaN(cut[b - K]) || double.IsNaN(cut[b + K])) continue;
+                            double dd = Math.Abs(cut[b + K] - 2 * cut[b] + cut[b - K]) / (dt * dt);
+                            if (dd > worst) { worst = dd; wat = b * 16 - on; }
+                        }
+                        double ap = 0; int aat = 0;
+                        for (int i = on + 384; i < on + (int)(Step * 0.5); i++) { double d = Math.Abs(m[i + 1] - 2 * m[i] + m[i - 1]); if (d > ap) { ap = d; aat = i - on; } }
+                        rows.Add($"  s{step,2}: cut2 {worst,9:F0} oct/s2 at {wat / 48.0,5:F1} ms | audio2d {ap:F4} at {aat / 48.0,5:F1} ms");
+                    }
+                    Measure.Report($"CURV {name} f{filter}\n" + string.Join("\n", rows));
+                }
+        }
+
+
+        [TestCase("Acid — Squelch", 1, 6)]
+        [TestCase("Acid — Squelch", 15, 6)]
+        [TestCase("Acid — Deep", 25, 6)]
+        [TestCase("Acid — Plucky", 15, 6)]
+        [TestCase("Acid — Sub", 10, 6)]
+        public void PackTrace(string name, int step, int filter)
+        {
+            if (Environment.GetEnvironmentVariable("NEO_DIAG") == null) Assert.Ignore("diag");
+            var ev = Sequence(Pack, 2); int on = (int)((step - 1) * Step); var log = new List<string>(); double prev = 0;
+            var (l, r, _) = Render(Presets[name], filter, ev, LineSeconds(2), null, 16, (e, pos) =>
+            {
+                if (pos < on - 400 || pos > on + 2400) return;
+                for (int i = 0; i < PolyEngine.VoiceCount; i++)
+                {
+                    var v = e.Voice(i); if (!v.IsActive) continue;
+                    log.Add($"{(pos - on) / 48.0,6:F2}ms v{i} age {F(v, "noteAge"):F4} cutOct {F(v, "cutOct"):F3} sm2 {F(v, "cutSm2"):F3} so {F(v, "diagSo"):F3} fenv {F(F(v, "fltEnv"), "Level"):F3} accD {F(v, "accDepthCur"):F3} cut {v.Cut1Hz,6:F0}");
+                }
+            });
+            Measure.Report($"PTRACE {name} s{step} f{filter}\n" + string.Join("\n", log));
+        }
+
+
+        /// <summary>Prototype: the spike inside each note. Windows of 0.5 ms (24 samples) over the note's interior; ratio of the biggest window to the biggest window more than 4 ms away.</summary>
+        internal static (double Ratio, double AtMs, double Peak)[] InteriorSpikes(float[] m, List<Ev> ev, int lead = 8, int tail = 8)
+        {
+            var (ons, offs) = AcidGate.Boundaries(ev);
+            var res = new (double, double, double)[ons.Count];
+            for (int s = 0; s < ons.Count; s++)
+            {
+                int a = ons[s] + lead * 48, bEnd = Math.Min(offs.Where(o => o > ons[s]).DefaultIfEmpty(int.MaxValue).First(), s + 1 < ons.Count ? ons[s + 1] : int.MaxValue) - tail * 48;
+                bEnd = Math.Min(bEnd, m.Length - 2);
+                if (bEnd - a < 240) { res[s] = (0, 0, 0); continue; }
+                int W = 24, nw = (bEnd - a) / W; var E = new double[nw];
+                for (int k = 0; k < nw; k++) for (int i = a + k * W; i < a + (k + 1) * W; i++) E[k] = Math.Max(E[k], Math.Abs(m[i + 1] - 2 * m[i] + m[i - 1]));
+                int kb = Array.IndexOf(E, E.Max()); double outside = 0;
+                for (int k = 0; k < nw; k++) if (Math.Abs(k - kb) > 8) outside = Math.Max(outside, E[k]);
+                res[s] = (E[kb] / Math.Max(outside, 1e-4), (a + kb * W - ons[s]) / 48.0, E[kb]);
+            }
+            return res;
+        }
+
+        [Test]
+        public void SpikeTable()
+        {
+            if (Environment.GetEnvironmentVariable("NEO_DIAG") == null) Assert.Ignore("diag");
+            var sb = new List<string>();
+            foreach (var name in Presets.Keys.Where(k => k.StartsWith("Acid")).OrderBy(k => k))
+                foreach (var (ln, line) in new[] { ("pack", Pack), ("busy", Busy) })
+                    foreach (int filter in new[] { 6, 0 })
+                    {
+                        var ev = Sequence(line, 2);
+                        var (l, r, _) = Render(Presets[name], filter, ev, LineSeconds(2));
+                        var sp = InteriorSpikes(Mid(l, r), ev);
+                        var top = sp.Select((x, i) => (x, i)).OrderByDescending(t => t.x.Ratio).Take(6).Select(t => $"s{t.i + 1}:{t.x.Ratio:F1}@{t.x.AtMs:F0}({t.x.Peak:F4})");
+                        sb.Add($"SPK {name,-16} {ln,-5} f{filter}: {string.Join(" ", top)}");
+                    }
+            Measure.Report(string.Join("\n", sb));
+        }
+
+
+        [Test]
+        public void Probe()
+        {
+            if (Environment.GetEnvironmentVariable("NEO_DIAG") == null) Assert.Ignore("diag");
+            string name = Environment.GetEnvironmentVariable("NEO_PRESET") ?? "Acid — Squelch";
+            var ev = Sequence(Pack, 2); var sb = new List<string>();
+            foreach (var (label, tw) in new (string, Action<ParamValues>)[] {
+                ("as is", null),
+                ("reso 0", v => v.Set(P.F1Reso, 0)),
+                ("range 3k", v => v.Set(P.AcidRange, Params.Table[P.AcidRange].Raw(3000))),
+                ("no drive", v => v.Set(P.F1Drive, 0)) })
+            {
+                var (l, r, _) = Render(Presets[name], 6, ev, LineSeconds(2), tw);
+                var m = Mid(l, r);
+                foreach (int step in new[] { 1, 15 })
+                {
+                    int on = (int)((step - 1) * Step); double pk = 0; int at = 0;
+                    for (int i = on + 384; i < on + 2800; i++) { double d = Math.Abs(m[i + 1] - 2 * m[i] + m[i - 1]); if (d > pk) { pk = d; at = i - on; } }
+                    sb.Add($"PRB {label,-9} s{step}: peak {pk:F4} at {at / 48.0:F1} ms; rms 20-40ms {Measure.Rms(m, on + 960, on + 1920):F4}");
+                    if (label == "as is" && step == 1) sb.Add("   d2 around: " + string.Join(" ", Enumerable.Range(at - 6, 14).Select(i => $"{(m[on + i + 1] - 2 * m[on + i] + m[on + i - 1]):F4}")) + "\n   x: " + string.Join(" ", Enumerable.Range(at - 6, 14).Select(i => $"{m[on + i]:F3}")));
+                }
+            }
+            Measure.Report(string.Join("\n", sb));
+        }
+
+
+        [Test]
+        public void CurvTable()
+        {
+            if (Environment.GetEnvironmentVariable("NEO_DIAG") == null) Assert.Ignore("diag");
+            var sb = new List<string>();
+            var combos = (Environment.GetEnvironmentVariable("NEO_COMBOS") ?? "0:6,0.6:2").Split(',').Select(c => c.Split(':')).Select(a => (float.Parse(a[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture)));
+            foreach (var (sm, fall) in combos)
+            {
+                foreach (var name in Presets.Keys.Where(k => k.StartsWith("Acid")).OrderBy(k => k))
+                {
+                    var ev = Sequence(Pack, 2);
+                    var (m, rows) = AcidCutoff.RenderTrace(Presets[name], 6, ev, LineSeconds(2));
+                    var acc = new[] { 1, 4, 7, 9, 12, 15, 17, 20, 23, 25, 28, 31 };
+                    double hz = rows.Where(x => acc.Contains(x.Step)).Average(x => x.MaxHz), hp = rows.Where(x => !acc.Contains(x.Step)).Average(x => x.MaxHz);
+                    sb.Add($"CT sm {sm} fall {fall} {name,-16}: worst {AcidCutoff.Worst(rows) / 1000:F0}k flagged {rows.Count(x => x.Curvature > AcidCutoff.MaxCurvature)} | mean max cutoff accent {hz:F0} Hz plain {hp:F0} Hz");
+                }
+            }
+            Measure.Report(string.Join("\n", sb));
+        }
+
         [Test]
         public void RatioTable()
         {

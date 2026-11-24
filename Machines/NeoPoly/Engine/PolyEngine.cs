@@ -370,14 +370,16 @@ namespace NeoBuzz.Poly
         // Acid patches move filter 1's coefficient sample by sample (a straight line from the last control point to the next), so a fast
         // envelope or an accent is a sweep and not a staircase of steps every ControlRate samples. interp: this block does it.
         bool interp, filterCold = true, cutOctCold = true;
-        float cutOct, noteAge;
+        float cutOct, cutSm1, cutSm2, noteAge;
         /// <summary>
-        /// How fast an acid patch's filter cutoff may move. The cutoff (in octaves) rises at most <see cref="AcidRiseOctMs"/> octaves per millisecond of Soft start per second
-        /// (0.7 / 3.5 ms = 200 octaves a second) for the first <see cref="AcidBoostAt"/> Soft starts of a note, then up to <see cref="AcidRiseBoost"/> times as fast, and falls
+        /// How fast an acid patch's filter cutoff may move, and how smoothly. The cutoff (in octaves) rises at most <see cref="AcidRiseOctMs"/> octaves per millisecond of Soft start
+        /// per second (0.42 / 3.5 ms = 120 octaves a second) for the first <see cref="AcidBoostAt"/> Soft starts of a note, then up to <see cref="AcidRiseBoost"/> times as fast, and falls
         /// <see cref="AcidFallFactor"/> times as fast as it rises. An envelope, an accent and a retrigger together can ask for five or six octaves in a few milliseconds, and a
-        /// resonant filter swept that fast pops at the note's start whatever its ceiling: measured by the AC3 gate, 350 octaves a second is already over the line.
+        /// resonant filter swept that fast pops at the note's start whatever its ceiling. The limited path is then run through two equal one-poles (a critically damped follower,
+        /// <see cref="AcidSmooth"/> times Soft start each): a rate limit alone has a corner where the cutoff meets the decaying envelope and turns from rising to falling, and a
+        /// resonant filter pings at a corner 20 to 35 ms into the note (AC3 round 3). The follower makes the cutoff's slope continuous, so its curvature is bounded.
         /// </summary>
-        internal const float AcidRiseOctMs = 0.42f, AcidFallFactor = 6f, AcidRiseBoost = 3f, AcidBoostAt = 3f;
+        internal const float AcidRiseOctMs = 0.42f, AcidFallFactor = 2f, AcidRiseBoost = 3f, AcidBoostAt = 3f, AcidSmooth = 0.4f;
         float g1Run, g1Step, r1Run, r1Step, g1End, r1End;
 
         // Drift (slow random walk).
@@ -420,6 +422,9 @@ namespace NeoBuzz.Poly
         internal bool Accented => accented;
         /// <summary>Filter 1's cutoff (Hz) at the last control point (test probe).</summary>
         internal float Cut1Hz;
+        /// <summary>The acid cutoff after the rate limit and the follower, in octaves (test access), and the note's age in seconds.</summary>
+        internal float CutOctNow => cutSm2;
+        internal float NoteAgeNow => noteAge;
 
         public void NoteOn(float n, float vel, int unisonIndex, int unisonCount, float glideFrom)
         {
@@ -682,7 +687,7 @@ namespace NeoBuzz.Poly
                 // The cutoff (in octaves) never rises faster than AcidRiseOctPerSec: an envelope, an accent and a retrigger together can ask for five or six octaves
                 // in a few milliseconds, and a resonant filter swept that fast is a pop whatever the ceiling.
                 float so = SoftOctaves(oct1);
-                if (cutOctCold) { cutOct = so; cutOctCold = false; }
+                if (cutOctCold) { cutOct = cutSm1 = cutSm2 = so; cutOctCold = false; }
                 else
                 {
                     noteAge += n / sr;
@@ -690,8 +695,11 @@ namespace NeoBuzz.Poly
                     float after = Math.Min(1f, Math.Max(0f, (noteAge - AcidBoostAt * s.SoftStart) / (AcidBoostAt * s.SoftStart)));
                     float rate = AcidRiseOctMs / s.SoftStart * (1f + (AcidRiseBoost - 1f) * after), up = rate * n / sr, down = up * AcidFallFactor;
                     cutOct = so > cutOct + up ? cutOct + up : so < cutOct - down ? cutOct - down : so;
+                    float k = (n / sr) / (AcidSmooth * s.SoftStart + n / sr);
+                    cutSm1 += k * (cutOct - cutSm1);
+                    cutSm2 += k * (cutSm1 - cutSm2);
                 }
-                cut1 = DspMath.Clamp(SoftCeiling(s.F1Cutoff * PortableMathF.Pow(2, cutOct), range), 16f, sr * 0.48f);
+                cut1 = DspMath.Clamp(SoftCeiling(s.F1Cutoff * PortableMathF.Pow(2, cutSm2), range), 16f, sr * 0.48f);
             }
             else cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
             float reso1 = DspMath.Clamp(s.F1Reso + dst[(int)ModDest.F1Reso], 0, 1);
