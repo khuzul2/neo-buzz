@@ -17,7 +17,7 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class GuideTests
     {
-        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "live-performance", "dye-sound-design", "migrating-songs", "teaching", "performance", "recipes", "troubleshooting" };
+        internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "midi-mapping", "live-performance", "dye-sound-design", "migrating-songs", "teaching", "performance", "recipes", "troubleshooting" };
         static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
@@ -150,6 +150,13 @@ namespace ReBuzz.AgentTests
             ["settings_reset"] = new[] { "key", "section", "all" },
             ["settings_history"] = new[] { "key", "limit" },
             ["midi_bindings_list"] = new[] { "machine" },
+            // MM1 (ReBuzz/Agent/MidiMapTools.cs)
+            ["controller_list"] = new string[0],
+            ["midi_map_list"] = new[] { "scope", "track_id" },
+            ["midi_map_set"] = new[] { "op", "scope", "track_id", "device", "kind", "channel", "number", "encoder", "machine", "parameter", "track", "command", "index", "min", "max", "invert", "takeover", "first_number", "count", "numbers", "keys", "own" },
+            ["midi_map_clear"] = new[] { "device", "kind", "channel", "number", "machine", "parameter", "track", "command", "index", "all", "scope", "track_id" },
+            ["track_page_get"] = new[] { "track_id" },
+            ["track_page_set"] = new[] { "track_id", "page", "slots", "add_page", "select_page", "remove_page" },
             ["midi_bind"] = new[] { "machine", "parameter", "channel", "controller", "track" },
             ["midi_unbind"] = new[] { "machine", "parameter", "track", "all" },
             ["midi_learn"] = new[] { "machine", "parameter", "track", "timeout_seconds" },

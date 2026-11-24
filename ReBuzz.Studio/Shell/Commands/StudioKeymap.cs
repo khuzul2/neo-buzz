@@ -93,6 +93,9 @@ namespace ReBuzz.Studio.Shell.Commands
             C("edit.selectall", "Edit", "Select _All", "Cmd+A"),
             C("edit.deselect", "Edit", "Deselect All", "Shift+Cmd+A|Esc"),
             C("edit.rename", "Edit", "Re_name…", "Cmd+R", help: "The selected machine, track or clip"),
+            C("edit.mapmode", "Edit", "MIDI _Map Mode", "Ctrl+Alt+K", "Alt+Cmd+K", help: "Outlines every control a MIDI controller can drive: click one, then move a knob or press a key on any controller to map it. Esc ends it, Delete unmaps the control waiting"),
+            C("track.previous", "Edit", "Pre_vious Track", "Alt+Up", native: false, help: "Selects the track before: the knobs and keys of your MIDI controllers drive it (a controller button can do it too)"),
+            C("track.next", "Edit", "Ne_xt Track", "Alt+Down", native: false, help: "Selects the next track: the knobs and keys of your MIDI controllers drive it (a controller button can do it too)"),
             C("edit.preferences", "Edit", "Pr_eferences…", "Cmd+Comma"),
 
             C("transport.playstop", "Transport", "Play or St_op", "Space", native: false, help: "In every view, not while typing in a box"),

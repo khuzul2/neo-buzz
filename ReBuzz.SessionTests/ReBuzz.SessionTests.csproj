@@ -31,6 +31,7 @@
     <Compile Include="..\ReBuzz\Core\Session\SessionTake.cs" Link="Engine\SessionTake.cs" />
     <Compile Include="..\ReBuzz\Core\Session\TrackInputs.cs" Link="Engine\TrackInputs.cs" />
     <Compile Include="..\ReBuzz\Midi\MidiDevice.cs" Link="Engine\MidiDevice.cs" />
+    <Compile Include="..\ReBuzz\Midi\Mapping\*.cs" Link="Engine\Mapping\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzz\Audio\EngineInput.cs" Link="Engine\EngineInput.cs" />
     <Compile Include="..\ReBuzz\Core\Session\ClipNotes.cs" Link="Engine\ClipNotes.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\TrackerNotes.cs" Link="Engine\TrackerNotes.cs" />

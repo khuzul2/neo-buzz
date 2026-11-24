@@ -146,6 +146,15 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>What the track selector holds and where its parts are, for a shot's note (the Mac run lost its chip: said here what the layout did).</summary>
+        static string DescribeSelector(MainWindow window)
+        {
+            window.UpdateLayout();
+            var t = window.Transport.Tracks;
+            var parts = ((Avalonia.Controls.Panel)t.Child).Children.Select(c => $"{c.GetType().Name}[{(c as Avalonia.Controls.TextBlock)?.Text}] {c.Bounds.Width:0}x{c.Bounds.Height:0} vis {c.IsVisible}");
+            return $"Selector '{t.NameText}' / chip '{t.FollowersText}' / notice '{t.FreeText}', {t.Bounds.Width:0} wide at {t.Bounds.X:0}, visible {t.IsVisible}: {string.Join("; ", parts)}.";
+        }
+
         static void Record(string file, string what, string how, string size, string song, string notes)
         {
             rows.RemoveAll(r => r.File == file);
@@ -862,6 +871,70 @@ namespace ReBuzz.Studio.Tests
                         "Select the Master, Alt+Cmd+5.");
                     window.Detail.Close();
                     Settle();
+                });
+
+                Try("036-midi-mapping", () =>
+                {
+                    // MM1 (docs/specs/midi-mapping.md): map mode with badges and a control listening, the popover, the Inspector's track page, the top-bar track selector.
+                    var mm = Core.MidiMapping;
+                    ReBuzz.Midi.MidiEngine.SimulatedInputs = new[] { "Faders", "Pads" };
+                    try
+                    {
+                        var ps = demo.Lead.ParameterGroupsList[1].Parameters.Where(x => x.Flags.HasFlag(BuzzGUI.Interfaces.ParameterFlags.State)).Take(6).ToList();
+                        StudioSelection.For(Core).SelectMachine(demo.Lead, null);
+                        mm.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, n)));
+                        var trackId = mm.SelectedTrackId;
+                        mm.SetSlot(trackId, 0, 0, ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[0].Name), new ReBuzz.Midi.Mapping.MapDrive());
+                        mm.SetSlot(trackId, 0, 1, ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[1].Name), new ReBuzz.Midi.Mapping.MapDrive { Takeover = ReBuzz.Midi.Mapping.Takeover.Jump });
+                        mm.SetSlot(trackId, 0, 2, ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[2].Name), new ReBuzz.Midi.Mapping.MapDrive());
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Pads", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 74), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[3].Name), ReBuzz.Core.MapScope.Global);
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Pads", ReBuzz.Midi.Mapping.MapKind.Note, 9, 36), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Command(ReBuzz.Midi.Mapping.MapCommand.Play), ReBuzz.Core.MapScope.Global);
+                        window.Detail.ShowDevice();
+                        window.Transport.Refresh();
+                        Settle();
+                        window.ToggleMapMode();
+                        Settle();
+                        window.MapLayer.Rescan();
+                        window.MapLayer.ArmTarget(ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[4].Name));
+                        Settle();
+                        window.MapLayer.Rescan();
+                        Shot(window, "036-midi-map-mode", "MIDI map mode (MM1): the banner under the top bar, every mappable control outlined, badges on the mapped ones (K1 to K3 from the Faders group, a pad's CC), one control listening, the track selector at the right of the view strip.",
+                            "Edit, Map MIDI controls (Ctrl+Alt+K).");
+                        // The Device panel scrolled so a card is half out of view: its outline stops at the panel's edge and none reaches the Inspector.
+                        var devicePage = MidiMappingUiTests.DeviceViewOf(window);
+                        var cardsScroller = devicePage?.Cards.Scroller;
+                        Assert.That(cardsScroller != null && MidiMappingUiTests.ScrollHalfACardOut(window, cardsScroller), Is.True, "the Device panel scrolls so a card is cut by its edge");
+                        window.MapLayer.Rescan();
+                        Shot(window, "036-midi-map-mode-scrolled", "MIDI map mode with the Device panel scrolled (MM1b): a card half out of view is outlined as far as it is in view, the outline stops at the panel's edge and none spills over the Inspector.",
+                            "Edit, Map MIDI controls (Ctrl+Alt+K), then scroll the Device panel.");
+                        cardsScroller.Offset = default;
+                        Settle();
+                        window.MapLayer.Rescan();
+                        window.MapLayer.Mode.Exit();
+                        window.MapLayer.OpenForTarget(ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[3].Name));
+                        Settle();
+                        Shot(window, "036-midi-popover", "The MIDI popover (MM1): scope (This track or Global), what it is mapped to, Listen and Unmap, the range, Invert and the takeover mode.",
+                            "The MIDI button of a control, or a badge's Edit.");
+                        window.MapLayer.Close();
+                        Settle();
+                        window.Transport.Refresh();
+                        Shot(window, "036-midi-top-bar", "The track selector with two devices following (MM1b): ◀ Lead ▶ and a muted \"2 devices\" chip (their names are its tooltip), at the right end of the view strip's row under the top bar; the top bar keeps one row with Lock, Keys and the device picker.",
+                            "Right end of the row of Arrangement, Session, Machines.",
+                            notes: DescribeSelector(window));
+                        window.Inspector.MidiPage.Refresh();
+                        Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
+                            "Select a track; the Inspector's Selection tab.");
+                    }
+                    finally
+                    {
+                        window.MapLayer.Mode.Exit();
+                        mm.CancelListening();
+                        mm.Edit((c, sg) => { c.Global.Clear(); c.Groups.Clear(); c.NoKeys.Clear(); sg.Tracks.Clear(); sg.Global = null; });
+                        ReBuzz.Midi.MidiEngine.SimulatedInputs = null;
+                        Settle();
+                    }
                 });
 
                 Try("030-sequence", () =>

@@ -19,6 +19,15 @@ namespace ReBuzz.Midi
         /// <summary>The computer keyboard playing notes.</summary>
         public static MidiDevice Keyboard => new MidiDevice(-2, KeyboardName);
 
+        /// <summary>
+        /// Fork (docs/specs/midi-mapping.md, MM1): what a mapping calls this controller: its name, and " #2", " #3" for a second and third one of
+        /// the same name (set when the port opens, so a message never builds the text). Null: the name.
+        /// </summary>
+        public string Key { get; init; }
+
+        /// <summary>The controller's identity for mappings and roles: <see cref="Key"/>, else the name ("" for no device).</summary>
+        public string Id => Key ?? Name ?? "";
+
         public bool IsUnknown => Index == -1 && string.IsNullOrEmpty(Name);
 
         public bool IsKeyboard => Index == -2;
