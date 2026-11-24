@@ -258,7 +258,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | gear_list | 5 | 7 | yes |
 | guide | 33 | 59 | yes |
 | history_jump | 1 | 1 | yes |
-| history_list | 3 | 1 | yes |
+| history_list | 4 | 1 | yes |
 | machine_add | 17 | 37 | yes |
 | machine_attributes | 1 | 1 | yes |
 | machine_clone | 1 | 1 | yes |
@@ -283,7 +283,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | midi_bindings_list | 8 | 6 | yes |
 | midi_learn | 5 | 4 | yes |
 | midi_map_clear | 1 | 1 | yes |
-| midi_map_list | 1 | 1 | yes |
+| midi_map_list | 1 | 2 | yes |
 | midi_map_set | 1 | 2 | yes |
 | midi_play | 8 | 4 | yes |
 | midi_unbind | 3 | 3 | yes |
@@ -347,7 +347,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | target_build | 1 | 2 | yes |
 | theory | 4 | 13 | yes |
 | track_input | 5 | 9 | yes |
-| track_page_get | 1 | 1 | yes |
+| track_page_get | 1 | 2 | yes |
 | track_page_set | 1 | 1 | yes |
 | transport | 7 | 9 | yes |
 | undo | 12 | 1 | yes |
