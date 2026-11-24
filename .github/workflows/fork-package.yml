@@ -659,7 +659,7 @@ jobs:
     needs: package
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v5
 
@@ -708,7 +708,7 @@ jobs:
     needs: package
     if: ${{ !cancelled() }}
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v5
 
