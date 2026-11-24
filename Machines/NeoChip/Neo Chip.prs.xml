@@ -1,0 +1,591 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Lead — Square hero">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="129" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="610" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="528" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="125" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="332" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="924" />
+      </Parameters>
+      <Attributes />
+      <Comment>Bold 50 % square mono lead with delayed vibrato and crisp stepped ADSR.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Thin 12 %">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="450" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="654" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="81" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="633" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="10" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="514" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="90" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="674" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="265" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+      </Parameters>
+      <Attributes />
+      <Comment>Cutting 12.5 % pulse lead with animated PWM and lively vibrato.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Pulse bass">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="81" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="562" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="9" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="447" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="946" />
+      </Parameters>
+      <Attributes />
+      <Comment>Tight mono 25 % pulse bass with snappy pluck-sustain envelope.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Arp — Major sparkle">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="2" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="81" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="622" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="11" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="499" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="1" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="3" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="650" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="837" />
+      </Parameters>
+      <Attributes />
+      <Comment>Bright tempo-synced 1/32 major triad arpeggio across mixed pulse duties.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Arp — Minor run">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="300" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="546" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="350" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="583" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="250" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="498" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="163" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="648" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="11" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="552" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="27" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="2" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="750" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="826" />
+      </Parameters>
+      <Attributes />
+      <Comment>Bouncing up-down minor triad arpeggio at 1/16T with gentle PWM shimmer.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pad — Unison detune">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="550" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="284" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="373" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="600" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="332" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="2" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="360" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="677" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="703" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="13" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="760" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="1000" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="826" />
+      </Parameters>
+      <Attributes />
+      <Comment>Wide three-voice detuned unison pad with slow PWM and stepped swell.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Noise hat">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="841" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="4" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="189" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="588" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="352" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="384" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="250" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="946" />
+      </Parameters>
+      <Attributes />
+      <Comment>Crisp metallic 7-bit short LFSR hi-hat with a fast one-shot decay.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Noise snare">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="649" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="4" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="189" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="588" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="433" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="544" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="312" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="150" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="946" />
+      </Parameters>
+      <Attributes />
+      <Comment>Crunchy 15-bit long LFSR snare with a downward pitch sweep and one-shot decay.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="FX — Laser sweep">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="4" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="189" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="588" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="399" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="591" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="62" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+      </Parameters>
+      <Attributes />
+      <Comment>Fast downward pitch sweep on a 25 % pulse with one-shot decay.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="FX — Coin">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="4" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="189" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="588" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="399" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="622" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="4" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="2" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="29" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="706" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+      </Parameters>
+      <Attributes />
+      <Comment>Crisp two-step fourth jump on a 50 % square wave with one-shot decay.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bell — Hardware envelope">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="189" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="588" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="688" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="192" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="750" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="880" />
+      </Parameters>
+      <Attributes />
+      <Comment>Shimmering polyphonic bell driven by a rapid repeating triangle hardware envelope.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Raw — Lo-res grit">
+    <Preset Machine="Neo Chip">
+      <Parameters>
+        <Parameter Name="P1 duty" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="P1 PWM" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="P1 PWM rate" Group="1" Index="2" Track="0" Value="565" />
+        <Parameter Name="P1 pan" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="P2 duty" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="P2 PWM" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="P2 PWM rate" Group="1" Index="6" Track="0" Value="600" />
+        <Parameter Name="P2 pan" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="P3 duty" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="P3 PWM" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="P3 PWM rate" Group="1" Index="10" Track="0" Value="510" />
+        <Parameter Name="P3 pan" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Noise mode" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Noise pitch" Group="1" Index="13" Track="0" Value="709" />
+        <Parameter Name="Noise pan" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Noise MIDI ch" Group="1" Index="15" Track="0" Value="10" />
+        <Parameter Name="Voice mode" Group="1" Index="16" Track="0" Value="2" />
+        <Parameter Name="Detune" Group="1" Index="17" Track="0" Value="520" />
+        <Parameter Name="Velocity depth" Group="1" Index="18" Track="0" Value="700" />
+        <Parameter Name="Raw" Group="1" Index="19" Track="0" Value="1" />
+        <Parameter Name="Env mode" Group="1" Index="20" Track="0" Value="1" />
+        <Parameter Name="Env attack" Group="1" Index="21" Track="0" Value="189" />
+        <Parameter Name="Env decay" Group="1" Index="22" Track="0" Value="588" />
+        <Parameter Name="Env sustain" Group="1" Index="23" Track="0" Value="12" />
+        <Parameter Name="Env release" Group="1" Index="24" Track="0" Value="514" />
+        <Parameter Name="Env period" Group="1" Index="25" Track="0" Value="552" />
+        <Parameter Name="Env sync" Group="1" Index="26" Track="0" Value="5" />
+        <Parameter Name="Arp mode" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Arp steps" Group="1" Index="28" Track="0" Value="3" />
+        <Parameter Name="Arp step 1" Group="1" Index="29" Track="0" Value="24" />
+        <Parameter Name="Arp step 2" Group="1" Index="30" Track="0" Value="28" />
+        <Parameter Name="Arp step 3" Group="1" Index="31" Track="0" Value="31" />
+        <Parameter Name="Arp rate" Group="1" Index="32" Track="0" Value="607" />
+        <Parameter Name="Arp sync" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Pitch sweep" Group="1" Index="34" Track="0" Value="500" />
+        <Parameter Name="Vib depth" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Vib rate" Group="1" Index="36" Track="0" Value="650" />
+        <Parameter Name="Vib delay" Group="1" Index="37" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="800" />
+        <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="1" />
+        <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="859" />
+      </Parameters>
+      <Attributes />
+      <Comment>Stepped aliased pulse edges and 4-bit per-channel DAC with a rhythmic saw-down hardware envelope.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

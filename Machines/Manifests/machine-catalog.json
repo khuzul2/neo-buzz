@@ -590,6 +590,22 @@
    ],
    "use_for": "Watch the spectrum of any signal, with peak hold, without changing it."
   },
+  "Neo Chip": {
+   "category": "Synths",
+   "tags": [
+    "chiptune",
+    "lead",
+    "bass",
+    "arpeggio",
+    "percussion",
+    "noise",
+    "polyphonic",
+    "monophonic",
+    "tempo-sync",
+    "bitcrush"
+   ],
+   "use_for": "Retro sound-chip synth with three pulse channels, 15-bit and 7-bit LFSR noise, 16-step and hardware envelopes, per-track arpeggio, pitch sweep and 4-bit DAC grit."
+  },
   "Neo Clipper": {
    "category": "Distortion",
    "tags": [

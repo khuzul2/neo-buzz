@@ -1,0 +1,191 @@
+# Neo Chip factory presets (docs/specs/neo-chip.md). Rebuild: python3 tools/gen-machine-presets.py Machines/NeoChip
+machine "Neo Chip"
+
+preset "Lead — Square hero"
+comment "Bold 50 % square mono lead with delayed vibrato and crisp stepped ADSR."
+Voice mode = Mono
+P1 duty = 50%
+P1 PWM = 0
+Env mode = ADSR
+Env attack = 0.003
+Env decay = 0.18
+Env sustain = 12
+Env release = 0.09
+Vib depth = 25
+Vib rate = 5.5
+Vib delay = 220
+Stereo spread = 0
+Volume = 2.5
+
+preset "Lead — Thin 12 %"
+comment "Cutting 12.5 % pulse lead with animated PWM and lively vibrato."
+Voice mode = Mono
+P1 duty = 12.5%
+P1 PWM = 45
+P1 PWM rate = 3.2
+Env mode = ADSR
+Env attack = 0.002
+Env decay = 0.22
+Env sustain = 10
+Env release = 0.08
+Vib depth = 18
+Vib rate = 6.0
+Vib delay = 140
+Stereo spread = 0
+Volume = 3.0
+
+preset "Bass — Pulse bass"
+comment "Tight mono 25 % pulse bass with snappy pluck-sustain envelope."
+Voice mode = Mono
+P1 duty = 25%
+P1 PWM = 0
+Env mode = ADSR
+Env attack = 0.002
+Env decay = 0.12
+Env sustain = 9
+Env release = 0.045
+Stereo spread = 0
+Volume = 3.5
+
+preset "Arp — Major sparkle"
+comment "Bright tempo-synced 1/32 major triad arpeggio across mixed pulse duties."
+Voice mode = Poly
+P1 duty = 25%
+P2 duty = 50%
+P3 duty = 12.5%
+Env mode = ADSR
+Env attack = 0.002
+Env decay = 0.20
+Env sustain = 11
+Env release = 0.07
+Arp mode = Up
+Arp steps = 3
+Arp step 1 = 0
+Arp step 2 = 4
+Arp step 3 = 7
+Arp sync = 1/32
+Stereo spread = 65
+Volume = -1.5
+
+preset "Arp — Minor run"
+comment "Bouncing up-down minor triad arpeggio at 1/16T with gentle PWM shimmer."
+Voice mode = Poly
+P1 duty = 50%
+P1 PWM = 30
+P1 PWM rate = 1.8
+P2 duty = 25%
+P2 PWM = 35
+P2 PWM rate = 2.2
+P3 duty = 75%
+P3 PWM = 25
+P3 PWM rate = 1.4
+Env mode = ADSR
+Env attack = 0.004
+Env decay = 0.25
+Env sustain = 11
+Env release = 0.11
+Arp mode = Up-Down
+Arp steps = 3
+Arp step 1 = 0
+Arp step 2 = 3
+Arp step 3 = 7
+Arp sync = 1/16T
+Stereo spread = 75
+Volume = -2.0
+
+preset "Pad — Unison detune"
+comment "Wide three-voice detuned unison pad with slow PWM and stepped swell."
+Voice mode = Unison
+Detune = 18
+P1 duty = 50%
+P1 PWM = 55
+P1 PWM rate = 0.45
+P2 duty = 25%
+P2 PWM = 65
+P2 PWM rate = 0.72
+P3 duty = 75%
+P3 PWM = 60
+P3 PWM rate = 0.58
+Env mode = ADSR
+Env attack = 0.32
+Env decay = 0.40
+Env sustain = 13
+Env release = 0.65
+Stereo spread = 100
+Volume = -2.0
+
+preset "Drums — Noise hat"
+comment "Crisp metallic 7-bit short LFSR hi-hat with a fast one-shot decay."
+Noise mode = Short
+Noise pitch = 18000
+Noise MIDI ch = All
+Env mode = Decay shot
+Env period = 0.065
+Env release = 0.02
+Stereo spread = 25
+Volume = 3.5
+
+preset "Drums — Noise snare"
+comment "Crunchy 15-bit long LFSR snare with a downward pitch sweep and one-shot decay."
+Noise mode = Long
+Noise pitch = 5500
+Noise MIDI ch = All
+Env mode = Decay shot
+Env period = 0.19
+Env release = 0.04
+Pitch sweep = -36
+Stereo spread = 15
+Volume = 3.5
+
+preset "FX — Laser sweep"
+comment "Fast downward pitch sweep on a 25 % pulse with one-shot decay."
+Voice mode = Mono
+P1 duty = 25%
+Env mode = Decay shot
+Env period = 0.26
+Env release = 0.03
+Pitch sweep = -84
+Stereo spread = 0
+Volume = 3.0
+
+preset "FX — Coin"
+comment "Crisp two-step fourth jump on a 50 % square wave with one-shot decay."
+Voice mode = Mono
+P1 duty = 50%
+Env mode = Decay shot
+Env period = 0.32
+Env release = 0.03
+Arp mode = As written
+Arp steps = 2
+Arp step 1 = 0
+Arp step 2 = 5
+Arp rate = 18
+Stereo spread = 0
+Volume = 3.0
+
+preset "Bell — Hardware envelope"
+comment "Shimmering polyphonic bell driven by a rapid repeating triangle hardware envelope."
+Voice mode = Poly
+P1 duty = 12.5%
+P2 duty = 25%
+P3 duty = 12.5%
+Env mode = Triangle
+Env period = 0.018
+Env release = 0.35
+Stereo spread = 75
+Volume = 0.5
+
+preset "Raw — Lo-res grit"
+comment "Stepped aliased pulse edges and 4-bit per-channel DAC with a rhythmic saw-down hardware envelope."
+Voice mode = Unison
+Detune = 26
+Raw = On
+Lo-res DAC = On
+P1 duty = 75%
+P2 duty = 12.5%
+P3 duty = 25%
+Env mode = Saw down
+Env sync = 1/16
+Env release = 0.08
+Stereo spread = 80
+Volume = -0.5
