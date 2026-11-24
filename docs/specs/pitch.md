@@ -212,7 +212,7 @@ Right-click an audio clip (a Session slot, an Arrangement clip) or use the MIDI 
 
 How the audio maps to the clip: a note at second s of the asset sits at the clip beat the clip's warp map gives for the sample (warp markers or the clip's tempo), in ticks; a reversed clip puts the notes backwards (pitch bends are not written); the clip's **Transpose** (and Detune, rounded to a semitone) is added to the pitches of melody and harmony; gain, fades and the clip's loop region do not matter (the whole asset is read; notes past the clip's end are dropped). The audio is mixed to mono (the mean of the two channels) and may be up to 20 minutes.
 
-The agent has `audio_convert_to_midi(machine, pattern, mode, range, min_note_ms, smooth_ms, pitch_bends, onset_threshold, frame_threshold, drum_threshold, quantize, strength, apply)`; `apply=false` reports the notes (up to 200, in beats) and changes nothing. It is in the guide of Neo Audio and of composition, and in `docs/agent-coverage.md`.
+The agent has `audio_convert_to_midi(machine, pattern, mode, range, min_note_ms, smooth_ms, pitch_bends, onset_threshold, frame_threshold, drum_threshold, quantize, strength, apply)`; `apply=false` reports the notes (up to 200, in beats) and changes nothing. It is in the guide of Neo Audio and of composition, and in `docs/agent-coverage.md`. Its sibling `audio_slice_to_midi` cuts the clip into sampler slices instead of finding notes ([`audio-to-midi.md`](audio-to-midi.md) section 10).
 
 ### 9.2 Melody (one note at a time)
 

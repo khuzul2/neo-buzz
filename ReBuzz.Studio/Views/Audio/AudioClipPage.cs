@@ -63,7 +63,7 @@ namespace ReBuzz.Studio.Views.Audio
         readonly ComboBox warp, preserve;
         readonly Control preserveRow;
         readonly TextBox tempo, transpose, detune, gain, fadeIn, fadeOut, start, loopStart, loopEnd;
-        readonly Button halve, doubleIt, detect, clear, fit, convert;
+        readonly Button halve, doubleIt, detect, clear, fit, convert, slice;
         // Fork (WM1): segment tempo, quantize and follow.
         readonly TextBox segBefore, segAfter, strength;
         readonly Button segHalve, segDouble, quantize;
@@ -114,6 +114,8 @@ namespace ReBuzz.Studio.Views.Audio
             // Fork (docs/specs/pitch.md section 9): the clip's notes as MIDI on a new track; the page's right-click menu offers the same.
             var convertMenu = ConvertFlow.ButtonMenu(() => shown);
             convert = Btn("Convert to MIDI ▾", "Find the melody, the harmony or the drums in the audio and put them on a new MIDI track, in a clip where this one is", () => convertMenu.Open(convert), "Convert to MIDI");
+            // Fork (docs/specs/audio-to-midi.md, SL1): the clip cut into up to 16 slices played from a Neo Sampler on a new MIDI track.
+            slice = Btn("Slice to new MIDI track…", "Cut the audio into up to 16 slices (at its transients, its warp markers or a grid) and play them from a Neo Sampler on a new MIDI track, in a clip where this one is", () => _ = SliceFlow.SliceClip(shown), "Slice to new MIDI track");
             transpose = Box("Transpose, semitones (-48 to 48)", CommitPitch, "Transpose");
             detune = Box("Detune, cents (-50 to 50)", CommitPitch, "Detune");
             gain = Box("Gain, dB (-70 to 24)", CommitGain, "Gain");
@@ -174,7 +176,7 @@ namespace ReBuzz.Studio.Views.Audio
                     Row("Transpose", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { transpose, Unit("semitones") } }),
                     Row("Detune", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { detune, Unit("cents") } }),
                     Row("Gain", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { gain, Unit("dB") } }),
-                    Row("MIDI", convert),
+                    Row("MIDI", new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Children = { convert, slice } }),
                 },
             };
             var left = new ScrollViewer
@@ -217,7 +219,9 @@ namespace ReBuzz.Studio.Views.Audio
             var headerText = new StackPanel { Orientation = Orientation.Horizontal, Children = { title, info, status } };
             header.Children.Add(headerText);
             DockPanel.SetDock(header, Dock.Top);
-            var frame = new DockPanel { LastChildFill = true, ContextMenu = convertMenu };
+            var pageMenu = ConvertFlow.ButtonMenu(() => shown);
+            SliceFlow.AddTo(pageMenu, () => shown);
+            var frame = new DockPanel { LastChildFill = true, ContextMenu = pageMenu };
             frame.Children.Add(header);
             DockPanel.SetDock(empty, Dock.Top);
             frame.Children.Add(empty);
@@ -269,6 +273,7 @@ namespace ReBuzz.Studio.Views.Audio
         internal Button ClearButton => clear;
         internal Button FitButton => fit;
         internal Button ConvertButton => convert;
+        internal Button SliceButton => slice;
         internal TextBox SegmentBeforeBox => segBefore;
         internal TextBox SegmentAfterBox => segAfter;
         internal Button SegmentHalveButton => segHalve;
