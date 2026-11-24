@@ -1,5 +1,5 @@
 // Fork (docs/specs/neo-audio.md, NA2): audio clips in the Arrangement, driven as a user does it (mouse and keys on the canvas) and as the
-// agent does it (arrangement_clip, audio_clip_set). Each gesture is one undo step, comes back with redo, and is saved in the .nbl and the .bmx.
+// agent does it (arrangement_clip, audio_clip_set). Each gesture is one undo step, comes back with redo, and is saved in the .nbl.
 
 using System;
 using System.IO;
@@ -239,7 +239,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the gestures
 
         [AvaloniaTest]
-        public void AnAudioClipMovesAndMovesToAnotherNeoAudioTrack([Values(".nbl", ".bmx")] string ext)
+        public void AnAudioClipMovesAndMovesToAnotherNeoAudioTrack([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -250,7 +250,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AnAudioClipMovesAcrossToAnotherNeoAudioTrack([Values(".nbl", ".bmx")] string ext)
+        public void AnAudioClipMovesAcrossToAnotherNeoAudioTrack([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -264,7 +264,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AltDragCopiesAnAudioClipAndTheCopyIsIndependent([Values(".nbl", ".bmx")] string ext)
+        public void AltDragCopiesAnAudioClipAndTheCopyIsIndependent([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -287,7 +287,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheRightEdgeTrimsAnAudioClip([Values(".nbl", ".bmx")] string ext)
+        public void TheRightEdgeTrimsAnAudioClip([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -298,7 +298,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AltDragOfTheRightEdgeStretchesAnAudioClip([Values(".nbl", ".bmx")] string ext)
+        public void AltDragOfTheRightEdgeStretchesAnAudioClip([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -314,7 +314,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheLoopSwitchAndDraggingTheEdgeRepeatAnAudioClip([Values(".nbl", ".bmx")] string ext)
+        public void TheLoopSwitchAndDraggingTheEdgeRepeatAnAudioClip([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheFadeHandlesSetTheFadesOfAnAudioClip([Values(".nbl", ".bmx")] string ext)
+        public void TheFadeHandlesSetTheFadesOfAnAudioClip([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -342,7 +342,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheGainHandleSetsTheGainInDecibels([Values(".nbl", ".bmx")] string ext)
+        public void TheGainHandleSetsTheGainInDecibels([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -354,7 +354,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ClipsThatOverlapCrossfade([Values(".nbl", ".bmx")] string ext)
+        public void ClipsThatOverlapCrossfade([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var first = rig.Clip(rig.LaneA, 0);
@@ -369,7 +369,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void CtrlESplitsAtTheCursorAndCtrlJConsolidates([Values(".nbl", ".bmx")] string ext)
+        public void CtrlESplitsAtTheCursorAndCtrlJConsolidates([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -389,7 +389,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void RPlaysAnAudioClipBackwards([Values(".nbl", ".bmx")] string ext)
+        public void RPlaysAnAudioClipBackwards([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
@@ -425,7 +425,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheAgentEditsAudioClipsInTheArrangement([Values(".nbl", ".bmx")] string ext)
+        public void TheAgentEditsAudioClipsInTheArrangement([Values(".nbl")] string ext)
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);

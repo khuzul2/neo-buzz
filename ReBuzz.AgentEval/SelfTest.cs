@@ -207,7 +207,7 @@ namespace ReBuzz.AgentEval
                 var ctx = new TaskContext(t.Name, Path.Combine(Path.GetTempPath(), "rebuzz-agenteval-selftest", t.Name));
                 var result = new TaskResult { Criteria = t.Score(empty, empty, ctx) };
                 Expect((t is KnowledgeTask || result.Criteria.Count >= 4) && !result.Passed, $"{t.Name}: an empty song fails ({result.Total:F2})");
-                Expect(t.Brief(ctx).Contains("song_save(path=") && t.Brief(ctx).Contains("result.bmxml"), $"{t.Name}: the brief says where to save");
+                Expect(t.Brief(ctx).Contains("song_save(path=") && t.Brief(ctx).Contains("result.nbl"), $"{t.Name}: the brief says where to save");
             }
         }
 

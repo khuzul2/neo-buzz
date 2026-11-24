@@ -199,7 +199,7 @@ Plan. Say each step in a sentence before doing it; render and measure before you
 7. Arrangement: patterns per section, placed with `arrangement_place(machine=…, pattern=…, at=…, repeat_every_beats=…, times=…)`, following the energy table (add or remove layers every 8 bars); builds and fills with `automation_write`.
 8. Listen: `render(section=…)` for each section as you go, then the whole song with `render()`; `analyze(source=…, metrics=[""loudness"", ""peaks"", ""key"", ""tempo"", ""spectrum""])`. The key and tempo must read back as written; the drop or chorus 2–6 LU louder than the breakdown or verse.
 9. Quick balance: probe every part (`render(probes=[…])`), set levels with `connection_set` so no part clips and the master peaks at or below -6 dBTP (the mixing guide has the numbers).
-10. Save: `song_save(path=…)` as .bmxml.
+10. Save: `song_save(path=…)` as .nbl.
 Report the form (sections and bars), key, tempo, the sounds, and the measured loudness, peak, key and tempo.
 ");
             AppendGuides(sb, "workflow", "composition", "genres");

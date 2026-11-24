@@ -429,8 +429,6 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase(".nbl")]
-        [TestCase(".bmx")]
-        [TestCase(".bmxml")]
         public void LocksAndPinsSurviveASaveAndAnOpen(string extension)
         {
             NewSong();

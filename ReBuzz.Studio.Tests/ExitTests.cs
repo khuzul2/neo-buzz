@@ -1,9 +1,7 @@
 // Fork (docs/specs/studio-mvp.md S9): P3's exit test, headless. A song made from an empty one by
 // simulated mouse and keys alone (machine view, a Neo editor, a parameter window, the Pattern and
-// Sequence tabs, the transport, the Session View), played through the engine, saved as BMXML and
-// BMX and opened again: the same song, and the same samples. Then the Windows-made songs in the
-// repository open with their native machines as placeholders and save back without loss, as
-// tools/song-roundtrip.py judges it. And the MCP server's start-up option, which CI uses to run the
+// Sequence tabs, the transport, the Session View), played through the engine, saved as .nbl
+// and opened again: the same song, and the same samples. And the MCP server's start-up option, which CI uses to run the
 // A7 live scenarios against the real app (tools/headless-live.py --studio). Screenshots: exit-*.png.
 
 using System;
@@ -199,8 +197,6 @@ namespace ReBuzz.Studio.Tests
                     foreach (var c in p.Columns)
                         lines.Add($"{at}pattern {p.Name}, column {c.Type} {c.Machine?.Name} {c.Parameter?.Name}[{c.Track}]: {string.Join(" ", c.GetEvents(0, int.MaxValue).Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");
                 }
-                // (An editor without patterns holds nothing. BMX links editors through patterns, so Master's,
-                // made when it was selected, isn't in a BMX file; BMXML keeps it.)
                 if (m.EditorMachine != null && m.Patterns.Count > 0)
                     lines.Add($"{at}pattern editor {m.EditorMachine.DLL.Name}: {Hex(core.MachineManager.GetMachineData(m.EditorMachine))}");
             }
@@ -504,8 +500,7 @@ namespace ReBuzz.Studio.Tests
                 SessionCore.Timestamp = Stopwatch.GetTimestamp;
 
                 // The playing left stateless parameters (notes too) at their last values, and the song
-                // files keep them. Opening a song mustn't play them again: BMX's loader skips them, as
-                // Buzz does, and BMXML's does too since S9 (BMXMLFile.CopyParameters). The renders after
+                // files keep them. Opening a song mustn't play them again: the loader skips them. The renders after
                 // reopening, bit-identical to the one made before the session played, show it.
                 int left = 0;
                 foreach (var m in Core.SongCore.MachinesList.Where(m => !m.Hidden))
@@ -517,11 +512,11 @@ namespace ReBuzz.Studio.Tests
                         }
                 Assert.That(left, Is.GreaterThan(0), "the playing left a stateless value for the files to keep (what this checks)");
 
-                // ---- Save as BMXML and BMX (Shift+Ctrl/Command+S), a new song (Ctrl/Command+N), each opened again (Ctrl/Command+O).
+                // ---- Save as .nbl (Shift+Ctrl/Command+S), a new song (Ctrl/Command+N), each opened again (Ctrl/Command+O).
                 var made = Snapshot();
                 Assert.That(made.Count(l => l.StartsWith("machine ")), Is.EqualTo(5));
                 string dir = Folder("from-scratch");
-                foreach (var ext in new[] { ".bmxml", ".bmx" })
+                foreach (var ext in new[] { ".nbl" })
                 {
                     string path = Path.Combine(dir, "exit song" + ext);
                     SongFiles.Picker = saving => saving ? path : null;
@@ -529,7 +524,7 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(File.Exists(path), Is.True, ext + " saved");
                     Assert.That(Core.Modified, Is.False);
                 }
-                foreach (var ext in new[] { ".bmxml", ".bmx" })
+                foreach (var ext in new[] { ".nbl" })
                 {
                     string path = Path.Combine(dir, "exit song" + ext);
                     Key(window, PhysicalKey.N, Cmd);
@@ -544,9 +539,9 @@ namespace ReBuzz.Studio.Tests
                     int first = Enumerable.Range(0, played.Length).FirstOrDefault(i => BitConverter.SingleToInt32Bits(played[i]) != BitConverter.SingleToInt32Bits(again[i]), -1);
                     Assert.That(first, Is.EqualTo(-1), $"{ext}: the render is bit-identical (first difference at frame {first / 2}: {(first >= 0 ? played[first] : 0)} vs {(first >= 0 ? again[first] : 0)})");
                     Assert.That(Wire(verb.Name, "Master").Pan, Is.EqualTo(pannedTo));
-                    window.ShowView(ext == ".bmxml" ? "Machines" : "Sequence");
+                    window.ShowView("Sequence");
                     Settle();
-                    Studio.Screenshot(window, ext == ".bmxml" ? "exit-10-reopened-bmxml" : "exit-11-reopened-bmx");
+                    Studio.Screenshot(window, "exit-11-reopened");
                 }
             }
             finally
@@ -556,223 +551,6 @@ namespace ReBuzz.Studio.Tests
                 SongFiles.New().Wait();
             }
         }
-
-        // ------------------------------------------------------------------ 2. old songs open and save back
-
-        internal static string Repo
-        {
-            get
-            {
-                string dir = AppContext.BaseDirectory;
-                while (dir != null && !File.Exists(Path.Combine(dir, "ReBuzz.sln"))) dir = Path.GetDirectoryName(dir);
-                return dir;
-            }
-        }
-
-        /// <summary>The Buzz songs in the repository, made on Windows (the machines' demo songs).</summary>
-        static List<string> OldSongs() =>
-            Repo == null ? new List<string>() :
-            Directory.EnumerateFiles(Path.Combine(Repo, "ExternalMachines", "source"), "*.*", SearchOption.AllDirectories)
-                .Where(f => f.EndsWith(".bmx", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".bmw", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(f => f, StringComparer.Ordinal).ToList();
-
-        /// <summary>Whether a BMX file has a PARA section (without it, only the machine's DLL knows its parameters).</summary>
-        static bool HasPara(string bmx)
-        {
-            using var r = new BinaryReader(File.OpenRead(bmx));
-            if (r.ReadUInt32() != 0x7A7A7542) return false;
-            uint sections = r.ReadUInt32();
-            for (uint i = 0; i < sections; i++)
-            {
-                string name = new string(r.ReadChars(4));
-                r.ReadUInt64();
-                if (name == "PARA") return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// tools/song-roundtrip.py's checks on the studio's saves: A (the original saved) and B (A opened
-        /// and saved again) the same, and nothing the original says about a machine lost in A.
-        /// </summary>
-        internal static (int Exit, string Output) RoundTripCheck(params string[] args)
-        {
-            var start = new ProcessStartInfo("python3") { RedirectStandardOutput = true, RedirectStandardError = true };
-            start.ArgumentList.Add("-I");
-            start.ArgumentList.Add(Path.Combine(Repo, "tools", "song-roundtrip.py"));
-            foreach (var a in args) start.ArgumentList.Add(a);
-            Process p;
-            try
-            {
-                p = Process.Start(start)!;
-            }
-            catch (System.ComponentModel.Win32Exception)
-            {
-                Assert.Inconclusive("python3 isn't on the PATH: tools/song-roundtrip.py makes the comparison");
-                return (0, null);
-            }
-            string output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            return (p.ExitCode, output.Trim());
-        }
-
-        [AvaloniaTest]
-        public void OldSongsOpenWithPlaceholdersAndSaveBackWithoutLoss()
-        {
-            using var restore = Studio.AfterTest(PutBack);
-            var songs = OldSongs();
-            if (songs.Count == 0) Assert.Ignore("the demo songs aren't in this checkout");
-            var (window, view) = OpenEmpty();
-            ToolTip.SetServiceEnabled(window, false);
-            var messages = new List<string>();
-            Dialogs.Responder = (m, c, b) =>
-            {
-                messages.Add(m);
-                return b == UserButtons.Ok ? UserAnswer.Ok : UserAnswer.No;
-            };
-            string work = Folder("old-songs");
-            var report = new List<string>();
-            var problems = new List<string>();
-            int opened = 0;
-            (int Placeholders, string Path) richest = (0, null);
-            try
-            {
-                void Open(string path)
-                {
-                    SongFiles.Picker = saving => saving ? null : path;
-                    Key(window, PhysicalKey.O, Cmd);
-                    Settle();
-                }
-                void SaveAs(string path)
-                {
-                    SongFiles.Picker = saving => saving ? path : null;
-                    Key(window, PhysicalKey.S, Cmd | RawInputModifiers.Shift);
-                    Assert.That(File.Exists(path), Is.True, path + " saved");
-                }
-                foreach (var song in songs)
-                {
-                    string name = Path.GetFileName(song);
-                    messages.Clear();
-                    Open(song);
-                    if (Core.SongCore.SongName != song)
-                    {
-                        bool para = HasPara(song);
-                        report.Add($"skip {name}: it doesn't open ({string.Join(" / ", messages.Take(2))}){(para ? "" : "; no PARA section: its parameters need the machines' DLLs, as on Windows without them")}");
-                        if (para) problems.Add($"{name}: has PARA but didn't open: {string.Join(" / ", messages)}");
-                        continue;
-                    }
-                    opened++;
-
-                    // Native machines are placeholders; Master and the pattern editors are the only machines that run.
-                    var machines = Core.SongCore.MachinesList.Where(m => !m.Hidden && m.DLL.Info.Type != MachineType.Master).ToList();
-                    Assert.That(machines, Is.Not.Empty, name);
-                    var running = machines.Where(m => !m.DLL.IsMissing).Select(m => $"{m.Name} ({m.DLL.Name})").ToList();
-                    Assert.That(running, Is.Empty, $"{name}: every native machine is a placeholder");
-
-                    // The views open on it: each machine's box is where it is hit; the arrangement's
-                    // tracks; a machine's patterns in the Pattern tab; the Session View's tracks.
-                    window.ShowView("Machines");
-                    Settle();
-                    foreach (var m in machines)
-                    {
-                        var box = view.Canvas.BoxOf(m);
-                        Assert.That(box.Width, Is.GreaterThan(0), $"{name}: {m.Name} has a box");
-                    }
-                    Key(window, PhysicalKey.F4);
-                    var sequence = (SequenceView)((TabItem)window.Tabs.SelectedItem!).Content!;
-                    Assert.That(sequence.Canvas.Rows, Is.EqualTo(Core.Song.Sequences.Count), $"{name}: the arrangement's tracks");
-                    // F2: the Pattern tab, as the song left it. A pattern it names is the one its editor shows.
-                    Key(window, PhysicalKey.F2);
-                    Assert.That(window.Detail.IsMaximised, Is.True, "F2: the Tracker");
-                    var page = PatternView.Page;
-                    if (page.Pattern != null)
-                        Assert.That(page.EditorControl, Is.Not.Null, $"{name}: the Pattern tab names {page.Machine?.Name}'s {page.Pattern.Name}, and shows its editor");
-                    var patterned = Core.Song.Machines.FirstOrDefault(m => m.Patterns.Count > 0 && !((MachineCore)m).Hidden && m.DLL.Info.Type != MachineType.Master);
-                    if (patterned != null)
-                    {
-                        PatternView.Edit(patterned);
-                        Settle();
-                        Assert.That(window.Detail.IsOpen, Is.True, $"{name}: the Tracker shows {patterned.Name}");
-                        Assert.That(PatternView.Page.Machine, Is.SameAs(patterned));
-                        Assert.That(PatternView.Page.EditorControl, Is.Not.Null, $"{name}: {patterned.Name}'s patterns in the Modern Pattern Editor");
-                    }
-                    Key(window, PhysicalKey.Tab, RawInputModifiers.Control);
-                    var session = (SessionView)((TabItem)window.Tabs.SelectedItem!).Content!;
-                    Settle();
-                    Assert.That(session.Headers.Count, Is.EqualTo(Core.SessionLayout.TrackCount), $"{name}: the Session View's tracks");
-                    if (name == "FSM_Infector_Demo.bmx")
-                    {
-                        Studio.Screenshot(window, "exit-old-session");
-                        window.ShowView("Pattern");
-                        Settle();
-                        Studio.Screenshot(window, "exit-old-pattern");
-                        window.ShowView("Sequence");
-                        Settle();
-                        Studio.Screenshot(window, "exit-old-sequence");
-                        window.ShowView("Machines");
-                        Settle();
-                        Studio.Screenshot(window, "exit-old-machines");
-                    }
-                    window.ShowView("Machines");
-                    Settle();
-
-                    // Saved back, as the round-trip tool does it: the original saved as A, A opened and saved as B, each format.
-                    string stem = Path.Combine(work, Path.GetFileNameWithoutExtension(song));
-                    foreach (var ext in new[] { ".bmx", ".bmxml" })
-                    {
-                        if (ext == ".bmxml") Open(song);
-                        string a = stem + ".A" + ext, b = stem + ".B" + ext;
-                        SaveAs(a);
-                        Open(a);
-                        Assert.That(Core.SongCore.SongName, Is.EqualTo(a), $"{name}: A{ext} opens");
-                        SaveAs(b);
-                        var (exit, output) = RoundTripCheck("--compare", song, a, b);
-                        report.Add($"{(exit == 0 ? "ok  " : "FAIL")} {name} {ext}: {output}");
-                        if (exit != 0) problems.Add($"{name} {ext}: {output}");
-                        int placeholders = machines.Count;
-                        if (ext == ".bmxml" && placeholders > richest.Placeholders) richest = (placeholders, a);
-                    }
-                }
-
-                // A song as ReBuzz on Windows saves one with the Modern Pattern Editor's data (none is in the
-                // repository: the tool writes one in the editor's format, into the richest song saved above).
-                // It opens and saves byte for byte, both formats.
-                Assert.That(richest.Path, Is.Not.Null);
-                string ws = Path.Combine(work, "windows-style.bmxml");
-                var made = RoundTripCheck("--windows-style", richest.Path, ws);
-                Assert.That(made.Exit, Is.EqualTo(0), made.Output);
-                var saves = new List<string>();
-                foreach (var ext in new[] { ".bmxml", ".bmx" })
-                {
-                    Open(ws);
-                    Assert.That(Core.SongCore.SongName, Is.EqualTo(ws), "the Windows-style song opens");
-                    if (ext == ".bmxml")
-                    {
-                        Key(window, PhysicalKey.F2);
-                        Studio.Screenshot(window, "exit-old-windows-style");
-                    }
-                    string a = Path.Combine(work, "windows-style.A" + ext), b = Path.Combine(work, "windows-style.B" + ext);
-                    SaveAs(a);
-                    Open(a);
-                    SaveAs(b);
-                    saves.Add(a);
-                    saves.Add(b);
-                }
-                var checkedWs = RoundTripCheck(new[] { "--check-windows-style", ws }.Concat(saves).ToArray());
-                report.Add($"{(checkedWs.Exit == 0 ? "ok  " : "FAIL")} windows-style.bmxml (from {Path.GetFileName(richest.Path)}): {checkedWs.Output}");
-                if (checkedWs.Exit != 0) problems.Add("windows-style.bmxml: " + checkedWs.Output);
-            }
-            finally
-            {
-                TestContext.Out.WriteLine(string.Join("\n", report));
-                Close(window);
-                SongFiles.New().Wait();
-            }
-            Assert.That(opened, Is.GreaterThan(songs.Count / 2), "most of the songs open");
-            Assert.That(problems, Is.Empty, "saved back without loss (tools/song-roundtrip.py)");
-        }
-
-        // ------------------------------------------------------------------ 3. the MCP server, started for a run
 
         [AvaloniaTest]
         public void TheAgentStartupOptionAllowsAgentsForOneRunWithoutSavingIt()

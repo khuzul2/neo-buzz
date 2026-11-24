@@ -136,7 +136,7 @@ namespace ReBuzz.AgentEval
             var copy = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "B" })["notes"];
             r.Expect(JsonNode.DeepEquals(copy, again), "pattern_duplicate changed the notes");
             // They survive saving and opening the song.
-            string song = Path.Combine(env.Folder, "notes.bmxml");
+            string song = Path.Combine(env.Folder, "notes.nbl");
             s.Save(song);
             s.Open(song);
             var reopened = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A" })["notes"];
@@ -241,7 +241,7 @@ namespace ReBuzz.AgentEval
             Recipes.Pattern(s, "Bass", "Line", 8, Enumerable.Range(0, 16).Select(i => J.Note(i % 3 == 0 ? "A1" : "A2", i * 0.5, 0.3, 80 + i * 3)));
             Recipes.Place(s, "Keys", "Chords", 0);
             Recipes.Place(s, "Bass", "Line", 0);
-            string song = Path.Combine(env.Folder, "determinism.bmxml");
+            string song = Path.Combine(env.Folder, "determinism.nbl");
             s.Save(song);
             return song;
         }
@@ -379,7 +379,7 @@ namespace ReBuzz.AgentEval
             r.Expect(J.Str(k2["key"]?["name"]) == "C major", $"C major scale: key {J.Str(k2["key"]?["name"])}");
 
             // A render: the tool's numbers are our meters' numbers on its WAV.
-            string song = Path.Combine(env.Folder, "determinism.bmxml");
+            string song = Path.Combine(env.Folder, "determinism.nbl");
             if (!File.Exists(song)) song = DeterminismSong(s, env);
             s.Open(song);
             var rendered = c.Ok("render", new JsonObject { ["tail_seconds"] = 1 });

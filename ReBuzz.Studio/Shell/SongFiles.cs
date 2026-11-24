@@ -11,10 +11,7 @@ namespace ReBuzz.Studio.Shell
 {
     internal static class SongFiles
     {
-        static readonly FilePickerFileType Songs = new FilePickerFileType("Songs (.nbl, .bmx, .bmxml, .bmw)") { Patterns = new[] { "*.nbl", "*.bmx", "*.bmxml", "*.bmw" } };
         static readonly FilePickerFileType Nbl = new FilePickerFileType("NeoBuzz Live song (.nbl)") { Patterns = new[] { "*.nbl" } };
-        static readonly FilePickerFileType Bmx = new FilePickerFileType("Song with waves (.bmx)") { Patterns = new[] { "*.bmx" } };
-        static readonly FilePickerFileType Bmxml = new FilePickerFileType("ReBuzz XML (.bmxml)") { Patterns = new[] { "*.bmxml" } };
 
         /// <summary>Tests choose here instead of a picker: (saving?) → a path, or null to cancel.</summary>
         public static System.Func<bool, string> Picker { get; set; }
@@ -27,7 +24,7 @@ namespace ReBuzz.Studio.Shell
         {
             if (Picker != null) return Picker(false);
             if (Storage == null) return null;
-            var files = await Storage.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Open song", FileTypeFilter = new[] { Songs }, AllowMultiple = false });
+            var files = await Storage.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Open song", FileTypeFilter = new[] { Nbl }, AllowMultiple = false });
             return files.FirstOrDefault()?.TryGetLocalPath();
         }
 
@@ -39,7 +36,7 @@ namespace ReBuzz.Studio.Shell
             {
                 Title = "Save song",
                 SuggestedFileName = suggested ?? "Untitled.nbl",
-                FileTypeChoices = new[] { Nbl, Bmxml, Bmx },
+                FileTypeChoices = new[] { Nbl },
                 DefaultExtension = "nbl",
             });
             return file?.TryGetLocalPath();
@@ -79,8 +76,7 @@ namespace ReBuzz.Studio.Shell
         {
             var core = Core;
             if (core == null) return false;
-            // A song opened from a .bmx, .bmw or .bmxml is saved as a new .nbl: the original is never overwritten without asking (native-format.md §7).
-            if (core.SongCore.SongName == null || (core.LegacyOrigin != null && core.LegacyOrigin == core.SongCore.SongName)) return await SaveAs();
+            if (core.SongCore.SongName == null) return await SaveAs();
             core.SaveSongFile(core.SongCore.SongName);
             return !core.Modified;
         }
@@ -89,9 +85,7 @@ namespace ReBuzz.Studio.Shell
         {
             var core = Core;
             if (core == null) return false;
-            string path = await PickSave(core.SongCore.SongName == null ? null
-                : core.LegacyOrigin != null ? System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(core.SongCore.SongName), ".nbl")
-                : System.IO.Path.GetFileName(core.SongCore.SongName));
+            string path = await PickSave(core.SongCore.SongName == null ? null : System.IO.Path.GetFileName(core.SongCore.SongName));
             if (path == null) return false;
             StudioHost.Current.SaveChoice.Next = path;
             core.SaveSongFile(null);                // the engine takes the name, as from its own dialog

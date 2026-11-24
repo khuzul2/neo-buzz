@@ -708,7 +708,7 @@ namespace ReBuzz.Studio.Tests
         {
             string dir = TestTemp.Path("rebuzz-studio-sequence-" + Environment.ProcessId);
             Directory.CreateDirectory(dir);
-            string path = Path.Combine(dir, "arranged.bmxml");
+            string path = Path.Combine(dir, "arranged.nbl");
             using var rig = new Rig();
             Rig.Machine("Lead", ("Hook", 16, new[] { 0, 4, 8 }), ("Riff", 32, new[] { 0, 12 }));
             Rig.Machine("Bass", ("Line", 32, new[] { 0, 16 }));
@@ -771,33 +771,6 @@ namespace ReBuzz.Studio.Tests
                 "the Windows editors' subsections");
             rig.Screenshot("sequence-14-reopened");
             canvas.SetZoom(SequenceGeometry.DefaultTickWidth, null);
-        }
-
-        [AvaloniaTest]
-        public void AnOldBuzzSongShowsItsArrangementAndSavesItBack()
-        {
-            string repo = AppContext.BaseDirectory;
-            while (repo != null && !File.Exists(Path.Combine(repo, "ReBuzz.sln"))) repo = Path.GetDirectoryName(repo);
-            string song = repo == null ? null : Path.Combine(repo, "ExternalMachines", "source", "buzztrax-buzzmachines", "FSM", "Infector", "FSM_Infector_Demo.bmx");
-            if (song == null || !File.Exists(song)) Assert.Ignore("the demo song isn't in this checkout");
-            using var rig = new Rig();
-            Assert.That(SongFiles.Open(song).Result, Is.True);
-            Settle();
-            int rows = Song.Sequences.Count;
-            Assert.That(rows, Is.GreaterThan(0), "the demo has tracks");
-            var before = Enumerable.Range(0, rows).Select(Events).ToList();
-            Assert.That(before.Any(e => e.Length > 0), Is.True, "and events");
-            Assert.That(rig.Canvas.Rows, Is.EqualTo(rows));
-            Assert.That(rig.Canvas.TimeSignatures.Entries, Is.EqualTo(new System.Collections.Generic.Dictionary<int, int> { [0] = 16 }), "no editor data: the default bars");
-            rig.Screenshot("sequence-15-old-song");
-
-            string copy = TestTemp.Path("rebuzz-studio-sequence-" + Environment.ProcessId, "infector.bmxml");
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            SongFiles.Picker = save => copy;
-            Assert.That(SongFiles.SaveAs().Result, Is.True);
-            Assert.That(SongFiles.Open(copy).Result, Is.True);
-            Settle();
-            Assert.That(Enumerable.Range(0, Song.Sequences.Count).Select(Events), Is.EqualTo(before), "the arrangement round-trips");
         }
 
         // ------------------------------------------------------------------ pure logic

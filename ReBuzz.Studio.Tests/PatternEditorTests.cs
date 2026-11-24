@@ -571,7 +571,7 @@ namespace ReBuzz.Studio.Tests
                 byte[] before = core.MachineManager.GetMachineData(s.Machine.EditorMachine);
                 SongFiles.Picker = save => null;
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                foreach (var ext in new[] { ".bmxml", ".bmx" })
+                foreach (var ext in new[] { ".nbl" })
                 {
                     string path = System.IO.Path.Combine(dir, "editor data" + ext);
                     SongFiles.Picker = save => path;

@@ -322,7 +322,7 @@ namespace ReBuzz.Core
         {
             if (Group == null)
             {
-                // ParameterCore is used as a temporary storage in BMXFile. FIXME?
+                // ParameterCore is used as a temporary storage in NblCoreSections. FIXME?
                 return;
             }
 

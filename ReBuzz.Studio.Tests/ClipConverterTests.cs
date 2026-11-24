@@ -36,7 +36,7 @@ namespace ReBuzz.Studio.Tests
 
         static ClipMigration.Result Migrate(byte[] blob, ClipLog log, int length = 8) => ClipMigration.FromBlob(blob, Machines(), _ => length, log, "Trk");
 
-        static ClipMigration.Result Migrate(BlobPattern[] patterns, ClipLog log, int length = 8) => Migrate(ClipBlob.WriteMpe(patterns), log, length);
+        static ClipMigration.Result Migrate(BlobPattern[] patterns, ClipLog log, int length = 8) => Migrate(ClipBlobWriter.WriteMpe(patterns), log, length);
 
         static ClipLane Lane(ClipMigration.Result r, string key, int clip = 0) => r.Clips[clip].Lanes.SingleOrDefault(l => l.Key == key);
 
@@ -73,7 +73,7 @@ namespace ReBuzz.Studio.Tests
         public void TheModernEditorsDataReadsBackWhatItWasWrittenWith()
         {
             var p = Pat("A", 2, 4, Col("Trk", 0, 0, new[] { (0, 5), (240, 7) }, new[] { 4, 3 }), Col("Trk", 1, 2, new[] { (480, 0x41) }, new[] { 4, 3 }));
-            var blob = ClipBlob.WriteMpe(new[] { p, Pat("B", 1, 6) }, stamp: Enumerable.Range(0, 32).Select(i => (byte)i).ToArray());
+            var blob = ClipBlobWriter.WriteMpe(new[] { p, Pat("B", 1, 6) });
             var back = ClipBlob.Parse(blob);
             Assert.That(back.Problem, Is.Null);
             Assert.That(back.Format, Is.EqualTo(BlobFormat.Mpe1));
@@ -81,9 +81,6 @@ namespace ReBuzz.Studio.Tests
             var c = back.Patterns[0].Columns[0];
             Assert.That((c.Machine, c.ParamIndex, c.Track, c.BeatRows), Is.EqualTo(("Trk", 0, 0, new List<int> { 4, 3 })));
             Assert.That(c.Events.Select(e => (e.Time, e.Value)), Is.EqualTo(new[] { (0, 5), (240, 7) }));
-            Assert.That(back.Stamp, Is.EqualTo(Enumerable.Range(0, 32).Select(i => (byte)i).ToArray()), "the stamp after the patterns");
-            Assert.That(ClipBlob.Parse(ClipBlob.WriteMpe(new[] { p })).Stamp, Is.Null);
-            Assert.That(BitConverter.ToInt32(blob, 2), Is.EqualTo(blob.Length - 5 - 32 + 4 + 1 - 4 - 1 + 0 + 0 - 0 + 0 == 0 ? 0 : BitConverter.ToInt32(blob, 2)), "the size field is whatever the editor writes");
         }
 
         [AvaloniaTest]
@@ -118,7 +115,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void NoPrefixOfABlobAndNoJunkMakesTheReaderThrow()
         {
-            var blob = ClipBlob.WriteMpe(new[] { Pat("A", 2, 4, Col("Trk", 0, 0, new[] { (0, 5) }, new[] { 4, 4 })) }, new byte[32]);
+            var blob = ClipBlobWriter.WriteMpe(new[] { Pat("A", 2, 4, Col("Trk", 0, 0, new[] { (0, 5) }, new[] { 4, 4 })) });
             for (int n = 0; n <= blob.Length; n++)
                 Assert.DoesNotThrow(() => ClipBlob.Parse(blob.Take(n).ToArray()), $"a blob cut at {n}");
             var rnd = new Random(7);
@@ -270,7 +267,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(r.Clips, Is.Empty);
             Assert.That(log.Entries.Single().Tag, Is.EqualTo(ClipTags.ForeignDropped));
 
-            var good = ClipBlob.WriteMpe(new[] { Pat("A", 2, 4, Col("Trk", 1, 0, new[] { (0, 0x41) }, new[] { 4, 4 })), Pat("B", 2, 4, Col("Trk", 1, 0, new[] { (0, 0x44) }, new[] { 4, 4 })) });
+            var good = ClipBlobWriter.WriteMpe(new[] { Pat("A", 2, 4, Col("Trk", 1, 0, new[] { (0, 0x41) }, new[] { 4, 4 })), Pat("B", 2, 4, Col("Trk", 1, 0, new[] { (0, 0x44) }, new[] { 4, 4 })) });
             var log2 = new ClipLog();
             var r2 = Migrate(good.Take(good.Length - 9).ToArray(), log2);
             Assert.That(r2.Clips.Count, Is.EqualTo(1).Or.EqualTo(2));
@@ -301,68 +298,6 @@ namespace ReBuzz.Studio.Tests
             Assert.That(result.Conserved && result.EventsIn == 6 + 12 && result.EventsDropped == 12, Is.True);
         }
 
-        // ------------------------------------------------------------------ export
-
-        static ClipContent Clip(string name, params ClipLane[] lanes) => new ClipContent { Name = name, Length = 8, RowsPerBeat = 4, Lanes = lanes.ToList() };
-
-        static ClipLane P(string machine, int group, int index, int track, params PatternEvent[] events) =>
-            new ClipLane { Kind = ClipLaneKind.Parameter, Machine = machine, Group = group, Index = index, Track = track, Events = events.ToList(), Grid = "rpb=4" };
-
-        [AvaloniaTest]
-        public void TheDerivedBlobHoldsTrackMachinesLanesNotTheNotesLaneNorTheEnginesOwnColumnsAndIsStamped()
-        {
-            var auto = P("Trk", 1, 0, 0, new PatternEvent(0, 5));
-            auto.Meta[ClipMeta.SessionAutomation] = "1";
-            var notes = new ClipLane { Kind = ClipLaneKind.Notes, Machine = "Trk", Events = { new PatternEvent(0, ClipEvents.NoteOn(60, 100), 240) } };
-            var clip = Clip("A", P("Trk", 2, 0, 1, new PatternEvent(0, 0x41), new PatternEvent(240, Off)), notes, auto, P("Other", 1, 0, 0, new PatternEvent(480, 9)));
-            var log = new ClipLog();
-            var blob = ClipExport.ToBlob(new[] { clip }, Machines(), pxp: false, log);
-            var parsed = ClipBlob.Parse(blob);
-            Assert.That(parsed.Problem, Is.Null);
-            Assert.That(parsed.Patterns.Single().Columns.Select(c => (c.Machine, c.ParamIndex, c.Track)), Is.EquivalentTo(new[] { ("Trk", 1, 1), ("Other", 0, 0) }),
-                "the track parameter 0 is column 1 (after the one global); no MIDI lane, no automation column");
-            Assert.That(parsed.Stamp, Is.EqualTo(ClipContent.Hash(new[] { clip })));
-            Assert.That(log.ByTag()[ClipTags.MidiNotInBlob].Events, Is.EqualTo(1));
-            Assert.That(log.ByTag()[ClipTags.AutoNotInBlob].Events, Is.EqualTo(1));
-            var changed = Clip("A", P("Trk", 2, 0, 1, new PatternEvent(0, 0x41), new PatternEvent(240, 0x44)));
-            Assert.That(ClipContent.Hash(new[] { changed }), Is.Not.EqualTo(parsed.Stamp), "a changed store has another stamp: the blob is stale");
-        }
-
-        [AvaloniaTest]
-        public void ThePatternXPBlobPutsEventsOnRowsAndTheLogCountsTheOnesThatMoved()
-        {
-            var lane = P("Trk", 2, 0, 0, new PatternEvent(0, 0x41), new PatternEvent(100, 0x44), new PatternEvent(240, 0x47));
-            var log = new ClipLog();
-            var blob = ClipExport.ToBlob(new[] { Clip("A", lane) }, Machines(), pxp: true, log);
-            var parsed = ClipBlob.Parse(blob);
-            Assert.That(parsed.Format, Is.EqualTo(BlobFormat.Pxp3));
-            Assert.That(parsed.Patterns[0].Columns[0].Events.Select(e => e.Time), Is.EqualTo(new[] { 0, 0, 240 }), "the event at 100 is on row 0");
-            Assert.That(log.ByTag()[ClipTags.ExportQuantized].Events, Is.EqualTo(1));
-        }
-
-        [AvaloniaTest]
-        public void ARampIsWrittenAsStepsAtTheRowsAndTheLogSaysSo()
-        {
-            var lane = P("Trk", 1, 0, 0, new PatternEvent(0, 0, 960), new PatternEvent(960, 100));
-            var log = new ClipLog();
-            var parsed = ClipBlob.Parse(ClipExport.ToBlob(new[] { Clip("A", lane) }, Machines(), pxp: false, log));
-            Assert.That(parsed.Patterns[0].Columns[0].Events.Select(e => (e.Time, e.Value)), Is.EqualTo(new[] { (0, 0), (240, 25), (480, 50), (720, 75), (960, 100) }));
-            Assert.That(log.ByTag()[ClipTags.RampSampled].Events, Is.EqualTo(1));
-        }
-
-        [AvaloniaTest]
-        public void ALaneTheBlobCannotHoldAndAMuteAreLoggedAsLosses()
-        {
-            var mute = P("Trk", 1, 0, 0, new PatternEvent(0, 5));
-            mute.Mute = true;
-            var log = new ClipLog();
-            ClipExport.ToBlob(new[] { Clip("A", mute, P("Nobody", 1, 0, 0, new PatternEvent(0, 1)), P("Trk", 2, 5, 0, new PatternEvent(0, 1))) }, Machines(), false, log);
-            Assert.That(log.ByTag()[ClipTags.LaneNotInBlob], Is.EqualTo((2, 2)));
-            Assert.That(log.ByTag()[ClipTags.MuteNotInBlob].Entries, Is.EqualTo(1));
-        }
-
-        // ------------------------------------------------------------------ the engine's store
-
         static MachineCore AddPoly()
         {
             var song = Studio.Host.Core.SongCore;
@@ -371,7 +306,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void GridMuteAndAnExplicitNoteOffSurviveASaveInEveryFormat([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void GridMuteAndAnExplicitNoteOffSurviveASaveInEveryFormat([Values(".nbl")] string extension)
         {
             var core = Studio.Host.Core;
             AudioHygieneTests.NewSong();

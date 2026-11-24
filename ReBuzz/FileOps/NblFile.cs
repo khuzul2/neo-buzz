@@ -1,5 +1,5 @@
 // Fork (docs/specs/native-format.md): the native song file, .nbl. Reads and writes the same in-memory song the BMX
-// writer reads and writes: the core sections are the ones BMXFile builds and loads (in UTF-8), kept as content-addressed
+// writer reads and writes: the core sections are the ones NblCoreSections builds and loads (in UTF-8), kept as content-addressed
 // chunks; the subsections the stores write (Session View, arrangement, markers, notes…) are manifest fields; the
 // embedded history shares the chunk store with the rest.
 
@@ -54,14 +54,14 @@ namespace ReBuzz.FileOps
         };
 
         readonly ReBuzzCore buzz;
-        readonly BMXFile inner;
+        readonly NblCoreSections inner;
 
         public event Action<FileEventType, string, object> FileEvent;
 
         public NblFile(ReBuzzCore buzz, string buzzPath, IUiDispatcher dispatcher, IKeyboard keyboard, EngineSettings engineSettings)
         {
             this.buzz = buzz;
-            inner = new BMXFile(buzz, buzzPath, dispatcher, keyboard, engineSettings);
+            inner = new NblCoreSections(buzz, buzzPath, dispatcher, keyboard, engineSettings);
             inner.FileEvent += (t, s, o) => FileEvent?.Invoke(t, s, o);
         }
 
@@ -97,7 +97,7 @@ namespace ReBuzz.FileOps
             // The audio assets come before the sections: the Session View's clips name them (docs/specs/neo-audio.md).
             if (import) foreach (var a in audioAssets) buzz.AudioAssets.Add(a);
             else buzz.AudioAssets.ReplaceWith(audioAssets);
-            using (BMXFile.Utf8Strings())
+            using (NblCoreSections.Utf8Strings())
                 inner.LoadFrom(stream, path, x, y, importAction);
             if (!import && keyedMachines != null) ApplyKeyed(buzz, keyedMachines);
         }
@@ -169,10 +169,10 @@ namespace ReBuzz.FileOps
                         carry.Stores[st.Key] = entry.DeepClone();
                     }
                 }
-            parts.Add(((uint)BMXFile.SectionType.IUGB, BMXFile.BuildSubSections(subs.OrderBy(s => s.Name, StringComparer.Ordinal))));
+            parts.Add(((uint)NblCoreSections.SectionType.IUGB, NblCoreSections.BuildSubSections(subs.OrderBy(s => s.Name, StringComparer.Ordinal))));
 
             if (!import && manifest["history"] is JsonObject history)
-                parts.Add(((uint)BMXFile.SectionType.HIST, PackHistory(history, ctx)));
+                parts.Add(((uint)NblCoreSections.SectionType.HIST, PackHistory(history, ctx)));
 
             foreach (var m in manifest)
                 if (!KnownMembers.Contains(m.Key))
@@ -180,7 +180,7 @@ namespace ReBuzz.FileOps
             CollectBlobs(carry.Members, ctx, carry.Blobs);
             CollectBlobs(carry.Stores, ctx, carry.Blobs);
 
-            return (new MemoryStream(BMXFile.Assemble(parts), false), carry);
+            return (new MemoryStream(NblCoreSections.Assemble(parts), false), carry);
         }
 
         static byte[] Join(JsonArray chunks, NblReadContext ctx)
@@ -255,13 +255,8 @@ namespace ReBuzz.FileOps
             {
                 List<(uint Magic, byte[] Data)> parts;
                 // Fork (clips.md §7.2, CU3): a native song holds its clips as lanes in the pattern columns, so its pattern editors' data holds no events.
-                ClipDerived.Native = true;
-                try
-                {
-                    using (BMXFile.Utf8Strings())
-                        parts = inner.BuildSections(true);
-                }
-                finally { ClipDerived.Native = false; }
+                using (NblCoreSections.Utf8Strings())
+                    parts = inner.BuildSections(true);
                 var blobs = new NblBlobSet();
                 var manifest = BuildManifest(buzz, parts, blobs, buzz.NativeCarry);
                 NblContainer.WriteAtomic(filename, Encoding.UTF8.GetBytes(manifest.ToJsonString(ManifestJson)), blobs);
@@ -299,12 +294,12 @@ namespace ReBuzz.FileOps
             JsonObject history = null;
             foreach (var (magic, data) in parts)
             {
-                if (magic == (uint)BMXFile.SectionType.IUGB)
+                if (magic == (uint)NblCoreSections.SectionType.IUGB)
                 {
-                    foreach (var sub in BMXFile.ParseSubSections(data).OrderBy(s => s.Name, StringComparer.Ordinal))
+                    foreach (var sub in NblCoreSections.ParseSubSections(data).OrderBy(s => s.Name, StringComparer.Ordinal))
                         stores[sub.Name] = StoreEntry(sub.Data, blobs);
                 }
-                else if (magic == (uint)BMXFile.SectionType.HIST)
+                else if (magic == (uint)NblCoreSections.SectionType.HIST)
                     history = HistoryEntry(data, blobs);
                 else
                     sections.Add(new JsonObject { ["id"] = IdOf(magic), ["size"] = data.Length, ["chunks"] = Refs(blobs.AddChunked(data)) });
@@ -328,7 +323,7 @@ namespace ReBuzz.FileOps
             }
             // Fork (clips.md §7.2, CU3): a song whose tracker data is lanes in the store (which an older build does not play: its editor data holds no events)
             // needs a reader of format 3: an older build refuses and says so, rather than open the song without them.
-            if (ClipDerived.Direct && ClipStore.HoldsTrackerLanes(buzz.SongCore))
+            if (PatternColumnCore.PlaysEveryLane && ClipStore.HoldsTrackerLanes(buzz.SongCore))
                 root["minReaderVersion"] = Math.Max((int)root["minReaderVersion"], 3);
             if (history != null) root["history"] = history;
             if (carry != null)

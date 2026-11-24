@@ -459,7 +459,7 @@ namespace ReBuzz.Studio.Tests
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Settle();
-            string path = TestTemp.Path($"ux-revert-{Environment.ProcessId}.bmxml");
+            string path = TestTemp.Path($"ux-revert-{Environment.ProcessId}.nbl");
             try
             {
                 Core.Modified = false;

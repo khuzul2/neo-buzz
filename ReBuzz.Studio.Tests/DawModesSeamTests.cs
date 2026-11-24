@@ -1,7 +1,7 @@
 // Fork (docs/specs/daw-modes.md AR0): the engine seams the arrangement, piano roll and tracker
 // views will use, on the studio's engine (Linux CI runs these): S1 the song meter, S2 clip ids on
 // sequence events, S3 automation ramps, S4 note sources; and the exit check, a song with clips,
-// loops, ramps and a meter that round-trips in .bmx and .bmxml with its core sections unchanged.
+// loops, ramps and a meter that round-trips in .nbl.
 
 using System;
 using System.Collections.Generic;
@@ -50,7 +50,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ S1: the song meter
 
         [AvaloniaTest]
-        public void TheSequenceEditorsBarsAreTheEnginesSongMeterAndSongFilesKeepThem([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void TheSequenceEditorsBarsAreTheEnginesSongMeterAndSongFilesKeepThem([Values(".nbl")] string extension)
         {
             using var rig = new SessionRig("Lead");
             var meter = rig.Core.SongMeter;
@@ -81,7 +81,7 @@ namespace ReBuzz.Studio.Tests
             rig.Layout.SetBeatsPerBar(5);
             rig.Core.SongMeter.Set(0, 12);
             Assert.That(rig.Session.BeatsPerBar, Is.EqualTo(5), "the session's own bar, set in the Session View, stays");
-            SaveAndOpen(rig, Work("own-bar.bmx"));
+            SaveAndOpen(rig, Work("own-bar.nbl"));
             Assert.That(rig.Session.BeatsPerBar, Is.EqualTo(5));
             Assert.That(rig.Core.SongMeter.Entries[0], Is.EqualTo(12));
         }
@@ -105,7 +105,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ S2: clip ids on events
 
         [AvaloniaTest]
-        public void ClipIdsAndLoopsSurviveEditsUndoAndSongFiles([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void ClipIdsAndLoopsSurviveEditsUndoAndSongFiles([Values(".nbl")] string extension)
         {
             using var rig = new SessionRig("Lead");
             var lead = rig.Machine("Lead");
@@ -401,66 +401,8 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ the exit check (daw-modes.md §9, AR0)
 
-        /// <summary>BMX sections by name (as the file spells them), each section's bytes.</summary>
-        static Dictionary<string, byte[]> BmxSections(string path)
-        {
-            var data = File.ReadAllBytes(path);
-            using var r = new BinaryReader(new MemoryStream(data));
-            Assert.That(r.ReadUInt32(), Is.EqualTo(0x7A7A7542u), "a Buzz file");
-            uint count = r.ReadUInt32();
-            var sections = new Dictionary<string, byte[]>();
-            for (uint i = 0; i < count; i++)
-            {
-                string name = Encoding.ASCII.GetString(r.ReadBytes(4));
-                uint offset = r.ReadUInt32(), size = r.ReadUInt32();
-                sections[name] = data.AsSpan((int)offset, (int)size).ToArray();
-            }
-            return sections;
-        }
-
-        const string SubSections = "BGUI";      // SectionType.IUGB as the file spells it: where the subsections are
-
-        /// <summary>A BMXML file without its stamps (name, build, date) and, with <paramref name="core"/>, without its subsections.</summary>
-        static string Bmxml(string path, bool core)
-        {
-            string text = File.ReadAllText(path);
-            text = Regex.Replace(text, "<ReBuzzSong[^>]*>", m => Regex.Replace(m.Value, "\\s(Name|Build|BuildString)=\"[^\"]*\"", ""));
-            if (core) text = Regex.Replace(text, "<SubSenctions>.*</SubSenctions>", "", RegexOptions.Singleline);
-            return text;
-        }
-
-        static string Repo
-        {
-            get
-            {
-                string dir = AppContext.BaseDirectory;
-                while (dir != null && !File.Exists(Path.Combine(dir, "ReBuzz.sln"))) dir = Path.GetDirectoryName(dir);
-                return dir;
-            }
-        }
-
-        static (int Exit, string Output)? RoundTripTool(params string[] args)
-        {
-            if (Repo == null) return null;
-            var start = new ProcessStartInfo("python3") { RedirectStandardOutput = true, RedirectStandardError = true };
-            start.ArgumentList.Add("-I");
-            start.ArgumentList.Add(Path.Combine(Repo, "tools", "song-roundtrip.py"));
-            foreach (var a in args) start.ArgumentList.Add(a);
-            try
-            {
-                using var p = Process.Start(start)!;
-                string output = p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
-                p.WaitForExit();
-                return (p.ExitCode, output.Trim());
-            }
-            catch (System.ComponentModel.Win32Exception)
-            {
-                return null;
-            }
-        }
-
         [AvaloniaTest]
-        public void ASongWithClipsLoopsRampsAndAMeterRoundTripsWithItsCoreSectionsUnchanged()
+        public void ASongWithClipsLoopsRampsAndAMeterRoundTripsInNbl()
         {
             using var rig = new SessionRig("Lead", "Bass");
             var layout = rig.Layout;
@@ -492,43 +434,16 @@ namespace ReBuzz.Studio.Tests
             string song = Describe();
             Assert.That(song, Does.Contain(":c1").And.Contain("/" + 8 * TB), "the song has clips and a ramp:\n" + song);
 
-            string original = Work("song.bmx");
+            string original = Work("song.nbl");
             rig.Core.SaveSongCopy(original);
-            var problems = new List<string>();
-            foreach (var ext in new[] { ".bmx", ".bmxml" })
-            {
-                string fileA = Work("song.A" + ext), fileB = Work("song.B" + ext);
-                SaveAndOpen(rig, original);
-                rig.Core.SaveSongCopy(fileA);
-                SaveAndOpen(rig, fileA);
-                Assert.That(Describe(), Is.EqualTo(song), $"{ext}: everything comes back");
-                rig.Core.SaveSongCopy(fileB);
-                if (ext == ".bmx")
-                    Assert.That(File.ReadAllBytes(fileB), Is.EqualTo(File.ReadAllBytes(fileA)), "bmx: A and B are the same bytes");
-                else
-                    Assert.That(Bmxml(fileB, core: false), Is.EqualTo(Bmxml(fileA, core: false)), "bmxml: A and B are the same but for the stamps");
-                if (RoundTripTool("--compare", original, fileA, fileB) is (int exit, string output))
-                {
-                    TestContext.Out.WriteLine($"song-roundtrip.py --compare {ext}: {output}");
-                    if (exit != 0) problems.Add($"{ext}: {output}");
-                }
-            }
-            Assert.That(problems, Is.Empty, "tools/song-roundtrip.py --compare");
-
-            // The same song without the fork's arrangement data (clip ids, their loops, the meter): only subsections differ.
-            string plainBmx = Work("plain.bmx"), plainXml = Work("plain.bmxml"), forkXml = Work("song.A.bmxml");
-            foreach (var s in rig.Core.SongCore.SequencesList)
-                foreach (var e in s.Events.Values) e.Clip = 0;
-            rig.Core.SongMeter.Reset();
-            rig.Core.SaveSongCopy(plainBmx);
-            rig.Core.SaveSongCopy(plainXml);
-            var fork = BmxSections(Work("song.A.bmx"));
-            var plain = BmxSections(plainBmx);
-            Assert.That(fork.Keys.Where(k => k != SubSections), Is.EquivalentTo(plain.Keys.Where(k => k != SubSections)));
-            foreach (var name in fork.Keys.Where(k => k != SubSections))
-                Assert.That(fork[name], Is.EqualTo(plain[name]), $"bmx section {name}: the same bytes with and without the fork's data");
-            Assert.That(fork[SubSections], Is.Not.EqualTo(plain[SubSections]), "the fork's data is in the subsections");
-            Assert.That(Bmxml(forkXml, core: true), Is.EqualTo(Bmxml(plainXml, core: true)), "bmxml: the same but for the subsections");
+            string fileA = Work("song.A.nbl"), fileB = Work("song.B.nbl");
+            SaveAndOpen(rig, original);
+            rig.Core.SaveSongCopy(fileA);
+            SaveAndOpen(rig, fileA);
+            Assert.That(Describe(), Is.EqualTo(song), ".nbl: everything comes back");
+            rig.Core.SaveSongCopy(fileB);
+            SaveAndOpen(rig, fileB);
+            Assert.That(Describe(), Is.EqualTo(song), ".nbl: and again");
         }
     }
 }

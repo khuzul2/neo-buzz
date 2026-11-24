@@ -44,9 +44,7 @@ namespace ReBuzz.AgentTests
             ["history_jump"] = new[] { "step" },
             ["song_new"] = new[] { "tempo_bpm", "discard_unsaved" },
             ["song_open"] = new[] { "path", "discard_unsaved" },
-            ["song_save"] = new[] { "path", "format", "overwrite" },
-            // native-format.md NF2 (ReBuzz/Agent/StudioTools.cs): the lossy copy for upstream Buzz/ReBuzz
-            ["song_export"] = new[] { "path", "overwrite" },
+            ["song_save"] = new[] { "path", "overwrite" },
             ["song_set"] = new[] { "tempo_bpm", "ticks_per_beat", "speed", "song_end_beats", "loop_start_beats", "loop_end_beats", "looping" },
             ["song_meter"] = new[] { "bar_beats", "from" },
             // machine-safety.md §3.5 (ReBuzz/Agent/NotesTools.cs): Song Notes

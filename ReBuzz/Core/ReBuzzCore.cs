@@ -1597,16 +1597,14 @@ namespace ReBuzz.Core
         /// <summary>Fork (history-snapshots.md HS2): the song file's bytes (a snapshot's) replace the song, which keeps its name and its history folder, and is marked modified. UI thread, transport stopped.</summary>
         internal bool RestoreSongBytes(byte[] bmx, string songName)
         {
-            string temp = Path.Combine(Path.GetTempPath(), "NeoBuzz-restore-" + Guid.NewGuid().ToString("N") + ".bmx");
+            string temp = Path.Combine(Path.GetTempPath(), "NeoBuzz-restore-" + Guid.NewGuid().ToString("N") + NblCoreSections.SnapshotExtension);
             File.WriteAllBytes(temp, bmx);
             var carry = NativeCarry;
-            string legacy = LegacyOrigin;
             try
             {
                 restoringSnapshot = true;
                 bool ok = TryOpenSongFile(temp, songName ?? "", true);
                 NativeCarry = carry;        // a snapshot is core sections; what the file carries stays
-                LegacyOrigin = legacy;
                 return ok;
             }
             finally
@@ -1629,7 +1627,7 @@ namespace ReBuzz.Core
         /// <summary>Fork (history-snapshots.md HS2): the song as its file sections are, for a snapshot. UI thread; touches no file.</summary>
         internal List<(uint Magic, byte[] Data)> CaptureSongSections()
         {
-            var file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
+            var file = new NblCoreSections(this, buzzPath, dispatcher, keyboard, engineSettings);
             SaveSongCore ss = new SaveSongCore();
             ss.Song = songCore;
             SaveSong?.Invoke(ss);
@@ -1640,10 +1638,21 @@ namespace ReBuzz.Core
         /// <summary>Fork (history-snapshots.md HS2): the song's snapshots (a history folder beside the song).</summary>
         internal SongHistory.SongSnapshots Snapshots { get; private set; }
 
+        /// <summary>Fork (clean-break.md CB1): what the UI and the agent say when a file that is not a .nbl song is opened.</summary>
+        public const string OpenNblOnlyMessage = "NeoBuzz Live opens .nbl songs only.";
+        public const string SaveNblOnlyMessage = "NeoBuzz Live saves .nbl songs only.";
+
         internal bool TryOpenSongFile(string filename, string restoreAs, bool restore)
         {
             if (!File.Exists(filename))
                 return false;
+            if (!restore && !NblFile.IsNative(filename))
+            {
+                // Fork (clean-break.md CB1): NeoBuzz Live opens its own songs only.
+                userMessages.Error(OpenNblOnlyMessage, Product.Name, null);
+                DCWriteLine($"Not opened: {filename}: {OpenNblOnlyMessage}", DCLogLevel.Warning);
+                return false;
+            }
             bool outer = SongLoading;
             SongLoading = true;
             try
@@ -1706,7 +1715,6 @@ namespace ReBuzz.Core
                 SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
                 if (!restore)
                 {
-                    LegacyOrigin = NblFile.IsNative(filename) ? null : filename;
                     UpdateRecentFilesList(filename);
                     Snapshots?.Bind(filename);          // fork (history-snapshots.md HS2)
                 }
@@ -1741,7 +1749,7 @@ namespace ReBuzz.Core
         internal static string OpenFailedMessage(string filename, Exception exception = null)
         {
             string name = $"\u201C{Path.GetFileName(filename)}\u201D";
-            const string Needs = "To load this song, you need to have following machine in your Gear forlder: ";     // BMXFile's
+            const string Needs = "To load this song, you need to have following machine in your Gear forlder: ";     // NblCoreSections'
             string message = exception?.InnerException?.Message ?? exception?.Message;
             if (message != null && message.StartsWith(Needs))
                 return $"{name} couldn't be opened: it uses {message.Substring(Needs.Length).Trim()}, a machine that isn't installed.";
@@ -1755,6 +1763,7 @@ namespace ReBuzz.Core
             if (chosen.HasValue)
             {
                 var filename = chosen.Value();
+                if (!NblFile.IsNative(filename)) { userMessages.Error(OpenNblOnlyMessage, Product.Name, null); return; }
                 Snapshots?.Auto("before importing " + Path.GetFileName(filename));     // fork (history-snapshots.md HS2)
                 IReBuzzFile rebuzzFile = GetReBuzzFile(filename);
 
@@ -1766,18 +1775,17 @@ namespace ReBuzz.Core
         IReBuzzFile GetReBuzzFile(string path)
         {
             IReBuzzFile file;
-            string extension = Path.GetExtension(path);
             if (NblFile.IsNative(path))
             {
                 file = new NblFile(this, buzzPath, dispatcher, keyboard, engineSettings);       // fork (native-format.md)
             }
-            else if (extension == ".bmx" || extension == ".bmw")
+            else if (NblCoreSections.IsSnapshot(path))
             {
-                file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
+                file = new NblCoreSections(this, buzzPath, dispatcher, keyboard, engineSettings);       // a snapshot: the core sections alone
             }
             else
             {
-                file = new BMXMLFile(this, buzzPath, dispatcher, engineSettings);
+                throw new InvalidDataException(OpenNblOnlyMessage);
             }
             return file;
         }
@@ -1815,13 +1823,19 @@ namespace ReBuzz.Core
                 if (Snapshots.Embed) Snapshots.Flush();
             }
 
+            // Fork (clean-break.md CB1): .nbl is the only song format.
+            if (Path.GetExtension(filename).Length == 0) filename += NblFile.Extension;
+            if (!NblFile.IsNative(filename))
+            {
+                userMessages.Error(SaveNblOnlyMessage, Product.Name, null);
+                return;
+            }
+
             // Do save
-            LegacyOrigin = null;        // fork (native-format.md): the song now has a file of its own
             IReBuzzFile file = GetReBuzzFile(filename);
 
             SaveSongCore ss = new SaveSongCore();
             ss.Song = songCore;
-            ss.Legacy = !NblFile.IsNative(filename);        // fork (neo-audio.md): audio clips go into waves
             SaveSong.Invoke(ss);
 
             file.SetSubSections(ss);
@@ -1833,10 +1847,6 @@ namespace ReBuzz.Core
             catch (Exception ex)
             {
                 userMessages.Error("Error saving file " + filename + "\n\n" + ex, "Error saving file.", ex);
-            }
-            finally
-            {
-                ss.RunCleanup();
             }
 
             Modified = false;
@@ -1854,63 +1864,9 @@ namespace ReBuzz.Core
             IReBuzzFile file = GetReBuzzFile(filename);
             SaveSongCore ss = new SaveSongCore();
             ss.Song = songCore;
-            ss.Legacy = !NblFile.IsNative(filename);
-            try
-            {
-                SaveSong?.Invoke(ss);
-                file.SetSubSections(ss);
-                file.Save(filename);
-            }
-            finally
-            {
-                ss.RunCleanup();
-            }
-        }
-
-        /// <summary>
-        /// Fork (native-format.md NF2): what "Export for Buzz/ReBuzz" would lose for this song. Touches nothing (no file, name,
-        /// modified flag, undo or history).
-        /// </summary>
-        internal FileOps.ExportReport PreviewBuzzExport()
-        {
-            using (FileOps.BuzzExport.Begin(this))
-            {
-                SaveSongCore ss = new SaveSongCore();
-                ss.Song = songCore;
-                ss.Legacy = true;
-                ss.DryRun = true;
-                SaveSong?.Invoke(ss);
-                return FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys, ss);
-            }
-        }
-
-        /// <summary>
-        /// Fork (native-format.md NF2): writes the song as a .bmx upstream ReBuzz can read, atomically, and returns what that
-        /// lost. Like <see cref="SaveSongCopy"/> it changes nothing in the open song: not its name, recent files, backup,
-        /// modified flag, undo or history.
-        /// </summary>
-        internal FileOps.ExportReport ExportForBuzz(string filename)
-        {
-            using (FileOps.BuzzExport.Begin(this))
-            {
-                var file = new BMXFile(this, buzzPath, dispatcher, keyboard, engineSettings);
-                SaveSongCore ss = new SaveSongCore();
-                ss.Song = songCore;
-                ss.Legacy = true;
-                try
-                {
-                    SaveSong?.Invoke(ss);
-                    var report = FileOps.BuzzExport.Analyze(this, ss.GetStreamsDict().Keys, ss);
-                    file.SetSubSections(ss);
-                    byte[] bytes = BMXFile.Assemble(file.BuildSections(false));
-                    FileOps.BuzzExport.WriteAtomic(filename, bytes);
-                    return report;
-                }
-                finally
-                {
-                    ss.RunCleanup();
-                }
-            }
+            SaveSong?.Invoke(ss);
+            file.SetSubSections(ss);
+            file.Save(filename);
         }
 
         public int RenderAudio(float[] buffer, int nsamples, int samplerate)
@@ -2730,17 +2686,10 @@ namespace ReBuzz.Core
         /// <summary>Fork: a snapshot is being restored (the song's audio assets stay: a snapshot holds the core sections, which name them).</summary>
         internal bool IsRestoringSnapshot => restoringSnapshot;
 
-        /// <summary>
-        /// Fork (native-format.md §7): the .bmx, .bmw or .bmxml this song was opened from, until it is saved under a name.
-        /// Save asks for a new .nbl name for such a song and never overwrites the original.
-        /// </summary>
-        internal string LegacyOrigin { get; private set; }
-
         internal void NewSong()
         {
             NativeCarry = null;
             if (!restoringSnapshot) AudioAssets.Clear();       // fork (neo-audio.md)
-            LegacyOrigin = null;
             bool outer = SongLoading;
             SongLoading = true;                 // fork (0.6.1)
             try

@@ -541,7 +541,7 @@ namespace ReBuzz.Studio.Tests
             layout.SetMonitor(a, 1);
             layout.SetMachineArmed(a, true);
             layout.SetMachineArmed(lead, true);
-            foreach (var ext in new[] { ".nbl", ".bmxml" })
+            foreach (var ext in new[] { ".nbl" })
             {
                 string path = Work("inputs" + ext);
                 core.SaveSongCopy(path);
@@ -569,7 +569,7 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             var a = NewTrack(rig, "Loops", AudioFrom.Wired);                    // what an old song's track is
             Assert.That(rig.Layout.Document.Inputs, Is.Empty, "nothing is written for the defaults");
-            string path = Work("old.bmxml");
+            string path = Work("old.nbl");
             core.SaveSongCopy(path);
             Assert.That(System.IO.File.ReadAllText(path), Does.Not.Contain("<Inputs"), "as an older build wrote it");
             Reopen(core, path);

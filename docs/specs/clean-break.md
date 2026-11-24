@@ -64,3 +64,11 @@ Keep the smallest piece and say why (section 2, item 1 is the first case). Each 
 - `Other/Templates/Examples/Multi-Channel Out Example.xml` named only old machines (FSM Infector, Jeskola Cross Delay, QuickNote): deleted. Nothing read it (`TrademarkTests` scanned the folder; the scan is removed).
 - Presets of Neo machines are Neo format. The presets of old machines (`Machines/Manifests/*/*.prs.xml`, `*.presets.txt`) go with their machines in stage 5.
 - No default song or gallery song of the Studio is stored in an old format (they are built in code or `.nbl`).
+
+## 8. Stage 3 result (song formats, Export for Buzz, CU3 leftovers)
+
+- `.bmx`, `.bmw` and `.bmxml` are not opened or saved. `ReBuzzCore.OpenNblOnlyMessage` ("NeoBuzz Live opens .nbl songs only.") is shown by the Studio (a dialog) and returned by the agent (`song_open`, `song_save`); `song_save` has no `format`, `song_export` is gone.
+- Removed: `BMXMLFile`, `BuzzExport`, `ClipExport`, `BuzzExportFlow`, `ClipEditPolicy` and the `clipEdit` manifest flag (57 manifests), `ClipDerived`, `ClipWords`, `LostInputCells`, the blob stamp and writers (`ClipBlob.Stamp`, `WriteMpe`, `WritePxp`; the tests keep their own `ClipBlobWriter` to make the editors' data), `tools/song-roundtrip.py`, `tools/clip-change-report.py`, the `--audio` steps, the ClipsOfOldSongs gallery test, the old-song tests.
+- The MPE editor's data blob keeps its normal writer (the columns' structure; events come from the store). Its derived-blob override is gone.
+- Clip goldens: the corpus is the two `.nbl` templates and `gen/session-loop`. The 22 `repo/*.bmx|bmw` and 17 `gen/*` entries went with the old-song corpus. The three remaining hashes are unchanged (checked on Linux: `clip-null.py check --twice`).
+- `FileAssociations` keeps `.bmx`, `.bmw`, `.bmxml` in a `Retired` list, used only by Remove, so a stale entry of an earlier build is freed. Kept references are listed in the report.

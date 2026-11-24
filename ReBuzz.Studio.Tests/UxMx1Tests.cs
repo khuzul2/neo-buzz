@@ -2,7 +2,7 @@
 // Detail panel maximised or the Master's double click; Compact: Detail > Mixer and under the Session View; Header: the Arrangement's
 // track headers), the Master's click and double click and the maximise key, every control one undo step, the Arrangement's header
 // controls and the mixer's being the same values, a group folding, the Master's volume in dB, and track colours: given when a track is
-// made and when a song without them opens, the user's colour winning, saved in .nbl, .bmx and .bmxml, never an undo step of their own.
+// made and when a song without them opens, the user's colour winning, saved in .nbl, never an undo step of their own.
 
 using System;
 using System.IO;
@@ -454,8 +454,6 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase(".nbl")]
-        [TestCase(".bmx")]
-        [TestCase(".bmxml")]
         public void ColoursAreSavedWithTheSongAndASongWithoutThemGetsThemOnOpenWithNoStep(string extension)
         {
             NewSong();

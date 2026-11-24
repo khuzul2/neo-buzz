@@ -32,7 +32,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static string NewPath() => Path.Combine(Folder, "song-" + System.Guid.NewGuid().ToString("N")[..8] + ".bmxml");
+        static string NewPath() => Path.Combine(Folder, "song-" + System.Guid.NewGuid().ToString("N")[..8] + ".nbl");
 
         static void Settle() { Dispatcher.UIThread.RunJobs(); Dispatcher.UIThread.RunJobs(); }
 
@@ -89,7 +89,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var restore = Studio.AfterTest(Reset);
             Fresh();
-            string missing = Path.Combine(Folder, "no such song.bmxml");
+            string missing = Path.Combine(Folder, "no such song.nbl");
             var asked = new List<bool>();
 
             SongFiles.Picker = saving => { asked.Add(saving); return null; };
@@ -218,31 +218,32 @@ namespace ReBuzz.Studio.Tests
         static FileAssociations Assoc(MemoryAssocStore store, string exe = @"C:\Apps\NeoBuzz Live\NeoBuzzLive.exe") => new(store, exe);
 
         [AvaloniaTest]
-        public void MakingTheDefaultRegistersTheSongTypesAndRemovingPutsBackWhatWasThere()
+        public void MakingTheDefaultRegistersTheSongTypeAndRemovingPutsBackWhatWasThere()
         {
             var store = new MemoryAssocStore();
-            store.Set(".bmx", "", "Buzz.Song");                    // another Buzz owned .bmx
+            store.Set(".nbl", "", "Other.Song");                   // another program owned .nbl
+            store.Set(".bmx", "", "NeoBuzzLive.Song");             // a stale entry of an earlier build (CB1 retired .bmx)
             var assoc = Assoc(store);
             Assert.That(assoc.IsDefault, Is.False);
-            Assert.That(assoc.CurrentFor(".bmx"), Is.EqualTo("Buzz.Song"));
+            Assert.That(assoc.CurrentFor(".nbl"), Is.EqualTo("Other.Song"));
 
             assoc.Make();
 
             Assert.That(assoc.IsDefault, Is.True);
-            foreach (var ext in new[] { ".nbl", ".bmx", ".bmw", ".bmxml" }) Assert.That(store.Get(ext, ""), Is.EqualTo("NeoBuzzLive.Song"), ext);
+            Assert.That(store.Get(".nbl", ""), Is.EqualTo("NeoBuzzLive.Song"));
+            Assert.That(store.Get(".bmw", ""), Is.Null, ".bmw is not registered any more");
             Assert.That(store.Get(@"NeoBuzzLive.Song\shell\open\command", ""), Is.EqualTo("\"C:\\Apps\\NeoBuzz Live\\NeoBuzzLive.exe\" \"%1\""), "the path may hold spaces");
             Assert.That(store.Get(@"NeoBuzzLive.Song\DefaultIcon", ""), Is.EqualTo("\"C:\\Apps\\NeoBuzz Live\\NeoBuzzLive.exe\",0"));
-            Assert.That(store.Get(".bmx", FileAssociations.PreviousValue), Is.EqualTo("Buzz.Song"));
-            Assert.That(store.Get(".bmw", FileAssociations.PreviousValue), Is.Null, "nothing to keep for .bmw");
+            Assert.That(store.Get(".nbl", FileAssociations.PreviousValue), Is.EqualTo("Other.Song"));
 
             assoc.Make();                                          // twice: still the first owner that is kept
-            Assert.That(store.Get(".bmx", FileAssociations.PreviousValue), Is.EqualTo("Buzz.Song"));
+            Assert.That(store.Get(".nbl", FileAssociations.PreviousValue), Is.EqualTo("Other.Song"));
 
             assoc.Remove();
 
             Assert.That(assoc.IsDefault, Is.False);
-            Assert.That(store.Get(".bmx", ""), Is.EqualTo("Buzz.Song"), "given back");
-            Assert.That(store.Get(".bmw", ""), Is.Null, "removed where there was none");
+            Assert.That(store.Get(".nbl", ""), Is.EqualTo("Other.Song"), "given back");
+            Assert.That(store.Get(".bmx", ""), Is.Null, "the stale entry is freed");
             Assert.That(store.Values.Keys.Where(k => k.Key.StartsWith("neobuzzlive.song")), Is.Empty, "the ProgID is gone");
             Assert.That(store.Values.Keys.Where(k => k.Name == FileAssociations.PreviousValue), Is.Empty);
         }
@@ -261,9 +262,9 @@ namespace ReBuzz.Studio.Tests
             var store = new MemoryAssocStore();
             var assoc = Assoc(store);
             assoc.Make();
-            store.Set(".bmw", "", "Other.Song");                   // another program took .bmw since
+            store.Set(".nbl", "", "Other.Song");                   // another program took .nbl since
             assoc.Remove();
-            Assert.That(store.Get(".bmw", ""), Is.EqualTo("Other.Song"));
+            Assert.That(store.Get(".nbl", ""), Is.EqualTo("Other.Song"));
         }
 
         [AvaloniaTest]
@@ -278,16 +279,16 @@ namespace ReBuzz.Studio.Tests
 
             GeneralPage.Associations = () => Assoc(store);
             var page = new GeneralPage(new PrefsModel(Host.Agent.Host.AppControl));
-            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .nbl/.bmx/.bmw"));
-            Assert.That(page.AssociationText, Is.EqualTo("No program is set for .bmx songs."));
+            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .nbl"));
+            Assert.That(page.AssociationText, Is.EqualTo("No program is set for .nbl songs."));
 
             page.AssociationButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            Assert.That(store.Get(".bmx", ""), Is.EqualTo("NeoBuzzLive.Song"));
-            Assert.That(page.AssociationButton.Content, Is.EqualTo("Restore the previous default for .nbl/.bmx/.bmw"));
+            Assert.That(store.Get(".nbl", ""), Is.EqualTo("NeoBuzzLive.Song"));
+            Assert.That(page.AssociationButton.Content, Is.EqualTo("Restore the previous default for .nbl"));
 
             page.AssociationButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            Assert.That(store.Get(".bmx", ""), Is.Null, "reversible");
-            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .nbl/.bmx/.bmw"));
+            Assert.That(store.Get(".nbl", ""), Is.Null, "reversible");
+            Assert.That(page.AssociationButton.Content, Is.EqualTo("Make NeoBuzz Live the default for .nbl"));
         }
     }
 }

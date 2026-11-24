@@ -463,7 +463,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>
-        /// The demo song, built in a new song and saved as "Night Drive.bmxml" (the title names it). Not opened again: the
+        /// The demo song, built in a new song and saved as "Night Drive.nbl" (the title names it). Not opened again: the
         /// notes moved onto the note lanes show in the Pattern View as they are written (they showed only once the song was
         /// opened again before; ui-gallery.md).
         /// </summary>
@@ -472,7 +472,7 @@ namespace ReBuzz.Studio.Tests
             NewSong();
             var built = GallerySong.Build(Core);
             foreach (var p in built.Problems) TestContext.Out.WriteLine("[gallery] demo song: " + p);
-            string path = Path.Combine(SongFolder, GallerySong.Title + ".bmxml");
+            string path = Path.Combine(SongFolder, GallerySong.Title + ".nbl");
             SongFiles.Picker = _ => path;
             try
             {
@@ -483,7 +483,7 @@ namespace ReBuzz.Studio.Tests
                 SongFiles.Picker = null;
             }
             Core.Modified = false;
-            File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".bmxml"), true);      // beside the pictures (the Mac job opens it in the app)
+            File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".nbl"), true);      // beside the pictures (the Mac job opens it in the app)
             Settle();
             return GallerySong.Find(Core);
         }
@@ -1350,7 +1350,7 @@ namespace ReBuzz.Studio.Tests
                     file.IsSubMenuOpen = true;
                     Settle();
                     Hover(ItemOf(file, "Open Recent"));
-                    Shot(window, "107-menu-file-recent", "File ▸ Open Recent: the recent songs (Night Drive.bmxml), Clear Menu.", "File ▸ Open Recent.", notes: Bar);
+                    Shot(window, "107-menu-file-recent", "File ▸ Open Recent: the recent songs (Night Drive.nbl), Clear Menu.", "File ▸ Open Recent.", notes: Bar);
                     file.IsSubMenuOpen = false;
                 });
                 ((DockPanel)bar.Parent!).Children.Remove(bar);
@@ -1764,9 +1764,15 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("338-error-open", () =>
                 {
-                    string broken = Path.Combine(SongFolder, "Broken song.bmx");
+                    string broken = Path.Combine(SongFolder, "Broken song.nbl");
                     File.WriteAllBytes(broken, Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
                     DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened. What happened in words; the exception under Details (closed).", "File ▸ Open… a damaged file.");
+                });
+                Try("339-error-old-format", () =>
+                {
+                    string old = Path.Combine(SongFolder, "Old song.bmx");
+                    File.WriteAllBytes(old, Encoding.ASCII.GetBytes("Buzz\0an old song"));
+                    DialogOnOpen(window, () => _ = SongFiles.Open(old), "339-error-old-format", "Opening a .bmx: one plain message, NeoBuzz Live opens .nbl songs only.", "File ▸ Open, choose a .bmx.");
                 });
             }
             finally
@@ -2516,37 +2522,6 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
-        /// <summary>Clips CU3 (clips.md §7.1): a song whose tracker data was moved into the store on open: the tracker views the lanes.</summary>
-        [AvaloniaTest, Order(8)]
-        public void ClipsOfOldSongs()
-        {
-            BeforeAll();
-            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
-            NewSong();
-            var window = Open("Machines");
-            try
-            {
-                const string Song = "a song with one old machine (Clip Probe) whose pattern data was moved into the store on open";
-                var machine = ClipOpenTests.MigratedProbe();
-                window.RefreshNow();
-                Settle();
-                var pattern = machine.Patterns.First(p => p.Name == "P");
-                Try("600-clips-old-machine-tracker", () =>
-                {
-                    window.Detail.Show(true);
-                    PatternView.Edit(pattern);
-                    window.ShowView("Pattern");
-                    Wait(300);
-                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open (the clip conversion): the columns are views of the pattern's lanes, the Level step and the note at row 4, the MIDI note at row 8 on the Notes lane.", "Open a song of old machines; F2.", Song);
-                });
-            }
-            finally
-            {
-                Close(window);
-            }
-            AfterAll();
-        }
-
         [AvaloniaTest, Order(6)]
         public void SongsAndStates()
         {
@@ -2562,40 +2537,6 @@ namespace ReBuzz.Studio.Tests
             var window = Open("Machines");
             try
             {
-                string old = repo == null ? null : Path.Combine(repo, "ExternalMachines", "source", "buzztrax-buzzmachines", "FSM", "Infector", "FSM_Infector_Demo.bmx");
-                if (old != null && File.Exists(old))
-                {
-                    const string Song = "FSM_Infector_Demo.bmx (a Windows Buzz song)";
-                    const string Natives = "Native (Windows) machines don't load on the Mac: they open as placeholders that keep their data.";
-                    Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                    try
-                    {
-                        Assert.That(Await(SongFiles.Open(old)), Is.True, "the old song opened");
-                    }
-                    finally
-                    {
-                        Dialogs.Responder = null;
-                    }
-                    Settle();
-                    window.RefreshNow();
-                    Settle();
-                    Try("500-old-song-machines", () => Shot(window, "500-old-song-machines", "An old Windows song with native machines: each a placeholder box marked Windows only, and the problem bar saying so in plain words (the song plays without them and saves them back unchanged), with Show Them.", "File ▸ Open… a .bmx made on Windows.", Song, Natives));
-                    Try("501-old-song-sequence", () => { window.ShowView("Sequence"); Shot(window, "501-old-song-sequence", "The old song's arrangement.", "F4.", Song, Natives); });
-                    Try("502-old-song-placeholder-parameters", () =>
-                    {
-                        var native = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type != MachineType.Master);
-                        Core.UiHost.OpenParameterWindow(native, null);
-                        var w = StudioMachineUiHost.ParameterWindowOf(native);
-                        Assert.That(w, Is.Not.Null);
-                        Settle();
-                        Shot(w!, "502-old-song-placeholder-parameters", $"The parameter window of a placeholder ({native.Name}, {native.DLL.Name}).", "Right-click a placeholder ▸ Parameters….", Song, Natives);
-                        Core.UiHost.CloseWindows(native);
-                    });
-                    window.ShowView("Machines");
-                    NewSong();
-                }
-                else failures.Add("mac-500..502: the old demo song isn't in this checkout");
-
                 // Many machines: every Neo and Pedal machine in one song.
                 Try("510-machines-many", () =>
                 {

@@ -15,9 +15,7 @@ namespace ReBuzz.Agent
 {
     internal static class StudioTools
     {
-        static readonly string[] SongExtensions = { ".nbl", ".bmxml", ".bmx", ".bmw" };
-
-        public static void Register(ToolRegistry tools, AgentHost host)
+                public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;
 
@@ -180,8 +178,8 @@ namespace ReBuzz.Agent
                 Name = "song_open",
                 Title = "Open song",
                 Description =
-                    "Opens a song file (.nbl, .bmxml, .bmx or .bmw) by its full path. Refuses when the current song has unsaved changes unless " +
-                    "discard_unsaved is true. Returns the new studio status. Not undoable. Example: song_open(path=\"C:/Music/demo.bmxml\").",
+                    "Opens a song file (.nbl) by its full path. Any other kind of file is refused: \"NeoBuzz Live opens .nbl songs only.\" Refuses when the current song has unsaved changes unless " +
+                    "discard_unsaved is true. Returns the new studio status. Not undoable. Example: song_open(path=\"C:/Music/demo.nbl\").",
                 Input = Object(null,
                     Req("path", String("Full path of the song file")),
                     Opt("discard_unsaved", Boolean("Throw away unsaved changes in the current song"))),
@@ -190,7 +188,7 @@ namespace ReBuzz.Agent
                 Handler = async c =>
                 {
                     string path = SongPath(c.RequiredString("path"));
-                    if (!File.Exists(path)) throw new ToolError($"No file at {path}. Give the full path of an existing .nbl, .bmxml, .bmx or .bmw song.");
+                    if (!File.Exists(path)) throw new ToolError($"No file at {path}. Give the full path of an existing .nbl song.");
                     var s = await host.Engine("song_open", false, messages =>
                     {
                         RefuseUnsaved(core, c.Bool("discard_unsaved") == true, "open another song");
@@ -211,40 +209,27 @@ namespace ReBuzz.Agent
                 Name = "song_save",
                 Title = "Save song",
                 Description =
-                    "Saves the song: to its own file, or to path (save as). .nbl is the native format and keeps everything; .bmxml is readable text; " +
-                    ".bmx opens in other Buzz versions but keeps less. A song opened from a .bmx, .bmw or .bmxml is saved next to it as a new .nbl " +
-                    "when path is omitted: the original isn't overwritten. " +
+                    "Saves the song as a .nbl, to its own file or to path (save as). " +
                     "Won't overwrite a different existing file unless overwrite is true. Example: song_save(path=\"C:/Music/sketch.nbl\").",
                 Input = Object(null,
                     Opt("path", String("Full path to save to (save as). Omit to save to the song's own file")),
-                    Opt("format", String("The file type when path has no extension, or for the new file beside an opened old song (default nbl)", "nbl", "bmxml", "bmx")),
                     Opt("overwrite", Boolean("Replace an existing file that isn't this song's own"))),
                 Output = Object(null, Req("file", String("The file written")), Req("bytes", Integer("Its size"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {
                     string requested = c.String("path");
-                    string format = (c.String("format") ?? "nbl").Trim().TrimStart('.').ToLowerInvariant();
-                    if (format != "nbl" && format != "bmxml" && format != "bmx") throw new ToolError("format: nbl, bmxml or bmx.");
-                    if (requested != null && Path.GetExtension(requested.Trim().Trim('"')).Length == 0) requested = requested.Trim().Trim('"') + "." + format;
+                    if (requested != null && Path.GetExtension(requested.Trim().Trim('"')).Length == 0) requested = requested.Trim().Trim('"') + ".nbl";
                     var r = await host.Engine("song_save", false, messages =>
                     {
                         string current = core.SongCore.SongName;
                         string path = requested != null ? SongPath(requested) : current
                             ?? throw new ToolError("This song has no file yet: give a path, e.g. song_save(path=\"C:/Music/song.nbl\").");
-                        bool beside = false;
-                        if (requested == null && core.LegacyOrigin != null && core.LegacyOrigin == current)
-                        {
-                            // Opened from an older kind of file: the new file goes beside it; the original stays as it was.
-                            path = Path.ChangeExtension(current, "." + format);
-                            if (string.Equals(path, current, StringComparison.OrdinalIgnoreCase)) path = Path.ChangeExtension(current, ".nbl");
-                            beside = true;
-                        }
-                        if ((requested != null || beside) && File.Exists(path) && !string.Equals(Path.GetFullPath(path), current == null ? null : Path.GetFullPath(current), StringComparison.OrdinalIgnoreCase)
+                        if (requested != null && File.Exists(path) && !string.Equals(Path.GetFullPath(path), current == null ? null : Path.GetFullPath(current), StringComparison.OrdinalIgnoreCase)
                             && c.Bool("overwrite") != true)
                             throw new ToolError($"{path} exists and isn't this song's file. Pass overwrite=true to replace it, or choose another name.");
                         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                        if (requested != null || beside)
+                        if (requested != null)
                         {
                             core.SongCore.SongName = path;
                         }
@@ -253,48 +238,6 @@ namespace ReBuzz.Agent
                         return new JsonObject { ["file"] = path, ["bytes"] = new FileInfo(path).Length };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Saved {r["file"]} ({r["bytes"]} bytes).", r);
-                },
-            });
-
-            tools.Add(new ToolDef
-            {
-                Name = "song_export",
-                Title = "Export for Buzz/ReBuzz",
-                Description =
-                    "Writes a separate .bmx that upstream Buzz/ReBuzz can open, and returns what that file loses (the loss report: category, item, what happens upstream). " +
-                    "Lossy on purpose (clip trims and gain, engine automation, the Neo machines, takes…); the open song, its file, its name and its undo history are not touched. " +
-                    "To keep everything use song_save (.nbl, or .bmx with format=\"bmx\" for a full save). Refuses a .nbl target and the open song's own file; " +
-                    "won't replace an existing file unless overwrite is true. Example: song_export(path=\"C:/Music/sketch-for-buzz.bmx\").",
-                Input = Object(null,
-                    Req("path", String("Full path of the .bmx to write (the .bmx extension is added when missing)")),
-                    Opt("overwrite", Boolean("Replace an existing file"))),
-                Output = Object(null,
-                    Req("file", String("The file written")), Req("bytes", Integer("Its size")),
-                    Req("lossless", Boolean("True when upstream loses nothing")),
-                    Req("losses", Array(Object(null, Req("category", String("The kind of loss")), Req("item", String("What it is")), Req("upstream", String("What happens in upstream Buzz/ReBuzz"))), "The loss report, sorted; empty when nothing is lost"))),
-                Annotations = ToolAnnotations.WriteIdempotent,
-                Handler = async c =>
-                {
-                    string requested = (c.String("path") ?? throw new ToolError("path: give the .bmx to write.")).Trim().Trim('"');
-                    if (Path.GetExtension(requested).Length == 0) requested += ".bmx";
-                    var r = await host.Engine("song_export", false, messages =>
-                    {
-                        string path = SongPath(requested);
-                        string problem = ReBuzz.FileOps.BuzzExport.TargetProblem(core.SongCore.SongName, path);
-                        if (problem != null) throw new ToolError(problem);
-                        if (File.Exists(path) && c.Bool("overwrite") != true)
-                            throw new ToolError($"{path} exists. Pass overwrite=true to replace it, or choose another name.");
-                        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                        ReBuzz.FileOps.ExportReport report;
-                        try { report = core.ExportForBuzz(path); }
-                        catch (Exception e) { throw new ToolError($"Exporting {path} failed: {e.Message}"); }
-                        var losses = new JsonArray();
-                        foreach (var l in report.Losses)
-                            losses.Add(new JsonObject { ["category"] = l.Category, ["item"] = l.Item, ["upstream"] = l.Upstream });
-                        return new JsonObject { ["file"] = path, ["bytes"] = new FileInfo(path).Length, ["lossless"] = report.IsEmpty, ["losses"] = losses };
-                    }, c.Cancellation);
-                    int n = ((JsonArray)r["losses"]!).Count;
-                    return ToolResult.Ok($"Exported {r["file"]} ({r["bytes"]} bytes) for Buzz/ReBuzz. " + (n == 0 ? "Nothing is lost." : $"{n} loss(es) listed."), r);
                 },
             });
 
@@ -363,9 +306,8 @@ namespace ReBuzz.Agent
         static string SongPath(string path)
         {
             path = Path.GetFullPath(path.Trim().Trim('"'));
-            string ext = Path.GetExtension(path).ToLowerInvariant();
-            if (!SongExtensions.Contains(ext))
-                throw new ToolError($"\"{path}\" isn't a song file: use .nbl (native, recommended), .bmxml, .bmx or .bmw.");
+            if (!string.Equals(Path.GetExtension(path), ".nbl", StringComparison.OrdinalIgnoreCase))
+                throw new ToolError(ReBuzzCore.OpenNblOnlyMessage);
             return path;
         }
 

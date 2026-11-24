@@ -1,8 +1,8 @@
 // Fork (docs/specs/clips.md §7.1, CU3): migration on open. After a song is loaded (machines, then the engine columns), every machine that has
 // patterns has its clips moved into the store: the built-in rows (PATT), PatternXP's data and the Modern Pattern Editor's blob become lanes
 // (ClipMigration), what does not convert is dropped with a log line, the machine's pattern editor is told to view the store, and the song is
-// marked as migrated, in memory. The file is never written here. A song that already holds its lanes in the store (a .nbl of format 3, a
-// .bmx or .bmxml whose derived blob carries the stamp of the store) is not migrated again: the store is the truth.
+// marked as migrated, in memory. The file is never written here. A song that already holds its lanes in the store (a .nbl of format 3)
+// is not migrated again: the store is the truth.
 
 using System;
 using System.Collections.Generic;
@@ -17,8 +17,6 @@ namespace ReBuzz.Core
     {
         public ClipLog Log { get; } = new ClipLog();
         public int MachinesMigrated, MachinesInStore, ClipsMigrated, LanesWritten;
-        /// <summary>The blob of a machine did not match the store (an older program changed it): the blob won.</summary>
-        public List<string> StaleBlobs { get; } = new List<string>();
 
         /// <summary>The entries that name something dropped: the panel shows when there is one.</summary>
         public IEnumerable<ClipLogEntry> Losses => Log.Entries.Where(e => e.Kind == ClipLogKind.Loss && e.Count > 0);
@@ -31,9 +29,7 @@ namespace ReBuzz.Core
             var lines = new List<(bool, string)>();
             foreach (var kind in new[] { ClipLogKind.Loss, ClipLogKind.Change })
                 foreach (var g in Log.Entries.Where(e => e.Kind == kind && e.Count > 0).GroupBy(e => e.Tag).OrderBy(g => g.Key, StringComparer.Ordinal))
-                    lines.Add((kind == ClipLogKind.Loss, ClipWords.Say(g.Key, g.Sum(e => e.Count))));
-            foreach (var m in StaleBlobs)
-                lines.Add((false, $"{m}: its pattern data was changed by an older program, so it was read again from that data."));
+                    lines.Add((kind == ClipLogKind.Loss, g.Key + " (" + g.Sum(e => e.Count) + " events)"));
             return lines;
         }
     }
@@ -72,9 +68,7 @@ namespace ReBuzz.Core
         static void Migrate(ReBuzzCore buzz, SongCore song, MachineCore machine, bool lanesInStore, ClipOpenReport report)
         {
             byte[] data = ClipStore.EditorData(machine);
-            bool current = lanesInStore || (data != null && data.Length > 0 && ClipStore.BlobIsCurrent(machine, data));
-            bool stale = !lanesInStore && data != null && data.Length > 0 && ClipBlob.StampOf(data) != null && !current;
-            if (current)
+            if (lanesInStore)
                 report.MachinesInStore++;
             else
             {
@@ -95,7 +89,6 @@ namespace ReBuzz.Core
                 report.LanesWritten += lanes;
                 if (result.EventsIn > 0 || lanes > 0) { report.MachinesMigrated++; song.ClipsMigrated = true; }
                 report.Log.AddRange(log);
-                if (stale) report.StaleBlobs.Add(machine.Name);
             }
             if (buzz.MachineManager.AttachClipStore(machine))
                 machine.ClipsAttached = true;

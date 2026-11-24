@@ -372,7 +372,7 @@ namespace ReBuzz.Studio.Tests
             var pattern = (PatternCore)r.Pattern;
             try
             {
-                string a = Path.Combine(dir, "a.bmx"), b = Path.Combine(dir, "b.bmx");
+                string a = Path.Combine(dir, "a.nbl"), b = Path.Combine(dir, "b.nbl");
                 r.Song.Core.SaveSongCopy(a);
                 r.ShowRoll();
                 pattern.PlayPosition = 5 * TB;

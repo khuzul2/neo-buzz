@@ -187,7 +187,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.Digit3);
                 string dir = TestTemp.Path("rebuzz-studio-p3c-" + Environment.ProcessId);
                 System.IO.Directory.CreateDirectory(dir);
-                string path = System.IO.Path.Combine(dir, "auto.bmxml");
+                string path = System.IO.Path.Combine(dir, "auto.nbl");
                 try
                 {
                     SongFiles.Picker = save => path;

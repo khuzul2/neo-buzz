@@ -63,7 +63,7 @@ namespace ReBuzz.AgentEval
 
         static string Path(TaskContext ctx, string name) => ctx.File(name).Replace("\\", "/");
 
-        public static string Save(TaskContext ctx) => $"When it's done, save it with song_save(path=\"{Path(ctx, "result.bmxml")}\", overwrite=true).";
+        public static string Save(TaskContext ctx) => $"When it's done, save it with song_save(path=\"{Path(ctx, "result.nbl")}\", overwrite=true).";
     }
 
     internal sealed class MasterMatchTask : EvalTask

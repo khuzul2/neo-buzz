@@ -242,26 +242,12 @@ jobs:
         dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
         dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
 
-    # Songs with missing machines (mac-engine.md M2): off Windows every native machine is a
-    # placeholder, which must save back what the song says about it. The demo songs open, save as
-    # BMX and BMXML, reopen and save again: the two saves are identical, and the first keeps every
-    # machine's values, data, attributes, tracks and pattern contents. So does a Windows-style song
-    # whose pattern editor machines are missing too.
-    - name: Songs with placeholders round-trip
-      if: always()
-      env:
-        REBUZZ_NATIVE_MACHINES: 'off'   # R1: the check is of placeholders; the rebuilt classics have tools/native-cross.py
-      run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
-
-    # The clip goldens (docs/specs/clips.md §10.1, CU1): every song of the corpus (the repo's songs and one generated song a feature
-    # of a clip) renders to the hash in eval/clip-goldens.json for this platform, twice (deterministic). A difference fails the step and
-    # names the song. Placeholders stand in for the classic machines, as in the step above. The observed hashes are uploaded.
+    # The clip goldens (docs/specs/clips.md §10.1, CU1): every song of the corpus (the two song templates and one generated song) renders to the hash in eval/clip-goldens.json for this platform, twice (deterministic). A difference fails the step and
+    # names the song. The observed hashes are uploaded.
     - name: Clip goldens on Linux (rebuzz-headless)
       if: always()
-      env:
-        REBUZZ_NATIVE_MACHINES: 'off'
       run: |
-        python3 tools/clip-null.py --audio "$RUNNER_TEMP/clip-audio" check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
+        python3 tools/clip-null.py check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
         python3 tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip-open"
 
     - name: Upload the clip goldens observed
@@ -274,17 +260,6 @@ jobs:
           ${{ runner.temp }}/clip-open/open-times.json
         if-no-files-found: ignore
 
-    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
-    - name: Upload the clip renders (audio)
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: clip-audio-linux
-        path: ${{ runner.temp }}/clip-audio/*.wav
-        retention-days: 30
-        compression-level: 6
-        if-no-files-found: ignore
-
     # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)
     # and driven by simulated input; what they drew is uploaded with the run.
     - name: Studio (Avalonia, headless)
@@ -292,8 +267,6 @@ jobs:
       shell: bash
       env:
         SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
-        CLIP_ROUNDTRIP_OUT: ${{ github.workspace }}/clip-roundtrip/round-trips.txt
-        CLIP_MIGRATION_LOG: ${{ github.workspace }}/clip-roundtrip/migration-log.json
       run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
 
     # P3's exit (studio-mvp.md S9): the studio app itself, on Xvfb's display with the PulseAudio null
@@ -314,15 +287,6 @@ jobs:
       with:
         name: studio-screenshots
         path: studio-screenshots/
-
-    # CU2 (clips.md S10): the round trips over the corpus, and the migration log (every step with its cause tag) that
-    # tools/clip-change-report.py reads in CU3.
-    - name: Clip round trips and migration log
-      if: always() && hashFiles('clip-roundtrip/*') != ''
-      uses: actions/upload-artifact@v6
-      with:
-        name: clip-roundtrip
-        path: clip-roundtrip/
 
     - name: Annotate test log
       if: failure()

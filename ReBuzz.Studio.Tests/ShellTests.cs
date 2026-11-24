@@ -55,7 +55,7 @@ namespace ReBuzz.Studio.Tests
             var core = host.Core;
             string dir = TestTemp.Path("rebuzz-studio-songs-" + System.Environment.ProcessId);
             Directory.CreateDirectory(dir);
-            string path = Path.Combine(dir, "round trip.bmxml");
+            string path = Path.Combine(dir, "round trip.nbl");
             var window = Open();
             try
             {
@@ -76,7 +76,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(core.SongCore.SongName, Is.EqualTo(path));
                 Studio.Screenshot(window, "studio-song-open");
                 window.RefreshNow();        // the title follows the song on the window's 100 ms timer: not timed here
-                Assert.That(window.Title, Does.StartWith("round trip.bmxml"));
+                Assert.That(window.Title, Does.StartWith("round trip.nbl"));
             }
             finally
             {

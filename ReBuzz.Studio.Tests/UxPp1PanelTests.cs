@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md, the parameter panel redesign PP1): the Device panel's layout D, headless. Cards of knobs (splitting, the
 // chips' jump, search, Changed only, the Knobs | List choice per machine type), the docked row and the floating wrap, the knobs' gestures,
-// the retired parameter window's entry points, the Inspector's macros and pins, and the pins in the song (.nbl, .bmx, .bmxml, undo).
+// the retired parameter window's entry points, the Inspector's macros and pins, and the pins in the song (.nbl, undo).
 
 using System;
 using System.IO;
@@ -404,8 +404,6 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase(".nbl")]
-        [TestCase(".bmx")]
-        [TestCase(".bmxml")]
         public void PinsSurviveASaveAndAnOpenAndUndoTakesThemBack(string extension)
         {
             NewSong();

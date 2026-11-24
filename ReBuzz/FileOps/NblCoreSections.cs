@@ -25,8 +25,14 @@ namespace ReBuzz.FileOps
         Close
     }
 
-    internal class BMXFile : IReBuzzFile
+    internal class NblCoreSections : IReBuzzFile
     {
+        /// <summary>The extension of the temporary file a history snapshot is restored from (the core sections alone, no container).</summary>
+        public const string SnapshotExtension = ".nbcore";
+
+        public static bool IsSnapshot(string path) => string.Equals(Path.GetExtension(path), SnapshotExtension, StringComparison.OrdinalIgnoreCase);
+
+
         readonly int WaveFlagsEnvelope = 0x80;
         public class Section
         {
@@ -94,7 +100,7 @@ namespace ReBuzz.FileOps
             HIST = 0x54534948   // Fork (history-snapshots.md HS2): the song's snapshots, embedded on save; other Buzz versions ignore it
         }
 
-        public BMXFile(ReBuzzCore buzz, string buzzPath, IUiDispatcher dispatcher, IKeyboard keyboard, EngineSettings engineSettings)
+        public NblCoreSections(ReBuzzCore buzz, string buzzPath, IUiDispatcher dispatcher, IKeyboard keyboard, EngineSettings engineSettings)
         {
             this.buzz = buzz;
             machines = new List<MachineCore>();
@@ -1025,12 +1031,6 @@ namespace ReBuzz.FileOps
                             {
                                 machine.PatternsList[first + j].BuiltInData = contents[j].Data;
                             }
-                        }
-                        else
-                        {
-                            // Fork (clips.md CU2): what the editor's data dropped, for the migration log only.
-                            for (int j = 0; j < contents.Count && first + j < machine.PatternsList.Count; j++)
-                                machine.PatternsList[first + j].LostInputCells = contents[j].Data.InputCells();
                         }
                     }
                 }
@@ -2360,11 +2360,6 @@ namespace ReBuzz.FileOps
                     var sequenceEvent = kv.Value;
                     ulong value;
 
-                    // Fork (NF2): an export for upstream leaves out take lanes and positions Buzz can't hold; the
-                    // "ExportedLanes" subsection keeps them (ArrangementEventStore).
-                    if (BuzzExport.Current != null && BuzzExport.Omits(sequence, pos))
-                        continue;
-
                     if (sequenceEvent.Type == SequenceEventType.Mute)
                     {
                         // Mute
@@ -2924,9 +2919,6 @@ namespace ReBuzz.FileOps
         {
             // Fork (mac-engine.md M2): Latin-1, as ReadString reads a byte per character. ASCII
             // wrote '?' for every byte above 127, so names such as "Attack time (µs)" changed.
-            // Fork (native-format.md NF2): an export for upstream writes names as readable Latin-1.
-            if (!utf8Strings && BuzzExport.Current != null)
-                str = BuzzExport.Current.Text(str);
             WriteString(ms, str, utf8Strings ? Encoding.UTF8 : Encoding.Latin1);
         }
 

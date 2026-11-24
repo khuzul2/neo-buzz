@@ -500,7 +500,7 @@ namespace ReBuzz.Studio.Tests
             Directory.CreateDirectory(dir);
             try
             {
-                string a = Path.Combine(dir, "a.bmx"), b = Path.Combine(dir, "b.bmx"), c = Path.Combine(dir, "c.bmx");
+                string a = Path.Combine(dir, "a.nbl"), b = Path.Combine(dir, "b.nbl"), c = Path.Combine(dir, "c.nbl");
                 r.Song.Core.SaveSongCopy(a);
                 r.ShowRoll();
                 r.Notes.HandleKey(Key.A, KeyModifiers.Control);     // looking, selecting: no edit

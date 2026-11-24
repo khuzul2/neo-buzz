@@ -26,9 +26,9 @@ namespace ReBuzz.AgentEval
         public string Task { get; }
         public string Folder { get; }
         /// <summary>The song the setup made (what the agent starts from).</summary>
-        public string StartSong => Path.Combine(Folder, "start.bmxml");
+        public string StartSong => Path.Combine(Folder, "start.nbl");
         /// <summary>Where the brief tells the agent to save.</summary>
-        public string ResultSong => Path.Combine(Folder, "result.bmxml");
+        public string ResultSong => Path.Combine(Folder, "result.nbl");
         public string File(string name) => Path.Combine(Folder, name);
     }
 
