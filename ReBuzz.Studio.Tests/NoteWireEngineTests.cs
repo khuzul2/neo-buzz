@@ -105,6 +105,11 @@ namespace ReBuzz.Studio.Tests
                 buffer = new float[frames * 2];
                 Core.EngineSettings.Set("Multithreading", multithreaded);
                 Core.EngineSettings.Set("UseCachedWorkOrder", cached);
+                // A buffer is cut at a tick (and a sub-tick) edge, and an event's offset is in the piece it is delivered in: so that the pieces
+                // here are the buffers whatever the tests before left (the tick's position, a fast tempo), the tick is long and starts now.
+                Core.EngineSettings.Set("SubTickTiming", false);
+                Core.BPM = 20;
+                ReBuzzCore.masterInfo.PosInTick = 0;
                 engine = new WorkThreadEngine(4);
                 if (algorithm == 2 && multithreaded) engine.Start();
                 bool2 = multithreaded && algorithm == 2;
