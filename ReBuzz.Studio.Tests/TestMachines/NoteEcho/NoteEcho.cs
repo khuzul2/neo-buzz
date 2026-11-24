@@ -1,7 +1,7 @@
 // Fork (docs/specs/note-wires.md §8): a note machine for the tests; nothing ships. It takes notes and sends notes: every event it receives goes out
 // transposed by Up semitones at the same offset, and, when Delay is not 0, once more Delay samples later (across block edges). Up 0 and Delay 0 is a pass-through.
 // EmitAt makes it a source: the next Work sends one event at the offset given. Everything it receives is logged for the tests (block, offset, kind, note).
-// Built into the tests' Gear/Generators as "Note Echo.NET.dll" (NoteEcho.csproj); it makes no sound.
+// Built into the tests' Gear/Generators as "Test Note Echo.NET.dll" (NoteEcho.csproj); it makes no sound.
 
 using System;
 using Buzz.MachineInterface;
@@ -9,7 +9,7 @@ using BuzzGUI.Interfaces;
 
 namespace ReBuzz.Studio.Tests.TestMachines
 {
-    [MachineDecl(Name = "Note Echo", ShortName = "NEcho", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 1)]
+    [MachineDecl(Name = "Test Note Echo", ShortName = "NEcho", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 1)]
     public class NoteEchoMachine : IBuzzMachine, INoteCapable, INoteReceiver
     {
         const int Cap = 8192;

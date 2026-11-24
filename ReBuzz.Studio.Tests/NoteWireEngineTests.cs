@@ -1,4 +1,4 @@
-// Fork (docs/specs/note-wires.md): note wires in the real engine, with the tests' Note Echo machine (TestMachines/NoteEcho) and real Neo machines:
+// Fork (docs/specs/note-wires.md): note wires in the real engine, with the tests' Test Note Echo machine (TestMachines/NoteEcho) and real Neo machines:
 // a note arrives at the offset it left at, in the same block, for each block size and through chains of three; a source works before its target
 // whichever way the audio graph alone would order them, in each work algorithm; a loop is refused with its reason; a track's insert chain takes
 // the clip and live notes in order and closes up when an insert goes; the wires save, reopen, follow a rename, go with a deleted machine and
@@ -60,7 +60,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>A Note Echo, wired to the Master by audio so the engine works it.</summary>
         static MachineCore Echo(string name, int up = 0, int delay = 0, bool toMaster = true)
         {
-            var m = Add("Note Echo", name);
+            var m = Add("Test Note Echo", name);
             if (toMaster) Audio(m, Master);
             Param(m, "Up").SetValue(0, up);
             Param(m, "Delay").SetValue(0, delay);

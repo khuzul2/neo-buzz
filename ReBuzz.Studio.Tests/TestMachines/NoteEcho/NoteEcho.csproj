@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
     Fork (docs/specs/note-wires.md §8): a note machine for the tests (NoteEcho.cs), built for net10.0 into the studio tests'
-    Gear/Generators as "Note Echo.NET.dll", as GuardTest.csproj builds the guard's. The tests' project builds it.
+    Gear/Generators as "Test Note Echo.NET.dll", as GuardTest.csproj builds the guard's. The tests' project builds it.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <AssemblyName>Note Echo.NET</AssemblyName>
+    <AssemblyName>Test Note Echo.NET</AssemblyName>
     <RootNamespace>ReBuzz.Studio.Tests.TestMachines</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>

@@ -69,7 +69,7 @@ Tools (in `ReBuzz/Agent/NoteWireTools.cs`; guide page `ReBuzz.Agent/Guides/…`)
 
 ## 8. Test machine
 
-`TestNoteEcho` in `ReBuzz.Studio.Tests/TestMachines` (nothing ships): note in and out; echoes each note up 12 semitones at the same offset and a delayed copy a fixed number of samples later (to cross a block edge). Used for the chain and ordering gates.
+`Test Note Echo` in `ReBuzz.Studio.Tests/TestMachines` (named so that it sorts last in the gear menus: a menu one item longer pushed the tests' clicks off the window) (nothing ships): note in and out; echoes each note up 12 semitones at the same offset and a delayed copy a fixed number of samples later (to cross a block edge). Used for the chain and ordering gates.
 
 ## 9. Gates (from the brief) and where each is tested
 
