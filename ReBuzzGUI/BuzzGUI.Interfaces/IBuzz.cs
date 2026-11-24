@@ -3,9 +3,6 @@ using System;
 using System.CodeDom;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-#if WINDOWS
-using System.Windows.Media;
-#endif
 using System.Xml.Linq;
 
 
@@ -39,10 +36,6 @@ namespace BuzzGUI.Interfaces
         bool AudioDeviceDisabled { get; set; }
 
         ReadOnlyCollection<string> MIDIControllers { get; }
-#if WINDOWS
-        // WPF type: Windows build only; the default body asks the WPF app (WpfMachineApi, §4.3).
-        IIndex<string, Color> ThemeColors => WpfMachineApi.ThemeColors?.Invoke(this)!;
-#endif
         IMenuItem MachineIndex { get; }
 
         IMachine MIDIFocusMachine { get; set; }

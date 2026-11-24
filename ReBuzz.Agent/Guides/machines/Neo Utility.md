@@ -45,10 +45,6 @@ Order: Matrix Decode, inversions, Swap, DC removal, Width and Bass mono, Pan, Ga
 
 - Neo Comp, Neo Drive and Neo Exciter in mid/side; Neo Imager for per-band width; Neo Analyzer for `correlation`.
 
-## Successor
-
-Neo Utility replaces Jeskola Gain and Pedal Gain: `machine_replace(machine="Gain")`.
-
 ## Checklist
 
 - [ ] `param_set(machine="Utility", changes=[{"param": "Gain", "value": "-6 dB"}])` then `machine_readings(machine="Utility")`: `peak_db` 6 dB lower.

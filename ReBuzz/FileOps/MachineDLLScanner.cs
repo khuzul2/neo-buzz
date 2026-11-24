@@ -212,22 +212,6 @@ namespace ReBuzz.FileOps
             buzz.DCWriteLine("RescanMachineDLLs");
             var xFileName = GetFullFileName();
 
-            // Fork (mac-engine.md M2): native machines run in Windows host processes; elsewhere
-            // only managed machines are scanned (native ones load as placeholders from songs).
-            NativeMachine.NativeMachineHost nativeMachineHost = null, nativeMachineHost64 = null;
-            if (NativeMachine.NativeMachineHost.Supported)
-            {
-                // Fork (cross-platform.md R1): off Windows there is the one, 64-bit host (nativeMachineHost stays null)
-                if (OperatingSystem.IsWindows())
-                {
-                    nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
-                    nativeMachineHost.InitHost(buzz, false);
-                }
-
-                nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
-                nativeMachineHost64.InitHost(buzz, true);
-            }
-
             string filepath = Path.Combine(buzzPath, "Gear", "Effects");
             var effectDllFiles = GetDllList(filepath);
             filepath = Path.Combine(buzzPath, "Gear", "Generators");
@@ -237,8 +221,8 @@ namespace ReBuzz.FileOps
             machineDLLs.NumDLLsInEffectsFolder = effectDllFiles.Count;
             machineDLLs.NumDLLsGeneratorsFolder = generatorDllFiles.Count;
 
-            List<XMLMachineDLL> effectsList = ValidateDlls(buzz, nativeMachineHost, nativeMachineHost64, effectDllFiles, buzzPath, dispatcher, engineSettings);
-            List<XMLMachineDLL> generatorsList = ValidateDlls(buzz, nativeMachineHost, nativeMachineHost64, generatorDllFiles, buzzPath, dispatcher, engineSettings);
+            List<XMLMachineDLL> effectsList = ValidateDlls(buzz, effectDllFiles, buzzPath, dispatcher, engineSettings);
+            List<XMLMachineDLL> generatorsList = ValidateDlls(buzz, generatorDllFiles, buzzPath, dispatcher, engineSettings);
 
             machineDLLs.EffectMachineDLLs = effectsList.ToArray();
             machineDLLs.GeneratorMachineDLLs = generatorsList.ToArray();
@@ -246,9 +230,6 @@ namespace ReBuzz.FileOps
             // Fork: created only now, so a scan that fails doesn't leave the file open (a rescan
             // then failed with "used by another process").
             Save(File.Create(xFileName), machineDLLs, buzz.UserMessages);
-
-            nativeMachineHost?.Dispose();
-            nativeMachineHost64?.Dispose();
 
             return machineDLLs;
         }
@@ -273,17 +254,12 @@ namespace ReBuzz.FileOps
 
         private static List<XMLMachineDLL> ValidateDlls(
             ReBuzzCore buzz,
-            NativeMachine.NativeMachineHost nativeMachineHost,
-            NativeMachine.NativeMachineHost nativeMachineHost64,
             List<FileInfo> machineDllFiles,
             string buzzPath,
             IUiDispatcher dispatcher, 
             EngineSettings engineSettings)
         {
             List<XMLMachineDLL> machineDLLs = new List<XMLMachineDLL>();
-
-            var uiMessage = nativeMachineHost?.UIMessage;
-            var uiMessage64 = nativeMachineHost64?.UIMessage;
 
             foreach (FileInfo file in machineDllFiles)
             {
@@ -294,8 +270,6 @@ namespace ReBuzz.FileOps
                         buzz,
                         file.Name,
                         file.FullName,
-                        nativeMachineHost,
-                        nativeMachineHost64,
                         buzzPath,
                         dispatcher,
                         engineSettings);
@@ -315,15 +289,10 @@ namespace ReBuzz.FileOps
         public static XMLMachineDLL ValidateDll(ReBuzzCore buzz,
             string libName,
             string path,
-            NativeMachine.NativeMachineHost nativeMachineHost,
-            NativeMachine.NativeMachineHost nativeMachineHost64,
             string buzzPath,
             IUiDispatcher dispatcher,
             EngineSettings engineSettings)
         {
-            var uiMessage = nativeMachineHost?.UIMessage;
-            var uiMessage64 = nativeMachineHost64?.UIMessage;
-
             if (libName.EndsWith("GUI.dll"))
                 return null;
 
@@ -367,126 +336,13 @@ namespace ReBuzz.FileOps
 
                 return mDll;
             }
-            // Fork (cross-platform.md R1): off Windows, the classics rebuilt as .dylib/.so, in the one 64-bit host
-            else if (!OperatingSystem.IsWindows())
-            {
-                if (nativeMachineHost64 == null || !(libName.EndsWith(".dylib") || libName.EndsWith(".so")))
-                    return null;
-                libName = libName.Substring(0, libName.LastIndexOf('.'));
-                var machine = new MachineCore(buzz.SongCore, buzzPath, dispatcher, engineSettings);
-                machine.MachineDLL.Is64Bit = true;
-                if (uiMessage64.UILoadLibrarySync(buzz, machine, libName, path))
-                {
-                    XMLMachineDLL mDll = new XMLMachineDLL();
-                    mDll.Name = libName;
-                    mDll.Path = path;
-                    mDll.Is64Bit = true;
 
-                    XMLMachineInfo machineInfo = new XMLMachineInfo();
-                    var mi = machine.DLL.Info;
-
-                    machineInfo.Type = mi.Type;
-                    machineInfo.Version = mi.Version;
-                    machineInfo.InternalVersion = mi.InternalVersion;
-                    machineInfo.Flags = mi.Flags;
-                    machineInfo.MinTracks = mi.MinTracks;
-                    machineInfo.MaxTracks = mi.MaxTracks;
-                    machineInfo.Name = mi.Name;
-                    machineInfo.ShortName = mi.ShortName;
-                    machineInfo.Author = mi.Author;
-                    mDll.MachineInfo = machineInfo;
-
-                    return mDll;
-                }
-            }
-            // 64 bit native machines
-            else if (nativeMachineHost == null || nativeMachineHost64 == null)
-            {
-                return null;        // fork (mac-engine.md M2): a native machine, and no native host here
-            }
-            else if (libName.EndsWith("x64.dll"))
-            {
-                libName = libName.Remove(libName.Length - 8);
-                var machine = new MachineCore(buzz.SongCore, buzzPath, dispatcher, engineSettings);
-                machine.MachineDLL.Is64Bit = true;
-                if (uiMessage64.UILoadLibrarySync(buzz, machine, libName, path))
-                {
-                    XMLMachineDLL mDll = new XMLMachineDLL();
-                    mDll.Name = libName;
-                    mDll.Path = path;
-                    mDll.Is64Bit = true;
-
-                    XMLMachineInfo machineInfo = new XMLMachineInfo();
-                    var mi = machine.DLL.Info;
-
-                    machineInfo.Type = mi.Type;
-                    machineInfo.Version = mi.Version;
-                    machineInfo.InternalVersion = mi.InternalVersion;
-                    machineInfo.Flags = mi.Flags;
-                    machineInfo.MinTracks = mi.MinTracks;
-                    machineInfo.MaxTracks = mi.MaxTracks;
-                    machineInfo.Name = mi.Name;
-                    machineInfo.ShortName = mi.ShortName;
-                    machineInfo.Author = mi.Author;
-                    mDll.MachineInfo = machineInfo;
-
-                    return mDll;
-                }
-            }
-            // 32 bit
-            else
-            {
-                libName = libName.Remove(libName.Length - 4);
-                var machine = new MachineCore(buzz.SongCore, buzzPath, dispatcher, engineSettings);
-
-                if (uiMessage.UILoadLibrarySync(buzz, machine, libName, path))
-                {
-                    XMLMachineDLL mDll = new XMLMachineDLL();
-                    mDll.Name = libName;
-                    mDll.Path = path;
-                    mDll.IsOutOfProcess = true;
-
-                    XMLMachineInfo machineInfo = new XMLMachineInfo();
-                    var mi = machine.DLL.Info;
-
-                    machineInfo.Type = mi.Type;
-                    machineInfo.Version = mi.Version;
-                    machineInfo.InternalVersion = mi.InternalVersion;
-                    machineInfo.Flags = mi.Flags;
-                    machineInfo.MinTracks = mi.MinTracks;
-                    machineInfo.MaxTracks = mi.MaxTracks;
-                    machineInfo.Name = mi.Name;
-                    machineInfo.ShortName = mi.ShortName;
-                    machineInfo.Author = mi.Author;
-                    mDll.MachineInfo = machineInfo;
-
-                    return mDll;
-                }
-            }
-            return null;
+            return null;        // not a managed machine
         }
 
         public XMLMachineDLL ValidateDll(ReBuzzCore buzz, string libName, string path, string buzzPath)
         {
-            NativeMachine.NativeMachineHost nativeMachineHost = null, nativeMachineHost64 = null;
-            if (NativeMachine.NativeMachineHost.Supported)
-            {
-                // Fork (cross-platform.md R1): off Windows there is the one, 64-bit host (nativeMachineHost stays null)
-                if (OperatingSystem.IsWindows())
-                {
-                    nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
-                    nativeMachineHost.InitHost(buzz, false);
-                }
-
-                nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
-                nativeMachineHost64.InitHost(buzz, true);
-            }
-
-            var ret = ValidateDll(buzz, libName, path, nativeMachineHost, nativeMachineHost64, buzzPath, dispatcher, engineSettings);
-            nativeMachineHost?.Dispose();
-            nativeMachineHost64?.Dispose();
-
-            return ret;
+            return ValidateDll(buzz, libName, path, buzzPath, dispatcher, engineSettings);
         }
 
         public static List<FileInfo> GetDllList(string filepath)
@@ -495,8 +351,7 @@ namespace ReBuzz.FileOps
             DirectoryInfo d = new DirectoryInfo(filepath);
             if (!d.Exists) return new List<FileInfo>();      // fork (mac-engine.md M2): a host without that gear folder
 
-            // Fork (cross-platform.md R1): off Windows the native machines are shared libraries (.dylib, .so)
-            return d.GetFiles().Where(f => f.Name.EndsWith(".dll") || (!OperatingSystem.IsWindows() && (f.Name.EndsWith(".dylib") || f.Name.EndsWith(".so")))).ToList();
+            return d.GetFiles().Where(f => f.Name.EndsWith(".dll")).ToList();
         }
     }
 

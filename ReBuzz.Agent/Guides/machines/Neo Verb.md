@@ -44,10 +44,6 @@ Path: `Pre-delay`, input `Diffusion`, `Early` reflections, a 16-line feedback ne
 
 - Neo Delay before it (echoes into a plate) or beside it on another send; Neo EQ on the return; Neo Comp with the reverb on input 2 to duck it under the source; Neo Gate on the return for a gated tail.
 
-## Successor
-
-Neo Verb replaces Jeskola Reverb and Pedal Plate: `machine_replace(machine="Reverb")` carries the settings over in their units.
-
 ## Checklist
 
 - [ ] `param_set(machine="Verb", changes=[{"param": "Decay", "value": "1.6 s"}])`, then `render(probes=["Verb"])` and `analyze` its loudness: the wet level sits behind the dry sound.

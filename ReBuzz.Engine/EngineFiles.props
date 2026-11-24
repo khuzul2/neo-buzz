@@ -17,7 +17,6 @@
     <EngineSource Include="$(EngineRoot)MachineManagement\**\*.cs" Link="MachineManagement\%(RecursiveDir)%(Filename)%(Extension)" />
     <EngineSource Include="$(EngineRoot)FileOps\**\*.cs" Link="FileOps\%(RecursiveDir)%(Filename)%(Extension)" />
     <EngineSource Include="$(EngineRoot)ManagedMachine\**\*.cs" Link="ManagedMachine\%(RecursiveDir)%(Filename)%(Extension)" />
-    <EngineSource Include="$(EngineRoot)NativeMachine\**\*.cs" Link="NativeMachine\%(RecursiveDir)%(Filename)%(Extension)" />
     <EngineSource Include="$(EngineRoot)Midi\**\*.cs" Link="Midi\%(RecursiveDir)%(Filename)%(Extension)" />
     <EngineSource Include="$(EngineRoot)Agent\**\*.cs" Link="Agent\%(RecursiveDir)%(Filename)%(Extension)" />
     <EngineSource Include="$(EngineRoot)Platform\**\*.cs" Link="Platform\%(RecursiveDir)%(Filename)%(Extension)" />

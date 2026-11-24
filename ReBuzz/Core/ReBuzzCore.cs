@@ -700,7 +700,6 @@ namespace ReBuzz.Core
                 {
                     masterInfo.SamplesPerSec = value;
                     UpdateMasterInfo();
-                    MachineManager.ResetMachines();         // Some machines need this?
                 }
                 PropertyChanged.Raise(this, "SelectedAudioDriverSampleRate");
             }
@@ -2348,7 +2347,6 @@ namespace ReBuzz.Core
 
             //if (songCore.Importing)
             //{
-            //    songCore.DictInitData[machineCore] = new MachineInitData() { data = data, tracks = trackcount };
             //}
 
             if (machineCore != null && patternEditor != null)
@@ -2906,7 +2904,7 @@ namespace ReBuzz.Core
         public event Action<float[], int, int> AudioReceived;
         internal void AudioInputAvalable(float[] samples, int frames, int channels)
         {
-            // Fork (docs/specs/neo-audio.md "Inputs and arm"): the engine's own input, then the old event ("ReBuzz Audio In" still works).
+            // Fork (docs/specs/neo-audio.md "Inputs and arm"): the engine's own input, then the event.
             EngineInput.Push(samples, frames, channels);
             AudioReceived?.Invoke(samples, frames, channels);
         }

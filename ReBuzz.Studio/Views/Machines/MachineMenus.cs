@@ -130,10 +130,6 @@ namespace ReBuzz.Studio.Views.Machines
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Signal Analysis...", () => Shell.Tools.SignalAnalysisWindow.Open(Shell.StudioHost.Current, machine)));
             menu.Items.Add(new Separator());
-            // U5 (mcp-server.md §12.5): a classic machine's Neo successors, the song moved over as machine_replace does it.
-            if (machine is MachineCore classic)
-                foreach (var successor in ReBuzz.Agent.MachineReplace.Successors(core, machine.DLL))
-                    menu.Items.Add(Item($"Replace with {successor.To}...", () => MachineEdits.ReplaceWithSuccessor(core, classic, successor.To)));
             menu.Items.Add(Sub("Replace", Gear(i => MachineEdits.Replace(core, machine, i))));
             // BR1 (docs/specs/browser.md): the browser opens in swap mode for this machine; the next double-click on a result replaces it.
             menu.Items.Add(Item("Hot-swap", () => canvas.Browser?.BeginSwap(machine), machine.DLL.Info.Type != MachineType.Master));

@@ -43,10 +43,6 @@ The LFO runs at `Rate` in Hz or follows the tempo with `Sync`; `Spread` offsets 
 
 - Neo Poly, Neo Wave or Neo Sampler pads before it; Neo Verb after it; Neo Delay for echoes of the swept sound; Neo EQ to keep the lows out of the wet.
 
-## Successor
-
-Neo Ensemble replaces Jeskola Chorus, Jeskola Flanger, FSM Chorus2 and Pedal Chorus: `machine_replace(machine="Chorus")` carries the settings over in their units.
-
 ## Checklist
 
 - [ ] `machine_add(gear="Neo Ensemble", name="Chorus", insert_after="Pad")`, then `preset_load(machine="Chorus", preset="Chorus — Classic")`.

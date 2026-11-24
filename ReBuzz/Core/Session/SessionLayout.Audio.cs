@@ -494,7 +494,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Frames a take drops at its start so it lines up with what was heard: a device input comes back the output latency plus its own
-        /// late, a track source the tap's delay, a hardware input wired through ReBuzz Audio In the output latency. None for the rest.
+        /// late, a track source the tap's delay. None for the rest.
         /// </summary>
         long CaptureSkip(IMachine machine)
         {
@@ -506,31 +506,12 @@ namespace ReBuzz.Core.Session
                 case AudioFromKind.Stereo:
                     return Engine.LatencyCompensation ? buzz.OutputLatencySamples + buzz.EngineInput.LatencyFrames : 0;
                 case AudioFromKind.None: return 0;
-                default: return Engine.LatencyCompensation && HearsHardware(machine) ? buzz.OutputLatencySamples : 0;
+                default: return 0;
             }
         }
 
         /// <summary>Frames an audio take of this machine drops at its start so it lines up (the round trip of what it records).</summary>
         internal long CaptureSkipOf(IMachine machine) => Engine == null || InputOf(machine) == 1 ? 0 : CaptureSkip(machine);
-
-        /// <summary>The ReBuzz Audio In machine: an audio track fed by it records a hardware input.</summary>
-        const string AudioInName = "ReBuzz Audio In";
-
-        /// <summary>Whether what the machine records comes from a hardware input (ReBuzz Audio In, through any machines).</summary>
-        static bool HearsHardware(IMachine machine)
-        {
-            var seen = new HashSet<IMachine>();
-            var next = new Stack<IMachine>();
-            next.Push(machine);
-            while (next.Count > 0 && seen.Count < 256)
-            {
-                var m = next.Pop();
-                if (m == null || !seen.Add(m)) continue;
-                if (m.DLL?.Info?.Name == AudioInName) return true;
-                foreach (var input in m.Inputs) next.Push(input.Source);
-            }
-            return false;
-        }
 
         /// <summary>Frames of audio a number of ticks lasts at a tempo.</summary>
         long FramesOf(long ticks, double bpm, int ticksPerBeat) =>

@@ -353,10 +353,8 @@ namespace ReBuzz.FileOps
 
             fs.Position = section.Offset;
 
-            Dictionary<MachineCore, MachineInitData> dictInitData = new Dictionary<MachineCore, MachineInitData>();
 
             ushort machineCount = ReadUShort(fs);
-            bool superOldSong = machines.Count == 0;
 
             for (int j = 0; j < machineCount; j++)
             {
@@ -393,17 +391,9 @@ namespace ReBuzz.FileOps
                         machineProto.MachineDLL = machineDLL;
                         if (!aliasedLibrary)
                             machineProto.MachineDLL.MachineInfo.Type = (MachineType)type;
-
-                        if (superOldSong)
-                        {
-                            machineProto = FetchMissingMachineInformation(machineProto);
-                        }    
                     }
                     else
                     {
-                        if (superOldSong)
-                            throw new Exception("To load this song, you need to have following machine in your Gear forlder: " + machineLibrary);
-
                         machineDLL = new MachineDLL();
                         machineDLL.Name = machineLibrary;
                         machineDLL.IsMissing = true;
@@ -511,11 +501,6 @@ namespace ReBuzz.FileOps
                     // Saved machine parameter count/indexes might be a different from the machine that is currently available for ReBuzz. Create parameter mappings
                     RemapLoadedMachineParameterIndex(machineNew, machineProto);
 
-                    if (!machineNew.DLL.IsManaged)
-                    {
-                        dictInitData[machineNew] = new MachineInitData() { data = data, tracks = tracks };
-                    }
-
                     // Copy stuff from proto to real. ToDo: Clean this up;
                     CopyAttributes(machineProto, machineNew);
 
@@ -566,86 +551,6 @@ namespace ReBuzz.FileOps
                             importDictionaryNonHidden[name] = machineNew.Name;
                         }
                     }
-                }
-            }
-
-            bool useMultithreading = false;// Global.GeneralSettings.MultithreadSongLoading;
-            // Native control machines need to have all machines "visible" before calling init
-            InitMachines(dictInitData.Where(kv => !kv.Key.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE)), useMultithreading);
-            InitMachines(dictInitData.Where(kv => kv.Key.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE)), useMultithreading);
-        }
-
-        private MachineCore FetchMissingMachineInformation(MachineCore machineProto)
-        {
-            machineProto.MachineDLL = machineProto.MachineDLL.Clone();
-            string machineLib = machineProto.DLL.Name;
-
-            buzz.MachineManager.FetchNativeMachineInfo(machineProto);
-
-            return machineProto;
-        }
-
-        internal void InitMachines(IEnumerable<KeyValuePair<MachineCore, MachineInitData>> dictInitData, bool multiThread)
-        {
-            bool askSkip = keyboard.HasModifierKeyPressed(KeyModifiers.Control) && keyboard.HasModifierKeyPressed(KeyModifiers.Alt);
-            List<Task> initTasks = new List<Task>();
-
-            // Native control machines need to have all machines "visible" before calling init
-            foreach (var kvMachine in dictInitData)
-            {
-                var machine = kvMachine.Key;
-
-                FileOpsEvent(FileEventType.StatusUpdate, "Init Machine: " + machine.Name + "...");
-
-                // Update machine names in ReBuzzEngine
-                buzz.MachineManager.RemapMachineNames(machine, importDictionaryNonHidden);
-
-                if (multiThread)
-                {
-                    var task = Task.Factory.StartNew(() =>
-                    {
-                        var val = kvMachine.Value;
-                        buzz.MachineManager.CallInit(machine, val.data, val.tracks, askSkip);
-                    });
-
-                    initTasks.Add(task);
-                }
-                else
-                {
-                    var val = kvMachine.Value;
-                    buzz.MachineManager.CallInit(machine, val.data, val.tracks, askSkip);
-                }
-            }
-
-            // Wait max xx seconds
-            while (!Task.WaitAll(initTasks.ToArray(), (int)Global.GeneralSettings.SongLoadWait * 1000))
-            {
-                List<MachineCore> badMachinesList = new List<MachineCore>();
-                string machinesMessage = "";
-                foreach (var t in initTasks)
-                {
-                    if (!t.IsCompleted)
-                    {
-                        int index = initTasks.IndexOf(t);
-                        var badMachine = dictInitData.ElementAt(index).Key;
-                        badMachinesList.Add(badMachine);
-                        machinesMessage += badMachine.Name + " (" + badMachine.DLL.Name + ")\n";
-                    }
-                }
-
-                if (!buzz.UserMessages.KeepWaiting("Loading machines below is taking a long time. Do you want to wait more?\n\n" + machinesMessage, "Wait more?"))
-                {
-                    // Init on some machine was not completed
-                    foreach (var badMachine in badMachinesList)
-                    {
-                        badMachine.MachineDLL.IsCrashed = true;
-                        badMachine.Ready = false;
-                        string error = "Init call failed for machine: " + badMachine.Name;
-                        buzz.DCWriteLine(error, DCLogLevel.Error);
-
-                        buzz.MachineManager.DeleteMachine(badMachine);
-                    }
-                    break;
                 }
             }
         }

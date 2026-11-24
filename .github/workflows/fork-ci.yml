@@ -3,8 +3,6 @@ name: Fork CI
 # Fast checks for fork work:
 #  - session-tests: Session View engine unit tests, the agent server's core, the Neo
 #    machines' DSP measurements and the engine's net10.0 build (Linux, a few minutes)
-#  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects), and checks
-#    that the portable machine API is a subset of the Windows one
 # The full solution + package build is fork-package.yml.
 
 # Pushes to main and PRs only (not every branch push), to keep Actions minutes down on a
@@ -248,38 +246,3 @@ jobs:
         name: plugin-host-linux
         path: plugin-host-results
         if-no-files-found: ignore
-
-  core-build:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        submodules: recursive
-
-    - uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-
-    # The Windows machines (Audio In, Audio Out, MIDI Output, Groove) bind to the Windows builds of
-    # BuzzGUI.Interfaces and BuzzGUI.Common. Their projects place their output under $(SolutionDir).
-    - name: Build the Windows machines
-      shell: pwsh
-      run: |
-        foreach ($p in 'Machines/ReBuzzAudioIn/ReBuzzAudioIn.csproj', 'Machines/ReBuzzAudioOut/ReBuzzAudioOut.csproj', 'Machines/MidiOutput/MidiOutput.csproj', 'Machines/ReBuzzGroove/ReBuzzGroove.csproj') {
-          dotnet build $p -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log -Append
-          if ($LASTEXITCODE -ne 0) { throw "$p failed to build" }
-        }
-
-    # Machine API (docs/specs/engine-split.md §4.3): the portable builds of BuzzGUI.Interfaces and
-    # BuzzGUI.Common must stay a subset of the Windows builds that machine DLLs bind to.
-    - name: Surface check
-      shell: pwsh
-      env:
-        PYTHONIOENCODING: utf-8
-      run: python experiments/engine-census/census.py surface "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true
-
-    - name: Annotate build log
-      if: failure()
-      shell: pwsh
-      run: |
-        ./tools/ci-annotate-log.ps1 build.log

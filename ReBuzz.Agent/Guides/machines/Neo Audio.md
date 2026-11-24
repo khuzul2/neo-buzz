@@ -51,10 +51,6 @@ The audio track of the Session View and the arrangement: it plays audio clips (W
 
 - ReBuzz Audio In or any instrument connected to it for takes; the Session View's mixer for levels and sends.
 
-## Successor
-
-None needed: it is the Session Clip Player renamed. A song that names Session Clip Player loads it as Neo Audio, and Classic keeps playing the old name.
-
 ## Checklist
 
 - [ ] `audio_convert_to_midi(machine="Drums audio", pattern="loop", mode="drums", apply=false)`: a list of notes (36 kick, 38 snare, 42 hat), nothing changed; with `apply` left out, a new Neo Drums track and a MIDI clip.

@@ -74,14 +74,12 @@
   "mixing": "Mixes several signals together",
   "metering": "Shows what the signal does; does not change it",
   "routing": "Moves signals between machines or in and out of the app",
-  "audio-io": "Connects to the audio device",
   "recording": "Captures audio into the song",
   "looper": "Loops recorded or placed audio",
   "midi": "Sends or receives MIDI",
   "sequencer": "Plays or edits note and pattern data",
   "chords": "Builds chords from single notes",
   "automation": "Moves other machines' parameters over time",
-  "groove": "Timing feel: swing and shuffle",
   "notes": "Holds notes or text for the song",
   "envelope": "Shapes a value over time from notes or from a signal level",
   "modulation": "Moves other machines' parameters automatically",
@@ -515,34 +513,6 @@
     "bass"
    ],
    "use_for": "Wavetable pads, sweeps, wobble basses and vowel-like leads from two warped table oscillators."
-  },
-  "ReBuzz Audio In": {
-   "category": "Utility",
-   "tags": [
-    "audio-io"
-   ],
-   "use_for": "Bring the audio device's input into the song."
-  },
-  "ReBuzz Audio Out": {
-   "category": "Utility",
-   "tags": [
-    "audio-io"
-   ],
-   "use_for": "Send what is connected to it to other outputs of the audio device."
-  },
-  "ReBuzz Groove": {
-   "category": "Control",
-   "tags": [
-    "groove"
-   ],
-   "use_for": "Swing for the whole song: up to eight steps that stretch or squeeze each tick."
-  },
-  "ReBuzz Midi Output": {
-   "category": "Control",
-   "tags": [
-    "midi"
-   ],
-   "use_for": "Send notes and controller changes from its tracks to a MIDI output device."
   },
   "Neo Audio": {
    "category": "Samplers",

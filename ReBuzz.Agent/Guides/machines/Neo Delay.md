@@ -44,10 +44,6 @@ Time changes glide (small ones bend the pitch like tape) or crossfade (large one
 
 - Neo Verb after it (a short plate on the echoes) or on a parallel send; Neo EQ to shape the return; Neo Comp on the dry source, so the ducked echoes stay clear. For wobble, Neo Tape before it, or Neo Ensemble for a modulated repeat.
 
-## Successor
-
-Neo Delay replaces Jeskola Delay, Jeskola Cross Delay, Jeskola NiNjA dElaY and FSM PanzerDelay: `machine_replace(machine="Delay")` carries the settings over in their units.
-
 ## Checklist
 
 - [ ] `machine_describe(machine="Echo")` shows the How and Sound of each control you changed; `param_set(machine="Echo", changes=[{"param": "Feedback", "value": "35%"}])` takes it.

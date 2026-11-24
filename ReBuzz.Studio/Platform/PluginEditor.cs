@@ -8,7 +8,7 @@
 //    only floats, nothing at all where the platform has no editors (Linux) or the plug-in has none: the caller then opens the
 //    device view as before. A closed window is forgotten, so the next double click opens it again.
 //  - AvaloniaPluginEditorPlatform makes the windows; PluginEditorHost is the NativeControlHost around the plug-in's view: the same
-//    pattern as P6c's ForeignWindowHost (NativeGui.cs, Win32NativeGui.cs) with the library making the container, so the plug-in
+//    pattern as a foreign-window host with the library making the container, so the plug-in
 //    attaches to a view it was given (§8.6: no autoresizing on macOS, the container takes the plug-in's size before layout).
 //
 // Sizes: Windows plug-ins work in physical pixels, so the host tells the plug-in the window's scale and converts with it; macOS

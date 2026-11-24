@@ -40,10 +40,6 @@ A noise gate and downward expander. The gate opens when the key's level reaches 
 
 - Neo Comp after it to level what stays; Neo EQ before it to clean the key; Neo Transient to restore punch.
 
-## Successor
-
-Neo Gate replaces Pedal Gate: `machine_replace(machine="Gate")` carries every setting over in its units (Bypass becomes the machine's bypass); "Pedal Gate — Same Settings" is its defaults.
-
 ## Checklist
 
 - [ ] `machine_readings(machine="Gate")`: `open` flips with the hits, `gain_db` sits at Range between them, no chatter.

@@ -56,10 +56,10 @@ namespace ReBuzz.AgentTests
         }
 
         /// <summary>
-        /// "ReBuzz" as the app's name: not a machine saved in songs ("ReBuzz Audio In"…), a code path (ReBuzz/…), a
+        /// "ReBuzz" as the app's name: a code path (ReBuzz/…), a
         /// dotted name (ReBuzz.Agent), a URI (rebuzz://, lower case) or upstream (based on, a fork of ReBuzz).
         /// </summary>
-        static readonly Regex AppCalledReBuzz = new(@"(?<![/\\\w-])(?<!based on |fork of )ReBuzz(?![\w/\\-])(?!\.\w)(?! Audio (In|Out)| Groove| Midi Output)");
+        static readonly Regex AppCalledReBuzz = new(@"(?<![/\\\w-])(?<!based on |fork of )ReBuzz(?![\w/\\-])(?!\.\w)");
 
         static IEnumerable<string> Hits(string where, string text) =>
             text.Split('\n').Where(line => AppCalledReBuzz.IsMatch(line)).Select(line => $"{where}: {line.Trim()}");

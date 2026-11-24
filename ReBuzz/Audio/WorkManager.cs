@@ -460,7 +460,6 @@ namespace ReBuzz.Audio
                 buzzCore.BPM = bpm;
                 buzzCore.TPB = tpb;
                 buzzCore.UpdateMasterInfo();
-                buzzCore.MachineManager.RefreshMachineParams();
             }
         }
         internal void UpdateSubTickLength()
