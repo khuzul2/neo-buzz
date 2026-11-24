@@ -35,6 +35,17 @@ Follow the newest complete Neo machine as the pattern (see `docs/specs/machines.
 - Gallery screenshots: the branch `ci-artifacts-mac` holds the latest gallery run only. Read your shots right after your run (`git show origin/ci-artifacts-mac:headless/<file>` and `headless-light/`) and check them yourself.
 - **Listening packs** (every new instrument or effect, and every sound change): renders of every preset on the brief's sources, 48 kHz WAV, kept local and never committed, with a README. Run a click detector (second difference against its local mean) on every render: 0 clicks unless the sound is meant to click. Blind A/B packs put each version in slot A in exactly half the items (±1), chosen by a seeded shuffle. The user approves the sound before the machine merges.
 
-## 6. Safety
+## 6. Antigravity: models, advisor and the issue protocol
+- **Two agents per task.** The **workhorse** builds: Antigravity's **Neon (High effort)**. The **advisor** reviews and never writes code or pushes: **Carbon (High effort)**. The project owner starts both from the prompts in `docs/tasks/README.md`.
+- They talk only through the task issue, with comments that start with these exact words:
+  - `SETUP CHECK` (workhorse): branch name, `dotnet --list-sdks`, `gh auth status`, `git submodule status | head`, and the result of building the test project the issue names.
+  - `PLAN READY` (workhorse): the design (approach, parameters with units and ranges, editor layout, presets), the files to add or change, and how each gate will be tested. No code before the advisor's OK.
+  - `ADVISOR PLAN REVIEW` (advisor): `Verdict: OK` or `Verdict: CHANGES REQUIRED`, numbered required changes, then suggestions.
+  - `FINAL READY` (workhorse): head commit, CI run ids and results, screenshots read, listening pack and click-detector results.
+  - `ADVISOR FINAL REVIEW` (advisor): verdict and numbered required fixes. After fixes the workhorse posts `FINAL READY` again.
+  - `REPORT` (workhorse, after an OK final review): the report of §2. Then both stop.
+- Listening packs go in `listening-packs/<issue>/` (git-ignored); the project owner listens on the same computer.
+
+## 7. Safety
 - Never kill processes by name, only ones you started, by id. Don't work around a failing safety check, proxy or permission refusal: report it in the issue.
 - No paid APIs or services without the user's approval in the issue.
