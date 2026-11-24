@@ -25,7 +25,7 @@ namespace NeoBuzz.Tune
         [ParameterDecl(Name = "Humanize", Description = "How much of a held note's own slow drift is kept", MinValue = 0, MaxValue = 1000, DefValue = 300)]
         public int Humanize { get => Values[P.Humanize]; set => Values.Set(P.Humanize, value); }
 
-        [ParameterDecl(Name = "Amount", Description = "How much of the correction is applied: 0 % leaves the voice as sung, 100 % moves it fully to the note", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        [ParameterDecl(Name = "Correction", Description = "How much of the correction is applied: 0 % leaves the voice as sung, 100 % moves it fully to the note", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
 
         [ParameterDecl(Name = "Transpose", Description = "Moves the whole voice up or down by whole semitones, after the correction", MinValue = 0, MaxValue = 48, DefValue = 24)]
@@ -82,7 +82,7 @@ namespace NeoBuzz.Tune
         [ParameterDecl(Name = "Method", Description = "Auto: period splicing for small corrections, PSOLA when formants or a large transpose are used. Splice or PSOLA: always that engine", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int Method { get => Values[P.Method]; set => Values.Set(P.Method, value); }
 
-        [ParameterDecl(Name = "Fx amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
         public int FxAmount { get => Values[P.FxAmount]; set => Values.Set(P.FxAmount, value); }
     }
 }

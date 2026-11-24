@@ -170,7 +170,7 @@ namespace NeoBuzz.Eq
                     Layout.Gap(1, 8),
                     match,
                     Layout.Gap(1, 8),
-                    new ParamChoice(ctx, P.Phase, "Phase", 40)),
+                    new ParamChoice(ctx, P.Phase, "Phase")),   // buttons as wide as "Minimum" needs (40 px clipped it)
                 Layout.Gap(10),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 240),
                 Layout.Gap(6),

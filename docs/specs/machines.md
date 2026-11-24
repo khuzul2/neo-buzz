@@ -1065,7 +1065,7 @@ Every Neo effect has **Amount** (0 - 200 %, default 100 %) and **Mix** (0 - 100 
 | Strip | gate Range, comp ratio and Makeup, Drive, the four EQ gains, Ceiling | stage | no |
 | Tape | Drive, Emphasis, Bump, Loss, Electronics, Wow, Flutter | its own | no |
 | Transient | Attack, Sustain, Impact 1 - 4 | its own | no |
-| Tune | the correction strength (the old Amount, capped at 100 %) and Retune toward 400 ms | its own | **yes in part: the old `Amount` is the correction strength; the new parameter is `Fx amount`** |
+| Tune | the correction strength (`Correction`, capped at 100 %) and Retune toward 400 ms | its own | **in part: `Correction` is the correction strength.** It was shown as "Amount" before FX1 and keeps its id `Amount` and index; the new parameter is id `FxAmount`, shown as "Amount" |
 | Verb | wet Mix toward 0 and Decay (log, from 0.2 s) | its own | no |
 | Utility | Gain and Pan toward 0, Width toward 100 % | stage | no |
 

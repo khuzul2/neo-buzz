@@ -62,7 +62,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Spectral", "NeoSpectralEditor", "neo-spectral-editor", 1004, 300),
             ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 836),   // the live view, key, pitch, triggers with the Train panel, chords and expression
             ("Neo Lo-Fi", "NeoLoFiEditor", "neo-lofi-editor", 1041, 241),   // LF2: Amount and Mix over Tone and Output (1000 x 330 with the three knobs in a column)
-            ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Fx amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
+            ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 675),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (966 x 605 before)

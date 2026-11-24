@@ -137,7 +137,7 @@
   {
    "index": 6,
    "id": "Amount",
-   "name": "Amount",
+   "name": "Correction",
    "group": "Pitch",
    "min": 0,
    "max": 1000,
@@ -438,7 +438,7 @@
   {
    "index": 25,
    "id": "FxAmount",
-   "name": "Fx amount",
+   "name": "Amount",
    "group": "Output",
    "min": 0,
    "max": 2000,
@@ -448,7 +448,7 @@
    "b": 200.0,
    "unit": "%",
    "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
-   "how": "Scales the correction: its strength (up to full) and the retune time. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "how": "Scales the correction: its strength (Correction, up to full) and the retune time. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
    "sound": "Turn it down to let the natural pitch through, up to correct faster and harder."
   }
  ],
