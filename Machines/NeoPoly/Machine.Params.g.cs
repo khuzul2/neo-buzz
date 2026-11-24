@@ -280,7 +280,7 @@ namespace NeoBuzz.Poly
         [ParameterDecl(Name = "M8 amount", Description = "Amount", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int M8Amt { get => Values[P.M8Amt]; set => Values.Set(P.M8Amt, value); }
 
-        [ParameterDecl(Name = "Accent threshold", Description = "Notes at or above this velocity are accented", MinValue = 0, MaxValue = 126, DefValue = 99)]
+        [ParameterDecl(Name = "Accent threshold", Description = "Notes at or above this velocity are accented", MinValue = 0, MaxValue = 126, DefValue = 109)]
         public int AccentThr { get => Values[P.AccentThr]; set => Values.Set(P.AccentThr, value); }
 
         [ParameterDecl(Name = "Accent", Description = "Extra filter envelope depth on accented notes", MinValue = 0, MaxValue = 1000, DefValue = 0)]

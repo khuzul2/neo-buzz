@@ -38,7 +38,7 @@ A polyphonic analogue-style synth: warm saws and pulses through a resonant ladde
 - Notes x unison voices must fit 32: with `Unison` 7 only 4 notes ring at once.
 - `Volume` starts at -6 dB, and 7 unison voices add about 8.5 dB: check peaks on chords.
 - A ladder at resonance near 100 % with `F1 key track` 100 % plays a sine at the note.
-- `Accent threshold` is 100 and a note written without a velocity plays at 100: with `Accent` above 0 every such note is accented. Write the line's velocities in the notes (127 for accents, 90 for the rest) or raise the threshold.
+- `Accent threshold` is 110 and a note written without a velocity plays at 100, so plain notes stay plain: write 110 or more (127 is usual) on the notes to accent. Lower the threshold to accent more of a line.
 - `Accent` and its companions do nothing at their defaults (0 %, `Accent decay` at its top, 0 dB); `Slide` is off. A song made before they existed sounds as it did. Slides need Mono or Legato voice mode; in Poly mode `Slide` does nothing. Accents act on filter 1 only.
 - `Drift` (15 %) moves pitch and cutoff per voice: set 0 % for drums, sub basses and exact A/B renders.
 

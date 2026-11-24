@@ -94,7 +94,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -200,7 +200,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -306,7 +306,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -412,7 +412,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -518,7 +518,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -624,7 +624,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -730,7 +730,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -836,7 +836,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -942,7 +942,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1048,7 +1048,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1154,7 +1154,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1260,7 +1260,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1366,7 +1366,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1472,7 +1472,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1578,7 +1578,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1684,7 +1684,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1790,7 +1790,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -1896,7 +1896,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2002,7 +2002,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2108,7 +2108,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2214,7 +2214,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2320,7 +2320,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2426,7 +2426,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2532,7 +2532,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2638,7 +2638,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2744,7 +2744,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2850,7 +2850,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -2956,7 +2956,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3062,7 +3062,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3168,7 +3168,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3274,7 +3274,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3380,7 +3380,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3486,7 +3486,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3592,7 +3592,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3698,7 +3698,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3804,7 +3804,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="0" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="0" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -3910,7 +3910,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="550" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="500" />
@@ -4016,7 +4016,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="350" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="651" />
@@ -4122,7 +4122,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="700" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="438" />
@@ -4228,7 +4228,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="450" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="562" />
@@ -4334,7 +4334,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="500" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="383" />
@@ -4440,7 +4440,7 @@
         <Parameter Name="M8 source" Group="1" Index="88" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="89" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="90" Track="0" Value="500" />
-        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="99" />
+        <Parameter Name="Accent threshold" Group="1" Index="91" Track="0" Value="109" />
         <Parameter Name="Accent" Group="1" Index="92" Track="0" Value="300" />
         <Parameter Name="Slide" Group="1" Index="93" Track="0" Value="1" />
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="588" />

@@ -301,8 +301,8 @@ M8Amt "M8 amount" 0 1000 500 bip | Amount
 
 # Acid extension (AC1, docs/specs/legacy-machines.md G3). Appended: a song that did not save these keeps the defaults, which change nothing.
 group Voice
-AccentThr   "Accent threshold" 0 126 99  int 1                          | Notes at or above this velocity are accented
-    how Sets the velocity from which a note counts as accented, from 1 to 127.
+AccentThr   "Accent threshold" 0 126 109 int 1                          | Notes at or above this velocity are accented
+    how Sets the velocity from which a note counts as accented, from 1 to 127. The default, 110, is above the 100 a note gets when no velocity is written.
     sound Lower values accent more notes of a line, and 127 accents only the hardest.
 Accent      "Accent"        0 1000 0    pct                             | Extra filter envelope depth on accented notes
     how Adds to the filter envelope's depth on accented notes, from 0 to 100 % (100 % is six octaves at the peak).

@@ -141,7 +141,7 @@ Start from the preset "Acid — Squelch" (Legato, Diode 18 with resonance 78 %, 
 | F1 type | Diode 18 | three poles, squelchy, keeps its bass |
 | F1 reso | 78% | 100 % rings by itself |
 | Accent | 55% | accented notes open the filter 3.3 octaves further |
-| Accent threshold | 100 | notes at velocity 100 or more are accented |
+| Accent threshold | 110 | notes at velocity 110 or more are accented; a note written without a velocity (100) is plain |
 | Accent decay | 70 ms | an accented note's filter closes faster |
 | Accent sweep | 1.2 oct | a run of accents climbs by up to this much |
 | Accent level | +3 dB | accents are louder |

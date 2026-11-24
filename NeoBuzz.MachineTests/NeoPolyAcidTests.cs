@@ -149,15 +149,15 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AccentRaisesTheFilterEnvelopePeakByTheAccentAmountOnAccentedNotesOnly()
         {
-            // Threshold 100: velocities 99 and 100 either side of it, a soft one and a full one.
-            var vel = new[] { 99 / 127f, 100 / 127f, 60 / 127f, 127 / 127f };
+            // Threshold 110: velocities 109 and 110 either side of it, a soft one and a full one.
+            var vel = new[] { 109 / 127f, 110 / 127f, 60 / 127f, 127 / 127f };
             var off = AccentPeaks(v => v.Set(P.Accent, 0), vel, 0.4);
             double amount = 0.4 * 6;   // Accent 40 % = 2.4 octaves of depth
             var on = AccentPeaks(v => Set(v, P.Accent, 0.4), vel, 0.4);
             Measure.Report($"Filter envelope peak (octaves) with Accent 0: {string.Join(", ", off.Select(x => x.ToString("F3")))}; with Accent 40 %: {string.Join(", ", on.Select(x => x.ToString("F3")))}");
             Assert.That(off[0], Is.GreaterThan(1.0f), "the envelope reaches its peak");
-            Assert.That(on[0] - off[0], Is.EqualTo(0).Within(1e-4), "99: not accented");
-            Assert.That(on[1] - off[1], Is.EqualTo(amount).Within(0.005), "100: accented, at the threshold");
+            Assert.That(on[0] - off[0], Is.EqualTo(0).Within(1e-4), "109: not accented");
+            Assert.That(on[1] - off[1], Is.EqualTo(amount).Within(0.005), "110: accented, at the threshold");
             Assert.That(on[2] - off[2], Is.EqualTo(0).Within(1e-4), "60: not accented");
             Assert.That(on[3] - off[3], Is.EqualTo(amount).Within(0.005), "127: accented");
         }
@@ -502,7 +502,7 @@ namespace NeoBuzz.MachineTests
             Assert.That(t[P.F1Type].Max, Is.EqualTo(6));
             Assert.That(t[P.F1Type].Names[6], Is.EqualTo("Diode 18"));
             Assert.That(P.AccentThr, Is.EqualTo(91));
-            Assert.That(t[P.AccentThr].Value(t[P.AccentThr].Default), Is.EqualTo(100), "Accent threshold 100");
+            Assert.That(t[P.AccentThr].Value(t[P.AccentThr].Default), Is.EqualTo(110), "Accent threshold 110");
             Assert.That(t[P.SlideTime].Value(t[P.SlideTime].Default), Is.EqualTo(0.06).Within(1e-6), "Slide time 60 ms");
             Assert.That(t[P.Accent].Value(t[P.Accent].Default), Is.EqualTo(0));
             Assert.That(t[P.AccentSweep].Value(t[P.AccentSweep].Default), Is.EqualTo(0));

@@ -41,7 +41,7 @@ namespace NeoBuzz.Poly
         public float[] MatrixAmt = new float[8];
         public int Version;
         // Acid (docs/specs/legacy-machines.md G3). Defaults change nothing: no accent depth, sweep, level or decay, no slide.
-        public int AccentThreshold = 100;
+        public int AccentThreshold = 110;
         public float AccentDepth;          // octaves added to the filter envelope's depth on an accented note
         public float AccentDecay;          // s, the filter decay of an accented note
         public bool AccentDecayOn;         // false: the knob is at its top, the decay stays as it is

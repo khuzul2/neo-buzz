@@ -1750,11 +1750,11 @@
    "group": "Voice",
    "min": 0,
    "max": 126,
-   "default": 99,
+   "default": 109,
    "kind": "int",
    "a": 1.0,
    "description": "Notes at or above this velocity are accented",
-   "how": "Sets the velocity from which a note counts as accented, from 1 to 127.",
+   "how": "Sets the velocity from which a note counts as accented, from 1 to 127. The default, 110, is above the 100 a note gets when no velocity is written.",
    "sound": "Lower values accent more notes of a line, and 127 accents only the hardest."
   },
   {
