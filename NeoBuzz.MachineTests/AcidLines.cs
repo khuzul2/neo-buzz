@@ -86,7 +86,7 @@ namespace NeoBuzz.MachineTests
         public static List<Ev> MonoLine() => Sequence(Pack.Select(n => n with { Accent = false }).ToArray(), 2, Rate / 10, 100 / 127f);
 
         /// <summary>Renders events through an engine set as <paramref name="preset"/> says (a filter type ≥ 0 replaces its F1 type; <paramref name="tweak"/> runs last), stereo.</summary>
-        public static (float[] L, float[] R, PolyEngine E) Render(Dictionary<int, int> preset, int filterType, List<Ev> events, double seconds, Action<ParamValues> tweak = null, int block = 16)
+        public static (float[] L, float[] R, PolyEngine E) Render(Dictionary<int, int> preset, int filterType, List<Ev> events, double seconds, Action<ParamValues> tweak = null, int block = 16, Action<PolyEngine, int> afterBlock = null)
         {
             var v = new ParamValues(Params.Table);
             foreach (var kv in preset) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
@@ -110,6 +110,7 @@ namespace NeoBuzz.MachineTests
                 }
                 int n = Math.Min(block, total - pos);
                 e.Process(l, r, n);
+                afterBlock?.Invoke(e, pos);
                 Array.Copy(l, 0, yl, pos, n);
                 Array.Copy(r, 0, yr, pos, n);
             }

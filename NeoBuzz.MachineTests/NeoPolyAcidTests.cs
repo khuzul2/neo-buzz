@@ -67,6 +67,7 @@ namespace NeoBuzz.MachineTests
         {
             var v = new ParamValues(Params.Table);
             v.Set(P.F1Type, 6);
+            v.Set(P.AcidRange, Params.Table[P.AcidRange].Max);   // the filter's own pitch: not the acid range's soft ceiling
             Set(v, P.F1Cutoff, cutoff);
             v.Set(P.F1Reso, 1000);
             v.Set(P.F1Key, 1000);
@@ -131,7 +132,7 @@ namespace NeoBuzz.MachineTests
                 e.NoteOn(0, 48, velocities[i]);
                 for (int pos = 0; pos < gap; pos += 256)
                 {
-                    if (pos == gap - 256) e.NoteOff(0);
+                    if (pos == gap - 4096) e.NoteOff(0);
                     e.Process(l, r, 256);
                     peaks[i] = Math.Max(peaks[i], PeakOf(e));
                 }
@@ -337,6 +338,7 @@ namespace NeoBuzz.MachineTests
         {
             var v = new ParamValues(Params.Table);
             v.Set(P.F1Type, type);
+            v.Set(P.AcidQuality, 0);   // the filter's own cost: the oversampling of an acid patch is measured apart
             v.Set(P.F1Reso, 700);
             v.Set(P.Polyphony, 8);
             v.Set(P.Drift, 0);
@@ -498,7 +500,7 @@ namespace NeoBuzz.MachineTests
         public void TheAcidParametersAreAppendedWithDefaultsThatChangeNothing()
         {
             var t = Params.Table;
-            Assert.That(t.Length, Is.EqualTo(98));
+            Assert.That(t.Length, Is.EqualTo(102));
             Assert.That(t[P.F1Type].Max, Is.EqualTo(6));
             Assert.That(t[P.F1Type].Names[6], Is.EqualTo("Diode 18"));
             Assert.That(P.AccentThr, Is.EqualTo(91));
@@ -516,17 +518,19 @@ namespace NeoBuzz.MachineTests
         {
             // Version 0's 91 keys, as the machine's step lists them; its first 91 table entries are the same by key and position.
             var v0 = Params.Table.Take(91).Select(p => p.Id).ToArray();
-            var chain = new StateMigrations(Params.Table).Step(v0, s => { });
+            var v1 = Params.Table.Take(98).Select(p => p.Id).ToArray();
+            var chain = new StateMigrations(Params.Table).Step(v0, s => { })
+                .Step(v1, s => s.Add("AcidRange", 163).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650));
             Assert.That(chain.Validate(), Is.Empty);
-            Assert.That(chain.Current, Is.EqualTo(1));
+            Assert.That(chain.Current, Is.EqualTo(2));
             var saved = new int[91];
             for (int i = 0; i < 91; i++) saved[i] = Params.Table[i].Default;
             saved[P.F1Type] = 5;
             saved[P.F1Cutoff] = 321;
             var now = chain.MigrateGlobals(0, saved);
-            Assert.That(now.Length, Is.EqualTo(98));
+            Assert.That(now.Length, Is.EqualTo(102));
             for (int i = 0; i < 91; i++) Assert.That(now[i], Is.EqualTo(saved[i]), Params.Table[i].Id);
-            for (int i = 91; i < 98; i++) Assert.That(now[i], Is.EqualTo(Params.Table[i].Default), Params.Table[i].Id);
+            for (int i = 91; i < 102; i++) Assert.That(now[i], Is.EqualTo(Params.Table[i].Default), Params.Table[i].Id);
         }
     }
 }

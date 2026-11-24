@@ -40,7 +40,8 @@ A polyphonic analogue-style synth: warm saws and pulses through a resonant ladde
 - A ladder at resonance near 100 % with `F1 key track` 100 % plays a sine at the note.
 - `Accent threshold` is 110 and a note written without a velocity plays at 100, so plain notes stay plain: write 110 or more (127 is usual) on the notes to accent. Lower the threshold to accent more of a line.
 - `Accent` and its companions do nothing at their defaults (0 %, `Accent decay` at its top, 0 dB); `Slide` is off. A song made before they existed sounds as it did. Slides need Mono or Legato voice mode; in Poly mode `Slide` does nothing. Accents act on filter 1 only.
-- In a patch that uses the acid controls (Slide, Accent, Accent sweep, Accent level or Diode 18) the voice keeps its notes clean: accent and slide move the cutoff and the level smoothly (no steps), a slid note's filter follows its gliding pitch, a note that starts from silence fades in over about 1.5 ms, and the filter envelope never opens faster than 5 ms (a resonant filter swept several octaves in under a millisecond rings like a click). Patches that do not use them play exactly as before.
+- An acid patch (it uses Slide, Accent, Accent sweep, Accent level or Diode 18) keeps its notes clean, and four controls set the bounds: `Filter range` (the soft ceiling filter 1's cutoff approaches, default 1.6 kHz), `Sweep limit` (the most a run of accents can swell the filter, 50 % of 3 octaves), `Soft start` (a smooth onset and the shortest release, 3.5 ms) and `Filter quality` (Eco 1x, High 2x, Ultra 4x oversampling of the filter, which adds 0, 15 or 23 samples of delay to it). The defaults are the clean ones: raise `Filter range` toward 18 kHz, `Sweep limit` to 100 %, lower `Soft start` to 0.5 ms or choose Eco for a harder, brighter line, and clicks and buzz can come back, by your choice. Other patches play exactly as before.
+- The editor's Full | Acid switch: the Acid view shows Tuning (O1 fine), Cutoff, Resonance, Env mod (F1 env), Decay (filter decay) and Accent as big knobs, the Waveform (saw or square on O1 shape), Slide and Slide time, and the four limits; they are the same parameters as in Full. A patch that uses the acid controls opens in the Acid view.
 - `Drift` (15 %) moves pitch and cutoff per voice: set 0 % for drums, sub basses and exact A/B renders.
 
 ## Pairs well with
@@ -49,7 +50,7 @@ A polyphonic analogue-style synth: warm saws and pulses through a resonant ladde
 
 ## Successor
 
-Neo Poly replaces Jeskola Bass, Bass 2 and Bass 3: `machine_replace(machine="Bass")` carries the settings over in their units. It also takes over the acid role of the old Aggressor 303 and Bass 3 lines with Diode 18, `Accent` and `Slide`.
+Neo Poly replaces Jeskola Bass, Bass 2 and Bass 3: `machine_replace(machine="Bass")` carries the settings over in their units. It also takes over the acid role of the old Aggressor and Bass 3 lines with Diode 18, `Accent` and `Slide`.
 
 ## Checklist
 

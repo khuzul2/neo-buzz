@@ -101,6 +101,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -207,6 +211,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -313,6 +321,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -419,6 +431,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -525,6 +541,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -631,6 +651,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -737,6 +761,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -843,6 +871,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -949,6 +981,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1055,6 +1091,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1161,6 +1201,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1267,6 +1311,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1373,6 +1421,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1479,6 +1531,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1585,6 +1641,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1691,6 +1751,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1797,6 +1861,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1903,6 +1971,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2009,6 +2081,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2115,6 +2191,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2221,6 +2301,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2327,6 +2411,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2433,6 +2521,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2539,6 +2631,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2645,6 +2741,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2751,6 +2851,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2857,6 +2961,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2963,6 +3071,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3069,6 +3181,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3175,6 +3291,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3281,6 +3401,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3387,6 +3511,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3493,6 +3621,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3599,6 +3731,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3705,6 +3841,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3811,6 +3951,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="1000" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="0" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="0" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3917,6 +4061,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="466" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="400" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment>Resonant diode bass with accents that bite and slides: play it in a line, hard notes accented.</Comment>
@@ -4023,6 +4171,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="538" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="267" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment>A softer, stretchier acid: longer slides, a rounder filter and a gentle accent.</Comment>
@@ -4129,6 +4281,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="435" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="733" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="333" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment>Near self-oscillation on a square wave: accents climb and squeal.</Comment>
@@ -4235,6 +4391,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="500" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="333" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment>A dark, heavy acid bass with a sub underneath.</Comment>
@@ -4252,7 +4412,7 @@
         <Parameter Name="Glide" Group="1" Index="6" Track="0" Value="200" />
         <Parameter Name="Bend range" Group="1" Index="7" Track="0" Value="2" />
         <Parameter Name="Drift" Group="1" Index="8" Track="0" Value="50" />
-        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="804" />
+        <Parameter Name="Volume" Group="1" Index="9" Track="0" Value="783" />
         <Parameter Name="Vel → amp" Group="1" Index="10" Track="0" Value="300" />
         <Parameter Name="O1 shape" Group="1" Index="11" Track="0" Value="667" />
         <Parameter Name="O1 PW" Group="1" Index="12" Track="0" Value="500" />
@@ -4280,7 +4440,7 @@
         <Parameter Name="F1 cutoff" Group="1" Index="34" Track="0" Value="441" />
         <Parameter Name="F1 reso" Group="1" Index="35" Track="0" Value="700" />
         <Parameter Name="F1 drive" Group="1" Index="36" Track="0" Value="208" />
-        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="825" />
+        <Parameter Name="F1 env" Group="1" Index="37" Track="0" Value="790" />
         <Parameter Name="F1 key track" Group="1" Index="38" Track="0" Value="300" />
         <Parameter Name="F1 velocity" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="F2 type" Group="1" Index="40" Track="0" Value="0" />
@@ -4341,6 +4501,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="414" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="467" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment>Short, snappy acid notes that die away quickly.</Comment>
@@ -4447,6 +4611,10 @@
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="517" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="200" />
         <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
+        <Parameter Name="Filter range" Group="1" Index="98" Track="0" Value="163" />
+        <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
+        <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
+        <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment>A round, low acid line that stays mostly sub, with a little filter movement.</Comment>

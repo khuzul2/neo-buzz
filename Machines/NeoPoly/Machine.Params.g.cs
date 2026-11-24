@@ -301,6 +301,18 @@ namespace NeoBuzz.Poly
         [ParameterDecl(Name = "Accent level", Description = "Extra level on accented notes", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AccentLevel { get => Values[P.AccentLevel]; set => Values.Set(P.AccentLevel, value); }
 
+        [ParameterDecl(Name = "Filter range", Description = "The highest cutoff an acid patch's filter 1 reaches (a soft ceiling)", MinValue = 0, MaxValue = 1000, DefValue = 163)]
+        public int AcidRange { get => Values[P.AcidRange]; set => Values.Set(P.AcidRange, value); }
+
+        [ParameterDecl(Name = "Sweep limit", Description = "The most a run of accents can swell the filter, as a share of 3 octaves", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AcidSweepMax { get => Values[P.AcidSweepMax]; set => Values.Set(P.AcidSweepMax, value); }
+
+        [ParameterDecl(Name = "Filter quality", Description = "Oversampling of an acid patch's filter 1", MinValue = 0, MaxValue = 2, DefValue = 1)]
+        public int AcidQuality { get => Values[P.AcidQuality]; set => Values.Set(P.AcidQuality, value); }
+
+        [ParameterDecl(Name = "Soft start", Description = "How smoothly an acid patch's notes start and end", MinValue = 0, MaxValue = 1000, DefValue = 650)]
+        public int AcidSoft { get => Values[P.AcidSoft]; set => Values.Set(P.AcidSoft, value); }
+
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);
 

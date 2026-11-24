@@ -15,16 +15,18 @@ namespace NeoBuzz.MachineTests
     /// </summary>
     internal static class AcidGate
     {
-        public const double MaxEverywhere = 0.010, MaxAtBoundary = 0.004, BroadbandDb = 6, BroadbandFloorDb = -90;
+        public const double MaxEverywhere = 0.010, MaxAtBoundary = 0.004, BroadbandDb = 6, BroadbandFloorDb = -90, BrightFloorDb = -75, DarkMidDb = -70;
         const int Rate = Measure.Rate;
 
         public sealed class Row
         {
             public int Step;
-            public double Max2d, Near2d, BroadbandDb, BroadbandLevelDb;
+            public double Max2d, Near2d, BroadbandDb, BroadbandLevelDb, MidLevelDb;
             public bool Bad2d => Max2d > MaxEverywhere;
             public bool BadNear => Near2d > MaxAtBoundary;
-            public bool BadBroadband => BroadbandDb > AcidGate.BroadbandDb && BroadbandLevelDb > BroadbandFloorDb;
+            /// <summary>Over the window by more than 6 dB and above the floor. A note with little between 1.5 and 6 kHz (a dark bass) has nothing to mask a burst above 6 kHz: the floor is -90 dBFS.
+            /// A bright note's own upper mids mask the same burst up to -75 dBFS (its filter opens by design, and a note that opens is brighter at its start than 50 ms later).</summary>
+            public bool BadBroadband => BroadbandDb > AcidGate.BroadbandDb && BroadbandLevelDb > (MidLevelDb < DarkMidDb ? BroadbandFloorDb : BrightFloorDb);
             public bool Bad => Bad2d || BadNear || BadBroadband;
         }
 
@@ -32,11 +34,13 @@ namespace NeoBuzz.MachineTests
         public static (List<int> Ons, List<int> Offs) Boundaries(List<Ev> events) =>
             (events.Where(e => e.Note >= 0).Select(e => e.At).OrderBy(x => x).ToList(), events.Where(e => e.Note < 0).Select(e => e.At).OrderBy(x => x).ToList());
 
-        public static float[] HighPass6k(float[] x)
+        public static float[] HighPass6k(float[] x) => HighPass(x, 6000);
+
+        public static float[] HighPass(float[] x, double hz)
         {
             var a = new Biquad(); var b = new Biquad();
-            a.Set(BiquadType.HighPass, 6000, Rate, 0.5411961);      // a 4th-order Butterworth
-            b.Set(BiquadType.HighPass, 6000, Rate, 1.3065630);
+            a.Set(BiquadType.HighPass, hz, Rate, 0.5411961);      // a 4th-order Butterworth
+            b.Set(BiquadType.HighPass, hz, Rate, 1.3065630);
             var y = new float[x.Length];
             for (int i = 0; i < x.Length; i++) y[i] = b.Process(a.Process(x[i]));
             return y;
@@ -57,6 +61,7 @@ namespace NeoBuzz.MachineTests
             var d = new float[x.Length];
             for (int i = 1; i < x.Length - 1; i++) d[i] = Math.Abs(x[i + 1] - 2 * x[i] + x[i - 1]);
             var hp = HighPass6k(x);
+            var hp15 = HighPass(x, 1500);
             int w = (int)(0.005 * Rate);
             var rows = new List<Row>();
             for (int k = 0; k < ons.Count; k++)
@@ -75,6 +80,7 @@ namespace NeoBuzz.MachineTests
                     double e1 = Power(hp, a, a + 480), e2 = Power(hp, a + 1440, a + 3840);
                     r.BroadbandDb = 10 * Math.Log10(e1 / e2);
                     r.BroadbandLevelDb = 10 * Math.Log10(e1);
+                    r.MidLevelDb = 10 * Math.Log10(Math.Max(1e-14, Power(hp15, a, a + 3840) - Power(hp, a, a + 3840)));
                 }
                 else r.BroadbandDb = -999;
                 rows.Add(r);

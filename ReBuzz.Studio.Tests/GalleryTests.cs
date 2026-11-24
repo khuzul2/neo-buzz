@@ -2005,9 +2005,15 @@ namespace ReBuzz.Studio.Tests
                 }
                 P5aShot("490-editor-neo-poly-modulation", "Neo Poly", (w, m) =>
                 {
-                    var tabs = EditorPart(w, "PageTabs", "Page tabs");
+                    // The editor has two rows of tabs now (Full | Acid above, Synth | Modulation inside the Full view): the inner ones.
+                    var tabs = w.GetVisualDescendants().OfType<Control>().Last(c => c.GetType().Name == "PageTabs" && Avalonia.Automation.AutomationProperties.GetName(c) == "Page tabs");
                     ClickIn(w, tabs, 120, 12);
-                }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Modulation tab (or Right on the tabs).");
+                }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Full view's Modulation tab (or Right on the tabs).");
+                P5aShot("496-editor-neo-poly-acid-view", "Neo Poly", (w, m) =>
+                {
+                    var outer = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "Pages");
+                    outer.GetType().GetProperty("Selected")!.SetValue(outer, 1);
+                }, "Neo Poly's Acid view (AC3): six big knobs (Tuning, Cutoff, Resonance, Env mod, Decay, Accent), the waveform switch (saw or square), Slide and Slide time, and below them the four limits (Filter range, Sweep limit, Soft start, Filter quality). A patch that uses the acid controls opens in it; Full is the other view.", "Double-click Neo Poly, then Acid in the tabs at the top.");
                 P5aShot("491-editor-neo-fm6-operator-4", "Neo FM6", (w, m) =>
                 {
                     var tiles = EditorPart(w, "InteractiveGraph", "Operator overview");

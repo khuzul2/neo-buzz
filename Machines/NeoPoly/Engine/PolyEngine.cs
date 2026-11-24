@@ -55,6 +55,9 @@ namespace NeoBuzz.Poly
         /// (<see cref="PolyVoice.StartRampSeconds"/>) and a slid note's cutoff follows its gliding pitch.
         /// </summary>
         public bool Acid;
+        // AC3 acid bounds: filter range (Hz), sweep limit (octaves), soft start (s), oversampling factor (1, 2, 4).
+        public float AcidRange = 1600f, SweepMax = 1.5f, SoftStart = 0.0035f, VcaCoef;
+        public int Oversample = 2;
     }
 
     internal sealed class PolyEngine : INoteSink
@@ -167,6 +170,11 @@ namespace NeoBuzz.Poly
             s.AccentDecayOn = values[P.AccentDecay] < 1000;
             s.AccentSweepCap = values.F(P.AccentSweep);
             s.AccentGain = (float)DspMath.DbToGain(values.Value(P.AccentLevel));
+            s.AcidRange = values.F(P.AcidRange);
+            s.SweepMax = values.F(P.AcidSweepMax) * 3f;
+            s.SoftStart = values.F(P.AcidSoft);
+            s.Oversample = values.Choice(P.AcidQuality) == 0 ? 1 : values.Choice(P.AcidQuality) == 2 ? 4 : 2;
+            s.VcaCoef = 1f - PortableMathF.Exp(-1f / (s.SoftStart / 3.5f * sampleRate));
             s.Slide = values.On(P.Slide);
             s.SlideTime = values.F(P.SlideTime);
             s.Acid = s.Slide || s.AccentDepth > 0 || s.AccentSweepCap > 0 || s.AccentGain != 1f || s.F1Type == 6;
@@ -232,11 +240,12 @@ namespace NeoBuzz.Poly
             // Accent: a note at or above the threshold (MIDI velocity 1 … 127). A run of them swells the filter up to the cap, and it relaxes between.
             NoteAccented = (int)MathF.Round(velocity * 127f) >= S.AccentThreshold;
             NoteSweep = 0;
-            if (NoteAccented && S.AccentSweepCap > 0)
+            float sweepCap = Math.Min(S.AccentSweepCap, S.SweepMax);
+            if (NoteAccented && sweepCap > 0)
             {
                 float dt = (clock - lastAccentClock) / sampleRate;
                 sweep = sweep > 0 ? sweep * PortableMathF.Exp(-dt / SweepRelax) : 0;
-                sweep = Math.Min(S.AccentSweepCap, sweep + S.AccentSweepCap / 3f);
+                sweep = Math.Min(sweepCap, sweep + sweepCap / 3f);
                 lastAccentClock = clock;
                 NoteSweep = sweep;
             }
@@ -333,7 +342,22 @@ namespace NeoBuzz.Poly
         float envPeakOct, envNowOct, envPeakLevel, depthPeak;
         // The accent follows the note's accent state smoothly: its filter depth (octaves) and its level (gain) glide to their targets
         // (AccentSmooth), the level per sample, so neither the cutoff nor the gain ever steps.
-        const float AccentGainSmooth = 0.003f, AccentDepthSmooth = 0.001f;
+        const float AccentGainSmooth = 0.003f, AccentDepthSmooth = 0.006f;
+        // AC3: bounds on an acid patch's filter 1, like the circuit it evokes (a filter cap and a bounded supply, not a runaway):
+        // the cutoff approaches AcidCeilingHz smoothly and never passes it; the octaves the modulation adds in total (key, envelope,
+        // accent, sweep, velocity, matrix, drift) are the sum up to AcidModKneeOct and then saturate toward AcidModMaxOct.
+        internal const float AcidModKneeOct = 3f, AcidModMaxOct = 5.5f, AcidAccentLiftOct = 0.15f;
+        // The acid VCA: the amp gain goes through two one-poles (a smooth onset and release, with no corner where an envelope starts or
+        // ends), a cold start rises over a raised cosine, a steal fades over a raised cosine, the release is never under AcidReleaseMin.
+        // (their lengths come from the Soft start control; the steal fade is twice it, never under 6 ms; the release is never under 5 ms.)
+        // The acid filter runs at 2x or 4x the sample rate between linear-phase half-band filters (31 taps, 80 dB): 15 samples of latency at 2x, 23 at 4x.
+        internal static int AcidLatencySamples(int oversample) => oversample == 4 ? 23 : oversample == 2 ? 15 : 0;
+        static readonly FirHalfbandDesign OsDesign = new FirHalfbandDesign(8, 80);
+        readonly FirHalfband os1 = new FirHalfband(OsDesign), os2up = new FirHalfband(OsDesign), os2down = new FirHalfband(OsDesign);
+        float vca1, vca2;
+        /// <summary>Test probe: when set, every sample of an acid ladder or diode filter logs its cutoff (Hz) here (up to the array's length).</summary>
+        internal float[] CutLog;
+        internal int CutLogCount;
         float accDepthCur, accGainRun = 1f, accGainInc, accGainEndOfBlock = 1f;
         // A hard start (a cold voice in an acid patch) fades its oscillators in over this long, so the cold filter is not struck.
         internal const float StartRampSeconds = 0.0015f;
@@ -386,6 +410,8 @@ namespace NeoBuzz.Poly
         /// <summary>The depth (octaves) the filter envelope scales by on this note once its accent has settled (the accent's depth glides in over a millisecond).</summary>
         internal float EnvDepthOct => depthPeak;
         internal bool Accented => accented;
+        /// <summary>Filter 1's cutoff (Hz) at the last control point (test probe).</summary>
+        internal float Cut1Hz;
 
         public void NoteOn(float n, float vel, int unisonIndex, int unisonCount, float glideFrom)
         {
@@ -397,7 +423,7 @@ namespace NeoBuzz.Poly
                 pending = true;
                 pendRelease = false;
                 pendNote = n; pendVel = vel; pendUni = unisonIndex; pendUniCount = unisonCount; pendGlideFrom = glideFrom;
-                steal.Start(sr);
+                steal.Start(sr, engine.S.Acid ? Math.Max(0.006f, 2f * engine.S.SoftStart) : 0.003f);
                 return;
             }
             if (pending)
@@ -439,8 +465,14 @@ namespace NeoBuzz.Poly
             if (s.Acid && ampEnv.Level < QuietLevel)
             {
                 startRamp = 0;
-                startRampInc = 1f / (StartRampSeconds * sr);
+                startRampInc = 1f / ((s.Acid ? s.SoftStart : StartRampSeconds) * sr);
                 coldRamp = false;
+            }
+            // A start from silence takes the note's accent state at once (nothing is sounding to step), so a short accent bites from the first millisecond.
+            if (s.Acid && ampEnv.Level < QuietLevel)
+            {
+                accDepthCur = accented ? s.AccentDepth + accentSweep : 0f;
+                accGainRun = accGainEndOfBlock = accented ? s.AccentGain : 1f;
             }
             if (!ampEnv.IsActive)
             {
@@ -448,6 +480,8 @@ namespace NeoBuzz.Poly
                 diode.Reset();
                 svf1.Reset();
                 svf2.Reset();
+                os1.Reset(); os2up.Reset(); os2down.Reset();
+                vca1 = vca2 = 0;
                 // A cold start in an acid patch: the oscillators start with their band-limiting buffers full (not with the last note's
                 // tail, then silence) and the filter's coefficient starts where it is going.
                 if (s.Acid)
@@ -507,7 +541,7 @@ namespace NeoBuzz.Poly
         {
             pending = false;
             pendRelease = false;
-            if (ampEnv.IsActive) steal.Start(sr, 0.004f);
+            if (ampEnv.IsActive) steal.Start(sr, engine.S.Acid ? Math.Max(0.006f, 2f * engine.S.SoftStart) : 0.004f);
             ampEnv.Gate(false);
             fltEnv.Gate(false);
             modEnv.Gate(false);
@@ -518,7 +552,7 @@ namespace NeoBuzz.Poly
             var s = engine.S;
             if (!force && envVersion == s.Version) return;
             envVersion = s.Version;
-            ampEnv.Set(s.AmpEnv[0], s.AmpEnv[1], s.AmpEnv[2], s.AmpEnv[3]);
+            ampEnv.Set(s.AmpEnv[0], s.AmpEnv[1], s.AmpEnv[2], s.Acid ? Math.Max(s.AmpEnv[3], Math.Max(0.005f, s.SoftStart)) : s.AmpEnv[3]);
             // An acid patch's filter never opens faster than FilterAttackMin: a resonant filter swept several octaves in under a millisecond
             // rings like a click (and the cutoff would move whole octaves between two control points).
             fltEnv.Set(s.Acid ? Math.Max(s.FltEnv[0], FilterAttackMin) : s.FltEnv[0], accented && s.AccentDecayOn ? Math.Min(s.FltEnv[1], s.AccentDecay) : s.FltEnv[1], s.FltEnv[2], s.FltEnv[3]);
@@ -635,10 +669,20 @@ namespace NeoBuzz.Poly
             envNowOct = envOct;
             if (envOct > envPeakOct) { envPeakOct = envOct; envPeakLevel = fenv; }
             float oct1 = key * s.F1Key + envOct + velOct + dst[(int)ModDest.F1Cutoff] * 6f + driftCut;
-            float cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
+            float cut1;
+            if (s.Acid)
+            {
+                // An accented note's ceiling is a little higher (up to AcidAccentLiftOct, as its depth glides in), so an accent stays brighter than a plain note
+                // even when both reach the range.
+                float range = s.AcidRange * PortableMathF.Pow(2, AcidAccentLiftOct * Math.Min(1f, accDepthCur));
+                cut1 = DspMath.Clamp(SoftCeiling(s.F1Cutoff * PortableMathF.Pow(2, SoftOctaves(oct1)), range), 16f, sr * 0.48f);
+            }
+            else cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
             float reso1 = DspMath.Clamp(s.F1Reso + dst[(int)ModDest.F1Reso], 0, 1);
-            float g1 = Svf.Prewarp(cut1, sr);
+            Cut1Hz = cut1;
             interp = s.Acid && (s.F1Type <= 1 || s.F1Type == 6);
+            // The acid ladder and diode run at 1x, 2x or 4x the sample rate: their coefficient comes from that rate.
+            float g1 = Svf.Prewarp(cut1, interp ? s.Oversample * sr : sr);
             if (interp)
             {
                 if (filterCold)
@@ -675,6 +719,24 @@ namespace NeoBuzz.Poly
             DspMath.PanGains(pan, out panL, out panR);
         }
 
+        /// <summary>The cutoff approaches <paramref name="ceiling"/> smoothly from below and never passes it: c / (1 + (c/ceiling)^4)^(1/4).</summary>
+        static float SoftCeiling(float c, float ceiling)
+        {
+            float r = c / ceiling, r2 = r * r;
+            return c / MathF.Sqrt(MathF.Sqrt(1f + r2 * r2));
+        }
+
+        /// <summary>Total octaves of modulation: as they are up to the knee, then bent toward the maximum (tanh), so no sum runs away.</summary>
+        static float SoftOctaves(float o)
+        {
+            if (o <= AcidModKneeOct) return o;
+            float w = AcidModMaxOct - AcidModKneeOct;
+            return AcidModKneeOct + w * DspMath.FastTanh((o - AcidModKneeOct) / w);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        float Run(int f1, float x, float drive, bool lp12) => f1 == 6 ? diode.Process(x, drive) : ladder.Process(x, drive, lp12);
+
         double Inc(float semis)
         {
             double hz = DspMath.NoteToHz(semis);
@@ -703,7 +765,8 @@ namespace NeoBuzz.Poly
                 float rampGain = 1f;
                 if (startRamp < 1f)
                 {
-                    rampGain = startRamp * startRamp * (3f - 2f * startRamp);   // a smooth step: no corner where it starts
+                    // A smooth step (a raised cosine for an acid patch): no corner where it starts
+                    rampGain = s.Acid ? 0.5f - 0.5f * PortableMathF.Cos(MathF.PI * startRamp) : startRamp * startRamp * (3f - 2f * startRamp);
                     startRamp = Math.Min(1f, startRamp + startRampInc);
                     if (coldRamp) x *= rampGain;
                 }
@@ -718,9 +781,27 @@ namespace NeoBuzz.Poly
                     g1Run += g1Step;
                     r1Run += r1Step;
                     if (f1 == 6) diode.Set(g1Run, r1Run); else ladder.Set(g1Run, r1Run);
+                    if (CutLog != null && CutLogCount < CutLog.Length)
+                        CutLog[CutLogCount++] = (float)(2.0 * sr * Math.Atan(g1Run) / Math.PI);
                 }
                 float y1;
-                if (f1 <= 1) y1 = ladder.Process(x, drive, lp12);
+                if (interp && s.Oversample == 2)
+                {
+                    // Twice the sample rate through the filter: a resonant filter near the top of the band does not alias.
+                    os1.Up(x, out float u0, out float u1);
+                    y1 = os1.Down(Run(f1, u0, drive, lp12), Run(f1, u1, drive, lp12));
+                }
+                else if (interp && s.Oversample == 4)
+                {
+                    os1.Up(x, out float u0, out float u1);
+                    os2up.Up(u0, out float a0, out float a1);
+                    os2up.Up(u1, out float b0, out float b1);
+                    float d0 = os2down.Down(Run(f1, a0, drive, lp12), Run(f1, a1, drive, lp12));
+                    float d1 = os2down.Down(Run(f1, b0, drive, lp12), Run(f1, b1, drive, lp12));
+                    y1 = os1.Down(d0, d1);
+                }
+                else if (interp) y1 = Run(f1, x, drive, lp12);
+                else if (f1 <= 1) y1 = ladder.Process(x, drive, lp12);
                 else if (f1 == 6) y1 = diode.Process(x, drive);
                 else
                 {
@@ -735,6 +816,13 @@ namespace NeoBuzz.Poly
                 float env = ampEnv.Next();
                 float g = env * ampMod * accGainRun * rampGain;
                 accGainRun += accGainInc;
+                if (s.Acid)
+                {
+                    // Two one-poles on the amp gain: the envelope's corners (its start, the end of its attack, its release) are rounded.
+                    vca1 += (g - vca1) * s.VcaCoef;
+                    vca2 += (vca1 - vca2) * s.VcaCoef;
+                    g = vca2;
+                }
                 if (steal.Fading)
                 {
                     if (!steal.Next(out float sg))
@@ -754,7 +842,7 @@ namespace NeoBuzz.Poly
                         }
                         sg = 0;
                     }
-                    g *= sg;
+                    g *= s.Acid ? sg * sg * (3f - 2f * sg) : sg;
                 }
                 float o = y * g;
                 left[offset + i] += o * panL;
@@ -766,8 +854,11 @@ namespace NeoBuzz.Poly
             diode.Flush();
             svf1.Flush();
             svf2.Flush();
+            vca1 = DspMath.Flush(vca1);
+            vca2 = DspMath.Flush(vca2);
             if (!ampEnv.IsActive && !steal.Fading && !pending)
             {
+                vca1 = vca2 = 0;
                 fltEnv.Reset();
                 modEnv.Reset();
             }

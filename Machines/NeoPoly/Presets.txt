@@ -1010,7 +1010,7 @@ O1 octave = 0
 F1 type = Diode 18
 F1 cutoff = 420
 F1 reso = 70
-F1 env = 65
+F1 env = 58
 F1 drive = 5
 F1 key track = 30
 F1 velocity = 0
@@ -1028,7 +1028,7 @@ Amp sustain = 10
 Amp release = 0.05
 Vel → amp = 30
 Drift = 5
-Volume = -3
+Volume = -4
 
 preset "Acid — Sub"
 comment "A round, low acid line that stays mostly sub, with a little filter movement."
