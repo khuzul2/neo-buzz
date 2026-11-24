@@ -39,7 +39,7 @@ namespace NeoBuzz.MachineTests
             (28, 2, 72), (30, 2, 67),
         };
 
-        static List<(string Name, Dictionary<int, int> Values)> Presets()
+        internal static List<(string Name, Dictionary<int, int> Values)> Presets()
         {
             var file = Path.Combine(FindRepo(), "Machines", "NeoOrgan", "Neo Organ.prs.xml");
             var list = new List<(string, Dictionary<int, int>)>();
@@ -60,7 +60,7 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>Plays the 8 bars with a preset; <paramref name="atBar"/> runs at the start of each bar (to switch a parameter).</summary>
-        static (float[] L, float[] R, List<int> Events) Play(Dictionary<int, int> preset, Action<ParamValues, int> atBar = null)
+        internal static (float[] L, float[] R, List<int> Events) Play(Dictionary<int, int> preset, Action<ParamValues, int> atBar = null)
         {
             var v = new ParamValues(Params.Table);
             foreach (var kv in preset) v.Set(kv.Key, kv.Value);
@@ -115,7 +115,7 @@ namespace NeoBuzz.MachineTests
         /// away: a corner of a driven wave spreads over many samples). <paramref name="exempt"/>: positions (note events) near which a
         /// click is the key click, by design.
         /// </summary>
-        static int Clicks(float[] x, bool strict, List<int> exempt = null)
+        internal static int Clicks(float[] x, bool strict, List<int> exempt = null)
         {
             int n = x.Length, count = 0, last = -100000;
             var d2 = new double[n];
@@ -148,7 +148,7 @@ namespace NeoBuzz.MachineTests
         /// The review's check, with no exemptions: the largest |second difference| in each 1 ms window (both channels), against the
         /// median of those over the take. Returns how many windows are above 20 times the median, and the largest value.
         /// </summary>
-        static (int Windows, double Max) D2Windows(float[] l, float[] r)
+        internal static (int Windows, double Max) D2Windows(float[] l, float[] r)
         {
             int w = Rate / 1000, count = l.Length / w;
             var m = new double[count];
@@ -170,7 +170,7 @@ namespace NeoBuzz.MachineTests
             return (m.Count(v => v > 20 * median), max);
         }
 
-        static void WriteWav(string path, float[] l, float[] r)
+        internal static void WriteWav(string path, float[] l, float[] r)
         {
             using var fs = File.Create(path);
             using var w = new BinaryWriter(fs);
