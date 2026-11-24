@@ -37,6 +37,10 @@ namespace ReBuzz.Core.Session
             public readonly Dictionary<PatternCore, TakeWriter> Writers = new Dictionary<PatternCore, TakeWriter>(ReferenceEqualityComparer.Instance);
             /// <summary>Overdub: what this pass wrote into each column of each clip, for its undo step.</summary>
             public readonly Dictionary<(PatternCore Clip, ColumnKey Column), List<PatternEvent>> Written = new Dictionary<(PatternCore, ColumnKey), List<PatternEvent>>();
+            /// <summary>Overdub: the points of automation this pass replaced (SA1), net of what it wrote itself, for its undo step.</summary>
+            public readonly Dictionary<(PatternCore Clip, ColumnKey Column), List<PatternEvent>> Removed = new Dictionary<(PatternCore, ColumnKey), List<PatternEvent>>();
+            /// <summary>Automation being swept: for each parameter of each clip, where its pass is (SA1).</summary>
+            public readonly Dictionary<(PatternCore Clip, ColumnKey Column), Sweep> Sweeps = new Dictionary<(PatternCore, ColumnKey), Sweep>();
 
             public TakeWriter WriterFor(PatternCore clip)
             {
@@ -44,6 +48,23 @@ namespace ReBuzz.Core.Session
                     Writers[clip] = w = new TakeWriter();
                 return w;
             }
+        }
+
+        /// <summary>
+        /// SA1: one parameter's pass over a clip, from its first move on. Positions are 1/240 tick into the clip, times are heard session
+        /// time (1/240 tick); in a pass the two advance together, until the clip's end (<see cref="End"/>, exclusive) wraps it.
+        /// </summary>
+        sealed class Sweep
+        {
+            /// <summary>Position of the last point written.</summary>
+            public int Last;
+            /// <summary>Heard time of the move that wrote it.</summary>
+            public long Heard;
+            /// <summary>The end of the clip's region where it was moved (exclusive).</summary>
+            public int End;
+
+            /// <summary>Whether the pass was over by <paramref name="time"/>: the clip played on to its end and wrapped.</summary>
+            public bool EndedBy(long time) => Last + (time - Heard) >= End;
         }
 
         readonly Dictionary<SequenceCore, Recording> recordings = new Dictionary<SequenceCore, Recording>(ReferenceEqualityComparer.Instance);
@@ -388,6 +409,7 @@ namespace ReBuzz.Core.Session
             if (!recordings.TryGetValue(r.Track, out var current) || !ReferenceEquals(current, r)) return;   // finished already
             recordings.Remove(r.Track);
             PublishWindows();
+            EndSweeps(r, end);
             foreach (var (clip, writer) in r.Writers)
             {
                 takeEvents.Clear();
@@ -396,14 +418,20 @@ namespace ReBuzz.Core.Session
                 if (takeEvents.Count > 0 && !clip.IsDeleted)
                     Write(r, clip, ColumnKey.Midi, takeEvents);
             }
-            var passes = r.Written.Where(w => w.Value.Count > 0 && !w.Key.Clip.IsDeleted).ToList();
+            var passes = r.Written.Keys.Concat(r.Removed.Keys).Distinct()
+                .Where(k => !k.Clip.IsDeleted && (r.Written.TryGetValue(k, out var w) && w.Count > 0 || r.Removed.TryGetValue(k, out var x) && x.Count > 0))
+                .ToList();
             if (passes.Count > 0)
             {
                 UndoStack.BeginActionGroup();
                 try
                 {
-                    foreach (var (key, events) in passes)
-                        UndoStack.Do(new ClipEventsAction(this, key.Clip, key.Column, events.ToArray(), add: true, done: true));
+                    foreach (var key in passes)
+                    {
+                        var written = r.Written.TryGetValue(key, out var added) ? added.ToArray() : Array.Empty<PatternEvent>();
+                        var replaced = r.Removed.TryGetValue(key, out var taken) ? taken.ToArray() : null;
+                        UndoStack.Do(new ClipEventsAction(this, key.Clip, key.Column, written, add: true, done: true, replaced));
+                    }
                 }
                 finally
                 {
@@ -441,8 +469,7 @@ namespace ReBuzz.Core.Session
                     var machine = input.Clip.Machine;
                     int group = machine?.ParameterGroups.IndexOf(input.Parameter.Group) ?? -1;
                     if (group < 0) continue;
-                    takeEvents.Add(new TakeEvent(input.Stamp.Position, input.Stamp.Data, 0));
-                    Write(r, input.Clip, new ColumnKey(group, input.Parameter.IndexInGroup, input.ParameterTrack), takeEvents, input.PastFirstPass);
+                    WriteAutomation(r, input.Clip, new ColumnKey(group, input.Parameter.IndexInGroup, input.ParameterTrack), input.Stamp, input.PastFirstPass);
                     continue;
                 }
                 r.WriterFor(input.Clip).Add(input.Stamp, takeEvents);
@@ -466,6 +493,115 @@ namespace ReBuzz.Core.Session
                 list.AddRange(batch);
             }
             buzz.SetModifiedFlag();
+        }
+
+        // ------------------------------------------------------------------ automation passes (SA1)
+
+        /// <summary>
+        /// A parameter moved while its track records (docs/specs/session-view.md 0.7, SA1). Like the Arrangement's recorder, a pass
+        /// replaces what it sweeps over: from the parameter's first move in the pass until the pass ends (the clip's end, where it
+        /// wraps, or the recording's end) the clip holds only this pass's points (<see cref="AutomationSweep"/>); parameters not moved in
+        /// the pass keep theirs. A take's first pass has nothing before it to replace.
+        /// </summary>
+        void WriteAutomation(Recording r, PatternCore clip, ColumnKey key, TakeStamp stamp, bool overdub)
+        {
+            var column = ColumnFor(clip, key, create: true);
+            if (column == null) return;
+            int t = stamp.Position;
+            var point = new PatternEvent(t, stamp.Data, 0);
+            if (!overdub && ReferenceEquals(clip, r.Take))
+            {
+                column.SetEvents(new[] { point }, true);
+                buzz.SetModifiedFlag();
+                return;
+            }
+            var id = (clip, key);
+            if (r.Sweeps.TryGetValue(id, out var sweep) && sweep.EndedBy(stamp.Time))
+            {
+                EndSweep(r, id, sweep, sweep.End - 1);          // the clip wrapped: the rest of that pass is replaced, this move starts the next
+                sweep = null;
+            }
+            int last = sweep?.Last ?? AutomationSweep.None;
+            // The clear-then-write rule, on what the column holds in the swept range; the point goes in first, so a playing clip is never without one.
+            var swept = column.GetEvents(AutomationSweep.From(last, t), t + 1).ToList();
+            var taken = new List<PatternEvent>();
+            AutomationSweep.Write(swept, e => e.Time, last, t, point, taken);
+            column.SetEvents(new[] { point }, true);
+            if (taken.Count > 0) column.SetEvents(taken, false);
+            Note(r, id, new[] { point }, taken);
+            sweep ??= r.Sweeps[id] = new Sweep();
+            sweep.Last = t;
+            sweep.Heard = stamp.Time;
+            sweep.End = stamp.End;
+            buzz.SetModifiedFlag();
+        }
+
+        /// <summary>What a pass wrote and replaced in a column, kept net for its undo step (a point it wrote and then replaced is neither).</summary>
+        void Note(Recording r, (PatternCore Clip, ColumnKey Column) id, IEnumerable<PatternEvent> added, List<PatternEvent> taken)
+        {
+            if (!r.Written.TryGetValue(id, out var written))
+                r.Written[id] = written = new List<PatternEvent>();
+            if (!r.Removed.TryGetValue(id, out var removed))
+                r.Removed[id] = removed = new List<PatternEvent>();
+            foreach (var e in taken)
+                if (!written.Remove(e))
+                    removed.Add(e);
+            written.AddRange(added);
+        }
+
+        /// <summary>The pass of a parameter is over: what it swept to <paramref name="upTo"/> (position, included) after its last point is replaced too.</summary>
+        void EndSweep(Recording r, (PatternCore Clip, ColumnKey Column) id, Sweep sweep, int upTo)
+        {
+            r.Sweeps.Remove(id);
+            if (id.Clip.IsDeleted || upTo <= sweep.Last) return;
+            var column = ColumnFor(id.Clip, id.Column, create: false);
+            if (column == null) return;
+            var tail = column.GetEvents(sweep.Last + 1, upTo + 1).ToList();
+            if (tail.Count == 0) return;
+            column.SetEvents(tail, false);
+            Note(r, id, Array.Empty<PatternEvent>(), tail);
+            buzz.SetModifiedFlag();
+        }
+
+        /// <summary>
+        /// Where a pass of the clip ended when its recording ended at <paramref name="end"/> (heard time): at the stop of a clip that
+        /// stopped (or the transport), at <paramref name="end"/> for one still playing, up to the clip's end; or where it was last moved
+        /// when that isn't known (a clip replaced by another, a dropped recording).
+        /// </summary>
+        int PassEnd(Recording r, PatternCore clip, Sweep sweep, long end)
+        {
+            long stop = -1;
+            if (ReferenceEquals(Engine?.GetPlayingCore(r.Track), clip))
+                stop = end;
+            else if (ReferenceEquals(r.Track.SessionStoppedClip, clip))
+            {
+                long at = System.Threading.Volatile.Read(ref r.Track.SessionStoppedAt);
+                if (at >= 0) stop = at * TakeTime.TimeBase;
+            }
+            if (stop == long.MaxValue || stop < 0) return sweep.Last;
+            long reach = sweep.Last + Math.Max(0, stop - sweep.Heard);
+            return (int)Math.Min(reach, sweep.End - 1);
+        }
+
+        /// <summary>The recording is over: every parameter's pass ends where it stopped.</summary>
+        void EndSweeps(Recording r, long end)
+        {
+            foreach (var (id, sweep) in r.Sweeps.ToList())
+                EndSweep(r, id, sweep, PassEnd(r, id.Clip, sweep, end));
+        }
+
+        /// <summary>The passes the clips have left since the last poll: one that wrapped replaces the rest of the clip; one whose clip stopped ends where it stopped.</summary>
+        void EndLeftPasses(Recording r, long now)
+        {
+            if (r.Sweeps.Count == 0) return;
+            var playing = Engine.GetPlayingCore(r.Track);
+            foreach (var (id, sweep) in r.Sweeps.ToList())
+            {
+                if (!ReferenceEquals(playing, id.Clip))
+                    EndSweep(r, id, sweep, PassEnd(r, id.Clip, sweep, now));
+                else if (now >= 0 && sweep.EndedBy(now))
+                    EndSweep(r, id, sweep, sweep.End - 1);
+            }
         }
 
         /// <summary>
@@ -493,10 +629,13 @@ namespace ReBuzz.Core.Session
         void Poll()
         {
             long now = Engine.HeardTimeNow();
+            if (recordings.Values.Any(x => x.Sweeps.Count > 0))
+                DrainInputs();                                           // moves heard before the passes are looked at
             foreach (var r in recordings.Values.ToList())
             {
                 if (!recordings.TryGetValue(r.Track, out var current) || !ReferenceEquals(current, r)) continue;
                 if (now >= 0) r.LastHeard = now;
+                EndLeftPasses(r, now);
                 if (r.Track.IsRemoved)
                 {
                     Finish(r, long.MaxValue);
@@ -835,16 +974,19 @@ namespace ReBuzz.Core.Session
         readonly IPattern clip;
         readonly ColumnKey column;
         readonly PatternEvent[] events;
+        readonly PatternEvent[] replaced;
         readonly bool add;
         bool skip;
 
-        public ClipEventsAction(SessionLayout layout, IPattern clip, ColumnKey column, PatternEvent[] events, bool add, bool done)
+        /// <param name="replaced">SA1, with <paramref name="add"/>: the points the added ones replaced (automation); undo puts them back.</param>
+        public ClipEventsAction(SessionLayout layout, IPattern clip, ColumnKey column, PatternEvent[] events, bool add, bool done, PatternEvent[] replaced = null)
         {
             this.layout = layout;
             this.clip = clip;
             this.column = column;
             this.events = events;
             this.add = add;
+            this.replaced = add && replaced != null && replaced.Length > 0 ? replaced : null;
             skip = done;
         }
 
@@ -860,7 +1002,19 @@ namespace ReBuzz.Core.Session
         {
             var p = layout.Current(clip);
             if (p == null || (p is PatternCore core && core.IsDeleted)) return;
-            SessionLayout.ColumnFor(p, column, create: set)?.SetEvents(events, set);
+            var target = SessionLayout.ColumnFor(p, column, create: set);
+            if (target == null) return;
+            // The written points go in before the replaced ones come out, and the replaced ones before the written come out.
+            if (set)
+            {
+                target.SetEvents(events, true);
+                if (replaced != null) target.SetEvents(replaced, false);
+            }
+            else
+            {
+                if (replaced != null) target.SetEvents(replaced, true);
+                target.SetEvents(events, false);
+            }
         }
     }
 

@@ -1,0 +1,253 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Crush — 8-bit">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="700" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="495" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="402" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="458" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Eight bits held at only 6 kHz with the aliasing left in: the top of the drums and chords folds back as harsh, stepped grit, like an early home computer or a handheld game.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Crush — 12-bit sampler">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="1100" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="608" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="120" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="280" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="402" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="400" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Twelve bits at 13 kHz behind an anti-alias filter, with a little clock jitter, hiss and a darker top: a dull, grainy, metallic early hardware sampler.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Crush — Crushed drums">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="400" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="562" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="402" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="458" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Five bits at 9.5 kHz with clock jitter, all wet: a drum loop that is torn into stepped, aliased fizz and still keeps its beat.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Crush — Broken toy">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="300" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="349" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="60" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="402" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="60" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="375" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="375" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Four bits at 2.2 kHz with jitter, a slow wobble and a dull top: a melody that sounds as if it comes from a dying toy.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tape — Cassette">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="2300" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="470" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="180" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="434" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="90" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="50" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="290" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A used cassette: plain hiss, a lazy wow, a nervous flutter, a wandering pitch and a rolled-off top.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tape — Worn tape">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="2300" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="440" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="220" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="171" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="120" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="250" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Tape at the end of its life: a deep wow, a nervous flutter, a wandering pitch, strong hiss and a dull top.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vinyl — Dusty vinyl">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="1300" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="360" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="240" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="380" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="70" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="202" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="375" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A dusty, well-played record: clear pops two dozen times a second, a steady hiss, a slow wobble and a darker top. Fourteen bits with dither keep the quiet parts alive.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Radio — AM radio">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="900" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="584" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="420" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="1" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="402" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="30" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="150" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="562" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A small AM radio: eleven kilohertz, a narrow top, a steady hiss that follows the music and a little flutter.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Radio — Telephone">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="400" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="537" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="440" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="80" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="402" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="170" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="542" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A telephone line: five bits at 8 kHz, anti-aliased, narrow and distorted, with a steady hiss and a pop now and then.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Warm — Gentle warmth">
+    <Preset Machine="Neo Lo-Fi">
+      <Parameters>
+        <Parameter Name="Bits" Group="1" Index="0" Track="0" Value="2300" />
+        <Parameter Name="Dither" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Anti-alias" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Jitter" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Hiss" Group="1" Index="5" Track="0" Value="320" />
+        <Parameter Name="Hiss follow" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Crackle" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Crackle level" Group="1" Index="8" Track="0" Value="300" />
+        <Parameter Name="Wow" Group="1" Index="9" Track="0" Value="80" />
+        <Parameter Name="Wow rate" Group="1" Index="10" Track="0" Value="283" />
+        <Parameter Name="Flutter" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Drift" Group="1" Index="12" Track="0" Value="80" />
+        <Parameter Name="Tone" Group="1" Index="13" Track="0" Value="350" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Amount" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Subtle but plain when you switch it against the dry sound: a softer top, a trace of hiss and a slight wander in the pitch, for taking the digital edge off a part.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
