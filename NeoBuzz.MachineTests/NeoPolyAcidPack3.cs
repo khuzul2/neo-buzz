@@ -19,7 +19,7 @@ namespace NeoBuzz.MachineTests
             var ev = Sequence(line, 2);
             var (l, r, _) = Render(Presets[name], filter, ev, LineSeconds(2), tweak);
             var m = Mid(l, r);
-            return (m, AcidGate.Analyse(m, ev));
+            return (m, AcidGate.Analyse(m, ev, AcidGate.IsDark(name)));
         }
 
         static string Row(string label, List<AcidGate.Row> rows) =>
@@ -103,7 +103,7 @@ namespace NeoBuzz.MachineTests
                 if (before != null)
                 {
                     var old = NeoPolyAcidGateTests.ReadWav24(Path.Combine(before, "named", $"{safe}-busy-line.wav"));
-                    var oldRows = AcidGate.Analyse(old, Sequence(Busy, 2));
+                    var oldRows = AcidGate.Analyse(old, Sequence(Busy, 2), AcidGate.IsDark(name));
                     double g = Measure.Rms(busy, 0, busy.Length) / Math.Max(1e-9, Measure.Rms(old, 0, old.Length));
                     var oldMatched = old.Select(x => (float)(x * g)).ToArray();
                     float t2 = (float)Math.Min(1.0, 0.89 / Math.Max(Measure.Peak(busy, 0, busy.Length), Measure.Peak(oldMatched, 0, oldMatched.Length)));
@@ -119,7 +119,7 @@ namespace NeoBuzz.MachineTests
                 foreach (var name in Acid)
                 {
                     var old = NeoPolyAcidGateTests.ReadWav24(Path.Combine(before, "named", $"{Safe(name)}-busy-line.wav"));
-                    var oldRows = AcidGate.Analyse(old, Sequence(Busy, 2));
+                    var oldRows = AcidGate.Analyse(old, Sequence(Busy, 2), AcidGate.IsDark(name));
                     var (_, newRows) = RenderMono(name, -1, Busy);
                     md.Append($"### {name}\n\n| step | before max | before near | before 6k burst dB | after max | after near | after 6k burst dB |\n|---|---|---|---|---|---|---|\n");
                     for (int i = 0; i < oldRows.Count; i++)

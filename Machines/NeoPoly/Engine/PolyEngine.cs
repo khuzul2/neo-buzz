@@ -468,12 +468,6 @@ namespace NeoBuzz.Poly
                 startRampInc = 1f / ((s.Acid ? s.SoftStart : StartRampSeconds) * sr);
                 coldRamp = false;
             }
-            // A start from silence takes the note's accent state at once (nothing is sounding to step), so a short accent bites from the first millisecond.
-            if (s.Acid && ampEnv.Level < QuietLevel)
-            {
-                accDepthCur = accented ? s.AccentDepth + accentSweep : 0f;
-                accGainRun = accGainEndOfBlock = accented ? s.AccentGain : 1f;
-            }
             if (!ampEnv.IsActive)
             {
                 ladder.Reset();

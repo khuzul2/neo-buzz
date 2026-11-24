@@ -15,18 +15,20 @@ namespace NeoBuzz.MachineTests
     /// </summary>
     internal static class AcidGate
     {
-        public const double MaxEverywhere = 0.010, MaxAtBoundary = 0.004, BroadbandDb = 6, BroadbandFloorDb = -90, BrightFloorDb = -75, DarkMidDb = -70;
+        public const double MaxEverywhere = 0.010, MaxAtBoundary = 0.004, BroadbandDb = 6, BroadbandFloorDb = -90, BrightFloorDb = -75;
         const int Rate = Measure.Rate;
 
         public sealed class Row
         {
             public int Step;
-            public double Max2d, Near2d, BroadbandDb, BroadbandLevelDb, MidLevelDb;
+            public double Max2d, Near2d, BroadbandDb, BroadbandLevelDb;
+            public bool Dark;
             public bool Bad2d => Max2d > MaxEverywhere;
             public bool BadNear => Near2d > MaxAtBoundary;
-            /// <summary>Over the window by more than 6 dB and above the floor. A note with little between 1.5 and 6 kHz (a dark bass) has nothing to mask a burst above 6 kHz: the floor is -90 dBFS.
-            /// A bright note's own upper mids mask the same burst up to -75 dBFS (its filter opens by design, and a note that opens is brighter at its start than 50 ms later).</summary>
-            public bool BadBroadband => BroadbandDb > AcidGate.BroadbandDb && BroadbandLevelDb > (MidLevelDb < DarkMidDb ? BroadbandFloorDb : BrightFloorDb);
+            /// <summary>Over the window by more than 6 dB and above the floor. A dark bass (a preset whose filter sits under about 200 Hz: Sub, Deep) has nothing up there to mask a
+            /// burst above 6 kHz: the floor is -90 dBFS (pack 2's Sub clicks were at -80 to -89). A bright preset's own upper mids mask the same burst up to -75 dBFS: its filter
+            /// opens by design, and a note that opens is brighter at its start than 50 ms later.</summary>
+            public bool BadBroadband => BroadbandDb > AcidGate.BroadbandDb && BroadbandLevelDb > (Dark ? BroadbandFloorDb : BrightFloorDb);
             public bool Bad => Bad2d || BadNear || BadBroadband;
         }
 
@@ -56,18 +58,17 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>The per-step table for a mono render and the note starts and ends it was played with.</summary>
-        public static List<Row> Analyse(float[] x, List<int> ons, List<int> offs)
+        public static List<Row> Analyse(float[] x, List<int> ons, List<int> offs, bool dark = false)
         {
             var d = new float[x.Length];
             for (int i = 1; i < x.Length - 1; i++) d[i] = Math.Abs(x[i + 1] - 2 * x[i] + x[i - 1]);
             var hp = HighPass6k(x);
-            var hp15 = HighPass(x, 1500);
             int w = (int)(0.005 * Rate);
             var rows = new List<Row>();
             for (int k = 0; k < ons.Count; k++)
             {
                 int a = ons[k], b = k + 1 < ons.Count ? ons[k + 1] : x.Length;
-                var r = new Row { Step = k + 1 };
+                var r = new Row { Step = k + 1, Dark = dark };
                 for (int i = a; i < Math.Min(b, x.Length); i++) r.Max2d = Math.Max(r.Max2d, d[i]);
                 void Near(int at)
                 {
@@ -80,7 +81,6 @@ namespace NeoBuzz.MachineTests
                     double e1 = Power(hp, a, a + 480), e2 = Power(hp, a + 1440, a + 3840);
                     r.BroadbandDb = 10 * Math.Log10(e1 / e2);
                     r.BroadbandLevelDb = 10 * Math.Log10(e1);
-                    r.MidLevelDb = 10 * Math.Log10(Math.Max(1e-14, Power(hp15, a, a + 3840) - Power(hp, a, a + 3840)));
                 }
                 else r.BroadbandDb = -999;
                 rows.Add(r);
@@ -88,11 +88,14 @@ namespace NeoBuzz.MachineTests
             return rows;
         }
 
-        public static List<Row> Analyse(float[] x, List<Ev> events)
+        public static List<Row> Analyse(float[] x, List<Ev> events, bool dark = false)
         {
             var (ons, offs) = Boundaries(events);
-            return Analyse(x, ons, offs);
+            return Analyse(x, ons, offs, dark);
         }
+
+        /// <summary>The presets whose filter sits under 200 Hz and keeps almost nothing above 1.5 kHz: the strict floor applies.</summary>
+        public static bool IsDark(string preset) => preset.EndsWith("Sub") || preset.EndsWith("Deep");
 
         public static string Flags(List<Row> rows) =>
             string.Join(" ", rows.Where(r => r.Bad).Select(r => r.Step + (r.Bad2d ? "a" : "") + (r.BadNear ? "n" : "") + (r.BadBroadband ? "b" : "")));

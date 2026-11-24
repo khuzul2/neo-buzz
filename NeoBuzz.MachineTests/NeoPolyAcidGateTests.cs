@@ -55,7 +55,7 @@ namespace NeoBuzz.MachineTests
         public void ACleanBassPasses()
         {
             var x = Bass(2);
-            var rows = AcidGate.Analyse(x, Starts(2), Ends(2));
+            var rows = AcidGate.Analyse(x, Starts(2), Ends(2), true);
             Assert.That(rows.Where(r => r.Bad), Is.Empty, AcidGate.Table(rows));
         }
 
@@ -64,7 +64,7 @@ namespace NeoBuzz.MachineTests
         {
             // 0.003 of a step in level, the size of Sub's note-start clicks in the AC2 pack: the old detector's floor was 0.02.
             var x = Bass(2, y => { for (int i = 3 * (Rate / 4) + 100; i < y.Length; i++) y[i] += 0.0025f; });
-            var rows = AcidGate.Analyse(x, Starts(2), Ends(2));
+            var rows = AcidGate.Analyse(x, Starts(2), Ends(2), true);
             
             
             Assert.That(rows[3].Near2d, Is.GreaterThan(0.002), "the step reads as its own size in the second difference");
@@ -86,7 +86,7 @@ namespace NeoBuzz.MachineTests
         public void AGainStepInAnAcidLineIsFlagged()
         {
             var x = Bass(2, y => { for (int i = 5 * (Rate / 4) + 4800; i < y.Length; i++) y[i] *= 1.5f; });
-            var rows = AcidGate.Analyse(x, Starts(2), Ends(2));
+            var rows = AcidGate.Analyse(x, Starts(2), Ends(2), true);
             Assert.That(rows[5].Bad, Is.True, AcidGate.Table(rows));
         }
 
@@ -96,10 +96,10 @@ namespace NeoBuzz.MachineTests
 
         static string PackDir => Environment.GetEnvironmentVariable("NEO_ACID_PACK2_DIR");
 
-        static List<AcidGate.Row> PackRows(string file, Note[] line)
+        static List<AcidGate.Row> PackRows(string file, Note[] line, bool dark = false)
         {
             var x = ReadWav24(Path.Combine(PackDir, "named", file));
-            return AcidGate.Analyse(x, Sequence(line, 2));
+            return AcidGate.Analyse(x, Sequence(line, 2), dark);
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace NeoBuzz.MachineTests
                 Measure.Report($"AC2 {f}: " + AcidGate.Flags(rows));
                 Assert.That(rows.Count(r => r.Bad), Is.GreaterThanOrEqualTo(5), f + " clicks everywhere");
             }
-            var sub = PackRows("Acid-Sub-busy-line.wav", Busy);
+            var sub = PackRows("Acid-Sub-busy-line.wav", Busy, true);
             Measure.Report("AC2 Sub busy: " + AcidGate.Flags(sub));
             Assert.That(sub.Where(r => r.Bad).Select(r => r.Step), Is.SupersetOf(new[] { 9, 11, 13, 17, 25, 27 }), "Sub's high-pitched note starts");
             // Not a gate that cries wolf: Sub's quiet steps in between are clean.

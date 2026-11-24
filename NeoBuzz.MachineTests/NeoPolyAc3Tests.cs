@@ -45,7 +45,7 @@ namespace NeoBuzz.MachineTests
         {
             var ev = Line(line);
             var (l, r, _) = Render(Presets[name], filter, ev, Seconds(line), null, block);
-            var rows = AcidGate.Analyse(Mid(l, r), ev);
+            var rows = AcidGate.Analyse(Mid(l, r), ev, AcidGate.IsDark(name));
             if (rows.Any(x => x.Bad)) Measure.Report($"{name} {filter} {line} {block}\n" + AcidGate.Table(rows));
             Assert.That(rows.Where(x => x.Bad).Select(x => x.Step), Is.Empty, AcidGate.Flags(rows));
             Assert.That(AcidGate.Worst2d(rows), Is.LessThanOrEqualTo(AcidGate.MaxEverywhere));
@@ -96,7 +96,7 @@ namespace NeoBuzz.MachineTests
                 var ev = Line("busy");
                 var (l, r, _) = Render(Presets[name], -1, ev, LineSeconds(2), v => v.Set(P.AcidQuality, quality));
                 Assert.That(l.All(float.IsFinite) && r.All(float.IsFinite), Is.True, name);
-                var rows = AcidGate.Analyse(Mid(l, r), ev);
+                var rows = AcidGate.Analyse(Mid(l, r), ev, AcidGate.IsDark(name));
                 // Eco (1x) has no oversampling: the gate's second difference may reach a little more than at 2x and 4x, but a resonant filter below the range does not click.
                 Assert.That(AcidGate.Worst2d(rows), Is.LessThan(quality == 0 ? 0.02 : AcidGate.MaxEverywhere + 1e-9), $"{name} quality {quality}");
             }
