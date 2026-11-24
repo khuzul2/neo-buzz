@@ -411,6 +411,7 @@ if args.fixtures:
     check(kit is not None, "Morph has a Kit parameter")
     if kit:
         call("param_set", machine="Morph", changes=[{"param": kit, "value": "Kit B"}])
+        call("render", **{"from": 0, "to": 1, "tail_seconds": 0.3, "name": "morph-Kit-B"})   # (the plug-in takes the value in its next audio block, as in a host)
         names = {}
         for _ in range(40):
             ok, names, _ = note_map("Morph")
@@ -418,6 +419,7 @@ if args.fixtures:
             time.sleep(0.15)
         check(names == {36: "Test Tom", 38: "Test Rim", 42: "Test Shaker", 46: "Test Bell"}, f"Morph's names follow its Kit parameter at run time: {names}")
         call("param_set", machine="Morph", changes=[{"param": kit, "value": "No names"}])
+        call("render", **{"from": 0, "to": 1, "tail_seconds": 0.3, "name": "morph-No-names"})   # (the plug-in takes the value in its next audio block, as in a host)
         for _ in range(40):
             ok, names, nm = note_map("Morph")
             if not names: break
