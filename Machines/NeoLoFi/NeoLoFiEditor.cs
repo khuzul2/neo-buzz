@@ -67,7 +67,7 @@ namespace NeoBuzz.LoFi
             double rate = ctx.Value(P.Rate);
             bool rateOff = ctx.Raw(P.Rate) >= Params.Table[P.Rate].Max || rate >= 48000;
             var plot = new NeoRect(r.X + 6, r.Y + 6, r.Width - 12, r.Height - 12);
-            double mid = plot.Y + plot.Height / 2, half = plot.Height / 2 - 2;
+            double mid = plot.Y + plot.Height / 2, half = plot.Height / 2 - 14;   // the top 12 px hold the label, clear of the curves
             g.Line(plot.Left, mid, plot.Right, mid, new NeoStroke(Palette.Grid, 1, false));
             const int Points = 240;
             const double Cycles = 2;
