@@ -81,7 +81,7 @@ namespace ReBuzz.Core.NoteWires
         public IReadOnlyList<string> NoteTargetsOf(IMachine source)
         {
             string n = source?.Name;
-            return state.AllEdges().Where(e => e.From == n && Find(e.To) != null).Select(e => e.To).Distinct().ToList();
+            return state.Wires.Where(e => e.From == n && Find(e.To) != null).Select(e => e.To).Distinct().ToList();
         }
 
         public IReadOnlyList<string> NoteTargetCandidates(IMachine source)
@@ -117,6 +117,20 @@ namespace ReBuzz.Core.NoteWires
         }
 
         public string ConnectNotes(IMachine source, string target) => Connect(source?.Name, target);
+
+        public string SetNoteTarget(IMachine source, string target)
+        {
+            string from = source?.Name;
+            var next = new NoteWireState(state.Wires.Where(w => w.From != from), state.Chains);
+            if (!string.IsNullOrEmpty(target))
+            {
+                string reason = NoteWireRules.CheckWire(next, AudioEdges(), PortsOf, from, target);
+                if (reason != null) return reason;
+                next = next.WithWire(new NoteEdge(from, target));
+            }
+            if (!next.SameAs(state)) Do(next, "Note wire");
+            return null;
+        }
         public bool DisconnectNotes(IMachine source, string target) => Disconnect(source?.Name, target);
 
         /// <summary>Replaces the chain of <paramref name="instrument"/> (an empty list removes it): one step. Null, or why it was refused.</summary>

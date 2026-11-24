@@ -139,6 +139,7 @@ namespace ReBuzz.Core
         IReadOnlyList<string> INoteWireHost.NoteTargetsOf(IMachine source) => NoteWires?.NoteTargetsOf(source) ?? Array.Empty<string>();
         IReadOnlyList<string> INoteWireHost.NoteTargetCandidates(IMachine source) => NoteWires?.NoteTargetCandidates(source) ?? Array.Empty<string>();
         string INoteWireHost.ConnectNotes(IMachine source, string target) => NoteWires?.ConnectNotes(source, target) ?? "This song has no note wires.";
+        string INoteWireHost.SetNoteTarget(IMachine source, string target) => NoteWires?.SetNoteTarget(source, target) ?? "This song has no note wires.";
         bool INoteWireHost.DisconnectNotes(IMachine source, string target) => NoteWires?.DisconnectNotes(source, target) ?? false;
 
         // Fork (daw-modes.md S5): the arrangement's lane roles and folds, saved in song files.

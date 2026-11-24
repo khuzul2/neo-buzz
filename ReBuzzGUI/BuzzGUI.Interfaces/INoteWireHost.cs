@@ -15,6 +15,9 @@ namespace BuzzGUI.Interfaces
         /// <summary>Adds a wire. Returns null, or the reason it was refused (a loop, a machine that takes no notes).</summary>
         string ConnectNotes(IMachine source, string target);
 
+        /// <summary>Replaces every free wire from <paramref name="source"/> by one to <paramref name="target"/> (none when empty): one undo step. Null, or the reason it was refused.</summary>
+        string SetNoteTarget(IMachine source, string target);
+
         /// <summary>Removes a wire; false when there was none.</summary>
         bool DisconnectNotes(IMachine source, string target);
     }

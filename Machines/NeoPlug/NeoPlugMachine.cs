@@ -21,7 +21,7 @@ namespace NeoBuzz.Plug
 #else
     [MachineDecl(Name = "Neo Plug", ShortName = "Plug", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
 #endif
-    public partial class NeoPlugMachine : IBuzzMachine, IBuzzMachineInstrument, IBuzzMachineManifest, IBuzzMachineNativeEditor, IDisposable
+    public partial class NeoPlugMachine : IBuzzMachine, IBuzzMachineInstrument, IBuzzMachineManifest, IBuzzMachineNativeEditor, IDisposable, INoteCapable, INoteReceiver, INoteLegacyTarget
     {
 #if FX
         const bool Effect = true;
@@ -199,6 +199,12 @@ namespace NeoBuzz.Plug
 #endif
 
         public void MidiNote(int channel, int value, int velocity) => core.MidiNote(channel, value, velocity);
+
+        // Note wires (docs/specs/note-wires.md): the instrument takes notes; it sends them once it is known to make some. The effect has no note ports.
+        bool INoteCapable.AcceptsNotes => !Effect;
+        bool INoteCapable.SendsNotes => !Effect && core.NotesOut;
+        void INoteReceiver.ReceiveNotes(ReadOnlySpan<NoteMessage> events) => core.ReceiveNotes(events);
+        public string TakeLegacyTarget() => core.TakeLegacyTarget();
         public void MidiControlChange(int ctrl, int channel, int value) => core.MidiControlChange(ctrl, channel, value);
         public void Stop() => core.StopAll();
         public int GetLatency() => core.Latency;
@@ -319,15 +325,6 @@ namespace NeoBuzz.Plug
                     Text = "Reload plug-in",
                     Command = new SimpleCommand { CanExecuteDelegate = _ => core.Crashed || core.IsOpen, ExecuteDelegate = _ => Reload() },
                 });
-                var targets = new List<IMenuItem>
-                {
-                    new MenuItemVM { Text = "(none)", IsCheckable = true, IsChecked = core.MidiOutName.Length == 0, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => core.SetMidiTarget("") } },
-                };
-                foreach (var name in core.MidiTargets())
-                {
-                    string target = name;
-                    targets.Add(new MenuItemVM { Text = target, IsCheckable = true, IsChecked = core.MidiOutName == target, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => core.SetMidiTarget(target) } });
-                }
                 if (core.OutputCount > 1)
                 {
                     var outs = new List<IMenuItem>();
@@ -338,7 +335,25 @@ namespace NeoBuzz.Plug
                     }
                     items.Add(new MenuItemVM { Text = "Output", Children = outs });
                 }
-                items.Add(new MenuItemVM { Text = "MIDI out to", Children = targets });
+#if !FX
+                var wires = host.Machine?.Graph?.Buzz as INoteWireHost;
+                if (wires != null)
+                {
+                    var wired = new HashSet<string>(wires.NoteTargetsOf(host.Machine), StringComparer.Ordinal);
+                    var targets = new List<IMenuItem>
+                    {
+                        new MenuItemVM { Text = "(none)", IsCheckable = true, IsChecked = wired.Count == 0, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => wires.SetNoteTarget(host.Machine, "") } },
+                    };
+                    foreach (var name in wires.NoteTargetCandidates(host.Machine))
+                    {
+                        string target = name;
+                        bool on = wired.Contains(target);
+                        targets.Add(new MenuItemVM { Text = target, IsCheckable = true, IsChecked = on, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => { if (on) wires.DisconnectNotes(host.Machine, target); else wires.ConnectNotes(host.Machine, target); } } });
+                    }
+                    items.Add(new MenuItemVM { Text = "Send notes to", Children = targets });
+                    items.Add(new MenuItemVM { Text = "Plug-in makes notes", IsCheckable = true, IsChecked = core.NotesOut, Command = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => core.NotesOut = !core.NotesOut } });
+                }
+#endif
                 var channels = new List<IMenuItem>();
                 for (int c = 0; c < 16; c++)
                 {
