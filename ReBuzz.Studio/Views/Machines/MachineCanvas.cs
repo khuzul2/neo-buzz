@@ -39,7 +39,7 @@ namespace ReBuzz.Studio.Views.Machines
         Vector offset;          // scroll offset, in zoomed pixels
         double wheelZoom;       // wheel notches (or pinch) not yet turned into a level
 
-        enum Drag { None, Move, Connect, Select, Pan, Modulate, Group }
+        enum Drag { None, Move, Connect, Select, Pan, Modulate, Group, NoteConnect }
         IModulator modSource;                   // P5b: the modulator whose handle is dragged
         (double X, double Y)? modDropAt;
         Drag drag;
@@ -259,6 +259,9 @@ namespace ReBuzz.Studio.Views.Machines
         {
             base.OnAttachedToVisualTree(e);
             ModulationBoard.Changed += OnModulationChanged;
+            NoteWiresPreference.Changed += OnNoteWiresPref;
+            core.NoteWires.Changed += OnNoteWiresChanged;
+            noteWiresShown = NoteWiresPreference.On;
             modsDirty = true;
             StartMeters();
             armTimer.Tick -= OnArmTick;
@@ -274,6 +277,8 @@ namespace ReBuzz.Studio.Views.Machines
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             ModulationBoard.Changed -= OnModulationChanged;
+            NoteWiresPreference.Changed -= OnNoteWiresPref;
+            core.NoteWires.Changed -= OnNoteWiresChanged;
             armTimer.Stop();
             armTimer.Tick -= OnArmTick;
             StopMeters();
@@ -886,6 +891,7 @@ namespace ReBuzz.Studio.Views.Machines
                 }
 
                 DrawModulation(ctx);
+                DrawNoteWires(ctx);
 
                 if (drag == Drag.Connect && connectFrom != null)
                 {
@@ -907,6 +913,7 @@ namespace ReBuzz.Studio.Views.Machines
 
                 DrawFoldedGroups(ctx, colours);
                 DrawPorts(ctx, machines);
+                DrawNotePorts(ctx, machines);
 
                 if (drag == Drag.Select)
                     ctx.DrawRectangle(BandFill, BandPen, band, 2, 2);
@@ -1317,6 +1324,7 @@ namespace ReBuzz.Studio.Views.Machines
             var p = ToLogical(view);
             var kind = pt.Properties.PointerUpdateKind;
             var mods = e.KeyModifiers;
+            if (drag == Drag.None && NotePointerPressed(p, kind, mods, e)) { e.Handled = true; Refusal = null; return; }
             var outPort = pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed && mods == KeyModifiers.None ? OutPortAt(p) : null;
             var machine = MachineAt(p) ?? outPort ?? InPortAt(p);
             var wire = machine == null ? WireAt(p) : null;
@@ -1467,6 +1475,9 @@ namespace ReBuzz.Studio.Views.Machines
                 case Drag.Connect:
                     DragConnect(p);
                     break;
+                case Drag.NoteConnect:
+                    DragNote(p);
+                    break;
                 case Drag.Group:
                     DragGroup(p);
                     break;
@@ -1481,7 +1492,8 @@ namespace ReBuzz.Studio.Views.Machines
                     var m = port ?? MachineAt(p);
                     bool overDelete = port == null && m != null && MachineGeometry.DeleteButton(BoxOf(m)).Contains(p);
                     var mod = m == null ? ModAt(p) : null;
-                    if (m != hover || overDelete != hoverDelete || port != hoverPort || mod != hoverMod)
+                    bool noteChanged = NoteHover(p);
+                    if (m != hover || overDelete != hoverDelete || port != hoverPort || mod != hoverMod || noteChanged)
                     {
                         hoverMod = mod;
                         hover = m;
@@ -1501,7 +1513,7 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         /// <summary>The tip the canvas shows now (tests).</summary>
-        public string HoverTip => hoverPort != null
+        public string HoverTip => NoteTip() ?? (hoverPort != null
             ? (HasOutput(hoverPort) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(hoverPort)), lastLogical)
                 ? "Output of " + hoverPort.Name + ": drag to another machine's input to connect (Shift-drag from the box does the same)"
                 : "Input of " + hoverPort.Name + ": drop a wire from another machine's output here")
@@ -1510,7 +1522,7 @@ namespace ReBuzz.Studio.Views.Machines
             : hover is MachineCore mc && mc.IsDiverged
             ? $"Muted to protect your ears: it {Shell.PlainWords.Diverged(mc)} at beat {mc.DivergedPosition / (double)Math.Max(1, core.TPB):0.##}, " +
               "so the guard silenced and stopped it. Reset and Unmute is on its menu and in the bar above."
-            : null;
+            : null);
 
         protected override void OnPointerExited(PointerEventArgs e)
         {
@@ -1532,6 +1544,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (drag != Drag.None)
             {
                 if (kind != dragButton) return;
+                if (drag == Drag.NoteConnect) DragNote(p);
                 if (drag == Drag.Move || drag == Drag.Connect || drag == Drag.Group) DragMoveOrConnect(p);
                 if (drag == Drag.Modulate)
                 {
@@ -1549,6 +1562,13 @@ namespace ReBuzz.Studio.Views.Machines
                 // The context menus open on release, as WPF's do.
                 var machine = MachineAt(p);
                 var group = machine == null ? GroupAt(p) : null;
+                if (machine == null && group == null && NoteWireAt(p) is { } nw)
+                {
+                    OpenMenu = Menus?.ForNoteWire(nw);
+                    OpenMenu?.Open(this);
+                    e.Handled = true;
+                    return;
+                }
                 if (machine == null && group == null && WireAt(p) != null) return;
                 if (machine != null && Armable(machine) && MachineGeometry.ArmDot(BoxOf(machine)).Inflate(2).Contains(p))
                 {
@@ -1768,6 +1788,7 @@ namespace ReBuzz.Studio.Views.Machines
                 modDropAt = null;
                 ModulationBoard.EndDrag(at);
             }
+            else if (was == Drag.NoteConnect) EndNoteDrag(commit);
             else if (was == Drag.Connect)
             {
                 var from = connectFrom;
@@ -1804,6 +1825,7 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>Delete (Backspace on a Mac): the selected machines (MachineView.DeleteSelectedCommand).</summary>
         public void DeleteSelection()
         {
+            if (DeleteSelectedNoteWire()) return;
             var sel = SelectedNow();
             if (sel.Count > 0) MachineEdits.Delete(core, sel);
         }

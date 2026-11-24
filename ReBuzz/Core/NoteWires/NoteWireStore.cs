@@ -116,6 +116,9 @@ namespace ReBuzz.Core.NoteWires
             return true;
         }
 
+        /// <summary>Why a free wire from <paramref name="source"/> to <paramref name="target"/> would be refused, or null when it would be made.</summary>
+        public string WhyNot(string source, string target) => NoteWireRules.CheckWire(state, AudioEdges(), PortsOf, source, target);
+
         public string ConnectNotes(IMachine source, string target) => Connect(source?.Name, target);
 
         public string SetNoteTarget(IMachine source, string target)
