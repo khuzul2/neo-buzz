@@ -383,6 +383,34 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Core.NoteWires.State.Wires, Is.Empty);
         }
 
+        [AvaloniaTest]
+        public void TheCatalogueAndTheNeoMachinesAgreeOnNotePorts()
+        {
+            using var restore = Studio.AfterTest(NewSong);
+            NewSong();
+            string dir = AppContext.BaseDirectory;
+            while (dir != null && !File.Exists(Path.Combine(dir, "Machines", "Manifests", "machine-catalog.json"))) dir = Path.GetDirectoryName(dir);
+            Assert.That(dir, Is.Not.Null, "the catalogue is in the repository");
+            var machines = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(dir, "Machines", "Manifests", "machine-catalog.json")))["machines"].AsObject();
+            int checkedCount = 0;
+            foreach (var kv in machines)
+            {
+                bool wantIn = (bool?)kv.Value["note_in"] == true, wantOut = (bool?)kv.Value["note_out"] == true;
+                if (!(kv.Key.StartsWith("Neo ") || kv.Key == "Dye Essence")) continue;
+                try { Core.SongCore.CreateMachine(kv.Key, null, "Cat " + checkedCount, null, null, null, -1, 0.3f, 0.3f); }
+                catch (Exception) { continue; }
+                var m = Core.SongCore.MachinesList.LastOrDefault(x => x.Name == "Cat " + checkedCount);
+                if (m == null) continue;
+                Pump();
+                checkedCount++;
+                var ports = NoteWireStore.PortsOf(m);
+                Assert.That(ports, Is.Not.Null, kv.Key);
+                Assert.That(ports.Value.In, Is.EqualTo(wantIn), kv.Key + " takes notes");
+                Assert.That(ports.Value.Out, Is.EqualTo(wantOut), kv.Key + " sends notes");
+            }
+            Assert.That(checkedCount, Is.GreaterThan(30), "most of the Neo family was created and checked");
+        }
+
         // ------------------------------------------------------------------ the audio thread
 
         [AvaloniaTest]
