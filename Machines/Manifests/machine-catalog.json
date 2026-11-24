@@ -1419,6 +1419,17 @@
     "polyphonic"
    ],
    "use_for": "Drawbar tonewheel organ with percussion, key click, vibrato and chorus, overdrive and a rotary speaker: gospel, jazz, blues and rock organ, church sounds, flutes and stabs."
+  },
+  "Neo Lo-Fi": {
+   "category": "Distortion",
+   "tags": [
+    "bitcrush",
+    "noise",
+    "vintage",
+    "gritty",
+    "tape"
+   ],
+   "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
   }
  }
 }
