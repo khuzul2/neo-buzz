@@ -246,6 +246,7 @@ Today automation lives in two places:
 - Draw points and lines, select and move them. Values are in units through manifests (Neo machines), raw otherwise.
 - Drawing where there's no clip makes an automation clip on the machine's automation lane.
 - **Recording:** knob moves while recording go into the automation clip under the play position. This is the session's automation recording (0.7, `SessionCore.OnParameterChange`) with another target.
+  - **A move replaces what the pass sweeps over**, here and in the session (SA1, issue 173): from a parameter's first move in a pass the points the pass passes over are cleared, then the move is written; points less than a quarter tick apart are one point. The rule is one helper, `AutomationSweep` (`ReBuzz/Core/AutomationSweep.cs`), used by `ArrangementAutomationRecorder` and by the session's takes (`SessionLayout.Takes.cs`). The two differ in where a pass ends: here at the last move, until the transport stops; in the session at the clip's loop end or where the recording stops, so the rest of the clip after the last move is replaced too (session-view.md 0.7, Automation).
 
 ### 4.4 Recording and comping
 
