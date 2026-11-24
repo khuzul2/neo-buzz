@@ -23,40 +23,43 @@ namespace NeoBuzz.MachineTests
         }
 
         static string Row(string label, List<AcidGate.Row> rows) =>
-            $"| {label} | {AcidGate.Worst2d(rows):F4} | {rows.Max(x => x.Near2d):F4} | {rows.Count(x => x.Bad)} | {(rows.Any(x => x.Bad) ? AcidGate.Flags(rows) : "-")} |";
+            $"| {label} | {AcidGate.WorstRatio(rows):F1}x | {AcidGate.Worst2d(rows):F4} | {rows.Count(x => x.Bad)} | {(rows.Any(x => x.Bad) ? AcidGate.Flags(rows) : "-")} |";
 
         const string Readme = """
             # Neo Poly acid listening pack 3 (AC3, local only, no audio is committed)
 
-            What this is: the acid voice after a review of the whole engine, not another patch on it. Pack 2 still clicked: the
-            accent opened the filter to the top of the band (23 kHz) on every accented note, so every saw edge went through a wide-open
-            resonant filter, and note starts were short and hard. What changed in the voice: the filter cutoff approaches a soft
-            ceiling (the new `Filter range`, 1.6 kHz as shipped) and the total modulation is soft-limited; the accent sweep is
-            capped (`Sweep limit`); the acid ladder and diode run at twice the sample rate between linear-phase half-band filters
-            (`Filter quality`: Eco 1x, High 2x, Ultra 4x); the amp goes through a smooth onset and release (`Soft start`, 3.5 ms; a
-            raised-cosine start from silence, a raised-cosine fade when a voice is stolen, a release of at least 5 ms). The filter
-            now lags the oscillators by 15 samples (0.31 ms) at High.
+            What this is: the acid voice after a second look at the whole engine. Pack 2 still clicked, and the first AC3 build hid the clicks
+            behind a dark filter (1.6 kHz) instead of fixing them. The cause is now found and fixed at its source: an accented note asked the
+            filter for five to seven octaves of sweep in under five milliseconds (the envelope's attack and the accent's depth both arrive at
+            once, and the cutoff took a note from 300 Hz to 10 kHz and more), and a resonant filter swept that fast pops at the note's start
+            whatever its ceiling. Now the cutoff may rise only at a set rate (200 octaves a second at the default Soft start for the first 10 ms of
+            a note, up to three times that after it), and falls six times as fast as it rises. Around it, as before: a soft ceiling on the cutoff
+            (`Filter range`, 10 kHz as shipped), a soft limit on the total modulation, a capped accent sweep (`Sweep limit`), the acid ladder
+            and diode at twice the sample rate (`Filter quality`: Eco 1x, High 2x, Ultra 4x), a smooth start and end of every note
+            (`Soft start`, 3.5 ms; it also sets how fast the cutoff may rise). The filter lags the oscillators by 15 samples (0.31 ms) at High.
+            Because the sweep is slower, the accent's bite now comes a little later and the presets' accents were retuned for it
+            (longer accent decays, deeper accents on Plucky, Squelch, Deep and Sub): the accent is brighter than a plain note again, by 1.15 to 3 times in spectral centroid, and 3.4 to 4.7 dB louder.
 
             Four folders (24 bit, 48 kHz, mono):
 
             - `blind/` : six items, each `NN_A.wav` and `NN_B.wav`: Diode 18 against the 24 dB ladder on the pack line (two bars),
               Diode 18 in slot A in exactly three of the six (a seeded shuffle, never three in a row), the same loudness in both.
               Which is which: `KEY-do-not-open-before-listening.txt`.
-            - `named/` : by name, the presets as they ship. `Acid-X-diode18.wav`, `Acid-X-ladder24.wav` (the pack line), `Acid-X-busy-line.wav`
-              (the busier line: sixteenths, eight slides, seven accents; this is the one to listen to for clicks),
-              and `Acid-X-range-max-busy-line.wav`: the same busy line with Filter range at its maximum (18 kHz) and nothing else changed, so you can hear
-              what the limit does. It is meant to be brighter and rougher; clicks and buzz may come back there.
+            - `named/` : by name, the presets as they ship (all at the default Filter range, 10 kHz). `Acid-X-diode18.wav`, `Acid-X-ladder24.wav` (the pack line),
+              `Acid-X-busy-line.wav` (the busier line: sixteenths, eight slides, seven accents; the one to listen to for clicks),
+              and `Acid-X-range-max-busy-line.wav`: the same busy line with Filter range at its maximum (18 kHz) and nothing else changed.
+              It is brighter; the gate still finds no boundary spike there (one note in Screamer has a burst above 6 kHz).
             - `before-after/` : per preset, the busy line from the pack-2 build (`Acid-X-1-before.wav`) and from this build (`Acid-X-2-after.wav`),
               the before brought to the after's loudness (the gain is in `before-after/GAINS.txt`). Listen for the clicks you named.
-            - `measurements.md` : the numbers: the largest second difference per preset, before and after, and the steps the gate flags.
+            - `measurements.md` : the numbers: per render the worst boundary ratio and the steps the gate flags; per step, before and after.
 
-            Gate: the largest second difference of the raw signal in every step at most 0.010 (full scale), at most 0.004 within 5 ms of a note
-            start or end, and no burst above 6 kHz at a note start (above 6 dB over the note's 30 to 80 ms; floors -90 dBFS on a dark
-            note, -75 dBFS on a bright one). No oscillator-edge exclusion. The pack-2 renders fail it at the steps you named.
+            Gate (replaced; the absolute 0.010 / 0.004 limits are gone): at every note start and note end the largest second difference of the raw
+            signal within 5 ms is at most 2x the larger interior peak of the notes around it (10 to 55 ms after, 55 to 8 ms before; never under 1e-4), plus no burst above 6 kHz at
+            a note start (more than 6 dB over the note's 30 to 80 ms; floors -90 dBFS on a dark note, -75 dBFS on a bright one). No oscillator-edge exclusion.
+            Checked at Filter range 1.6, 3, 6, 10 (default) and 18 kHz, on both filters, at blocks 16, 64 and 256. The pack-2 renders fail it at the steps you named.
 
-            What I would like to hear back: per preset, clicks or none; whether Squelch still bites and Screamer still screams at 1.6 kHz
-            (if not, say which of Filter range, Sweep limit or Soft start you would raise, and I will move the defaults); and which of Eco, High
-            and Ultra you hear a difference between (all three are in the pack only through `Filter quality`; High is the default).
+            What I would like to hear back: per preset, clicks or none; whether Squelch bites and Screamer screams at the default; the
+            range-max renders against the defaults; and which of Eco, High and Ultra you hear a difference between (High is the default).
             """;
 
         [Test]
@@ -72,8 +75,8 @@ namespace NeoBuzz.MachineTests
             var diodeFirst = Draw();
             while (diodeFirst.Max() - diodeFirst.Min() == diodeFirst.Count - 1) diodeFirst = Draw();
             var key = new StringBuilder("item\tpreset\tslot A\tslot B\tgain applied to the ladder render (dB)\tgate-flagged steps (diode, ladder)\n");
-            var md = new StringBuilder("# Neo Poly acid pack 3: measurements\n\nGate numbers per render (second difference of the raw mono signal; full scale = 1; limits 0.010 anywhere, 0.004 within 5 ms of a note start or end).\n\n");
-            md.Append("| render | worst 2nd diff | worst near a note start/end | steps flagged | which |\n|---|---|---|---|---|\n");
+            var md = new StringBuilder("# Neo Poly acid pack 3: measurements\n\nGate numbers per render: the worst note boundary's second difference (within 5 ms) over the larger interior peak around it (limit 2.0x), the largest second difference anywhere (full scale = 1, for scale), the steps flagged (r = boundary ratio, b = burst above 6 kHz).\n\n");
+            md.Append("| render | worst boundary ratio | largest 2nd diff | steps flagged | which |\n|---|---|---|---|---|\n");
             int flaggedTotal = 0;
             var gains = new List<double>();
             for (int item = 0; item < Acid.Length; item++)
@@ -121,9 +124,9 @@ namespace NeoBuzz.MachineTests
                     var old = NeoPolyAcidGateTests.ReadWav24(Path.Combine(before, "named", $"{Safe(name)}-busy-line.wav"));
                     var oldRows = AcidGate.Analyse(old, Sequence(Busy, 2), AcidGate.IsDark(name));
                     var (_, newRows) = RenderMono(name, -1, Busy);
-                    md.Append($"### {name}\n\n| step | before max | before near | before 6k burst dB | after max | after near | after 6k burst dB |\n|---|---|---|---|---|---|---|\n");
+                    md.Append($"### {name}\n\n| step | before ratio | before 6k burst dB | after ratio | after 6k burst dB |\n|---|---|---|---|---|\n");
                     for (int i = 0; i < oldRows.Count; i++)
-                        md.Append($"| {i + 1} | {oldRows[i].Max2d:F4} | {oldRows[i].Near2d:F4} | {oldRows[i].BroadbandDb:F0} | {newRows[i].Max2d:F4} | {newRows[i].Near2d:F4} | {newRows[i].BroadbandDb:F0} |\n");
+                        md.Append($"| {i + 1} | {oldRows[i].Ratio:F1}x | {oldRows[i].BroadbandDb:F0} | {newRows[i].Ratio:F1}x | {newRows[i].BroadbandDb:F0} |\n");
                     md.Append('\n');
                 }
             }

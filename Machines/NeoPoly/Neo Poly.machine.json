@@ -1860,7 +1860,7 @@
    "group": "Filter 1",
    "min": 0,
    "max": 1000,
-   "default": 163,
+   "default": 797,
    "kind": "freq",
    "a": 1000.0,
    "b": 18000.0,

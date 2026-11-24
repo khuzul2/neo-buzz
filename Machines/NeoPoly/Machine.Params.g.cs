@@ -301,7 +301,7 @@ namespace NeoBuzz.Poly
         [ParameterDecl(Name = "Accent level", Description = "Extra level on accented notes", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AccentLevel { get => Values[P.AccentLevel]; set => Values.Set(P.AccentLevel, value); }
 
-        [ParameterDecl(Name = "Filter range", Description = "The highest cutoff an acid patch's filter 1 reaches (a soft ceiling)", MinValue = 0, MaxValue = 1000, DefValue = 163)]
+        [ParameterDecl(Name = "Filter range", Description = "The highest cutoff an acid patch's filter 1 reaches (a soft ceiling)", MinValue = 0, MaxValue = 1000, DefValue = 797)]
         public int AcidRange { get => Values[P.AcidRange]; set => Values.Set(P.AcidRange, value); }
 
         [ParameterDecl(Name = "Sweep limit", Description = "The most a run of accents can swell the filter, as a share of 3 octaves", MinValue = 0, MaxValue = 1000, DefValue = 500)]

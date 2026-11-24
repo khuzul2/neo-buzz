@@ -369,7 +369,15 @@ namespace NeoBuzz.Poly
         bool trackPitch;
         // Acid patches move filter 1's coefficient sample by sample (a straight line from the last control point to the next), so a fast
         // envelope or an accent is a sweep and not a staircase of steps every ControlRate samples. interp: this block does it.
-        bool interp, filterCold = true;
+        bool interp, filterCold = true, cutOctCold = true;
+        float cutOct, noteAge;
+        /// <summary>
+        /// How fast an acid patch's filter cutoff may move. The cutoff (in octaves) rises at most <see cref="AcidRiseOctMs"/> octaves per millisecond of Soft start per second
+        /// (0.7 / 3.5 ms = 200 octaves a second) for the first <see cref="AcidBoostAt"/> Soft starts of a note, then up to <see cref="AcidRiseBoost"/> times as fast, and falls
+        /// <see cref="AcidFallFactor"/> times as fast as it rises. An envelope, an accent and a retrigger together can ask for five or six octaves in a few milliseconds, and a
+        /// resonant filter swept that fast pops at the note's start whatever its ceiling: measured by the AC3 gate, 350 octaves a second is already over the line.
+        /// </summary>
+        internal const float AcidRiseOctMs = 0.42f, AcidFallFactor = 6f, AcidRiseBoost = 3f, AcidBoostAt = 3f;
         float g1Run, g1Step, r1Run, r1Step, g1End, r1End;
 
         // Drift (slow random walk).
@@ -443,6 +451,7 @@ namespace NeoBuzz.Poly
             randomValue = rng.NextBipolar();
             accented = pendAccented;
             accentSweep = pendSweep;
+            noteAge = 0;
             envPeakOct = 0;
             envPeakLevel = 0;
             trackPitch = false;
@@ -481,6 +490,7 @@ namespace NeoBuzz.Poly
                 if (s.Acid)
                 {
                     filterCold = true;
+                    cutOctCold = true;
                     coldRamp = true;
                     for (int i = 0; i < 3; i++)
                     {
@@ -669,7 +679,19 @@ namespace NeoBuzz.Poly
                 // An accented note's ceiling is a little higher (up to AcidAccentLiftOct, as its depth glides in), so an accent stays brighter than a plain note
                 // even when both reach the range.
                 float range = s.AcidRange * PortableMathF.Pow(2, AcidAccentLiftOct * Math.Min(1f, accDepthCur));
-                cut1 = DspMath.Clamp(SoftCeiling(s.F1Cutoff * PortableMathF.Pow(2, SoftOctaves(oct1)), range), 16f, sr * 0.48f);
+                // The cutoff (in octaves) never rises faster than AcidRiseOctPerSec: an envelope, an accent and a retrigger together can ask for five or six octaves
+                // in a few milliseconds, and a resonant filter swept that fast is a pop whatever the ceiling.
+                float so = SoftOctaves(oct1);
+                if (cutOctCold) { cutOct = so; cutOctCold = false; }
+                else
+                {
+                    noteAge += n / sr;
+                    // The first stretch of a note (the 5 ms either side of its start are where a pop is heard) the cutoff climbs at the base rate; after it, up to AcidRiseBoost times as fast.
+                    float after = Math.Min(1f, Math.Max(0f, (noteAge - AcidBoostAt * s.SoftStart) / (AcidBoostAt * s.SoftStart)));
+                    float rate = AcidRiseOctMs / s.SoftStart * (1f + (AcidRiseBoost - 1f) * after), up = rate * n / sr, down = up * AcidFallFactor;
+                    cutOct = so > cutOct + up ? cutOct + up : so < cutOct - down ? cutOct - down : so;
+                }
+                cut1 = DspMath.Clamp(SoftCeiling(s.F1Cutoff * PortableMathF.Pow(2, cutOct), range), 16f, sr * 0.48f);
             }
             else cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
             float reso1 = DspMath.Clamp(s.F1Reso + dst[(int)ModDest.F1Reso], 0, 1);

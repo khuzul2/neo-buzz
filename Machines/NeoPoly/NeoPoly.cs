@@ -61,7 +61,7 @@ namespace NeoBuzz.Poly
                 "M5Dst", "M5Amt", "M6Src", "M6Dst", "M6Amt", "M7Src", "M7Dst", "M7Amt",
                 "M8Src", "M8Dst", "M8Amt",
                 "AccentThr", "Accent", "Slide", "SlideTime", "AccentDecay", "AccentSweep", "AccentLevel",
-            }, s => s.Add("AcidRange", 163).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650));
+            }, s => s.Add("AcidRange", 797).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650));
 
         internal override StateMigrations Migrations => PolyChain;
 

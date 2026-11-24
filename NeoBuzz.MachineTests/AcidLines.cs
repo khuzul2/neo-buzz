@@ -7,6 +7,7 @@ namespace NeoBuzz.MachineTests
     internal static class AcidLines
     {
         const int Rate = Measure.Rate;
+
         public const double StepSeconds = 60.0 / 130 / 4;
         public static double Step => StepSeconds * Rate;
 

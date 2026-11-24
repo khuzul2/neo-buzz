@@ -328,7 +328,7 @@ AccentLevel "Accent level"  0 1000 0    lin 0 12 dB 1                   | Extra 
 # Acid bounds (AC3). Appended (state version 2): an older song takes these defaults. They apply only to a patch that uses an acid control
 # (Slide, Accent, Accent sweep, Accent level or the Diode 18 filter); every other patch sounds as before.
 group Filter 1
-AcidRange   "Filter range"  0 1000 163  freq 1000 18000                 | The highest cutoff an acid patch's filter 1 reaches (a soft ceiling)
+AcidRange   "Filter range"  0 1000 797  freq 1000 18000                 | The highest cutoff an acid patch's filter 1 reaches (a soft ceiling)
     how Sets the ceiling filter 1's cutoff approaches without passing it in an acid patch, from 1 to 18 kHz; the sound bends toward it smoothly and never hits a wall.
     sound Low values keep the line round and click-free; high values let accents open up and bite harder, and at the top a loud resonant filter can click and buzz.
 AcidSweepMax "Sweep limit"  0 1000 500  pct                             | The most a run of accents can swell the filter, as a share of 3 octaves

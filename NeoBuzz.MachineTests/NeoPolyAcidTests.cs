@@ -189,7 +189,7 @@ namespace NeoBuzz.MachineTests
             }
             // Level: +6 dB on the accented note, none on the other.
             double plain = Early(0.5f, 0.0005, 0), soft = Early(0.5f, 0.0005, 6), hard = Early(1f, 0.0005, 0), hardLift = Early(1f, 0.0005, 6);
-            Assert.That(Measure.Db(soft / plain), Is.EqualTo(0).Within(0.01), "not accented: no lift");
+            Assert.That(Measure.Db(soft / plain), Is.EqualTo(0).Within(0.05), "not accented: no lift (a patch with an Accent level is an acid patch: its filter is oversampled and its cutoff rate-limited, which differs from the plain path by hundredths of a dB)");
             Assert.That(Measure.Db(hardLift / hard), Is.EqualTo(6).Within(0.2), "accented: +6 dB");
 
             // Decay: measured on the filter envelope as the time its contribution takes to fall to half the peak.
@@ -520,7 +520,7 @@ namespace NeoBuzz.MachineTests
             var v0 = Params.Table.Take(91).Select(p => p.Id).ToArray();
             var v1 = Params.Table.Take(98).Select(p => p.Id).ToArray();
             var chain = new StateMigrations(Params.Table).Step(v0, s => { })
-                .Step(v1, s => s.Add("AcidRange", 163).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650));
+                .Step(v1, s => s.Add("AcidRange", 797).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650));
             Assert.That(chain.Validate(), Is.Empty);
             Assert.That(chain.Current, Is.EqualTo(2));
             var saved = new int[91];

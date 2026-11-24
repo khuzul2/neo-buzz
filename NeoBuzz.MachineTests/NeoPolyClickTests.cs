@@ -284,13 +284,13 @@ namespace NeoBuzz.MachineTests
 
         // ── the acid character is still there ───────────────────────────────
 
-        static double Centroid(float[] x, int from, int n)
+        static double Centroid(float[] x, int from, int n, bool power = false)
         {
             var w = new float[n];
             for (int i = 0; i < n; i++) w[i] = x[from + i] * (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / n));
             var mag = Measure.Spectrum(w, 0, n);
             double num = 0, den = 0;
-            for (int k = 1; k < mag.Length; k++) { double f = (double)k * Rate / n; num += f * mag[k]; den += mag[k]; }
+            for (int k = 1; k < mag.Length; k++) { double f = (double)k * Rate / n, wt = power ? mag[k] * mag[k] : mag[k]; num += f * wt; den += wt; }
             return num / den;
         }
 
@@ -304,11 +304,11 @@ namespace NeoBuzz.MachineTests
             return up / all;
         }
 
-        /// <summary>The brightest 5 ms of the note's first 50 ms: the largest spectral centroid of the 256-sample frames, hopped by 64 (the accent's bite is a few milliseconds long: its decay is short).</summary>
-        static double BrightestCentroid(float[] x)
+        /// <summary>The brightest 21 ms starting 10 to 70 ms into the note: the largest spectral centroid (magnitude-weighted) of the 1024-sample frames, hopped by 128. A frame is longer than one period of the lowest bass note (18 ms at A1: a shorter frame measures where the saw's edge falls in it, not the filter), and it starts after the first 10 ms, where the filter's rise is rate-limited alike for a plain and an accented note (the gate's Soft start window) and the amplitude is still coming in.</summary>
+        static double BrightestCentroid(float[] x, bool power = false)
         {
             double best = 0;
-            for (int at = 0; at + 256 <= 2400; at += 64) best = Math.Max(best, Centroid(x, at, 256));
+            for (int at = 512; at + 1024 <= 3584; at += 128) best = Math.Max(best, Centroid(x, at, 1024, power));
             return best;
         }
 
@@ -328,17 +328,12 @@ namespace NeoBuzz.MachineTests
                 double peakPlain = Measure.Peak(plain, 0, plain.Length), peakAccent = Measure.Peak(accent, 0, accent.Length);
                 double db = Measure.Db(peakAccent / peakPlain);
                 double cPlain = BrightestCentroid(plain), cAccent = BrightestCentroid(accent);
-                // The accent's filter opens further: the brightest 5 ms of its first 50 ms is brighter than the plain note's, with Filter range at 4 kHz (at the shipped
-                // 1.6 kHz both notes are held under the same soft ceiling and are mostly their fundamental: the accent's level and decay are what is left, checked above).
-                double bPlain = BrightestCentroid(Note(90 / 127f, 4000)), bAccent = BrightestCentroid(Note(1f, 4000));
-                Measure.Report($"accent {name} {filter}: with Filter range 4 kHz, brightest 5 ms {bPlain:F0} Hz plain, {bAccent:F0} Hz accented");
-                // AC3 finding (reported, not hidden): the accented note is brighter in the brightest 5 ms on Rubber, Screamer and Deep, not on Squelch, Plucky or Sub (their
-                // accent decay is short and the accent's extra level and drive sit on the fundamental): the check is that it is not much darker.
-                Assert.That(bAccent, Is.GreaterThan(bPlain * 0.8), $"{name} {filter}: the accented note's brightest 5 ms is not much darker");
-                Measure.Report($"accent {name} {(filter == 6 ? "Diode18" : "Ladder24")}: peak {db:+0.0;-0.0} dB, brightest 5 ms (spectral centroid) {cPlain:F0} Hz plain, {cAccent:F0} Hz accented");
+                Measure.Report($"WIN {name} {filter}: first 43 ms centroid {Centroid(plain, 0, 2048):F0} plain {Centroid(accent, 0, 2048):F0} accent, ratio {Centroid(accent, 0, 2048) / Centroid(plain, 0, 2048):F2}; 8-30 ms {Centroid(plain, 384, 1024):F0} / {Centroid(accent, 384, 1024):F0}");
+                Measure.Report($"accent {name} {(filter == 6 ? "Diode18" : "Ladder24")}: peak {db:+0.0;-0.0} dB, brightest 21 ms (spectral centroid) {cPlain:F0} Hz plain, {cAccent:F0} Hz accented");
                 if (Environment.GetEnvironmentVariable("NEO_CLICK_DIAG") == "frames")
-                    Measure.Report($"frames {name} {filter}: plain " + string.Join(" ", Enumerable.Range(0, 20).Select(i => Centroid(plain, i * 128, 256).ToString("F0"))) + " | accent " + string.Join(" ", Enumerable.Range(0, 20).Select(i => Centroid(accent, i * 128, 256).ToString("F0"))));
+                    Measure.Report($"frames {name} {filter}: plain " + string.Join(" ", Enumerable.Range(0, 17).Select(i => Centroid(plain, i * 128, 1024).ToString("F0"))) + " | accent " + string.Join(" ", Enumerable.Range(0, 17).Select(i => Centroid(accent, i * 128, 1024).ToString("F0"))));
                 Assert.That(db, Is.GreaterThanOrEqualTo(3.0), $"{name} {filter}: the accented peak");
+                Assert.That(cAccent, Is.GreaterThanOrEqualTo(cPlain * 1.15), $"{name} {filter}: the accented note is brighter (centroid of its brightest 5 ms, at the shipped Filter range)");
             }
         }
 
