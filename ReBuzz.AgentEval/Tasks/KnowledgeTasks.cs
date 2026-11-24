@@ -489,6 +489,30 @@ namespace ReBuzz.AgentEval
                     ck.Add("controller", b != null && J.Num(b["controller"]) == 21 && J.Num(b["channel"]) == 2, b != null ? $"controller {J.Num(b["controller"])} on channel {J.Num(b["channel"])}" : "no binding");
                 }),
 
+            Guide("midi-mapping", "Guide: MIDI mapping",
+                "The song has a Neo Poly called Bass. Two hardware controllers are connected: Faders, whose eight knobs send controller numbers 21 to 28 on channel 1, and Pads, whose first pad sends note 36 on channel 10. " +
+                "Set the song up so that Faders' eight knobs are taught as one group, Faders' first knob drives Bass's F1 cutoff while Bass's track is the selected one (it is part of Bass's track, and the song keeps it), " +
+                "and Pads' note 36 starts playback whichever track is selected.",
+                (s, c) => K.Replay(s, "hear-a-bass"),
+                (s, c) =>
+                {
+                    s.C.Ok("midi_map_set", new JsonObject { ["op"] = "knob_group", ["device"] = "Faders", ["first_number"] = 21, ["count"] = 8, ["channel"] = 1 });
+                    s.C.Ok("track_page_set", new JsonObject { ["track_id"] = "track:Bass", ["slots"] = new JsonArray(new JsonObject { ["knob"] = 1, ["machine"] = "Bass", ["parameter"] = "F1 cutoff" }) });
+                    s.C.Ok("midi_map_set", new JsonObject { ["scope"] = "global", ["device"] = "Pads", ["kind"] = "note", ["channel"] = 10, ["number"] = 36, ["command"] = "play" });
+                },
+                (s, c, ck) =>
+                {
+                    var faders = J.Objects(s.C.Ok("controller_list")["controllers"]).FirstOrDefault(x => string.Equals(J.Str(x["device"]), "Faders", StringComparison.OrdinalIgnoreCase));
+                    ck.Add("knob_group", faders != null && J.Num(faders["knobs"]) == 8, faders != null ? $"Faders has {J.Num(faders["knobs"])} knob(s)" : "Faders is not a known controller");
+                    var page = J.Objects(s.C.Ok("track_page_get", new JsonObject { ["track_id"] = "track:Bass" })["pages"]).FirstOrDefault();
+                    var slot = J.Objects(page?["slots"]).FirstOrDefault(x => J.Num(x["knob"]) == 1);
+                    ck.Add("slot", slot != null && J.Str(slot["machine"]) == "Bass" && string.Equals(J.Str(slot["parameter"]), "F1 cutoff", StringComparison.OrdinalIgnoreCase) && slot["fallback"] == null,
+                        slot != null ? $"knob 1 holds {J.Str(slot["machine"]) ?? "nothing"} {J.Str(slot["parameter"])}" : "no knob 1 on Bass's page");
+                    var pad = J.Objects(s.C.Ok("midi_map_list", new JsonObject { ["scope"] = "global" })["mappings"]).FirstOrDefault(x => J.Str(x["command"]) == "play");
+                    ck.Add("pad", pad != null && J.Str(pad["kind"]) == "note" && J.Num(pad["number"]) == 36 && J.Num(pad["channel"]) == 10 && string.Equals(J.Str(pad["device"]), "Pads", StringComparison.OrdinalIgnoreCase),
+                        pad != null ? $"{J.Str(pad["control"])} → {J.Str(pad["command"])}" : "no global play mapping");
+                }),
+
             Guide("migrating-songs", "Guide: migrating songs",
                 "An old song: a Neo Poly called Bass feeds a classic Pedal Comp called Squash, which feeds a classic Pedal Plate reverb called Room. Move every classic machine onto its Neo successor, one at a time, looking at each move first, so the chain keeps its order and the song still sounds.",
                 (s, c) =>
