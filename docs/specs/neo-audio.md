@@ -370,3 +370,46 @@ Steady loops of whole bars: the tempo is AW1's exactly (0.000 BPM apart; gate 0.
 **Checks that run in CI**: the forward pass against PyTorch (a tiny random-weight network, `ReBuzz.SessionTests/AutoWarp/aw2-parity.bin`, within 1e-4: measured 2.4e-7; the pointwise, depthwise and GELU kernels are vectorised, `Vector<float>`, with an exp-polynomial tanh), the DSP fallback when no model is loaded or the model is not sure, the version-keyed cache, the model-or-DSP choice, the decoder on known activations at 62, 100, 128 and 190 BPM, and a regression test of the shipped weights (`ShippedModelFollowsAGeneratedDriftLine`: 85 % of a held-out generated line's beats within 10 ms). A 10-minute file (640 s) on the 4-core CI runner, decoding, model, DSP check and markers all included: 2.5 to 2.8 s with the first kernels; the vectorised kernels halve the forward pass (the figure of the shipped build is in the AW2b report).
 
 **AW2c and AW2d (follow-ups; the shipped weights stay version 2).** The tools have an E-GMD leg (`fetch.py egmd`: the 43 kit sounds of the Groove MIDI performances, licence read from the dataset's page at fetch time, drummers 5 and 9 and the performances in GMD's validation split left out, its own `egmd` dataset so it is never in a validation half), training that continues from the shipped weights (`train.py --init`), a tempo prior (`TempoPriorSigma`, log-normal, centre 120 BPM) and a check of the DSP track's beats against the model's beat activation (`DspPhaseRatio`), both off by default: neither gained on validation. Two continued-training candidates (AW2c: more AAM; AW2d: E-GMD, a lighter AAM share) each lost 0.03 to 0.04 downbeat F on the GMD and GuitarSet test halves, so neither shipped. GTZAN and Ballroom (measure-only, never trained on): beat F 0.788 and 0.743, downbeat F 0.427 and 0.439.
+
+### AW3 as built: the grid on the transients (timing, not tempo)
+
+**Why.** The user's blind test of AW2 against AW1 (8 held-out items, 2026-11-23) came out 4 to 3 to 1 for AW2 where beat F at +-70 ms says 0.65 to 0.99 against 0.30 to 0.76, and two remarks said the click "is off from the transients". AW3 measures what ±70 ms hides and adds two settings, both **off by default** (the rule of AW2c: on only if validation improves and no test gate gets worse; they do not meet it, see below).
+
+**What was measured** (`AutoWarpEval --aw3`, `tools/aw2/aw3score.py`, Fork `pitch-eval.yml` jobs `aw3-*`; the validation halves for every choice, the test halves once, runs 45226591051 and 45229341961). The grid as the app would warp it (the markers, not the tracker's raw beats) against the annotations, and against the strong onsets of the shared detector (`NeoBuzz.Dsp.OnsetDetector`, strength 3 and over, within 60 ms). Signed offsets in ms, grid minus reference (positive: late); median, interquartile range. Validation halves:
+
+| set | AW2 vs annotations | AW2 activation peak vs annotations | annotations vs onsets | AW2 vs onsets | AW1 vs onsets |
+|---|---|---|---|---|---|
+| AAM (63) | +1.9 (0.0 .. +5.1) | +3.0 | -3.4 | -0.6 | -1.0 |
+| Candombe (5) | -0.3 (-4.7 .. +3.8) | -0.3 | -3.5 | -4.3 | -1.2 |
+| GMD (26) | 0.0 (-11.5 .. +4.6) | +0.1 | **+12.7** (-2.3 .. +26.7) | **+9.9** (-1.3 .. +20.5) | -1.2 (-7.5 .. +4.3) |
+| GuitarSet (30) | -1.5 (-4.0 .. 0.0) | +3.7 | -5.9 | -2.7 | -2.6 |
+
+**Findings.** (1) AW2 has no constant bias against the annotations: every median is within 2 ms, and the model's own activation peak sits within 4 ms of them, so the front end, the frame centre, the peak interpolation and the decoder add nothing. (2) The offset the ear hears is the annotations' own: in Groove MIDI the beat grid is the click the drummer played to and the hits lead it by 12.7 ms (median, a wide spread), AW2 learned it (+9.9 ms behind the onsets) and AW1, which snaps its beats to the attacks, does not (-1.2). Candombe's annotations are 3.5 ms ahead of the onsets and AW2 is 4.3 ms ahead. (3) A second cause is the steady test: AW2 calls a result steady when every 16-beat window is within 1 % of the line, which a human performance passes, and a single straight line then wanders off the hits.
+
+**The two settings** (both are knobs of the code, default as AW2 had it):
+- `BeatModelTracker.AttackReachMs` (default 0): each beat of the model moves to the attack within this many ms, as AW1 places its own (`BeatTracker.RefineAt`, the same code, and `Smooth` for soft attacks); a move that would reorder beats is dropped.
+- `AudioAnalysis.SteadyResidualP95Ms` and `SteadyResidualMaxMs` (default: not checked): a steady result also needs the beats' distance from the fitted line to stay within these bounds (95th percentile and largest, ms); otherwise the per-bar markers of the non-steady path are used. A loop of whole bars keeps the old test, so a steady loop keeps AW1's tempo.
+
+**Validation sweep** (reach 0, 25, 35 ms by residual bounds not checked, 30:60, 20:40, 15:30; the full table is in the AW3 report). Reach 25 with bounds 30:60 was chosen: reach 35 is no better than 25, and tighter bounds add markers without a gain. Against AW2 (validation, beat F at +-25 / +-70 ms, and the median offset against the onsets):
+
+| set | AW2 F25 / F70 | candidate F25 / F70 | AW2 vs onsets | candidate vs onsets (IQR) |
+|---|---|---|---|---|
+| AAM | 0.853 / 0.893 | 0.870 / 0.892 | -0.6 | -2.2 (-4.5 .. +2.8) |
+| Candombe | 0.992 / 1.000 | 0.985 / 1.000 | -4.3 | -1.1 (-3.3 .. 0.0) |
+| GMD | 0.844 / 0.954 | 0.712 / 0.948 | +9.9 | -0.7 (-4.2 .. +5.6) |
+| GuitarSet | 0.813 / 0.878 | 0.774 / 0.876 | -2.7 | -2.4 (-11.3 .. +8.8) |
+
+**Test halves, scored once** (AW2 then the candidate; beat F at +-25 / +-70 ms; median offset against the onsets):
+
+| set | AW2 F25 / F70 | candidate F25 / F70 | AW2 vs onsets | candidate vs onsets |
+|---|---|---|---|---|
+| AAM (54) | 0.958 / 0.960 | 0.937 / 0.951 | -1.6 | -2.3 |
+| Candombe (8) | 0.948 / 0.985 | 0.938 / 0.987 | -4.7 | -1.2 |
+| GMD (46) | 0.700 / 0.831 | 0.611 / 0.826 | +10.0 | -0.8 |
+| GuitarSet (120) | 0.487 / 0.648 | 0.464 / 0.645 | -3.0 | -2.4 |
+
+**The gates, and why the code stays off.** The brief's gates were "|median| under 5 ms against the annotations on every validation set" (met by AW2 already, and missed by the candidate on GMD, -13.9 ms, because it moves the grid onto the hits and the annotations are 12.7 ms behind them), "F at +-25 ms improves on every set" (it falls on every set but AAM's validation half) and "no +-70 ms gate gets worse" (GMD -0.005, AAM -0.009 on the test halves). So the candidate is **not on by default**. What it does do is what the ear asked for: against the strong onsets the median offset of every set is within 2.4 ms and Groove MIDI's +10 ms is gone (AW1's own offset is -1.0). The listening pack v2 decides whether the ear prefers it. Not built, because the offsets left against the onsets are small (under 2.5 ms, nothing for a phase lock to correct) and item 01's tempo error of the brief was stale (see below): the phase lock per stretch, the tempo-ratio check and the per-file choice between AW1 and AW2.
+
+**Item 01 and the pack.** The pack the user heard had item 01 at 101.1 BPM (AW1, 44 markers) and 101.0 (AW2, 2 markers): no 2:3 error. The difference is the single straight line of AW2's steady result against AW1's markers that follow the player. With the candidate's residual bounds item 01 stays one line (its beats are within 30 ms of it), so the candidate does not change what the ear heard there. Items where AW2 and AW1 differ by an octave (08: 81.8 against 164.1 BPM; 2362: 124.0 against 62.0) are not touched by AW3.
+
+**Listening pack v2** (`aw3-pack`, 16 held-out clips: the 8 of AW2's blind test and 8 new, each AW1 against the candidate; the slots are counterbalanced, AW1 in slot A in 8 of 16, the key is kept apart).

@@ -50,7 +50,15 @@ namespace ReBuzz.Core.Clips
             var result = new AutoWarpResult { BeatsPerBar = Math.Clamp(beatsPerBar, 1, 16) };
             int bpb = result.BeatsPerBar;
             if (source == null || source.Length < 1) return result;
-            var track = BeatTracker.Of(source);
+            return FromTrack(source, BeatTracker.Of(source), beatsPerBar, fromSeconds);
+        }
+
+        /// <summary>The markers for a beat track already found (AW3: the evaluation tool tries settings on one track).</summary>
+        internal static AutoWarpResult FromTrack(AudioSource source, BeatTrack track, int beatsPerBar = 4, double fromSeconds = 0)
+        {
+            var result = new AutoWarpResult { BeatsPerBar = Math.Clamp(beatsPerBar, 1, 16) };
+            int bpb = result.BeatsPerBar;
+            if (source == null || source.Length < 1 || track == null) return result;
             if (!track.Found) return result;
             int rate = source.SampleRate;
 
@@ -84,7 +92,6 @@ namespace ReBuzz.Core.Clips
                 double local = (b[w + win] - b[w]) / win;
                 if (Math.Abs(local / per - 1) > SteadyTolerance) steady = false;
             }
-            result.Steady = steady;
             double seconds = source.Seconds;
 
             if (steady)
@@ -93,10 +100,19 @@ namespace ReBuzz.Core.Clips
                 double bars = BarsTempo(seconds, bpb);
                 if (bars > 0 && (Math.Abs(bars - bpm) / bpm < 0.015 || (track.FromModel && (Math.Abs(bars - 2 * bpm) / bars < 0.015 || Math.Abs(bars - 0.5 * bpm) / bars < 0.015))) && from <= 0)
                 {
+                    result.Steady = true;
                     result.Bpm = bars;
                     result.Loop = true;
                     return result;
                 }
+                // AW3: a tempo within 1 % over 16 beats can still wander: the phase adds up (a human performance), and one straight line then lands tens of ms off the hits.
+                // Steady also needs the beats to stay near the line (the residuals' 95th percentile and largest, ms).
+                if (!ResidualsWithin(b, a0, per, rate)) steady = false;
+            }
+            result.Steady = steady;
+
+            if (steady)
+            {
                 result.Bpm = Math.Round(bpm, 3);
                 double s0 = a0;
                 double spb = rate * 60.0 / result.Bpm;
@@ -118,6 +134,20 @@ namespace ReBuzz.Core.Clips
             for (int k = 0; k + 1 < bars2.Count; k++) Split(b, bars2[k], bars2[k + 1], tol, marks);
             foreach (int j in marks) result.Markers.Add((b[j], j));
             return result;
+        }
+
+        /// <summary>AW3: the largest and the 95th percentile of the beats' distance from the line through them (ms) that still counts as steady. Infinite: not checked. Set on the validation split.</summary>
+        internal static double SteadyResidualP95Ms = double.PositiveInfinity, SteadyResidualMaxMs = double.PositiveInfinity;
+
+        static bool ResidualsWithin(double[] b, double a0, double per, int rate)
+        {
+            if (double.IsInfinity(SteadyResidualP95Ms) && double.IsInfinity(SteadyResidualMaxMs)) return true;
+            int m = b.Length;
+            var r = new double[m];
+            for (int j = 0; j < m; j++) r[j] = Math.Abs(b[j] - (a0 + per * j)) * 1000.0 / rate;
+            Array.Sort(r);
+            double p95 = r[Math.Min(m - 1, (int)Math.Ceiling(0.95 * m) - 1)];
+            return p95 <= SteadyResidualP95Ms && r[m - 1] <= SteadyResidualMaxMs;
         }
 
         static void Split(double[] b, int lo, int hi, double tol, SortedSet<int> marks)
