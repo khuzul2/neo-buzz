@@ -874,6 +874,56 @@ namespace NeoBuzz.Plug
 
         public int Latency => latency;
 
+        // --- Mix (effects only): the dry input against the plug-in's output, the dry delayed by the plug-in's latency ---------------
+        // 0 … 1000 (1000 = only the plug-in, which is exactly what the effect did before Mix existed). The dry goes through a ring on every
+        // block; the weight glides over 20 ms and lands exactly, so 0 gives the input delayed by the latency, bit for bit.
+        const int DryRing = 1 << 16;
+        Sample[] dry;
+        int dryPos;
+        float mixWeight = 1f;
+        volatile int mixRaw = 1000;
+
+        /// <summary>Mix, 0 … 1000 (an effect's dry/wet; 1000 is only the plug-in).</summary>
+        public int MixRaw
+        {
+            get => mixRaw;
+            set => mixRaw = Math.Clamp(value, 0, 1000);
+        }
+
+        void KeepDry(Sample[] input, int n)
+        {
+            dry ??= new Sample[DryRing];
+            int p = dryPos;
+            for (int i = 0; i < n; i++)
+            {
+                p = (p + 1) & (DryRing - 1);
+                dry[p] = input[i];
+            }
+        }
+
+        void MixDry(Sample[] output, int n)
+        {
+            float target = mixRaw / 1000f;
+            if (target == 1f && mixWeight == 1f) { dryPos = (dryPos + n) & (DryRing - 1); return; }
+            int lat = Math.Clamp(latency, 0, DryRing - n - 1);
+            float step = 1f / Math.Max(1, (int)(0.02 * rate));
+            for (int i = 0; i < n; i++)
+            {
+                if (mixWeight < target) mixWeight = Math.Min(target, mixWeight + step);
+                else if (mixWeight > target) mixWeight = Math.Max(target, mixWeight - step);
+                float w = mixWeight;
+                if (w >= 1f) continue;
+                var d = dry[(dryPos + 1 + i - lat) & (DryRing - 1)];
+                if (w <= 0f) output[i] = d;
+                else
+                {
+                    output[i].L = d.L * (1f - w) + output[i].L * w;
+                    output[i].R = d.R * (1f - w) + output[i].R * w;
+                }
+            }
+            dryPos = (dryPos + n) & (DryRing - 1);
+        }
+
         // --- MIDI out --------------------------------------------------------------------------------------
 
         public string MidiOutName => midiTargetName;
@@ -995,6 +1045,7 @@ namespace NeoBuzz.Plug
                     return effect && input != null;
                 }
                 Volatile.Write(ref lastRender, Environment.TickCount64);
+                if (effect && input != null) KeepDry(input, n);
                 var master = host.MasterInfo;
                 int ne = 0;
                 bool playing = false;
@@ -1135,6 +1186,7 @@ namespace NeoBuzz.Plug
                     }
                     if (playing) beatPos += c * bpm / (60.0 * rate);
                 }
+                if (effect && input != null) MixDry(output, n);
                 if (any) quiet = 0; else quiet += n;
                 return any || quiet <= limit;
             }

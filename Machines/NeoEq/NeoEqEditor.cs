@@ -162,6 +162,8 @@ namespace NeoBuzz.Eq
 
             var output = Layout.Row(
                 Layout.Column(
+                    Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
+                    Layout.Gap(1, 6),
                     new ParamKnob(ctx, P.Output, diameter: 56),
                     Layout.Gap(1, 10),
                     new ParamChoice(ctx, P.Delta, "Delta", 40),
@@ -459,8 +461,11 @@ namespace NeoBuzz.Eq
             }
             graph.DrawGrid(g);
 
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
-            for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
+            values.AllowPhysical();
+            for (int i = 0; i < Params.Table.Length; i++) rawValues.Set(i, ctx.Raw(i));
+            FxStage.Fill(rawValues, values, P.Amount, EqEngine.AmountRules);
             double rate = machine?.Engine.SampleRate ?? 48000;
 
             int sel = handles.Selected;

@@ -26,6 +26,14 @@ lines += [
     "        public int Output { get => core.OutBus; set => core.SetOutBus(value); }",
     "",
 ]
+# An effect's Mix, after Output (appended; the instrument has none).
+lines += [
+    "#if FX",
+    '        [ParameterDecl(Name = "Mix", Description = "Dry/wet: 100 % is only the plug-in, 0 % only the input (delayed by the plug-in\'s latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]',
+    "        public int Mix { get => core.MixRaw; set => core.MixRaw = value; }",
+    "#endif",
+    "",
+]
 lines += ["    }", "}", ""]
 with open(os.path.join(here, "Slots.g.cs"), "w", newline="\n") as f:
     f.write("\n".join(lines))

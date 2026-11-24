@@ -45,8 +45,8 @@ namespace NeoBuzz.Drive
 
             var output = Layout.Row(
                 Layout.Column(
+                    Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
                     new ParamKnob(ctx, P.Output),
-                    new ParamKnob(ctx, P.Mix),
                     new ParamChoice(ctx, P.AutoGain, "Auto gain", 32)),
                 Layout.Gap(6),
                 Layout.Column(
@@ -63,8 +63,11 @@ namespace NeoBuzz.Drive
 
         static void DrawCurve(INeoCanvas g, NeoRect r, EditorContext ctx, NeoDriveMachine machine)
         {
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
-            for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
+            values.AllowPhysical();
+            for (int i = 0; i < Params.Table.Length; i++) rawValues.Set(i, ctx.Raw(i));
+            FxStage.Fill(rawValues, values, P.Amount, DriveEngine.AmountRules);
             var c = new NeoPoint(r.X + r.Width / 2, r.Y + r.Height / 2);
             double half = r.Width / 2 - 8;
             var grid = new NeoStroke(Palette.Grid, 1, false);

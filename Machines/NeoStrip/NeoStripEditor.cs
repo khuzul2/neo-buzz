@@ -94,7 +94,7 @@ namespace NeoBuzz.Strip
             });
 
             var output = Layout.Row(
-                Layout.Column(new ParamKnob(ctx, P.Output, diameter: k), Layout.Gap(1, 4), new ParamChoice(ctx, P.Delta, "Delta", 40), Layout.Gap(1, 4), match),
+                Layout.Column(Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)), new ParamKnob(ctx, P.Output, diameter: k), Layout.Gap(1, 4), new ParamChoice(ctx, P.Delta, "Delta", 40), Layout.Gap(1, 4), match),
                 Layout.Gap(8),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 150),
                 Layout.Gap(4),

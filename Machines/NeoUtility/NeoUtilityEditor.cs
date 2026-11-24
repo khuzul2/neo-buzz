@@ -55,7 +55,9 @@ namespace NeoBuzz.Utility
                 new ParamChoice(ctx, P.DcRemove, "DC removal", ToggleCell),
                 // The mid/side matrix (docs/specs/mastering-tools.md, M1): a three-way choice (Off, Encode M/S, Decode M/S),
                 // not a switch: a drop-down that keeps the column's width.
-                new ParamDropdown(ctx, P.Matrix, "Matrix", 96));
+                new ParamDropdown(ctx, P.Matrix, "Matrix", 96),
+                Layout.Gap(1, 4),
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)));
 
             var meters = Layout.Row(
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 196),

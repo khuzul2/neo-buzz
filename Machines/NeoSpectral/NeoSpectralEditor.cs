@@ -64,7 +64,8 @@ namespace NeoBuzz.Spectral
             });
 
             var output = Layout.Column(
-                Layout.Row(new ParamKnob(ctx, P.Output, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
+                new ParamKnob(ctx, P.Output, diameter: 40),
                 new ParamChoice(ctx, P.Delta, "Delta", 40),
                 Layout.Gap(1, 4),
                 match);
