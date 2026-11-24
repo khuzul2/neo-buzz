@@ -266,8 +266,8 @@ namespace ReBuzz.Studio.Tests
                 Core.SongCore.CreateMachine("Neo Poly", null, "V1 Poly", null, null, null, -1, 0.5f, 0.5f);
                 var m = Core.SongCore.MachinesList.Last(x => x.Name == "V1 Poly");
                 var (_, version, _) = State(m);
-                Assert.That(version, Is.EqualTo(1), "Neo Poly is at state version 1 (docs/specs/machines.md, Neo Poly acid)");
-                Assert.That(((IVersionedMachine)m.ManagedMachine).StateVersion, Is.EqualTo(1));
+                Assert.That(version, Is.EqualTo(2), "Neo Poly is at state version 2 (docs/specs/machines.md, Neo Poly acid)");
+                Assert.That(((IVersionedMachine)m.ManagedMachine).StateVersion, Is.EqualTo(2));
             }
             finally
             {
