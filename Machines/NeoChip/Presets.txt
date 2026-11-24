@@ -48,15 +48,15 @@ Stereo spread = 0
 Volume = 3.5
 
 preset "Arp — Major sparkle"
-comment "Bright tempo-synced 1/32 major triad arpeggio across mixed pulse duties."
+comment "Bright wide tempo-synced 1/32 major triad arpeggio across thin pulse duties."
 Voice mode = Poly
-P1 duty = 25%
-P2 duty = 50%
-P3 duty = 12.5%
+P1 duty = 12.5%
+P2 duty = 12.5%
+P3 duty = 25%
 Env mode = ADSR
 Env attack = 0.002
 Env decay = 0.20
-Env sustain = 11
+Env sustain = 12
 Env release = 0.07
 Arp mode = Up
 Arp steps = 3
@@ -64,34 +64,26 @@ Arp step 1 = 0
 Arp step 2 = 4
 Arp step 3 = 7
 Arp sync = 1/32
-Stereo spread = 65
-Volume = -1.5
+Stereo spread = 85
+Volume = 0.0
 
 preset "Arp — Minor run"
-comment "Bouncing up-down minor triad arpeggio at 1/16T with gentle PWM shimmer."
-Voice mode = Poly
+comment "Driving mono minor octave-and-third run at 1/16T with a pulsing saw-down hardware envelope."
+Voice mode = Mono
 P1 duty = 50%
-P1 PWM = 30
+P1 PWM = 35
 P1 PWM rate = 1.8
-P2 duty = 25%
-P2 PWM = 35
-P2 PWM rate = 2.2
-P3 duty = 75%
-P3 PWM = 25
-P3 PWM rate = 1.4
-Env mode = ADSR
-Env attack = 0.004
-Env decay = 0.25
-Env sustain = 11
-Env release = 0.11
+Env mode = Saw down
+Env sync = 1/16T
+Env release = 0.08
 Arp mode = Up-Down
 Arp steps = 3
-Arp step 1 = 0
-Arp step 2 = 3
-Arp step 3 = 7
+Arp step 1 = -12
+Arp step 2 = 0
+Arp step 3 = 3
 Arp sync = 1/16T
-Stereo spread = 75
-Volume = -2.0
+Stereo spread = 0
+Volume = 3.0
 
 preset "Pad — Unison detune"
 comment "Wide three-voice detuned unison pad with slow PWM and stepped swell."

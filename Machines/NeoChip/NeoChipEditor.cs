@@ -76,17 +76,17 @@ namespace NeoBuzz.Chip
                 noiseStrip));
 
             // Envelope section with a live 16-step staircase shape picture.
-            var envGraph = new GraphView(266, 68, (g, r) => DrawEnvelope(g, r, ctx), animate: false);
+            var envGraph = new GraphView(306, 78, (g, r) => DrawEnvelope(g, r, ctx), animate: false);
             ctx.Changed += envGraph.InvalidateVisual;
 
             var envelope = S("Envelope", Layout.Column(
                 Layout.Row(
-                    new ParamDropdown(ctx, P.EnvMode, "Mode", width: 122),
+                    new ParamDropdown(ctx, P.EnvMode, "Mode", width: 136),
                     Layout.Gap(8),
-                    new ParamDropdown(ctx, P.EnvSync, "Sync", width: 82)),
-                Layout.Gap(1, 4),
+                    new ParamDropdown(ctx, P.EnvSync, "Sync", width: 88)),
+                Layout.Gap(1, 6),
                 envGraph,
-                Layout.Gap(1, 4),
+                Layout.Gap(1, 6),
                 Layout.Row(
                     new ParamKnob(ctx, P.EnvAttack, "Attack", D),
                     new ParamKnob(ctx, P.EnvDecay, "Decay", D),
@@ -102,7 +102,7 @@ namespace NeoBuzz.Chip
                     new ParamChoice(ctx, P.ArpSteps, "Steps", cellWidth: 28),
                     Layout.Gap(6),
                     new ParamDropdown(ctx, P.ArpSync, "Sync", width: 72)),
-                Layout.Gap(1, 4),
+                Layout.Gap(1, 6),
                 Layout.Row(
                     new ParamKnob(ctx, P.ArpStep1, "Step 1", D),
                     new ParamKnob(ctx, P.ArpStep2, "Step 2", D),
@@ -116,23 +116,23 @@ namespace NeoBuzz.Chip
                     new ParamKnob(ctx, P.VibDelay, "Vib delay", D))));
 
             // Output & Voice section with live vertical output meter.
-            var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 146);
+            var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 166);
             var output = S("Output", Layout.Row(
                 Layout.Column(
-                    new ParamChoice(ctx, P.VoiceMode, "Voice", cellWidth: 50),
-                    Layout.Gap(1, 4),
+                    new ParamChoice(ctx, P.VoiceMode, "Voice", cellWidth: 56),
+                    Layout.Gap(1, 6),
                     Layout.Row(
-                        new ParamChoice(ctx, P.Raw, "Raw", cellWidth: 52),
+                        new ParamChoice(ctx, P.Raw, "Raw", cellWidth: 34),
                         Layout.Gap(6),
-                        new ParamChoice(ctx, P.LoResDac, "Lo-res DAC", cellWidth: 74)),
-                    Layout.Gap(1, 4),
+                        new ParamChoice(ctx, P.LoResDac, "Lo-res DAC", cellWidth: 50)),
+                    Layout.Gap(1, 6),
                     Layout.Row(
                         new ParamKnob(ctx, P.Detune, "Detune", D),
                         new ParamKnob(ctx, P.VelDepth, "Velocity", D)),
                     Layout.Row(
                         new ParamKnob(ctx, P.Spread, "Spread", D),
                         new ParamKnob(ctx, P.Volume, "Volume", D))),
-                Layout.Gap(8),
+                Layout.Gap(10),
                 meter));
 
             return Layout.Column(

@@ -737,19 +737,23 @@ namespace NeoBuzz.Chip
                 if (noiseWasTop)
                 {
                     var nch = channels[3];
-                    if (noiseStack.Count > 0)
+                    if (noiseStack.Count > 0 && nch.IsSounding)
                     {
                         var top = noiseStack.Top;
                         nch.OwnerKey = top.Key;
                         nch.Held = true;
                         nch.Sustained = false;
                         nch.NoteSeq = ++noteSeq;
-                        nch.Trigger(top.Note, top.Vel, CurrentEnvMode, (float)sampleRate, stealFade: nch.IsSounding);
+                        nch.Trigger(top.Note, top.Vel, CurrentEnvMode, (float)sampleRate, stealFade: true);
                     }
-                    else if (nch.Held)
+                    else if (noiseStack.Count == 0 && nch.Held)
                     {
                         if (sustainDown) nch.Sustained = true;
                         else { nch.Held = false; nch.Release(); }
+                    }
+                    else if (noiseStack.Count > 0)
+                    {
+                        nch.OwnerKey = noiseStack.Top.Key;
                     }
                 }
                 return;
@@ -770,7 +774,9 @@ namespace NeoBuzz.Chip
             {
                 if (!pulseStack.Remove(key, out bool wasTop) || !wasTop) return;
                 int count = vm == ChipVoiceMode.Unison ? PulseCount : 1;
-                if (pulseStack.Count > 0)
+                bool anySounding = false;
+                for (int i = 0; i < count; i++) if (channels[i].IsSounding) anySounding = true;
+                if (pulseStack.Count > 0 && anySounding)
                 {
                     var top = pulseStack.Top;
                     long seq = ++noteSeq;
@@ -784,6 +790,11 @@ namespace NeoBuzz.Chip
                         ch.NoteSeq = seq;
                         ch.Trigger(top.Note, top.Vel, envMode, (float)sampleRate, stealFade: ch.IsSounding);
                     }
+                }
+                else if (pulseStack.Count > 0)
+                {
+                    var top = pulseStack.Top;
+                    for (int i = 0; i < count; i++) channels[i].OwnerKey = top.Key;
                 }
                 else
                 {
