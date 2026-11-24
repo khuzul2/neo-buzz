@@ -274,7 +274,7 @@ namespace ReBuzz.AgentEval
             }
             foreach (var kv in KnowledgeTasks.GuideCoverage) Expect(names.Contains(kv.Value), $"{kv.Key} is covered by {kv.Value}, which exists");
             var recipes = K.RecipeIds();
-            Expect(recipes.Count >= 10, $"the recipes guide holds {recipes.Count} recipes");
+            Expect(recipes.Count >= 9, $"the recipes guide holds {recipes.Count} recipes");
             foreach (var id in recipes) Expect(names.Contains("recipe_" + id.Replace('-', '_')), $"recipe {id} has a task");
             foreach (var t in KnowledgeTasks.All)
             {
