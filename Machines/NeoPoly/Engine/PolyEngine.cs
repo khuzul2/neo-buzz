@@ -776,7 +776,7 @@ namespace NeoBuzz.Poly
                     r1Run += r1Step;
                     if (f1 == 6) diode.Set(g1Run, r1Run); else ladder.Set(g1Run, r1Run);
                     if (CutLog != null && CutLogCount < CutLog.Length)
-                        CutLog[CutLogCount++] = (float)(2.0 * sr * Math.Atan(g1Run) / Math.PI);
+                        CutLog[CutLogCount++] = (float)(2.0 * sr * PortableMath.Atan(g1Run) / Math.PI);
                 }
                 float y1;
                 if (interp && s.Oversample == 2)
