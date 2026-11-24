@@ -1198,7 +1198,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ANeoTuneWithEveryControlAllocatesNothing()
         {
-            // neo-tune.md: Neo Tune (the scale, Retune speed, Amount, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
+            // neo-tune.md: Neo Tune (the scale, Retune speed, Correction, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
             NewSong();
             var m = AddPoly("Hygiene Tune Poly");
             m.CreatePattern("00", 16);
@@ -1209,7 +1209,7 @@ namespace ReBuzz.Studio.Tests
             var tg = tune.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             var scale = tg.First(p => p.Name == "Scale");
             var retune = tg.First(p => p.Name == "Retune speed");
-            var amount = tg.First(p => p.Name == "Amount");
+            var amount = tg.First(p => p.Name == "Correction");   // the correction strength (id Amount; FX1's Amount is the effect strength)
             var transpose = tg.First(p => p.Name == "Transpose");
             var formant = tg.First(p => p.Name == "Formant shift");
             var vib = tg.First(p => p.Name == "Add vibrato");

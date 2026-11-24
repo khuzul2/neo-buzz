@@ -26,6 +26,8 @@ Time changes glide (small ones bend the pitch like tape) or crossfade (large one
 | Duck | 12 dB | echoes step aside while the input plays |
 | Mix | 100% | on a send; 15-35 % as an insert |
 
+`Amount` (default 100 %) scales feedback and wet level: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Mix — Vocal Echo (Ducked)", "Mix — Quarter Note Echo", "Mix — Dotted Eighth Throw", "Mix — Slapback", "Mix — Doubler (Wide)".

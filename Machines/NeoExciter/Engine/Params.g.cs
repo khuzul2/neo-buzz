@@ -23,7 +23,9 @@ namespace NeoBuzz.Exciter
         public const int Stereo = 12;
         public const int Output = 13;
         public const int Delta = 14;
-        public const int Count = 15;
+        public const int Amount = 15;
+        public const int Mix = 16;
+        public const int Count = 17;
     }
 
     internal static class Params
@@ -48,6 +50,8 @@ namespace NeoBuzz.Exciter
             new ParamDef(P.Stereo, "Stereo", "Stereo", 0, 1, 0, MapKind.Enum, names: new[] { "L/R", "M/S" }, group: "Output", description: "What is excited: left and right, or mid and side (harmonics of the side widen, of the mid centre)", how: "Chooses whether harmonics are added to left and right, or to mid and side.", sound: "Mid/side adds harmonics to the sides to widen the sound, or to the centre to focus it."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the exciter, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the exciter.", sound: "It matches the loudness to the dry sound so you judge the added tone fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the exciter adds: the output minus the input, delayed to match (glides over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear only the harmonics that the exciter adds."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the drive, the four band amounts and the air shelf's gain. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for less sparkle, up for more harmonics and air."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

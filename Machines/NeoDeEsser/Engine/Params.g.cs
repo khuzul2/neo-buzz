@@ -21,7 +21,9 @@ namespace NeoBuzz.DeEsser
         public const int Listen = 10;
         public const int Output = 11;
         public const int Delta = 12;
-        public const int Count = 13;
+        public const int Amount = 13;
+        public const int Mix = 14;
+        public const int Count = 15;
     }
 
     internal static class Params
@@ -44,6 +46,8 @@ namespace NeoBuzz.DeEsser
             new ParamDef(P.Listen, "Listen", "Listen", 0, 1, 0, MapKind.Switch, group: "Reduction", description: "Hear the band the detector hears", how: "Switches the output to the band the detector hears.", sound: "You hear only the sibilance range, which helps you place Frequency and Width exactly."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the de-esser, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the de-esser.", sound: "It matches the loudness to the untreated voice so you can judge the tone fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the de-esser takes out: the output minus the input, delayed to match (glides over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear exactly what the de-esser removes, so you can check it is taking hiss and not the voice's body."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales how much it reduces: the ratio's reduction and the maximum reduction. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a lighter touch on the sibilance, up to tame harsher esses."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

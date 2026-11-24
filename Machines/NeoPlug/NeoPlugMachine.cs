@@ -236,6 +236,9 @@ namespace NeoBuzz.Plug
                 if (parameter?.Group == null || parameter.Group.Type != ParameterGroupType.Global) return null;
                 int i = parameter.IndexInGroup;
                 if (i == PlugCore.Slots) return value >= 0 && value < core.OutputNames.Count ? core.OutputNames[value] : null;
+#if FX
+                if (i == PlugCore.Slots + 1) return (value / 10.0).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
+#endif
                 return core.IsBound(i) ? core.SlotTextSafe(i, value) : null;
             }
             catch (Exception) { return null; }

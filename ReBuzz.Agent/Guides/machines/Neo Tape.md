@@ -23,6 +23,8 @@ A tape machine: a record pre-emphasis (`Emphasis`, a high shelf), an oversampled
 | Mix | 100% | 35 % with heavy saturation for parallel |
 | Output | 0 dB | match the loudness before judging |
 
+`Amount` (default 100 %) scales drive, emphasis, bump, loss, electronics, wow and flutter: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Mastering — Subtle Glue (15 ips)", "Mastering — Warm and Rounded (7.5 ips)", "Mastering — Open and Fast (30 ips)", "Mix Bus — Tape Glue".

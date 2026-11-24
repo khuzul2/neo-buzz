@@ -24,7 +24,7 @@ Retune     "Retune speed"   0 1000  250   pow 0 400 2 ms 0                    | 
 Humanize   "Humanize"        0 1000  300   pct                                 | How much of a held note's own slow drift is kept
     how Sets how much of the singer's slow drift around a held note stays, from 0 to 100 %.
     sound At 0 a held note is dead flat; higher values keep it alive and human.
-Amount     "Amount"         0 1000  1000  pct                                 | How much of the correction is applied: 0 % leaves the voice as sung, 100 % moves it fully to the note
+Amount     "Correction"     0 1000  1000  pct                                 | How much of the correction is applied: 0 % leaves the voice as sung, 100 % moves it fully to the note
     how Blends the correction in, from 0 to 100 % of the distance to the note (in cents).
     sound Lower values tune the voice only part of the way, which hides the effect.
 Transpose  "Transpose"      0 48    24    int -24 st signed                   | Moves the whole voice up or down by whole semitones, after the correction
@@ -96,3 +96,7 @@ reading target_note     note    | The note the voice is moved to, as a MIDI numb
 reading correction_cents cents  | How far the correction moves the pitch now, cents (negative: down)
 reading voiced          flag    | 1 while a pitch is found, 0 for unvoiced sounds and silence
 reading latency_samples samples | The delay of the machine, reported to NeoBuzz Live
+group Output
+FxAmount    "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the correction: its strength (Correction, up to full) and the retune time. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to let the natural pitch through, up to correct faster and harder.

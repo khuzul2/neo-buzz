@@ -27,6 +27,8 @@ Path: `Pre-delay`, input `Diffusion`, `Early` reflections, a 16-line feedback ne
 | High cut | 8 kHz | 6-10 kHz keeps it from hissing |
 | Mix | 100% | on a send; 15-35 % as an insert |
 
+`Amount` (default 100 %) scales wet level and decay: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Send — Hall (100% wet)", "Send — Plate (100% wet)", "Hall — Concert", "Room — Live Drums", "Chamber — Vocal", "Plate — Bright Vocal", "Plate — Snare".

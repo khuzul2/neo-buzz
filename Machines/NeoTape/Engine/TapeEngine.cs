@@ -49,6 +49,7 @@ namespace NeoBuzz.Tape
         public static int OversampleLatency(bool high) => high ? FastOversampler.LatencyFor(HighFactor) + 1 : 0;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         readonly FastOversampler[] os = new FastOversampler[2];
         AdaaShaper[] adaa = new AdaaShaper[2];
@@ -79,9 +80,17 @@ namespace NeoBuzz.Tape
         double pubAdded = -100, pubMatch = double.NaN;
         int pubLatency;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Drive, 0), AmountRule.Lin(P.Emphasis, 0), AmountRule.Lin(P.Bump, 0), AmountRule.Lin(P.Loss, 0), AmountRule.Lin(P.Electronics, 0),
+            AmountRule.Lin(P.Wow, 0), AmountRule.Lin(P.Flutter, 0),
+        };
+
         public TapeEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             for (int c = 0; c < 2; c++) os[c] = new FastOversampler(MaxBlock);
             Delta = new DeltaListen(FastOversampler.LatencyFor(HighFactor) + 1 + (int)Math.Ceiling(WfBaseSeconds * 192000) + 8, 48000);
             Match = new GainMatch(48000);
@@ -108,6 +117,7 @@ namespace NeoBuzz.Tape
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int max = (int)Math.Ceiling(WfBaseSeconds * sr) * 2 + 16;
             for (int c = 0; c < 2; c++) wf[c] = new FracDelay(max);
@@ -134,6 +144,7 @@ namespace NeoBuzz.Tape
 
         public void Reset()
         {
+            fx.Reset();
             for (int c = 0; c < 2; c++)
             {
                 os[c].Reset();
@@ -204,6 +215,13 @@ namespace NeoBuzz.Tape
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

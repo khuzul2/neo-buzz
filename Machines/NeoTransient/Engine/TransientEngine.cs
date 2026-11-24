@@ -37,6 +37,7 @@ namespace NeoBuzz.Transient
         const int HistoryLength = 160;       // the editor's gain trace: one point every 20 ms
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         int lookahead;
 
@@ -74,9 +75,17 @@ namespace NeoBuzz.Transient
         int historyPos, historyLeft, historyLength;
         float historyMax;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Attack, 0), AmountRule.Lin(P.Sustain, 0),
+            AmountRule.Lin(P.Impact1, 0), AmountRule.Lin(P.Impact2, 0), AmountRule.Lin(P.Impact3, 0), AmountRule.Lin(P.Impact4, 0),
+        };
+
         public TransientEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             Delta = new DeltaListen(MaxRing - 2, 48000);
             Match = new GainMatch(48000);
             split[0] = new TransientSplit(48000);
@@ -99,6 +108,7 @@ namespace NeoBuzz.Transient
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             attack.Setup(GlideSeconds, sr);
             sustain.Setup(GlideSeconds, sr);
@@ -122,6 +132,7 @@ namespace NeoBuzz.Transient
 
         public void Reset()
         {
+            fx.Reset();
             ringL.Reset();
             ringR.Reset();
             split[0].Reset();
@@ -211,6 +222,13 @@ namespace NeoBuzz.Transient
         /// <summary>Processes a stereo block in place.</summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

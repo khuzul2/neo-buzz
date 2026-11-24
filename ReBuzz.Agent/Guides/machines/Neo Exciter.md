@@ -23,6 +23,8 @@ A harmonic exciter. The input is split into four bands; each band goes through a
 | Shelf gain | 0 dB | brightens (+) or softens (-) only the added harmonics |
 | Auto gain | Off | On keeps a fair comparison |
 
+`Amount` (default 100 %) scales drive, shelf gain and the band amounts: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "Mastering — Air" (Tape, Drive 12 dB, Amount 4 20 %), "Mastering — Presence and Air", "Mastering — Subtle Warmth" (Warm).

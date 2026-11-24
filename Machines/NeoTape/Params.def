@@ -59,3 +59,7 @@ Delta       "Delta"         0 1     0     switch                             | H
 reading added_db          dB    | Level of what the tape changes (output minus input, RMS) against the input over the last 3 s; −100 when nothing is changed
 reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s)
 reading latency_samples   samples | The oversampling's delay (High) plus the modulated read's (with Wow or Flutter), reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the saturation, emphasis, head bump, HF loss, electronics, wow and flutter. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for a cleaner tape, up for more of its colour and wobble.

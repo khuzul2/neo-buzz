@@ -274,6 +274,22 @@
    "description": "Output level",
    "how": "Sets the final level in dB, from -24 to +24.",
    "sound": "It makes the whole sound louder or quieter without changing its tone."
+  },
+  {
+   "index": 16,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales how far the compressor moves the sound from neutral: the gain it takes off (the ratio's reduction), the makeup and the character. 0 % is bypass, 100 % your settings, 200 % twice as much.",
+   "sound": "Turn it down to ease the compression in without touching the other controls, up to squash harder than the ratio alone allows."
   }
  ]
 }

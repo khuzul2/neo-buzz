@@ -44,9 +44,9 @@ namespace NeoBuzz.Comp
 
             var output = Layout.Row(
                 Layout.Column(
+                    Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
                     Layout.Row(new ParamKnob(ctx, P.Makeup), new ParamKnob(ctx, P.Character)),
-                    Layout.Row(new ParamKnob(ctx, P.Mix), new ParamKnob(ctx, P.Output)),
-                    new ParamChoice(ctx, P.AutoMakeup, "Auto makeup", 36)),
+                    Layout.Row(new ParamKnob(ctx, P.Output), new ParamChoice(ctx, P.AutoMakeup, "Auto makeup", 36))),
                 Layout.Gap(6),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 170),
                 Layout.Gap(4),
@@ -61,8 +61,11 @@ namespace NeoBuzz.Comp
 
         static void DrawCurve(INeoCanvas g, NeoRect r, EditorContext ctx, NeoCompMachine machine)
         {
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
-            for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
+            values.AllowPhysical();
+            for (int i = 0; i < Params.Table.Length; i++) rawValues.Set(i, ctx.Raw(i));
+            FxStage.Fill(rawValues, values, P.Amount, CompEngine.AmountRules);
             const double lo = -60, hi = 0;
             double X(double db) => r.Left + 6 + (db - lo) / (hi - lo) * (r.Width - 12);
             double Y(double db) => r.Bottom - 6 - (Math.Clamp(db, lo, hi) - lo) / (hi - lo) * (r.Height - 12);

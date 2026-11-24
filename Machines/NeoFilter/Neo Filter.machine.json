@@ -333,6 +333,22 @@
    "description": "Output gain, −24 … +24 dB in 0.1 dB steps",
    "how": "Adds -24 to +24 dB of gain after the filter.",
    "sound": "It restores the level lost to filtering, or keeps resonant peaks in check."
+  },
+  {
+   "index": 18,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales how far the filter moves the sound: the cutoff in octaves from fully open, the band types' resonance, the drive, the envelope and the LFO depth. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down to open the filter and calm its movement, up to close it further and sweep wider."
   }
  ]
 }

@@ -913,6 +913,22 @@
    "description": "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)",
    "how": "Chooses whether band 4's detector hears its own signal or the machine on the second input.",
    "sound": "External lets another sound, such as a kick, duck or lift this band."
+  },
+  {
+   "index": 55,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "Output",
+   "min": 0,
+   "max": 2000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
+   "how": "Scales the gain reduction in every band (the ratios, upward ratios and range) and each band's makeup. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
+   "sound": "Turn it down for gentler dynamics in every band, up for tighter control."
   }
  ],
  "readings": [

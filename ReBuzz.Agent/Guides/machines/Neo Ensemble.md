@@ -26,6 +26,8 @@ The LFO runs at `Rate` in Hz or follows the tempo with `Sync`; `Spread` offsets 
 | Feedback | 50% | Flanger and Phaser; negative is hollower |
 | Mix | 50% | the deepest comb or notches; 100 % is only the wet |
 
+`Amount` (default 100 %) scales mix, depth and feedback: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Chorus — Classic", "Chorus — Wide Stereo", "Chorus — Subtle Doubling", "Ensemble — Strings", "Ensemble — Thick (3 Voices)".

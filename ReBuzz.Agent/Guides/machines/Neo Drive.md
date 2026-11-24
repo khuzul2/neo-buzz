@@ -29,6 +29,8 @@ Path: `Low cut` (before the shaper), `Drive`, the oversampled shaper (`Quality` 
 | Mix | 40% | 25-50 % for parallel saturation |
 | Quality | 4× | 8x for high drive on bright material; 2x for light colour on many tracks |
 
+`Amount` (default 100 %) scales drive and bias: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Tape — Warm Bus" (6 dB), "Tape — Hot Reels" (15 dB), "Tape — Cassette" (lo-fi, 60 Hz to 9 kHz).
