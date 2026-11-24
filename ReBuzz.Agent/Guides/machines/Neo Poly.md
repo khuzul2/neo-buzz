@@ -40,6 +40,7 @@ A polyphonic analogue-style synth: warm saws and pulses through a resonant ladde
 - A ladder at resonance near 100 % with `F1 key track` 100 % plays a sine at the note.
 - `Accent threshold` is 110 and a note written without a velocity plays at 100, so plain notes stay plain: write 110 or more (127 is usual) on the notes to accent. Lower the threshold to accent more of a line.
 - `Accent` and its companions do nothing at their defaults (0 %, `Accent decay` at its top, 0 dB); `Slide` is off. A song made before they existed sounds as it did. Slides need Mono or Legato voice mode; in Poly mode `Slide` does nothing. Accents act on filter 1 only.
+- In a patch that uses the acid controls (Slide, Accent, Accent sweep, Accent level or Diode 18) the voice keeps its notes clean: accent and slide move the cutoff and the level smoothly (no steps), a slid note's filter follows its gliding pitch, a note that starts from silence fades in over about 1.5 ms, and the filter envelope never opens faster than 5 ms (a resonant filter swept several octaves in under a millisecond rings like a click). Patches that do not use them play exactly as before.
 - `Drift` (15 %) moves pitch and cutoff per voice: set 0 % for drums, sub basses and exact A/B renders.
 
 ## Pairs well with

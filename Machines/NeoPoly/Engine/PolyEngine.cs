@@ -49,6 +49,12 @@ namespace NeoBuzz.Poly
         public float AccentGain = 1f;     // amp factor of an accented note
         public bool Slide;
         public float SlideTime = 0.06f;
+        /// <summary>
+        /// True when the patch uses the acid controls (slide, accent, Diode 18). Those lines start and change notes with large, fast
+        /// jumps of level and cutoff, so their voices smooth what other patches leave as they were: a hard start is ramped in
+        /// (<see cref="PolyVoice.StartRampSeconds"/>) and a slid note's cutoff follows its gliding pitch.
+        /// </summary>
+        public bool Acid;
     }
 
     internal sealed class PolyEngine : INoteSink
@@ -163,6 +169,7 @@ namespace NeoBuzz.Poly
             s.AccentGain = (float)DspMath.DbToGain(values.Value(P.AccentLevel));
             s.Slide = values.On(P.Slide);
             s.SlideTime = values.F(P.SlideTime);
+            s.Acid = s.Slide || s.AccentDepth > 0 || s.AccentSweepCap > 0 || s.AccentGain != 1f || s.F1Type == 6;
             s.F1Cutoff = values.F(P.F1Cutoff);
             s.F1Reso = values.F(P.F1Reso);
             s.F1Drive = (float)DspMath.DbToGain(values.Value(P.F1Drive));
@@ -323,7 +330,23 @@ namespace NeoBuzz.Poly
         // Accent: the note's flag and the sweep it carries (octaves of filter envelope depth); the peak the envelope reached, for tests and meters.
         bool accented, pendAccented;
         float accentSweep, pendSweep;
-        float envPeakOct, envNowOct, envPeakLevel;
+        float envPeakOct, envNowOct, envPeakLevel, depthPeak;
+        // The accent follows the note's accent state smoothly: its filter depth (octaves) and its level (gain) glide to their targets
+        // (AccentSmooth), the level per sample, so neither the cutoff nor the gain ever steps.
+        const float AccentGainSmooth = 0.003f, AccentDepthSmooth = 0.001f;
+        float accDepthCur, accGainRun = 1f, accGainInc, accGainEndOfBlock = 1f;
+        // A hard start (a cold voice in an acid patch) fades its oscillators in over this long, so the cold filter is not struck.
+        internal const float StartRampSeconds = 0.0015f;
+        internal const float FilterAttackMin = 0.005f;
+        const float QuietLevel = 0.02f;
+        float startRamp = 1f, startRampInc;
+        bool coldRamp;         // the ramp also scales the oscillators going into a cold filter, not only the voice's output
+        // A slid note's filter follows its gliding pitch (the key tracking), not the note it is gliding to.
+        bool trackPitch;
+        // Acid patches move filter 1's coefficient sample by sample (a straight line from the last control point to the next), so a fast
+        // envelope or an accent is a sweep and not a staircase of steps every ControlRate samples. interp: this block does it.
+        bool interp, filterCold = true;
+        float g1Run, g1Step, r1Run, r1Step, g1End, r1End;
 
         // Drift (slow random walk).
         float driftPitch, driftCut, driftPitchTarget, driftCutTarget;
@@ -360,8 +383,8 @@ namespace NeoBuzz.Poly
         /// <summary>The filter envelope's largest contribution to filter 1's cutoff since this note started (octaves; its level then is in <see cref="EnvDepthOct"/>).</summary>
         internal float EnvPeakOct => envPeakOct;
         internal float EnvNowOct => envNowOct;
-        /// <summary>The depth (octaves) the filter envelope scales by on this note: its contribution at the envelope's peak.</summary>
-        internal float EnvDepthOct => envPeakLevel > 0 ? envPeakOct / envPeakLevel : 0;
+        /// <summary>The depth (octaves) the filter envelope scales by on this note once its accent has settled (the accent's depth glides in over a millisecond).</summary>
+        internal float EnvDepthOct => depthPeak;
         internal bool Accented => accented;
 
         public void NoteOn(float n, float vel, int unisonIndex, int unisonCount, float glideFrom)
@@ -396,6 +419,7 @@ namespace NeoBuzz.Poly
             accentSweep = pendSweep;
             envPeakOct = 0;
             envPeakLevel = 0;
+            trackPitch = false;
             pitchTarget = n;
             float glideTime = engine.SlideNow ? s.SlideTime : s.GlideTime;
             if (!float.IsNaN(glideFrom) && glideTime > 0.0005f)
@@ -410,12 +434,34 @@ namespace NeoBuzz.Poly
             }
             if (unisonCount > 1)
                 for (int i = 0; i < 3; i++) osc[i].Reset(rng.NextUnipolar());
+            // A start from (near) silence in an acid patch: the oscillators come in over a short smooth ramp, so neither the cold filter
+            // nor the amp envelope's first steep slope starts with a corner.
+            if (s.Acid && ampEnv.Level < QuietLevel)
+            {
+                startRamp = 0;
+                startRampInc = 1f / (StartRampSeconds * sr);
+                coldRamp = false;
+            }
             if (!ampEnv.IsActive)
             {
                 ladder.Reset();
                 diode.Reset();
                 svf1.Reset();
                 svf2.Reset();
+                // A cold start in an acid patch: the oscillators start with their band-limiting buffers full (not with the last note's
+                // tail, then silence) and the filter's coefficient starts where it is going.
+                if (s.Acid)
+                {
+                    filterCold = true;
+                    coldRamp = true;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        // Back by the latency and forward again through the buffer: the waveform goes on in the phase it would have had.
+                        double inc = Inc(n + s.Transpose[i]);
+                        osc[i].Reset(osc[i].Phase - BlepTable.Z * inc);
+                        for (int j = 0; j < BlepTable.Z; j++) osc[i].Next(inc, out _, out _);
+                    }
+                }
             }
             ApplyEnvelopes(true);
             ampEnv.Gate(true);
@@ -434,6 +480,7 @@ namespace NeoBuzz.Poly
             accented = engine.NoteAccented;
             accentSweep = engine.NoteSweep;
             float glideTime = engine.SlideNow ? s.SlideTime : s.GlideTime;
+            if (engine.SlideNow && s.Acid) trackPitch = true;
             if (glide && glideTime > 0.0005f)
                 glideStep = Math.Abs(pitchTarget - pitch) / (glideTime * sr);
             else
@@ -472,7 +519,9 @@ namespace NeoBuzz.Poly
             if (!force && envVersion == s.Version) return;
             envVersion = s.Version;
             ampEnv.Set(s.AmpEnv[0], s.AmpEnv[1], s.AmpEnv[2], s.AmpEnv[3]);
-            fltEnv.Set(s.FltEnv[0], accented && s.AccentDecayOn ? Math.Min(s.FltEnv[1], s.AccentDecay) : s.FltEnv[1], s.FltEnv[2], s.FltEnv[3]);
+            // An acid patch's filter never opens faster than FilterAttackMin: a resonant filter swept several octaves in under a millisecond
+            // rings like a click (and the cutoff would move whole octaves between two control points).
+            fltEnv.Set(s.Acid ? Math.Max(s.FltEnv[0], FilterAttackMin) : s.FltEnv[0], accented && s.AccentDecayOn ? Math.Min(s.FltEnv[1], s.AccentDecay) : s.FltEnv[1], s.FltEnv[2], s.FltEnv[3]);
             modEnv.Set(s.ModEnv[0], s.ModEnv[1], s.ModEnv[2], s.ModEnv[3]);
         }
 
@@ -565,9 +614,23 @@ namespace NeoBuzz.Poly
             sync = s.Sync;
 
             // Filters: cutoff in octaves from the knob, key, envelope, velocity, matrix, drift.
-            float key = (note - 60f) / 12f;
+            float key = ((trackPitch ? pitch : note) - 60f) / 12f;
             float velOct = s.F1Vel * (velocity - 1f);
-            float depth = accented ? s.F1Env + s.AccentDepth + accentSweep : s.F1Env;
+            // The accent's depth and level glide to the note's accent state (a step in either, at a note that changes it, is a click).
+            float accDepthTarget = accented ? s.AccentDepth + accentSweep : 0f;
+            float accGainTarget = accented ? s.AccentGain : 1f;
+            float accGainEnd = accGainRun;
+            if (accDepthCur != accDepthTarget || accGainRun != accGainTarget)
+            {
+                accDepthCur += (accDepthTarget - accDepthCur) * (1f - PortableMathF.Exp(-n / (AccentDepthSmooth * sr)));
+                accGainEnd += (accGainTarget - accGainRun) * (1f - PortableMathF.Exp(-n / (AccentGainSmooth * sr)));
+                if (Math.Abs(accDepthTarget - accDepthCur) < 1e-4f) accDepthCur = accDepthTarget;
+                if (Math.Abs(accGainTarget - accGainEnd) < 1e-5f) accGainEnd = accGainTarget;
+            }
+            accGainInc = (accGainEnd - accGainRun) / n;
+            accGainEndOfBlock = accGainEnd;
+            float depth = s.F1Env + accDepthCur;
+            depthPeak = s.F1Env + accDepthTarget;
             float envOct = fenv * depth;
             envNowOct = envOct;
             if (envOct > envPeakOct) { envPeakOct = envOct; envPeakLevel = fenv; }
@@ -575,7 +638,21 @@ namespace NeoBuzz.Poly
             float cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
             float reso1 = DspMath.Clamp(s.F1Reso + dst[(int)ModDest.F1Reso], 0, 1);
             float g1 = Svf.Prewarp(cut1, sr);
-            if (s.F1Type <= 1) ladder.Set(g1, reso1);
+            interp = s.Acid && (s.F1Type <= 1 || s.F1Type == 6);
+            if (interp)
+            {
+                if (filterCold)
+                {
+                    g1Run = g1;
+                    r1Run = reso1;
+                    filterCold = false;
+                }
+                g1Step = (g1 - g1Run) / n;
+                r1Step = (reso1 - r1Run) / n;
+                g1End = g1;
+                r1End = reso1;
+            }
+            else if (s.F1Type <= 1) ladder.Set(g1, reso1);
             else if (s.F1Type == 6) diode.Set(g1, reso1);
             else
             {
@@ -594,7 +671,6 @@ namespace NeoBuzz.Poly
             // Amp: velocity, matrix; pan: unison spread, matrix.
             float velGain = 1f - s.VelAmp * (1f - velocity);
             ampMod = velGain * DspMath.Clamp(1f + dst[(int)ModDest.Amp], 0, 2);
-            if (accented && s.AccentGain != 1f) ampMod *= s.AccentGain;
             float pan = DspMath.Clamp(unisonPos * s.UniSpread + dst[(int)ModDest.Pan], -1, 1);
             DspMath.PanGains(pan, out panL, out panR);
         }
@@ -624,12 +700,25 @@ namespace NeoBuzz.Poly
                 float c = l2 > 0 ? osc[2].Next(inc2, out _, out _) : 0f;
                 float x = a * l0 + b * l1 + c * l2;
                 if (rg > 0) x += a * b * rg;
+                float rampGain = 1f;
+                if (startRamp < 1f)
+                {
+                    rampGain = startRamp * startRamp * (3f - 2f * startRamp);   // a smooth step: no corner where it starts
+                    startRamp = Math.Min(1f, startRamp + startRampInc);
+                    if (coldRamp) x *= rampGain;
+                }
                 if (nz > 0)
                 {
                     float w = rng.NextBipolar();
                     x += nz * (w + (pink.Next(w) * 3f - w) * nc);
                 }
 
+                if (interp)
+                {
+                    g1Run += g1Step;
+                    r1Run += r1Step;
+                    if (f1 == 6) diode.Set(g1Run, r1Run); else ladder.Set(g1Run, r1Run);
+                }
                 float y1;
                 if (f1 <= 1) y1 = ladder.Process(x, drive, lp12);
                 else if (f1 == 6) y1 = diode.Process(x, drive);
@@ -644,7 +733,8 @@ namespace NeoBuzz.Poly
                 else y = svf2.Process(y1);
 
                 float env = ampEnv.Next();
-                float g = env * ampMod;
+                float g = env * ampMod * accGainRun * rampGain;
+                accGainRun += accGainInc;
                 if (steal.Fading)
                 {
                     if (!steal.Next(out float sg))
@@ -670,6 +760,8 @@ namespace NeoBuzz.Poly
                 left[offset + i] += o * panL;
                 right[offset + i] += o * panR;
             }
+            accGainRun = accGainEndOfBlock;
+            if (interp) { g1Run = g1End; r1Run = r1End; }
             ladder.Flush();
             diode.Flush();
             svf1.Flush();

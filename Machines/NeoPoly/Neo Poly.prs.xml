@@ -4022,7 +4022,7 @@
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="651" />
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="538" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="267" />
-        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="167" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
       </Parameters>
       <Attributes />
       <Comment>A softer, stretchier acid: longer slides, a rounder filter and a gentle accent.</Comment>
@@ -4446,7 +4446,7 @@
         <Parameter Name="Slide time" Group="1" Index="94" Track="0" Value="588" />
         <Parameter Name="Accent decay" Group="1" Index="95" Track="0" Value="517" />
         <Parameter Name="Accent sweep" Group="1" Index="96" Track="0" Value="200" />
-        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="167" />
+        <Parameter Name="Accent level" Group="1" Index="97" Track="0" Value="250" />
       </Parameters>
       <Attributes />
       <Comment>A round, low acid line that stays mostly sub, with a little filter movement.</Comment>
