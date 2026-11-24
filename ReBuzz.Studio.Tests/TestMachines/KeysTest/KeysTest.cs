@@ -1,5 +1,5 @@
 // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): a synth that takes notes only in its Note track parameter,
-// as the native machines and (today) the Pedal synths do, for the keyboard's tests whatever the Pedal synths take later:
+// as trackers do, for the keyboard's tests:
 // a sine on each track at its note's pitch (Buzz's C-5 is MIDI 60; A4 is 440 Hz), at the level the Velocity beside it
 // gives (velocity / 127 of -12 dBFS), until an off. No MidiNote: the keyboard plays its tracks. The setters keep what
 // they get and Work applies it, so the order a tick sends them in doesn't matter.

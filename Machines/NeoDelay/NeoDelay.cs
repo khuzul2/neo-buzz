@@ -1,7 +1,7 @@
 #nullable disable
 // Neo Delay (docs/specs/machines.md §5): a tempo-synced stereo, ping-pong and cross delay with
-// filters, saturation, a little wow and ducking in its loop, which can't run away; the successor of
-// Jeskola Delay, Cross Delay, NiNjA dElaY and FSM PanzerDelay (docs/specs/mcp-server.md §12.5). DSP
+// filters, saturation, a little wow and ducking in its loop, which can't run away
+// (docs/specs/mcp-server.md §12.5). DSP
 // in Engine/, parameters generated from Params.def, editor in NeoDelayEditor.cs.
 
 using System;

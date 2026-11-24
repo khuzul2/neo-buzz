@@ -1,5 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P6c, §9): the last Windows-parity items, headless: a native machine's own window in a studio window
-// (the decision, the fallback, the platform seam; the Win32 reparenting on the Windows runner); Cut, Copy and Paste of machines; the
+// Fork (docs/specs/ux-overhaul.md P6c, §9): the last Windows-parity items, headless: Cut, Copy and Paste of machines; the
 // machine's Attributes, Search Online and own Commands in its menu; the on-screen piano keyboard; groups folded, moved and renamed.
 
 using System;

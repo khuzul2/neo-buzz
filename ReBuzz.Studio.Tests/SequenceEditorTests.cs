@@ -676,7 +676,7 @@ namespace ReBuzz.Studio.Tests
             canvas.SetZoom(SequenceGeometry.DefaultTickWidth, null);
         }
 
-        /// <summary>Renders whole ticks, as the audio thread would (a WorkManager, as ReBuzzTests and the Session View's tests do).</summary>
+        /// <summary>Renders whole ticks, as the audio thread would (a WorkManager, as the Session View's tests do).</summary>
         internal sealed class Player : IDisposable
         {
             readonly WorkManager work = new WorkManager(Core, new WorkThreadEngine(1), 0, BuzzGUI.Common.Global.EngineSettings);

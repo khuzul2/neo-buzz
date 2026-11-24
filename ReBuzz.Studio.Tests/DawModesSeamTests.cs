@@ -296,7 +296,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(PatternColumnCoreRamp(column, 9 * TB), Is.Null, "after the last event: nothing to ramp to");
         }
 
-        // Allocation: ReBuzzTests' DawModesSeamTests.PlayingRampsAllocatesNothing, in the release build CI tests
+        // Allocation: DawModesSeamTests.PlayingRampsAllocatesNothing, in the release build CI tests
         // (a debug build boxes enum flags on the audio path, ramps or not).
 
         // ------------------------------------------------------------------ S4: note sources

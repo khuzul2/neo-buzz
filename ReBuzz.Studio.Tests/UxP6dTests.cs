@@ -56,7 +56,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
-        /// <summary>InitialStateTests: the state of a song with nothing in it (ReBuzzTests' InitialStateAssertions, the part the studio shows).</summary>
+        /// <summary>InitialStateTests: the state of a song with nothing in it (InitialStateAssertions, the part the studio shows).</summary>
         static void AssertEmptySong(string name, bool checkModified = true)
         {
             Assert.That(Core.SongCore.SongName, Is.EqualTo(name), "the song's file");

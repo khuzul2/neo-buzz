@@ -141,7 +141,7 @@ namespace ReBuzz.Studio.Tests
 
             /// <summary>
             /// Reads <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, on that thread). With
-            /// <paramref name="describe"/>, each buffer is measured by ReBuzzTests' AllocationWindow too, and a buffer that
+            /// <paramref name="describe"/>, each buffer is measured by AllocationWindow too, and a buffer that
             /// allocated is described in the log: the types the runtime's allocation ticks name, JIT, type loads, GCs.
             /// </summary>
             public Cost Read(int buffers, Action perBuffer = null, bool describe = false)

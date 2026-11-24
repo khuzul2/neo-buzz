@@ -1,6 +1,6 @@
 // Fork (docs/specs/studio-mvp.md S5): the Session View on Avalonia, driven headless through its
 // controls with simulated mouse and keys, following the scenarios of the WPF view's tests
-// (ReBuzzTests: SessionViewTests, SessionPlayableTests, SessionClipTests, SessionMixerTests,
+// (ReBuzz.SessionTests: SessionViewTests, SessionPlayableTests, SessionClipTests, SessionMixerTests,
 // SessionRecordingTests, SessionPerformanceTests, PianoRollTests). Each saves screenshots.
 
 using Avalonia;
@@ -547,7 +547,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void GroupsGetAColumnThatLaunchesTheirClipsAndFolds()
         {
-            // As ReBuzzTests' MixRig: Drums and Bass through a bus in the group Rhythm, Lead to the master.
+            // As MixRig: Drums and Bass through a bus in the group Rhythm, Lead to the master.
             using var rig = new SessionRig();
             var bus = rig.Add("Neo Utility", "Bus", track: false);
             var drums = rig.Add("Neo Poly", "Drums", to: bus);

@@ -24,10 +24,9 @@ namespace ReBuzz.Gallery
         internal sealed class Song
         {
             public MachineCore Drums, Bass, Lead, Pad, Drive, Comp, Delay, Verb, Eq, Limiter, Master;
-            public MachineCore NativeGenerator, NativeEffect;      // null without the natives
             public IPattern Beat, Fill, Break, LineA, LineB, Hook, Answer, Arp, Chords;
             public readonly List<string> Problems = new List<string>();
-            public IEnumerable<MachineCore> Generators => new[] { Drums, Bass, Lead, Pad, NativeGenerator }.Where(m => m != null);
+            public IEnumerable<MachineCore> Generators => new[] { Drums, Bass, Lead, Pad }.Where(m => m != null);
         }
 
         /// <summary>The song's parts in the open song, by their names (the galleries save it first, so the title names it).</summary>
@@ -40,7 +39,6 @@ namespace ReBuzz.Gallery
             s.Master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
             s.Drums = M("Drums"); s.Bass = M("Bass"); s.Lead = M("Lead"); s.Pad = M("Pad");
             s.Drive = M("Drive"); s.Comp = M("Drum Bus"); s.Delay = M("Delay"); s.Verb = M("Verb"); s.Eq = M("EQ"); s.Limiter = M("Limiter");
-            s.NativeGenerator = M("Infector"); s.NativeEffect = M("Jeskola Delay");
             s.Beat = P(s.Drums, "Beat"); s.Fill = P(s.Drums, "Fill"); s.Break = P(s.Drums, "Break");
             s.LineA = P(s.Bass, "Line A"); s.LineB = P(s.Bass, "Line B");
             s.Hook = P(s.Lead, "Hook"); s.Answer = P(s.Lead, "Answer"); s.Arp = P(s.Lead, "Arp");
@@ -81,13 +79,6 @@ namespace ReBuzz.Gallery
             s.Verb = Add("Neo Verb", "Verb", -0.02f, 0.5f);
             s.Eq = Add("Neo EQ", "EQ", 0.34f, 0f);
             s.Limiter = Add("Neo Limiter", "Limiter", 0.64f, 0f);
-            // Natives, where Gear has them (ReBuzz.exe): an arpeggio through a delay, as Buzz songs have.
-            if (core.MachineDLLs.ContainsKey("FSM Infector") && core.MachineDLLs.ContainsKey("Jeskola Delay"))
-            {
-                s.NativeGenerator = Add("FSM Infector", "Infector", -0.82f, 0.9f);
-                s.NativeEffect = Add("Jeskola Delay", "Jeskola Delay", -0.4f, 0.9f);
-            }
-
             void Wire(MachineCore from, MachineCore to, int amp = 0x4000, int pan = 0x4000)
             {
                 if (from == null || to == null) return;
@@ -105,8 +96,6 @@ namespace ReBuzz.Gallery
             Wire(s.Verb, s.Eq, 0x3000);
             Wire(s.Eq, s.Limiter);
             Wire(s.Limiter, s.Master);
-            Wire(s.NativeGenerator, s.NativeEffect, 0x3000);
-            Wire(s.NativeEffect, s.Eq, 0x2800);
 
             foreach (var g in s.Generators)
                 if (!song.SequencesList.Any(q => q.Machine == g)) song.AddSequence(g, song.SequencesList.Count);
@@ -154,9 +143,6 @@ namespace ReBuzz.Gallery
             for (int c = 0; c < 4; c++)
                 foreach (int n in chords[c].Take(3)) pad.Add((c * Bar, Bar, n, 80));
             s.Chords = Pattern(s.Pad, "Chords", 4 * Bar, pad.ToArray());
-
-            // Natives: an Infector pattern, as old songs have (no notes written: its tracker columns take them).
-            if (s.NativeGenerator != null) s.NativeGenerator.CreatePattern("00", Bar);
 
             // Onto the Pattern View's note lanes, where the pattern editor shows them; Hook stays in its clip (the piano roll's).
             foreach (var p in new[] { s.Beat, s.Fill, s.Break, s.LineA, s.LineB, s.Answer, s.Arp, s.Chords })

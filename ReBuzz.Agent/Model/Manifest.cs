@@ -14,7 +14,7 @@
 // evidence it rests on, and per parameter a plain-English name, a role (ManifestRoles) and a mapping
 // that is exact (no unit read from a description alone). It lives where the draft did and replaces it.
 // U6 (§12.13): a manifest generated from a machine's source ("status": "generated", tools/source_manifests.py)
-// for the Pedal effects and ReBuzz's own machines: names, ranges and texts from its [ParameterDecl]s, units and
+// for the studio's own machines: names, ranges and texts from its [ParameterDecl]s, units and
 // mappings from the code that uses them, exact; it keeps the profile's measurements as a curated one does.
 
 using System;
@@ -62,7 +62,7 @@ namespace ReBuzz.Agent.Model
         /// <summary>What the profiler measured behind <see cref="SuggestedRole"/> ("min → max: the −3 dB corner 120 Hz → 9.8 kHz").</summary>
         public string RoleEvidence { get; init; } = "";
         /// <summary>
-        /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0.1 ms" for
+        /// False when the machine's own value texts don't say what it does (an Attack that reads "0.1 ms" for
         /// 10 ms: a descriptor that scales the raw value): its values are read and written through the mapping only.
         /// </summary>
         public bool OwnTexts { get; init; } = true;
@@ -285,7 +285,7 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// The entry for the machine's parameter at <paramref name="index"/> in its group, named <paramref name="name"/>:
-        /// by name, and among parameters that share a name (FSM Infector's " - Decay"), the one at that index.
+        /// by name, and among parameters that share a name (a " - Decay"), the one at that index.
         /// </summary>
         public ManifestParameter FindAt(bool track, int index, string name)
         {

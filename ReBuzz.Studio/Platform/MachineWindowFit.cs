@@ -1,5 +1,5 @@
 // Fork (UI gallery review, then the user's "machine windows are not resizable"): a machine window (a machine's GUI,
-// its manifest editor, a native machine's window) is a fixed size: CanResize = false, sized to its content, so a
+// its manifest editor) is a fixed size: CanResize = false, sized to its content, so a
 // resize never leaves the UI unresponsive. It is never larger than the screen's work area, though: Neo FM6's, Neo
 // Poly's and Neo Wave's editors are 942-1000 pt tall, and on a laptop their bottoms were out of reach. A GUI of a
 // fixed layout (the Neo editors, the manifest editor) sits in a scroll viewer (NeoBuzz.Editor.MachineKeyboardFrame,

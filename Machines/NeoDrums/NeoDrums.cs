@@ -1,5 +1,5 @@
 #nullable disable
-// Neo Drums (docs/specs/machines.md §5): a synthesised drum kit, the successor of Rout 909 and FSM KickXP
+// Neo Drums (docs/specs/machines.md §5): a synthesised drum kit
 // (docs/specs/mcp-server.md §12.5). Twelve voices on the General MIDI drum keys from C2 (as Neo Sampler's Kit mode),
 // or per-track hit columns (BD, SD, … with a velocity) and an Accent column, as Buzz drum machines play. 16 tracks of
 // Note, Velocity, Accent and the hit columns, plus MIDI. One stereo output: the voices' buses mix into it in the engine

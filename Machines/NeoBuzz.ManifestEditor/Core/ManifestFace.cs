@@ -159,7 +159,7 @@ namespace NeoBuzz.Editor
 
         /// <summary>
         /// Its times are all in seconds, or all bare scales (drawn by position, "relative"); a mix of the two
-        /// (FSM KickXP's decay in seconds, its release a bare slope) has no honest picture.
+        /// (a decay in seconds, a release a bare slope) has no honest picture.
         /// </summary>
         public bool Drawable => InSeconds || Times.All(p => p.Dimension.Length == 0);
     }
@@ -175,7 +175,7 @@ namespace NeoBuzz.Editor
     /// <summary>What the editor shows of a machine.</summary>
     internal sealed class MachineFace
     {
-        /// <summary>The gear's name ("Pedal SH101").</summary>
+        /// <summary>The gear's name ("Neo Poly").</summary>
         public string Gear { get; init; } = "";
         /// <summary>"curated", "draft" or "generated": how far its units are to be trusted.</summary>
         public string Quality { get; init; } = "";
@@ -243,7 +243,7 @@ namespace NeoBuzz.Editor
             string g = (p.Group ?? "").Trim();
             if (p.IsTrack)
             {
-                // Curated track parameters are grouped "Track", or by what they do (FSM KickXP's Tone, Layers, Amp).
+                // Curated track parameters are grouped "Track", or by what they do (Tone, Layers, Amp).
                 if (g.Length == 0 || g == "Track") return tracks > 1 ? "Track 1" : "Track";
                 return tracks > 1 ? g + " (track 1)" : g;
             }

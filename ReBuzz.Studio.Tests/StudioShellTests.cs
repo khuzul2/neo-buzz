@@ -107,7 +107,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AMachineThatStopsWorkingIsToldByNameInTheStatusLine()
         {
-            // Gallery win-704: a native machine's host stopped answering; only the debug console said so,
+            // Gallery win-704: a machine stopped answering; only the debug console said so,
             // and its "Process hang" line named no machine.
             NewSong();
             var window = Open();

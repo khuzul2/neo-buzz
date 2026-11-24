@@ -57,4 +57,4 @@ Range = -60
 KeyLow = 200
 KeyHigh = 8000
 
-preset "Pedal Gate — Same Settings"
+preset "Gate — Reference Settings"

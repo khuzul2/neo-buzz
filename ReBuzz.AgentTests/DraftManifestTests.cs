@@ -165,7 +165,7 @@ namespace ReBuzz.AgentTests
             Assert.That((dry.PlainName, dry.Role, dry.OwnTexts, dry.Approximate), Is.EqualTo(("Dry signal through", "mix.dry", true, false)));
             Assert.That(ManifestRoles.IsKnown(dry.Role), Is.True);
             Assert.That(ManifestRoles.IsKnown("filter.cutof"), Is.False);
-            // Two parameters with one name (FSM Infector's " - Decay"): each machine parameter finds its own by index.
+            // Two parameters with one name (a machine's " - Decay"): each machine parameter finds its own by index.
             Assert.That(m.FindAt(true, 2, " - Level")!.PlainName, Is.EqualTo("Echo feedback"));
             Assert.That(m.FindAt(true, 3, " - Level")!.PlainName, Is.EqualTo("Echo level"));
             Assert.That(m.FindAt(true, 3, " - level")!.OwnTexts, Is.False, "names match case-insensitively too");

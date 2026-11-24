@@ -1392,7 +1392,7 @@ namespace ReBuzz.Studio.Tests
                     });
                 }
                 MachineMenu("200-machines-menu-canvas", view.PointOf(0.1, 0.85, window), "Machines: the menu on empty space (New ▸, Unmute all, Snap, Select All, Deselect…).", "Right-click empty space in the Machine View.");
-                MachineMenu("201-machines-menu-new-generators", view.PointOf(0.1, 0.85, window), "Machines: New ▸ Generators, the installed generators (the machine browser): Neo and Pedal machines.", "Right-click empty space ▸ New ▸ Generators.", "New", "Generators");
+                MachineMenu("201-machines-menu-new-generators", view.PointOf(0.1, 0.85, window), "Machines: New ▸ Generators, the installed generators (the machine browser): the Neo machines.", "Right-click empty space ▸ New ▸ Generators.", "New", "Generators");
                 MachineMenu("202-machines-menu-new-effects", view.PointOf(0.1, 0.85, window), "Machines: New ▸ Effects, the installed effects.", "Right-click empty space ▸ New ▸ Effects.", "New", "Effects");
                 MachineMenu("203-machines-menu-generator", view.PointOf(demo.Bass, window), "Machines: a generator's menu (Bass, Neo Poly): Mute, Solo, Parameters…, Editor…, MIDI input, Replace, Rename…, Delete.", "Right-click a generator.");
                 MachineMenu("204-machines-menu-effect", view.PointOf(demo.Delay, window), "Machines: an effect's menu (Delay, Neo Delay): Mute, Bypass, Parameters…, Editor…, Rename…, Delete.", "Right-click an effect.");
@@ -2025,7 +2025,7 @@ namespace ReBuzz.Studio.Tests
                     ClickIn(w, pads, 6 + 1 * (((480 - 12 - 5 * 6) / 6.0) + 6) + 10, 20);
                 }, "Neo Drums' editor with the snare's pad selected (P5a): its panel alone, the mix strip with every pad's level and pan, the pad lit by the hit it played.", "Double-click Neo Drums, then click the snare's pad.");
 
-                // The generic parameter window: a Neo machine, a Pedal synth, a Pedal effect.
+                // The generic parameter window: a Neo machine.
                 void Parameters(string id, MachineCore m, string what, string how)
                 {
                     Try(id, () =>
@@ -2039,12 +2039,6 @@ namespace ReBuzz.Studio.Tests
                     });
                 }
                 Parameters("450-parameters-neo-poly", demo.Bass, "The parameter window of Bass (Neo Poly): every parameter as a slider with its value, presets, track choice.", "Right-click a machine ▸ Parameters….");
-                string synth = new[] { "Pedal SH101", "Pedal Juno106", "Pedal M1", "Pedal FM" }.FirstOrDefault(Core.MachineDLLs.ContainsKey);
-                string effect = new[] { "Pedal Comp", "Pedal Plate", "Pedal Chorus" }.FirstOrDefault(Core.MachineDLLs.ContainsKey);
-                if (synth != null) Parameters("451-parameters-pedal-synth", Add(synth, synth.Replace("Pedal ", "")), $"The parameter window of a Pedal synth ({synth}): the generic view (Pedal machines have no editor of their own here).", "Double-click a Pedal machine, or its menu ▸ Parameters….");
-                else failures.Add("mac-451: no Pedal synth in Gear");
-                if (effect != null) Parameters("452-parameters-pedal-effect", Add(effect, effect.Replace("Pedal ", "")), $"The parameter window of a Pedal effect ({effect}).", "Double-click a Pedal machine, or its menu ▸ Parameters….");
-                else failures.Add("mac-452: no Pedal effect in Gear");
                 Try("453-parameters-menu", () =>
                 {
                     Core.UiHost.OpenParameterWindow(demo.Bass, null);
@@ -2058,7 +2052,7 @@ namespace ReBuzz.Studio.Tests
 
                 // The Device panel (ux-overhaul.md, the parameter panel): cards of knobs docked (one row, scrolling sideways) and floating
                 // (wrapping), for four machines, and the Inspector with the macros and the pinned parameters.
-                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq"), ("Pedal Gain Multi", "pedal-gain-multi") })
+                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq") })
                 {
                     Try("454-device-docked-" + slug, () =>
                     {
@@ -2203,19 +2197,6 @@ namespace ReBuzz.Studio.Tests
                         Core.UiHost.CloseWindows(demo.Bass);
                     }
                 });
-                if (synth != null)
-                {
-                    Try("460-manifest-editor-pedal-synth", () =>
-                    {
-                        var m = made.First(x => x.DLL.Name == synth);
-                        Assert.That(Core.UiHost.OpenEditor(m), Is.True, "Editor... opened");
-                        var w = StudioMachineUiHost.EditorWindowOf(m);
-                        Assert.That(w, Is.Not.Null);
-                        Wait(200);
-                        Shot(w!, "460-manifest-editor-pedal-synth", $"{synth}'s manifest editor (Editor…): its curated face, knobs in sections, the preset bar.", "Right-click a machine ▸ Editor… (or a double click, where Double-click Opens Editor is on).");
-                        Core.UiHost.CloseWindows(m);
-                    });
-                }
             }
             finally
             {
@@ -2226,7 +2207,7 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
-        // ------------------------------------------------------------------ 5xx: old songs, natives, safety, many machines
+        // ------------------------------------------------------------------ 5xx: old songs, safety, many machines
 
         // ------------------------------------------------------------------ 36x: Neo Audio clips in the Arrangement
 
@@ -2537,11 +2518,11 @@ namespace ReBuzz.Studio.Tests
             var window = Open("Machines");
             try
             {
-                // Many machines: every Neo and Pedal machine in one song.
+                // Many machines: every Neo machine in one song.
                 Try("510-machines-many", () =>
                 {
                     NewSong();
-                    var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && !d.Name.StartsWith("Neo Plug") && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence" || d.Name.StartsWith("Pedal ")))
+                    var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && !d.Name.StartsWith("Neo Plug") && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence"))
                         .Select(d => d.Name).OrderBy(x => x).ToList();
                     int cols = 6;
                     for (int k = 0; k < gear.Count; k++)
@@ -2550,11 +2531,11 @@ namespace ReBuzz.Studio.Tests
                         // As right-click ▸ New makes them (a spot taken moves to free space).
                         var instrument = Core.Instruments.First(i => i.MachineDLL?.Name == gear[k]);
                         var made = ReBuzz.Studio.Views.Machines.MachineEdits.Create(Core, instrument, x, y);
-                        if (made is MachineCore mc) mc.Name = gear[k].Replace("Neo ", "").Replace("Pedal ", "P ");
+                        if (made is MachineCore mc) mc.Name = gear[k].Replace("Neo ", "");
                     }
                     Settle();
                     window.ShowView("Machines");
-                    Shot(window, "510-machines-many", $"Machines with many machines: every Neo and Pedal machine ({gear.Count}) in one song.", "Add machines (right-click ▸ New).", song: "a song of every Neo and Pedal machine");
+                    Shot(window, "510-machines-many", $"Machines with many machines: every Neo machine ({gear.Count}) in one song.", "Add machines (right-click ▸ New).", song: "a song of every Neo machine");
                 });
 
                 Try("343-machines-many-meters", () =>
@@ -2572,7 +2553,7 @@ namespace ReBuzz.Studio.Tests
                     canvas.TickMeters(1);
                     canvas.SetZoom(-2);                  // the whole song in the view (P SH101 was cut off by the foot of it)
                     Settle();
-                    Shot(window, "343-machines-many-meters", $"The same song of every Neo and Pedal machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo and Pedal machine", notes: Headless);
+                    Shot(window, "343-machines-many-meters", $"The same song of every Neo machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo machine", notes: Headless);
                     canvas.SetZoom(0);
                     canvas.PeakSource = ReBuzz.Core.Session.SessionMixer.PeakOf;
                     canvas.TickMeters(10);

@@ -1,7 +1,7 @@
 // Fork (NeoBuzz Live): the studio neither checks for updates nor offers upstream ReBuzz's installer, which would
 // replace NeoBuzz Live. Nothing it ships is the updater (BuzzGUI.BuzzUpdate) or names upstream's releases, a saved
 // "check for updates" doesn't turn anything on, and no menu item or Preferences page is about updates.
-// ReBuzz.AgentTests/UpdateCheckTests.cs guards the sources; ReBuzzTests/UpdateCheckTests.cs the Windows app.
+// ReBuzz.AgentTests/UpdateCheckTests.cs guards the sources.
 
 using System;
 using System.IO;

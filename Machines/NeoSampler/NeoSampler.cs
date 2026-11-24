@@ -1,7 +1,7 @@
 #nullable disable
 // Neo Sampler (docs/specs/machines.md §5): plays the song's waves (wavetable slots) and built-in
 // samples in 16 zones; Kit mode makes it a drum machine. 16 tracks of Note and Velocity, plus MIDI.
-// The successor of Jeskola Tracker, Matilde Tracker2 and Pedal M1 (docs/specs/mcp-server.md §12.5).
+// (docs/specs/mcp-server.md §12.5).
 // DSP in Engine/, the wavetable's waves in through WaveSource.cs, parameters generated from
 // Params.def, editor in NeoSamplerEditor.cs.
 
@@ -95,7 +95,7 @@ namespace NeoBuzz.Sampler
         IParameter[] zoneWaves;
 
         /// <summary>
-        /// Zone z's wave as the host holds it: a value set (param_set, machine_replace, automation) reaches the engine at the next
+        /// Zone z's wave as the host holds it: a value set (param_set, automation) reaches the engine at the next
         /// tick, the host at once, so a render waiting on Busy reads in a wave a zone has just been given. Off the audio thread
         /// (WaveSource's scans); the engine's value where there's no host.
         /// </summary>
