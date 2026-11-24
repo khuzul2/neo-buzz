@@ -93,7 +93,7 @@ namespace NeoBuzz.Ensemble
         /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
         public static readonly AmountRule[] AmountRules =
         {
-            AmountRule.Lin(P.Depth, 0), AmountRule.Lin(P.Feedback, 0),
+            AmountRule.Lin(P.Mix, 0), AmountRule.Lin(P.Depth, 0), AmountRule.Lin(P.Feedback, 0),
         };
 
         public EnsembleEngine(ParamValues values)
