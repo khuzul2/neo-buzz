@@ -136,6 +136,11 @@ namespace ReBuzz.Core
                     ret = pan;
                 }
             }
+            else if (Group.Type == ParameterGroupType.Global && IndexInGroup == 0 && Group.Machine?.DLL?.Info?.Type == MachineType.Master)
+            {
+                // Fork (ux-overhaul.md, MX1): the Master's Volume in dB, here and wherever the Master's volume shows (the song's gain is 1 - value / 0x4000).
+                ret = Session.SessionMixer.MasterVolumeText(value, MaxValue);
+            }
             else
             {
                 var machine = Group.Machine as MachineCore;

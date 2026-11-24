@@ -169,6 +169,7 @@ The features built since K3 and the tools that cover them (`FEATURES` in `tools/
 
 | Area | Feature | Specified in | Tools | Note |
 |---|---|---|---|---|
+| Mixer (MX1) | One mixer everywhere (Full, Compact, Header densities): tracks, groups, returns and the Master chain, the Master volume in dB, and a colour per track | ux-overhaul.md §11 | machine_set, machine_list, connection_set, machine_tracks | faders and sends are the wires' gains (connection_set), On and Solo are machine_set, a track's colour is machine_set(colour=...) |
 | Device panel (PP1) | Pinned parameters in the Inspector (up to 8 per machine, saved in the song) | ux-overhaul.md | machine_pin | the macros come from the manifest roles; machine_open_editor(window="parameters") opens the panel |
 | Device panel (PP2) | Locks (left out of Randomize and Morph, saved in the song), Randomize, Nudge and Morph between two presets | ux-overhaul.md | param_lock, param_randomize | hiding a parameter is a view setting of the Device panel (per machine type); the agent sees every parameter |
 | Arrangement (AR1) | Clips: place, draw, move, trim, loop, split, join, copy, make unique | daw-modes.md §8.2 | arrangement_clip, arrangement_place, arrangement_clear, arrangement_get | arrangement_clip is the Arrange view's own ClipEditor |
@@ -272,9 +273,9 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_readings | 54 | 47 | yes |
 | machine_remove | 2 | 0 | yes |
 | machine_replace | 92 | 55 | yes |
-| machine_set | 9 | 10 | yes |
+| machine_set | 10 | 12 | yes |
 | machine_swap | 1 | 1 | yes |
-| machine_tracks | 1 | 1 | yes |
+| machine_tracks | 2 | 1 | yes |
 | master_record | 2 | 4 | yes |
 | meters_read | 10 | 12 | yes |
 | midi_bind | 4 | 3 | yes |

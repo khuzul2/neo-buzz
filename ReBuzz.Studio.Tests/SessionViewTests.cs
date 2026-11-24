@@ -13,6 +13,7 @@ using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Views.Mixer;
 using ReBuzz.Studio.Views.Session;
 using static ReBuzz.Studio.Tests.SessionRig;
 
@@ -94,8 +95,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(StateOf(rig, 1, line), Is.EqualTo(ClipState.Playing));
             Assert.That(ReBuzz.Studio.Shell.TransportBar.PositionOf(rig.Core), Does.StartWith("1.2."), "the session clock, in the top bar: bar.beat.tick");
             // Fork (ux-overhaul.md §3.1): a clip keeps its fill while it plays; the play green is its ▶ on a dark chip and its outline.
-            Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(Identity).Or.SameAs(SessionPalette.Lighten(Identity, 0.1)),
-                "an uncoloured clip keeps its colour, its machine's identity colour (Neo Poly: Synth), while it plays (it turned green, a colour a user can pick)");
+            // MX1: an uncoloured clip's colour is its track's (the user's, else the one the track was given): option A, a colour per track.
+            var trackColour = TrackColour.BrushOf(rig.Layout.SequenceOf(0).Machine);
+            Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(trackColour).Or.SameAs(SessionPalette.Lighten(trackColour, 0.1)),
+                "an uncoloured clip keeps its colour, its track's colour, while it plays (it turned green, a colour a user can pick)");
             Assert.That(LitAsPlaying(view.SlotAt(0, 0)), Is.True, "its ▶ in the play colour");
             Assert.That(LitAsPlaying(view.SlotAt(1, 0)) && ReferenceEquals(view.SlotAt(1, 0).Outline, SessionPalette.Playing), Is.True, "an unselected one's outline too");
             Assert.That(view.SlotAt(0, 0).ChipColour, Is.SameAs(SessionPalette.StateChip));
@@ -288,7 +291,7 @@ namespace ReBuzz.Studio.Tests
             var panel = InWindow(view.ClipPanelView);
             Assert.That(scene.Right, Is.LessThanOrEqualTo(panel.Left + 1), "the scene column is in view, left of the clip panel");
             Assert.That(scene.Left, Is.GreaterThan(0));
-            var master = InWindow(view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Master));
+            var master = InWindow(view.MixerStrips.Single(s => s.Kind == StripKind.Master));
             Assert.That(master.Left, Is.EqualTo(scene.Left).Within(1), "the master strip stays under the scenes");
 
             // Scrolled sideways, the tracks pass under it; it still launches.
@@ -474,7 +477,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(view.DescribeColumns(), Is.EqualTo("Drums Lead A:Verb"));
 
             // Edits rebuild the view: the strips are fetched again each time.
-            SessionView.MixerStrip Strip(IMachine m) => view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Track && s.Machine == m);
+            MixerStripView Strip(IMachine m) => view.MixerStrips.Single(s => s.Kind == StripKind.Track && s.Machine == m);
             var toMaster = lead.Outputs.Single(o => o.Destination == rig.Master);
             Assert.That(Strip(lead).DbText, Is.EqualTo("0.0 dB"));
 
@@ -515,7 +518,7 @@ namespace ReBuzz.Studio.Tests
 
             // The master fader is the master volume.
             double volume = rig.Core.MasterVolume;
-            rig.Drag(view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Master).Fader, 0, 20);
+            rig.Drag(view.MixerStrips.Single(s => s.Kind == StripKind.Master).Fader, 0, 20);
             Assert.That(rig.Core.MasterVolume, Is.LessThan(volume));
 
             // Meters: the strips' post-fader peaks while the scene plays.
@@ -529,8 +532,9 @@ namespace ReBuzz.Studio.Tests
             rig.Screenshot("session-mixer");
 
             // The sends' connections are Machine View undo steps (the song's history).
-            rig.Core.SongCore.ActionStack.Undo();
-            rig.Core.SongCore.ActionStack.Undo();
+            // (Every mixer gesture is a step now (MX1): the master fader and the crossfader side, the sends after them are undone first.)
+            for (int i = 0; i < 12 && SessionMixer.GetSend(lead, verb) > 0; i++)
+                rig.Core.SongCore.ActionStack.Undo();
             rig.Settle();
             view.RefreshState();
             Assert.That(SessionMixer.GetSend(lead, verb), Is.EqualTo(0), "undo takes the send's connection away");
@@ -564,7 +568,7 @@ namespace ReBuzz.Studio.Tests
             var view = rig.Show(1100, 680);
 
             Assert.That(view.DescribeColumns(), Is.EqualTo("[Rhythm] Drums Bass Lead"));
-            Assert.That(view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Group).Machine, Is.SameAs(bus), "the group's fader is its output machine's");
+            Assert.That(view.MixerStrips.Single(s => s.Kind == StripKind.Group).Machine, Is.SameAs(bus), "the group's fader is its output machine's");
 
             rig.Click(view.GroupSlots.Single(c => c.Scene == 0));         // a group slot launches its members' clips
             rig.RunTicks(2);
@@ -575,7 +579,7 @@ namespace ReBuzz.Studio.Tests
             // Cue: ⚙ › Cue output, then a strip's C connects its machine to it.
             rig.Click(view.SettingsButton);
             rig.Menu("Cue output/Phones");
-            var leadStrip = view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Track && s.Machine == lead);
+            var leadStrip = view.MixerStrips.Single(s => s.Kind == StripKind.Track && s.Machine == lead);
             rig.Click(leadStrip.Cue);
             Assert.That(SessionMixer.IsCued(lead, phones), Is.True);
             rig.Screenshot("session-groups");

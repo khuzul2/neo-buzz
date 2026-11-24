@@ -25,6 +25,7 @@ GUIDES = os.path.join(ROOT, "ReBuzz.Agent", "Guides")
 # K3b). Every tool named here must be registered: the script stops when one is not. An empty tool list is an honest gap, with the reason.
 # (area, feature, where it is specified, tools, note)
 FEATURES = [
+    ("Mixer (MX1)", "One mixer everywhere (Full, Compact, Header densities): tracks, groups, returns and the Master chain, the Master volume in dB, and a colour per track", "ux-overhaul.md §11", ["machine_set", "machine_list", "connection_set", "machine_tracks"], "faders and sends are the wires' gains (connection_set), On and Solo are machine_set, a track's colour is machine_set(colour=...)"),
     ("Device panel (PP1)", "Pinned parameters in the Inspector (up to 8 per machine, saved in the song)", "ux-overhaul.md", ["machine_pin"], "the macros come from the manifest roles; machine_open_editor(window=\"parameters\") opens the panel"),
     ("Device panel (PP2)", "Locks (left out of Randomize and Morph, saved in the song), Randomize, Nudge and Morph between two presets", "ux-overhaul.md", ["param_lock", "param_randomize"], "hiding a parameter is a view setting of the Device panel (per machine type); the agent sees every parameter"),
     ("Arrangement (AR1)", "Clips: place, draw, move, trim, loop, split, join, copy, make unique", "daw-modes.md §8.2", ["arrangement_clip", "arrangement_place", "arrangement_clear", "arrangement_get"], "arrangement_clip is the Arrange view's own ClipEditor"),

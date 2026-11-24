@@ -43,6 +43,9 @@ namespace ReBuzz.Studio.Views.Machines
         IModulator modSource;                   // P5b: the modulator whose handle is dragged
         (double X, double Y)? modDropAt;
         Drag drag;
+
+        /// <summary>A drag of any kind is going on (a press that has not been released).</summary>
+        internal bool IsDragging => drag != Drag.None;
         Point dragOrigin, dragLast;             // logical canvas pixels (Pan: view pixels)
         Vector panStart;
         MouseButton dragButton;                 // the button that started the drag ends it

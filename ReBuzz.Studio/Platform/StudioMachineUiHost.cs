@@ -53,6 +53,9 @@ namespace ReBuzz.Studio.Platform
         /// </summary>
         public static Func<IMachine, bool> DeviceOpener { get; set; }
 
+        /// <summary>Fork (ux-overhaul.md §11, MX1): a double click on the Master opens the full mixer (true when the window took it).</summary>
+        public static Func<IMachine, bool> MasterOpener { get; set; }
+
         /// <summary>The window a machine's GUI or parameters are in, if open (for tests).</summary>
         public static Window GuiWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Gui : null;
 
@@ -149,6 +152,7 @@ namespace ReBuzz.Studio.Platform
         public void OpenGui(IMachine machine, WindowPlacement? at)
         {
             // A hosted plug-in's own editor comes first (one window per machine; none here: the device view or parameters, as before).
+            if (machine?.DLL?.Info?.Type == MachineType.Master && MasterOpener?.Invoke(machine) == true) return;
             var mode = PluginEditors.Open(machine, at);
             if (mode == PluginEditorMode.Floating)
                 StudioHost.Current?.Log($"{machine.Name}: its editor could not be embedded; it opens in a window of its own");

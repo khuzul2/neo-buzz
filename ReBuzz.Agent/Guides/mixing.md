@@ -50,6 +50,7 @@ Parts add up in power, so they can't all sit at the loud end of their range: if 
 - Tilt within ±0.5 dB/oct of the reference. Without one: −2 to −3.5 dB/oct is balanced (third-octave levels, pink noise 0); above −2 bright, below −4 dark.
 - Stereo: compare correlation and the per-band width.
 - A mastered reference is louder and denser: compare loudness and PLR only after mastering.
+- **The studio's mixer and track colours.** One mixer shows everywhere (Detail ▸ Mixer, the Master's double click, the Session View, the Arrangement headers): a strip per track, group, return and the Master. Its controls are the machines' own: `connection_set` is a fader, `machine_set(mute=…, solo=…)` is On and Solo, and groups, returns and the Master chain are found with `machine_tracks`. The Master's Volume reads in dB (`-inf dB` at the bottom); the mixer shows peaks only, so `analyze` reads LUFS. `machine_list` shows each track's `colour`; `machine_set(machine="Bass", colour="Slate Blue")` sets it as the person's own choice (it wins over the song's), `colour="auto"` gives it the first colour no other track uses.
 
 ## Frequency slots
 
