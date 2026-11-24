@@ -212,7 +212,6 @@ jobs:
       run: |
         if (Test-Path test.log) { ./tools/ci-annotate-log.ps1 test.log }
         if (Test-Path machine-test.log) { ./tools/ci-annotate-log.ps1 machine-test.log }
-        if (Test-Path pedal-test.log) { ./tools/ci-annotate-log.ps1 pedal-test.log }
         if (Test-Path agent-test.log) { ./tools/ci-annotate-log.ps1 agent-test.log }
 
   # Plug-in host (docs/specs/plugin-host.md, H1): neoplug built with CMake, Surge XT (CLAP and VST3), the SDK's AGain and Note

@@ -2431,15 +2431,8 @@ NATIVE_LICENCE_EXCEPTIONS = (NATIVE_LICENCE_EXCEPTION, NATIVE_LICENCE_EXCEPTION_
 
 
 def rebuilt_natives(root):
-    """U7 (mcp-server.md §12.14): the natives ExternalMachines/machines.json ships rebuilt from source (their entries): those
-    whose licence allows it, and those whose source has none, shipped by build.ps1's one recorded exception."""
-    try:
-        with open(os.path.join(root, "ExternalMachines", "machines.json"), encoding="utf-8") as f:
-            bt = next((m for m in json.load(f)["machines"] if m.get("id") == "buzztrax-buzzmachines"), {})
-    except (OSError, ValueError):
-        return []
-    return [n for n in bt.get("natives", []) if n.get("ship") == "rebuilt"
-            and (n.get("licenseException") in NATIVE_LICENCE_EXCEPTIONS if "licenseException" in n else n.get("redistribute", True))]
+    """CB1: no natives are rebuilt or shipped any more (ExternalMachines is gone)."""
+    return []
 
 
 PACK = "MACHINE-PROFILE-PACK"

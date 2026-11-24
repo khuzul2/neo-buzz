@@ -104,12 +104,12 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheKnobsAreCardsASectionEachAndTheTracksTableIsTheLastCard()
         {
-            var m = Add("Neo Poly", "PP1 Tracks");
+            var m = Add("Keys Test", "PP1 Tracks");
+            m.TrackCount = 3;
             var (window, page, view) = Stage(m, floating: true);
             try
             {
                 var cards = view.Cards;
-                Assert.That(cards.Shown, Is.Not.Empty);
                 Assert.That(cards.TableCard, Is.Not.Null, "track parameters stay a table, after the cards");
                 var host = cards.Scroller.Content as Panel;
                 Assert.That(host!.Children.Last(), Is.SameAs(cards.TableCard));
@@ -302,7 +302,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void EveryOldEntryPointOpensTheDevicePanelFloating()
         {
-            var m = Add("Neo Utility", "PP1 Retired");
+            var m = Add("Keys Test", "PP1 Retired");
             try
             {
                 Core.UiHost.OpenParameterWindow(m, null);                       // "Parameters..."

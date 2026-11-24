@@ -157,7 +157,7 @@ namespace ReBuzz.Studio.Tests
                 var t = DeviceLayout.Build(chord);
                 var table = t.Sections.Single(s => s.IsTable);
                 Assert.That(table.Name, Is.EqualTo("Tracks"));
-                Assert.That(table.Params.Select(p => p.Name), Does.Contain("Velocity"));
+                Assert.That(table.Params.Select(p => p.Name), Does.Contain("Pan"));
                 Assert.That(t.Sections.Select(s => s.Name), Is.EqualTo(new[] { "Tracks" }), "no globals: the table alone");
             }
             finally
@@ -556,7 +556,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(cell.Value, Is.EqualTo(cell.Default));
                 // Only that track's cell changed.
                 Assert.That(table.Cell(0, table.Params.FindIndex(q => q.Parameter == cell.Parameter)).Value, Is.Not.EqualTo(cell.Max).Or.EqualTo(cell.Default));
-                Studio.Screenshot(window, "device-pedal-chord-table");
+                Studio.Screenshot(window, "device-track-table");
             }
             finally
             {
@@ -813,22 +813,14 @@ namespace ReBuzz.Studio.Tests
         {
             using var restore = Studio.AfterTest(Studio.ResetPanels);
             using var rig = new Rig();
-            // No editor of its own here and the manifest's editor switched off: the device view in the panel (and no parameter window).
-            Assert.That(DevicePage.HasEditor(rig.Comp), Is.False);
-            bool manifestEditor = ReBuzz.Agent.ManifestEditorSettings.OpensEditor(rig.Comp.DLL);
-            using var putBack = Studio.AfterTest(() => ReBuzz.Agent.ManifestEditorSettings.Set(rig.Comp.DLL, manifestEditor));
-            ReBuzz.Agent.ManifestEditorSettings.Set(rig.Comp.DLL, true);
-            rig.Song.Core.UiHost.OpenGui(rig.Comp, null);
-            Settle();
-            Assert.That(StudioMachineUiHost.EditorWindowOf(rig.Comp), Is.Not.Null, "a curated manifest's editor is a custom editor: it comes first, as before");
-            Assert.That(rig.Window.Detail.IsDevice, Is.False);
-            rig.Song.Core.UiHost.CloseWindows(rig.Comp);
-            ReBuzz.Agent.ManifestEditorSettings.Set(rig.Comp.DLL, false);
-            rig.Song.Core.UiHost.OpenGui(rig.Comp, null);
+            // No editor of its own (the test synth): the device view in the panel (and no parameter window).
+            var plain = rig.Song.Add("Keys Test", "Plain", track: false);
+            Assert.That(DevicePage.HasEditor(plain), Is.False);
+            rig.Song.Core.UiHost.OpenGui(plain, null);
             Settle();
             Assert.That(rig.Window.Detail.IsOpen && rig.Window.Detail.IsDevice, Is.True);
-            Assert.That(rig.Dock.Page?.Machine, Is.SameAs(rig.Comp));
-            Assert.That(StudioMachineUiHost.ParameterWindowOf(rig.Comp), Is.Null, "the classic window stays closed");
+            Assert.That(rig.Dock.Page?.Machine, Is.SameAs(plain));
+            Assert.That(StudioMachineUiHost.ParameterWindowOf(plain), Is.Null, "the classic window stays closed");
 
             // A machine with an editor: its editor's window, as before.
             Assert.That(DevicePage.HasEditor(rig.Bass), Is.True);
@@ -856,8 +848,8 @@ namespace ReBuzz.Studio.Tests
             page.ParametersButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Avalonia.Controls.Button.ClickEvent));
             Settle();
             Assert.That(page.EditorShown, Is.False);
-            rig.Select(rig.Comp);
-            Assert.That(rig.Dock.Page!.EditorButton.IsVisible, Is.False, "an effect with no editor has no switch");
+            rig.Select(rig.Song.Add("Keys Test", "Plain", track: false));
+            Assert.That(rig.Dock.Page!.EditorButton.IsVisible, Is.False, "a machine with no editor has no switch");
             rig.Window.Detail.Close();
         }
     }

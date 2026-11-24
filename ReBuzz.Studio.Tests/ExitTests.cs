@@ -250,7 +250,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(verb, Is.Not.Null, "Neo Verb from the gear menu");
                 // As in WPF: generators added to a song without effects are wired to Master.
                 Assert.That(Graph(), Is.EqualTo(string.Join("; ", new[] { chorus.Name, "Master", poly.Name, bass.Name, verb.Name }.OrderBy(n => n, StringComparer.Ordinal))
-                                                + $"; {poly.Name}→Master; {bass.Name}→Master"));
+                                                + "; " + string.Join("; ", new[] { $"{poly.Name}→Master", $"{bass.Name}→Master" }.OrderBy(n => n, StringComparer.Ordinal))));
 
                 // Master to the right, by drag; then the chain by Shift-drag: synths → Chorus → Verb → Master.
                 var masterAt = view.PointOf(master, window);

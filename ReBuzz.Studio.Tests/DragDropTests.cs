@@ -630,7 +630,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
 
             // On a track of another machine: refused, with why.
-            var lead = AddTrack("Neo Poly", "Lead");
+            var lead = AddTrack("Neo Drums", "Lead", connect: false);
             Settle();
             var plan = s.PlanTrack(lead, One(first));
             Assert.That(plan.Allowed, Is.False);

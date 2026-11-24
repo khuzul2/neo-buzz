@@ -103,7 +103,8 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void DockedTheTrackTableCardIsCutToThePanelAndScrollsInside()
         {
-            var m = Add("Neo Poly", "PP3 Table");
+            var m = Add("Keys Test", "PP3 Table");
+            m.TrackCount = 3;
             var (window, page, view) = Stage(m, floating: false, width: 900, height: 260);
             try
             {

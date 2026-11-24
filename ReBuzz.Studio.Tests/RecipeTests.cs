@@ -170,7 +170,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(ids, Is.EquivalentTo(new[]
             {
                 "hear-a-bass", "movement-from-a-modulator", "safe-experiment", "arrange-a-section", "two-scenes",
-                "controller-for-the-cutoff", "explain-a-control", "engine-swap", "replace-a-classic", "check-the-load",
+                "controller-for-the-cutoff", "explain-a-control", "engine-swap", "check-the-load",
             }));
             foreach (var r in Recipes())
                 if (r.Needs.Length > 0) Assert.That(ids, Does.Contain(r.Needs), r.Id);

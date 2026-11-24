@@ -42,7 +42,7 @@ echo "::endgroup::"
 
 echo "::group::rebuzz-headless with the Neo Plug machines"
 git submodule update --init --depth 1 3rdParty/serilog/serilog
-# On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild, as fork-ci's core-build.
+# On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild.
 win=(-nologo); [ "$RUNNER_OS" = Windows ] && win+=("-p:SolutionDir=$W/" -p:ReBuzzCleanBuild=true)
 dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -v:q "${win[@]}"
 ls ReBuzz.Headless/bin/Release/net10.0/Gear/NeoPlug

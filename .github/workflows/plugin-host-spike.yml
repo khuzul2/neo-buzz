@@ -103,7 +103,7 @@ jobs:
     - name: rebuzz-headless with the Neo Plug Spike machines
       run: |
         git submodule update --init --depth 1 3rdParty/serilog/serilog
-        # On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild, as fork-ci's core-build.
+        # On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild.
         win=(); [ "$RUNNER_OS" = Windows ] && win=("-p:SolutionDir=$W/" -p:ReBuzzCleanBuild=true)
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q "${win[@]}"
         G="$W/ReBuzz.Headless/bin/Release/net10.0/Gear/"

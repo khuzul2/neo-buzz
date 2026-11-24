@@ -45,6 +45,15 @@ namespace ReBuzz.Studio.Tests.TestMachines
             if ((uint)track < Tracks) velocity[track] = value;
         }
 
+        /// <summary>A track parameter that keeps its value (the device panel's track table needs one): it changes no sound.</summary>
+        [ParameterDecl(Name = "Pan", MinValue = 0, MaxValue = 127, DefValue = 64, Description = "A track value the tests read and write; no sound depends on it")]
+        public void SetPan(int value, int track)
+        {
+            if ((uint)track < Tracks) pan[track] = value;
+        }
+
+        readonly int[] pan = new int[Tracks];
+
         /// <summary>Tests: the velocity each track's note started with (0 for none playing).</summary>
         public int[] Playing
         {

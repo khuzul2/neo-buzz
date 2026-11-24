@@ -1,10 +1,9 @@
 <Project>
   <!--
     Fork (docs/specs/daw-modes.md §8.1, audio hygiene): how .NET compiles code in every app we ship and every test
-    host the audio thread runs in. Imported by ReBuzz.csproj (NeoBuzzLive.exe), the studio (ReBuzz.Studio, the Mac app),
-    rebuzz-headless, NativeMachineFramework (C++/CLI: its runtimeconfig.json ships beside the exe, and a native host that
-    loads it first starts .NET with it), ReBuzzTests, ReBuzz.Studio.Tests and ReBuzz.SessionTests; a new app or test host
-    that plays audio imports it too. (NeoBuzz.MachineTests and NeoBuzz.PedalTests turn tiered compilation off altogether.)
+    host the audio thread runs in. Imported by the studio (ReBuzz.Studio, the Mac app), rebuzz-headless,
+    ReBuzz.Studio.Tests and ReBuzz.SessionTests; a new app or test host that plays audio imports it too.
+    (NeoBuzz.MachineTests turns tiered compilation off altogether.)
 
     TieredCompilationQuickJitForLoops=false: a method with a loop is compiled fully optimised the first time, never
     at tier 0. A tier-0 method whose loop runs long is replaced while it runs (on-stack replacement), by code
