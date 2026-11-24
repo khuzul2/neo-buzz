@@ -97,11 +97,9 @@ namespace ReBuzz.Audio
         internal static volatile bool MasterInfoCopied;
 
         /// <summary>
-        /// The engine's master info (tempo, rate, tick length, position) into what native machines are sent: each tick, and,
-        /// Fork, for a native machine's Init before the engine has ticked (UIMessage.UIInit). Without it a machine set up
-        /// before the first tick computed its state for 0 Hz: Jeskola Delay's and Cross Delay's lines were 0 samples long, and
-        /// their first Work looped for ever (its host stopped answering, the UI gallery's "Jeskola Delay stopped working"), and
-        /// FSM Infector played silence until the song was opened again (a process's first render, native-songs' warm-up).
+        /// The engine's master info (tempo, rate, tick length, position) into what machines are sent: each tick, and,
+        /// Fork, for a machine's Init before the engine has ticked. Without it a machine set up
+        /// before the first tick computed its state for 0 Hz (delay lines 0 samples long, whose first Work looped for ever).
         /// </summary>
         internal static void CopyEngineMasterInfo()
         {

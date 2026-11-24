@@ -1218,10 +1218,8 @@ namespace ReBuzz.Core
         internal void RaiseMachineDiverged(MachineCore machine) => MachineDiverged?.Invoke(machine);
 
         /// <summary>
-        /// Fork: a machine stopped working (a native machine's host process stopped answering or
-        /// exited): the apps tell the user (on the UI thread, once a machine), not only the debug
-        /// console, which said "Jeskola Delay crashed." and then a "Process hang" that named no
-        /// machine (gallery win-704).
+        /// Fork: a machine stopped working (its work stopped answering or failed): the apps tell the user (on the UI thread, once a machine), not only the debug
+        /// console, which named no machine (gallery win-704).
         /// </summary>
         internal event Action<MachineCore, string> MachineCrashed;
 

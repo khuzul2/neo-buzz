@@ -19,8 +19,7 @@ namespace ReBuzz.Agent
         public static bool Available(IMachineDLL dll) =>
             dll?.Info != null && dll.Info.Type != MachineType.Master && SongModel.Manifest(dll) != null;
 
-        /// <summary>Whether the machine brings a GUI of its own (a GUI factory: Pedal LFO's target picker, Pedal Chord's and
-        /// Pedal Tracker's editors, the Neo editors). A native machine's own double click dialog is handled before this.</summary>
+        /// <summary>Whether the machine brings a GUI of its own (a GUI factory: the Neo editors).</summary>
         public static bool HasOwnGui(IMachineDLL dll)
         {
             try
@@ -38,7 +37,7 @@ namespace ReBuzz.Agent
         public static bool DefaultFor(bool curated, bool hasOwnGui) => curated && !hasOwnGui;
 
         /// <summary>On for a curated manifest of a machine with no GUI of its own, off for a draft, a generated one or a
-        /// machine whose GUI holds its own editors (the Neo machines, Pedal LFO, Chord, Peer Control, Tracker...).</summary>
+        /// machine whose GUI holds its own editors (the Neo machines).</summary>
         public static bool Default(IMachineDLL dll) => DefaultFor(SongModel.Manifest(dll)?.IsCurated == true, HasOwnGui(dll));
 
         /// <summary>Whether opening the machine (a double click) shows its manifest editor rather than its parameter list.</summary>
