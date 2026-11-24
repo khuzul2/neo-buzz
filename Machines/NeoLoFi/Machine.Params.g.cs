@@ -16,7 +16,7 @@ namespace NeoBuzz.LoFi
         [ParameterDecl(Name = "Rate", Description = "Sample-and-hold rate in Hz; at or above the host's sample rate it is off", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int Rate { get => Values[P.Rate]; set => Values.Set(P.Rate, value); }
 
-        [ParameterDecl(Name = "Anti-alias", Description = "A steep low-pass (8th order, 0.42 of the hold rate) before the hold", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "Anti-alias", Description = "A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int AntiAlias { get => Values[P.AntiAlias]; set => Values.Set(P.AntiAlias, value); }
 
         [ParameterDecl(Name = "Jitter", Description = "Random timing error of the hold clock (up to 25% of a hold period at 100%)", MinValue = 0, MaxValue = 1000, DefValue = 0)]

@@ -78,7 +78,7 @@
     "Off",
     "On"
    ],
-   "description": "A steep low-pass (8th order, 0.42 of the hold rate) before the hold",
+   "description": "A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold",
    "how": "Filters everything above the new Nyquist frequency away before the hold.",
    "sound": "Off, the fold-over aliasing makes the sound harsh and inharmonic; on, the sound is duller but clean, like a period sampler's output filter."
   },

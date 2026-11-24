@@ -14,7 +14,7 @@ Dither      "Dither"        0 1     0     switch                          | TPDF
 Rate        "Rate"          0 1000  1000  freq 200 192000                  | Sample-and-hold rate in Hz; at or above the host's sample rate it is off
     how Sets the rate the signal is held at, from 200 Hz up; the top of the range, at or above the song's sample rate, turns the reducer off.
     sound Lower rates sound crunchy and metallic as the top end folds back into the audible range; very low rates turn music into an electronic toy.
-AntiAlias   "Anti-alias"    0 1     0     switch                          | A steep low-pass (8th order, 0.42 of the hold rate) before the hold
+AntiAlias   "Anti-alias"    0 1     0     switch                          | A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold
     how Filters everything above the new Nyquist frequency away before the hold.
     sound Off, the fold-over aliasing makes the sound harsh and inharmonic; on, the sound is duller but clean, like a period sampler's output filter.
 Jitter      "Jitter"        0 1000  0     pct                             | Random timing error of the hold clock (up to 25% of a hold period at 100%)
