@@ -21,6 +21,9 @@ namespace ReBuzz.Core.Clips
         static volatile BeatModelNet global;
         static volatile bool globalSet;
 
+        /// <summary>The AW2 network was chosen explicitly (a scope or a global choice): the pretrained network (AW4) then stays out unless it is chosen too.</summary>
+        public static bool Overridden => scopedSet || globalSet;
+
         /// <summary>The model in use, or null (then AW1's DSP path is used).</summary>
         public static BeatModelNet Current
         {
@@ -123,7 +126,7 @@ namespace ReBuzz.Core.Clips
         internal static BeatTrack TrackFrom(AudioSource src, Activations act, BeatModelNet net)
         {
             var track = Decode(act, src.SampleRate, src.Length, net.Version, net.TempoBins);
-            if (track != null && AttackReachMs > 0) SnapToAttacks(src, track);
+            if (track != null && AttackReachMs > 0) SnapToAttacks(src, track, AttackReachMs);
             return track;
         }
 
@@ -131,13 +134,13 @@ namespace ReBuzz.Core.Clips
         internal static double AttackReachMs = 0;
 
         /// <summary>The model's beats sit on a 20 ms frame grid with the training loss's tolerance of one frame; the ear hears an attack. Each beat goes to the attack within the reach (a soft attack stays near its neighbours' line, BeatTracker.Smooth).</summary>
-        static void SnapToAttacks(AudioSource src, BeatTrack track)
+        internal static void SnapToAttacks(AudioSource src, BeatTrack track, double reachMs)
         {
             var an = src.ForAnalysis();
             int n = track.Beats.Length;
             var rough = new long[n];
             for (int i = 0; i < n; i++) rough[i] = (long)Math.Round(track.Beats[i]);
-            double[] pos = BeatTracker.RefineAt(an, rough, AttackReachMs / 1000.0, out double[] attack);
+            double[] pos = BeatTracker.RefineAt(an, rough, reachMs / 1000.0, out double[] attack);
             pos = BeatTracker.Smooth(pos, attack);
             for (int i = 1; i < n; i++) if (pos[i] <= pos[i - 1]) return;      // never reorder beats: leave the frame positions
             track.Beats = pos;
@@ -191,7 +194,7 @@ namespace ReBuzz.Core.Clips
             var sorted = (double[])conf.Clone();
             Array.Sort(sorted);
             if (sorted[n / 2] < MinConfidence) return null;
-            var track = new BeatTrack { Rate = rate, Length = length, Beats = beats, Down = down, FromModel = true, ModelVersion = version, Act = a, Low = (double[])conf.Clone(), Full = (double[])conf.Clone(), Change = new double[n] };
+            var track = new BeatTrack { Rate = rate, Length = length, Beats = beats, Down = down, FromModel = true, Source = "aw2", ModelVersion = version, Act = a, Low = (double[])conf.Clone(), Full = (double[])conf.Clone(), Change = new double[n] };
             var intervals = new List<double>(n);
             for (int i = 1; i < n; i++) intervals.Add(beats[i] - beats[i - 1]);
             intervals.Sort();

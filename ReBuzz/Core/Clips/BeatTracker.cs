@@ -33,6 +33,8 @@ namespace ReBuzz.Core.Clips
         /// <summary>From the beat model (AW2): the beats are at the model's own level (55 to 215 BPM), <see cref="Down"/> is the downbeat activation at each beat.</summary>
         public bool FromModel;
         public int ModelVersion;
+        /// <summary>Where the beats came from: "beatthis" (AW4's pretrained network), "aw2" (the shipped network) or "dsp" (AW1's tracker).</summary>
+        public string Source = "dsp";
         public double[] Down;
         /// <summary>From the beat model: the beat activation per frame (50 a second), for checking another track's phase against it.</summary>
         public float[] Act;
@@ -140,14 +142,17 @@ namespace ReBuzz.Core.Clips
         /// <summary>The beats of the audio, once per source and model version (also for a streamed one: it reads the file's exact samples). From the beat model when there is one and it is sure, else AW1's DSP tracker. Never on the audio thread.</summary>
         public static BeatTrack Of(AudioSource source)
         {
-            var net = BeatModel.Current;
-            int version = net?.Version ?? 0;
+            // AW4: the pretrained network first, when the source setting allows it and its file is here and whole; then the AW2 network; then AW1's DSP.
+            var choice = AutoWarpPolicy.Source;
+            var bt = choice == BeatSource.Auto || choice == BeatSource.BeatThis ? BeatThis.Current : null;
+            var net = choice == BeatSource.Dsp ? null : BeatModel.Current;
+            int version = bt != null ? BeatThis.Version : net?.Version ?? 0;
             var perSource = cache.GetOrCreateValue(source);
             Lazy<BeatTrack> lazy;
             lock (perSource)
             {
                 if (!perSource.TryGetValue(version, out lazy))
-                    perSource[version] = lazy = new Lazy<BeatTrack>(() => TrackBest(source, net), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+                    perSource[version] = lazy = new Lazy<BeatTrack>(() => TrackBest(source, net, bt), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
             }
             return lazy.Value;
         }
@@ -177,8 +182,19 @@ namespace ReBuzz.Core.Clips
 
         static readonly double[] AgreeRatios = { 1, 2, 0.5, 1.5, 2.0 / 3, 4.0 / 3, 0.75 };
 
-        static BeatTrack TrackBest(AudioSource source, BeatModelNet net)
+        static BeatTrack TrackBest(AudioSource source, BeatModelNet net, BeatThisNet bt = null)
         {
+            if (bt != null)
+            {
+                // AW4: the pretrained network's beats and downbeats are the answer; if it fails for any reason, the AW2 path below runs, with no message.
+                System.Threading.Interlocked.Increment(ref Runs);
+                try
+                {
+                    var t = BeatThisTracker.Track(source, bt);
+                    if (t != null && t.Found) return t;
+                }
+                catch (Exception) { }
+            }
             if (net != null)
             {
                 System.Threading.Interlocked.Increment(ref Runs);

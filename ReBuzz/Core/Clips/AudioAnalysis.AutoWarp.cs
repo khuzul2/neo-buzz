@@ -27,6 +27,8 @@ namespace ReBuzz.Core.Clips
         public bool Loop;
         /// <summary>The beats came from the beat model (not AW1's DSP track): the telemetry of the model-or-DSP choice.</summary>
         public bool FromModel;
+        /// <summary>Where the beats came from: "beatthis", "aw2" or "dsp" (AW4).</summary>
+        public string Source = "dsp";
 
         public void Deconstruct(out List<(double Sample, double Beat)> markers, out double bpm) { markers = Markers; bpm = Bpm; }
     }
@@ -81,6 +83,7 @@ namespace ReBuzz.Core.Clips
             result.FirstDownbeat = b[0];
             result.Found = true;
             result.FromModel = track.FromModel;
+            result.Source = track.Source;
 
             // A line through the beats: the steady tempo, and whether it is one.
             LineFit(b, out double a0, out double per);

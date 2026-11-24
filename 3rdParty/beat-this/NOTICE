@@ -1,0 +1,28 @@
+Beat This! (beat and downbeat tracking)
+
+Auto-warp (docs/specs/neo-audio.md, AW4 as built) can take the beats and downbeats of a recording from the small pretrained model of
+
+  Francesco Foscarin, Jan Schlueter, Gerhard Widmer: "Beat This! Accurate Beat Tracking Without DBN Postprocessing", Proceedings of the 25th International
+  Society for Music Information Retrieval Conference (ISMIR), 2024.
+  Institute of Computational Perception, Johannes Kepler University Linz.   https://github.com/CPJKU/beat_this
+
+Licence. The upstream repository's README ("License") says: "The code and the published model weights are released under the MIT license"; its LICENSE file (MIT,
+Copyright (c) 2024 Institute of Computational Perception, JKU Linz, Austria) is in this folder. The same README adds: "Note that some of the training files are fully copyrighted
+or under limited Creative Commons licenses, and it is up to the user to assess whether this may impact their use case." The training data (16 annotated datasets) is not part of
+this software and is never fetched by it; this software holds no audio and no annotations of it. The weights are a published work that the authors release under the MIT
+licence; the sentence about the training files is reported in the AW4 report of the task issue.
+
+What is used. One checkpoint, "small0" (the 2 million parameter model of the paper, trained on all its data but GTZAN), and the paper's method (50 frames a second log-mel input;
+windows of 1500 frames; the minimal peak-picking post-processing). The front end, the windowing and the post-processing are written in C# from the paper and the published description
+(ReBuzz/Core/Clips/BeatThisFront.cs); no upstream code is copied. The network is run through ONNX Runtime (MIT).
+
+The weights are not in this repository and not part of the source tree. tools/autowarp/beat_this_model.py downloads the pinned checkpoint, checks its SHA-256, exports it to ONNX
+with the pinned Python toolchain (tools/autowarp/beat_this_requirements.txt), checks the export against the PyTorch model and prints the SHA-256 of the result; the package
+workflow does this and embeds the file, and the app loads it only if its SHA-256 is the pinned one (BeatThis.PinnedSha256). Without the file Auto-warp uses the AW2 network and
+then AW1's DSP tracker. In the packaged app this notice is shipped in the Licenses folder; no screen of the app names the model.
+
+Sources and checksums (SHA-256)
+  upstream code          https://github.com/CPJKU/beat_this  (MIT; version 1.1.0, pip beat-this==1.1.0, wheel 3f2b2d1e027c6dac380bf80c71555e3c28a4036a7f1af20129a945915a72a645; repository HEAD b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c)
+  checkpoint small0      https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/small0.ckpt     6074be2c4d490c5f6101fcc374a1ec72ae93456e23bb6019783b849f5dc7d47b   (8451101 bytes)
+  ONNX export of it      made by tools/autowarp/beat_this_model.py (torch 2.11.0, onnx 1.23.2, opset 17, a free time axis)  20957568b91eb46caf8c5559726bb49a1aa5afcd2da7bd64d68586c0b597eef1   (10498987 bytes)
+  annotation sources     https://github.com/CPJKU/beat_this_annotations  (the list of the datasets the checkpoint was trained on; not used by this software)

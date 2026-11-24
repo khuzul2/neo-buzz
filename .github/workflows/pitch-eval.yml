@@ -137,7 +137,7 @@ on:
         type: string
         default: '120'
       aw3:
-        description: 'AW3 (turn the other jobs off): words "sweep" (the timing fixes on the halves of half=, default val; reach=0,25,35 is the attack reach in ms, resid=inf:inf,30:60 the residual bounds p95:max in ms) and/or "pack" (the listening pack v2)'
+        description: 'AW3 and AW4 (turn the other jobs off): words "sweep" (the timing fixes on the halves of half=, default val; reach=0,25,35 is the attack reach in ms, resid=inf:inf,30:60 the residual bounds p95:max in ms) and/or "pack" (the listening pack v2); AW4: "bt-parity", "bt-eval" (the test halves of GMD, GuitarSet, Candombe and AAM, AW1 against AW2, AW3 and the pretrained network), "bt-measure" (GTZAN and Ballroom, measure only), "bt-speed" (a 10-minute file) and "bt-listen" (the round-3 listening pack)'
         type: string
         default: ''
       guitarset_every:
@@ -1542,4 +1542,253 @@ jobs:
       with:
         name: aw3-pack
         path: aw3-pack/
+        retention-days: 14
+
+  # ---------------------------------------------------------------------------------------- AW4
+  # The pretrained beat and downbeat network (docs/specs/neo-audio.md, AW4 as built; 3rdParty/beat-this). The weights are never committed: bt-model fetches the pinned upstream
+  # checkpoint (SHA-256 checked), exports it to ONNX and checks the export against PyTorch; the other bt-* jobs take that file. Dispatch with the aw3 input set to one or more of
+  # bt-parity, bt-eval, bt-measure, bt-speed, bt-listen (bt-eval, bt-parity and bt-listen also run the aw3-items job: the held-out items).
+  bt-model:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - name: Fetch the pinned checkpoint, export it, check the export
+      run: |
+        set -euo pipefail
+        pip install --quiet torch==2.11.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+        pip install --quiet -r tools/autowarp/beat_this_requirements.txt
+        pip list 2>/dev/null | grep -i -E "^(torch|torchaudio|beat|onnx|onnxruntime|numpy|einops|rotary|soxr) " | tee bt-model-log.txt
+        python3 tools/autowarp/beat_this_model.py fetch bt-model 2>&1 | grep -v -i warn | tee -a bt-model-log.txt
+        rm -f bt-model/*.ckpt
+        { echo "## bt-model"; cat bt-model-log.txt; } >> "$GITHUB_STEP_SUMMARY"
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: bt-model
+        path: |
+          bt-model/
+          bt-model-log.txt
+        retention-days: 7
+
+  bt-parity:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-parity') }}
+    needs: [aw3-items, bt-model]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - uses: actions/download-artifact@v7
+      with:
+        name: bt-model
+        path: bt-model
+    - name: Build the tool
+      run: dotnet build tools/AutoWarpEval -c Release -o aw4-tool 2>&1 | tail -3
+    - name: The upstream package against ours (spectrogram within 1e-4, beats and downbeats within a frame)
+      run: |
+        set -euo pipefail
+        pip install --quiet torch==2.11.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+        pip install --quiet -r tools/autowarp/beat_this_requirements.txt
+        mkdir -p parity
+        # Three test items of each set (the first, a middle and the last of the sorted names), and one 44.1 kHz generated line (the resampling path: beats only).
+        for d in items/aw3-items-gmd items/aw3-items-guitarset items/aw3-items-candombe items/aw3-items-aam0; do
+          python3 - "$d" parity <<'PY'
+        import glob, json, os, shutil, sys
+        d, out = sys.argv[1:3]
+        names = sorted(os.path.basename(j)[:-5] for j in glob.glob(f"{d}/*.json") if json.load(open(j)).get("split") == "test")
+        for n in {names[0], names[len(names) // 2], names[-1]}:
+            shutil.copy(f"{d}/{n}.wav", out)
+        PY
+        done
+        dotnet aw4-tool/AutoWarpEval.dll --dump Drift Mix 0 parity/generated_drift_mix.wav
+        python3 tools/autowarp/beat_this_model.py reference bt-ref parity/*.wav 2>&1 | grep -v -i warn
+        dotnet aw4-tool/AutoWarpEval.dll --bt-parity bt-model/bt-model/beat_this_small.onnx bt-ref parity/*.wav | tee bt-parity-log.txt
+    - name: Job summary
+      if: always()
+      run: '[ -f bt-parity-log.txt ] && { echo "## bt-parity"; cat bt-parity-log.txt; } >> "$GITHUB_STEP_SUMMARY" || true'
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: bt-parity
+        path: bt-parity-log.txt
+        retention-days: 14
+
+  bt-eval:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-eval') }}
+    needs: [aw3-items, bt-model]
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - uses: actions/download-artifact@v7
+      with:
+        name: bt-model
+        path: bt-model
+    - name: Build the tool
+      run: dotnet build tools/AutoWarpEval -c Release -o aw4-tool 2>&1 | tail -3
+    - name: AW1, AW2, AW3 and the pretrained network on the test halves, score
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile mir_eval
+        mkdir -p results sets
+        for set in gmd guitarset candombe aam; do mkdir -p sets/$set; done
+        cp items/aw3-items-gmd/* sets/gmd/; cp items/aw3-items-guitarset/* sets/guitarset/; cp items/aw3-items-candombe/* sets/candombe/
+        for p in 0 1 2; do cp items/aw3-items-aam$p/* sets/aam/; done
+        echo "cores: $(nproc)"
+        for set in gmd guitarset candombe aam; do
+          dotnet aw4-tool/AutoWarpEval.dll --aw4 sets/$set $set bt-model/bt-model/beat_this_small.onnx results/$set.json --half test --reach 0,25 --onsets
+        done
+        python3 tools/aw2/aw4score.py results/*.json --out aw4-report.md --csv aw4-per-file.csv --half test
+    - name: Job summary
+      if: always()
+      run: '[ -f aw4-report.md ] && { echo "## aw4-report.md"; tail -c 60000 aw4-report.md; } >> "$GITHUB_STEP_SUMMARY" || true'
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw4-report
+        path: |
+          aw4-report.md
+          aw4-per-file.csv
+          results/
+        retention-days: 14
+
+  bt-measure:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-measure') }}
+    needs: bt-model
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        name: bt-model
+        path: bt-model
+    - name: Build the tool
+      run: dotnet build tools/AutoWarpEval -c Release -o aw4-tool 2>&1 | tail -3
+    - name: Fetch GTZAN and Ballroom (runner only, never kept), score
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile mir_eval requests
+        sudo mkdir -p /mnt/aw2 && sudo chown "$USER" /mnt/aw2
+        python3 -u tools/aw2/measure.py /mnt/aw2/measure gtzan ballroom 2>&1 | tee measure-log.txt
+        mkdir -p results
+        for s in gtzan ballroom; do
+          if ls /mnt/aw2/measure/$s/*.json > /dev/null 2>&1; then
+            dotnet aw4-tool/AutoWarpEval.dll --aw4 /mnt/aw2/measure/$s $s bt-model/bt-model/beat_this_small.onnx results/$s.json --half test --reach 0,25 --onsets
+          else
+            echo "$s: no items (skipped)" | tee -a measure-log.txt
+          fi
+        done
+        python3 tools/aw2/aw4score.py results/*.json --out aw4-measure-report.md --half test --clips ""
+        # Only the metrics table is kept: no audio, no per-file results, no labels.
+        rm -rf /mnt/aw2/measure results
+    - name: Job summary
+      if: always()
+      run: |
+        for f in measure-log.txt aw4-measure-report.md; do [ -f $f ] && { echo "## $f"; tail -c 20000 $f; } >> "$GITHUB_STEP_SUMMARY"; done || true
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw4-measure-report
+        path: |
+          aw4-measure-report.md
+          measure-log.txt
+        retention-days: 14
+
+  bt-speed:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-speed') }}
+    needs: bt-model
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        name: bt-model
+        path: bt-model
+    - name: A 10-minute file, all included (decoding, spectrogram, network, markers)
+      run: |
+        set -euo pipefail
+        dotnet build tools/AutoWarpEval -c Release -o aw4-tool 2>&1 | tail -3
+        { echo "cores: $(nproc)"; lscpu | grep -E "Model name"; } | tee bt-speed-log.txt
+        dotnet aw4-tool/AutoWarpEval.dll --bt-bench bt-model/bt-model/beat_this_small.onnx 600 | tee -a bt-speed-log.txt
+        { echo "## bt-speed"; cat bt-speed-log.txt; } >> "$GITHUB_STEP_SUMMARY"
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: bt-speed
+        path: bt-speed-log.txt
+        retention-days: 14
+
+  bt-listen:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-listen') }}
+    needs: [aw3-items, bt-model]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - uses: actions/download-artifact@v7
+      with:
+        name: bt-model
+        path: bt-model
+    - name: Build the tools
+      run: |
+        dotnet build tools/AutoWarpEval -c Release -o aw4-tool 2>&1 | tail -3
+        g++ -O2 -std=c++17 -I NeoStretch/third_party tools/aw2/warp.cpp -o aw4-tool/aw2warp
+    - name: The round-3 pack (the 16 clips of round 2, the new source and AW2 as shipped)
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile
+        mkdir -p all; for d in items/*; do case "$d" in */bt-model) ;; *) cp $d/* all/ ;; esac; done
+        python3 tools/aw2/aw4packlist.py all pack-list.txt pack-readme.txt
+        dotnet aw4-tool/AutoWarpEval.dll --pack4 aw4-renders aw4-tool/aw2warp pack-list.txt bt-model/bt-model/beat_this_small.onnx | tee pack-log.txt
+        cp pack-readme.txt pack-list.txt pack-log.txt aw4-renders/
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw4-renders
+        path: aw4-renders/
         retention-days: 14

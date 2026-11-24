@@ -8,6 +8,9 @@ using ReBuzz.Core.AudioLibrary;
 
 namespace ReBuzz.Core.Clips
 {
+    /// <summary>Where auto-warp takes the beats from (AW4): the pretrained network when its file is here, else the AW2 network, else AW1's DSP (Auto); or one of them only (the evaluation and support).</summary>
+    internal enum BeatSource { Auto, BeatThis, Aw2, Dsp }
+
     internal static class AutoWarpPolicy
     {
         /// <summary>A file longer than this many bars (with a tempo) is auto-warped on import.</summary>
@@ -28,6 +31,20 @@ namespace ReBuzz.Core.Clips
             set { loaded = true; enabled = value; }
         }
 
+        static BeatSource source = BeatSource.Auto;
+
+        /// <summary>A hidden setting: <c>beatSource=auto|beatthis|aw2|dsp</c> in autowarp.txt, or <c>NEO_BEAT_SOURCE</c> (which wins). No page shows it; it is for the evaluation and for support.</summary>
+        public static BeatSource Source
+        {
+            get
+            {
+                if (Enum.TryParse<BeatSource>(Environment.GetEnvironmentVariable("NEO_BEAT_SOURCE"), true, out var fromEnv)) return fromEnv;
+                Load();
+                return source;
+            }
+            set { loaded = true; source = value; }
+        }
+
         static string SettingsFile => Path.Combine(AudioCache.DataFolder, "autowarp.txt");
 
         /// <summary>Reads the file once; a missing or damaged one leaves the default.</summary>
@@ -42,7 +59,9 @@ namespace ReBuzz.Core.Clips
                 {
                     int eq = line.IndexOf('=');
                     if (eq <= 0) continue;
-                    if (line.Substring(0, eq).Trim() == "autoWarpLongFiles") enabled = line.Substring(eq + 1).Trim() != "0";
+                    string key = line.Substring(0, eq).Trim(), value = line.Substring(eq + 1).Trim();
+                    if (key == "autoWarpLongFiles") enabled = value != "0";
+                    else if (key == "beatSource" && Enum.TryParse<BeatSource>(value, true, out var s)) source = s;
                 }
             }
             catch (Exception) { }
@@ -53,12 +72,12 @@ namespace ReBuzz.Core.Clips
             try
             {
                 Directory.CreateDirectory(AudioCache.DataFolder);
-                File.WriteAllLines(SettingsFile, new[] { "autoWarpLongFiles=" + (enabled ? "1" : "0") });
+                File.WriteAllLines(SettingsFile, new[] { "autoWarpLongFiles=" + (enabled ? "1" : "0"), "beatSource=" + source.ToString().ToLowerInvariant() });
             }
             catch (Exception) { }
         }
 
         /// <summary>Forces the next read to go to the file again (tests that change the data folder).</summary>
-        internal static void Reload() { loaded = false; enabled = true; }
+        internal static void Reload() { loaded = false; enabled = true; source = BeatSource.Auto; }
     }
 }

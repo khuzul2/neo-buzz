@@ -87,7 +87,7 @@ namespace NeoBuzz.AutoWarpEval
         static double Num(string s) => s == "inf" ? double.PositiveInfinity : double.Parse(s, CultureInfo.InvariantCulture);
         static string Fmt(double v) => double.IsInfinity(v) ? "inf" : v.ToString("0", CultureInfo.InvariantCulture);
 
-        static Dictionary<string, object> Describe(AudioSource src, AutoWarpResult r, int rate, int bpb)
+        internal static Dictionary<string, object> Describe(AudioSource src, AutoWarpResult r, int rate, int bpb)
         {
             var beats = new List<double>();
             var downs = new List<double>();
@@ -108,7 +108,7 @@ namespace NeoBuzz.AutoWarpEval
         }
 
         /// <summary>Strong onsets of the shared detector (time in s, strength), strength 2 and over.</summary>
-        static double[][] Onsets(AudioSource src)
+        internal static double[][] Onsets(AudioSource src)
         {
             var mono = BeatFront.Mono22k(src);
             var det = new OnsetDetector(BeatFront.Rate) { MinIntervalSeconds = 0.04 };
@@ -141,6 +141,6 @@ namespace NeoBuzz.AutoWarpEval
             return o.ToArray();
         }
 
-        static double[] Round(IEnumerable<double> v) => v.Select(q => Math.Round(q, 4)).ToArray();
+        internal static double[] Round(IEnumerable<double> v) => v.Select(q => Math.Round(q, 4)).ToArray();
     }
 }

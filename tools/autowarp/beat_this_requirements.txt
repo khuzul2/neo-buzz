@@ -1,0 +1,11 @@
+# The pinned toolchain of tools/autowarp/beat_this_model.py (AW4): the export of the small checkpoint is deterministic on it.
+# torch and torchaudio come from the CPU index: pip install torch==2.11.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cpu
+beat-this==1.1.0
+einops==0.8.2
+rotary-embedding-torch==0.9.2
+soxr==1.1.0
+onnx==1.23.2
+onnxruntime==1.32.0
+numpy==2.5.5
+scipy==1.18.1
+soundfile==0.14.0

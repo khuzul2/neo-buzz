@@ -59,6 +59,10 @@ namespace NeoBuzz.AutoWarpEval
                     case "--pack2": return Pack2.Run(args, i + 1);
                     case "--pack3": return Pack3.Run(args, i + 1);
                     case "--aw3": return Aw3Commands.Run(args, i + 1);
+                    case "--aw4": return Aw4Commands.Run(args, i + 1);
+                    case "--bt-parity": return Aw4Commands.Parity(args, i + 1);
+                    case "--bt-bench": return Aw4Commands.Bench(Next(), args.Length > i + 1 ? args[i + 1] : "600");
+                    case "--pack4": return Pack4.Run(args, i + 1);
                     case "--dump":
                         {
                             var l = Variant(Enum.Parse<WarpSignals.Tempo>(Next(), true), Enum.Parse<WarpSignals.Style>(Next(), true), int.Parse(Next()));

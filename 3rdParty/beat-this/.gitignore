@@ -1,0 +1,4 @@
+# The weights are never committed (AW4): tools/autowarp/beat_this_model.py fetches and exports them on demand, CI does it for the package.
+*.onnx
+*.ckpt
+*.pt

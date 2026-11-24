@@ -21,12 +21,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ReBuzz\Core\Clips\AudioClip.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\..\ReBuzz\Core\Clips\BeatTracker.cs;..\..\ReBuzz\Core\Clips\Fft.cs;..\..\ReBuzz\Core\Clips\BeatFront.cs;..\..\ReBuzz\Core\Clips\BeatModelNet.cs;..\..\ReBuzz\Core\Clips\BeatModelTracker.cs;..\..\ReBuzz\Core\Clips\BeatModelData.cs" Link="Engine\%(Filename)%(Extension)" />
+    <Compile Include="..\..\ReBuzz\Core\Clips\AudioClip.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.cs;..\..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\..\ReBuzz\Core\Clips\BeatTracker.cs;..\..\ReBuzz\Core\Clips\Fft.cs;..\..\ReBuzz\Core\Clips\BeatFront.cs;..\..\ReBuzz\Core\Clips\BeatModelNet.cs;..\..\ReBuzz\Core\Clips\BeatModelTracker.cs;..\..\ReBuzz\Core\Clips\BeatModelData.cs;..\..\ReBuzz\Core\Clips\BeatThisFront.cs;..\..\ReBuzz\Core\Clips\BeatThisModel.cs;..\..\ReBuzz\Core\Clips\AutoWarpPolicy.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\..\ReBuzz\Core\AudioLibrary\AudioCache.cs;..\..\ReBuzz\Core\AudioLibrary\StreamedAudio.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\..\ReBuzz.SessionTests\AutoWarp\WarpSignals.cs" Link="WarpSignals.cs" />
     <Compile Include="..\PitchEval\Wav.cs" Link="Wav.cs" />
     <!-- AW3: the shared onset detector (docs/specs/pitch.md section 3) and what it uses. -->
     <Compile Include="..\..\Machines\NeoBuzz.Dsp\OnsetDetector.cs;..\..\Machines\NeoBuzz.Dsp\ComplexFft.cs;..\..\Machines\NeoBuzz.Dsp\PortableMath.cs;..\..\Machines\NeoBuzz.Dsp\Filters.cs;..\..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Dsp\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- AW4: ONNX Runtime (MIT) runs the pretrained beat network, as the app does. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
   </ItemGroup>
 
 </Project>
