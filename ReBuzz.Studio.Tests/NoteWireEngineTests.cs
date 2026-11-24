@@ -322,18 +322,17 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Core.SongCore.MachinesList.First(m => m.Name == "Sa2").NoteNode, Is.Null, "no live wire to a deleted machine");
             string b = Temp("b.nbl");
             Core.SaveSongCopy(b);
-            var saved = System.Text.Encoding.UTF8.GetString(File.ReadAllBytes(b));
-            Assert.That(NoteWireStoreText(b), Does.Not.Contain("Sb"), "and it isn't saved");
             Core.SongCore.ActionStack.Undo();
             Pump();
             Assert.That(Core.SongCore.MachinesList.First(m => m.Name == "Sa2").NoteNode?.Out.Length, Is.EqualTo(1), "the undo of the delete brings the wire back");
-        }
 
-        static string NoteWireStoreText(string nbl)
-        {
-            // The subsection is a store of the manifest: search the container's text for the wire element.
-            var bytes = File.ReadAllBytes(nbl);
-            return System.Text.Encoding.UTF8.GetString(bytes);
+            // The song saved while Sb was gone has no wire to it (the file's sections are compressed: open it and look at the state).
+            Core.Modified = false;
+            Dialogs.Responder = (m, c, bb) => UserAnswer.No;
+            Assert.That(Core.TryOpenSongFile(b), Is.True);
+            Dialogs.Responder = null;
+            Assert.That(Core.NoteWires.State.Wires, Is.Empty, "the wire to a deleted machine isn't saved");
+            Assert.That(Core.NoteWires.State.ChainOf("Sd2"), Is.EqualTo(new[] { "Sc2" }), "the chain of the machines that are there is");
         }
 
         [AvaloniaTest]

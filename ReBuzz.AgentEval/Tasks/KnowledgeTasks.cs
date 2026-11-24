@@ -489,6 +489,20 @@ namespace ReBuzz.AgentEval
                     ck.Add("controller", b != null && J.Num(b["controller"]) == 21 && J.Num(b["channel"]) == 2, b != null ? $"controller {J.Num(b["controller"])} on channel {J.Num(b["channel"])}" : "no binding");
                 }),
 
+            Guide("note-wires", "Guide: note wires",
+                "The song has a Neo Poly called Lead and a Neo Voice to MIDI called Voice. Make the notes that Voice detects play Lead, with a note wire (not by audio), so that the song has exactly that one note wire.",
+                (s, c) =>
+                {
+                    s.C.Ok("machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Lead" });
+                    s.C.Ok("machine_add", new JsonObject { ["gear"] = "Neo Voice to MIDI", ["name"] = "Voice" });
+                },
+                (s, c) => s.C.Ok("note_wire_connect", new JsonObject { ["source"] = "Voice", ["target"] = "Lead" }),
+                (s, c, ck) =>
+                {
+                    var wires = J.Objects(s.C.Ok("note_wires")["wires"]).ToList();
+                    ck.Add("wire", wires.Count == 1 && J.Str(wires[0]["source"]) == "Voice" && J.Str(wires[0]["target"]) == "Lead", wires.Count == 1 ? $"{J.Str(wires[0]["source"])} to {J.Str(wires[0]["target"])}" : $"{wires.Count} note wires");
+                }),
+
             Guide("midi-mapping", "Guide: MIDI mapping",
                 "The song has a Neo Poly called Bass. Two hardware controllers are connected: Faders, whose eight knobs send controller numbers 21 to 28 on channel 1, and Pads, whose first pad sends note 36 on channel 10. " +
                 "Set the song up so that Faders' eight knobs are taught as one group, Faders' first knob drives Bass's F1 cutoff while Bass's track is the selected one (it is part of Bass's track, and the song keeps it), " +
