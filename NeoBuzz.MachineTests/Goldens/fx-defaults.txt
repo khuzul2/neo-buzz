@@ -133,7 +133,7 @@ Neo Exciter	Vocal — Bright and Present	9c09fcb6ee81cf0e	8ec9c11f9fcbf2da
 Neo Exciter	Drums — Crack and Sizzle	75de1a53cf3d33b8	1cb0618c66b6002c
 Neo Exciter	Bass — Add Harmonics to Be Heard on Small Speakers	0c0e05932ecd98b4	c860e1850c19d376
 Neo Exciter	Mid/Side — Air on the Sides	128e37c8c8776d31	4c2bc3ccebc42e33
-Neo Exciter	Old Exciter (Oomek-style)	239ea8eb43150437	d49828c020d12150
+Neo Exciter	Tube Exciter (Warm)	239ea8eb43150437	d49828c020d12150
 Neo Filter	(defaults)	067b7bcfbd49291f	8fb7001253cdc9a4
 Neo Filter	Sweep — Ladder Low-Pass (1 Bar)	6d860f55eab4c331	1d5a1c8a85535048
 Neo Filter	Sweep — Slow Rise (4 Bars, Saw)	10caa1abb3b2110c	3c36f6871522d437
@@ -159,7 +159,7 @@ Neo Gate	Drums — Toms, Gentle Expander	43ed4f8e22112717	faa35eb0c3ffd71f
 Neo Gate	Vocals — Soft Gate Between Phrases	7efaea5b6ca831e2	f8688b5a508e509d
 Neo Gate	Bass — Tighten the Tail	3da23e061efdfe26	16d37063751f98e1
 Neo Gate	Noise — Hiss Between Takes	7e954f1ad8d42d02	e688ccbdcbd614a1
-Neo Gate	Pedal Gate — Same Settings	b795c8ef5c74c6d8	01e01776521a4cf8
+Neo Gate	Gate — Reference Settings	b795c8ef5c74c6d8	01e01776521a4cf8
 Neo Imager	(defaults)	f649f96ead527a25	bb58432187874b88
 Neo Imager	Mastering — Widen the Highs	3fd5045bc127cf65	146956581afc561d
 Neo Imager	Mastering — Focus the Lows (Mono Below 150 Hz)	b0ef5a4c987a83b1	be3358a360485e4a
