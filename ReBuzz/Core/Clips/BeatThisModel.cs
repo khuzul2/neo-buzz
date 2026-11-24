@@ -221,8 +221,8 @@ namespace ReBuzz.Core.Clips
         /// <summary>AW4b: beats to a fraction of a frame (a parabola through the logit's top), off: the picked frames.</summary>
         internal static bool SubFrame = true;
 
-        /// <summary>AW4b: ms added to every beat (negative: earlier). The network's beats sit late against the attacks; this is the measured median (docs/specs/neo-audio.md, AW4b).</summary>
-        internal static double ShiftMs = 0;
+        /// <summary>AW4b: ms added to every beat (negative: earlier). The network's beats sit 10 to 12 ms late against the strong onsets on the sets it was not trained on (AAM +11.5, GTZAN +10.6; its frames are not the cause: the front end matches the reference's and the reference is as late); the default is the measured median, rounded (docs/specs/neo-audio.md, AW4b).</summary>
+        internal static double ShiftMs = -10;
 
         /// <summary>The raw answer: logits for every frame, and the beats and downbeats (frames of 20 ms) the reference's post-processor takes from them.</summary>
         internal sealed class Result

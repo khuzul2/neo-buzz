@@ -13,6 +13,10 @@ CLIPS = [("gmd_drummer5_session2_1", 100), ("gmd_drummer5_session2_2", 110), ("g
          ("gmd_drummer9_session1_19", 110), ("gmd_drummer9_session1_18", 140), ("cd_zavala.muniz.2014_54", 110), ("cd_zavala.muniz.2014_50", 110)]
 
 d, lst, rd = sys.argv[1:4]
+if len(sys.argv) > 4 and sys.argv[4] == "r4":
+    # Round 4 (AW4b): the eight clips of round 3 the listener preferred AW2 on.
+    keep = ["cd_csic.1995_cuareim_03", "gs_04_BN3-154-E_solo", "gmd_drummer5_session2_2", "aam_2458", "aam_1006", "gs_04_Funk1-114-Ab_comp", "gs_05_Rock1-130-A_solo", "aam_1066"]
+    CLIPS = [c for c in CLIPS if c[0] in keep]
 rows = []
 readme = ["Auto-warp listening pack, round 3 (AW4): 40 s windows of held-out clips, played at a render tempo against a click on the grid (a higher, louder tick on each bar line), warped with Signalsmith Stretch", ""]
 for name, bpm in CLIPS:

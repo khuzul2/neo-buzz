@@ -438,3 +438,26 @@ Auto-warp's beats now come first from a small pretrained network (the published 
 The raw network without the grid step (`bt_raw`) has downbeat F 0.911 on AAM and 0.638 on GuitarSet: the markers (a fixed number of beats a bar, one phase) cost downbeats where the music does not keep the grid's bar. Measure only, all files: GTZAN (998 files, not in the network's data) AW2 F70 0.788 / down F 0.427 / bar 1 0.434, AW4 0.854 / 0.701 / 0.719; Ballroom* (698) AW2 0.743 / 0.439 / 0.375, AW4 0.933 / 0.760 / 0.729. The analysis time is 0.8 s a file on a 30 s excerpt (27 ms a second of audio) against AW2's 0.09 s.
 
 **The gates, honestly.** Downbeat F is higher than AW2's on every set (met). Beat F at +-70 ms is at least AW2's on three sets and **not on AAM (0.907 against 0.960)**: on nine of the 54 AAM files the network follows the beat at half the annotated tempo (82 BPM against 164 BPM), and AW2 was trained on AAM's own annotation conventions; with those nine out the figures are 0.917 against 0.962. The three clips AW2 failed in round 2: bar 1 is right on gmd_drummer5_session2_2 (down F 1.00) and aam_1006, and not on gs_04_Funk1-114-Ab_comp (right with reach 25) (met: 2 of 3); aam_1006 is 113 BPM at beat F 0.75, so it is better placed but not better tracked. **Speed is not met**: a 10-minute file takes 11.8 s all included on the 4-core CI runner (the network 11.2 s: 22 windows of 30 s, each about 1 s of one core on a development machine and about 2 s on a CI core), against the 6 s asked; the quadratic attention of a 1500-frame window is the cost, and a shorter window would break parity. The model loads once and is kept.
+
+#### AW4b: the late grid
+
+The round-3 listening (the new source against shipped AW2: 3 for the new source, 9 for AW2, 4 the same; 5 to 2 for AW2 in the rested first half) found the new grid off the beat. The AW4 table already showed why: the grid sat +6 to +13 ms behind the strong onsets on every set (AW2: -1 to -3 ms), a lateness F at +-70 ms does not see.
+
+**Cause.** Not our front end or decode: the spectrogram, the logits and the picked frames equal the reference's (the parity job), frame i is centred on sample 441 i (the reference's own convention, with the signal reflected at both ends), and the resampler has no delay (an impulse at 1.000 s of a 44.1 or 48 kHz signal comes out at 1.000 s). The reference network itself puts its beats late: against AAM's annotations (made from the exact note times) its beats are +14.8 ms (median) and Candombe's +12.0 ms, and against the strong onsets +11.5 ms (AAM), +10.6 ms (GTZAN, not in its training data); on Groove MIDI and GuitarSet, whose annotations lag the hits (Groove MIDI's by 12.7 ms), its beats sit on the annotations (median 0 ms) and so 13 and 6 ms behind the hits. It was trained on annotations that follow the hit, not lead it, and learned that. So the fix is a measured compensation, not a front-end change: **a shift of -10 ms** (`BeatThisTracker.ShiftMs`), the median of the two sets the network was not trained on, rounded.
+
+**Sub-frame timing.** `BeatThisFront.Refine` moves each picked frame to the top of the parabola through the logit at the frame and its two neighbours (at most half a frame); the picked frames, and so the parity with the reference, are not changed. It moves nothing on average (the median offset changes by 0.0 to 0.2 ms) and F at +-25 ms by about +0.004 on AAM: the beat is as scattered as the network makes it, not as coarse as the frame is. Kept (it costs nothing, and the grid no longer lands only on multiples of 20 ms).
+
+**Attack snap (reach).** Kept as a setting, **off**: after the shift it still brings every set within 3 ms of the onsets, but it lowers beat F at +-25 ms on every set (AAM 0.848 to 0.798 with reach 15, GMD 0.783 to 0.708, GTZAN 0.646 to 0.615) and F at +-70 ms and downbeat F on AAM (0.907 to 0.860, 0.855 to 0.800).
+
+**Measured** (test halves; the shift sweep is in the AW4b report: -6, -10, -14 ms and reach 0, 15, 25). Shift -10 ms, sub-frame on, reach 0, against the same network before (`aw4_old`) and AW2:
+
+| set | AW2 F25 / F70 / down F | AW4 old F25 / on-onset | AW4b F25 / F70 / down F / bar 1 | AW4b on-onset |
+|---|---|---|---|---|
+| AAM | 0.958 / 0.960 / 0.791 | 0.772 / +11.3 | 0.848 / 0.907 / 0.855 / 0.870 | +1.3 |
+| GTZAN | 0.582 / 0.788 / 0.427 | 0.714 / +10.5 | 0.646 / 0.851 / 0.699 / 0.719 | +0.7 |
+| Candombe* | 0.948 / 0.985 / 0.982 | 0.826 / +6.5 | 0.927 / 0.998 / 0.998 / 1.000 | -2.4 |
+| GuitarSet* | 0.487 / 0.648 / 0.445 | 0.540 / +6.1 | 0.527 / 0.676 / 0.548 / 0.542 | -2.1 |
+| GMD* | 0.700 / 0.831 / 0.611 | 0.850 / +13.0 | 0.783 / 0.931 / 0.923 / 0.957 | +5.2 |
+| Ballroom* | 0.638 / 0.743 / 0.439 | 0.817 / +5.7 | 0.799 / 0.932 / 0.760 / 0.731 | -4.4 |
+
+The grid is within 3 ms of the onsets on AAM, GTZAN, Candombe and GuitarSet, and not on Groove MIDI (+5.2: its annotations lag the hits, the network learned that) and Ballroom (-4.4). F at +-25 ms is above AW2's on GTZAN and not on AAM (0.848 against 0.958: AW2 was fitted to AAM's convention; the network's beats scatter about 14 ms around the line). Downbeat F and bar 1 keep all their gains.

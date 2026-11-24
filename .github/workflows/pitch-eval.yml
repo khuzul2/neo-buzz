@@ -137,7 +137,7 @@ on:
         type: string
         default: '120'
       aw3:
-        description: 'AW3 and AW4 (turn the other jobs off): words "sweep" (the timing fixes on the halves of half=, default val; reach=0,25,35 is the attack reach in ms, resid=inf:inf,30:60 the residual bounds p95:max in ms) and/or "pack" (the listening pack v2); AW4: "bt-parity", "bt-eval" (the test halves of GMD, GuitarSet, Candombe and AAM, AW1 against AW2, AW3 and the pretrained network), "bt-measure" (GTZAN and Ballroom, measure only), "bt-speed" (a 10-minute file) and "bt-listen" (the round-3 listening pack)'
+        description: 'AW3 and AW4 (turn the other jobs off): words "sweep" (the timing fixes on the halves of half=, default val; reach=0,25,35 is the attack reach in ms, resid=inf:inf,30:60 the residual bounds p95:max in ms) and/or "pack" (the listening pack v2); AW4: "bt-parity", "bt-eval" (the test halves of GMD, GuitarSet, Candombe and AAM, AW1 against AW2, AW3 and the pretrained network), "bt-measure" (GTZAN and Ballroom, measure only), "bt-speed" (a 10-minute file) "bt-listen" (the round-3 listening pack) and "bt-round4" (the round-4 pack, 8 clips of 15 s)'
         type: string
         default: ''
       guitarset_every:
@@ -1791,4 +1791,44 @@ jobs:
       with:
         name: aw4-renders
         path: aw4-renders/
+        retention-days: 14
+
+  bt-round4:
+    if: ${{ contains(github.event.inputs.aw3, 'bt-round4') }}
+    needs: [aw3-items, bt-model]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - uses: actions/download-artifact@v7
+      with:
+        name: bt-model
+        path: bt-model
+    - name: Build the tools
+      run: |
+        dotnet build tools/AutoWarpEval -c Release -o aw4-tool 2>&1 | tail -3
+        g++ -O2 -std=c++17 -I NeoStretch/third_party tools/aw2/warp.cpp -o aw4-tool/aw2warp
+    - name: The round-4 pack (8 clips of round 3, 15 s each, the new source and AW2 as shipped)
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile
+        mkdir -p all; for d in items/*; do case "$d" in */bt-model) ;; *) cp $d/* all/ ;; esac; done
+        python3 tools/aw2/aw4packlist.py all pack-list.txt pack-readme.txt r4
+        AW4_SECONDS=15 dotnet aw4-tool/AutoWarpEval.dll --pack4 aw4-renders-r4 aw4-tool/aw2warp pack-list.txt bt-model/bt-model/beat_this_small.onnx | tee pack-log.txt
+        cp pack-readme.txt pack-list.txt pack-log.txt aw4-renders-r4/
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw4-renders-r4
+        path: aw4-renders-r4/
         retention-days: 14

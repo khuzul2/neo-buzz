@@ -18,13 +18,14 @@ namespace NeoBuzz.AutoWarpEval
             var bt = Aw4Commands.LoadNet(a[at + 3]);
             var aw2 = Aw2Commands.LoadModel("embedded");
             BeatThisTracker.AttackReachMs = double.Parse(Environment.GetEnvironmentVariable("AW4_REACH") ?? "0", CultureInfo.InvariantCulture);
+            double seconds = double.Parse(Environment.GetEnvironmentVariable("AW4_SECONDS") ?? "40", CultureInfo.InvariantCulture);       // the length of each excerpt (round 4: 15)
             int n = 0;
             foreach (var line in File.ReadLines(list))
             {
                 var p = line.Split('\t');
                 if (p.Length < 2) continue;
                 var (x, rate) = Wav.Read(p[0]);
-                int s0 = Math.Min(x.Length / 4, 10 * rate), len = Math.Min(x.Length - s0, 40 * rate);
+                int s0 = Math.Min(x.Length / 4, 10 * rate), len = Math.Min(x.Length - s0, (int)(seconds * rate));
                 var w = new float[len];
                 Array.Copy(x, s0, w, 0, len);
                 double song = double.Parse(p[1], CultureInfo.InvariantCulture);
