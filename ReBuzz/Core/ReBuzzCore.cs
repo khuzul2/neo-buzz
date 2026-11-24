@@ -1707,7 +1707,7 @@ namespace ReBuzz.Core
                 // Fork (docs/specs/clips.md §7.1, CU3): after the machines and the engine columns, the clips of every machine move into the
                 // store, in memory (the file is never written), and each pattern editor is told to view it. Where the engine plays every lane.
                 if (PatternColumnCore.PlaysEveryLane)
-                    ClipOpen.Run(this, OpenedNativeVersion >= 3);
+                    ClipOpen.Run(this, OpenedNativeVersion >= 3 || NblCoreSections.IsSnapshot(filename));       // a snapshot is cut from the live song: its lanes are in the store's columns
 
                 SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
                 if (!restore)
