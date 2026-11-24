@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using BuzzGUI.Interfaces;
 
 namespace ReBuzz.Core.NoteWires
@@ -92,6 +93,19 @@ namespace ReBuzz.Core.NoteWires
         {
             return new NoteWireState(Wires.Where(w => exists(w.From) && exists(w.To)),
                 Chains.Where(c => exists(c.Instrument)).Select(c => new NoteChain(c.Instrument, c.Inserts.Where(exists).ToArray())));
+        }
+
+        /// <summary>The saved form (the "NoteWires" subsection): <c>&lt;NoteWires version="1"&gt;&lt;Wire from to/&gt;&lt;Track instrument&gt;&lt;Insert name/&gt;&lt;/Track&gt;&lt;/NoteWires&gt;</c>.</summary>
+        public XElement ToXml(int version) =>
+            new XElement("NoteWires", new XAttribute("version", version),
+                Wires.Select(w => new XElement("Wire", new XAttribute("from", w.From), new XAttribute("to", w.To))),
+                Chains.Select(c => new XElement("Track", new XAttribute("instrument", c.Instrument), c.Inserts.Select(n => new XElement("Insert", new XAttribute("name", n))))));
+
+        public static NoteWireState FromXml(XElement root)
+        {
+            var wires = root.Elements("Wire").Select(w => new NoteEdge((string)w.Attribute("from"), (string)w.Attribute("to"))).Where(e => !string.IsNullOrEmpty(e.From) && !string.IsNullOrEmpty(e.To));
+            var chains = root.Elements("Track").Select(t => new NoteChain((string)t.Attribute("instrument"), t.Elements("Insert").Select(i => (string)i.Attribute("name")).Where(n => !string.IsNullOrEmpty(n)).ToArray())).Where(c => !string.IsNullOrEmpty(c.Instrument));
+            return new NoteWireState(wires, chains);
         }
 
         public bool SameAs(NoteWireState o)

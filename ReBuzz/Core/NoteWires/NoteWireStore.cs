@@ -315,9 +315,7 @@ namespace ReBuzz.Core.NoteWires
             if (live.IsEmpty) return;
             var stream = save.CreateSubSection(SubSectionName);
             if (stream == null) return;
-            var root = new XElement("NoteWires", new XAttribute("version", FormatVersion),
-                live.Wires.Select(w => new XElement("Wire", new XAttribute("from", w.From), new XAttribute("to", w.To))),
-                live.Chains.Select(c => new XElement("Track", new XAttribute("instrument", c.Instrument), c.Inserts.Select(n => new XElement("Insert", new XAttribute("name", n))))));
+            var root = live.ToXml(FormatVersion);
             var bytes = new UTF8Encoding(false).GetBytes(root.ToString(SaveOptions.DisableFormatting));
             stream.Write(bytes, 0, bytes.Length);
             stream.Flush();
@@ -336,7 +334,7 @@ namespace ReBuzz.Core.NoteWires
                     if (version > FormatVersion)
                         buzz.DCWriteLine($"Note wires: saved by a newer version ({version}); not read.", DCLogLevel.Warning);
                     else
-                        state = Parse(root);
+                        state = NoteWireState.FromXml(root);
                 }
             }
             catch (Exception e)
@@ -346,13 +344,6 @@ namespace ReBuzz.Core.NoteWires
             AdoptLegacy();
             Rebuild();
             Changed?.Invoke();
-        }
-
-        internal static NoteWireState Parse(XElement root)
-        {
-            var wires = root.Elements("Wire").Select(w => new NoteEdge((string)w.Attribute("from"), (string)w.Attribute("to"))).Where(e => !string.IsNullOrEmpty(e.From) && !string.IsNullOrEmpty(e.To));
-            var chains = root.Elements("Track").Select(t => new NoteChain((string)t.Attribute("instrument"), t.Elements("Insert").Select(i => (string)i.Attribute("name")).Where(n => !string.IsNullOrEmpty(n)).ToArray())).Where(c => !string.IsNullOrEmpty(c.Instrument));
-            return new NoteWireState(wires, chains);
         }
     }
 }
