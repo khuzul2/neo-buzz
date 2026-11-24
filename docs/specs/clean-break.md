@@ -57,3 +57,10 @@ Keep the smallest piece and say why (section 2, item 1 is the first case). Each 
 | Piece kept | Why |
 |---|---|
 | `NblCoreSections` (was `BMXFile`) and the string `bmx-sections-v1` | `.nbl` v1 to v3 core sections are in this codec |
+
+## 7. Stage 2 result (our own files)
+
+- `Other/Templates/Songs/*.nbl` (the two song templates) name only Master, Neo machines, Dye Essence and the Modern Pattern Editor: nothing to convert.
+- `Other/Templates/Examples/Multi-Channel Out Example.xml` named only old machines (FSM Infector, Jeskola Cross Delay, QuickNote): deleted. Nothing read it (`TrademarkTests` scanned the folder; the scan is removed).
+- Presets of Neo machines are Neo format. The presets of old machines (`Machines/Manifests/*/*.prs.xml`, `*.presets.txt`) go with their machines in stage 5.
+- No default song or gallery song of the Studio is stored in an old format (they are built in code or `.nbl`).
