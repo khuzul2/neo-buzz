@@ -788,6 +788,7 @@ namespace ReBuzz.MachineManagement
                     }
                 }
 
+                Machine.NoteNode?.Deliver(buzz);        // fork (note-wires.md): the notes its wires carried this block, before its Work
                 Machine.IsActive = WorkMachine(nSamples);
 
                 // Some machines report the active state wrong, double check

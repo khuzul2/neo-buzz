@@ -191,6 +191,7 @@ namespace ReBuzz.FileOps
             ["Arrangement"] = "arrangement lane roles, folded tracks and parameter lanes",
             ["ArrangementEvents"] = "clip trims, gain, ids and loops",
             ["TrackColours"] = "track colours",
+            ["NoteWires"] = "note wires and note inserts",
         };
 
         public static ExportReport Analyze(ReBuzzCore buzz, IEnumerable<string> subSections, SaveSongCore audio = null)
