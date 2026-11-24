@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Views.Midi
             selection.Changed += source =>
             {
                 if (ReferenceEquals(source, Token)) return;
-                mapping.Select(selection.Machine, Token);
+                mapping.Select(selection.Machine, Token, arm: source is not Views.Session.SessionView);
             };
             mapping.SelectionChanged += source =>
             {

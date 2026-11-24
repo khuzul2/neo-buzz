@@ -26,7 +26,7 @@ Knob moves are recorded as automation through `RecordControlChange`. A message a
 
 ## Selection
 
-Selecting a track arms it exclusively (hand-armed tracks stay armed). The track selector "◀ track name ▶" with a muted chip ("2 devices"; which ones is its tooltip) sits at the right end of the view strip's row under the top bar: in the transport bar it wrapped Lock, Keys and the device picker onto a second row at 1440 px, and shifted every view under it at 1280 px, so the bar keeps the height it had; the "K7 is free" notice takes the chip's place for a few seconds; Alt+Up / Alt+Down (and two mappable commands) select the previous / next track.
+Selecting a track arms it exclusively (hand-armed tracks stay armed), except a pick in the Session View: there an armed track's empty slots turn into record buttons (they lose their stop button), so the keys and knobs follow the pick and nothing is armed for it. The track selector "◀ track name ▶" with a muted chip ("2 devices"; which ones is its tooltip) sits at the right end of the view strip's row under the top bar: in the transport bar it wrapped Lock, Keys and the device picker onto a second row at 1440 px, and shifted every view under it at 1280 px, so the bar keeps the height it had; the "K7 is free" notice takes the chip's place for a few seconds; Alt+Up / Alt+Down (and two mappable commands) select the previous / next track.
 
 ## Studio
 

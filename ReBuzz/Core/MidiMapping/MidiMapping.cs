@@ -293,13 +293,13 @@ namespace ReBuzz.Core
             return list;
         }
 
-        /// <summary>Selects the track of a machine (null: none): its keys and knobs follow. False when nothing changed.</summary>
-        public bool Select(IMachine machine, object source = null)
+        /// <summary>Selects the track of a machine (null: none): its keys and knobs follow, and (<paramref name="arm"/>) it is armed for input when auto-arm is on. False when nothing changed.</summary>
+        public bool Select(IMachine machine, object source = null, bool arm = true)
         {
             if (machine != null && !InSong(machine)) machine = null;
             if (ReferenceEquals(machine, selected)) return false;
             selected = machine;
-            ApplyAutoArm();
+            ApplyAutoArm(arm);
             Rebuild();
             SelectionChanged?.Invoke(source);
             Changed?.Invoke();
@@ -362,11 +362,11 @@ namespace ReBuzz.Core
         /// The selected track's generator is armed for input, and the one selecting armed before is not (a track a person armed stays armed, for
         /// recording several at once). A machine that is not a note generator, or has no track in the Session View yet, is not armed.
         /// </summary>
-        void ApplyAutoArm()
+        void ApplyAutoArm(bool arm = true)
         {
             var layout = buzz.SessionLayout;
             if (layout == null) return;
-            var head = autoArm ? SelectedGenerator : null;
+            var head = autoArm && arm ? SelectedGenerator : null;     // arm false: a pick in the Session View, where an armed track's empty slots turn into record buttons: the keys follow it, nothing is armed
             if (autoArmed != null && !ReferenceEquals(autoArmed, head))
             {
                 var was = autoArmed;
