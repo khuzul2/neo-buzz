@@ -57,10 +57,10 @@ for codec in mpg123 vorbis FLAC ogg; do
   ls "$macos/libs" | grep -qi "$codec" || { echo "the bundle's libs/ has no $codec library (libsndfile needs it to import audio)" >&2; exit 1; }
 done
 
-# The app icon: ReBuzz's own (ReBuzz/rebuzzlogo.ico holds one 256 px PNG), as an .icns up to 256 px.
+# The app icon: the studio's (ReBuzz.Studio/AppIcon.ico holds one 256 px PNG), as an .icns up to 256 px.
 iconset="$out/AppIcon.iconset"
 rm -rf "$iconset" && mkdir -p "$iconset"
-python3 - "$root/ReBuzz/rebuzzlogo.ico" "$iconset/source.png" <<'PY'
+python3 - "$root/ReBuzz.Studio/AppIcon.ico" "$iconset/source.png" <<'PY'
 import struct, sys
 data = open(sys.argv[1], 'rb').read()
 count = struct.unpack('<H', data[4:6])[0]
