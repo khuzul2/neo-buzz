@@ -193,31 +193,6 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AMachineWhosePolicyRefusesEditsGetsNoWriteFromTheLaneOrTheEditorAndNoUndoStep([Values(false, true)] bool arrangement)
-        {
-            using var rig = new Rig("Lead");
-            var clip = Clip.Open(rig, arrangement);
-            rig.Click(clip.P(4, 0.5));
-            string before = clip.Points();
-            int steps = Core.SongCore.ActionStack.Actions.Count();
-            ClipEditPolicy.Rule = m => "These clips are view only.";
-            using var restore = Studio.AfterTest(() => ClipEditPolicy.Rule = null);
-            rig.Click(clip.P(8, 0.5));
-            Assert.That(clip.Lane.Refusal, Is.EqualTo("These clips are view only."), "the lane says why");
-            rig.Drag(clip.PointP(4 * TB), clip.P(6, 0.9));
-            rig.Click(clip.PointP(4 * TB));
-            rig.Key(PhysicalKey.R);
-            rig.Key(PhysicalKey.Delete);
-            Assert.That(clip.Lane.PasteAt(8 * TB), Is.True.Or.False);
-            Assert.That(clip.Points(), Is.EqualTo(before), "nothing was written");
-            Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps), "no undo step");
-            Assert.That(new ClipEnvelopeEditor(Core).AddPoint(ClipEnvelopes.Read(clip.Pattern, clip.Key), 0, 1), Is.EqualTo("These clips are view only."));
-            ClipEditPolicy.Rule = null;
-            rig.Click(clip.P(8, 0.5));
-            Assert.That(clip.Points(), Is.Not.EqualTo(before), "allowed again");
-        }
-
-        [AvaloniaTest]
         public void AGestureThatShiftHoldsMovesOffTheGrid()
         {
             using var rig = new Rig("Lead");
@@ -240,7 +215,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the files
 
         [AvaloniaTest]
-        public void ACurveAndAPerTrackChoiceAreSavedAndReopened([Values(".nbl", ".bmx", ".bmxml")] string extension, [Values(false, true)] bool arrangement)
+        public void ACurveAndAPerTrackChoiceAreSavedAndReopened([Values(".nbl")] string extension, [Values(false, true)] bool arrangement)
         {
             using var rig = new Rig("Lead");
             var clip = Clip.Open(rig, arrangement);

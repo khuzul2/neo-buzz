@@ -230,7 +230,6 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         if (SongModel.IsMaster(m)) throw new ToolError("Master doesn't play notes.");
-                        if (ClipEditPolicy.AgentRefusal(m) is { } why) throw new ToolError(why);       // clips.md §5.7: an old machine's clips are view only
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
                         int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
                         var problems = new List<string>();

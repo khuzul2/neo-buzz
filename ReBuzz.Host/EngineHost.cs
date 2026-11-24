@@ -41,8 +41,7 @@ namespace ReBuzz.Host
         public IKeyboard Keyboard { get; init; } = new NoKeyboard();
 
         /// <summary>
-        /// Windows' native machine hosts (bin32, bin64) take a window of the app as their parent (step 2); the studio gives its
-        /// main window's handle once the window exists. Null or zero: none, as in a headless host.
+        /// The studio's main window handle (step 2), given once the window exists. Null or zero: none, as in a headless host.
         /// </summary>
         public Func<IntPtr> ParentWindow { get; set; }
     }
@@ -189,7 +188,7 @@ namespace ReBuzz.Host
             step("engine step 1");
             init.StartReBuzzEngineStep1((s, e) => { });
             step("engine step 2");
-            init.StartReBuzzEngineStep2(services.ParentWindow?.Invoke() ?? IntPtr.Zero);       // no HWND off Windows: native machines have no parent for their GUIs
+            init.StartReBuzzEngineStep2(services.ParentWindow?.Invoke() ?? IntPtr.Zero);       // no HWND off Windows
             step("engine step 3 (gear scan)");
             init.StartReBuzzEngineStep3(engineSettings, new Observer());
             var machineDb = new MachineDatabase(core, buzzPath, services.Dispatcher, engineSettings);

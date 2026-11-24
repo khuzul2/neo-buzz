@@ -1,9 +1,9 @@
 #nullable disable
-// Neo Gate (docs/specs/mastering-tools.md §5.13): the successor of Pedal Gate, and a downward expander.
+// Neo Gate (docs/specs/mastering-tools.md §5.13): a noise gate and a downward expander.
 //  - The key (the input, or input 2) goes through KeyDetector, the detector Neo De-esser shares: a high-pass and a
-//    low-pass (off at their ends), then a linked Peak follower (attack 1 ms, release 10 ms: Pedal Gate's) or a 10 ms RMS
-//    average read on the stereo power sum (Pedal Gate's), in dB.
-//  - Pedal Gate's state machine, kept: Closed → Attack when the level reaches the threshold; Open until it falls under
+//    low-pass (off at their ends), then a linked Peak follower (attack 1 ms, release 10 ms) or a 10 ms RMS
+//    average read on the stereo power sum, in dB.
+//  - The state machine: Closed → Attack when the level reaches the threshold; Open until it falls under
 //    the close threshold (threshold − hysteresis), then Hold for the hold time, then Release; a level back over the
 //    threshold during Release or Attack re-opens. The gain moves in linear ramps (1 / attack, 1 / release per sample),
 //    so the same settings open and close the same way.

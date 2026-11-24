@@ -71,11 +71,9 @@ namespace WDE.ModernPatternEditor
                 if (v == column.PatternColumn.Parameter.NoValue)
                     return new string('.', column.DigitCount);
 
-#if !WINDOWS
                 // Fork (ux-overhaul.md P3c): decimal, and a drum machine's names for its notes.
                 if (column.IsDecimal) return v.ToString(column.decimalFormat);
                 if (column.PatternColumn.Parameter.Type == ParameterType.Note && v != BuzzNote.Off && column.NoteName(v) is string name) return name;
-#endif
                 return column.PatternColumn.Parameter.GetHexValueString(v);
             }
 
@@ -206,7 +204,6 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-#if !WINDOWS
         // Fork (ux-overhaul.md P3c): byte, word and switch values in decimal when ValueDisplay says so: the digits of the
         // parameter's largest value (0 for a column that stays hex: notes, ASCII, negative minimums).
         int decimalDigits = -1;
@@ -247,15 +244,12 @@ namespace WDE.ModernPatternEditor
             if (!(buzzNote >= BuzzNote.Min && buzzNote <= BuzzNote.Max)) return null;
             return MachineNoteNames.For(PatternColumn.Machine)?.Name(BuzzNote.ToMIDINote(buzzNote));
         }
-#endif
 
         public virtual int DigitCount
         {
             get
             {
-#if !WINDOWS
                 if (IsDecimal) return decimalDigits;
-#endif
                 switch (PatternColumn.Parameter.Type)
                 {
                     case ParameterType.Note: return 3;
@@ -278,7 +272,6 @@ namespace WDE.ModernPatternEditor
         public virtual string Description { get { return PatternColumn.Parameter.Description; } }
         public virtual ColumnRenderer.IBeat FetchBeat(int index) { return new Beat(this, index); }
 
-#if !WINDOWS
         /// <summary>Fork (daw-modes.md AR3): a column that isn't one of the editor's own (the Notes lanes, NoteLaneColumn): no editor column behind it.</summary>
         protected ParameterColumn(ParameterColumnSet set, IPatternColumn pc, int track)
         {
@@ -287,7 +280,6 @@ namespace WDE.ModernPatternEditor
             this.PatternColumn = pc;
             this.track = track;
         }
-#endif
 
         public ParameterColumn(ParameterColumnSet set, IPatternColumn pc, int track, int rpb)
         {
@@ -357,7 +349,6 @@ namespace WDE.ModernPatternEditor
                     else
                         return null;
                 }
-#if !WINDOWS
                 else if (IsDecimal)
                 {
                     // Fork (ux-overhaul.md P3c, decision 51): the digit at the cursor is replaced by the one typed, the others
@@ -367,7 +358,6 @@ namespace WDE.ModernPatternEditor
                     digits[d.Index] = (char)('0' + newvalue);
                     value = int.Parse(new string(digits), System.Globalization.CultureInfo.InvariantCulture);
                 }
-#endif
                 else if (DigitCount == 2)
                 {
                     if (beat.HasValue(d.RowInBeat))

@@ -161,7 +161,7 @@ namespace NeoBuzz.Machine
             }
             catch (Exception ex)
             {
-                // A control machine's fault must not stop the engine (as the Pedal control machines do): kept for the editor.
+                // A control machine's fault must not stop the engine: kept for the editor.
                 Fault = ex.GetType().Name + ": " + ex.Message;
             }
         }

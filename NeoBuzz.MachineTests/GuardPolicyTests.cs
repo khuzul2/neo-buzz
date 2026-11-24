@@ -1,4 +1,4 @@
-// The guard policy (ReBuzzTests/Automation/GuardPolicy.cs) must forgive a runner's one-off noise and never a real regression:
+// The guard policy (GuardPolicy.cs) must forgive a runner's one-off noise and never a real regression:
 // a block that allocates every time still fails an allocation check, a workload twice as slow still fails a throughput guard,
 // while a one-off allocation and a one-off slow measurement pass on the retry.
 

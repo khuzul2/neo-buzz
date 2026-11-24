@@ -14,7 +14,7 @@
 // evidence it rests on, and per parameter a plain-English name, a role (ManifestRoles) and a mapping
 // that is exact (no unit read from a description alone). It lives where the draft did and replaces it.
 // U6 (§12.13): a manifest generated from a machine's source ("status": "generated", tools/source_manifests.py)
-// for the Pedal effects and ReBuzz's own machines: names, ranges and texts from its [ParameterDecl]s, units and
+// for the studio's own machines: names, ranges and texts from its [ParameterDecl]s, units and
 // mappings from the code that uses them, exact; it keeps the profile's measurements as a curated one does.
 
 using System;
@@ -62,7 +62,7 @@ namespace ReBuzz.Agent.Model
         /// <summary>What the profiler measured behind <see cref="SuggestedRole"/> ("min → max: the −3 dB corner 120 Hz → 9.8 kHz").</summary>
         public string RoleEvidence { get; init; } = "";
         /// <summary>
-        /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0.1 ms" for
+        /// False when the machine's own value texts don't say what it does (an Attack that reads "0.1 ms" for
         /// 10 ms: a descriptor that scales the raw value): its values are read and written through the mapping only.
         /// </summary>
         public bool OwnTexts { get; init; } = true;
@@ -71,7 +71,7 @@ namespace ReBuzz.Agent.Model
     /// <summary>
     /// The roles a curated manifest gives its parameters (mcp-server.md §12.2, §12.9): what a parameter does,
     /// the same word on every machine, so a cutoff maps to a cutoff and a wet level to a wet level
-    /// (machine_replace, U5). Dotted: area, then what.
+    /// (the manifests, U5). Dotted: area, then what.
     /// </summary>
     public static class ManifestRoles
     {
@@ -323,8 +323,6 @@ namespace ReBuzz.Agent.Model
         /// <summary>Curated: what its claims rest on (its source files, documentation, the profile, its value texts).</summary>
         public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
         public bool IsCurated => Status == "curated";
-        /// <summary>Fork (docs/specs/clips.md §5.7, CU3): the machine's clips can be edited in the Studio. Absent: an old machine, whose clips are view only (they keep playing).</summary>
-        public bool ClipEdit { get; init; }
         /// <summary>U6: generated from the machine's source (its parameter declarations and the code that uses them), not profiled guesswork.</summary>
         public bool IsGeneratedFromSource => Status == "generated";
 
@@ -336,7 +334,7 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// The entry for the machine's parameter at <paramref name="index"/> in its group, named <paramref name="name"/>:
-        /// by name, and among parameters that share a name (FSM Infector's " - Decay"), the one at that index.
+        /// by name, and among parameters that share a name (a " - Decay"), the one at that index.
         /// </summary>
         public ManifestParameter FindAt(bool track, int index, string name)
         {
@@ -412,7 +410,6 @@ namespace ReBuzz.Agent.Model
                 Parameters = parameters,
                 TrackParameters = trackParameters,
                 Status = (string)root["status"] ?? "",
-                ClipEdit = (bool?)root["clipEdit"] ?? false,
                 Type = (string)root["type"] ?? "",
                 Notes = notes,
                 NoteMap = noteMap,

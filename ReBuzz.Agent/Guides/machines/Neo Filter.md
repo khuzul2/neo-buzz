@@ -54,10 +54,6 @@ Neo Poly's filters as an effect: the transistor ladder and the state-variable fi
 
 - Neo Drive before it for fuzz into a filter; Neo Ensemble or Neo Delay after it for movement; Neo Poly and Neo Wave as the source.
 
-## Successor
-
-Neo Filter replaces Pedal Filter, Jeskola Filter, Jeskola Filter 2 and FSM WahMan: `machine_replace(machine="Filter")` carries their settings over.
-
 ## Checklist
 
 - [ ] `machine_add(gear="Neo Filter", name="Filter", insert_after="Bass")`, then `preset_load(machine="Filter", preset="Auto-Wah — Funky (Band-Pass)")`.

@@ -1,2 +1,0 @@
-SUBDIRS = M3 M4 M4wII
-

@@ -2,9 +2,7 @@
 # tables whose meaning is known; U2 (docs/specs/machine-safety.md §3.1): the health categories
 # (diverging, hot, needs a window), which effects get swept and the safe range's edge; U2 in depth
 # (mcp-server.md §12.12): tools/machine_roles.py's measurements on synthetic signals, the suggested
-# roles from features, the harmonic sieve and the hot ends that get a range. U6 (§12.13): the manifests generated
-# from the machines' source (tools/source_manifests.py) are what their source generates, and its fits are exact. U7
-# (§12.14): so are the natives' (tools/native_manifests.py), read from their C++ declarations and DescribeValue.
+# roles from features, the harmonic sieve and the hot ends that get a range.
 # Run: python3 -m unittest discover -s tools -p "test_machine_infer.py"
 
 import math
@@ -15,8 +13,6 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import machine_infer as mi  # noqa: E402
 import machine_roles as mr  # noqa: E402
-import source_manifests as sm  # noqa: E402
-import native_manifests as nm  # noqa: E402
 
 
 def table(fmt, lo, hi, f, step=1):
@@ -609,82 +605,6 @@ class HotEndTests(unittest.TestCase):
         self.assertFalse(mi.rings("Wet out", 40.0, 0.0))
         self.assertTrue(mi.level_control("Makeup Gain") and mi.level_control("Dry thru"))
         self.assertFalse(mi.level_control("Feedback") or mi.level_control("Q"))
-
-
-class SourceManifestTests(unittest.TestCase):
-    """U6 (mcp-server.md §12.13): manifests from the machines' source."""
-
-    def test_committed_manifests_are_what_their_sources_generate(self):
-        self.assertEqual(sm.run(write=False), [])
-
-    def test_the_declarations_are_read_as_rebuzz_reads_them(self):
-        glob, track = sm.machine_params(sm.PEDAL + "pedal-gain-multi/PedalGainMultiMachine.cs")
-        self.assertEqual([p["name"] for p in glob], ["Gain", "Master Mute", "Inertia"])
-        self.assertEqual([p["name"] for p in track], ["Solo", "Mute", "Volume", "Pan", "Mono"])
-        self.assertEqual((glob[0]["min"], glob[0]["max"], glob[0]["default"]), (0, 181, 161))
-        self.assertEqual((glob[1]["min"], glob[1]["max"]), (0, 1))
-        # The MIDI output's Note, Volume, Delay and Cut hold no value: played, not in its manifest.
-        _, track = sm.machine_params("Machines/MidiOutput/MidiOutput.cs")
-        self.assertEqual([p["name"] for p in track], ["Device", "MidiCC", "MidiCCValue", "Channel"])
-
-    def test_kinds_fit_exactly_or_fail(self):
-        p = {"name": "X", "min": 0, "max": 96, "texts": None, "descriptor": None}
-        m = sm.mapping(sm.P("X", "db", "(v - 48) * 0.5", unit="dB"), p, {})
-        self.assertEqual((m["a"], m["b"]), (-24.0, 24.0))
-        with self.assertRaises(sm.Problem):
-            sm.mapping(sm.P("X", "db", "v * v / 96", unit="dB"), p, {})   # not a line
-        r = {"name": "R", "min": 0, "max": 127, "texts": None, "descriptor": None}
-        m = sm.mapping(sm.P("R", "ratio", "v >= 127 ? 1e6 : pow(40, v / 126)", unit=":1", flag="max_inf"), r, {})
-        self.assertAlmostEqual(m["b"], 40 ** (127 / 126), places=6)
-        self.assertTrue(m["flag"])
-
-    def test_code_that_changed_is_caught(self):
-        spec = dict(next(x for x in sm.SPECS if x["gear"] == "Pedal Gain"))
-        spec["params"] = [dict(spec["params"][0], code=["Gain * 0.02f"])] + spec["params"][1:]
-        with self.assertRaises(sm.Problem):
-            sm.generate(spec, None)
-        spec["params"] = spec["params"][1:]
-        with self.assertRaises(sm.Problem):   # a parameter the source declares and this file doesn't
-            sm.generate(spec, None)
-
-
-class NativeManifestsFromSource(unittest.TestCase):
-    """U7 (mcp-server.md §12.14): the natives' manifests from their C++ declarations and DescribeValue."""
-
-    def test_committed_manifests_are_what_their_sources_generate(self):
-        self.assertEqual(nm.run(write=False), [])
-
-    def test_the_declarations_are_read_as_rebuzz_reads_them(self):
-        spec = next(x for x in nm.SPECS if x["gear"] == "Jeskola NiNjA dElaY")
-        glob, track, max_tracks = nm.declarations(nm.read_source(spec))
-        self.assertEqual(max_tracks, 8)
-        # A switch runs 0…1; DescribeValue numbers the globals first, then the track parameters.
-        self.assertEqual([(p["name"], p["min"], p["max"], p["default"], p["describe"]) for p in glob], [("Dry thru", 0, 1, 1, 0)])
-        self.assertEqual([p["name"] for p in track], ["Length", "Length unit", "Feedback", "f. type", "f. cutoff", "f. bandwidth", "Wet out"])
-        self.assertEqual(track[0]["describe"], 1)
-        # A played track parameter (Noise Generator's Trigger, no MPF_STATE) is left out; a default outside the range is clamped.
-        _, track, _ = nm.declarations(nm.read_source(next(x for x in nm.SPECS if x["gear"] == "Jeskola Noise Generator")))
-        self.assertNotIn("Trigger", [p["name"] for p in track])
-        _, track, _ = nm.declarations(nm.read_source(next(x for x in nm.SPECS if x["gear"] == "FSM WahManPro")))
-        phase = next(p for p in track if p["name"] == "Set phase")
-        self.assertEqual((phase["declared_default"], phase["default"]), (255, 127))
-
-    def test_describe_cases_are_found_nested_switches_aside(self):
-        cases, _ = nm.describe_cases(nm.read_source(next(x for x in nm.SPECS if x["gear"] == "Jeskola NiNjA dElaY")))
-        self.assertEqual(sorted(cases), [1, 2, 3, 4, 5, 6, 7])
-        cases, _ = nm.describe_cases(nm.read_source(next(x for x in nm.SPECS if x["gear"] == "Jeskola Trilok")))
-        self.assertEqual(cases, set())
-
-    def test_a_case_this_file_doesnt_map_or_changed_code_is_caught(self):
-        spec = dict(next(x for x in nm.SPECS if x["gear"] == "FSM WahMan"))
-        existing, _ = nm.existing_of(spec)
-        with self.assertRaises(nm.sm.Problem):
-            nm.generate(dict(spec, cases=[]), existing)           # DescribeValue has case 2
-        with self.assertRaises(nm.sm.Problem):
-            nm.generate(dict(spec, cases=[nm.C(2, "freq", nm.LFO_FSM, "0.05*pow(900.0,value/255.0)", unit="Hz")]), existing)
-        with self.assertRaises(nm.sm.Problem):
-            nm.generate(dict(spec, cases=spec["cases"] + [nm.C(3, "int", "v")]), existing)   # no case 3 in the code
-
 
 if __name__ == "__main__":
     unittest.main()

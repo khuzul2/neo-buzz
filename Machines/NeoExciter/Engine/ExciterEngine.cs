@@ -1,5 +1,5 @@
 #nullable disable
-// Neo Exciter (docs/specs/mastering-tools.md §5.8): the successor of Oomek Exciter.
+// Neo Exciter (docs/specs/mastering-tools.md §5.8): a harmonic exciter.
 //  - The input is split into four zero-latency Linkwitz–Riley bands (LrBands). Each band, per channel, goes through a
 //    4× oversampler (FastOversampler) and a first-order ADAA shaper; what it adds is the harmonic residual
 //    r = f(D·u) / D − u, the shaper's output (brought back by the drive D) minus the audio (the audio taken half a

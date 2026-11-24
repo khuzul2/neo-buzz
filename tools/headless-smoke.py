@@ -21,7 +21,7 @@ exe = sys.argv[1]
 work = sys.argv[2] if len(sys.argv) > 2 else tempfile.mkdtemp(prefix="rebuzz-smoke-")
 os.makedirs(work, exist_ok=True)
 settings = os.path.join(work, "settings")
-song = os.path.join(work, "smoke.bmxml")
+song = os.path.join(work, "smoke.nbl")
 failures = []
 
 

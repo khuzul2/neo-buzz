@@ -21,7 +21,7 @@ using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Core.Session;
 using ReBuzz.SessionTests.Convert;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

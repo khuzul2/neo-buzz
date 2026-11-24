@@ -1,7 +1,7 @@
 #nullable disable
 // Neo Filter (docs/specs/machines.md §5): a stereo filter effect on Neo Poly's filters (the ladder and
 // the state-variable filter), oversampled, with drive, an envelope follower and an LFO moving the
-// cutoff; the successor of Jeskola Filter and Filter 2, FSM WahMan and Pedal Filter (docs/specs/
+// cutoff (docs/specs/
 // mcp-server.md §12.5). DSP in Engine/, parameters generated from Params.def, editor in
 // NeoFilterEditor.cs.
 
@@ -99,7 +99,7 @@ namespace NeoBuzz.Filter
         };
     }
 
-#if WINDOWS || AVALONIA   // fork: the editor on WPF, or Avalonia in the studio (studio-mvp.md S1); none headless
+#if AVALONIA   // fork: the editor: Avalonia in the studio (studio-mvp.md S1); none headless
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {

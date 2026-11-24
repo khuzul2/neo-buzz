@@ -11,7 +11,7 @@ namespace ReBuzz.FileOps
         event Action<FileEventType, string, object> FileEvent;
 
         Dictionary<string, MemoryStream> GetSubSections();
-        void Load(string bmxmlFile, float x = 0, float y = 0, ImportSongAction importAction = null);
+        void Load(string file, float x = 0, float y = 0, ImportSongAction importAction = null);
         void EndFileOperation(bool import);
         void Save(string filename);
         void SetSubSections(SaveSongCore ss);

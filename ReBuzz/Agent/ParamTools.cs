@@ -61,7 +61,6 @@ namespace ReBuzz.Agent
                         Req("keys", Array(Object("A playable key", Req("key", Integer("MIDI note number, as a pattern's Note column and a note_write's pitch")), Req("note", String("Its note name")), Opt("name", String("What the machine calls it (Kick)")), Opt("group", String("Its group"))), "The playable keys, at most 64 (more: truncated)")),
                         Opt("truncated", Boolean("There are more keys than listed")), Req("source", String("machine or manifest")))),
                     Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
-                    Opt("successors", Array(Object("A Neo successor", Req("gear", String("Its gear")), Req("how", String("The call that moves the song onto it"))), "machine_replace moves the machine onto these")),
                     Req("groups", Array(String("Group"), "All parameter groups")),
                     Opt("group_sizes", Array(Object("A group of a large machine", Req("group", String("Its name")), Req("parameters", Integer("How many parameters it has"))), "A large machine without group: each group's parameter count; read one with group")),
                     Opt("parameter_count", Integer("A large machine without group: how many parameters it has in all")),
@@ -125,8 +124,6 @@ namespace ReBuzz.Agent
                         if (ModulationTools.Incoming(core, m) is JsonArray incoming) o["modulations"] = incoming;
                         if (ModulationTools.Own(core, m) is JsonObject own) o["modulator"] = own;
                         if (manifest?.Quirks.Count > 0) o["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
-                        // U5 (mcp-server.md §12.5): its Neo successors, which machine_replace moves the song onto.
-                        if (MachineReplace.SuccessorsJson(core, m.DLL) is JsonArray successors) o["successors"] = successors;
                         if (manifest?.Imports.Count > 0)
                             o["data_imports"] = new JsonArray(manifest.Imports.Select(i => (JsonNode)new JsonObject
                             {
@@ -186,14 +183,12 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var ps = r["parameters"]!.AsArray();
                     string line = string.Join("; ", ps.Take(40).Select(p => $"{p!["name"]} = {p["value"]}"));
-                    string successor = r["successors"] is JsonArray su && su.Count > 0
-                        ? $" Successor: {string.Join(", ", su.Select(x => x!["gear"]!.GetValue<string>()))} (machine_replace)." : "";
                     if (r["parameter_count"] != null)
                         return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {r["parameter_count"]} parameters in {r["groups"]!.AsArray().Count} groups: " +
                                              string.Join(", ", r["group_sizes"]!.AsArray().Select(g => $"{g!["group"]} ({g["parameters"]})")) +
                                              ". Pass group to read one group's parameters.", r);
                     return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {ps.Count} parameters{(group != null ? $" in {group}" : "")}" +
-                                         (r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest)" : "") + "." + successor + " " +
+                                         (r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest)" : "") + "." + " " +
                                          line + (ps.Count > 40 ? "; …" : ""), r);
                 },
             });

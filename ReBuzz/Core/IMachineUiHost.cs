@@ -25,13 +25,6 @@ namespace ReBuzz.Core
         /// </summary>
         bool OpenEditor(IMachine machine) => false;
 
-        /// <summary>
-        /// Fork (ux-overhaul.md P6c, §9 row 1): a native machine ran in another process and answered its double click by showing a window
-        /// of its own there (<paramref name="hostProcessId"/>). A host may take that window into one of its own; the default leaves it
-        /// where the machine put it (a floating window, as ReBuzz.exe has it).
-        /// </summary>
-        void NativeGuiShown(IMachine machine, int hostProcessId) { }
-
         void CloseWindows(IMachine machine);
 
         /// <summary>Which of the machine's windows are open, and where (saved in BMX and BMXML songs).</summary>

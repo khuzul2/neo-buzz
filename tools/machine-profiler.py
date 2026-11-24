@@ -2311,8 +2311,8 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
                      f"{(e.get('denormal') or {}).get('silent_ms_per_s', '')} | {category(e)} |")
     lines += ["", "## Not measured yet", "",
               "Whether `Work` reports silence (the engine keeps what it returns only for the activity LED, and a managed effect's false "
-              "means \"pass my input\", not \"I'm silent\": mcp-server.md §12.13); a wave or a plugin to choose for "
-              "Jeskola Tracker and Polac VSTi (a person's choice, not a measurement); LFO rates (a modulation's rate shows only over seconds of "
+              "means \"pass my input\", not \"I'm silent\": mcp-server.md §12.13); a wave or a plugin to choose "
+              "(a person's choice, not a measurement); LFO rates (a modulation's rate shows only over seconds of "
               "steady tone); what a parameter does only with another one set (a slot's effect, an envelope routed elsewhere) beyond the "
               "contexts the sweep tries: mcp-server.md §12.12.", ""]
     return "\n".join(lines)
@@ -2431,15 +2431,8 @@ NATIVE_LICENCE_EXCEPTIONS = (NATIVE_LICENCE_EXCEPTION, NATIVE_LICENCE_EXCEPTION_
 
 
 def rebuilt_natives(root):
-    """U7 (mcp-server.md §12.14): the natives ExternalMachines/machines.json ships rebuilt from source (their entries): those
-    whose licence allows it, and those whose source has none, shipped by build.ps1's one recorded exception."""
-    try:
-        with open(os.path.join(root, "ExternalMachines", "machines.json"), encoding="utf-8") as f:
-            bt = next((m for m in json.load(f)["machines"] if m.get("id") == "buzztrax-buzzmachines"), {})
-    except (OSError, ValueError):
-        return []
-    return [n for n in bt.get("natives", []) if n.get("ship") == "rebuilt"
-            and (n.get("licenseException") in NATIVE_LICENCE_EXCEPTIONS if "licenseException" in n else n.get("redistribute", True))]
+    """CB1: no natives are rebuilt or shipped any more (ExternalMachines is gone)."""
+    return []
 
 
 PACK = "MACHINE-PROFILE-PACK"

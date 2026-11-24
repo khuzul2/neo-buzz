@@ -1,5 +1,0 @@
-!INCLUDE ..\common.nmake
-
-SUBDIRS_ALL = UnwieldyTracker.all
-
-!INCLUDE ..\subdirs.nmake

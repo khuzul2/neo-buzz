@@ -30,7 +30,7 @@ A harmonic exciter. The input is split into four bands; each band goes through a
 - "Mastering — Air" (Tape, Drive 12 dB, Amount 4 20 %), "Mastering — Presence and Air", "Mastering — Subtle Warmth" (Warm).
 - "Vocal — Bright and Present" (Tube, Drive 14 dB, Amount 3 35 %, Amount 4 25 %), "Drums — Crack and Sizzle" (Transistor).
 - "Bass — Add Harmonics to Be Heard on Small Speakers": Warm, Crossover 1 100 Hz, Crossover 2 400 Hz, Crossover 3 2 kHz, Amount 2 about 40 %.
-- "Mid/Side — Air on the Sides" (Tape, M/S, Amount 4 35 %); "Old Exciter (Oomek-style)" for songs moved from the old machine.
+- "Mid/Side — Air on the Sides" (Tape, M/S, Amount 4 35 %).
 
 ## Pitfalls
 
@@ -42,10 +42,6 @@ A harmonic exciter. The input is split into four bands; each band goes through a
 ## Pairs well with
 
 - Neo EQ before it; Neo Limiter after it; Neo Imager to widen what it adds (`guide(topic="mastering-chain")`).
-
-## Successor
-
-Neo Exciter replaces Oomek Exciter: `machine_replace(machine="Exciter")` carries its Drive, cuts and Amount into the matching settings.
 
 ## Checklist
 

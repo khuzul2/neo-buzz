@@ -45,8 +45,7 @@ namespace ReBuzz.Agent
                     "curated, or a profiled draft: its parameters take \"800 Hz\", \"-6 dB\"; exact_units when not a draft), its health and its parameters' " +
                     "safe ranges (param_set keeps to them). Machines with exact units come first, then drafts, then machines that need a window. Unhealthy ones " +
                     "(diverging: NaN or a runaway level somewhere; crashes; missing) are left out unless include_unhealthy=true, which lists them last, " +
-                    "flagged with why (hidden_unhealthy names them). Hot ones (loud but steady at some setting) are a warning, listed. Classic machines " +
-                    "with a Neo successor say so (machine_replace moves a song onto it). Filter by kind or text. " +
+                    "flagged with why (hidden_unhealthy names them). Hot ones (loud but steady at some setting) are a warning, listed. Filter by kind or text. " +
                     "Example: gear_list(kind=\"generator\", search=\"poly\").",
                 Input = Object(null,
                     Opt("kind", String("Only generators (make sound) or effects (process sound)", "generator", "effect")),
@@ -71,7 +70,6 @@ namespace ReBuzz.Agent
                         Opt("safe_ranges", Array(Object("A parameter's safe range", Req("param", String("Its name")), Req("range", String("The safe values"))), "Where param_set keeps agents")),
                         Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about")),
                         Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it")),
-                        Opt("successor", String("Its Neo successor: machine_replace moves a song's machine onto it")),
                         Opt("plugin_count", Integer("For gear that hosts plug-ins: how many it lists")),
                         Opt("plugins", Array(String("A plug-in name"), "Names to pass to machine_add as plugin (search narrows the list)"))), "Matching gear")),
                     Req("total", Integer("How many matched before the limit")),
@@ -140,9 +138,6 @@ namespace ReBuzz.Agent
                                     ["reason"] = p.SafeRange.Reason,
                                 }).ToArray());
                             if (manifest?.Quirks.Count > 0) row["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
-                            // U5 (mcp-server.md §12.5): "successor: Neo Verb (machine_replace)".
-                            var successors = MachineReplace.Successors(core, dll);
-                            if (successors.Count > 0) row["successor"] = string.Join(", ", successors.Select(x => x.To)) + " (machine_replace)";
                             // U2 in depth (mcp-server.md §12.12): unhealthy gear (diverging somewhere, crashing, missing) is left out
                             // unless asked for. Hot gear and gear that needs a window are listed: a warning, and a status of its own.
                             if (unhealthy && !includeUnhealthy)

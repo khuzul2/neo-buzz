@@ -5,7 +5,7 @@ using ReBuzz.Agent.Guides;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Agent.Model;
 using V = ReBuzz.Agent.Model.ValueResolver;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

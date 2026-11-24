@@ -7,10 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
-#if WINDOWS
-using System.Windows.Interop;
-using System.Windows.Media;
-#endif
 
 namespace BuzzGUI.Common.InterfaceExtensions
 {
@@ -200,22 +196,6 @@ namespace BuzzGUI.Common.InterfaceExtensions
             return machine.Attributes.Where(p => p.Name == name).First();
         }
 
-#if WINDOWS
-        public static Color GetThemeColor(this IMachine machine)
-        {
-            if (machine.IsControlMachine)
-                return machine.Graph.Buzz.ThemeColors["MV Control"];
-
-            switch (machine.DLL.Info.Type)
-            {
-                case MachineType.Master: return machine.Graph.Buzz.ThemeColors["MV Master"];
-                case MachineType.Generator: return machine.IsMuted ? machine.Graph.Buzz.ThemeColors["MV Generator Mute"] : machine.Graph.Buzz.ThemeColors["MV Generator"];
-                case MachineType.Effect: return machine.IsMuted ? machine.Graph.Buzz.ThemeColors["MV Effect Mute"] : machine.Graph.Buzz.ThemeColors["MV Effect"];
-            }
-
-            return Colors.LightCyan;
-        }
-#endif
 
         public static string GetNewPatternName(this IMachine machine)
         {
@@ -258,106 +238,6 @@ namespace BuzzGUI.Common.InterfaceExtensions
             machine.SendGUIMessage(request.ToArray());
         }
 
-#if WINDOWS
-        // WPF (the "Other..." value popup), so the Windows build only (engine-split.md §4.4).
-        #region Attribute menu
-
-        static IEnumerable<IMenuItem> GetAttributeValues(this IMachine machine, int index, ICommand setcmd, ICommand othercmd)
-        {
-            var a = machine.Attributes[index];
-
-            var values = a.GetPresentableNumberOfValues();
-
-            List<MenuItemVM> l = new List<MenuItemVM>();
-            var g = new MenuItemVM.Group();
-
-            foreach (var v in values)
-            {
-                l.Add(new MenuItemVM()
-                {
-                    Text = v.ToString(),
-                    IsEnabled = true,
-                    IsDefault = v == a.DefValue,
-                    IsCheckable = true,
-                    IsChecked = v == a.Value,
-                    StaysOpenOnClick = true,
-                    Command = setcmd,
-                    CommandParameter = Tuple.Create(a, v),
-                    CheckGroup = g
-                });
-            }
-
-            if (values.Count() < (a.MaxValue - a.MinValue + 1))
-            {
-                l.Add(new MenuItemVM() { IsSeparator = true });
-                l.Add(new MenuItemVM() { Text = "Other...", IsEnabled = true, Command = othercmd, CommandParameter = a });
-            }
-
-            return l;
-        }
-
-
-        public static IEnumerable<MenuItemVM> GetAttributeMenuItems(this IMachine machine)
-        {
-            var setAttributeCommand = new SimpleCommand
-            {
-                CanExecuteDelegate = x => true,
-                ExecuteDelegate = _x =>
-                {
-                    var x = _x as Tuple<IAttribute, int>;
-                    x.Item1.Value = x.Item2;
-                }
-            };
-
-            var otherCommand = new SimpleCommand
-            {
-                CanExecuteDelegate = x => true,
-                ExecuteDelegate = _x =>
-                {
-                    var a = (IAttribute)_x;
-
-                    Point p = Win32Mouse.GetScreenPosition();
-
-                    ParameterValueEditor hw = new ParameterValueEditor(a.Value, a.MinValue, a.MaxValue, true)
-                    {
-                        WindowStartupLocation = WindowStartupLocation.Manual,
-                        Left = p.X /= WPFExtensions.PixelsPerDip,
-                        Top = p.Y /= WPFExtensions.PixelsPerDip
-                    };
-
-                    new WindowInteropHelper(hw).Owner = Global.Buzz.MachineViewHWND;
-
-                    if ((bool)hw.ShowDialog())
-                    {
-                        a.Value = hw.Value;
-                    }
-
-                }
-            };
-
-            var attributes = machine.Attributes;
-
-            List<MenuItemVM> l = new List<MenuItemVM>();
-            if (attributes.Count > 0)
-            {
-                int index = 0;
-                foreach (var a in attributes)
-                {
-                    var v = machine.GetAttributeValues(index, setAttributeCommand, otherCommand);
-                    l.Add(new MenuItemVM() { Text = a.Name, Children = v, IsEnabled = v != null });
-                    index++;
-                }
-            }
-            else
-            {
-                l.Add(new MenuItemVM() { Text = "(no attributes)" });
-            }
-
-            return l;
-        }
-
-        #endregion
-#endif
 
     }
 }

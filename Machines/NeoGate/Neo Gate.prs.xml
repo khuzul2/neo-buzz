@@ -150,7 +150,7 @@
       <Comment></Comment>
     </Preset>
   </Item>
-  <Item Key="Pedal Gate — Same Settings">
+  <Item Key="Gate — Reference Settings">
     <Preset Machine="Neo Gate">
       <Parameters>
         <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="625" />

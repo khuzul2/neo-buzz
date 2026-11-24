@@ -142,7 +142,6 @@ namespace NeoBuzz.Plug
                 ["format"] = "rebuzz-machine-manifest/1",
                 ["gear"] = gear,
                 ["kind"] = effect ? "effect" : "generator",
-                ["clipEdit"] = true,
                 ["status"] = "generated",
                 ["source"] = "generated at run time from the loaded plug-in's parameters",
                 ["summary"] = $"{core.Name}{(core.State.Vendor is { Length: > 0 } vendor ? " by " + vendor : "")} ({(core.State.Format ?? "").ToUpperInvariant()}), hosted: " +

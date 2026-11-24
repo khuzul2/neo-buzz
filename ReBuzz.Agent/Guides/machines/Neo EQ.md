@@ -53,10 +53,6 @@ Find the frequency with `analyze_mix` (it names masking bands) or `plot(kind="sp
 - Neo Comp, Neo Multiband, Neo Drive and Neo Limiter after it in a chain (`guide(topic="mastering-chain")`); Neo Analyzer to check the result.
 - `eq_fit(source="r4", target="C:/Refs/track.wav", machine="M EQ")` fits bells and shelves to a reference's tonal difference and writes them into bands 2-7 as one undo step; without `machine` it only returns the changes.
 
-## Successor
-
-Neo EQ replaces Pedal EQ, Jeskola EQ-3 and Joachims Hyperion (its graphic mode): `machine_replace(machine="EQ")` carries their curves over.
-
 ## Checklist
 
 - [ ] `machine_readings(machine="M EQ")`: `gain_match_db` shows what the moves did to loudness; set Output to match before judging.

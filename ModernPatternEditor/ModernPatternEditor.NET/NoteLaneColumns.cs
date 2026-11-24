@@ -1,4 +1,3 @@
-#if !WINDOWS
 // Fork (docs/specs/daw-modes.md AR3, seam S7): the tracker sees the notes.
 //
 // The engine's MIDI column is where a pattern's notes live for a machine that takes MIDI (the Session View's takes, the agent
@@ -425,4 +424,3 @@ namespace WDE.ModernPatternEditor
         public static IEnumerable<BuzzAction> Once(this BuzzAction action) => new[] { action };
     }
 }
-#endif

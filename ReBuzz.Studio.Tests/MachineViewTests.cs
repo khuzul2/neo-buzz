@@ -17,7 +17,7 @@ using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Machines;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -405,7 +405,7 @@ namespace ReBuzz.Studio.Tests
             var (window, view) = OpenEmpty();
             string dir = TestTemp.Path("rebuzz-studio-machines-" + System.Environment.ProcessId);
             Directory.CreateDirectory(dir);
-            string path = Path.Combine(dir, "layout.bmxml");
+            string path = Path.Combine(dir, "layout.nbl");
             try
             {
                 // A song made by the engine alone, saved and opened again.
@@ -443,45 +443,6 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 SongFiles.Picker = null;
-                Close(window);
-            }
-        }
-
-        [AvaloniaTest]
-        public void AnOldSongOpensWithItsNativeMachinesAsPlaceholders()
-        {
-            string repo = System.AppContext.BaseDirectory;
-            while (repo != null && !File.Exists(Path.Combine(repo, "ReBuzz.sln"))) repo = Path.GetDirectoryName(repo);
-            string song = repo == null ? null : Path.Combine(repo, "ExternalMachines", "source", "buzztrax-buzzmachines", "FSM", "Infector", "FSM_Infector_Demo.bmx");
-            if (song == null || !File.Exists(song)) Assert.Ignore("the demo song isn't in this checkout");
-            var (window, view) = OpenEmpty();
-            try
-            {
-                Assert.That(SongFiles.Open(song).Result, Is.True);
-                Settle();
-                var machines = Core.SongCore.Machines.ToList();
-                Assert.That(machines.Count, Is.GreaterThan(1));
-                foreach (var m in machines)
-                    Near(view.Canvas.BoxOf(m).Center, view.Canvas.Map.PointAt(System.Math.Clamp(m.Position.Item1, -2, 2), System.Math.Clamp(m.Position.Item2, -2, 2)), m.Name);
-
-                // Fork (ux-overhaul.md P1, UX review mac-500): the problem bar says it in plain words, with a button to find them.
-                var missing = Core.SongCore.MachinesList.Where(m => !m.Hidden && m.DLL.IsMissing).ToList();
-                if (missing.Count > 0 && !System.OperatingSystem.IsWindows())
-                {
-                    window.RefreshNow();
-                    Settle();
-                    Assert.That(window.Problems.Text, Does.StartWith($"{missing.Count} machines in this song are Windows-only (").And.Contain("kept and saved unchanged"));
-                    var show = window.Problems.Buttons.Single();
-                    Assert.That(show.Content, Is.EqualTo("Show Them"));
-                    view.Canvas.ClearSelection();
-                    show.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                    Settle();
-                    Assert.That(view.Canvas.Selection, Is.EquivalentTo(missing), "the button selects them in the Machine View");
-                }
-                Studio.Screenshot(window, "machines-12-old-song");
-            }
-            finally
-            {
                 Close(window);
             }
         }

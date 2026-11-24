@@ -4,7 +4,7 @@
 using ReBuzz.Audio;
 using ReBuzz.Host;
 using ReBuzz.Platform;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

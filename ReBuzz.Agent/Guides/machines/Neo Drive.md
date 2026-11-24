@@ -51,10 +51,6 @@ Path: `Low cut` (before the shaper), `Drive`, the oversampled shaper (`Quality` 
 
 - Neo EQ before it (cut lows) and after it (tone); Neo Comp and Neo Limiter on a bus (`guide(topic="mastering-chain")`); Neo Filter after a fuzz.
 
-## Successor
-
-Neo Drive replaces Jeskola Distortion: `machine_replace(machine="Dist")`.
-
 ## Checklist
 
 - [ ] `machine_readings(machine="Drive")`: `peak_db` under 0 dBFS with the drive you chose.

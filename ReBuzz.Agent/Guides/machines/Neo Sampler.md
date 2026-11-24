@@ -45,10 +45,6 @@ Built-in waves: 201-215 the drum and percussion hits (kick, snare, hats, toms, c
 
 - Neo Comp and Neo Transient on drum kits, Neo EQ for each sample's weight, Neo Verb and Neo Delay for space, Neo Tape for grit; Neo Drums when you want a synthesised kit.
 
-## Successor
-
-Neo Sampler replaces Pedal M1: `machine_replace(machine="Keys")` turns its oscillator waves and key zones into zones 1-8 at the same pitch, and the reply says what has no counterpart.
-
 ## Checklist
 
 - [ ] `wave_list()` shows each slot's root and loop; `preset_load(machine="Drums", preset="Kit — Electro (GM Layout)")` plays without files.

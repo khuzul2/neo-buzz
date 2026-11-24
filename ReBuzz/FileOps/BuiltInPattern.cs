@@ -159,14 +159,14 @@ namespace ReBuzz.FileOps
         internal static byte[] ToPXP(MachineCore machine, IList<(string Name, BuiltInPattern Data)> patterns)
         {
             var ms = new MemoryStream();
-            BMXFile.WriteByte(ms, 3);                                   // PXP version
-            BMXFile.WriteInt(ms, patterns.Count);                       // pattern count
+            NblCoreSections.WriteByte(ms, 3);                                   // PXP version
+            NblCoreSections.WriteInt(ms, patterns.Count);                       // pattern count
             int globals = Group(machine, 1).Count;
             foreach (var (name, data) in patterns)
             {
-                BMXFile.WriteString(ms, name, System.Text.Encoding.Latin1);                          // pattern name
-                BMXFile.WriteInt(ms, 4);                                // rows per beat
-                BMXFile.WriteInt(ms, globals + Group(machine, 2).Count * data.Tracks.Length);   // columns (global + tracks)
+                NblCoreSections.WriteString(ms, name, System.Text.Encoding.Latin1);                          // pattern name
+                NblCoreSections.WriteInt(ms, 4);                                // rows per beat
+                NblCoreSections.WriteInt(ms, globals + Group(machine, 2).Count * data.Tracks.Length);   // columns (global + tracks)
                 WriteColumns(ms, machine, 1, 0, data.Global, 0);
                 for (int l = 0; l < data.Tracks.Length; l++)
                     WriteColumns(ms, machine, 2, l, data.Tracks[l], globals);
@@ -179,16 +179,16 @@ namespace ReBuzz.FileOps
             var parameters = Group(machine, group);
             for (int j = 0; j < parameters.Count; j++)
             {
-                BMXFile.WriteString(ms, machine.Name, System.Text.Encoding.Latin1);                  // name
-                BMXFile.WriteInt(ms, index);                            // parameter index
-                BMXFile.WriteInt(ms, track);                            // track
-                BMXFile.WriteByte(ms, 0);                               // bool graphical
+                NblCoreSections.WriteString(ms, machine.Name, System.Text.Encoding.Latin1);                  // name
+                NblCoreSections.WriteInt(ms, index);                            // parameter index
+                NblCoreSections.WriteInt(ms, track);                            // track
+                NblCoreSections.WriteByte(ms, 0);                               // bool graphical
                 var events = Enumerable.Range(0, rows.Length).Where(i => j < rows[i].Length && rows[i][j] != parameters[j].NoValue).ToArray();
-                BMXFile.WriteInt(ms, events.Length);                    // number of events in column
+                NblCoreSections.WriteInt(ms, events.Length);                    // number of events in column
                 foreach (int i in events)
                 {
-                    BMXFile.WriteInt(ms, i);
-                    BMXFile.WriteInt(ms, rows[i][j]);
+                    NblCoreSections.WriteInt(ms, i);
+                    NblCoreSections.WriteInt(ms, rows[i][j]);
                 }
                 index++;
             }

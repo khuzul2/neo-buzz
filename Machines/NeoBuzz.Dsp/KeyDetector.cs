@@ -2,8 +2,8 @@
 // Neo machines shared DSP (docs/specs/mastering-tools.md §5.12, §5.13): the detector Neo De-esser and Neo Gate share.
 // A key signal goes through an optional high-pass and low-pass (second order each: a band-pass when both are set, which
 // is the de-esser's sibilance band), and a linked stereo level follower reads it in dB: a peak follower (attack and
-// release one-poles on max(|l|, |r|), Pedal Gate's detector) or an RMS one (a sliding rectangular window over the mean
-// square of both channels, read on the peak scale, which equals Pedal Gate's stereo power sum: its sqrt((l² + r²) / N)). Allocation-free; the portable maths.
+// release one-poles on max(|l|, |r|)) or an RMS one (a sliding rectangular window over the mean
+// square of both channels, read on the peak scale, the stereo power sum: sqrt((l² + r²) / N)). Allocation-free; the portable maths.
 
 using System;
 using System.Runtime.CompilerServices;

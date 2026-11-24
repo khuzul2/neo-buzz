@@ -1,6 +1,5 @@
 // Fork (docs/specs/machines.md §3.4): versioned machine state on the real engine. The tests' Versioned Test effect (TestMachines/VersionedTest)
-// went through three layouts; a song saved at each of them (a BMXML song rewritten to that layout, its data in the old form) opens in the
-// current one with the same sound, a song saved now carries its state version in BMXML and BMX alike, and the agent's machine_describe and
+// went through three layouts; a .nbl saved at an older one loads through MigrateKeyed, a song saved now carries its state version, and the agent's machine_describe and
 // param_set speak the current layout. Every existing Neo machine saves what it always did (state version 0: byte 2 envelope).
 
 using System;
@@ -20,7 +19,7 @@ using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.FileOps;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
 
 namespace ReBuzz.Studio.Tests
@@ -74,27 +73,6 @@ namespace ReBuzz.Studio.Tests
             _ => "<VersionedTestState><Gain>7</Gain><Pan>5</Pan></VersionedTestState>",
         };
 
-        /// <summary>The current song's BMXML with the machine rewritten to the layout and data of an older version.</summary>
-        static void RewriteTo(string path, string machineName, int version)
-        {
-            var serializer = new XmlSerializer(typeof(BMXMLSong));
-            BMXMLSong song;
-            using (var f = File.OpenRead(path)) song = (BMXMLSong)serializer.Deserialize(f)!;
-            var m = song.Machines.Single(x => x.Name == machineName);
-            var globals = m.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global);
-            var template = globals.Parameters[0];
-            var layout = Layouts[version];
-            globals.Parameters = layout.Select((name, i) => new BMXMLParameter
-            {
-                Type = template.Type, Name = name, Description = name, MinValue = 0, MaxValue = Max[version][i], NoValue = template.NoValue,
-                Flags = template.Flags, DefValue = 0,
-                Values = new[] { new BMXMLParameterValue { Track = 0, Value = SavedValue(version, name) } },
-            }).ToArray();
-            var content = Encoding.UTF8.GetBytes(DataAt(version));
-            m.Data = StateEnvelope.Write(content, version);    // version 0: the plain envelope every old song has; later versions carry theirs
-            using (var f = File.Create(path)) serializer.Serialize(f, song);
-        }
-
         static void Open(string path)
         {
             Core.Modified = false;
@@ -104,38 +82,6 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        [TestCase(0)]
-        [TestCase(1)]
-        [TestCase(2)]
-        public void ASongSavedAtAnOlderVersionLoadsToTheSameSound(int version)
-        {
-            NewSong();
-            string path = TestTemp.Path("versioned-" + Guid.NewGuid().ToString("N") + ".bmxml");
-            try
-            {
-                Add("VT");
-                Core.SaveSongCopy(path);
-                RewriteTo(path, "VT", version);
-                Open(path);
-                var vt = Core.SongCore.MachinesList.Single(m => m.Name == "VT");
-                Assert.That(Values(vt), Is.EqualTo(new[] { 800, 250, 2 }), $"cutoff, gain and mode of a v{version} song, in the current layout");
-                Assert.That(Param(vt, "Cutoff").GetValue(0), Is.EqualTo(800));
-                var (xml, v, first) = State(vt);
-                Assert.That(v, Is.EqualTo(3), "saved again it is the current version");
-                Assert.That(first, Is.EqualTo(StateEnvelope.Versioned));
-                Assert.That(xml, Does.Contain("<Gain>7</Gain>").And.Not.Contain("Pan").And.Not.Contain("Level"), "its own data moved to the current form");
-            }
-            finally
-            {
-                Dialogs.Responder = null;
-                try { File.Delete(path); } catch (IOException) { }
-                NewSong();
-            }
-        }
-
-        [AvaloniaTest]
-        [TestCase(".bmxml")]
-        [TestCase(".bmx")]
         [TestCase(".nbl")]
         public void ASongSavedNowKeepsItsStateVersion(string extension)
         {
@@ -204,34 +150,6 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ASongFromANewerBuildKeepsDefaultsAndLogsIt()
-        {
-            NewSong();
-            string path = TestTemp.Path("versioned-" + Guid.NewGuid().ToString("N") + ".bmxml");
-            try
-            {
-                Add("VT");
-                Core.SaveSongCopy(path);
-                var serializer = new XmlSerializer(typeof(BMXMLSong));
-                BMXMLSong song;
-                using (var f = File.OpenRead(path)) song = (BMXMLSong)serializer.Deserialize(f)!;
-                var m = song.Machines.Single(x => x.Name == "VT");
-                foreach (var p in m.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters) p.Values = new[] { new BMXMLParameterValue { Track = 0, Value = 77 } };
-                m.Data = StateEnvelope.Write(Encoding.UTF8.GetBytes("<VersionedTestState><Future>1</Future></VersionedTestState>"), 9);
-                using (var f = File.Create(path)) serializer.Serialize(f, song);
-                Open(path);
-                var vt = Core.SongCore.MachinesList.Single(x => x.Name == "VT");
-                Assert.That(Values(vt), Is.EqualTo(new[] { 500, 500, 0 }), "the defaults, not another layout's numbers");
-            }
-            finally
-            {
-                Dialogs.Responder = null;
-                try { File.Delete(path); } catch (IOException) { }
-                NewSong();
-            }
-        }
-
-        [AvaloniaTest]
         public void MachinesWithoutAVersionSaveWhatTheyAlwaysDid()
         {
             NewSong();
@@ -282,37 +200,5 @@ namespace ReBuzz.Studio.Tests
             return result;
         }
 
-        [AvaloniaTest]
-        public void TheAgentSeesTheCurrentLayoutOfAnOldSong()
-        {
-            NewSong();
-            string path = TestTemp.Path("versioned-" + Guid.NewGuid().ToString("N") + ".bmxml");
-            try
-            {
-                Add("VT");
-                Core.SaveSongCopy(path);
-                RewriteTo(path, "VT", 0);
-                Open(path);
-                var d = Call("machine_describe", new JsonObject { ["machine"] = "VT" })["structuredContent"]!.AsObject();
-                Assert.That(d["state_version"]!.GetValue<int>(), Is.EqualTo(3));
-                var names = d["parameters"]!.AsArray().Select(p => p!["name"]!.GetValue<string>()).ToArray();
-                Assert.That(names, Is.EqualTo(new[] { "Cutoff", "Gain", "Mode" }), "the current layout, not the song's");
-                Call("param_set", new JsonObject
-                {
-                    ["machine"] = "VT",
-                    ["changes"] = new JsonArray(new JsonObject { ["param"] = "Gain", ["value"] = "raw:300" }, new JsonObject { ["param"] = "#0", ["value"] = "raw:100" }),
-                });
-                var vt = Core.SongCore.MachinesList.Single(m => m.Name == "VT");
-                Assert.That(Values(vt), Is.EqualTo(new[] { 100, 300, 2 }));
-                var plain = Call("machine_describe", new JsonObject { ["machine"] = "VT" });
-                Assert.That(plain.ToJsonString(), Does.Not.Contain("Old pan"));
-            }
-            finally
-            {
-                Dialogs.Responder = null;
-                try { File.Delete(path); } catch (IOException) { }
-                NewSong();
-            }
-        }
     }
 }

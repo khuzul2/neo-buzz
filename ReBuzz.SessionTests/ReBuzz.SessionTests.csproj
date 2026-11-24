@@ -24,7 +24,7 @@
   <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
 
   <ItemGroup>
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionMidiMap.cs" Link="Engine\SessionMidiMap.cs" />
@@ -79,7 +79,7 @@
     <Compile Include="..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Engine\Dsp\DspMath.cs" />
     <EmbeddedResource Include="..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" Link="Engine\nmp.onnx" />
     <!-- Song Notes' formats (docs/specs/machine-safety.md §3.5): Markdown, the RTF reader, Info's saved state. -->
-    <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs;..\ReBuzz\Core\Notes\RtfToMarkdown.cs;..\ReBuzz\Core\Notes\InfoMachineState.cs" Link="Engine\%(Filename)%(Extension)" />
+    <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs" Link="Engine\%(Filename)%(Extension)" />
     <!-- The seams for hosts without Windows or a UI toolkit (docs/specs/mac-engine.md M0), with the interfaces they implement. -->
     <Compile Include="..\ReBuzz\Platform\*.cs" Link="Platform\%(Filename)%(Extension)" />
     <!-- The app's name (NeoBuzz Live), which the seams' messages and CoreMIDI's names use. -->
@@ -111,7 +111,7 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
-    <Using Include="ReBuzzTests.Automation" />
+    <Using Include="NeoBuzz.TestSupport" />
   </ItemGroup>
 
   <ItemGroup>

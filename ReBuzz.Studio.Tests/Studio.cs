@@ -5,7 +5,7 @@ using System.IO;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

@@ -1,5 +1,5 @@
 using ReBuzz.Core.Settings;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

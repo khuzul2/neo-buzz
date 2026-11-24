@@ -117,7 +117,7 @@ namespace ReBuzz.Studio.Views.Browser
             return list.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        static readonly string[] Brands = { "Neo", "Jeskola", "FSM", "Oomek", "Pedal", "Rout", "Polac", "Elak", "Geonik" };
+        static readonly string[] Brands = { "Neo" };
 
         /// <summary>The brand tag: the name's own first word where it is a known maker's, else the machine's author.</summary>
         static string BrandOf(GearItem g, string dll)

@@ -1,6 +1,6 @@
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {

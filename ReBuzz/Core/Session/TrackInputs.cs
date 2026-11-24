@@ -12,7 +12,7 @@ namespace ReBuzz.Core.Session
 {
     internal enum AudioFromKind
     {
-        /// <summary>What is wired into the machine (an old song's way, and what ReBuzz Audio In feeds).</summary>
+        /// <summary>What is wired into the machine.</summary>
         Wired,
         /// <summary>Nothing: the track records and monitors silence.</summary>
         None,

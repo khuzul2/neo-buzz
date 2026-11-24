@@ -189,7 +189,7 @@ namespace ReBuzz.AgentTests
             Assert.That((dry.PlainName, dry.Role, dry.OwnTexts, dry.Approximate), Is.EqualTo(("Dry signal through", "mix.dry", true, false)));
             Assert.That(ManifestRoles.IsKnown(dry.Role), Is.True);
             Assert.That(ManifestRoles.IsKnown("filter.cutof"), Is.False);
-            // Two parameters with one name (FSM Infector's " - Decay"): each machine parameter finds its own by index.
+            // Two parameters with one name (a machine's " - Decay"): each machine parameter finds its own by index.
             Assert.That(m.FindAt(true, 2, " - Level")!.PlainName, Is.EqualTo("Echo feedback"));
             Assert.That(m.FindAt(true, 3, " - Level")!.PlainName, Is.EqualTo("Echo level"));
             Assert.That(m.FindAt(true, 3, " - level")!.OwnTexts, Is.False, "names match case-insensitively too");
@@ -198,54 +198,8 @@ namespace ReBuzz.AgentTests
             Assert.That(m.FindAt(true, 2, " - Level")!.SafeRange!.Min, Is.EqualTo(1), "curated manifests carry safe ranges too");
         }
 
-        [Test]
-        public void EveryCommittedDraftParses()
-        {
-            string root = TestContext.CurrentContext.TestDirectory;
-            while (root != null && !Directory.Exists(Path.Combine(root, "Machines", "Manifests"))) root = Path.GetDirectoryName(root)!;
-            Assert.That(root, Is.Not.Null, "Machines/Manifests in the repository");
-            var files = Directory.GetFiles(Path.Combine(root!, "Machines", "Manifests"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories);
-            Assert.That(files, Is.Not.Empty);
-            foreach (var file in files)
-            {
-                var m = MachineManifest.Load(file)!;
-                string sub = Path.GetFileName(Path.GetDirectoryName(file))!;
-                Assert.That(Path.GetFileName(file), Is.EqualTo(m.Gear + MachineManifest.Suffix));
-                Assert.That(sub, Is.AnyOf("Generators", "Effects"), file);
-                Assert.That(m.IsDraft || m.IsCurated || m.IsGeneratedFromSource, Is.True,
-                    m.Gear + ": drafts, curated manifests (U3) and manifests from source (U6) here; the Neo machines' generated manifests live with them");
-                Assert.That(m.Kind, Is.AnyOf("generator", "effect"));
-                if (m.IsDraft) Assert.That(m.Summary, Does.Contain("profiled draft"), m.Gear);
-                Assert.That(m.Health, Is.Not.Null, m.Gear);
-                Assert.That(m.Health!.Status, Is.AnyOf("ok", "warn", "unhealthy", "needs_window"), m.Gear);
-                if (m.Health.Diverging) Assert.That(m.Health.Unhealthy, Is.True, $"{m.Gear}: diverging is unhealthy");
-                if (m.Health.NeedsWindow) Assert.That(m.Health.Window, Is.Not.Empty, $"{m.Gear}: why it needs a window");
-                foreach (var p in m.Parameters.Concat(m.TrackParameters))
-                {
-                    Assert.That(p.Default, Is.InRange(p.Min, p.Max), $"{m.Gear} {p.Name}");
-                    if (p.SafeRange is SafeRange s)
-                    {
-                        Assert.That(s.Min >= p.Min && s.Max <= p.Max && s.Contains(p.Default), Is.True, $"{m.Gear} {p.Name}: its safe range is inside its range and holds its default");
-                        Assert.That(s.Reason, Is.Not.Empty, $"{m.Gear} {p.Name}: why");
-                        Assert.That(m.Health.Status, Is.AnyOf("unhealthy", "warn"), $"{m.Gear}: a safe range comes from an end that diverges or never decays");
-                    }
-                    if (m.IsDraft) Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
-                    // U2 in depth: a draft's suggested role is a known role, with what was measured behind it.
-                    if (p.SuggestedRole.Length > 0)
-                    {
-                        Assert.That(ManifestRoles.IsKnown(p.SuggestedRole), Is.True, $"{m.Gear} {p.Name}: {p.SuggestedRole} is in the role vocabulary");
-                        Assert.That(p.RoleEvidence, Is.Not.Empty, $"{m.Gear} {p.Name}: its evidence");
-                        Assert.That(m.IsDraft, Is.True, $"{m.Gear}: curated manifests and manifests from source have no suggestions");
-                    }
-                    double v = p.Mapping.Value(p.Default, p.Min, p.Max);
-                    Assert.That(double.IsNaN(v), Is.False, $"{m.Gear} {p.Name}: its default maps to a value");
-                }
-            }
-        }
-
         /// <summary>
-        /// Found by the profiler on Windows: a machine that diverges (Jeskola Bass 2, Joachims
-        /// Neptune) renders infinities, and the render's report must still be JSON.
+        /// Found by the profiler on Windows: a machine that diverges (an unstable filter) renders infinities, and the render's report must still be JSON.
         /// </summary>
         [TestCase(float.PositiveInfinity)]
         [TestCase(float.NaN)]

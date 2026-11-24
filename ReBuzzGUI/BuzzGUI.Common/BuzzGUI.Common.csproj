@@ -1,23 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Fork (docs/specs/engine-split.md §4): one assembly identity, two builds, as for
-    BuzzGUI.Interfaces. The Windows build is the library as it always was; the portable net10.0
-    build compiles only the files the engine needs (PortableFiles.props), with their WPF parts
-    under #if WINDOWS. Windows ships the Windows build. Off Windows only the portable build is made.
+    Fork (docs/specs/engine-split.md §4): the portable net10.0 build, which compiles only the files
+    the engine needs (PortableFiles.props). The Windows (WPF) build was removed in CB1.
   -->
   <PropertyGroup>
-    <TargetFrameworks>net10.0-windows10.0.26100.0;net10.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <BaseOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\BuzzGUI.Common\bin</BaseOutputPath>
     <IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\BuzzGUI.Common\obj</IntermediateOutputPath>
     <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
-  <PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
-    <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Sanford.Multimedia.Midi\Clocks\**" />
@@ -69,12 +62,6 @@
   </ItemGroup>
  
   <ItemGroup>
-    <ProjectReference Include="..\..\3rdParty\7Zip\7zip.csproj" Condition="$(TargetFramework.Contains('-windows'))">
-		<Private>False</Private>
-		<CopyLocalSatelliteAssemblies>False</CopyLocalSatelliteAssemblies>
-	</ProjectReference>
-	
-	
     <ProjectReference Include="..\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj">
 		<CopyLocalSatelliteAssemblies>False</CopyLocalSatelliteAssemblies>
 		<Private>False</Private>

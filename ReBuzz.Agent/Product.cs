@@ -2,8 +2,7 @@
 // contributors); what it shows (window titles, menus, dialogs, the About box, the console's lines, the MCP
 // server's name and its `claude mcp add` lines, the Mac app and the Windows executable) says NeoBuzz Live.
 // The code keeps ReBuzz's names: namespaces, assemblies and projects, the settings, autosave and agent-log
-// folders, registry keys, file formats (.bmx, .bmxml) and machine names saved in songs ("ReBuzz Audio In",
-// "ReBuzz Groove", …), so songs, settings, machines and plugins carry over unchanged.
+// folders, registry keys, file formats (the .nbl core sections), so songs, settings, machines and plugins carry over unchanged.
 //
 // In ReBuzz.Agent because every app and test project references it (the engine, ReBuzz.exe, the studio,
 // rebuzz-headless, ReBuzz.AgentEval); ReBuzz.SessionTests links this file.

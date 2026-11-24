@@ -67,8 +67,8 @@ namespace ReBuzz.AgentTests
 
         // ---- the machine page template (§4) ---------------------------------------------------------
 
-        static readonly string[] Sections = { "How it sounds", "Use it for", "Key controls", "Starting points", "Pitfalls", "Pairs well with", "Successor", "Checklist" };
-        static readonly string[] OptionalSections = { "Successor" };
+        static readonly string[] Sections = { "How it sounds", "Use it for", "Key controls", "Starting points", "Pitfalls", "Pairs well with", "Checklist" };
+        static readonly string[] OptionalSections = { };
 
         /// <summary>Whether a checklist item names a tool (a call such as render(...) or a backticked tool name) that the guides know.</summary>
         static bool NamesATool(string item) =>
@@ -98,7 +98,7 @@ namespace ReBuzz.AgentTests
             {
                 int rows = Regex.Matches(controls, @"(?m)^\s*(?:-|\*|\d+\.)\s+\S").Count;
                 if (rows == 0) rows = Math.Max(0, Regex.Matches(controls, @"(?m)^\|.+\|\s*$").Count - 2);
-                // 5 to 8; a machine with fewer controls than that lists them all (Pedal Gain has three parameters).
+                // 5 to 8; a machine with fewer controls than that lists them all (Neo Utility has few parameters).
                 int least = Math.Min(5, controlCount);
                 if (rows < least || rows > 8) problems.Add($"\"Key controls\" lists {rows} controls ({(least < 5 ? $"all {least} of the machine's, at most 8" : "5 to 8")})");
             }
@@ -136,9 +136,8 @@ namespace ReBuzz.AgentTests
         [Test]
         public void TheTemplateCheckFindsWhatIsWrong()
         {
-            string good = "# Neo X\n\n## How it sounds\nSmooth.\n\n## Use it for\nBuses.\n\n## Key controls\n- A: 1 dB\n- B: 2 dB\n- C: 3 dB\n- D: 4 dB\n- E: 5 dB\n\n## Starting points\n- Glue: A 1 dB\n\n## Pitfalls\nLevel.\n\n## Pairs well with\nNeo Verb.\n\n## Successor\nPedal X.\n\n## Checklist\n- [ ] It sounds: `machine_readings(machine=\"X\")` reads under 0 dB.\n";
+            string good = "# Neo X\n\n## How it sounds\nSmooth.\n\n## Use it for\nBuses.\n\n## Key controls\n- A: 1 dB\n- B: 2 dB\n- C: 3 dB\n- D: 4 dB\n- E: 5 dB\n\n## Starting points\n- Glue: A 1 dB\n\n## Pitfalls\nLevel.\n\n## Pairs well with\nNeo Verb.\n\n## Checklist\n- [ ] It sounds: `machine_readings(machine=\"X\")` reads under 0 dB.\n";
             Assert.That(TemplateProblems(good), Is.Empty);
-            Assert.That(TemplateProblems(good.Replace("## Successor\nPedal X.\n\n", "")), Is.Empty, "Successor is optional");
             Assert.That(TemplateProblems(good.Replace("## Pitfalls\nLevel.\n\n", "")), Has.Some.Contain("no \"## Pitfalls\""));
             Assert.That(TemplateProblems(good.Replace("- E: 5 dB\n", "")), Has.Some.Contain("lists 4 controls"));
             Assert.That(TemplateProblems(good.Replace("- [ ] It sounds", "It sounds")), Has.Some.Contain("no \"- [ ]\""));

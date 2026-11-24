@@ -3,7 +3,7 @@ using System.IO;
 using NUnit.Framework;
 using ReBuzz.Agent.Audio;
 using ReBuzz.Agent.Mcp;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

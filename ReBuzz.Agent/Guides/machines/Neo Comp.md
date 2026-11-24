@@ -51,10 +51,6 @@ Threshold from a measurement: the reduction at level L is (L - Threshold) x (1 -
 - Neo EQ before it (cut the lows) and after it (tone); Neo Limiter after a bus compressor; Neo Multiband when one band misbehaves; Neo Transient to restore punch.
 - The whole chain: `guide(topic="mixing-dynamics")` and `guide(topic="mastering-chain")`.
 
-## Successor
-
-Neo Comp replaces Pedal Comp: `machine_replace(machine="Comp")` carries its settings over in their units.
-
 ## Checklist
 
 - [ ] `machine_readings(machine="Comp")` gives `rms_db` and `peak_db` out; compare with the input's `analyze` figures: the loudest parts are down 1-3 dB (glue) or the amount you planned.

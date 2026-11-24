@@ -24,7 +24,9 @@ import subprocess
 import sys
 import threading
 import time
-import xml.etree.ElementTree as ET
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import nbl  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument("exe")
@@ -240,7 +242,7 @@ for n in names:
     if isinstance(a0, (int, float)) and isinstance(c0, (int, float)) and abs(a0 - c0) >= 0.05:
         print(f"     note {n}: two renders of the same session differ by {abs(a0 - c0):.2f} LU ({a0} vs {c0})", flush=True)
 
-song = os.path.join(work, "h1.bmxml")
+song = os.path.join(work, "h1.nbl")
 check(call("song_save", path=song, overwrite=True)[0], "song_save")
 check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
 ok, text, r2 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": names, "name": "after"})
@@ -275,27 +277,19 @@ for name, (pname, value, raw) in tweaks.items():
     check_known(now.get("raw") == raw, f"{name}: {pname} comes back as {value} (raw {raw}) after reopen; now {now.get('value')} (raw {now.get('raw')})", name)
 
 
-def machine_states(path):
-    """The plug-in machines' PlugState (decoded) from a .bmxml, by machine name."""
+def machine_states(path, also=()):
+    """The plug-in machines' saved data (PlugState) from a .nbl, by machine name (tools/nbl.py reads the MACH section)."""
+    manifest, blobs = nbl.read(path)
+    mach = nbl.section(manifest, blobs, "MACH") or b""
     out = {}
-    root = ET.parse(path).getroot()
-    for m in root.iter():
-        if m.tag.split("}")[-1] != "Machine":
-            continue
-        name = m.get("Name") or (m.findtext("Name") or "")
-        for d in m.iter():
-            tag = d.tag.split("}")[-1]
-            if tag in ("Data", "MachineState") and d.text and len(d.text) > 40:
-                try:
-                    raw = base64.b64decode(d.text)
-                except Exception:
-                    continue
-                if b"PlugState" in raw:
-                    out[name] = raw
+    for n in list(names) + list(also):
+        _, data = nbl.machine_data_at(mach, n, ("Neo Plug", "Neo Plug FX"))
+        if data and b"PlugState" in data:
+            out[n] = data
     return out
 
 
-song2 = os.path.join(work, "h1-resaved.bmxml")
+song2 = os.path.join(work, "h1-resaved.nbl")
 check(call("song_save", path=song2, overwrite=True)[0], "song_save again")
 s1, s2 = machine_states(song), machine_states(song2)
 results["state_sizes"] = {k: len(v) for k, v in s1.items()}
@@ -326,13 +320,15 @@ for n in names:
 
 def edit_state(src, dst, victim, fn):
     """Writes dst: src with the victim machine's PlugState XML run through fn. Returns (old state bytes, new state bytes)."""
-    text = open(src, encoding="utf-8").read()
-    states = machine_states(src)
-    raw = states[victim]
+    manifest, blobs = nbl.read(src)
+    mach = nbl.section(manifest, blobs, "MACH")
+    at, raw = nbl.machine_data_at(mach, victim, ("Neo Plug", "Neo Plug FX"))
     # Data is a version byte, a 32-bit length, then the MachineState XML.
     body = fn(raw[5:].decode("utf-8")).encode("utf-8")
     changed = raw[:1] + len(body).to_bytes(4, "little") + body
-    open(dst, "w", encoding="utf-8").write(text.replace(base64.b64encode(raw).decode(), base64.b64encode(changed).decode()))
+    mach = mach[:at] + len(changed).to_bytes(4, "little", signed=True) + changed + mach[at + 4 + len(raw):]
+    nbl.set_section(manifest, blobs, "MACH", mach)
+    nbl.write(dst, manifest, blobs)
     return raw, changed
 
 
@@ -345,9 +341,9 @@ if names and names[0] in s1:
             xml = re.sub(rf"<{tag}>.*?</{tag}>", f"<{tag}>{value}</{tag}>", xml)
         return xml
 
-    _, changed = edit_state(song, os.path.join(work, "h1-missing.bmxml"), victim, unknown)
-    check(call("song_open", path=os.path.join(work, "h1-missing.bmxml"), discard_unsaved=True)[0], "song_open with a missing plug-in")
-    resaved = os.path.join(work, "h1-missing-resaved.bmxml")
+    _, changed = edit_state(song, os.path.join(work, "h1-missing.nbl"), victim, unknown)
+    check(call("song_open", path=os.path.join(work, "h1-missing.nbl"), discard_unsaved=True)[0], "song_open with a missing plug-in")
+    resaved = os.path.join(work, "h1-missing-resaved.nbl")
     check(call("song_save", path=resaved, overwrite=True)[0], "song_save with a missing plug-in")
     check(machine_states(resaved).get(victim) == changed, f"{victim}: a missing plug-in's state is saved back unchanged")
     check("plug-in not found" in "\n".join(stderr_lines()), "the machine reports the plug-in missing")
@@ -383,7 +379,7 @@ if args.fixtures:
     call("arrangement_place", machine="Octaver", pattern="A", at=[0])
     ok, _, r0 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "probes": ["Voice"], "name": "midi-off"})
     check(probe_levels(r0).get("Voice", (None, True))[1] is True, "Voice is silent while the Octaver's MIDI goes nowhere")
-    midi_song = os.path.join(work, "midi.bmxml")
+    midi_song = os.path.join(work, "midi.nbl")
     call("song_save", path=midi_song, overwrite=True)
     edit_state(midi_song, midi_song, "Octaver", lambda xml: xml.replace("</PlugState>", "<MidiOut>Voice</MidiOut></PlugState>") if "<MidiOut" not in xml else re.sub(r"<MidiOut\s*/>|<MidiOut>.*?</MidiOut>", "<MidiOut>Voice</MidiOut>", xml))
     call("song_open", path=midi_song, discard_unsaved=True)
@@ -482,9 +478,9 @@ if args.fixtures and placed != "inprocess":
 
     # back in process, and a song with a sandboxed machine keeps the choice
     ok, _, _ = call("machine_command", machine="Crash", command="Placement > Sandbox per instance")
-    sbx_song = os.path.join(work, "sandbox.bmxml")
+    sbx_song = os.path.join(work, "sandbox.nbl")
     check(call("song_save", path=sbx_song, overwrite=True)[0], "song_save with a sandboxed plug-in")
-    check(b"<Placement>instance</Placement>" in machine_states(sbx_song).get("Crash", b""), "the placement is saved with the song")
+    check(b"<Placement>instance</Placement>" in machine_states(sbx_song, also=("Crash",)).get("Crash", b""), "the placement is saved with the song")
     call("song_open", path=sbx_song, discard_unsaved=True)
     ok, q = quirks_of("Crash")
     check("per instance" in q or bool(placed), "the song opens with Crash in its own sandbox")

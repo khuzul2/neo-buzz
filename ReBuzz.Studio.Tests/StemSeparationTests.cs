@@ -20,7 +20,7 @@ using ReBuzz.Core;
 using ReBuzz.Core.AudioLibrary.Stems;
 using ReBuzz.SessionTests.Stems;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
