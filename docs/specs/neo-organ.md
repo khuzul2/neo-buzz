@@ -42,6 +42,7 @@ A polyphonic tonewheel organ with a stereo output, 16 tracks. It is an instrumen
 | Key click band | about 1 - 6 kHz, nothing above 8 kHz | 95 % of its energy between 1 and 6 kHz, -71 dB above 8 kHz, -45 dB below 500 Hz; over within 8 ms; it fades in |
 | Release click | much quieter than the press | -27.6 dB re the press |
 | Every preset, a Cmaj7 chord | click peak 20 dB under the chord's steady peak (12 dB for Funk Stabs and Reggae Bubble); power above 6 kHz in the first 10 ms at most 6 dB over the 30 - 80 ms window (floor 60 dB under the chord) | see the table below; all pass |
+| Rock Drive (round 3, on the listening pack's 8 bars) | panning (p95 of abs(L - R) per 10 ms) no more than the wider of Full Gospel and Fast Whirl; 3 - 8 kHz re the full band no more than Full Gospel; the drive adds more than 3 dB to that band | 1.75 dB (limit 10.31); -17.6 dB (limit -10.1); the drive adds 6.3 dB. The first Rock Drive: 7.17 dB, -11.7 dB, +11.4 dB |
 | Vibrato swing | ±6, ±12, ±24 cents | ±6.4, ±12.8, ±25.7 |
 | Horn swells | 0.8 Hz slow, 6.7 Hz fast | 0.805, 6.709 |
 | Drum swells | 0.67 Hz slow, 5.7 Hz fast | 0.671, 5.695 |
@@ -64,7 +65,7 @@ A Cmaj7 chord (C3 E3 G3 B3) from silence at each preset's settings, rendered wit
 | Jazz — Warm Soul | 20% → 30% | -14.9 → -45.4 dB (-20) | +36.6 → -32.5 dB | -15.7 → -80.4 dB | 215 → 0 | 0.363 → 0.004 |
 | Soft — Soft Ballad | 5% → 10% | -20.2 → -60.7 dB (-20) | +30.4 → -27.0 dB | -21.5 → -76.3 dB | 42 → 0 | 0.065 → 0.003 |
 | Soft — Mellow Flutes | 12% → 15% | -13.9 → -51.8 dB (-20) | +38.5 → -26.3 dB | -16.8 → -80.3 dB | 21 → 0 | 0.209 → 0.011 |
-| Rock — Rock Drive | 40% → 15% | -3.8 → -28.0 dB (-20) | +10.3 → -2.7 dB | -6.7 → -18.8 dB | 0 → 0 | 0.892 → 0.452 |
+| Rock — Rock Drive (retuned in round 3) | 40% → 15% | -3.8 → -40.2 dB (-20) | +10.3 → -16.3 dB | -6.7 → -58.1 dB | 0 → 0 | 0.892 → 0.110 |
 | Percussive — Bright Percussion | 60% → 55% | -5.9 → -33.0 dB (-20) | +44.8 → -19.4 dB | -13.0 → -74.2 dB | 82 → 0 | 1.054 → 0.023 |
 | Percussive — Reggae Bubble | 80% → 90% | -3.3 → -21.6 dB (-12) | +47.7 → -13.2 dB | -11.3 → -71.3 dB | 225 → 0 | 0.913 → 0.009 |
 | Percussive — Funk Stabs | 100% → 80% | 1.6 → -23.6 dB (-12) | +53.5 → -12.5 dB | -5.0 → -67.5 dB | 421 → 0 | 1.110 → 0.008 |
