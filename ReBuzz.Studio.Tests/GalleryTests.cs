@@ -276,9 +276,9 @@ namespace ReBuzz.Studio.Tests
             Core.SongCore.CreateMachine(gear, null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
             setup(machine, (m, p, v) => m.ParameterGroups[1].Parameters.First(x => x.Name == p).SetValue(0, v));
-            machine.CreatePattern("Beat", 16);
+            machine.CreatePattern(name + " beat", 16);
             window.Detail.ShowPage(true, true);
-            PatternView.Edit(machine.PatternsList.First(p => p.Name == "Beat"));
+            PatternView.Edit(machine.PatternsList.First(p => p.Name == name + " beat"));
             Wait(250);
             var roll = PatternView.Page.Roll;
             roll.Poll();
@@ -292,6 +292,8 @@ namespace ReBuzz.Studio.Tests
 
         static void Try(string id, System.Action shot)
         {
+            // GALLERY_ONLY=059,061: only the shots whose id starts with one of these (a quick look at a new screen; unset in CI).
+            if (System.Environment.GetEnvironmentVariable("GALLERY_ONLY") is { Length: > 0 } only && !only.Split(',').Any(p => id.StartsWith(p))) return;
             try
             {
                 shot();
