@@ -50,8 +50,8 @@
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs;..\Machines\NeoBuzz.Analysis\GainMatch.cs" Link="NeoGate\Analysis\%(Filename)%(Extension)" />
     <!-- The zero-allocation checks measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
     <Compile Include="..\NeoBuzz.MachineTests\AllocationCheck.cs" Link="AllocationCheck.cs" />
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
-    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\AllocationWindow.cs" Link="TestSupport\AllocationWindow.cs" />
   </ItemGroup>
 
   <ItemGroup>

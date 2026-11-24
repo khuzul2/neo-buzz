@@ -19,7 +19,7 @@ using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.FileOps;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
 
 namespace ReBuzz.Studio.Tests

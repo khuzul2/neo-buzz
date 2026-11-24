@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Model;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

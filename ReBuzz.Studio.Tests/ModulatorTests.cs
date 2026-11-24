@@ -29,7 +29,7 @@ using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Device;
 using ReBuzz.Studio.Views.Machines;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

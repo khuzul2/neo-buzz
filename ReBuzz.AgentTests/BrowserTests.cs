@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using ReBuzz.Agent.App;
 using ReBuzz.Agent.Browser;
 using ReBuzz.Agent.Mcp;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

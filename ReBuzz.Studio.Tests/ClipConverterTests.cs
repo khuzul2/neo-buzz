@@ -9,7 +9,7 @@ using Avalonia.Headless.NUnit;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

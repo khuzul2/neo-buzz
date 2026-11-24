@@ -43,7 +43,7 @@
          agent server measures with (docs/specs/mcp-server.md §7). Only this file, by name. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />
     <!-- The zero-allocation tests measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
     <!-- Explain (neo-learn.md §5.3): the cross-assembly parameter-source marks and the strip's board. -->
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\ExplainBoard.cs" Link="Explain\ExplainBoard.cs" />
     <!-- Canvas modulators (neo-patch.md §3): the plain data the modulation tables and tests read. -->
@@ -51,9 +51,9 @@
     <!-- Versioned machine state (machines.md §3.4): the interface the engine calls and the saved envelope, plain data. -->
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\MachineInterface\IVersionedMachine.cs" Link="Explain\IVersionedMachine.cs" />
     <None Include="Layouts\**" CopyToOutputDirectory="PreserveNewest" />
-    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
+    <Compile Include="..\TestSupport\AllocationWindow.cs" Link="TestSupport\AllocationWindow.cs" />
     <!-- The throughput guards time a render against a reference workload in the same run (Throughput.cs; machines.md §6). -->
-    <Compile Include="..\ReBuzzTests\Automation\Throughput.cs" Link="Automation\Throughput.cs" />
+    <Compile Include="..\TestSupport\Throughput.cs" Link="TestSupport\Throughput.cs" />
     <!-- Neo Tune's objective quality measures (neo-tune.md section 12), shared with the pitch-eval tool. -->
     <Compile Include="..\tools\PitchEval\TuneQuality.cs" Link="Quality\TuneQuality.cs" />
     <Compile Include="..\tools\PitchEval\TuneNotes.cs" Link="Quality\TuneNotes.cs" />
@@ -69,7 +69,7 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
-    <Using Include="ReBuzzTests.Automation" />
+    <Using Include="NeoBuzz.TestSupport" />
   </ItemGroup>
 
 </Project>

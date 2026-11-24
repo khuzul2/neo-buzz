@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             Model.EndSwap();
         }
 
-        static string Temp(string name) => ReBuzzTests.Automation.TestTemp.Path("br1-studio-" + name + "-" + Guid.NewGuid().ToString("N")[..8]);
+        static string Temp(string name) => NeoBuzz.TestSupport.TestTemp.Path("br1-studio-" + name + "-" + Guid.NewGuid().ToString("N")[..8]);
 
         /// <summary>A WAV of a sine (16-bit mono) so a preview has something to mix.</summary>
         static void WriteSine(string path, double seconds, int rate = 44100, double hz = 440)

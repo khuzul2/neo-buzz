@@ -40,7 +40,7 @@ using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

@@ -3,7 +3,7 @@
 // editor's Explain strip and the studio inspector can explain any control. KnowledgePending lists the machines still to do:
 // they warn, everything else fails.
 using ReBuzz.Agent.Model;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

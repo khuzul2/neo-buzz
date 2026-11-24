@@ -21,7 +21,7 @@ using NeoBuzz.Editor;
 using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -1716,7 +1716,7 @@ namespace ReBuzz.Studio.Tests
                     var analyzerWindow = OpenEditor(analyzer);
                     Run(0.5);
                     // GuardPolicy: both measured again (up to 3 times) until the scope's frame is within its limit.
-                    var frames = ReBuzzTests.Automation.GuardPolicy.Retry(() => (Scope: EditorFrameMs(window), Analyzer: EditorFrameMs(analyzerWindow)),
+                    var frames = NeoBuzz.TestSupport.GuardPolicy.Retry(() => (Scope: EditorFrameMs(window), Analyzer: EditorFrameMs(analyzerWindow)),
                                                                           f => f.Scope < Math.Max(3 * f.Analyzer, 20), out _);
                     double scopeMs = frames.Scope, analyzerMs = frames.Analyzer;
                     TestContext.Out.WriteLine($"[notice] Neo Scope's editor in the studio (headless, Skia in software, {window.ClientSize.Width:0} x {window.ClientSize.Height:0}): " +

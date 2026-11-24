@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
 
         static string Work(string name)
         {
-            string dir = ReBuzzTests.Automation.TestTemp.Path($"dd1-{Environment.ProcessId}");
+            string dir = NeoBuzz.TestSupport.TestTemp.Path($"dd1-{Environment.ProcessId}");
             Directory.CreateDirectory(dir);
             return Path.Combine(dir, name);
         }

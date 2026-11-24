@@ -3,9 +3,6 @@ using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if WINDOWS
-using static WDE.ModernPatternEditor.PlayRecordManager;
-#endif
 
 namespace WDE.ModernPatternEditor.MPEStructures
 {
@@ -279,24 +276,6 @@ namespace WDE.ModernPatternEditor.MPEStructures
             BeatRowsList = newBeatRows;
         }
 
-#if WINDOWS
-        internal void PlayColumnEvents(IPattern pat, int start, int end, List<CollectedEventState> collectEvents)
-        {
-            // Fork (neo-buzz audio hygiene): straight from the column's list, under its lock as
-            // GetEvents read it (it made two arrays of them on every call).
-            lock (patternEventsLock)
-            {
-                for (int i = 0; i < eventList.Count; i++)
-                {
-                    var e = eventList[i];
-                    if (e.Time >= start && e.Time < end)
-                        //Parameter.SetValue(ParamTrack, e.Value);
-                        collectEvents.Add(new CollectedEventState() { parameter = Parameter, time = e.Time, ParamTrack = ParamTrack, value = e.Value, eventType = CollectedEventType.Buzz });
-                }
-            }
-        }
-
-#endif
 
         internal void SetRPB(int rpb)
         {

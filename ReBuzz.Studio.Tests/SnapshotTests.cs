@@ -15,7 +15,7 @@ using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Core.SongHistory;
 using ReBuzz.FileOps;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

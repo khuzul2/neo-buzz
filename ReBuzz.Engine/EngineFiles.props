@@ -2,8 +2,7 @@
 
   <!--
     Fork (docs/specs/engine-split.md §5, PR 10): the engine's source files, where they are.
-    ReBuzz.Engine.csproj compiles them (EngineSource); ReBuzz.csproj imports this file and leaves
-    them out, so each file is compiled once, into ReBuzz.Engine.dll.
+    ReBuzz.Engine.csproj compiles them (EngineSource) into ReBuzz.Engine.dll.
   -->
 
   <PropertyGroup>
@@ -24,26 +23,16 @@
     <EngineSource Include="$(EngineRoot)Platform\**\*.cs" Link="Platform\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <!-- They stay in ReBuzz.exe: XAML code-behind, the WPF implementations of the seams, the HWND
-       host of native editors, the app hosts of studio and headless mode, and the Windows audio,
-       MIDI and registry implementations (engine-split.md §2.2, stages 2 and 3). -->
+  <!-- The Windows audio drivers are compiled by ReBuzz.Host on Windows (ASIO and WASAPI through NAudio), not here. -->
   <ItemGroup>
-    <EngineSource Remove="$(EngineRoot)**\*.xaml.cs" />
-    <EngineSource Remove="$(EngineRoot)Core\UserMessagesViaMessageBox.cs;$(EngineRoot)Core\WindowsGuiDispatcher.cs;
-                          $(EngineRoot)Core\FileNameChoiceThroughOpenFileDialog.cs;$(EngineRoot)Core\FileNameToSaveChoiceThroughSaveFileDialog.cs;
-                          $(EngineRoot)MachineManagement\WindowsKeyboard.cs" />
-    <EngineSource Remove="$(EngineRoot)NativeMachine\NativeEditorHost.cs;$(EngineRoot)Agent\StudioAgent.cs;$(EngineRoot)Agent\HeadlessAgent.cs" />
-    <EngineSource Remove="$(EngineRoot)Audio\Driver\AsioAudioDriver.cs;$(EngineRoot)Audio\Driver\WasapiAudioDriver.cs;$(EngineRoot)Audio\Driver\WindowsAudioDriverFactory.cs;
-                          $(EngineRoot)Midi\Midi2.cs;$(EngineRoot)Midi\MidiInDevice.cs;$(EngineRoot)Midi\MidiOutDevice.cs;$(EngineRoot)Midi\WindowsMidiBackend.cs;
-                          $(EngineRoot)Core\WindowsRegistry.cs;$(EngineRoot)Core\WindowsRegistryKey.cs" />
+    <EngineSource Remove="$(EngineRoot)Audio\Driver\AsioAudioDriver.cs;$(EngineRoot)Audio\Driver\WasapiAudioDriver.cs" />
   </ItemGroup>
 
-  <!-- Engine code outside the engine folders: helpers in ReBuzz/Common and engine start-up. -->
+  <!-- Engine code outside the engine folders: helpers in ReBuzz/Common. -->
   <ItemGroup>
     <EngineSource Include="$(EngineRoot)Common\Utils.cs;$(EngineRoot)Common\BurstProtectionEngine.cs;$(EngineRoot)Common\MultimediaTimer.cs;
                            $(EngineRoot)Common\ChildProcessTracker.cs;$(EngineRoot)Common\Interfaces\IMachineExtension.cs"
                   Link="Common\%(RecursiveDir)%(Filename)%(Extension)" />
-    <EngineSource Include="$(EngineRoot)AppViews\ReBuzzCoreInitialization.cs" Link="AppViews\ReBuzzCoreInitialization.cs" />
   </ItemGroup>
 
 </Project>

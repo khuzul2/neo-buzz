@@ -886,9 +886,6 @@ namespace WDE.ModernPatternEditor
                 {
                     if (Global.Buzz.Playing && TargetMachine != null)
                     {
-#if WINDOWS
-                        playRecordManager.Play(songTime);
-#endif
                     }
                 }
 

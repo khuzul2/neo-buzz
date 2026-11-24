@@ -28,7 +28,7 @@ using ReBuzz.Core.Notes;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Notes;
 using static ReBuzz.Studio.Tests.MachineViewTests;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

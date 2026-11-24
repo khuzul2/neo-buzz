@@ -24,7 +24,7 @@ using ReBuzz.Core.SongHistory;
 using ReBuzz.FileOps;
 using ReBuzz.FileOps.Nbl;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

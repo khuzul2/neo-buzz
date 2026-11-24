@@ -24,7 +24,7 @@ using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Mixer;
 using ReBuzz.Studio.Views.Sequence;

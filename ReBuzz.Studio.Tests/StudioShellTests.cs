@@ -16,7 +16,7 @@ using BuzzGUI.Common;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Preferences;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

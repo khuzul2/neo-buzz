@@ -4,9 +4,6 @@
 [submodule "3rdParty/serilog/serilog"]
 	path = 3rdParty/serilog/serilog
 	url = https://github.com/serilog/serilog
-[submodule "3rdParty/serilog/serilog-sinks-richtextbox"]
-	path = 3rdParty/serilog/serilog-sinks-richtextbox
-	url = https://github.com/serilog-contrib/serilog-sinks-richtextbox
 [submodule "3rdParty/Gear/matilde"]
 	path = 3rdParty/Gear/matilde
 	url = https://github.com/clvn/matilde/

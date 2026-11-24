@@ -18,7 +18,7 @@ using BuzzGUI.Interfaces;
 using NUnit.Framework;
 using ReBuzz.Audio;
 using ReBuzz.Core;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Sequence;

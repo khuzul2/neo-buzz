@@ -6,9 +6,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-#if WINDOWS
-using System.Windows.Markup;
-#endif
 
 namespace WDE.ModernPatternEditor
 {

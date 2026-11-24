@@ -24,7 +24,7 @@
   <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
 
   <ItemGroup>
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionMidiMap.cs" Link="Engine\SessionMidiMap.cs" />
@@ -111,7 +111,7 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
-    <Using Include="ReBuzzTests.Automation" />
+    <Using Include="NeoBuzz.TestSupport" />
   </ItemGroup>
 
   <ItemGroup>

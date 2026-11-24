@@ -56,19 +56,9 @@
 
   <!-- The audio hygiene tests describe a buffer that allocated as the engine's and the machines' tests do (AllocationWindow). -->
   <ItemGroup>
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
-    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
-    <Compile Include="..\ReBuzzTests\Automation\TestTemp.cs" Link="Automation\TestTemp.cs" />
-  </ItemGroup>
-
-  <!-- The UI gallery's demo song (docs/specs/ui-gallery.md), shared with ReBuzz.exe (its ui-shots switch). -->
-  <ItemGroup>
-    <Compile Include="..\ReBuzz\AppViews\GallerySong.cs" Link="GallerySong.cs" />
-  </ItemGroup>
-
-  <!-- Fixtures the tests read beside them: Info's saved state (machine-safety.md §3.5). -->
-  <ItemGroup>
-    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\AllocationWindow.cs" Link="TestSupport\AllocationWindow.cs" />
+    <Compile Include="..\TestSupport\TestTemp.cs" Link="TestSupport\TestTemp.cs" />
   </ItemGroup>
 
   <!-- The engine the tests start finds its gear beside them, as the app does (Neo editors included). -->

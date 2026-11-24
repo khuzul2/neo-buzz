@@ -8,7 +8,7 @@ using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

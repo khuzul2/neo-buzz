@@ -10,7 +10,7 @@
 
 using System.Reflection;
 using System.Threading;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {

@@ -7,7 +7,7 @@ using ReBuzz.Host;
 using ReBuzz.Platform;
 using ReBuzz.Midi;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

@@ -22,7 +22,7 @@ using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Device;
 using ReBuzz.Studio.Views.Inspector;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
 using static ReBuzz.Studio.Tests.DeviceTestKit;
 using Mode = ReBuzz.Studio.Views.Device.DeviceView.DeviceMode;
