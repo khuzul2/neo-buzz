@@ -22,7 +22,8 @@ A shaper for the band below a crossover (20-300 Hz, a Linkwitz-Riley 24 low-pass
 | Contrast | 0% | +20 to +40 focuses a master; -30 to -50 evens a jumpy bass |
 | Mono freq | 100 Hz | below it the low band is mono (with Mono On) |
 | Peak level | -3 dB | where the low band's peaks are held (with Peak control On) |
-| Amount, Mix | 100% | scales punch, sustain, contrast and balance; 0 % is the bypassed dry, 200 % exaggerates. |
+
+`Amount` (default 100 %) scales punch, sustain, contrast and balance: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
 
 ## Starting points
 

@@ -25,7 +25,8 @@ Time changes glide (small ones bend the pitch like tape) or crossfade (large one
 | High cut | 5 kHz | each repeat darker, so the echoes sit behind the dry sound |
 | Duck | 12 dB | echoes step aside while the input plays |
 | Mix | 100% | on a send; 15-35 % as an insert |
-| Amount | 100% | scales feedback and wet level; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
+
+`Amount` (default 100 %) scales feedback and wet level: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
 
 ## Starting points
 

@@ -27,7 +27,8 @@ Path: crossovers (`Crossover 1` to `Crossover 3`, never closer than the one belo
 | B1 release | 200 ms | |
 | B1 makeup | 1.5 dB | loudness matched |
 | Mix | 100% | 40 % under dry drums for parallel squash |
-| Amount | 100% | scales each band's ratio, upward ratio, range and makeup; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
+
+`Amount` (default 100 %) scales each band's ratio, upward ratio, range and makeup: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
 
 The defaults compress (every band 2:1 at -20 dB): set the bands you do not want to 1:1, or start from a preset.
 

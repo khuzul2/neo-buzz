@@ -26,7 +26,8 @@ Path: `Pre-delay`, input `Diffusion`, `Early` reflections, a 16-line feedback ne
 | Low cut | 200 Hz | keeps the return clean; 200-400 Hz |
 | High cut | 8 kHz | 6-10 kHz keeps it from hissing |
 | Mix | 100% | on a send; 15-35 % as an insert |
-| Amount | 100% | scales wet level and decay; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
+
+`Amount` (default 100 %) scales wet level and decay: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
 
 ## Starting points
 

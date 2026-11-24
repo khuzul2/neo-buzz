@@ -114,7 +114,7 @@ namespace NeoBuzz.Dsp
 
         readonly ParamValues raw, eff;
         readonly AmountRule[] rules;
-        readonly int amountIndex, mixIndex, deltaIndex, listenIndex, ownMixIndex;
+        readonly int amountIndex, mixIndex, deltaIndex, listenIndex;
         readonly float[] ringL, ringR;
         readonly int mask;
         int pos;
@@ -129,10 +129,8 @@ namespace NeoBuzz.Dsp
         /// <param name="deltaIndex">Index of the effect's Delta switch (−1: none): the stage scales the delta by its weight.</param>
         /// <param name="listenIndex">Index of the effect's Listen switch (−1: none): the stage leaves the listened signal alone.</param>
         /// <param name="maxLatency">The most latency the effect reports, samples.</param>
-        /// <param name="ownMixIndex">An effect that mixes itself but whose dry is not the plain delayed input in every mode (Neo Multiband's minimum phase keeps its dry in the crossover's phase): the stage takes the output to the exact dry as that Mix falls below 2 %.</param>
-        public FxStage(ParamValues raw, int amountIndex, int mixIndex, AmountRule[] rules, int deltaIndex = -1, int listenIndex = -1, int maxLatency = 30000, int maxBlock = 256, int ownMixIndex = -1)
+        public FxStage(ParamValues raw, int amountIndex, int mixIndex, AmountRule[] rules, int deltaIndex = -1, int listenIndex = -1, int maxLatency = 30000, int maxBlock = 256)
         {
-            this.ownMixIndex = ownMixIndex;
             this.raw = raw;
             this.amountIndex = amountIndex;
             this.mixIndex = mixIndex;
@@ -209,8 +207,7 @@ namespace NeoBuzz.Dsp
             Fill(raw, eff, amountIndex, rules);
             double a = Amount;
             double fade = a >= FadeBelow ? 1.0 : a <= 0 ? 0.0 : a / FadeBelow;
-            double own = ownMixIndex >= 0 ? Math.Min(1.0, raw.Value(ownMixIndex) / 0.02) : 1.0;
-            float target = (float)(Mix * fade * own);
+            float target = (float)(Mix * fade);
             if (!started)
             {
                 weight.Reset(target);

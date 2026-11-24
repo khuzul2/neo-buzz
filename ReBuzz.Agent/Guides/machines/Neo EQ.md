@@ -25,7 +25,8 @@ Beyond that, each band can work on one channel (`B1 channel`: Stereo, Left, Righ
 | B3 gain | -3 dB | cut narrow, boost wide |
 | B3 Q | 1.4 | 0.5-1 tone, 1.4-2 a region, 4-8 a resonance |
 | Output | 0 dB | the editor's Match sets it from `gain_match_db` |
-| Amount, Mix | 100% | scales every band gain and graphic slider (dB); 0 % is the bypassed dry, 200 % exaggerates. |
+
+`Amount` (default 100 %) scales every band gain and graphic slider (dB): 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
 
 Find the frequency with `analyze_mix` (it names masking bands) or `plot(kind="spectrum", sources=["r1"])`. One labelled move per band. Check each move with `compare` against the render before.
 

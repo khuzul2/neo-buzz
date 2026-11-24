@@ -209,6 +209,10 @@ namespace NeoBuzz.MachineTests
             var c = Get(name);
             foreach (var (variant, set) in Setups(c))
             {
+                // Neo Multiband's own Mix in minimum phase blends against the bands' sum at unity (its crossovers' allpasses), so a
+                // parallel blend never combs, and a soloed band wins over it (MultibandTests): Mix 0 there is that dry, not the input.
+                // Amount 0 is the input in every mode.
+                if (c.Name == "Neo Multiband" && variant == "minimum phase") continue;
                 var v = Values(c, set);
                 SetRaw(v, "Mix", 0);
                 var (inL, inR) = c.Material();

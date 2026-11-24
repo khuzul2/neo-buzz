@@ -26,7 +26,8 @@ A clipper: `Drive` pushes the signal into the `Ceiling` and the curve flattens w
 | Bands | 1 band | 2 or 3 split the clipping by frequency; set before playing |
 | Mix | 100% | below it the dry signal can pass the ceiling |
 | Output | 0 dB | the editor's Match sets it from `gain_match_db` |
-| Amount | 100% | scales drive, ceiling and band drives; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
+
+`Amount` (default 100 %) scales drive, ceiling and band drives: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
 
 ## Starting points
 

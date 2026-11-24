@@ -24,7 +24,8 @@ Order: Matrix Decode, inversions, Swap, DC removal, Width and Bass mono, Pan, Ga
 | Width | 100% | 120-140 % wider; 50-80 % narrower; keep basses at 100 % or below |
 | Bass mono | On | with Bass mono freq 120 Hz (80 Hz on a master) |
 | Matrix | Off | Encode M/S before and Decode M/S after a machine |
-| Amount, Mix | 100% | scales gain, pan and width offsets; 0 % is the bypassed dry, 200 % exaggerates. |
+
+`Amount` (default 100 %) scales gain, pan and width offsets: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
 
 ## Starting points
 

@@ -22,7 +22,8 @@ A noise gate and downward expander. The gate opens when the key's level reaches 
 | Hold | 60 ms | stops the gate cutting note ends |
 | Release | 120 ms | short chops tails, long fades them |
 | Lookahead | 2 ms | gate open before the transient (adds latency) |
-| Amount, Mix | 100% | scales the ratio and range; 0 % is the bypassed dry, 200 % exaggerates. |
+
+`Amount` (default 100 %) scales the ratio and range: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
 
 ## Starting points
 

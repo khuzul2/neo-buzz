@@ -30,7 +30,8 @@ Neo Poly's filters as an effect: the transistor ladder and the state-variable fi
 | LFO depth | 0 oct | 1-3 octaves around Cutoff for sweeps |
 | LFO sync | Free | a note value (1/4 to 8 bars) locks the sweep to the tempo |
 | Mix | 100% | below it the dry signal is crossfaded in |
-| Amount | 100% | scales cutoff distance from open, resonance, drive, envelope and LFO depth; 0 % is the bypassed dry, 200 % exaggerates. Mix is its own dry/wet. |
+
+`Amount` (default 100 %) scales cutoff distance from open, resonance, drive, envelope and LFO depth: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
 
 ## Starting points
 

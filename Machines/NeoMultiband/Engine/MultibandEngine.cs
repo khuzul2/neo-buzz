@@ -152,7 +152,7 @@ namespace NeoBuzz.Multiband
 
         public MultibandEngine(ParamValues values)
         {
-            fx = new FxStage(values, P.Amount, -1, AmountRules, ownMixIndex: P.Mix);
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
             this.values = fx.Effective;
             SetSampleRate(48000);
         }
