@@ -50,6 +50,26 @@ A polyphonic tonewheel organ with a stereo output, 16 tracks. It is an instrumen
 | Cost | 61 keys within 1.5x of one key | 1.00x; 61 keys with vibrato, drive and rotary 77x real time |
 | Hygiene | 0 bytes a buffer, no denormals, no zipper above -60 dB | all hold; moving drawbars, expression and volume leaves -75 dB above 2 kHz |
 
+### The key click per preset (OR1 review)
+
+A Cmaj7 chord (C3 E3 G3 B3) from silence at each preset's settings, rendered with the click and again with Key click at 0: the difference is the click as it comes out. "Steady" is 300 - 500 ms. Power above 6 kHz is measured through a 16th-order 6 kHz high-pass; the 30 - 80 ms window's power has a floor 60 dB under the chord (a tonewheel chord with no drive has next to nothing above 6 kHz, its top wheel being 5.9 kHz). The pack columns are the listening pack's 8-bar takes. Before is the white-noise click of the first OR1 build (the Key click scale was different: a fixed level, not the note's).
+
+| Preset | Key click | Click peak re the chord's steady peak (limit) | Above 6 kHz: first 10 ms over 30 - 80 ms (limit +6 dB) | Above 6 kHz in the first 10 ms, re the chord | Pack: 1-ms windows > 20x median | Pack: max abs 2nd difference |
+|---|---|---|---|---|---|---|
+| Full — Full Gospel | 45% → 45% | -9.0 → -27.6 dB (-20) | +14.7 → -0.9 dB | -10.9 → -25.2 dB | 0 → 0 | 0.957 → 0.343 |
+| Full — Church Full | 10% → 20% | -19.0 → -48.0 dB (-20) | +34.2 → -30.7 dB | -23.0 → -86.9 dB | 7 → 0 | 0.143 → 0.015 |
+| Full — Fast Whirl | 15% → 25% | -18.5 → -47.5 dB (-20) | +32.5 → -27.1 dB | -23.1 → -81.5 dB | 70 → 0 | 0.394 → 0.013 |
+| Jazz — Jazz Trio | 35% → 40% | -9.0 → -36.9 dB (-20) | +41.8 → -24.0 dB | -14.1 → -76.5 dB | 269 → 0 | 0.716 → 0.007 |
+| Jazz — Smoky Blues | 25% → 35% | -1.9 → -30.5 dB (-20) | +45.4 → -21.2 dB | -9.4 → -72.9 dB | 203 → 0 | 0.764 → 0.008 |
+| Jazz — Warm Soul | 20% → 30% | -14.9 → -45.4 dB (-20) | +36.6 → -32.5 dB | -15.7 → -80.4 dB | 215 → 0 | 0.363 → 0.004 |
+| Soft — Soft Ballad | 5% → 10% | -20.2 → -60.7 dB (-20) | +30.4 → -27.0 dB | -21.5 → -76.3 dB | 42 → 0 | 0.065 → 0.003 |
+| Soft — Mellow Flutes | 12% → 15% | -13.9 → -51.8 dB (-20) | +38.5 → -26.3 dB | -16.8 → -80.3 dB | 21 → 0 | 0.209 → 0.011 |
+| Rock — Rock Drive | 40% → 15% | -3.8 → -28.0 dB (-20) | +10.3 → -2.7 dB | -6.7 → -18.8 dB | 0 → 0 | 0.892 → 0.452 |
+| Percussive — Bright Percussion | 60% → 55% | -5.9 → -33.0 dB (-20) | +44.8 → -19.4 dB | -13.0 → -74.2 dB | 82 → 0 | 1.054 → 0.023 |
+| Percussive — Reggae Bubble | 80% → 90% | -3.3 → -21.6 dB (-12) | +47.7 → -13.2 dB | -11.3 → -71.3 dB | 225 → 0 | 0.913 → 0.009 |
+| Percussive — Funk Stabs | 100% → 80% | 1.6 → -23.6 dB (-12) | +53.5 → -12.5 dB | -5.0 → -67.5 dB | 421 → 0 | 1.110 → 0.008 |
+| Rotary take (Jazz Trio, Slow-Fast-Slow) | 35% → 40% | | | | 289 → 2 (also 2 with Key click 0: its percussion through the fast horn) | 0.774 → 0.013 |
+
 ## 5. Parameters and state
 
 `Params.def` lists the 32 parameters in seven groups (Drawbars, Percussion, Key, Vibrato, Drive, Rotary, Output); the order is the version-0 layout (`state-layouts.txt`). The state is versioned (`StateMigrations`).
