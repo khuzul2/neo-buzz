@@ -159,6 +159,7 @@ namespace ReBuzz.Studio.Views.Sequence
             core.PropertyChanged += OnBuzzChanged;
             state.Changed += OnStateChanged;
             ReBuzz.Core.Session.PatternColors.Changed += OnPatternColourChanged;
+            if (core.TrackColours is { } trackColours) trackColours.Changed += OnTrackColoursChanged;
             WatchSequences();
             geo.TickWidth = state.Zoom;
             ClampCursor();
@@ -177,6 +178,7 @@ namespace ReBuzz.Studio.Views.Sequence
             core.PropertyChanged -= OnBuzzChanged;
             state.Changed -= OnStateChanged;
             ReBuzz.Core.Session.PatternColors.Changed -= OnPatternColourChanged;
+            if (core.TrackColours is { } trackColours) trackColours.Changed -= OnTrackColoursChanged;
             UnwatchSequences();
             UnwatchPatterns();
             song = null;
@@ -228,6 +230,7 @@ namespace ReBuzz.Studio.Views.Sequence
         });
 
         void OnPatternColourChanged(IPattern p) => OnUi(InvalidateVisual);
+        void OnTrackColoursChanged() => OnUi(InvalidateVisual);
 
         void WatchSequences()
         {
@@ -739,7 +742,7 @@ namespace ReBuzz.Studio.Views.Sequence
             int ci = kind == 0 && pattern != null ? state.ColourIndexOf(pattern) : -1;
             var palette = SequenceSongState.Palette;
             bool hasOwn = kind == 0 && pattern != null && state.TryGet(pattern, out int saved) && saved >= 0;
-            if (kind == 0 && !hasOwn && !Look.IsClassic && pattern?.Machine != null && MachineIdentity.ColourOf(pattern.Machine) is { } identity) return identity;
+            if (kind == 0 && !hasOwn && !Look.IsClassic && pattern?.Machine != null && Mixer.TrackColour.Of(pattern.Machine) is { } identity) return identity;
             return ci >= 0 && ci < palette.Count
                 ? Color.FromUInt32(palette[ci].Argb)
                 : Look.BoxColours is { } own ? own[kind]
@@ -809,7 +812,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 var r = vert ? new Rect(y, 0, geo.TrackWidth, area.Height) : new Rect(0, y, area.Width, geo.TrackHeight);
                 if (row == cursorRow) ctx.FillRectangle(HeaderSelectedBrush, r);
                 // P3h: the track's machine's identity colour, a strip at the header's left edge (the vertical's: its top edge).
-                if (!Look.IsClassic && MachineIdentity.ColourOf(seq.Machine) is { } identity)
+                if (!Look.IsClassic && Mixer.TrackColour.Of(seq.Machine) is { } identity)
                     ctx.FillRectangle(ReBuzz.Studio.Views.Session.SessionPalette.BrushOf(identity),
                         vert ? new Rect(Math.Floor(y) + 1, 0, Math.Max(1, geo.TrackWidth - 1), 4) : new Rect(0, Math.Floor(y) + 1, 4, Math.Max(1, geo.TrackHeight - 1)));
                 // The machine's name, centred above the buttons.

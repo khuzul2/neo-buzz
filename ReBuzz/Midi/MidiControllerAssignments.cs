@@ -493,7 +493,7 @@ namespace ReBuzz.Midi
         /// one parameter within an idle gap are one step. While the song plays it is performance and isn't recorded. Runs on the
         /// UI thread, where the engine delivers MIDI input to this class.
         /// </summary>
-        void RecordMove(ParameterCore parameter, int track, int before, int after)
+        internal void RecordMove(ParameterCore parameter, int track, int before, int after)
         {
             if (!(buzz is ReBuzzCore core) || buzz.Playing || core.PlayRequested) return;
             var stack = core.SongCore?.ActionStack;

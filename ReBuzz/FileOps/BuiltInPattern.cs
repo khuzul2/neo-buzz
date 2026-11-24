@@ -48,6 +48,23 @@ namespace ReBuzz.FileOps
             return result;
         }
 
+        /// <summary>The cells of the connections' amp and pan that hold a value, by the name of the source machine (null: none).</summary>
+        internal Dictionary<string, int> InputCells()
+        {
+            Dictionary<string, int> cells = null;
+            foreach (var input in Inputs)
+            {
+                int n = input.AmpPan.Count(v => v != 65535);
+                if (n > 0)
+                {
+                    cells ??= new Dictionary<string, int>();
+                    string name = input.Source?.Name ?? "?";
+                    cells[name] = cells.TryGetValue(name, out int before) ? before + n : n;
+                }
+            }
+            return cells;
+        }
+
         /// <summary>The value to write at a row and parameter: the kept one, or no value.</summary>
         internal int ValueAt(int group, int track, int row, int index, ParameterCore parameter)
         {

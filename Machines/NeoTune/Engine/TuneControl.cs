@@ -20,7 +20,7 @@ namespace NeoBuzz.Tune
     internal sealed partial class TuneEngine
     {
         const int HistBits = 11, HistSize = 1 << HistBits, HistMask = HistSize - 1;
-        const double HoldGap = 0.07, RampSeconds = 0.020, SilenceRms = 0.002, SlewRate = 500.0;
+        const double HoldGap = 0.07, RampSeconds = 0.020, SilenceRms = 0.002, SlewRate = 500.0, AccelRate = 20000.0, StepSemis = 0.15;
 
         // ---- history of the current run
         readonly double[] hAbs = new double[HistSize], hDev = new double[HistSize];
@@ -52,6 +52,8 @@ namespace NeoBuzz.Tune
         double heldF0, heldShift;
         long evCentreT;
         bool evPrevVoiced;
+        double blipF, blipTime, slewV;
+        const double BlipSemitones = 9.0, BlipConfirm = 0.09;
 
         void ResetControl()
         {
@@ -61,7 +63,7 @@ namespace NeoBuzz.Tune
             curNote = pendNote = -1; pendTime = noteTime = 0;
             sSmooth = devInst = 0; smoothInit = false; lfoPhase = 0; lastEnd = 0;
             listener.Reset(); listenRoot = -1;
-            heldF0 = heldShift = 0;
+            heldF0 = heldShift = 0; blipF = blipTime = 0; slewV = 0;
             Array.Clear(cAbsTrack, 0, cAbsTrack.Length); Array.Clear(mcTrack, 0, mcTrack.Length);
         }
 
@@ -135,7 +137,7 @@ namespace NeoBuzz.Tune
                 }
                 // A real unvoiced sound or silence: the ratio ramps to 1 in 20 ms and the grains give way to the input.
                 if (evOn && realFor == 0) Log(centreT, TuneEventKind.VoicedEnd, heldShift);
-                evPrevVoiced = false;
+                evPrevVoiced = false; slewV = 0;
                 realFor += dt;
                 cF[slot] = 0;
                 cShift[slot] = (float)(heldShift * Math.Max(0.0, 1.0 - realFor / RampSeconds));
@@ -147,6 +149,30 @@ namespace NeoBuzz.Tune
                 return;
             }
 
+            // NT4: a tracker blip. The shared tracker sometimes reports a harmonic or a multiple of the pitch (an octave, or a formant's frequency) for a few tens of milliseconds in the
+            // middle of a note; NT3's marks were then laid at a fraction of the true period, the splices cut the cycle at the wrong phase, and the control stage corrected a note that was not
+            // sung (04 at 0.55 s: 130 Hz, 912 Hz for 58 ms, 117 Hz; the shift went -1.6 and +1.6 semitones). A voiced frame that is more than BlipSemitones away from the pitch in force
+            // is held (the last pitch and ratio, as in a short gap) until the new pitch has stayed (within 2 semitones) for BlipConfirm: a real leap is delayed by that, a blip never gets through.
+            if (runActive && heldF0 > 0 && evPrevVoiced)
+            {
+                double jump = 12.0 * PortableMath.Log2(e.F0 / heldF0);
+                if (Math.Abs(jump) > BlipSemitones)
+                {
+                    double near = blipF > 0 ? Math.Abs(12.0 * PortableMath.Log2(e.F0 / blipF)) : 99;
+                    if (near <= 2.0) blipTime += dt; else { blipTime = dt; }
+                    blipF = e.F0;
+                    if (blipTime < BlipConfirm)
+                    {
+                        cF[slot] = (float)heldF0; cShift[slot] = (float)heldShift;
+                        if (evOn) Log(centreT, TuneEventKind.PitchBlip, e.F0, heldF0);
+                        cCount++;
+                        Display(dt, dispIn0, dispOut0, dispCentre0);
+                        return;
+                    }
+                }
+                else { blipTime = 0; blipF = 0; }
+            }
+            else { blipTime = 0; blipF = 0; }
             double m = e.Midi;
             if (!runActive)
             {
@@ -291,8 +317,18 @@ namespace NeoBuzz.Tune
             // heard as a tick at every hard note change). The first frame of a run starts from 0 (the ramp from the unvoiced stretch was made above).
             if (evPrevVoiced)
             {
-                double maxD = SlewRate * dt;
-                shift = heldShift + Math.Clamp(shift - heldShift, -maxD, maxD);
+                // second-derivative limit: the ratio accelerates and brakes at AccelRate semitones per second squared (up to SlewRate st/s), so a step has no corner at its ends
+                // Only a step engages it (more than StepSemis in one frame, or a ramp already running): the slow motion of a kept vibrato or a slow retune passes as it was.
+                double d = shift - heldShift;
+                if (slewV != 0 || Math.Abs(d) > StepSemis)
+                {
+                double vdes = Math.Sign(d) * Math.Min(SlewRate, Math.Sqrt(2 * AccelRate * Math.Abs(d)));
+                double dv = Math.Clamp(vdes - slewV, -AccelRate * dt, AccelRate * dt);
+                slewV += dv;
+                double stp = slewV * dt;
+                if (Math.Abs(d) <= Math.Abs(stp) && Math.Sign(d) == Math.Sign(slewV) || Math.Abs(d) < 1e-9) { stp = d; slewV = 0; }
+                shift = heldShift + stp;
+                }
             }
             if (evOn && Math.Abs(shift - heldShift) > 0.12 && heldF0 > 0 && evPrevVoiced) Log(centreT, TuneEventKind.ShiftStep, heldShift, shift);
             cF[slot] = (float)e.F0;

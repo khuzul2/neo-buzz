@@ -72,7 +72,9 @@ namespace ReBuzz.Core.Session
             machine is MachineCore m && routeTable.Map.TryGetValue(m, out var route) ? route : null;
 
         /// <summary>Whether a MIDI device is a connected control surface (its messages run the session; All inputs leave it out).</summary>
-        bool IsClaimed(MidiDevice device) => device.IsDevice && buzz.SessionControllers?.ClaimsInput(device.Name) == true;
+        bool IsClaimed(MidiDevice device) =>
+            device.IsDevice && (buzz.SessionControllers?.ClaimsInput(device.Name) == true
+                || buzz.MidiMapping?.ExcludedFromAllInputs(device) == true);       // fork (midi-mapping.md): a device pinned to a track, or one whose notes do not follow the selection
 
         /// <summary>The armed machines that take a message from <paramref name="device"/> on <paramref name="channel"/> (0 to 15), a new array or none.</summary>
         MachineCore[] Accepting(MachineCore[] armed, MidiDevice device, int channel)

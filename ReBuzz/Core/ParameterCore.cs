@@ -136,6 +136,11 @@ namespace ReBuzz.Core
                     ret = pan;
                 }
             }
+            else if (Group.Type == ParameterGroupType.Global && IndexInGroup == 0 && Group.Machine?.DLL?.Info?.Type == MachineType.Master)
+            {
+                // Fork (ux-overhaul.md, MX1): the Master's Volume in dB, here and wherever the Master's volume shows (the song's gain is 1 - value / 0x4000).
+                ret = Session.SessionMixer.MasterVolumeText(value, MaxValue);
+            }
             else
             {
                 var machine = Group.Machine as MachineCore;
@@ -174,7 +179,9 @@ namespace ReBuzz.Core
         // Return values between min & max. No NoValue
         public int GetValue(int track)
         {
-            if (values.TryGetValue(track, out int val))
+            if ((uint)track >= (uint)values.Length) track = 0;       // -1 is the first track, as SetValue takes it
+            int val = values[track];
+            if (val != Unset)
             {
                 return val;
             }
@@ -209,7 +216,17 @@ namespace ReBuzz.Core
             return true;
         }
 
-        ConcurrentDictionary<int, int> values = new ConcurrentDictionary<int, int>();
+        // Fork (MM1): an array with a marker for "never set", not a ConcurrentDictionary: setting an existing key there allocated a node, and a
+        // controller knob sets a value for every message it sends (0 bytes per MIDI message, docs/specs/midi-mapping.md).
+        const int Unset = int.MinValue;
+        int[] values = NewValues();
+
+        static int[] NewValues()
+        {
+            var a = new int[256];
+            Array.Fill(a, Unset);
+            return a;
+        }
         // readonly ConcurrentDictionary<int, int> pvalues = new ConcurrentDictionary<int, int>();
         int[] pvalues = new int[256]; 
         // Fork (engine hardening): the tracks changed since the machine's last tick, a bit a
@@ -297,6 +314,7 @@ namespace ReBuzz.Core
 
         internal void DirectSetValue(int track, int value)
         {
+            if ((uint)track >= (uint)values.Length) track = 0;
             values[track] = value;
         }
 

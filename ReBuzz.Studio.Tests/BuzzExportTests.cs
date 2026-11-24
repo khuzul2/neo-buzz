@@ -212,6 +212,7 @@ namespace ReBuzz.Studio.Tests
             ("Names", $"Pattern \"{PatternName}\" of {LeadName}"),
             ("NeoBuzz Live data", "arrangement lane roles, folded tracks and parameter lanes"),
             ("NeoBuzz Live data", "clip trims, gain, ids and loops"),
+            ("NeoBuzz Live data", "track colours"),
             ("Sequence length", $"{Lane(s, s.Main)}: 1 events past tick 65535"),
             ("Takes", $"{Lane(s, s.Take)}: 3 events"),
         }.OrderBy(x => x.Item1, StringComparer.Ordinal).ThenBy(x => x.Item2, StringComparer.Ordinal);

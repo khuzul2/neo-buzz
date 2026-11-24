@@ -24,6 +24,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
@@ -143,6 +144,15 @@ namespace ReBuzz.Studio.Tests
                 var smaller = frame.CreateScaledBitmap(new PixelSize(frame.PixelSize.Width * 3 / 4, frame.PixelSize.Height * 3 / 4), BitmapInterpolationMode.HighQuality);
                 smaller.Save(path);
             }
+        }
+
+        /// <summary>What the track selector holds and where its parts are, for a shot's note (the Mac run lost its chip: said here what the layout did).</summary>
+        static string DescribeSelector(MainWindow window)
+        {
+            window.UpdateLayout();
+            var t = window.Transport.Tracks;
+            var parts = ((Avalonia.Controls.Panel)t.Child).Children.Select(c => $"{c.GetType().Name}[{(c as Avalonia.Controls.TextBlock)?.Text}] {c.Bounds.Width:0}x{c.Bounds.Height:0} vis {c.IsVisible}");
+            return $"Selector '{t.NameText}' / chip '{t.FollowersText}' / notice '{t.FreeText}', {t.Bounds.Width:0} wide at {t.Bounds.X:0}, visible {t.IsVisible}: {string.Join("; ", parts)}.";
         }
 
         static void Record(string file, string what, string how, string size, string song, string notes)
@@ -829,6 +839,104 @@ namespace ReBuzz.Studio.Tests
                     }
                 });
 
+                Try("036-mixer-compact", () =>
+                {
+                    // MX1 (ux-overhaul.md §11): the one mixer. Compact below a view (Detail > Mixer), Full over the window.
+                    window.ShowView("Machines");
+                    window.Detail.ShowMixer();
+                    Settle();
+                    Shot(window, "036-mixer-compact", "Detail > Mixer, Compact (MX1): a strip for every track, group (members before it, ▾ folds them) and return, then the Master: name with its track colour, volume fader with meter, pan, On, Solo and Arm.",
+                        "Alt+Cmd+6, the Mixer button under the view, or a click on the Master.");
+                });
+                Try("036-mixer-full", () =>
+                {
+                    window.Detail.ShowMixer(maximise: true);
+                    window.Detail.MixerPage.Rebuild();
+                    Settle();
+                    Shot(window, "036-mixer-full", "The Full mixer (MX1): each strip with its colour bar, name and kind, inserts in signal order with + Effect, sends, pan, the fader in dB with a meter and peak hold, On, Solo, Arm and Cue; the Master's strip with its chain, its volume in dB and the peak.",
+                        "Shift+Cmd+F on Detail > Mixer, ⤢ in the detail bar, or a double click on the Master.");
+                    window.Detail.MixerPage.RevealMaster();
+                    Settle();
+                    Shot(window, "036-mixer-full-master", "The Full mixer scrolled to the Master (MX1): its chain's inserts, the volume in dB, the peak and the cue output.",
+                        "A double click on the Master in the Machines view.");
+                });
+                Try("036-master-device-db", () =>
+                {
+                    window.Detail.Close();
+                    var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+                    ReBuzz.Studio.Views.StudioSelection.For(Core).SelectMachine(master, window);
+                    window.Detail.ShowDevice();
+                    Settle();
+                    Shot(window, "036-master-device-db", "The Master's device page (MX1): its Volume in dB, as the mixer shows it (0.0 dB at full, -inf dB at the bottom).",
+                        "Select the Master, Alt+Cmd+5.");
+                    window.Detail.Close();
+                    Settle();
+                });
+
+                Try("036-midi-mapping", () =>
+                {
+                    // MM1 (docs/specs/midi-mapping.md): map mode with badges and a control listening, the popover, the Inspector's track page, the top-bar track selector.
+                    var mm = Core.MidiMapping;
+                    ReBuzz.Midi.MidiEngine.SimulatedInputs = new[] { "Faders", "Pads" };
+                    try
+                    {
+                        var ps = demo.Lead.ParameterGroupsList[1].Parameters.Where(x => x.Flags.HasFlag(BuzzGUI.Interfaces.ParameterFlags.State)).Take(6).ToList();
+                        StudioSelection.For(Core).SelectMachine(demo.Lead, null);
+                        mm.SetKnobGroup("Faders", Enumerable.Range(21, 8).Select(n => new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, n)));
+                        var trackId = mm.SelectedTrackId;
+                        mm.SetSlot(trackId, 0, 0, ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[0].Name), new ReBuzz.Midi.Mapping.MapDrive());
+                        mm.SetSlot(trackId, 0, 1, ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[1].Name), new ReBuzz.Midi.Mapping.MapDrive { Takeover = ReBuzz.Midi.Mapping.Takeover.Jump });
+                        mm.SetSlot(trackId, 0, 2, ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[2].Name), new ReBuzz.Midi.Mapping.MapDrive());
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Pads", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 74), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[3].Name), ReBuzz.Core.MapScope.Global);
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Pads", ReBuzz.Midi.Mapping.MapKind.Note, 9, 36), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Command(ReBuzz.Midi.Mapping.MapCommand.Play), ReBuzz.Core.MapScope.Global);
+                        window.Detail.ShowDevice();
+                        window.Transport.Refresh();
+                        Settle();
+                        window.ToggleMapMode();
+                        Settle();
+                        window.MapLayer.Rescan();
+                        window.MapLayer.ArmTarget(ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[4].Name));
+                        Settle();
+                        window.MapLayer.Rescan();
+                        Shot(window, "036-midi-map-mode", "MIDI map mode (MM1): the banner under the top bar, every mappable control outlined, badges on the mapped ones (K1 to K3 from the Faders group, a pad's CC), one control listening, the track selector at the right of the view strip.",
+                            "Edit, Map MIDI controls (Ctrl+Alt+K).");
+                        // The Device panel scrolled so a card is half out of view: its outline stops at the panel's edge and none reaches the Inspector.
+                        var devicePage = MidiMappingUiTests.DeviceViewOf(window);
+                        var cardsScroller = devicePage?.Cards.Scroller;
+                        Assert.That(cardsScroller != null && MidiMappingUiTests.ScrollHalfACardOut(window, cardsScroller), Is.True, "the Device panel scrolls so a card is cut by its edge");
+                        window.MapLayer.Rescan();
+                        Shot(window, "036-midi-map-mode-scrolled", "MIDI map mode with the Device panel scrolled (MM1b): a card half out of view is outlined as far as it is in view, the outline stops at the panel's edge and none spills over the Inspector.",
+                            "Edit, Map MIDI controls (Ctrl+Alt+K), then scroll the Device panel.");
+                        cardsScroller.Offset = default;
+                        Settle();
+                        window.MapLayer.Rescan();
+                        window.MapLayer.Mode.Exit();
+                        window.MapLayer.OpenForTarget(ReBuzz.Midi.Mapping.MapTarget.Parameter(demo.Lead.Name, ps[3].Name));
+                        Settle();
+                        Shot(window, "036-midi-popover", "The MIDI popover (MM1): scope (This track or Global), what it is mapped to, Listen and Unmap, the range, Invert and the takeover mode.",
+                            "The MIDI button of a control, or a badge's Edit.");
+                        window.MapLayer.Close();
+                        Settle();
+                        window.Transport.Refresh();
+                        Shot(window, "036-midi-top-bar", "The track selector with two devices following (MM1b): ◀ Lead ▶ and a muted \"2 devices\" chip (their names are its tooltip), at the right end of the view strip's row under the top bar; the top bar keeps one row with Lock, Keys and the device picker.",
+                            "Right end of the row of Arrangement, Session, Machines.",
+                            notes: DescribeSelector(window));
+                        window.Inspector.MidiPage.Refresh();
+                        Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
+                            "Select a track; the Inspector's Selection tab.");
+                    }
+                    finally
+                    {
+                        window.MapLayer.Mode.Exit();
+                        mm.CancelListening();
+                        mm.Edit((c, sg) => { c.Global.Clear(); c.Groups.Clear(); c.NoKeys.Clear(); sg.Tracks.Clear(); sg.Global = null; });
+                        ReBuzz.Midi.MidiEngine.SimulatedInputs = null;
+                        Settle();
+                    }
+                });
+
                 Try("030-sequence", () =>
                 {
                     window.ShowView("Sequence");
@@ -845,7 +953,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     var seq = Tab<SequenceView>(window, "Arrangement");
                     seq.SetArrangementMode(true);
-                    Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes, clips with their previews, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
+                    Shot(window, "032-sequence-arrangement", "Sequence in Arrangement mode (daw-modes.md AR1): the Master's tempo and markers on top, a track for each machine with its lanes (each track header holds the mixer's Header density, MX1: the fader, meter, pan and sends of the same strip), clips with their previews in the track's colour, loop repeats and shared badges, the meter grid.", "The Sequence tab, then Arrange.");
                     seq.SetArrangementMode(false);
                 });
                 Try("033-arrangement-piano-roll", () =>
@@ -862,7 +970,7 @@ namespace ReBuzz.Studio.Tests
                 Try("040-session", () =>
                 {
                     window.ShowView("Session");
-                    Shot(window, "040-session", "Session (stopped): the launch grid of the demo song's scenes (Intro, Verse, Drop, Break, Fill), clip colours, the Verb return, clip panel and mixer.", "Ctrl+Tab, or the Session tab.", notes: Headless);
+                    Shot(window, "040-session", "Session (stopped): the launch grid of the demo song's scenes (Intro, Verse, Drop, Break, Fill), clip colours, the Verb return, clip panel and the shared mixer under the grid (MX1: the Compact density with sends, the crossfader, Cue and groups, track colours on every header).", "Ctrl+Tab, or the Session tab.", notes: Headless);
                 });
                 var session = Tab<SessionView>(window, "Session");
                 Try("041-session-queued", () =>
@@ -2302,6 +2410,43 @@ namespace ReBuzz.Studio.Tests
                     try { DialogShot(window, dialog, "049-convert-progress", "Convert to MIDI while the job runs (here: Harmony, 40 %): the options locked, a progress bar; Cancel stops it and changes nothing.", "Convert in the dialog."); }
                     finally { dialog.Close(); }
                 });
+                // Fork (docs/specs/audio-to-midi.md section 10): Slice to new MIDI track, from the same menu.
+                Try("049-slice-menu", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5), MouseButton.Right);
+                    var menu = session.LastMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on an audio clip opens its menu");
+                    menus.Add(menu!);
+                    Hover(ItemOf(menu!, "Slice to new MIDI track"));
+                    Shot(window, "049-slice-menu", "Session: an audio clip's menu with Slice to new MIDI track... next to Convert to MIDI (audio-to-midi.md section 10); the Arrangement's clip menu and the Audio page offer it too.", "Right-click an audio clip ▸ Slice to new MIDI track….");
+                    CloseMenus();
+                });
+                Try("049-slice-dialog", () =>
+                {
+                    var source = layout.SliceSourceOfClip(inSession, out string error);
+                    Assert.That(source, Is.Not.Null, error);
+                    var dialog = new ReBuzz.Studio.Shell.SliceFlow.SliceWindow(layout, source);
+                    dialog.Show();
+                    for (int i = 0; i < 400 && dialog.Plans == null; i++) { System.Threading.Thread.Sleep(10); Dispatcher.UIThread.RunJobs(); }
+                    Settle();
+                    try { DialogShot(window, dialog, "049-slice-dialog", "Slice to new MIDI track...: what to slice by (Transients, Warp markers, 1 bar, 1/4, 1/8, 1/16), the number of slices (the limit is Neo Sampler's 16 zones; a grid that would make more is disabled, with its count in the tooltip) and the waves and keys it will use; Slice puts the waves, a Neo Sampler track and a MIDI clip in the song, one undo step.", "Right-click an audio clip ▸ Slice to new MIDI track…."); }
+                    finally { dialog.Close(); }
+                });
+                Try("049-slice-result", () =>
+                {
+                    var source = layout.SliceSourceOfClip(inSession, out string error);
+                    Assert.That(source, Is.Not.Null, error);
+                    var plan = source.Plan(ReBuzz.Core.Clips.SliceBy.Transients);
+                    Assert.That(plan.Ok, plan.Why);
+                    Assert.That(ReBuzz.Studio.Shell.SliceFlow.Apply(layout, source, plan), Is.True, ReBuzz.Studio.Shell.SliceFlow.LastSummary);
+                    window.ShowView("Session");
+                    Settle();
+                    try { Shot(window, "049-slice-result", "Session after Slice to new MIDI track (Transients): a new MIDI track \"" + ReBuzz.Studio.Shell.SliceFlow.LastOutcome.Machine.Name + "\" with a Neo Sampler in Kit mode and a MIDI clip of one note per slice in the source's scene; the slices are the first free song waves.", "Slice to new MIDI track… ▸ Slice."); }
+                    finally { Core.SongCore.ActionStack.Undo(); Settle(); }
+                });
                 Try("038-session-audio-page", () =>
                 {
                     var session = Tab<SessionView>(window, "Session");
@@ -2388,6 +2533,37 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here (auto-warp from that moment: it follows the tempo changes, AW1), Warp from here, straight (one tempo), Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
                     CloseMenus();
+                });
+            }
+            finally
+            {
+                Close(window);
+            }
+            AfterAll();
+        }
+
+        /// <summary>Clips CU3 (clips.md §7.1): a song whose tracker data was moved into the store on open: the tracker views the lanes.</summary>
+        [AvaloniaTest, Order(8)]
+        public void ClipsOfOldSongs()
+        {
+            BeforeAll();
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
+            NewSong();
+            var window = Open("Machines");
+            try
+            {
+                const string Song = "a song with one old machine (Clip Probe) whose pattern data was moved into the store on open";
+                var machine = ClipOpenTests.MigratedProbe();
+                window.RefreshNow();
+                Settle();
+                var pattern = machine.Patterns.First(p => p.Name == "P");
+                Try("600-clips-old-machine-tracker", () =>
+                {
+                    window.Detail.Show(true);
+                    PatternView.Edit(pattern);
+                    window.ShowView("Pattern");
+                    Wait(300);
+                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open (the clip conversion): the columns are views of the pattern's lanes, the Level step and the note at row 4, the MIDI note at row 8 on the Notes lane.", "Open a song of old machines; F2.", Song);
                 });
             }
             finally

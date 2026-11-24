@@ -83,6 +83,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)TemporaryWave.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerNotes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NoteLanes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClipLanes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClipBlob.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClipMigration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClipExport.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)VUMeter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WaveCommandHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)libsndfile\SoundFile.cs" />

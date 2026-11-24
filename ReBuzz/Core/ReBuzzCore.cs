@@ -119,6 +119,7 @@ namespace ReBuzz.Core
 
         // MIDI control of the Session View (0.2); created with the layout.
         internal SessionMidi SessionMidi { get; set; }
+        internal MidiMapping MidiMapping { get; set; }          // fork (docs/specs/midi-mapping.md, MM1): MIDI mapping for any controller
 
         // Fork (0.8): Link, MIDI clock in and out; created with the layout.
         internal SessionSync SessionSync { get; set; }
@@ -132,6 +133,7 @@ namespace ReBuzz.Core
         // Fork (mcp-server.md A3): named sections of the song, saved in song files.
         internal SongMarkerStore MarkerStore { get; set; }
         internal MachinePinStore PinStore { get; set; }         // fork (ux-overhaul.md, the parameter panel): the Inspector's pinned parameters
+        internal TrackColourStore TrackColours { get; set; }    // fork (ux-overhaul.md, MX1): a colour per track
 
         // Fork (daw-modes.md S5): the arrangement's lane roles and folds, saved in song files.
         internal ArrangementStore Arrangement { get; set; }
@@ -919,6 +921,7 @@ namespace ReBuzz.Core
             global::ReBuzz.Core.Clips.NeoStretch.Log = line => DCWriteLine(line, DCLogLevel.Warning);   // fork (NA5): the Pro warp mode's missing library says so once
             UiEvents = UiEventQueue.For(dispatcher);    // fork (audio hygiene): with its signal, made here on the UI thread
             UiEvents.Reserve(1);                        // the transport's Playing event (StartPlaying)
+            midiInputTarget = new MidiInputEvents(this);    // fork (MM1): the UI half of a MIDI message
 
             midiActivityTimer = dispatcher.CreateTimer(TimeSpan.FromSeconds(0.5), () =>
             {
@@ -1615,6 +1618,9 @@ namespace ReBuzz.Core
 
         volatile bool restoringSnapshot;
 
+        /// <summary>Fork (clips.md §7.4, CU3): the format version of the .nbl being opened (0 for another kind of file); 3 and above hold their lanes in the store.</summary>
+        internal int OpenedNativeVersion { get; set; }
+
         /// <summary>Fork (history-snapshots.md HS3): the live restore waiting for its boundary or gliding; the audio thread reads it each tick and block.</summary>
         internal volatile SongHistory.LiveRestorePlan ActiveRestore;
         /// <summary>Added to by each WorkManager: rebuilds its cached work order now, on the calling (UI) thread, so the audio thread meets it already built.</summary>
@@ -1678,6 +1684,7 @@ namespace ReBuzz.Core
                     };
 
                     OpenFile.Invoke(filename);
+                    OpenedNativeVersion = 0;
                     bmxFile.Load(filename);
                 }
                 catch (Exception e)
@@ -1690,6 +1697,11 @@ namespace ReBuzz.Core
                     NewSong();
                     return false;
                 }
+
+                // Fork (docs/specs/clips.md §7.1, CU3): after the machines and the engine columns, the clips of every machine move into the
+                // store, in memory (the file is never written), and each pattern editor is told to view it. Where the engine plays every lane.
+                if (PatternColumnCore.PlaysEveryLane)
+                    ClipOpen.Run(this, OpenedNativeVersion >= 3);
 
                 SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
                 if (!restore)
@@ -1959,11 +1971,28 @@ namespace ReBuzz.Core
 
             // Some UI components require MIDIInput.Invoke to be called from UI thread (Midi Keyboard)
             // Fork: posted rather than Invoke, so the MIDI thread never waits for the UI.
-            dispatcher.BeginInvoke(() =>
+            // Fork (MM1): the engine's queue of UI events, not a closure per message: nothing is allocated here for a message.
+            UiEvents.Enqueue(midiInputTarget, data, 0);
+        }
+
+        MidiInputEvents midiInputTarget;
+
+        /// <summary>The UI-thread half of a MIDI message: the activity light and the MIDIInput event.</summary>
+        sealed class MidiInputEvents : UiEventQueue.ITarget
+        {
+            readonly ReBuzzCore core;
+
+            public MidiInputEvents(ReBuzzCore core)
             {
-                MIDIActivity = true;
-                MIDIInput?.Invoke(data);
-            });
+                this.core = core;
+                core.UiEvents.Reserve(512);              // messages waiting for the UI thread (a burst of CCs); more only grows the queue
+            }
+
+            public void Deliver(int data, int kind)
+            {
+                core.MIDIActivity = true;
+                core.MIDIInput?.Invoke(data);
+            }
         }
 
         /// <summary>
@@ -1991,7 +2020,13 @@ namespace ReBuzz.Core
             // Fork: notes and CCs mapped to the Session View control the session only
             // (docs/specs/session-view.md 0.2). The session handles them here, on the MIDI thread
             // (0.4.1), so launches don't wait for the UI.
-            bool sessionOnly = SessionMidi?.OnMidiThread(data) == true;
+            // Fork (midi-mapping.md, MM1): a control being mapped or taught takes the message first; then the session's map; then the mapping's own
+            // (the selected track's page, the global maps, a pinned device's keys). Each runs on this thread and allocates nothing.
+            var mapping = MidiMapping;
+            bool mapped = mapping != null && mapping.IsListening && mapping.OnMidiThread(device, data);
+            bool sessionOnly = !mapped && SessionMidi?.OnMidiThread(data) == true;
+            if (!mapped && !sessionOnly && mapping != null) mapped = mapping.OnMidiThread(device, data);
+            sessionOnly |= mapped;
 
             // Fork (0.7): armed tracks take the keyboard: their machines play it and it is recorded.
             if (!sessionOnly && SessionCore.OnMidiInput(device, data))
@@ -2413,6 +2448,15 @@ namespace ReBuzz.Core
             // Link machine to editor. Maybe specific call?
             MachineManager.SetPatternEditorPattern(peMachine, machineToUseEditor.Patterns.FirstOrDefault());
             machineToUseEditor.EditorMachine = peMachine;
+
+            // Fork (clips.md §6, CU3): a machine made while no song is loading has no clips to move: its editor views the store from the start.
+            // (A song's machines are attached by ClipOpen after the load.)
+            if (PatternColumnCore.PlaysEveryLane && !SongLoading && (patterneditordata == null || patterneditordata.Length == 0) && machineToUseEditor.PatternsList.Count <= 1 && machineToUseEditor.PatternsList.All(p => p.BuiltInData == null))
+            {
+                peMachine.LoadedEditorData = null;
+                if (MachineManager.AttachClipStore(machineToUseEditor))
+                    machineToUseEditor.ClipsAttached = true;
+            }
         }
 
         public string GetNewEditorName()
@@ -2530,7 +2574,11 @@ namespace ReBuzz.Core
                     string oldName = machine.Name;
                     machine.Name = MachineManager.GetNewMachineName(name);
                     if (!string.IsNullOrEmpty(oldName) && SongCore.MachinesList.Contains(machine))
+                    {
                         PinStore?.Rename(oldName, machine.Name);     // fork (ux-overhaul.md): pins and locks follow a renamed machine
+                        MidiMapping?.RenameMachine(oldName, machine.Name);     // fork (midi-mapping.md): so do its mappings and its track's pages
+                        TrackColours?.Rename(oldName, machine.Name);   // fork (ux-overhaul.md, MX1): and so does its track colour
+                    }
                     Modified = true;
 
                     return true;
@@ -2715,6 +2763,8 @@ namespace ReBuzz.Core
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
             PinStore?.Clear();                  // fork (ux-overhaul.md, the parameter panel)
+            TrackColours?.Clear();              // fork (ux-overhaul.md, MX1)
+            MidiMapping?.Clear();               // fork (midi-mapping.md, MM1)
             Arrangement?.Clear();               // fork (daw-modes.md S5)
             Clips.Reset();                      // fork (daw-modes.md S2)
             SongMeter.Reset();                  // fork (daw-modes.md S1)

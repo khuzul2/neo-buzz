@@ -25,6 +25,8 @@
     <Compile Include="..\..\ReBuzz\Core\AudioLibrary\AudioCache.cs;..\..\ReBuzz\Core\AudioLibrary\StreamedAudio.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\..\ReBuzz.SessionTests\AutoWarp\WarpSignals.cs" Link="WarpSignals.cs" />
     <Compile Include="..\PitchEval\Wav.cs" Link="Wav.cs" />
+    <!-- AW3: the shared onset detector (docs/specs/pitch.md section 3) and what it uses. -->
+    <Compile Include="..\..\Machines\NeoBuzz.Dsp\OnsetDetector.cs;..\..\Machines\NeoBuzz.Dsp\ComplexFft.cs;..\..\Machines\NeoBuzz.Dsp\PortableMath.cs;..\..\Machines\NeoBuzz.Dsp\Filters.cs;..\..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Dsp\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

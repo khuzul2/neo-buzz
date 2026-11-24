@@ -85,9 +85,12 @@ namespace ReBuzz.Studio.Views.Machines
             bool want = tracksOn && shown;
             if (want == liveHeld) return;
             liveHeld = want;
-            if (want) { Live.Retain(); Live.Changed += OnTracksChanged; }
-            else { Live.Changed -= OnTracksChanged; Live.Release(); }
+            if (want) { Live.Retain(); Live.Changed += OnTracksChanged; if (core.TrackColours != null) core.TrackColours.Changed += OnTrackColoursChanged; }
+            else { Live.Changed -= OnTracksChanged; if (core.TrackColours != null) core.TrackColours.Changed -= OnTrackColoursChanged; Live.Release(); }
         }
+
+        // MX1: a track's colour changed (a person, an agent, undo, a song opening): the chips and wires draw it again.
+        void OnTrackColoursChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(OnTracksChanged);
 
         void OnTracksChanged()
         {
@@ -156,7 +159,7 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         /// <summary>A track's colour: its generator's (a group's or a return's: its machine's), from the machine's identity.</summary>
-        public static Color ColourOfHead(IMachine head) => MachineIdentity.ColourOf(head) ?? Shell.Design.StudioTokens.TextSecondary;
+        public static Color ColourOfHead(IMachine head) => Mixer.TrackColour.Of(head) ?? Shell.Design.StudioTokens.TextSecondary;
 
         /// <summary>Selecting a machine off the pinned track (or nothing) lets go of the pin; one on it keeps it.</summary>
         void Unpin(IMachine selected)

@@ -293,6 +293,9 @@ def parse_mpe(hexdata):
     if r.u8() != 255 or r.u8() != 1:
         return None
     size = r.i32()
+    # Clips CU2/CU3 (clips.md 7.2): the derived blob ends with the store's stamp (magic "NBST" 1, then a SHA-256), after what the size covers.
+    if len(r.d) == size + 37 and r.d[size:size + 5] == b"NBST\x01":
+        r.d = r.d[:size]
     if size != len(r.d):
         raise Unparseable(f"editor data says {size} bytes, has {len(r.d)}")
     patterns = []
@@ -879,7 +882,12 @@ def main():
               f"bmxml {xa:,}, bmx {ba:,}; the editors' data unchanged, both formats stable", flush=True)
         for p in problems[:12]:
             print("     " + p)
-        failures += [f"windows-style.bmxml: {p}" for p in problems]
+        # Clips CU3 (clean break, user decision C): the editors' data of a .bmx/.bmxml is derived from the store now, so it is not byte-stable;
+        # reported, not a failure. CB1 removes the .bmx/.bmxml formats and this case with them.
+        if os.environ.get("ROUNDTRIP_STRICT_EDITOR_DATA"):
+            failures += [f"windows-style.bmxml: {p}" for p in problems]
+        elif problems:
+            print("     (not a failure: .bmx/.bmxml editor data is derived from the store; CB1 removes the format)")
 
     code = h.close()
     print(f"\n{opened} of {len(songs)} songs opened; {time.time() - started:.0f} s")

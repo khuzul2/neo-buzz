@@ -148,6 +148,12 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.SetPatternEditorData(data);
         }
 
+        // Fork (clips.md §6, CU3): the song's clips are in the store; the editor views them (found by name by the host).
+        public void AttachClipStore()
+        {
+            ModernPatternEditor.AttachClipStore();
+        }
+
         public byte[] GetPatternEditorData()
         {
             return ModernPatternEditor.GetPatternEditorData();

@@ -274,6 +274,8 @@ namespace ReBuzz.Agent.Model
         /// <summary>Curated: what its claims rest on (its source files, documentation, the profile, its value texts).</summary>
         public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
         public bool IsCurated => Status == "curated";
+        /// <summary>Fork (docs/specs/clips.md §5.7, CU3): the machine's clips can be edited in the Studio. Absent: an old machine, whose clips are view only (they keep playing).</summary>
+        public bool ClipEdit { get; init; }
         /// <summary>U6: generated from the machine's source (its parameter declarations and the code that uses them), not profiled guesswork.</summary>
         public bool IsGeneratedFromSource => Status == "generated";
 
@@ -357,6 +359,7 @@ namespace ReBuzz.Agent.Model
                 Parameters = parameters,
                 TrackParameters = trackParameters,
                 Status = (string)root["status"] ?? "",
+                ClipEdit = (bool?)root["clipEdit"] ?? false,
                 Type = (string)root["type"] ?? "",
                 Notes = notes,
                 Health = health,

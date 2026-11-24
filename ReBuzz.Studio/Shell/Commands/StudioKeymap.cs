@@ -93,6 +93,9 @@ namespace ReBuzz.Studio.Shell.Commands
             C("edit.selectall", "Edit", "Select _All", "Cmd+A"),
             C("edit.deselect", "Edit", "Deselect All", "Shift+Cmd+A|Esc"),
             C("edit.rename", "Edit", "Re_name…", "Cmd+R", help: "The selected machine, track or clip"),
+            C("edit.mapmode", "Edit", "MIDI _Map Mode", "Ctrl+Alt+K", "Alt+Cmd+K", help: "Outlines every control a MIDI controller can drive: click one, then move a knob or press a key on any controller to map it. Esc ends it, Delete unmaps the control waiting"),
+            C("track.previous", "Edit", "Pre_vious Track", "Alt+Up", native: false, help: "Selects the track before: the knobs and keys of your MIDI controllers drive it (a controller button can do it too)"),
+            C("track.next", "Edit", "Ne_xt Track", "Alt+Down", native: false, help: "Selects the next track: the knobs and keys of your MIDI controllers drive it (a controller button can do it too)"),
             C("edit.preferences", "Edit", "Pr_eferences…", "Cmd+Comma"),
 
             C("transport.playstop", "Transport", "Play or St_op", "Space", native: false, help: "In every view, not while typing in a box"),
@@ -108,13 +111,14 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.session", "View", "S_ession", "Cmd+2|Ctrl+Tab", help: "Ctrl+Tab again: back to the arrangement"),
             C("view.machines", "View", "_Machines", "Cmd+3|F3"),
             C("view.pattern", "View", "_Tracker", "Cmd+4", help: "The detail panel's Tracker, docked under the view"),
-            C("view.maximise", "View", "_Maximise Tracker", "Shift+Cmd+F|F2", help: "The Tracker over the whole window, and back (F2 renames a clip in the Session View)"),
+            C("view.maximise", "View", "_Maximise Tracker", "Shift+Cmd+F|F2", help: "The detail panel's page (the Tracker, or the Mixer: Compact becomes Full) over the whole window, and back (F2 renames a clip in the Session View)"),
             C("view.notes", "View", "Song _Notes", "Cmd+5|F10", help: "The inspector's Song tab"),
             C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine, pattern or clip, and the song"),
             C("view.browser", "View", "_Browser", "Ctrl+Alt+B", "Alt+Cmd+B", help: "Shows or hides the panel on the left: the machines to add, and the patterns of the selection"),
             C("view.detail", "View", "_Detail", "Ctrl+Alt+D", "Alt+Cmd+D", help: "Shows or hides the panel under the view: the Tracker and the piano roll"),
             C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same pattern"),
             C("view.device", "View", "D_evice", "Ctrl+Alt+5", "Alt+Cmd+5", help: "The detail panel's Device page: the selected machine's parameters, grouped and searchable, its editor, and the piano keyboard under it"),
+            C("view.detailmixer", "View", "Mi_xer", "Ctrl+Alt+6", "Alt+Cmd+6", help: "The detail panel's Mixer page: every track, group and return and the Master, Compact; the maximise key makes it Full"),
             C("device.find", "View", "_Find Parameter", "Cmd+F", help: "Searches the parameters of the Device page"),
             C("view.addmachine", "View", "Add _Machine…", "Shift+Cmd+N", help: "Opens the machine browser on the Machine View, to search and add a machine (a double click on empty canvas does too)"),
             C("view.cpu", "View", "C_PU Monitor", help: "Every machine's share of the audio engine's time, and the engine's total"),
@@ -168,6 +172,15 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(M, "A chip: point at it, or Tab to it", "light that track's path and dim the rest (a card shows its chain, mute, solo, arm and level)");
             yield return new ViewKey(M, "Click a chip, or Enter on it", "select the track's generator in every view, and keep the track lit; click it again, or " + K("Esc") + ", to let go");
             yield return new ViewKey(M, "← → Home End", "from chip to chip, in the bar of the Tracks button; the +N chip at the end opens the rest in a list you can filter");
+
+            const string X = "Mixer (everywhere)";
+            yield return new ViewKey(X, "One mixer, three sizes", "Detail > Mixer and the bottom of the Session View are Compact (name, fader, meter, pan, On, Solo, Arm); the maximised Detail panel is Full (colour, inserts with + Effect, sends, the fader in dB with a peak hold, Cue); an Arrangement track's header holds the same fader, meter, pan and sends sideways");
+            yield return new ViewKey(X, "Click the Master, or " + K("Ctrl+Alt+6|Alt+Cmd+6"), "show Detail > Mixer under the view, with the Master's strip in view");
+            yield return new ViewKey(X, "Double-click the Master", "the Full mixer over the window, the Master's strip in view; " + K("Shift+Cmd+F|F2") + " or the ⤢ button goes back");
+            yield return new ViewKey(X, "A group's ▾ line", "folds the group's tracks into its strip (▸ unfolds them)");
+            yield return new ViewKey(X, "Right-click a strip's name or colour", "choose the track's colour: it is used for the track everywhere (clips, chips, wires, headers) and wins over the one the song gave it");
+            yield return new ViewKey(X, "Drag, wheel, double-click", "a fader, pan or send: drag or wheel (Shift for fine), double-click to reset; each gesture is one undo step");
+            yield return new ViewKey(X, "Master peak", "the Master shows its peak in dB (click it to reset); there is no loudness meter on the Master");
 
             const string A = "Sequence (the arrangement)";
             yield return new ViewKey(A, "Arrows, Page Up/Down, Home, End", "move the cursor (Shift: select)");

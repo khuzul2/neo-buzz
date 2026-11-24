@@ -246,5 +246,35 @@ namespace ReBuzz.SessionTests.AutoWarp
                 Assert.That(r.Bpm, Is.EqualTo(want).Within(want * 0.02), $"{scale}: {r.Bpm}");
             }
         }
+
+        /// <summary>AW3: beats whose phase wanders by +-30 ms over 60 beats (a tempo within 1 % over 16 beats, so AW1's rule calls them steady).</summary>
+        static BeatTrack WanderingTrack(int rate, double wanderSeconds)
+        {
+            int n = 120;
+            var beats = new double[n];
+            for (int i = 0; i < n; i++) beats[i] = (1.0 + 0.5 * i + wanderSeconds * Math.Sin(2 * Math.PI * i / 60.0)) * rate;
+            return new BeatTrack { Rate = rate, Length = (int)(62 * rate), Beats = beats, Down = new double[n], FromModel = true, Low = new double[n], Full = new double[n], Change = new double[n], MedianBpm = 120 };
+        }
+
+        [Test]
+        public void ASteadyTempoWhoseBeatsWanderOffTheLineGetsMarkersWhenTheResidualBoundsAreOn()
+        {
+            int rate = 22050;
+            var s = new AudioSource(new float[62 * rate], new float[62 * rate], rate);
+            var track = WanderingTrack(rate, 0.030);
+            try
+            {
+                var off = AudioAnalysis.FromTrack(s, track, 4);
+                Assert.That(off.Steady, Is.True, "the 1 % rule alone calls it steady");
+                Assert.That(off.Markers.Count, Is.EqualTo(2));
+                AudioAnalysis.SteadyResidualP95Ms = 20; AudioAnalysis.SteadyResidualMaxMs = 40;
+                var on = AudioAnalysis.FromTrack(s, track, 4);
+                Assert.That(on.Steady, Is.False, "30 ms off the line is over a 20 ms bound");
+                Assert.That(on.Markers.Count, Is.GreaterThan(2));
+                var tight = AudioAnalysis.FromTrack(s, WanderingTrack(rate, 0.004), 4);
+                Assert.That(tight.Steady, Is.True, "4 ms off the line is within the bounds");
+            }
+            finally { AudioAnalysis.SteadyResidualP95Ms = AudioAnalysis.SteadyResidualMaxMs = double.PositiveInfinity; }
+        }
     }
 }

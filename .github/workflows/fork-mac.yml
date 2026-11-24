@@ -30,6 +30,8 @@ on:
       - 'ExternalMachines/source/thepedal/**'
       - 'tools/headless-live.py'
       - 'tools/song-roundtrip.py'
+      - 'tools/clip-null.py'
+      - 'tools/null-test.py'
       - 'tools/headless-midi.py'
       - 'LinkHelper/**'
       - 'NeoStretch/**'
@@ -59,7 +61,7 @@ jobs:
   portable-tests:
     if: ${{ inputs.gallery != true }}
     runs-on: macos-15
-    timeout-minutes: 100
+    timeout-minutes: 150
     steps:
     - uses: actions/checkout@v5
 
@@ -133,6 +135,34 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # The clip goldens (docs/specs/clips.md §10.1, CU1) on Apple silicon: placeholders for the classic machines, against the goldens of macos-arm64.
+    - name: Clip goldens on macOS
+      if: always()
+      run: |
+        python3 tools/clip-null.py --audio "$RUNNER_TEMP/clip-audio" check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
+        python3 tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip-open"
+
+    - name: Upload the clip goldens observed
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-goldens-macos
+        path: |
+          ${{ runner.temp }}/clip/observed.json
+          ${{ runner.temp }}/clip-open/open-times.json
+        if-no-files-found: ignore
+
+    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
+    - name: Upload the clip renders (audio)
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: clip-audio-macos
+        path: ${{ runner.temp }}/clip-audio/*.wav
+        retention-days: 30
+        compression-level: 6
+        if-no-files-found: ignore
 
     # R1: each rebuilt classic loads and renders its cases through the native host (finite, audible, no divergence), and the
     # classic demo songs of ExternalMachines/source open with their machines and play (tools/native-cross.py).

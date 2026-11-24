@@ -40,6 +40,9 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Fork (docs/specs/neo-audio.md "Inputs and arm"): the room the expanded header of a machine that can be armed gives its inputs and meter.</summary>
         public const double InputRowHeight = 44;
 
+        /// <summary>Fork (ux-overhaul.md §11, MX1): the row of the mixer's header density (fader, meter, pan, sends) under a track's first lane's buttons.</summary>
+        public const double MixerRowHeight = 24;
+
         /// <summary>The rows for the song's sequences, grouped by machine in the order of each machine's first sequence (the Master's first).</summary>
         public static List<ArrangementRow> Build(ISong song, ArrangementStore store)
         {
@@ -64,7 +67,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 {
                     // NA4b: collapsed take lanes have no row (their numbers stay: LaneNumber counts all the machine's lanes).
                     if (hideTakes && i > 0 && store.RoleOf(lanes[i]) == LaneRole.Take) continue;
-                    rows.Add(new ArrangementRow { Kind = ArrangementRowKind.Lane, Machine = g.Key, Lane = lanes[i], Lanes = lanes, LaneNumber = i + 1, Height = i == 0 && SessionLayout.CanArm(g.Key) ? LaneHeight + InputRowHeight : LaneHeight });
+                    rows.Add(new ArrangementRow { Kind = ArrangementRowKind.Lane, Machine = g.Key, Lane = lanes[i], Lanes = lanes, LaneNumber = i + 1, Height = i == 0 ? LaneHeight + MixerRowHeight + (SessionLayout.CanArm(g.Key) ? InputRowHeight : 0) : LaneHeight });
                 }
                 // AR4: the parameters chosen for this track, under its lanes.
                 if (store != null)

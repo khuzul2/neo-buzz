@@ -163,6 +163,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 session.PropertyChanged += OnSessionChanged;
             }
             ReBuzz.Core.Session.PatternColors.Changed += OnPatternColourChanged;
+            if (core.TrackColours is { } trackColours) trackColours.Changed += OnTrackColoursChanged;
             WatchSequences();
             geo.TickWidth = state.Zoom;
             Changed();
@@ -187,6 +188,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 session.PropertyChanged -= OnSessionChanged;
             }
             ReBuzz.Core.Session.PatternColors.Changed -= OnPatternColourChanged;
+            if (core.TrackColours is { } trackColours) trackColours.Changed -= OnTrackColoursChanged;
             UnwatchSequences();
             UnwatchPatterns();
             song = null;
@@ -239,6 +241,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnTrackState(ISequence s) => OnUi(InvalidateVisual);
         void OnSessionChanged(object sender, PropertyChangedEventArgs e) => OnUi(InvalidateVisual);
         void OnPatternColourChanged(IPattern p) => OnUi(InvalidateVisual);
+        void OnTrackColoursChanged() => OnUi(InvalidateVisual);
 
         void WatchSequences()
         {
@@ -482,7 +485,7 @@ namespace ReBuzz.Studio.Views.Sequence
             var palette = SequenceSongState.Palette;
             int ci = pattern != null ? state.ColourIndexOf(pattern) : -1;
             bool hasOwn = pattern != null && state.TryGet(pattern, out int saved) && saved >= 0;
-            if (!hasOwn && !Look.IsClassic && pattern?.Machine != null && MachineIdentity.ColourOf(pattern.Machine) is { } identity) return identity;
+            if (!hasOwn && !Look.IsClassic && pattern?.Machine != null && Mixer.TrackColour.Of(pattern.Machine) is { } identity) return identity;
             return ci >= 0 && ci < palette.Count
                 ? Color.FromUInt32(palette[ci].Argb)
                 : Look.BoxColours is { } own ? own[0] : (Color)StudioTokens.Accent;
