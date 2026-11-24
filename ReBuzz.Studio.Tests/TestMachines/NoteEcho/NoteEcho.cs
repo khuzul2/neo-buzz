@@ -20,6 +20,12 @@ namespace ReBuzz.Studio.Tests.TestMachines
         public readonly int[] LogBlock = new int[Cap], LogOffset = new int[Cap], LogKind = new int[Cap], LogNote = new int[Cap], LogBlockLength = new int[Cap];
         public int LogCount;
         public int Block;                         // Work calls so far
+        // What it sent from EmitAt: the Work call and the offset, to compare with what the target received.
+        public readonly int[] SentBlock = new int[Cap], SentOffset = new int[Cap], SentNote = new int[Cap];
+        public int SentCount;
+        /// <summary>The order the machines of a song worked in: one counter for all, the value this one took in each of its Work calls.</summary>
+        public static long Counter;
+        public readonly long[] SeqLog = new long[Cap];
         int blockLength;
 
         readonly NoteMessage[] pending = new NoteMessage[Cap];     // to send: offsets are from the start of the next Work
@@ -47,11 +53,18 @@ namespace ReBuzz.Studio.Tests.TestMachines
                     var e = events[i];
                     if (LogCount < Cap)
                     {
-                        LogBlock[LogCount] = Block; LogOffset[LogCount] = e.Offset; LogKind[LogCount] = (int)e.Kind; LogNote[LogCount] = e.Data1; LogBlockLength[LogCount] = blockLength;
+                        LogBlock[LogCount] = Block + 1; LogOffset[LogCount] = e.Offset; LogKind[LogCount] = (int)e.Kind; LogNote[LogCount] = e.Data1; LogBlockLength[LogCount] = blockLength;
                         LogCount++;
                     }
                     if (incomingCount < Cap) incoming[incomingCount++] = e;
                 }
+        }
+
+        /// <summary>The old way in (a machine with no note wires reaches it through MidiNote): treated as one received at offset 0.</summary>
+        public void MidiNote(int channel, int value, int velocity)
+        {
+            var m = velocity > 0 ? NoteMessage.On(0, channel, value, velocity) : NoteMessage.Off(0, channel, value);
+            ((INoteReceiver)this).ReceiveNotes(new ReadOnlySpan<NoteMessage>(in m));
         }
 
         /// <summary>Tests: sends one event in the next Work, at <paramref name="offset"/>.</summary>
@@ -62,13 +75,14 @@ namespace ReBuzz.Studio.Tests.TestMachines
                     pending[pendingCount++] = on ? NoteMessage.On(offset, 0, note, 100) : NoteMessage.Off(offset, 0, note);
         }
 
-        public void ClearLog() { lock (gate) LogCount = 0; }
+        public void ClearLog() { lock (gate) { LogCount = 0; SentCount = 0; } }
 
         public bool Work(Sample[] output, int n, WorkModes mode)
         {
             emitter ??= host.Machine as INoteEmitter;
             blockLength = n;
             Block++;
+            if (Block < Cap) SeqLog[Block] = System.Threading.Interlocked.Increment(ref Counter);
             lock (gate)
             {
                 // Events carried from earlier blocks (offsets past the end of their block) and the scripted ones.
@@ -76,7 +90,11 @@ namespace ReBuzz.Studio.Tests.TestMachines
                 for (int i = 0; i < pendingCount; i++)
                 {
                     var e = pending[i];
-                    if (e.Offset < n) emitter?.EmitNote(e);
+                    if (e.Offset < n)
+                    {
+                        emitter?.EmitNote(e);
+                        if (SentCount < Cap) { SentBlock[SentCount] = Block; SentOffset[SentCount] = e.Offset; SentNote[SentCount] = e.Data1; SentCount++; }
+                    }
                     else { e.Offset -= n; pending[keep++] = e; }
                 }
                 pendingCount = keep;
