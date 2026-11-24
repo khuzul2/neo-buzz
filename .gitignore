@@ -412,3 +412,6 @@ FodyWeavers.xsd
 
 # Crash dumps (RB1: the Fork package workflow collects them as artifacts; never committed)
 *.dmp
+
+# Local listening packs (AGENTS.md: never committed)
+listening-packs/
