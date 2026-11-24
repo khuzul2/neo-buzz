@@ -10,6 +10,13 @@ namespace ReBuzz.SessionTests.AutoWarp
     [TestFixture]
     public class AutoWarpTests
     {
+        IDisposable? noPretrained;
+
+        /// <summary>These tests are about AW1 and AW2; an installed pretrained network (AW4) must not change what they measure.</summary>
+        [SetUp] public void LeaveThePretrainedNetworkOut() => noPretrained = BeatThis.Scope(null);
+
+        [TearDown] public void PutItBack() { noPretrained?.Dispose(); noPretrained = null; }
+
         static AudioSource Source(WarpLine line) => new AudioSource(line.Audio, line.Audio, line.Rate);
 
         /// <summary>The map the clip plays with: the markers, or a straight one from the tempo when there are none (as the layout makes it).</summary>

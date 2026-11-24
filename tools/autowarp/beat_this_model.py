@@ -2,7 +2,7 @@
 """AW4 (docs/specs/neo-audio.md, AW4 as built): the pretrained Beat This! model (Foscarin, Schlueter, Widmer, ISMIR 2024; github.com/CPJKU/beat_this, MIT).
 
     beat_this_model.py fetch OUT_DIR [--strict]
-                                             download the pinned small checkpoint, check its SHA-256, export it to ONNX (a free time axis), check the export
+                                             download the pinned small checkpoint, check its SHA-256, export it to ONNX (a free time axis, the long attentions fused), check the export
                                              against the PyTorch model, print the ONNX file's SHA-256 (--strict: fail when it is not the pinned one) and write OUT_DIR/beat_this_small.onnx
     beat_this_model.py reference OUT_DIR WAV [WAV ...]
                                              run the upstream package (pip install beat-this) on each file and write, per file, NAME.spect.f32 (the log-mel
@@ -20,7 +20,7 @@ CKPT_URL = "https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/small0.
 CKPT_SHA256 = "6074be2c4d490c5f6101fcc374a1ec72ae93456e23bb6019783b849f5dc7d47b"
 ONNX_NAME = "beat_this_small.onnx"
 # The SHA-256 of the export on the pinned toolchain (the app checks the file it loads against this; see ReBuzz/Core/Clips/BeatThisModel.cs).
-ONNX_SHA256 = "20957568b91eb46caf8c5559726bb49a1aa5afcd2da7bd64d68586c0b597eef1"
+ONNX_SHA256 = "b700cc6814038bfad9a3585357cd3d2deb606e7c60453af1a8bd8e8efba5a309"
 
 
 def sha256(path):
@@ -44,6 +44,64 @@ def fetch_ckpt(out_dir):
     return path
 
 
+HEAD_DIM = 32
+# Heads of each attention of the small model (the head size is 32 everywhere): the time attentions of the three frontend blocks, and the six transformer layers.
+def _heads(name):
+    for key, heads in (("blocks.0/partial/attnT", 1), ("blocks.1/partial/attnT", 2), ("blocks.2/partial/attnT", 4), ("transformer_blocks", 4)):
+        if key in name:
+            return heads
+    return None
+
+
+def fuse_attention(path):
+    """Replaces each long attention (MatMul, Softmax, MatMul over 1500 x 1500 scores) of the exported graph by ONNX Runtime's MultiHeadAttention operator (com.microsoft; the
+    queries and keys already carry the scale, so scale=1): the same function, 1.3 times faster on a CPU (it works on one head at a time instead of on the whole score tensor).
+    The short attentions over the 8 to 32 frequency bands are left as they are. Returns the number of attentions fused."""
+    import numpy as np, onnx
+    from onnx import helper as h, numpy_helper as nh
+    m = onnx.load(path)
+    g = m.graph
+    nodes = list(g.node)
+    prod = {o: n for n in nodes for o in n.output}
+    first_input = {}
+    for n in nodes:
+        if n.op_type == "MatMul":
+            first_input.setdefault(n.input[0], []).append(n)
+    drop, replace, inits = set(), {}, []
+    for sm in [n for n in nodes if n.op_type == "Softmax"]:
+        heads = _heads(sm.name)
+        if heads is None:
+            continue
+        mm1, mm2 = prod[sm.input[0]], first_input[sm.output[0]][0]
+        q, kt, v, out = mm1.input[0], mm1.input[1], mm2.input[1], mm2.output[0]
+        base = sm.name.rsplit("/", 1)[0] + "/mha"
+        inits.append(nh.from_array(np.array([0, 0, -1], np.int64), base + "/shape_bsd"))
+        inits.append(nh.from_array(np.array([0, 0, heads, HEAD_DIM], np.int64), base + "/shape_split"))
+        replace[id(mm2)] = [
+            h.make_node("Transpose", [q], [base + "/q_t"], perm=[0, 2, 1, 3], name=base + "/q_T"),
+            h.make_node("Reshape", [base + "/q_t", base + "/shape_bsd"], [base + "/q_r"], name=base + "/q_R"),
+            h.make_node("Transpose", [kt], [base + "/k_t"], perm=[0, 3, 1, 2], name=base + "/k_T"),
+            h.make_node("Reshape", [base + "/k_t", base + "/shape_bsd"], [base + "/k_r"], name=base + "/k_R"),
+            h.make_node("Transpose", [v], [base + "/v_t"], perm=[0, 2, 1, 3], name=base + "/v_T"),
+            h.make_node("Reshape", [base + "/v_t", base + "/shape_bsd"], [base + "/v_r"], name=base + "/v_R"),
+            h.make_node("MultiHeadAttention", [base + "/q_r", base + "/k_r", base + "/v_r"], [base + "/o"], domain="com.microsoft", num_heads=heads, scale=1.0, name=base + "/MHA"),
+            h.make_node("Reshape", [base + "/o", base + "/shape_split"], [base + "/o_r"], name=base + "/o_R"),
+            h.make_node("Transpose", [base + "/o_r"], [out], perm=[0, 2, 1, 3], name=base + "/o_T"),
+        ]
+        drop |= {id(mm1), id(sm)}
+    new_nodes = []
+    for n in nodes:
+        if id(n) in drop:
+            continue
+        new_nodes += replace.get(id(n), [n])
+    del g.node[:]
+    g.node.extend(new_nodes)
+    g.initializer.extend(inits)
+    m.opset_import.append(h.make_opsetid("com.microsoft", 1))
+    onnx.save(m, path)
+    return len(replace)
+
+
 def export(ckpt, onnx_path):
     import torch
     from beat_this.inference import load_model
@@ -60,6 +118,7 @@ def export(ckpt, onnx_path):
 
     torch.onnx.export(Wrap(model).eval(), (torch.randn(1, 1500, 128),), onnx_path, input_names=["spect"], output_names=["beat", "downbeat"],
                       dynamic_axes={"spect": {1: "T"}, "beat": {1: "T"}, "downbeat": {1: "T"}}, opset_version=17, dynamo=False)
+    print("attentions fused:", fuse_attention(onnx_path))
     return model
 
 

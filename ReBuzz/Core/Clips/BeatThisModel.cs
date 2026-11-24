@@ -27,7 +27,7 @@ namespace ReBuzz.Core.Clips
         public string Origin { get; }
         public string Sha256 { get; }
 
-        BeatThisNet(InferenceSession s, string origin, string sha) { session = s; Origin = origin; Sha256 = sha; }
+        BeatThisNet(InferenceSession s, string origin, string sha, byte[] model) { session = s; Origin = origin; Sha256 = sha; bytes = model; }
 
         /// <summary>The model of these bytes, or null when they are not the pinned file or ONNX Runtime cannot load them. <paramref name="expectedSha256"/> null: not checked (tests of the check).</summary>
         public static BeatThisNet Load(byte[] bytes, string origin, string expectedSha256 = BeatThis.PinnedSha256)
@@ -37,7 +37,7 @@ namespace ReBuzz.Core.Clips
                 string sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
                 if (expectedSha256 != null && !string.Equals(sha, expectedSha256, StringComparison.OrdinalIgnoreCase)) return null;
                 var o = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL, ExecutionMode = ExecutionMode.ORT_SEQUENTIAL, IntraOpNumThreads = 1, InterOpNumThreads = 1 };
-                return new BeatThisNet(new InferenceSession(bytes, o), origin, sha);
+                return new BeatThisNet(new InferenceSession(bytes, o), origin, sha, bytes);
             }
             catch (Exception) { return null; }
         }
@@ -48,38 +48,66 @@ namespace ReBuzz.Core.Clips
             catch (Exception) { return null; }
         }
 
-        /// <summary>The beat and downbeat logits of a spectrogram (frames x 128), every frame, by the reference's windows. The windows run in parallel (the model is 2 M numbers, one thread a window).</summary>
+        /// <summary>The beat and downbeat logits of a spectrogram (frames x 128), every frame, by the reference's windows. The windows run in parallel, one thread each (the network is 2 M
+        /// numbers but its attention is memory-bound, so a window does not scale across threads as well as windows do across cores); when the last few windows would leave most cores idle
+        /// they run one after the other on a second session that uses all of them.</summary>
         public void Predict(float[] spect, int frames, out float[] beat, out float[] down)
         {
             var starts = BeatThisFront.WindowStarts(frames);
             var beats = new float[starts.Length][];
             var downs = new float[starts.Length][];
-            int threads = Math.Max(1, Math.Min(starts.Length, Environment.ProcessorCount));
-            Parallel.For(0, starts.Length, new ParallelOptions { MaxDegreeOfParallelism = threads }, w =>
+            int cores = Math.Max(1, Environment.ProcessorCount);
+            int tail = cores > 1 && starts.Length > cores ? starts.Length % cores : 0;
+            if (tail > cores / 2) tail = 0;
+            int bulk = starts.Length - tail;
+            Parallel.For(0, bulk, new ParallelOptions { MaxDegreeOfParallelism = Math.Min(bulk, cores) }, w => RunWindow(session, spect, frames, starts, w, beats, downs));
+            if (tail > 0)
             {
-                var input = new float[BeatThisFront.Chunk * BeatThisFront.Mels];
-                int len = BeatThisFront.FillWindow(spect, frames, starts[w], input);
-                var b = new float[len];
-                var d = new float[len];
-                using (var tIn = OrtValue.CreateTensorValueFromMemory(input, new long[] { 1, len, BeatThisFront.Mels }))
-                using (var tB = OrtValue.CreateTensorValueFromMemory(b, new long[] { 1, len }))
-                using (var tD = OrtValue.CreateTensorValueFromMemory(d, new long[] { 1, len }))
-                using (var opts = new RunOptions())
-                    session.Run(opts, new[] { "spect" }, new[] { tIn }, new[] { "beat", "downbeat" }, new[] { tB, tD });
-                beats[w] = b; downs[w] = d;
-            });
+                var wide = Wide();
+                for (int w = bulk; w < starts.Length; w++) RunWindow(wide, spect, frames, starts, w, beats, downs);
+            }
             beat = BeatThisFront.Aggregate(frames, starts, beats);
             down = BeatThisFront.Aggregate(frames, starts, downs);
         }
 
-        public void Dispose() => session.Dispose();
+        InferenceSession wideSession;
+        byte[] bytes;
+
+        InferenceSession Wide()
+        {
+            lock (this)
+            {
+                if (wideSession == null)
+                {
+                    var o = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL, ExecutionMode = ExecutionMode.ORT_SEQUENTIAL, IntraOpNumThreads = Math.Max(1, Environment.ProcessorCount), InterOpNumThreads = 1 };
+                    wideSession = new InferenceSession(bytes, o);
+                }
+                return wideSession;
+            }
+        }
+
+        static void RunWindow(InferenceSession s, float[] spect, int frames, int[] starts, int w, float[][] beats, float[][] downs)
+        {
+            var input = new float[BeatThisFront.Chunk * BeatThisFront.Mels];
+            int len = BeatThisFront.FillWindow(spect, frames, starts[w], input);
+            var b = new float[len];
+            var d = new float[len];
+            using (var tIn = OrtValue.CreateTensorValueFromMemory(input, new long[] { 1, len, BeatThisFront.Mels }))
+            using (var tB = OrtValue.CreateTensorValueFromMemory(b, new long[] { 1, len }))
+            using (var tD = OrtValue.CreateTensorValueFromMemory(d, new long[] { 1, len }))
+            using (var opts = new RunOptions())
+                s.Run(opts, new[] { "spect" }, new[] { tIn }, new[] { "beat", "downbeat" }, new[] { tB, tD });
+            beats[w] = b; downs[w] = d;
+        }
+
+        public void Dispose() { session.Dispose(); wideSession?.Dispose(); }
     }
 
     /// <summary>The model the app holds, found once, and the switches the tests and tools use.</summary>
     internal static class BeatThis
     {
         /// <summary>The SHA-256 of the pinned export of the small checkpoint (tools/autowarp/beat_this_model.py, 3rdParty/beat-this/NOTICE).</summary>
-        public const string PinnedSha256 = "20957568b91eb46caf8c5559726bb49a1aa5afcd2da7bd64d68586c0b597eef1";
+        public const string PinnedSha256 = "b700cc6814038bfad9a3585357cd3d2deb606e7c60453af1a8bd8e8efba5a309";
         public const string FileName = "beat_this_small.onnx";
         public const string ResourceName = "ReBuzz.BeatThis.beat_this_small.onnx";
 

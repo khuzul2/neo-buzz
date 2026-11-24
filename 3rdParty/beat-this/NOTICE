@@ -24,5 +24,5 @@ then AW1's DSP tracker. In the packaged app this notice is shipped in the Licens
 Sources and checksums (SHA-256)
   upstream code          https://github.com/CPJKU/beat_this  (MIT; version 1.1.0, pip beat-this==1.1.0, wheel 3f2b2d1e027c6dac380bf80c71555e3c28a4036a7f1af20129a945915a72a645; repository HEAD b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c)
   checkpoint small0      https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/small0.ckpt     6074be2c4d490c5f6101fcc374a1ec72ae93456e23bb6019783b849f5dc7d47b   (8451101 bytes)
-  ONNX export of it      made by tools/autowarp/beat_this_model.py (torch 2.11.0, onnx 1.23.2, opset 17, a free time axis)  20957568b91eb46caf8c5559726bb49a1aa5afcd2da7bd64d68586c0b597eef1   (10498987 bytes)
+  ONNX export of it      made by tools/autowarp/beat_this_model.py (torch 2.11.0, onnx 1.23.2, opset 17, a free time axis, the nine long attentions fused into ONNX Runtime MultiHeadAttention operators)  b700cc6814038bfad9a3585357cd3d2deb606e7c60453af1a8bd8e8efba5a309   (10512677 bytes)
   annotation sources     https://github.com/CPJKU/beat_this_annotations  (the list of the datasets the checkpoint was trained on; not used by this software)

@@ -211,7 +211,7 @@ namespace NeoBuzz.AutoWarpEval
             for (int r = 0; r < reps; r++) Array.Copy(one.Audio, 0, x, r * one.Audio.Length, one.Audio.Length);
             string path = Path.Combine(Path.GetTempPath(), "aw4-bench.wav");
             Pack.WriteWav(path, x, one.Rate);
-            using var _ = BeatThis.Scope(net);
+            using var scope = BeatThis.Scope(net);
             for (int pass = 0; pass < 3; pass++)
             {
                 var proc = Process.GetCurrentProcess();
@@ -220,8 +220,19 @@ namespace NeoBuzz.AutoWarpEval
                 var (audio, rate) = Wav.Read(path);
                 var src = new AudioSource(audio, audio, rate);
                 double decode = sw.Elapsed.TotalMilliseconds;
-                var res = AudioAnalysis.AutoWarp(src, 4);
-                double total = sw.Elapsed.TotalMilliseconds;
+                // The stages of one more analysis, for the log: the mono mix and resampling, the spectrogram, the network.
+                var swp = Stopwatch.StartNew();
+                var mono = BeatFront.Mono22k(src);
+                double tMono = swp.Elapsed.TotalMilliseconds; swp.Restart();
+                var spect = BeatThisFront.Compute(mono, out int frames);
+                double tSpect = swp.Elapsed.TotalMilliseconds; swp.Restart();
+                net.Predict(spect, frames, out _, out _);
+                double tNet = swp.Elapsed.TotalMilliseconds;
+                Console.WriteLine($"  stages: mono {tMono:0} ms, spectrogram {tSpect:0} ms, network {tNet:0} ms ({frames} frames, {BeatThisFront.WindowStarts(frames).Length} windows)");
+                sw.Restart();
+                var src9 = new AudioSource(audio, audio, rate);
+                var res = AudioAnalysis.AutoWarp(src9, 4);
+                double total = decode + sw.Elapsed.TotalMilliseconds;
                 proc.Refresh();
                 Console.WriteLine($"pass {pass}: {src.Seconds:0} s of audio: decode {decode:0} ms, total (decoding, spectrogram, network, markers) {total:0} ms wall, {(proc.TotalProcessorTime - cpu0).TotalMilliseconds:0} ms cpu, cores {Environment.ProcessorCount}, found {res.Found}, source {res.Source}, markers {res.Markers.Count}, bpm {res.Bpm:0.00}");
             }
