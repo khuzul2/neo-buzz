@@ -21,7 +21,7 @@ Around the tone: Percussion (a single-trigger 2nd or 3rd harmonic, only when no 
 | Parameter | Value | Why |
 |---|---|---|
 | 8' | 8 | the body of every registration; the other bars colour it |
-| 16' and 5 1/3' | 8 | the jazz weight under the note |
+| 16' | 8 | the sub-octave weight; with 5 1/3' at 8 too, the jazz registration |
 | Percussion | on | a quick bell on the first key (single trigger); play legato for none |
 | Vibrato type | C3 | chorus 3 is the widest; V1 is the gentlest |
 | Drive | 0% | 30 to 70% for blues and rock grit |
