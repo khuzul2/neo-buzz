@@ -22,6 +22,11 @@ namespace ReBuzz.Studio.Tests
     {
         const int TB = PatternEvent.TimeBase;
 
+        // (Another test's core may have installed its dispatcher: a change is raised where it is made, here.)
+        Action<Action> marshal;
+        [SetUp] public void Direct() { marshal = NoteMaps.Marshal; NoteMaps.Marshal = a => a(); }
+        [TearDown] public void Restore() { NoteMaps.Marshal = marshal; }
+
         static void Set(IMachine m, string name, int value) =>
             m.ParameterGroups[1].Parameters.First(p => p.Name == name).SetValue(0, value);
 
@@ -31,6 +36,14 @@ namespace ReBuzz.Studio.Tests
             Set(m, "Mode", 1);
             Set(m, "Kit base", 36);
             for (int z = 0; z < 16; z++) Set(m, $"Z{z + 1} wave", z < waves.Length ? waves[z] : 0);
+        }
+
+        /// <summary>Lets the roll look at its machine's map (it also hears the change event itself); whether its map is a newer one now.</summary>
+        static bool Follow(PianoRoll roll)
+        {
+            int was = roll.Map.Version;
+            roll.SyncMap();
+            return roll.Map.Version != was;
         }
 
         // The built-in samples, by their wave numbers (201 on): Kick, Kick 808, Snare, Clap, Rim, Closed hat, Open hat, …
@@ -192,25 +205,25 @@ namespace ReBuzz.Studio.Tests
             r.Roll.FoldBox.SelectedIndex = 3;
             UxP3bTests.Pump();
             Assert.That(roll.Rows, Is.EqualTo(new[] { 41, 40, 39, 38, 37, 36 }), "Fold: playable shows the six keys and nothing else");
-            Assert.That(roll.KeyTip(36), Does.StartWith("Kick · C2"));
-            Assert.That(roll.KeyTip(60), Is.EqualTo("C4 · no sound"), "keys that make no sound say so");
+            Assert.That(roll.KeyTip(36), Does.StartWith("Kick · " + BuzzGUI.Common.NoteNames.Name(36)));
+            Assert.That(roll.KeyTip(60), Is.EqualTo(BuzzGUI.Common.NoteNames.Name(60) + " · no sound"), "keys that make no sound say so");
 
             // Renaming a zone (another wave on it): the version moves and the same roll follows, with no reopening.
             int version = map.Version;
             Set(sampler, "Z2 wave", Kick808);
-            Assert.That(roll.SyncMap(), Is.True);
+            Assert.That(Follow(roll), Is.True, "the roll took the new map");
             Assert.That(roll.Map.Version, Is.GreaterThan(version));
             Assert.That(roll.Map.NameOf(37), Is.EqualTo("Kick 808"));
             Assert.That(roll.Rows, Is.EqualTo(new[] { 41, 40, 39, 38, 37, 36 }));
-            Assert.That(roll.SyncMap(), Is.False, "nothing changed since");
+            Assert.That(Follow(roll), Is.False, "nothing changed since");
 
             // Adding a zone: a seventh key. Removing one: its key goes.
             Set(sampler, "Z7 wave", ClosedHat + 2);
-            Assert.That(roll.SyncMap(), Is.True);
+            Assert.That(Follow(roll), Is.True, "the roll took the new map");
             Assert.That(roll.Rows, Is.EqualTo(new[] { 42, 41, 40, 39, 38, 37, 36 }), "the rows follow an added zone");
             Assert.That(roll.Map.NameOf(42), Is.EqualTo("Low tom"));
             Set(sampler, "Z1 wave", 0);
-            Assert.That(roll.SyncMap(), Is.True);
+            Assert.That(Follow(roll), Is.True, "the roll took the new map");
             Assert.That(roll.Rows, Is.EqualTo(new[] { 42, 41, 40, 39, 38, 37 }), "and a removed one");
             Assert.That(roll.Map.IsPlayable(36), Is.False);
 
@@ -278,6 +291,32 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ no map
 
+        // ------------------------------------------------------------------ the tracker
+
+        [AvaloniaTest]
+        public void TheTrackerNamesANoteUnderThePointerOfAMachineThatNamesItsKeys()
+        {
+            using var r = new UxP3bTests.Rig(16, "Neo Sampler");
+            Kit(r.Lead, Kick, Snare, Clap);
+            r.ShowRoll();
+            r.Notes.AddNote(0, 36);
+            r.Notes.AddNote(TB, 37);
+            r.Notes.AddNote(2 * TB, 60);
+            r.ShowTracker();
+            UxP3bTests.Pump();
+            var body = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(r.Window).First(v => v.GetType().Name == "PatternBody");
+            var tipAt = body.GetType().GetMethod("NoteTipAt", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.That(tipAt, Is.Not.Null);
+            var b = ((Avalonia.Controls.Control)body).Bounds;
+            var tips = new HashSet<string>();
+            for (double y = 0; y < Math.Min(b.Height, 600); y += 3)
+                for (double x = 0; x < Math.Min(b.Width, 260); x += 4)
+                    if (tipAt.Invoke(body, new object[] { new Avalonia.Point(x, y) }) is string t) tips.Add(t);
+            Assert.That(tips, Does.Contain("Kick · " + BuzzGUI.Common.NoteNames.Name(36)), "the Kick's cell says Kick: " + string.Join(" | ", tips));
+            Assert.That(tips, Does.Contain("Snare · " + BuzzGUI.Common.NoteNames.Name(37)), "and the Snare's: " + string.Join(" | ", tips));
+            Assert.That(tips.Count, Is.EqualTo(2), "a key no zone names (60) has no tip: " + string.Join(" | ", tips));
+        }
+
         [AvaloniaTest]
         public void AMachineWithNoMapLeavesTheRollAsItWasAndFoldPlayableDisabled()
         {
@@ -299,7 +338,7 @@ namespace ReBuzz.Studio.Tests
             r.Roll.FoldBox.SelectedIndex = 3;       // (if it were chosen anyway: every row)
             UxP3bTests.Pump();
             Assert.That(r.Notes.Rows, Is.Null);
-            Assert.That(r.Notes.KeyTip(60), Is.EqualTo("C4"), "a plain key's tip is its note");
+            Assert.That(r.Notes.KeyTip(60), Is.EqualTo(BuzzGUI.Common.NoteNames.Name(60)), "a plain key's tip is its note");
         }
     }
 }
