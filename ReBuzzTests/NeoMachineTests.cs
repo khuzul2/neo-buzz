@@ -145,6 +145,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Tune = new("Neo Tune", "Tune", false);
         // The strip (docs/specs/mastering-tools.md §5.10).
         internal static readonly NeoInfo Strip = new("Neo Strip", "Strip", false);
+        // The sound-chip instrument (docs/specs/neo-chip.md).
+        internal static readonly NeoInfo Chip = new("Neo Chip", "Chip", true);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -1861,9 +1863,25 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoChipPlaysAChordStopsAndShowsItsEditor()
+        {
+            using var rig = new Rig(Chip);
+            Assert.That(rig.Param("Noise pitch").DescribeValue(rig.Param("Noise pitch").DefValue), Does.EndWith("Hz"));
+            rig.Notes(BuzzNote(4, 0), BuzzNote(4, 4), BuzzNote(4, 7));
+            var chord = rig.PlayUntilSound(0.3);
+            TestContext.Out.WriteLine($"Neo Chip chord {Db(Rms(chord)):F1} dB");
+            Assert.That(Rms(chord), Is.GreaterThan(1e-3), "the chord sounds");
+            rig.Notes(255, 255, 255);
+            rig.Play(1);
+            Assert.That(Rms(rig.Play(0.3)), Is.LessThan(Rms(chord) / 1000), "and stops after note-off");
+
+            ShootEditor(rig.Effect, "neo-chip-editor");
+        }
+
+        [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Tune, Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
+            foreach (var info in new[] { Chip, Tune, Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, LearnSub, LearnFm, LearnWt, LearnAdd, LearnGrain, LearnPhys, LearnString, LearnFormant, LearnFold, LearnPd, LearnVector, LearnSampler, LearnSpectral, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip, Tape, DeEsser, Gate, Spectral, Patch })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

@@ -110,6 +110,7 @@ namespace NeoBuzz.MachineTests
             }),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, v => Learn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v)),
             ["Neo Learn Subtractive"] = (NeoBuzz.LearnSub.Params.Table, v => Learn(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v)),
+            ["Neo Chip"] = (NeoBuzz.Chip.Params.Table, v => Synth(new NeoBuzz.Chip.ChipEngine(v), (e, l, r, n) => ((NeoBuzz.Chip.ChipEngine)e).Process(l, r, n))),
         };
 
         static Action<float[], float[], int> Learn(NeoBuzz.Learn.MacroMap map, ParamValues v)

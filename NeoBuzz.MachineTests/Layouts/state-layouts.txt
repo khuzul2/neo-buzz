@@ -3,6 +3,7 @@
 # Changing a table (order, key, range, mapping, default) without adding its next version and line fails EveryMachineLayoutIsRecordedAndOnlyChangesWithAVersion.
 NeoBuzz.Analyzer	0	6	d09ad78ec03ed49d
 NeoBuzz.AudioToMidi	0	40	f026429bd83d63bf
+NeoBuzz.Chip	0	41	5a6f97f568d7fa03
 NeoBuzz.Clipper	0	15	70d4b85d1bfad1fc
 NeoBuzz.Comp	0	16	45efdd9ad3e0f78b
 NeoBuzz.DeEsser	0	13	c0c0dfc6900f468a
