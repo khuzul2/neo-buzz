@@ -15,6 +15,7 @@
   "bass"
  ],
  "use_for": "A teaching wavetable synth: scan a table, bend the phase and let a slow motion sweep it for evolving pads and sync leads.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

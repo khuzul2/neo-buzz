@@ -12,6 +12,7 @@
   "spectral"
  ],
  "use_for": "A teaching spectral synth: frozen pads, bell-like stretches and ghostly textures from one sample (built in or your WAV), analysed into partials and noise.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

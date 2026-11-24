@@ -14,6 +14,7 @@
   "drums"
  ],
  "use_for": "Play a synth or drums with your voice: sung pitch to notes in a key, trained beatbox sounds to drum notes, chords, and voice level and vowels as controllers.",
+ "note_out": true,
  "tracks": 0,
  "track_parameters": [],
  "parameters": [

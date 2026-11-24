@@ -15,6 +15,7 @@
   "bass"
  ],
  "use_for": "Evolving pads, leads and basses from morphing wavetable or analog engines with unison and a built-in effects rack.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

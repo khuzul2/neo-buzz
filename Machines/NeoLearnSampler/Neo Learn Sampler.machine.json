@@ -12,6 +12,7 @@
   "sampler"
  ],
  "use_for": "A teaching sampler: lo-fi keys, pads and drones from one sample (five built in, or your own WAV) with a start offset, a tone tilt, a crossfaded loop, vintage grit and a small room.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

@@ -13,6 +13,7 @@
   "monophonic"
  ],
  "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training.",
+ "note_out": true,
  "tracks": 0,
  "track_parameters": [],
  "parameters": [

@@ -146,7 +146,8 @@
     "lead",
     "bass"
    ],
-   "use_for": "Evolving pads, leads and basses from morphing wavetable or analog engines with unison and a built-in effects rack."
+   "use_for": "Evolving pads, leads and basses from morphing wavetable or analog engines with unison and a built-in effects rack.",
+   "note_in": true
   },
   "EasyRec": {
    "category": "Utility",
@@ -656,7 +657,8 @@
     "percussion",
     "punchy"
    ],
-   "use_for": "A complete synthesised drum kit: kick, snare, clap, rim and hats with a pattern-friendly keymap."
+   "use_for": "A complete synthesised drum kit: kick, snare, clap, rim and hats with a pattern-friendly keymap.",
+   "note_in": true
   },
   "Neo Ensemble": {
    "category": "Modulation",
@@ -708,7 +710,8 @@
     "bright",
     "pluck"
    ],
-   "use_for": "Bells, electric pianos, FM basses and metallic percussion from six operators and many algorithms."
+   "use_for": "Bells, electric pianos, FM basses and metallic percussion from six operators and many algorithms.",
+   "note_in": true
   },
   "Neo Gate": {
    "category": "Dynamics",
@@ -737,7 +740,8 @@
     "organ",
     "keys"
    ],
-   "use_for": "A teaching additive synth: build organs, hollow reeds, choirs and bells from sine partials with tilt, odd/even, comb and shimmer."
+   "use_for": "A teaching additive synth: build organs, hollow reeds, choirs and bells from sine partials with tilt, odd/even, comb and shimmer.",
+   "note_in": true
   },
   "Neo Learn FM": {
    "category": "Synths",
@@ -749,7 +753,8 @@
     "bass",
     "pluck"
    ],
-   "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback."
+   "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback.",
+   "note_in": true
   },
   "Neo Learn Formant": {
    "category": "Synths",
@@ -759,7 +764,8 @@
     "polyphonic",
     "pad"
    ],
-   "use_for": "A teaching vowel synth: choirs, talking low voices and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope."
+   "use_for": "A teaching vowel synth: choirs, talking low voices and whispers from four formant filters that move across A, E, I, O and U, with tract size, Q and a talking envelope.",
+   "note_in": true
   },
   "Neo Learn Granular": {
    "category": "Synths",
@@ -770,7 +776,8 @@
     "pad",
     "lush"
    ],
-   "use_for": "A teaching granular synth: ambient clouds, frozen textures and glitchy stutters from grain size, density, spray, octave shimmer and a trapezoid-to-Gaussian contour."
+   "use_for": "A teaching granular synth: ambient clouds, frozen textures and glitchy stutters from grain size, density, spray, octave shimmer and a trapezoid-to-Gaussian contour.",
+   "note_in": true
   },
   "Neo Learn Physical": {
    "category": "Synths",
@@ -781,7 +788,8 @@
     "pluck",
     "keys"
    ],
-   "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry."
+   "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry.",
+   "note_in": true
   },
   "Neo Learn Spectral": {
    "category": "Synths",
@@ -790,7 +798,8 @@
     "polyphonic",
     "spectral"
    ],
-   "use_for": "A teaching spectral synth: frozen pads, bell-like stretches and ghostly textures from one sample (built in or your WAV), analysed into partials and noise."
+   "use_for": "A teaching spectral synth: frozen pads, bell-like stretches and ghostly textures from one sample (built in or your WAV), analysed into partials and noise.",
+   "note_in": true
   },
   "Neo Learn String": {
    "category": "Synths",
@@ -801,7 +810,8 @@
     "pluck",
     "keys"
    ],
-   "use_for": "A teaching plucked-string synth (Karplus-Strong): harps, guitars, harpsichords and bells from a pick position, damping, a decay time that holds at any note, stiffness and sympathetic strings."
+   "use_for": "A teaching plucked-string synth (Karplus-Strong): harps, guitars, harpsichords and bells from a pick position, damping, a decay time that holds at any note, stiffness and sympathetic strings.",
+   "note_in": true
   },
   "Neo Learn Subtractive": {
    "category": "Synths",
@@ -813,7 +823,8 @@
     "lead",
     "pad"
    ],
-   "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained."
+   "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained.",
+   "note_in": true
   },
   "Neo Learn Phase Distortion": {
    "category": "Synths",
@@ -822,7 +833,8 @@
     "polyphonic",
     "bright"
    ],
-   "use_for": "A teaching phase-distortion synth: rubbery basses, digital plucks and glassy keys from a bent cosine with six read shapes, a decaying bend, a resonant sweep, ring modulation and a warm chorus."
+   "use_for": "A teaching phase-distortion synth: rubbery basses, digital plucks and glassy keys from a bent cosine with six read shapes, a decaying bend, a resonant sweep, ring modulation and a warm chorus.",
+   "note_in": true
   },
   "Neo Learn Sampler": {
    "category": "Synths",
@@ -831,7 +843,8 @@
     "polyphonic",
     "sampler"
    ],
-   "use_for": "A teaching sampler: lo-fi keys, pads and drones from one sample (five built in, or your own WAV) with a start offset, a tone tilt, a crossfaded loop, vintage grit and a small room."
+   "use_for": "A teaching sampler: lo-fi keys, pads and drones from one sample (five built in, or your own WAV) with a start offset, a tone tilt, a crossfaded loop, vintage grit and a small room.",
+   "note_in": true
   },
   "Neo Learn Vector": {
    "category": "Synths",
@@ -841,7 +854,8 @@
     "pad",
     "lush"
    ],
-   "use_for": "A teaching vector synth: evolving pads and textures from four sources at the corners of a diamond, a cursor that mixes them and an orbit that moves it by itself."
+   "use_for": "A teaching vector synth: evolving pads and textures from four sources at the corners of a diamond, a cursor that mixes them and an orbit that moves it by itself.",
+   "note_in": true
   },
   "Neo Learn Wavefolder": {
    "category": "Synths",
@@ -851,7 +865,8 @@
     "polyphonic",
     "pluck"
    ],
-   "use_for": "A teaching wavefolder: metallic low tones, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate."
+   "use_for": "A teaching wavefolder: metallic low tones, bongo-like plucks and sizzling leads from one to six folding stages, a symmetry offset, timbre FM and a low-pass gate.",
+   "note_in": true
   },
   "Neo Learn Wavetable": {
    "category": "Synths",
@@ -863,7 +878,8 @@
     "lead",
     "bass"
    ],
-   "use_for": "A teaching wavetable synth: scan a table, bend the phase and let a slow motion sweep it for evolving pads and sync leads."
+   "use_for": "A teaching wavetable synth: scan a table, bend the phase and let a slow motion sweep it for evolving pads and sync leads.",
+   "note_in": true
   },
   "Neo Limiter": {
    "category": "Dynamics",
@@ -905,7 +921,8 @@
     "bass",
     "pad"
    ],
-   "use_for": "Sounds the fixed synths cannot make: build your own routing from oscillators, envelopes, LFOs, filters, shapers and delays, with per-note and global modulation, MPE and sixteen macros."
+   "use_for": "Sounds the fixed synths cannot make: build your own routing from oscillators, envelopes, LFOs, filters, shapers and delays, with per-note and global modulation, MPE and sixteen macros.",
+   "note_in": true
   },
   "Neo Poly": {
    "category": "Synths",
@@ -918,7 +935,8 @@
     "pad",
     "vintage"
    ],
-   "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords."
+   "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords.",
+   "note_in": true
   },
   "Neo Sampler": {
    "category": "Samplers",
@@ -927,7 +945,8 @@
     "polyphonic",
     "keys"
    ],
-   "use_for": "Play the song's waves across the keyboard with key zones, loops and filters."
+   "use_for": "Play the song's waves across the keyboard with key zones, loops and filters.",
+   "note_in": true
   },
   "Neo Scope": {
    "category": "Utility",
@@ -997,7 +1016,8 @@
     "lead",
     "bass"
    ],
-   "use_for": "Wavetable pads, sweeps, wobble basses and vowel-like leads from two warped table oscillators."
+   "use_for": "Wavetable pads, sweeps, wobble basses and vowel-like leads from two warped table oscillators.",
+   "note_in": true
   },
   "Oomek Aggressor 303": {
    "category": "Synths",
@@ -1386,7 +1406,8 @@
     "chords",
     "drums"
    ],
-   "use_for": "Play a synth or drums with your voice: sung pitch to notes in a key, trained beatbox sounds to drum notes, chords, and voice level and vowels as controllers."
+   "use_for": "Play a synth or drums with your voice: sung pitch to notes in a key, trained beatbox sounds to drum notes, chords, and voice level and vowels as controllers.",
+   "note_out": true
   },
   "Neo Audio to MIDI": {
    "category": "Control",
@@ -1396,7 +1417,8 @@
     "drums",
     "monophonic"
    ],
-   "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training."
+   "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training.",
+   "note_out": true
   },
   "Neo Tune": {
    "category": "Modulation",

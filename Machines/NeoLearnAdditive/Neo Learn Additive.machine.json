@@ -14,6 +14,7 @@
   "keys"
  ],
  "use_for": "A teaching additive synth: build organs, hollow reeds, choirs and bells from sine partials with tilt, odd/even, comb and shimmer.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

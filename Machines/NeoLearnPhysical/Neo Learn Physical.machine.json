@@ -14,6 +14,7 @@
   "keys"
  ],
  "use_for": "A teaching physical-modelling synth: marimbas, plucked strings, glass bowls and bowed or breathy tones from a material, a mallet-pick-bow exciter morph and a string-tube-bar-plate geometry.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

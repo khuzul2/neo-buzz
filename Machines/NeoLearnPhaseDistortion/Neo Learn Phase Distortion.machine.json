@@ -12,6 +12,7 @@
   "bright"
  ],
  "use_for": "A teaching phase-distortion synth: rubbery basses, digital plucks and glassy keys from a bent cosine with six read shapes, a decaying bend, a resonant sweep, ring modulation and a warm chorus.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",
