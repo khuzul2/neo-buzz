@@ -37,6 +37,7 @@ namespace NeoBuzz.LoFi
         const int AaSections = 6;                 // 12th order
         const double AaCutoff = 0.40;             // of the hold rate
         const double WowMinHz = 0.3;
+        const double Log2Min = 7.643856189774724;   // log2 of 200 Hz, the lowest hold rate
         const double FlutterHz1 = 7.3, FlutterHz2 = 11.9, FlutterW1 = 0.65, FlutterW2 = 0.35;
         static readonly double[] DriftHz = { 0.12, 0.19, 0.31 };
         static readonly double[] DriftW = { 0.5, 0.3, 0.2 };
@@ -122,7 +123,7 @@ namespace NeoBuzz.LoFi
             wowR.Setup(MotionGlideSeconds, sr); wowRateR.Setup(MotionGlideSeconds, sr);
             flutR.Setup(MotionGlideSeconds, sr); driftR.Setup(MotionGlideSeconds, sr);
             toneR.Setup(GlideSeconds, sr); mixR.Setup(GlideSeconds, sr); outR.Setup(GlideSeconds, sr);
-            int max = (int)Math.Ceiling(0.075 * sr) + 8;
+            int max = (int)Math.Ceiling(0.15 * sr) + 8;
             for (int c = 0; c < 2; c++) ch[c].Delay = new FracDelay(max);
             popDecay = PortableMath.Exp(-1.0 / (0.0004 * sr));
             hissNorm = 1.0 / Math.Sqrt(HissColour / (2 - HissColour));
@@ -156,25 +157,67 @@ namespace NeoBuzz.LoFi
             double bits = values.Value(P.Bits);
             double rate = values.Value(P.Rate);
             double hiss = values.Value(P.Hiss);
-            Target(ref bitsR, (float)bits, force);
+            double a = values.Value(P.Amount) / 100.0;       // the effect strength, 0 … 2
+            bool unity = Math.Abs(a - 1) < 1e-9;             // 100 %: the settings exactly as they stand
             bool rateTop = values[P.Rate] >= values.Table[P.Rate].Max;   // the top of the range is off whatever the host's rate
-            Target(ref rateR, rateTop ? offLog2 : (float)(PortableMath.Log(Math.Min(rate, sampleRate)) / Ln2), force);
+
+            // Amount scales each active stage on a perceptual scale (docs/specs/neo-lofi.md section 2a): 0 is every stage off.
+            double bitsEff = unity ? bits : ScaledBits(bits, a);
+            double rateOct = rateTop ? offLog2 : PortableMath.Log(Math.Min(rate, sampleRate)) / Ln2;   // log2 of the hold rate
+            double rateEffLog = unity || rateTop ? rateOct : ScaledRateLog2(rateOct, offLog2, a);
+            double jitter = values.F(P.Jitter);
+            double hissGain = double.IsNegativeInfinity(hiss) ? 0.0 : DspMath.DbToGain(hiss);
+            double density = values.Value(P.Crackle);
+            double popDb = values.Value(P.CrackleLevel);
+            double wow = values.Value(P.Wow), flutter = values.Value(P.Flutter), drift = values.Value(P.Drift);
+            double tone = values.Value(P.Tone);
+            if (!unity)
+            {
+                jitter = Math.Min(1.0, jitter * a);
+                if (!double.IsNegativeInfinity(hiss))
+                {
+                    // dB above the floor of the control (-90): linear in dB, capped at -12 dBFS however far it is pushed
+                    double db = a <= 0 ? double.NegativeInfinity : Math.Min(-90 + a * (hiss + 90), Math.Max(hiss, -12.0));
+                    hissGain = double.IsNegativeInfinity(db) ? 0.0 : DspMath.DbToGain(db);
+                }
+                density = Math.Min(density * a, 200.0);
+                popDb = Math.Min(-60 + a * (popDb + 60), Math.Max(popDb, -6.0));
+                wow = Math.Min(wow * a, 100.0);
+                flutter = Math.Min(flutter * a, 100.0);
+                drift = Math.Min(drift * a, 50.0);
+                tone = Math.Min(1.34, Math.Max(-1.25, tone * a));   // the cut in octaves, the lift in dB, both scaled
+            }
+            Target(ref bitsR, (float)bitsEff, force);
+            Target(ref rateR, (float)rateEffLog, force);
             dither = values.On(P.Dither);
             aaOn = values.On(P.AntiAlias);
             follow = values.On(P.HissFollow);
-            Target(ref jitR, values.F(P.Jitter), force);
-            Target(ref hissR, double.IsNegativeInfinity(hiss) ? 0f : (float)DspMath.DbToGain(hiss), force);
-            Target(ref dens, (float)values.Value(P.Crackle), force);
-            Target(ref crackLev, (float)DspMath.DbToGain(values.Value(P.CrackleLevel)), force);
-            Target(ref wowR, (float)values.Value(P.Wow), force);
+            Target(ref jitR, (float)jitter, force);
+            Target(ref hissR, (float)hissGain, force);
+            Target(ref dens, (float)density, force);
+            Target(ref crackLev, (float)DspMath.DbToGain(popDb), force);
+            Target(ref wowR, (float)wow, force);
             Target(ref wowRateR, (float)values.Value(P.WowRate), force);
-            Target(ref flutR, (float)values.Value(P.Flutter), force);
-            Target(ref driftR, (float)values.Value(P.Drift), force);
-            Target(ref toneR, (float)values.Value(P.Tone), force);
+            Target(ref flutR, (float)flutter, force);
+            Target(ref driftR, (float)drift, force);
+            Target(ref toneR, (float)tone, force);
             Target(ref mixR, values.F(P.Mix), force);
             Target(ref outR, (float)DspMath.DbToGain(values.Value(P.Output)), force);
             values.Clean();
         }
+
+        /// <summary>The word length at an Amount (<paramref name="a"/>, 1 = 100 %): the bits removed from 24 scale with it, and above 100 % each extra 100 % removes up to 6 more; never below 2 bits (or the setting, when it is lower).</summary>
+        public static double ScaledBits(double bits, double a)
+        {
+            if (bits >= 24) return bits;
+            double removed = 24 - bits;
+            double scaled = a <= 1 ? removed * a : removed + (a - 1) * Math.Min(removed, 6.0);
+            return Math.Max(Math.Min(bits, 2.0), 24 - scaled);
+        }
+
+        /// <summary>log2 of the hold rate at an Amount: the octaves below the host's rate (<paramref name="offLog2"/>) scale with it, down to 200 Hz at most.</summary>
+        public static double ScaledRateLog2(double rateLog2, double offLog2, double a) =>
+            Math.Max(Math.Min(rateLog2, Log2Min), offLog2 - a * (offLog2 - rateLog2));
 
         static void Target(ref SmoothRamp r, float v, bool force)
         {
@@ -318,7 +361,7 @@ namespace NeoBuzz.LoFi
             {
                 lastToneT = toneT;
                 double t = toneT;
-                double fc = Math.Min(20000.0 * PortableMath.Pow(600.0 / 20000.0, Math.Min(1.0, Math.Max(0.0, -t))), 0.45 * sampleRate);
+                double fc = Math.Min(20000.0 * PortableMath.Pow(600.0 / 20000.0, Math.Min(1.25, Math.Max(0.0, -t))), 0.45 * sampleRate);
                 for (int c = 0; c < 2; c++)
                 {
                     ch[c].ToneLp.Set(BiquadType.LowPass, fc, sampleRate, 0.7071067811865476);

@@ -1,7 +1,7 @@
 #nullable disable
 // Neo Lo-Fi's editor (docs/specs/neo-lofi.md): four sections of knob cards in the house style: Crush (bits, rate, jitter,
 // dither, anti-alias, with a picture of a sine through the crush), Noise (hiss, follow, crackle), Motion (wow, flutter,
-// drift) and Output (tone, mix, output, meters). One source for WPF and Avalonia (the Neo editor kit).
+// drift) and Output (amount, mix, tone, output, meters). One source for WPF and Avalonia (the Neo editor kit).
 
 using System;
 #if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
@@ -48,8 +48,10 @@ namespace NeoBuzz.LoFi
                 Layout.Gap(4),
                 new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 120));
 
+            // Amount (the strength of the whole effect) first, with Mix (dry/wet) under it; then the tone and the level.
             var output = Layout.Row(
-                Layout.Column(new ParamKnob(ctx, P.Tone), new ParamKnob(ctx, P.Mix), new ParamKnob(ctx, P.Output)),
+                Layout.Column(new ParamKnob(ctx, P.Amount), new ParamKnob(ctx, P.Mix)),
+                Layout.Column(new ParamKnob(ctx, P.Tone), new ParamKnob(ctx, P.Output)),
                 Layout.Gap(6),
                 meters);
 
@@ -63,9 +65,12 @@ namespace NeoBuzz.LoFi
         /// <summary>Two cycles of a sine (dim) and the same through the hold and the bit reduction (accent), as the settings stand.</summary>
         static void DrawCrush(INeoCanvas g, NeoRect r, EditorContext ctx)
         {
-            double bits = ctx.Value(P.Bits);
+            // The picture shows what the crush does at the Amount (the effect strength), as the engine scales it.
+            double amount = ctx.Value(P.Amount) / 100.0;
+            double bits = LoFiEngine.ScaledBits(ctx.Value(P.Bits), amount);
             double rate = ctx.Value(P.Rate);
             bool rateOff = ctx.Raw(P.Rate) >= Params.Table[P.Rate].Max || rate >= 48000;
+            if (!rateOff) rate = Math.Pow(2, LoFiEngine.ScaledRateLog2(Math.Log2(rate), Math.Log2(48000.0), amount));
             var plot = new NeoRect(r.X + 6, r.Y + 6, r.Width - 12, r.Height - 12);
             double mid = plot.Y + plot.Height / 2, half = plot.Height / 2 - 14;   // the top 12 px hold the label, clear of the curves
             g.Line(plot.Left, mid, plot.Right, mid, new NeoStroke(Palette.Grid, 1, false));

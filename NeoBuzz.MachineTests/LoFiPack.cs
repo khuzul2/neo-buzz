@@ -143,19 +143,146 @@ namespace NeoBuzz.MachineTests
         static string Slug(string s) =>
             new string(s.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Replace("--", "-").Trim('-');
 
-        [Test, Explicit("writes the listening pack: set NEO_LOFI_PACK to an output folder")]
+        /// <summary>The machine at a setting over a source, as the pack renders it (and the log's figures).</summary>
+        internal static (float[] L, float[] R) Process(ParamValues v, (float[] L, float[] R) src, out LoFiEngine engine)
+        {
+            engine = new LoFiEngine(v);
+            engine.SetSampleRate(Rate);
+            var l = (float[])src.L.Clone();
+            var r = (float[])src.R.Clone();
+            var bl = new float[256];
+            var br = new float[256];
+            for (int pos = 0; pos < l.Length; pos += 256)
+            {
+                int n = Math.Min(256, l.Length - pos);
+                Array.Copy(l, pos, bl, 0, n);
+                Array.Copy(r, pos, br, 0, n);
+                engine.Process(bl, br, n);
+                Array.Copy(bl, 0, l, pos, n);
+                Array.Copy(br, 0, r, pos, n);
+            }
+            return (l, r);
+        }
+
+        static ParamValues Preset(PresetEntry p, double? amountPercent = null)
+        {
+            var v = new ParamValues(Params.Table);
+            foreach (var kv in p.Values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+            if (amountPercent != null) v.Set(P.Amount, Params.Table[P.Amount].Raw(amountPercent.Value));
+            return v;
+        }
+
+        internal sealed record PresetEntry(string Preset, Dictionary<int, int> Values);
+
+        /// <summary>The factory presets; NEO_LOFI_PRESETS names another preset file (the first pack's, for the before figures).</summary>
+        internal static List<PresetEntry> FactoryPresets()
+        {
+            string other = Environment.GetEnvironmentVariable("NEO_LOFI_PRESETS");
+            if (string.IsNullOrEmpty(other))
+                return PresetTests.AllPresets().Where(p => p.Machine == "Neo Lo-Fi").Select(p => new PresetEntry(p.Preset, p.Values)).ToList();
+            var list = new List<PresetEntry>();
+            foreach (var item in System.Xml.Linq.XDocument.Load(other).Root!.Elements("Item"))
+            {
+                var values = new Dictionary<int, int>();
+                foreach (var q in item.Element("Preset")!.Element("Parameters")!.Elements("Parameter")) values[(int)q.Attribute("Index")!] = (int)q.Attribute("Value")!;
+                list.Add(new PresetEntry((string)item.Attribute("Key")!, values));
+            }
+            return list;
+        }
+
+        /// <summary>What is left of the wet signal after the best gain and delay (-12 to +12 samples) of the dry is taken away, in dB under the dry's level: the crush, noise and pops as a listener hears them, whatever the hold's or the motion's small delays.</summary>
+        static double ResidualDb((float[] L, float[] R) wet, (float[] L, float[] R) dry)
+        {
+            double best = double.PositiveInfinity;
+            int n = dry.L.Length;
+            for (int lag = -12; lag <= 12; lag++)
+            {
+                double wd = 0, dd = 0, ww = 0;
+                for (int i = 16; i < n - 16; i++)
+                {
+                    double w = wet.L[i + lag], d = dry.L[i];
+                    wd += w * d; dd += d * d; ww += w * w;
+                }
+                double g = wd / dd;
+                best = Math.Min(best, (ww - g * wd) / (g * g * dd));
+            }
+            return 10 * Math.Log10(Math.Max(1e-30, best));
+        }
+
+        /// <summary>Every parameter as the machine shows it, for the log: proof that a render ran with the preset's values.</summary>
+        static string State(ParamValues v) =>
+            string.Join("; ", Params.Table.Select(d => $"{d.Name} {d.Describe(v[d.Index])}"));
+
+        /// <summary>Error to signal in dB: the RMS of (wet - dry) over the RMS of dry, both channels.</summary>
+        static double ErrorToSignalDb((float[] L, float[] R) wet, (float[] L, float[] R) dry)
+        {
+            double e = 0, s = 0;
+            for (int i = 0; i < dry.L.Length; i++)
+            {
+                double dl = wet.L[i] - dry.L[i], dr = wet.R[i] - dry.R[i];
+                e += dl * dl + dr * dr;
+                s += (double)dry.L[i] * dry.L[i] + (double)dry.R[i] * dry.R[i];
+            }
+            return 10 * Math.Log10(Math.Max(1e-30, e / s));
+        }
+
+        static string Rms((float[] L, float[] R) x) => $"{Measure.Db(Math.Sqrt((Measure.Rms(x.L, 0, x.L.Length) * Measure.Rms(x.L, 0, x.L.Length) + Measure.Rms(x.R, 0, x.R.Length) * Measure.Rms(x.R, 0, x.R.Length)) / 2)):0.0}";
+
+        static (string Name, Func<(float[], float[])> Make)[] Sources() => new (string, Func<(float[], float[])>)[] { ("drums", Drums), ("chords", Chords), ("keys", Keys) };
+
+        [Test, Explicit("writes the listening pack: set NEO_LOFI_PACK to an output folder (NEO_LOFI_NOWAV=1: only the log)")]
         public void WriteTheListeningPack()
         {
             string dir = Environment.GetEnvironmentVariable("NEO_LOFI_PACK");
             if (string.IsNullOrEmpty(dir)) Assert.Inconclusive("set NEO_LOFI_PACK");
+            bool wav = Environment.GetEnvironmentVariable("NEO_LOFI_NOWAV") != "1";
             Directory.CreateDirectory(dir);
-            var sources = new (string Name, Func<(float[], float[])> Make)[] { ("drums", Drums), ("chords", Chords), ("keys", Keys) };
-            var presets = PresetTests.AllPresets().Where(p => p.Machine == "Neo Lo-Fi").ToList();
+            var presets = FactoryPresets();
+            var log = new StringBuilder();
+            var made = new Dictionary<string, (float[] L, float[] R)>();
+            foreach (var (name, make) in Sources())
+            {
+                var (l, r) = make();
+                var x = (l, r);
+                Normalise(x, -3);
+                made[name] = x;
+                if (wav) WriteWav(Path.Combine(dir, $"00-dry__{name}.wav"), l, r);
+                log.AppendLine($"dry | {name} | peak {Measure.Db(Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length))):0.0} dBFS | rms {Rms(x)} dBFS | {l.Length} samples");
+            }
+            var report = new StringBuilder();
+            report.AppendLine(LoFiStageReport.Header);
+            var changes = LoFiPackChanges.Text;
+            int index = 1;
+            var readmeItems = new StringBuilder();
+            foreach (var p in presets)
+            {
+                var v100 = Preset(p);
+                report.AppendLine(LoFiStageReport.Row(p.Preset, LoFiStageReport.Measure_(v100)));
+                readmeItems.AppendLine($"{index:00}. **{p.Preset}**" + (changes.TryGetValue(p.Preset, out var c) ? $": {c}" : ""));
+                foreach (var (name, _) in Sources())
+                {
+                    var (l, r) = Process(Preset(p), made[name], out var e);
+                    if (wav) WriteWav(Path.Combine(dir, $"{index:00}-{Slug(p.Preset)}__{name}.wav"), l, r);
+                    log.AppendLine($"{index:00} {p.Preset} | {name} | {State(Preset(p))} | end of render: {e.CurrentBits:0.00} bits, hold {e.CurrentRate:0} Hz | residual {ResidualDb((l, r), made[name]):0.0} dB | rms {Rms((l, r))} dBFS | peak {Measure.Db(Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length))):0.0} dBFS");
+                }
+                if (changes.ContainsKey(p.Preset) && changes[p.Preset].Length > 0 && LoFiPackChanges.Retuned.Contains(p.Preset))
+                    foreach (double amount in new[] { 50.0, 150.0 })
+                    {
+                        var v = Preset(p, amount);
+                        var (l, r) = Process(v, made["drums"], out var e);
+                        if (wav) WriteWav(Path.Combine(dir, $"{index:00}-{Slug(p.Preset)}__drums__amount{amount:000}.wav"), l, r);
+                        log.AppendLine($"{index:00} {p.Preset} | drums at Amount {amount:0} % | {State(v)} | end of render: {e.CurrentBits:0.00} bits, hold {e.CurrentRate:0} Hz | residual {ResidualDb((l, r), made["drums"]):0.0} dB | rms {Rms((l, r))} dBFS | peak {Measure.Db(Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length))):0.0} dBFS");
+                    }
+                index++;
+            }
+            File.WriteAllText(Path.Combine(dir, "renders.log"), log.ToString());
+            File.WriteAllText(Path.Combine(dir, "stages.md"), report.ToString());
             var readme = new StringBuilder();
-            readme.AppendLine("# Neo Lo-Fi listening pack");
+            readme.AppendLine("# Neo Lo-Fi listening pack 2 (LF2)");
             readme.AppendLine();
             readme.AppendLine("Every factory preset of Neo Lo-Fi on three sources, written by `NeoBuzz.MachineTests/LoFiPack.cs` (an explicit test; nothing here is committed).");
             readme.AppendLine("This is not a blind test: it is here for you to decide whether the sound is right. Each file is the whole machine at that preset, 48 kHz, 16-bit WAV, stereo.");
+            readme.AppendLine("The sources and their levels are the ones of the first pack, so you can put the two side by side. `renders.log` lists, for every file, the machine's parameter values as the render ran with them, and how far the output is from the dry source (the residual: what is left after the best gain and delay of the dry is taken away, in dB under the source; 0 dB is as loud as the source itself, -30 dB is hardly there).");
             readme.AppendLine();
             readme.AppendLine("## Sources (all made by our own Neo machines, the dry files are `00-dry__*.wav`)");
             readme.AppendLine();
@@ -165,44 +292,19 @@ namespace NeoBuzz.MachineTests
             readme.AppendLine();
             readme.AppendLine("Each source is normalised to a -3 dBFS peak before the machine; the processed files are written as the machine returns them (no loudness matching: the presets that add gain or noise are louder or quieter on purpose, so judge the character, then level).");
             readme.AppendLine();
+            readme.AppendLine("## What is new");
+            readme.AppendLine();
+            readme.AppendLine("- **Amount** (0 to 200 %, 100 % = the preset as it stands): one knob for how strong the whole effect is. Files named `...__drums__amount050.wav` and `...__amount150.wav` are the seven retuned presets at 50 % and 150 % on the drums.");
+            readme.AppendLine("- Seven presets are stronger. 04 Broken toy, 06 Worn tape and 08 AM radio, which you kept, are unchanged.");
+            readme.AppendLine("- A fresh Neo Lo-Fi now sounds lo-fi: the defaults are 8 bits held at 12 kHz, not 12 bits and nothing else.");
+            readme.AppendLine();
             readme.AppendLine("## Presets");
             readme.AppendLine();
-            var made = new Dictionary<string, (float[] L, float[] R)>();
-            foreach (var (name, make) in sources)
-            {
-                var (l, r) = make();
-                var x = (l, r);
-                Normalise(x, -3);
-                made[name] = x;
-                WriteWav(Path.Combine(dir, $"00-dry__{name}.wav"), l, r);
-            }
-            int index = 1;
-            foreach (var p in presets)
-            {
-                readme.AppendLine($"{index:00}. **{p.Preset}**");
-                foreach (var (name, _) in sources)
-                {
-                    var v = new ParamValues(Params.Table);
-                    foreach (var kv in p.Values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
-                    var e = new LoFiEngine(v);
-                    e.SetSampleRate(Rate);
-                    var l = (float[])made[name].L.Clone();
-                    var r = (float[])made[name].R.Clone();
-                    var bl = new float[256];
-                    var br = new float[256];
-                    for (int pos = 0; pos < l.Length; pos += 256)
-                    {
-                        int n = Math.Min(256, l.Length - pos);
-                        Array.Copy(l, pos, bl, 0, n);
-                        Array.Copy(r, pos, br, 0, n);
-                        e.Process(bl, br, n);
-                        Array.Copy(bl, 0, l, pos, n);
-                        Array.Copy(br, 0, r, pos, n);
-                    }
-                    WriteWav(Path.Combine(dir, $"{index:00}-{Slug(p.Preset)}__{name}.wav"), l, r);
-                }
-                index++;
-            }
+            readme.Append(readmeItems);
+            readme.AppendLine();
+            readme.AppendLine("## What each stage measures at the preset (other stages switched off, test signals)");
+            readme.AppendLine();
+            readme.Append(report);
             File.WriteAllText(Path.Combine(dir, "README.md"), readme.ToString());
         }
     }

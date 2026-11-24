@@ -528,6 +528,7 @@ namespace NeoBuzz.MachineTests
                 if (b % 75 == 0) Set(v, P.Drift, (b / 75) % 2 == 0 ? 8 : 0);
                 if (b % 35 == 0) Set(v, P.Tone, ((b / 35) % 5 - 2) * 0.4);
                 if (b % 90 == 0) Set(v, P.Mix, (b / 90) % 2 == 0 ? 1 : 0.4);
+                if (b % 30 == 0) Set(v, P.Amount, (b / 30 % 5) * 50);
                 Array.Copy(l, (b % 8) * 256, bl, 0, 256);
                 Array.Copy(r, (b % 8) * 256, br, 0, 256);
                 e.Process(bl, br, 256);
@@ -636,6 +637,262 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Neo Lo-Fi largest change per 16 samples: {worstBits:0.000} bits, {worstLog:0.000} octaves");
             Assert.That(worstBits, Is.LessThan(0.5));
             Assert.That(worstLog, Is.LessThan(0.15));
+        }
+
+        // ---- amount (the strength of the whole effect) ---------------------------------------------------
+
+        static readonly double[] Amounts = { 0, 25, 50, 75, 100, 125, 150, 175, 200 };
+
+        static ParamValues Only(Action<ParamValues> setup, double amount)
+        {
+            var v = new ParamValues(Params.Table);
+            Set(v, P.Bits, 24);
+            v.Set(P.Rate, Params.Table[P.Rate].Max);
+            setup(v);
+            Set(v, P.Amount, amount);
+            return v;
+        }
+
+        [Test]
+        public void AmountIsAZeroToTwoHundredPercentKnobThatStartsAtOneHundred()
+        {
+            var d = Params.Table[P.Amount];
+            Assert.That(d.Value(d.Min), Is.EqualTo(0));
+            Assert.That(d.Value(d.Max), Is.EqualTo(200));
+            Assert.That(d.Value(d.Default), Is.EqualTo(100));
+            Assert.That(d.Group, Is.EqualTo("Output"));
+            Assert.That(P.Amount, Is.EqualTo(P.Count - 1), "appended at the end: songs that never saved it keep 100 %");
+        }
+
+        [Test]
+        public void AmountZeroPassesTheInputBitForBitWithEveryStageOn()
+        {
+            var l = Measure.PinkNoise(Rate * 2, 0.2, 15);
+            var r = Measure.PinkNoise(Rate * 2, 0.2, 16);
+            var (e, _) = Make(v =>
+            {
+                Set(v, P.Bits, 5); Set(v, P.Rate, 6000); v.Set(P.AntiAlias, 1); v.Set(P.Dither, 1); Set(v, P.Jitter, 0.5);
+                Set(v, P.Hiss, -40); Set(v, P.Crackle, 30); Set(v, P.Wow, 30); Set(v, P.Flutter, 20); Set(v, P.Drift, 10); Set(v, P.Tone, -0.5);
+                Set(v, P.Amount, 0);
+            });
+            var (ol, or) = Run(e, l, r);
+            for (int i = 0; i < l.Length; i++)
+                if (ol[i] != l[i] || or[i] != r[i]) Assert.Fail($"differs at {i}");
+            Assert.That(e.Idle, Is.True);
+            Assert.That(e.MakesSound, Is.False);
+        }
+
+        [Test]
+        public void AmountGlidingToZeroEndsExactlyAtTheInput()
+        {
+            var l = Measure.PinkNoise(Rate * 3, 0.2, 17);
+            var (e, v) = Make(x => { Set(x, P.Bits, 6); Set(x, P.Rate, 8000); Set(x, P.Hiss, -50); Set(x, P.Crackle, 20); Set(x, P.Wow, 20); Set(x, P.Tone, -0.4); });
+            var bl = new float[256];
+            var br = new float[256];
+            var o = new float[l.Length];
+            for (int pos = 0; pos < l.Length; pos += 256)
+            {
+                if (pos == 256 * 10) Set(v, P.Amount, 0);
+                int n = Math.Min(256, l.Length - pos);
+                Array.Copy(l, pos, bl, 0, n);
+                Array.Copy(l, pos, br, 0, n);
+                e.Process(bl, br, n);
+                Array.Copy(bl, 0, o, pos, n);
+            }
+            for (int i = Rate * 2; i < l.Length; i++)
+                if (o[i] != l[i]) Assert.Fail($"differs at {i}");
+        }
+
+        [Test]
+        public void MixStaysTheDryWetBlendWhateverTheAmount()
+        {
+            // At Mix 0 the input passes bit for bit at any Amount; at Amount 200 and Mix 50 % the wet is half of it.
+            var l = Measure.PinkNoise(Rate, 0.2, 18);
+            foreach (double amount in new[] { 50.0, 100.0, 200.0 })
+            {
+                var (e, _) = Make(v => { Set(v, P.Bits, 6); Set(v, P.Hiss, -40); Set(v, P.Mix, 0); Set(v, P.Amount, amount); });
+                var y = Mono(e, l);
+                for (int i = 0; i < l.Length; i++) if (y[i] != l[i]) Assert.Fail($"Amount {amount}: differs at {i}");
+            }
+        }
+
+        [Test]
+        public void TheBitsRemovedAndTheRateOctavesScaleWithAmount()
+        {
+            // 8 bits: 16 removed. 50 % keeps 16 bits, 150 % removes 6 more, 200 % twelve more is capped at 6 (so 2 bits).
+            foreach (var (amount, expected) in new[] { (0.0, 24.0), (50.0, 16.0), (100.0, 8.0), (150.0, 5.0), (200.0, 2.0) })
+                Assert.That(LoFiEngine.ScaledBits(8, amount / 100), Is.EqualTo(expected).Within(1e-9), $"{amount} %");
+            Assert.That(LoFiEngine.ScaledBits(24, 2), Is.EqualTo(24), "an off crusher stays off");
+            Assert.That(LoFiEngine.ScaledBits(1, 2), Is.EqualTo(1), "never below the setting's own floor");
+            double off = Math.Log2(Rate), at = Math.Log2(12000);
+            foreach (var (amount, octaves) in new[] { (0.0, 0.0), (50.0, 1.0), (100.0, 2.0), (200.0, 4.0) })
+                Assert.That(off - LoFiEngine.ScaledRateLog2(at, off, amount / 100), Is.EqualTo(octaves).Within(1e-9), $"{amount} %");
+            Assert.That(LoFiEngine.ScaledRateLog2(Math.Log2(300), off, 2), Is.EqualTo(Math.Log2(200)).Within(1e-9), "never below 200 Hz");
+        }
+
+        [Test]
+        public void TheCrushGrowsStepByStepWithAmountAndAt100PercentIsTheSetting()
+        {
+            double lastBits = 25, lastHold = Rate + 1;
+            foreach (double amount in Amounts)
+            {
+                var v = Only(x => { Set(x, P.Bits, 8); Set(x, P.Rate, 12000); }, amount);
+                double bits = LoFiStageReport.EffectiveBits(v), hold = LoFiStageReport.HoldRate(v);
+                if (double.IsNaN(bits)) bits = 24;
+                if (double.IsNaN(hold)) hold = Rate;
+                Measure.Report($"Neo Lo-Fi Amount {amount} %: Bits 8 -> {bits:0.00} effective bits, Rate 12 kHz -> hold {hold:0} Hz");
+                Assert.That(bits, Is.LessThanOrEqualTo(lastBits + 0.01), $"bits at {amount} %");
+                Assert.That(hold, Is.LessThanOrEqualTo(lastHold + 1), $"hold at {amount} %");
+                if (amount > 0) { Assert.That(bits, Is.LessThan(lastBits - 0.5), $"bits fall at {amount} %"); Assert.That(hold, Is.LessThan(lastHold * 0.8), $"hold falls at {amount} %"); }
+                lastBits = bits; lastHold = hold;
+                if (amount == 50) { Assert.That(bits, Is.EqualTo(16).Within(0.4)); Assert.That(hold, Is.EqualTo(24000).Within(720)); }
+                if (amount == 100) { Assert.That(bits, Is.EqualTo(8).Within(0.1)); Assert.That(hold, Is.EqualTo(12000).Within(360)); }
+                if (amount == 200) { Assert.That(bits, Is.EqualTo(2).Within(0.4)); Assert.That(hold, Is.EqualTo(3000).Within(90)); }
+            }
+        }
+
+        [Test]
+        public void TheNoiseGrowsInDecibelsWithAmountAndAt100PercentIsTheSetting()
+        {
+            double lastHiss = -200, lastCount = -1, lastPeak = -200;
+            foreach (double amount in Amounts)
+            {
+                var vh = Only(x => Set(x, P.Hiss, -50), amount);
+                double hiss = LoFiStageReport.Hiss(vh);
+                if (double.IsNaN(hiss)) hiss = -200;
+                var (count, peak) = LoFiStageReport.Crackle(Only(x => { Set(x, P.Crackle, 20); Set(x, P.CrackleLevel, -30); }, amount));
+                if (double.IsNaN(peak)) peak = -200;
+                Measure.Report($"Neo Lo-Fi Amount {amount} %: hiss set -50 -> {hiss:0.0} dB, crackle 20/s at -30 dB -> {count:0.0}/s peak {peak:0.0} dB");
+                Assert.That(hiss, Is.GreaterThanOrEqualTo(lastHiss - 0.2), $"hiss at {amount} %");
+                Assert.That(count, Is.GreaterThanOrEqualTo(lastCount - 1.5), $"crackle count at {amount} %");
+                Assert.That(peak, Is.GreaterThanOrEqualTo(lastPeak - 0.5), $"crackle level at {amount} %");
+                if (amount > 0) Assert.That(hiss, Is.GreaterThan(lastHiss + 3), $"hiss rises at {amount} %");
+                lastHiss = hiss; lastCount = count; lastPeak = peak;
+                if (amount == 50) Assert.That(hiss, Is.EqualTo(-70).Within(1.0));
+                if (amount == 100) { Assert.That(hiss, Is.EqualTo(-50).Within(1.0)); Assert.That(count, Is.EqualTo(20).Within(4)); }
+                if (amount == 150) Assert.That(hiss, Is.EqualTo(-30).Within(1.0));
+                if (amount == 200) { Assert.That(hiss, Is.EqualTo(-12).Within(1.0), "capped at -12 dBFS"); Assert.That(count, Is.EqualTo(40).Within(8)); }
+                if (amount == 0) { Assert.That(count, Is.EqualTo(0)); Assert.That(hiss, Is.EqualTo(-200)); }
+            }
+        }
+
+        [Test]
+        public void WowFlutterAndDriftGrowWithAmountAndAt100PercentAreTheSetting()
+        {
+            double lastWow = -1, lastFlutter = -1, lastDrift = -1;
+            foreach (double amount in new[] { 0.0, 50, 100, 150, 200 })
+            {
+                var vw = Only(x => { Set(x, P.Wow, 20); Set(x, P.WowRate, 1.0); }, amount);
+                var vf = Only(x => Set(x, P.Flutter, 20), amount);
+                var vd = Only(x => Set(x, P.Drift, 10), amount);
+                double wow = LoFiStageReport.Wow(vw), flutter = LoFiStageReport.Flutter(vf), drift = LoFiStageReport.Drift(vd);
+                Measure.Report($"Neo Lo-Fi Amount {amount} %: wow set 20 ct -> {wow:0.0} ct, flutter set 20 ct -> {flutter:0.0} ct (tracker), drift set 10 ct -> {drift:0.0} ct");
+                Assert.That(wow, Is.GreaterThanOrEqualTo(lastWow - 0.5), $"wow at {amount} %");
+                Assert.That(flutter, Is.GreaterThanOrEqualTo(lastFlutter - 0.5), $"flutter at {amount} %");
+                Assert.That(drift, Is.GreaterThanOrEqualTo(lastDrift - 0.5), $"drift at {amount} %");
+                if (amount > 0) { Assert.That(wow, Is.GreaterThan(lastWow + 3), "wow rises"); Assert.That(flutter, Is.GreaterThan(lastFlutter + 1), "flutter rises"); Assert.That(drift, Is.GreaterThan(lastDrift + 1), "drift rises"); }
+                lastWow = wow; lastFlutter = flutter; lastDrift = drift;
+                if (amount == 0) { Assert.That(wow, Is.LessThan(0.5)); Assert.That(drift, Is.LessThan(0.5)); }
+                if (amount > 0) Assert.That(wow, Is.EqualTo(20 * amount / 100).Within(0.15 * 20 * amount / 100), $"wow {amount} %");
+                if (amount == 100) Assert.That(drift, Is.EqualTo(10).Within(2));
+                if (amount == 200) Assert.That(drift, Is.EqualTo(20).Within(3));
+            }
+        }
+
+        [Test]
+        public void TheToneCutAndLiftGrowWithAmountAndAt100PercentIsTheSetting()
+        {
+            double lastCut = double.PositiveInfinity, lastLift = -1;
+            foreach (double amount in new[] { 0.0, 50, 100, 150, 200 })
+            {
+                var (cut, _) = LoFiStageReport.Tone(Only(x => Set(x, P.Tone, -0.5), amount));
+                var (_, lift) = LoFiStageReport.Tone(Only(x => Set(x, P.Tone, 0.5), amount));
+                if (double.IsNaN(cut)) cut = 21000;
+                Measure.Report($"Neo Lo-Fi Amount {amount} %: tone -50 % -> -3 dB at {cut:0} Hz, tone +50 % -> {lift:0.0} dB at 12 kHz");
+                Assert.That(cut, Is.LessThanOrEqualTo(lastCut + 1), $"cut at {amount} %");
+                Assert.That(lift, Is.GreaterThanOrEqualTo(lastLift - 0.05), $"lift at {amount} %");
+                if (amount > 0) { Assert.That(cut, Is.LessThan(lastCut * 0.9), "the cut deepens"); Assert.That(lift, Is.GreaterThan(lastLift + 0.5), "the lift grows"); }
+                lastCut = cut; lastLift = lift;
+                if (amount == 100) Assert.That(cut, Is.EqualTo(20000 * Math.Pow(0.03, 0.5)).Within(0.06 * 20000 * Math.Pow(0.03, 0.5)), "100 % is the setting");
+            }
+        }
+
+        [Test]
+        public void AmountBelowAndAtOneHundredAddsNothingToThePresetsOwnStageFigures()
+        {
+            // Every factory preset at Amount 100 % measures what it is set to, stage by stage (the gates of section 4 hold for the preset).
+            foreach (var p in PresetTests.AllPresets().Where(p => p.Machine == "Neo Lo-Fi"))
+            {
+                var v = new ParamValues(Params.Table);
+                foreach (var kv in p.Values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                Assert.That(v.Value(P.Amount), Is.EqualTo(100), p.Preset);
+                var s = LoFiStageReport.Measure_(v);
+                double bits = v.Value(P.Bits);
+                if (bits < 24 && !v.On(P.Dither)) Assert.That(s.Bits, Is.EqualTo(bits).Within(0.3), $"{p.Preset}: bits");
+                if (v[P.Rate] < Params.Table[P.Rate].Max) Assert.That(s.HoldHz, Is.EqualTo(v.Value(P.Rate)).Within(0.03 * v.Value(P.Rate) + 2), $"{p.Preset}: hold");
+                if (v.Value(P.Hiss) > -90 && !v.On(P.HissFollow)) Assert.That(s.HissDb, Is.EqualTo(v.Value(P.Hiss)).Within(1.0), $"{p.Preset}: hiss");
+                if (v.Value(P.Crackle) > 0) Assert.That(s.CracklePerSec, Is.EqualTo(v.Value(P.Crackle)).Within(0.3 * v.Value(P.Crackle)), $"{p.Preset}: crackle");
+                if (v.Value(P.Wow) > 0) Assert.That(s.WowCt, Is.EqualTo(v.Value(P.Wow)).Within(0.15 * v.Value(P.Wow)), $"{p.Preset}: wow");
+            }
+        }
+
+        [Test]
+        public void AFreshInstanceSoundsLoFi()
+        {
+            var v = new ParamValues(Params.Table);
+            var (e, _) = Make();
+            Assert.That(LoFiStageReport.EffectiveBits(v), Is.EqualTo(8).Within(0.1));
+            Assert.That(LoFiStageReport.HoldRate(v), Is.EqualTo(12000).Within(360));
+            var x = Measure.PinkNoise(Rate, 0.2, 21);
+            var y = Mono(e, x);
+            Assert.That(e.Idle, Is.False, "not a pass-through");
+            double err = 0, sig = 0;
+            for (int i = 0; i < x.Length; i++) { err += (y[i] - x[i]) * (y[i] - x[i]); sig += x[i] * x[i]; }
+            Assert.That(10 * Math.Log10(err / sig), Is.GreaterThan(-12), "the fresh sound is far from the input");
+        }
+
+        [Test]
+        public void AmountSweptUnderAutomationMakesNoZipperAboveMinusSixtyDecibels()
+        {
+            double zipper = SweepZipperDb(P.Amount, 0, 200, v => { Set(v, P.Wow, 30); Set(v, P.Flutter, 15); Set(v, P.Drift, 12); Set(v, P.Tone, -0.5); });
+            Measure.Report($"Neo Lo-Fi Amount swept 0 to 200 % per block (wow, flutter, drift, tone): energy above 2 kHz {zipper:0.0} dB re the sine");
+            Assert.That(zipper, Is.LessThan(-60));
+        }
+
+        [Test]
+        public void AmountMovesTheCrushInSmallSteps()
+        {
+            var (e, v) = Make(x => { Set(x, P.Bits, 8); Set(x, P.Rate, 12000); });
+            var l = new float[16];
+            var r = new float[16];
+            float lastBits = 8, lastLog = (float)Math.Log2(12000);
+            double worstBits = 0, worstLog = 0;
+            for (int b = 0; b < 4000; b++)
+            {
+                Set(v, P.Amount, (b / 40) % 2 == 0 ? 0 : 200);
+                e.Process(l, r, 16);
+                worstBits = Math.Max(worstBits, Math.Abs(e.CurrentBits - lastBits));
+                worstLog = Math.Max(worstLog, Math.Abs(Math.Log2(e.CurrentRate) - lastLog));
+                lastBits = e.CurrentBits;
+                lastLog = (float)Math.Log2(e.CurrentRate);
+            }
+            Measure.Report($"Neo Lo-Fi Amount 0 <-> 200 %: largest change per 16 samples {worstBits:0.000} bits, {worstLog:0.000} octaves");
+            Assert.That(worstBits, Is.LessThan(0.5));
+            Assert.That(worstLog, Is.LessThan(0.15));
+        }
+
+        [Test]
+        public void EverythingAtTwoHundredPercentStaysFiniteAndInsideTheDelayLine()
+        {
+            var x = Measure.Sine(220, Rate * 20, 0.4);
+            var (e, _) = Make(v =>
+            {
+                Set(v, P.Bits, 3); Set(v, P.Rate, 3000); v.Set(P.AntiAlias, 1); Set(v, P.Jitter, 1); Set(v, P.Hiss, -30); Set(v, P.Crackle, 90);
+                Set(v, P.CrackleLevel, -10); Set(v, P.Wow, 50); Set(v, P.WowRate, 0.3); Set(v, P.Flutter, 50); Set(v, P.Drift, 25); Set(v, P.Tone, -1);
+                Set(v, P.Amount, 200);
+            });
+            var y = Mono(e, x);
+            foreach (float s in y) Assert.That(float.IsFinite(s) && Math.Abs(s) < 4, Is.True);
         }
     }
 }

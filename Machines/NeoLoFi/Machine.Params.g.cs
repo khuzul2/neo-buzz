@@ -7,13 +7,13 @@ namespace NeoBuzz.LoFi
 {
     public partial class NeoLoFiMachine
     {
-        [ParameterDecl(Name = "Bits", Description = "Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels", MinValue = 0, MaxValue = 2300, DefValue = 1100)]
+        [ParameterDecl(Name = "Bits", Description = "Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels", MinValue = 0, MaxValue = 2300, DefValue = 700)]
         public int Bits { get => Values[P.Bits]; set => Values.Set(P.Bits, value); }
 
         [ParameterDecl(Name = "Dither", Description = "TPDF dither (one step peak to peak each side) before the rounding", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Dither { get => Values[P.Dither]; set => Values.Set(P.Dither, value); }
 
-        [ParameterDecl(Name = "Rate", Description = "Sample-and-hold rate in Hz; at or above the host's sample rate it is off", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        [ParameterDecl(Name = "Rate", Description = "Sample-and-hold rate in Hz (12 kHz at first); at or above the host's sample rate it is off", MinValue = 0, MaxValue = 1000, DefValue = 596)]
         public int Rate { get => Values[P.Rate]; set => Values.Set(P.Rate, value); }
 
         [ParameterDecl(Name = "Anti-alias", Description = "A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold", MinValue = 0, MaxValue = 1, DefValue = 0)]
@@ -54,5 +54,8 @@ namespace NeoBuzz.LoFi
 
         [ParameterDecl(Name = "Output", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Output { get => Values[P.Output]; set => Values.Set(P.Output, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: how strong the whole effect is, 100 % = the settings as they stand, 0 = clean (bit for bit the input), 200 % = exaggerated", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
     }
 }

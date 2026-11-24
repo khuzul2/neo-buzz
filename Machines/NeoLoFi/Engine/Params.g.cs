@@ -24,7 +24,8 @@ namespace NeoBuzz.LoFi
         public const int Tone = 13;
         public const int Mix = 14;
         public const int Output = 15;
-        public const int Count = 16;
+        public const int Amount = 16;
+        public const int Count = 17;
     }
 
     internal static class Params
@@ -34,9 +35,9 @@ namespace NeoBuzz.LoFi
 
         public static readonly ParamDef[] Table =
         {
-            new ParamDef(P.Bits, "Bits", "Bits", 0, 2300, 1100, MapKind.Linear, a: 1, b: 24, unit: "bit", digits: 1, group: "Crush", description: "Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels", how: "Sets the word length from 1 to 24 bits, in fractions of a bit; 24 turns the crusher off.", sound: "Fewer bits give coarser steps: at 12 it is grainy on quiet parts, at 8 it is gritty, at 4 and below it is a harsh buzz of noise and distortion."),
+            new ParamDef(P.Bits, "Bits", "Bits", 0, 2300, 700, MapKind.Linear, a: 1, b: 24, unit: "bit", digits: 1, group: "Crush", description: "Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels", how: "Sets the word length from 1 to 24 bits, in fractions of a bit; 24 turns the crusher off.", sound: "Fewer bits give coarser steps: at 12 it is grainy on quiet parts, at 8 it is gritty, at 4 and below it is a harsh buzz of noise and distortion."),
             new ParamDef(P.Dither, "Dither", "Dither", 0, 1, 0, MapKind.Switch, group: "Crush", description: "TPDF dither (one step peak to peak each side) before the rounding", how: "Adds triangular dither before the bit reduction.", sound: "Off the quantisation error is crunchy distortion that follows the signal; on it turns into a smooth hiss, and quiet tails stay alive."),
-            new ParamDef(P.Rate, "Rate", "Rate", 0, 1000, 1000, MapKind.Freq, a: 200, b: 192000, group: "Crush", description: "Sample-and-hold rate in Hz; at or above the host's sample rate it is off", how: "Sets the rate the signal is held at, from 200 Hz up; the top of the range, at or above the song's sample rate, turns the reducer off.", sound: "Lower rates sound crunchy and metallic as the top end folds back into the audible range; very low rates turn music into an electronic toy."),
+            new ParamDef(P.Rate, "Rate", "Rate", 0, 1000, 596, MapKind.Freq, a: 200, b: 192000, group: "Crush", description: "Sample-and-hold rate in Hz (12 kHz at first); at or above the host's sample rate it is off", how: "Sets the rate the signal is held at, from 200 Hz up; the top of the range, at or above the song's sample rate, turns the reducer off.", sound: "Lower rates sound crunchy and metallic as the top end folds back into the audible range; very low rates turn music into an electronic toy."),
             new ParamDef(P.AntiAlias, "AntiAlias", "Anti-alias", 0, 1, 0, MapKind.Switch, group: "Crush", description: "A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold", how: "Filters everything above the new Nyquist frequency away before the hold.", sound: "Off, the fold-over aliasing makes the sound harsh and inharmonic; on, the sound is duller but clean, like a period sampler's output filter."),
             new ParamDef(P.Jitter, "Jitter", "Jitter", 0, 1000, 0, MapKind.Percent, group: "Crush", description: "Random timing error of the hold clock (up to 25% of a hold period at 100%)", how: "Shakes the moment each sample is taken by a small random amount.", sound: "A little roughens the aliasing into noise; more adds a rough, unstable grain."),
             new ParamDef(P.Hiss, "Hiss", "Hiss", 0, 700, 0, MapKind.Db, a: -90, b: -20, flag: true, group: "Noise", description: "Hiss level in dBFS (RMS); off at its minimum", how: "Adds a steady hiss from -90 to -20 dB, or turns it off at the minimum.", sound: "A little hiss gives a worn tape or old preamp feel; more covers quiet passages."),
@@ -50,6 +51,7 @@ namespace NeoBuzz.LoFi
             new ParamDef(P.Tone, "Tone", "Tone", 0, 1000, 500, MapKind.Bipolar, group: "Output", description: "After the chain: left of centre a low-pass (20 kHz down to 600 Hz), right of centre a high-frequency lift (up to 9 dB)", how: "Tilts the tone after everything else: darker to the left, brighter to the right, flat in the middle.", sound: "Turn it down to soften the harsh edges of the crushing; turn it up to bring back air."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (the dry signal is not delayed: there is no latency)", how: "Blends the processed signal with the dry input.", sound: "Lower values keep the original and add the lo-fi as a layer."),
             new ParamDef(P.Output, "Output", "Output", 0, 1000, 500, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output level", how: "Sets the final level in dB, from -24 to +24.", sound: "It makes the sound louder or quieter without changing its character."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 1000, 500, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 0, group: "Output", description: "Effect strength: how strong the whole effect is, 100 % = the settings as they stand, 0 = clean (bit for bit the input), 200 % = exaggerated", how: "Scales every active stage at once on a perceptual scale: bits removed and rate reduction in octaves, hiss and crackle level in dB, the depth of wow, flutter and drift, the tone cut. Mix still blends the dry back in.", sound: "Turn it down to hear the lo-fi fade out of the sound without changing its character, and up to push every stage further; at 0 the sound is clean."),
         };
     }
 }

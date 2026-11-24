@@ -2,16 +2,16 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoLoFi
 namespace NeoBuzz.LoFi
 class NeoLoFiMachine
-summary Lo-fi in one effect, with zero latency: bit-depth reduction (1 to 24 bits, fractional, optional TPDF dither), sample-and-hold rate reduction down to 200 Hz with an optional anti-alias filter and hold-clock jitter, hiss (optionally following the input), vinyl crackle, light wow, flutter and drift, a tone control, Mix and Output. Everything is smoothed; with every stage off, or Mix at 0, the input passes bit for bit. Use it for 8-bit and early-sampler grit, cassette and radio colour, dusty vinyl, telephone and small-speaker sounds.
+summary Lo-fi in one effect, with zero latency: bit-depth reduction (1 to 24 bits, fractional, optional TPDF dither), sample-and-hold rate reduction down to 200 Hz with an optional anti-alias filter and hold-clock jitter, hiss (optionally following the input), vinyl crackle, light wow, flutter and drift, a tone control, Mix, Output and an Amount knob for the strength of the whole effect (0 to 200 %). A fresh instance is lo-fi at once: 8 bits held at 12 kHz. Everything is smoothed; with every stage off, or Mix or Amount at 0, the input passes bit for bit. Use it for 8-bit and early-sampler grit, cassette and radio colour, dusty vinyl, telephone and small-speaker sounds.
 
 group Crush
-Bits        "Bits"          0 2300 1100   lin 1 24 bit 1                  | Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels
+Bits        "Bits"          0 2300 700    lin 1 24 bit 1                  | Word length of the output in bits; 24 is off. Fractional values give a fractional number of levels
     how Sets the word length from 1 to 24 bits, in fractions of a bit; 24 turns the crusher off.
     sound Fewer bits give coarser steps: at 12 it is grainy on quiet parts, at 8 it is gritty, at 4 and below it is a harsh buzz of noise and distortion.
 Dither      "Dither"        0 1     0     switch                          | TPDF dither (one step peak to peak each side) before the rounding
     how Adds triangular dither before the bit reduction.
     sound Off the quantisation error is crunchy distortion that follows the signal; on it turns into a smooth hiss, and quiet tails stay alive.
-Rate        "Rate"          0 1000  1000  freq 200 192000                  | Sample-and-hold rate in Hz; at or above the host's sample rate it is off
+Rate        "Rate"          0 1000  596   freq 200 192000                  | Sample-and-hold rate in Hz (12 kHz at first); at or above the host's sample rate it is off
     how Sets the rate the signal is held at, from 200 Hz up; the top of the range, at or above the song's sample rate, turns the reducer off.
     sound Lower rates sound crunchy and metallic as the top end folds back into the audible range; very low rates turn music into an electronic toy.
 AntiAlias   "Anti-alias"    0 1     0     switch                          | A steep low-pass (12th-order Butterworth, 0.40 of the hold rate) before the hold
@@ -56,3 +56,6 @@ Mix         "Mix"           0 1000  1000  pct                             | Dry/
 Output      "Output"        0 1000  500   db -24 24                       | Output level
     how Sets the final level in dB, from -24 to +24.
     sound It makes the sound louder or quieter without changing its character.
+Amount      "Amount"        0 1000  500   lin 0 200 % 0                   | Effect strength: how strong the whole effect is, 100 % = the settings as they stand, 0 = clean (bit for bit the input), 200 % = exaggerated
+    how Scales every active stage at once on a perceptual scale: bits removed and rate reduction in octaves, hiss and crackle level in dB, the depth of wow, flutter and drift, the tone cut. Mix still blends the dry back in.
+    sound Turn it down to hear the lo-fi fade out of the sound without changing its character, and up to push every stage further; at 0 the sound is clean.

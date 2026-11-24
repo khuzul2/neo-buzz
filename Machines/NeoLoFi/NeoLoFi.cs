@@ -35,8 +35,8 @@ namespace NeoBuzz.LoFi
             bool hasInput = (mode & WorkModes.WM_READ) != 0 && HasSignal(input, n);
             if (!hasInput)
             {
-                // Run until the motion's delay (up to 75 ms) and the filters have flushed, then rest (unless hiss or crackle is on).
-                if (!Engine.MakesSound && quietBlocks > 4 + (int)(0.08 * rate / Math.Max(1, n))) return false;
+                // Run until the motion's delay (up to 150 ms at 200 %) and the filters have flushed, then rest (unless hiss or crackle is on).
+                if (!Engine.MakesSound && quietBlocks > 4 + (int)(0.16 * rate / Math.Max(1, n))) return false;
                 quietBlocks++;
                 Array.Clear(left, 0, n);
                 Array.Clear(right, 0, n);
