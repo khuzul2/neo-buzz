@@ -24,7 +24,7 @@ namespace NeoBuzz.AutoWarpEval
             {
                 // Say why: the pinned checksum, or the file.
                 string sha = File.Exists(path) ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant() : "(no such file)";
-                throw new InvalidOperationException($"{path} is not the pinned beat network: its SHA-256 is {sha}, the app pins {BeatThis.PinnedSha256}");
+                throw new InvalidOperationException($"{path} is not the pinned beat network: its SHA-256 is {sha}, the app pins the exports listed in BeatThisModel.cs");
             }
             return net;
         }

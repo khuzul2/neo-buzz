@@ -20,6 +20,9 @@ CKPT_URL = "https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/small0.
 CKPT_SHA256 = "6074be2c4d490c5f6101fcc374a1ec72ae93456e23bb6019783b849f5dc7d47b"
 ONNX_NAME = "beat_this_small.onnx"
 # The SHA-256 of the export on the pinned toolchain (the app checks the file it loads against this; see ReBuzz/Core/Clips/BeatThisModel.cs).
+# The export is not bit-identical across systems (constant folding differs); every one the parity jobs checked is pinned, as in BeatThisModel.cs.
+ONNX_SHA256S = {"b700cc6814038bfad9a3585357cd3d2deb606e7c60453af1a8bd8e8efba5a309",   # local export
+                "827132d4fd4a2aecaabceaca6d60963ebdbc3086c6c03571757633588beb7619"}   # Linux CI export
 ONNX_SHA256 = "b700cc6814038bfad9a3585357cd3d2deb606e7c60453af1a8bd8e8efba5a309"
 
 
@@ -146,8 +149,8 @@ def cmd_fetch(out_dir, strict=False):
     check(model, onnx_path)
     got = sha256(onnx_path)
     print("onnx", onnx_path, os.path.getsize(onnx_path), "bytes, sha256", got)
-    if ONNX_SHA256 and got != ONNX_SHA256:
-        print(f"::warning::the export's SHA-256 {got} is not the pinned {ONNX_SHA256}: the toolchain differs from the pinned one")
+    if got not in ONNX_SHA256S:
+        print(f"::warning::the export's SHA-256 {got} is not one of the pinned {sorted(ONNX_SHA256S)}: the toolchain differs from the pinned one")
         if strict:
             raise SystemExit(3)
 

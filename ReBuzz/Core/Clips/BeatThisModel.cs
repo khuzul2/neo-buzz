@@ -30,19 +30,19 @@ namespace ReBuzz.Core.Clips
         BeatThisNet(InferenceSession s, string origin, string sha, byte[] model) { session = s; Origin = origin; Sha256 = sha; bytes = model; }
 
         /// <summary>The model of these bytes, or null when they are not the pinned file or ONNX Runtime cannot load them. <paramref name="expectedSha256"/> null: not checked (tests of the check).</summary>
-        public static BeatThisNet Load(byte[] bytes, string origin, string expectedSha256 = BeatThis.PinnedSha256)
+        public static BeatThisNet Load(byte[] bytes, string origin, string expectedSha256 = BeatThis.AnyPinned)
         {
             try
             {
                 string sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-                if (expectedSha256 != null && !string.Equals(sha, expectedSha256, StringComparison.OrdinalIgnoreCase)) return null;
+                if (expectedSha256 == BeatThis.AnyPinned ? !BeatThis.IsPinned(sha) : expectedSha256 != null && !string.Equals(sha, expectedSha256, StringComparison.OrdinalIgnoreCase)) return null;
                 var o = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL, ExecutionMode = ExecutionMode.ORT_SEQUENTIAL, IntraOpNumThreads = 1, InterOpNumThreads = 1 };
                 return new BeatThisNet(new InferenceSession(bytes, o), origin, sha, bytes);
             }
             catch (Exception) { return null; }
         }
 
-        public static BeatThisNet LoadFile(string path, string expectedSha256 = BeatThis.PinnedSha256)
+        public static BeatThisNet LoadFile(string path, string expectedSha256 = BeatThis.AnyPinned)
         {
             try { return Load(File.ReadAllBytes(path), path, expectedSha256); }
             catch (Exception) { return null; }
@@ -108,6 +108,12 @@ namespace ReBuzz.Core.Clips
     {
         /// <summary>The SHA-256 of the pinned export of the small checkpoint (tools/autowarp/beat_this_model.py, 3rdParty/beat-this/NOTICE).</summary>
         public const string PinnedSha256 = "b700cc6814038bfad9a3585357cd3d2deb606e7c60453af1a8bd8e8efba5a309";
+        /// <summary>The checkpoint is pinned (tools/autowarp/beat_this_model.py); an ONNX export of it is not bit-identical across operating systems and library builds
+        /// (the weights are, the graph's float constants fold differently), so each export that the parity jobs checked is pinned: this one (local), then the Linux CI one.</summary>
+        static readonly string[] pinnedExports = { PinnedSha256, "827132d4fd4a2aecaabceaca6d60963ebdbc3086c6c03571757633588beb7619" };
+        /// <summary>Pass as the expected checksum to accept any pinned export (the default).</summary>
+        public const string AnyPinned = "*pinned*";
+        public static bool IsPinned(string sha) => Array.Exists(pinnedExports, e => string.Equals(e, sha, StringComparison.OrdinalIgnoreCase));
         public const string FileName = "beat_this_small.onnx";
         public const string ResourceName = "ReBuzz.BeatThis.beat_this_small.onnx";
 
