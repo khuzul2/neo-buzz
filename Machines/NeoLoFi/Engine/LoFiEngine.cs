@@ -431,7 +431,7 @@ namespace NeoBuzz.LoFi
         /// <summary>The bit reduction alone, at <paramref name="bits"/> (no dither): for the editor's picture and tests.</summary>
         public static double Quantize(double x, double bits)
         {
-            double n = Math.Pow(2, bits - 1);
+            double n = bits == Math.Floor(bits) ? Math.ScaleB(1.0, (int)bits - 1) : PortableMath.Exp((bits - 1) * Ln2);
             double k = Math.Floor(x * n + 0.5);
             k = Math.Min(Math.Max(k, -Math.Ceiling(n)), Math.Ceiling(n) - 1);
             double q = k / n;
