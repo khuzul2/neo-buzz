@@ -174,9 +174,6 @@ namespace ReBuzz.Studio.Tests
         {
             var top = TopLevel.GetTopLevel(item)!;
             top.UpdateLayout();
-            // A long submenu scrolls: bring the item into its popup's view before clicking it.
-            item.BringIntoView();
-            top.UpdateLayout();
             Assert.That(item.IsEffectivelyVisible && item.Bounds.Width > 0, Is.True, $"{item.Header} is showing");
             var centre = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), top)!.Value;
             Click(top, centre);
