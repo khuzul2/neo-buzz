@@ -33,7 +33,7 @@ Around the tone: Percussion (a single-trigger 2nd or 3rd harmonic, only when no 
 
 - "Full — Full Gospel" (every bar, chorus, driven, fast), "Full — Church Full", "Full — Fast Whirl".
 - "Jazz — Jazz Trio", "Jazz — Smoky Blues", "Jazz — Warm Soul".
-- "Soft — Soft Ballad", "Soft — Mellow Flutes", "Rock — Rock Drive".
+- "Soft — Soft Ballad", "Soft — Mellow Flutes", "Rock — Rock Drive" (driven at 70 % through a slow, moderate speaker).
 - "Percussive — Bright Percussion", "Percussive — Reggae Bubble", "Percussive — Funk Stabs".
 - A swell: set `Expression` low and automate it up; it sits before the drive, so the tone gets brighter as it opens.
 

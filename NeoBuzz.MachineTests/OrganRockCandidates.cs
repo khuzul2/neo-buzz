@@ -26,7 +26,7 @@ namespace NeoBuzz.MachineTests
             [P.Drive] = 600, [P.Speed] = 1, [P.RotDepth] = 450, [P.Spread] = 350, [P.Doppler] = 125,
         };
 
-        /// <summary>Candidate B: the slow speaker with a little more drive (Drive 70 %, Depth 60 %, Mic spread 40 %, Doppler 40 %).</summary>
+        /// <summary>Candidate B, the one the user chose and the preset ships: the slow speaker with a little more drive (Drive 70 %, Depth 60 %, Mic spread 40 %, Doppler 40 %).</summary>
         public static readonly Dictionary<int, int> BChanges = new()
         {
             [P.Drive] = 700, [P.Speed] = 0, [P.RotDepth] = 600, [P.Spread] = 400, [P.Doppler] = 200,

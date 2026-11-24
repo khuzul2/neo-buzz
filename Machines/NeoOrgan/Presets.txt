@@ -178,7 +178,7 @@ Rotary = Off
 Volume = -6
 
 preset "Rock — Rock Drive"
-comment "Wide 16', 8', 4' and 2 2/3' into a firm overdrive with a fast but shallow, narrow speaker: a driving rock organ that does not hurt."
+comment "Wide 16', 8', 4' and 2 2/3' into a firm overdrive with a slow, moderate speaker: a driving rock organ that does not hurt."
 B16 = 8
 B513 = 0
 B8 = 8
@@ -192,12 +192,12 @@ PercOn = Off
 KeyClick = 15
 Leakage = 50
 VibOn = Off
-Drive = 60
+Drive = 70
 Rotary = On
-Speed = Fast
-RotDepth = 45
-Doppler = 25
-Spread = 35
+Speed = Slow
+RotDepth = 60
+Doppler = 40
+Spread = 40
 Volume = -4
 
 preset "Percussive — Bright Percussion"
