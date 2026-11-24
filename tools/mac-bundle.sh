@@ -20,13 +20,6 @@ macos="$app/Contents/MacOS"
 rm -rf "$app" "$out/ReBuzz.app"
 mkdir -p "$macos" "$app/Contents/Resources"
 
-# The classic Buzz machines rebuilt for arm64 (docs/specs/cross-platform.md R1) and the host that runs them, beside the
-# app: ReBuzz.Host/AppGear.targets takes build/natives and build/native-host into the publish (Gear/, rebuzz-native-host
-# and Licenses/NOTICE.txt, which names them and their licences).
-python3 "$root/tools/build-natives-posix.py" --out "$root/build/natives"
-cmake -S "$root/ReBuzzEngine/portable" -B "$root/build/native-host" -DCMAKE_OSX_ARCHITECTURES=arm64 >/dev/null
-cmake --build "$root/build/native-host" -j 3
-
 # Neo Audio's Pro warp mode (docs/specs/neo-audio.md section 11): the neostretch library (a C ABI over Signalsmith Stretch, MIT), for
 # a universal binary (arm64 and x86_64), so an Intel Mac running a development build of the studio plays Pro too and not Complex
 # (the app itself is osx-arm64 only; the library costs nothing to build for both).
@@ -121,10 +114,8 @@ test "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Contents/In
 test -x "$macos/$name" && test -f "$macos/ReBuzz.Studio.dll" && test ! -e "$macos/ReBuzz.Studio"
 file "$macos/$name" | grep "Mach-O 64-bit executable arm64" >/dev/null
 test -f "$app/Contents/Resources/AppIcon.icns"
-# the rebuilt classics: the host, the machines in Gear and the notice that names them
-test -x "$macos/rebuzz-native-host" && file "$macos/rebuzz-native-host" | grep "arm64" >/dev/null
 test -f "$macos/libneostretch.dylib" && file "$macos/libneostretch.dylib" | grep "arm64" >/dev/null
-test -f "$macos/Gear/Generators/FSM Infector.dylib" && test -f "$macos/Gear/Effects/Jeskola Distortion.dylib"
-grep -q "NOT FOR PUBLIC RELEASE AS IS" "$macos/Licenses/NOTICE.txt"
+# clean break (CB1): no native host and no old machine in the app
+test ! -e "$macos/rebuzz-native-host" && test -f "$macos/Gear/Generators/Neo Poly.NET.dll"
 codesign -dv "$app" 2>&1 | grep "^Identifier=$identifier$" >/dev/null
 echo "$app: $(du -sh "$app" | cut -f1); CFBundleName, CFBundleDisplayName and CFBundleExecutable \"$name\", $identifier"
