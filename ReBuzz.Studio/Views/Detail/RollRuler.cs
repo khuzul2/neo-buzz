@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Detail
             foreach (var line in Lines(first, last, Tpb, BarTicks, tw))
             {
                 double x = Math.Round(roll.X(line.Tick * ClipNotes.TimeBase) - OffsetX) + 0.5;
-                if (x < PianoRoll.KeysWidth) continue;
+                if (x < roll.KeyColumn) continue;
                 bool bar = line.Kind == RulerMark.Bar;
                 dc.DrawLine(bar ? BarPen : BeatPen, new Point(x, bar ? 2 : 9), new Point(x, BraceTop - 1));
                 if (line.Label.Length > 0)
@@ -136,7 +136,7 @@ namespace ReBuzz.Studio.Views.Detail
             int s = gesture != Gesture.None ? previewStart : LoopStartTick, e = gesture != Gesture.None ? previewEnd : LoopEndTick;
             if (s >= 0 && e > s)
             {
-                double x0 = Math.Max(PianoRoll.KeysWidth, roll.X(s * ClipNotes.TimeBase) - OffsetX), x1 = roll.X(e * ClipNotes.TimeBase) - OffsetX;
+                double x0 = Math.Max(roll.KeyColumn, roll.X(s * ClipNotes.TimeBase) - OffsetX), x1 = roll.X(e * ClipNotes.TimeBase) - OffsetX;
                 if (x1 > x0)
                 {
                     var fill = LoopOn || gesture != Gesture.None ? StudioTokens.AccentBrush : StudioTokens.SurfaceBorderBrush;
@@ -151,7 +151,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (Playhead >= 0)
             {
                 double x = roll.X(Playhead) - OffsetX;
-                if (x >= PianoRoll.KeysWidth)
+                if (x >= roll.KeyColumn)
                     {
                         var tri = new StreamGeometry();
                         using (var g = tri.Open())
@@ -166,7 +166,7 @@ namespace ReBuzz.Studio.Views.Detail
             }
 
             // The keys' column: a label.
-            dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 0, PianoRoll.KeysWidth, h - 1));
+            dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 0, roll.KeyColumn, h - 1));
             var title = new FormattedText("Bar", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, StudioTokens.FontBody, StudioTokens.TextSecondaryBrush);
             dc.DrawText(title, new Point(6, 5));
         }
@@ -175,7 +175,7 @@ namespace ReBuzz.Studio.Views.Detail
 
         int TickAt(double x, KeyModifiers mods)
         {
-            double tick = (x + OffsetX - PianoRoll.KeysWidth) / roll.TickWidth;
+            double tick = (x + OffsetX - roll.KeyColumn) / roll.TickWidth;
             bool free = mods.HasFlag(KeyModifiers.Shift) || mods.HasFlag(KeyModifiers.Alt);
             int step = free ? 1 : Math.Max(1, Tpb);
             return Math.Clamp((int)Math.Round(tick / step) * step, 0, LengthTicks);
@@ -188,7 +188,7 @@ namespace ReBuzz.Studio.Views.Detail
             base.OnPointerPressed(e);
             if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
             var p = e.GetPosition(this);
-            if (p.X < PianoRoll.KeysWidth) return;
+            if (p.X < roll.KeyColumn) return;
             moved = false;
             int tick = TickAt(p.X, e.KeyModifiers);
             if (CanSetLoop && LoopStartTick >= 0 && LoopEndTick > LoopStartTick && Math.Abs(p.X - XOfTick(LoopStartTick)) <= EdgeGrab)
@@ -271,9 +271,12 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>The line's x in this control, or a negative number for none.</summary>
         public double LineX { get; set; } = -1;
 
+        /// <summary>The left of the grid (the roll's key column, which a machine that names its keys widens); the line isn't drawn left of it.</summary>
+        public double Left { get; set; } = PianoRoll.KeysWidth;
+
         public override void Render(DrawingContext dc)
         {
-            if (LineX < PianoRoll.KeysWidth || LineX > Bounds.Width) return;
+            if (LineX < Left || LineX > Bounds.Width) return;
             dc.DrawLine(Edge, new Point(LineX, 0), new Point(LineX, Bounds.Height));
             dc.DrawLine(Line, new Point(LineX, 0), new Point(LineX, Bounds.Height));
         }
@@ -335,7 +338,7 @@ namespace ReBuzz.Studio.Views.Detail
             foreach (int v in new[] { 32, 64, 96, 127 })
             {
                 double y = Math.Round(BarTop(v)) + 0.5;
-                dc.DrawLine(GuidePen, new Point(PianoRoll.KeysWidth, y), new Point(w, y));
+                dc.DrawLine(GuidePen, new Point(roll.KeyColumn, y), new Point(w, y));
             }
             var selected = roll.Selection;
             var notes = roll.Notes;
@@ -350,7 +353,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (to != null)
                 foreach (var n in to) DrawBar(dc, n, true, bw, w);
 
-            dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 1, PianoRoll.KeysWidth, h - 1));
+            dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 1, roll.KeyColumn, h - 1));
             var title = new FormattedText("Velocity", CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, StudioTokens.FontCaption, StudioTokens.TextSecondaryBrush);
             dc.DrawText(title, new Point(3, 4));
             if (from != null || hitIndex >= 0)
@@ -365,7 +368,7 @@ namespace ReBuzz.Studio.Views.Detail
         void DrawBar(DrawingContext dc, ClipNote n, bool sel, double bw, double w)
         {
             double x = BarX(n);
-            if (x + bw < PianoRoll.KeysWidth || x > w) return;
+            if (x + bw < roll.KeyColumn || x > w) return;
             double top = BarTop(n.Velocity);
             dc.FillRectangle(sel ? PianoRoll.NoteSelected : PianoRoll.NoteFill, new Rect(x, top, bw, LaneHeight - Pad - top));
         }
@@ -393,7 +396,7 @@ namespace ReBuzz.Studio.Views.Detail
             base.OnPointerPressed(e);
             if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
             var p = e.GetPosition(this);
-            if (p.X < PianoRoll.KeysWidth) return;
+            if (p.X < roll.KeyColumn) return;
             int hit = HitTest(p);
             if (hit < 0) return;
             var mods = e.KeyModifiers;

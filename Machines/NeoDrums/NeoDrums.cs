@@ -55,6 +55,31 @@ namespace NeoBuzz.Drums
         /// </summary>
         public IReadOnlyDictionary<int, string> KeyNames => keyNames;
 
+        // ---- Note map (docs/specs/daw-modes.md §8.9, NM1): the keys that play a voice, by the voice's name ---------------------------
+
+        static readonly string[] voiceGroups = { "Kick", "Snare and clap", "Snare and clap", "Snare and clap", "Hats", "Hats", "Toms", "Toms", "Toms", "Percussion", "Cymbals", "Cymbals" };
+        static readonly uint[] voiceColors =
+        {
+            0xFFE0457B, 0xFFF0A040, 0xFFF0A040, 0xFFF0A040, 0xFF4FC3F7, 0xFF4FC3F7, 0xFF8BC34A, 0xFF8BC34A, 0xFF8BC34A, 0xFFBA68C8, 0xFFFFD54F, 0xFFFFD54F,
+        };
+
+        static readonly IReadOnlyList<NoteMapEntry> noteMap = BuildKeys();
+
+        static IReadOnlyList<NoteMapEntry> BuildKeys()
+        {
+            var entries = new List<NoteMapEntry>();
+            for (int key = 0; key < 128; key++)
+                if (DrumsEngine.VoiceOfKey(key) is int voice and >= 0)
+                    entries.Add(new NoteMapEntry(key, DrumsEngine.Names[voice], voiceGroups[voice], voiceColors[voice]));
+            return entries;
+        }
+
+        /// <summary>Every key that plays a voice (General MIDI's drum keys with the TR-909's pairs), by the voice's name; the same for every channel.</summary>
+        internal override IReadOnlyList<NoteMapEntry> BuildNoteMap(int channel) => noteMap;
+
+        /// <summary>The kit's keys never change.</summary>
+        internal override int NoteMapSignature() => 1;
+
         static readonly IReadOnlyDictionary<int, string> keyShortNames = KeysByShortName();
 
         static Dictionary<int, string> KeysByShortName()

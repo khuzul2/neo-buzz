@@ -211,6 +211,49 @@ namespace ReBuzz.Agent.Model
     }
 
     /// <summary>
+    /// One playable key a manifest declares (<c>note_map</c>, docs/specs/daw-modes.md §8.9): a key and an optional name and group, as
+    /// <c>{"key": 36, "name": "Kick", "group": "Drums"}</c>; <c>"key": "C2"</c> names a pitch the way the agent writes one, and
+    /// <c>"to": 48</c> makes it a range (36 to 48, all playable, unnamed unless a name is given).
+    /// </summary>
+    public sealed class ManifestNoteKey
+    {
+        public int Key { get; init; }
+        public string Name { get; init; } = "";
+        public string Group { get; init; } = "";
+        /// <summary>A colour hint as ARGB; 0: none ("color": "#E0457B").</summary>
+        public uint Color { get; init; }
+
+        /// <summary>The keys a <c>note_map</c> array lists, in order, ranges expanded; entries that name no valid key are left out.</summary>
+        internal static IReadOnlyList<ManifestNoteKey> ParseList(JsonNode node)
+        {
+            var keys = new List<ManifestNoteKey>();
+            if (node is not JsonArray list) return keys;
+            foreach (var item in list)
+            {
+                if (item is not JsonObject o) continue;
+                int from = KeyOf(o["key"]);
+                if (from < 0 || from > 127) continue;
+                int to = o["to"] == null ? from : KeyOf(o["to"]);
+                if (to < from || to > 127) to = from;
+                string name = ((string)o["name"] ?? "").Trim(), group = ((string)o["group"] ?? "").Trim();
+                uint color = 0;
+                string hex = ((string)o["color"] ?? "").TrimStart('#');
+                if (hex.Length == 6 && uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out uint rgb)) color = 0xFF000000u | rgb;
+                for (int k = from; k <= to; k++)
+                    keys.Add(new ManifestNoteKey { Key = k, Name = to == from ? name : "", Group = group, Color = color });
+            }
+            return keys;
+        }
+
+        static int KeyOf(JsonNode v)
+        {
+            if (v is JsonValue n && n.TryGetValue<int>(out int i)) return i;
+            if (v is JsonValue s && s.TryGetValue<string>(out string text) && Pitch.TryParse(text, out int parsed, out _)) return parsed;
+            return -1;
+        }
+    }
+
+    /// <summary>
     /// What the profiler found wrong (drafts): "ok", "warn", "unhealthy" or "needs_window", with the
     /// problems. machine-safety.md §3.1: unhealthy machines that diverge (NaN, infinity, a runaway
     /// level) say so; hot ones (loud but steady) are warnings; a managed machine that can't be built
@@ -267,6 +310,12 @@ namespace ReBuzz.Agent.Model
         public string Type { get; init; } = "";
         /// <summary>Note input and pitch convention (generators); null when the manifest doesn't say (Neo: MIDI, A4 = 440 Hz).</summary>
         public ManifestNotes Notes { get; init; }
+        /// <summary>
+        /// The keys that make a sound, declared in the manifest (<c>note_map</c>, docs/specs/daw-modes.md §8.9): a machine with a fixed
+        /// map says it here instead of in code. A profiled drum map (<c>notes.map</c>) counts as one when there is no <c>note_map</c>.
+        /// Empty: it declares none.
+        /// </summary>
+        public IReadOnlyList<ManifestNoteKey> NoteMap { get; init; } = Array.Empty<ManifestNoteKey>();
         /// <summary>The profiler's health verdict; null when not profiled.</summary>
         public ManifestHealth Health { get; init; }
         /// <summary>Curated: what to know before using it ("track 0 only", "needs a wave", "stereo in, mono out").</summary>
@@ -336,6 +385,10 @@ namespace ReBuzz.Agent.Model
                     Polyphony = (int?)n["polyphony"] ?? 0,
                     Map = ManifestNotes.ParseMap(n["map"]),
                 };
+            // A declared note_map, else the profiled drum map (notes.map) as names on keys.
+            IReadOnlyList<ManifestNoteKey> noteMap = ManifestNoteKey.ParseList(root["note_map"]);
+            if (noteMap.Count == 0 && notes?.Map.Count > 0)
+                noteMap = notes.Map.Select(m => new ManifestNoteKey { Key = m.Key, Name = m.Name }).ToList();
             ManifestHealth health = null;
             if (root["health"] is JsonObject h)
                 health = new ManifestHealth
@@ -362,6 +415,7 @@ namespace ReBuzz.Agent.Model
                 ClipEdit = (bool?)root["clipEdit"] ?? false,
                 Type = (string)root["type"] ?? "",
                 Notes = notes,
+                NoteMap = noteMap,
                 Health = health,
                 Quirks = Strings(root["quirks"]),
                 Evidence = Strings(root["evidence"]),
