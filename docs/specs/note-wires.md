@@ -84,6 +84,20 @@ Tools (in `ReBuzz/Agent/NoteWireTools.cs`; guide page `ReBuzz.Agent/Guides/…`)
 | Existing tests and clip goldens unchanged | CI |
 | Gallery shots (ports and wires, free and Tracks, dark and light, hidden) | `GalleryTests`, read from `ci-artifacts-mac` |
 
-## 10. Decisions and limits (filled in as built)
+## 10. Using note wires (user guide)
 
-See the NW1 report on issue #171.
+* **Make a wire.** In the Machines view a machine that takes notes (Neo Poly, FM6, Wave, Patch, Sampler, Drums, Dye Essence, Neo Plug) has a small diamond on its top edge; one that sends notes (Neo Voice to MIDI, Neo Audio to MIDI, a Neo Plug whose plug-in makes MIDI) has one on its bottom edge. Drag from the bottom diamond to a machine, or right-click the sender and choose **Send notes to**. A refused wire (a loop, a machine that takes no notes) says why in a tooltip and changes nothing.
+* **Read it.** A note wire is dotted with an arrowhead, in the sender's colour (its track's colour when Tracks is on). Point at it to name it. The **Note wires** button in the bar hides the wires; the diamonds stay.
+* **Remove it.** Click the wire and press Delete, or right-click it and choose **Remove**. Undo puts it back (one step).
+* **Inserts.** A machine that both takes and sends notes can go into a track's chain before its instrument: right-click it, **Note insert before**, then the instrument. The Inspector's Notes section lists the chain for the selected instrument or insert, with move up, move down and remove. Clip notes, live MIDI and mapped keys enter the first insert.
+* **Old songs.** A song whose Voice to MIDI, Audio to MIDI or Neo Plug named a target opens with the same target as a wire.
+
+## 11. Decisions and limits
+
+* Wires are keyed by machine **name** (as pins and track colours are); a delete keeps the wire in the store, a save writes only wires whose two machines exist.
+* A free wire into an instrument that has a chain enters the instrument itself, past its inserts; wire to the first insert to go through the chain. An insert sits in one chain at most.
+* Notes typed in the Tracker's columns are not diverted into a chain (only clip playback notes, live MIDI and mapped keys are).
+* The Neo synths receive the offset with each event but apply the events at the start of the block, as they do for every MIDI event; Neo Plug honours the frames.
+* Tracks mode draws the inserts where the machines are (no machine is moved), with the chain's order numbers on the short wires; it does not lay the inserts out left of the instrument.
+* A machine dropped from the browser is not turned into an insert automatically: no machine ships that both takes and sends notes yet, and the catalogue is not read at drop time. Use the menu, the Inspector or `note_chain`. The drop rules for audio machines are unchanged.
+* A synth's note-in port exists whether or not anything is wired; a Neo Plug shows note-out only while its loaded plug-in makes MIDI.
