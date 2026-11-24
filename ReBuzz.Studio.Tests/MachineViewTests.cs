@@ -12,6 +12,7 @@ using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
@@ -176,6 +177,17 @@ namespace ReBuzz.Studio.Tests
             top.UpdateLayout();
             Assert.That(item.IsEffectivelyVisible && item.Bounds.Width > 0, Is.True, $"{item.Header} is showing");
             var centre = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), top)!.Value;
+            // A long submenu (the gear's Generators) scrolls, with a scroll button over its last row: if something else is
+            // over the item's centre, scroll the item up a few rows first so the click lands on it.
+            bool OnItem(Point p) => top.InputHitTest(p) is Visual v && (v == item || v.GetVisualAncestors().Contains(item));
+            var scroller = item.FindAncestorOfType<ScrollViewer>();
+            for (int tries = 0; !OnItem(centre) && scroller != null && tries < 4; tries++)
+            {
+                scroller.Offset = new Vector(scroller.Offset.X, scroller.Offset.Y + 3 * item.Bounds.Height);
+                Settle();
+                top.UpdateLayout();
+                centre = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), top)!.Value;
+            }
             Click(top, centre);
         }
 
