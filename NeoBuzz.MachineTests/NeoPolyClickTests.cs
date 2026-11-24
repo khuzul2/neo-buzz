@@ -440,7 +440,7 @@ namespace NeoBuzz.MachineTests
 
             - `blind/` : six items (01 to 06), each a pair `NN_A.wav` and `NN_B.wav`. One is Diode 18, the other the 24 dB
               ladder. Diode 18 is in slot A in exactly three of the six items and in slot B in the other three (the items and the
-              slots were drawn with a seeded shuffle, not a coin per item). The two renders of a pair have the same loudness (the
+              slots were drawn with a seeded shuffle, not a coin per item, and never three in a row). The two renders of a pair have the same loudness (the
               ladder one is brought to the diode's RMS; the gains are in the key, {GAINS}). Listen, write down per item which you
               prefer for acid and why, and whether you hear any click or pop in either, then open the key.
             - `named/` : by name, at the levels they come out of the machine (the ladder is a little quieter):
@@ -476,6 +476,9 @@ namespace NeoBuzz.MachineTests
             var rng = new Random(20261124);
             var order = Enumerable.Range(0, acid.Length).OrderBy(_ => rng.Next()).ToArray();
             var diodeFirst = Enumerable.Range(0, acid.Length).OrderBy(_ => rng.Next()).Take(acid.Length / 2).ToHashSet();
+            // Drawn again (same generator) while the three are three items in a row: AAABBB is a pattern a listener can learn.
+            while (diodeFirst.Max() - diodeFirst.Min() == diodeFirst.Count - 1)
+                diodeFirst = Enumerable.Range(0, acid.Length).OrderBy(_ => rng.Next()).Take(acid.Length / 2).ToHashSet();
             var key = new System.Text.StringBuilder("item\tpreset\tslot A\tslot B\tgain applied to the ladder render (dB)\tclicks (diode, ladder)\n");
             int clicksTotal = 0;
             var gains = new List<double>();
