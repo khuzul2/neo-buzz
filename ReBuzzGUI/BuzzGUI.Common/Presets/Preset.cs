@@ -1,4 +1,5 @@
-﻿using BuzzGUI.Common.InterfaceExtensions;
+﻿using Buzz.MachineInterface;
+using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using SevenZip.Compression.LZMA;
 using System;
@@ -29,6 +30,14 @@ namespace BuzzGUI.Common.Presets
 
             [XmlAttribute]
             public int Value;
+
+            /// <summary>
+            /// Fork: the parameter's stable key (IVersionedMachine.ParameterKeys) for a global parameter of a versioned machine, so a
+            /// rename can't send the value elsewhere; null in presets saved before ids, and for other machines. Only the XML form
+            /// stores it (the copy-and-paste string keeps version 2's layout).
+            /// </summary>
+            [XmlAttribute]
+            public string Id;
 
             public Parameter() { }
 
@@ -108,6 +117,7 @@ namespace BuzzGUI.Common.Presets
             Machine = machine.DLL.Name;
 
             Parameters = new List<Parameter>();
+            var keys = KeysOf(machine);
 
             foreach (IParameterGroup pg in machine.ParameterGroups)
             {
@@ -118,7 +128,12 @@ namespace BuzzGUI.Common.Presets
                     foreach (IParameter p in pg.Parameters)
                     {
                         if ((p.Flags & ParameterFlags.State) == ParameterFlags.State)
-                            Parameters.Add(new Parameter(p.Name, (byte)pg.Type, t, p.IndexInGroup, defvalue ? p.DefValue : p.GetValue(t)));
+                        {
+                            var saved = new Parameter(p.Name, (byte)pg.Type, t, p.IndexInGroup, defvalue ? p.DefValue : p.GetValue(t));
+                            if (keys != null && pg.Type == ParameterGroupType.Global && p.IndexInGroup >= 0 && p.IndexInGroup < keys.Count)
+                                saved.Id = keys[p.IndexInGroup];
+                            Parameters.Add(saved);
+                        }
 
                     }
                 }
@@ -368,8 +383,56 @@ namespace BuzzGUI.Common.Presets
         public int GetValueOrDefault(IParameter parameter, int track)
         {
             // TODO: support non-unique parameter names
-            var mp = Parameters.Where(p => p.Name == parameter.Name && p.Group == (byte)parameter.Group.Type && p.Track == track).FirstOrDefault();
+            var mp = Find(parameter, track);
             return mp != null ? mp.Value : parameter.DefValue;
+        }
+
+        static IReadOnlyList<string> KeysOf(IMachine machine) => (machine?.ManagedMachine as IVersionedMachine)?.ParameterKeys;
+
+        /// <summary>
+        /// Fork (docs/specs/machines.md §3.2, "Renamed parameters and user presets"): the saved value for <paramref name="parameter"/>.
+        /// A global parameter of a versioned machine is found by its id when the preset stored ids. A preset saved before ids is
+        /// found by name, as Buzz always did; only on a machine that renamed parameters (IRenamedParameters), a former name stands
+        /// for its parameter while the preset doesn't name that parameter by its current name, and a name a former name took over
+        /// (Neo Tune's "Amount") is not read as the parameter that has it now. Every other parameter and machine: by name as before.
+        /// </summary>
+        Parameter Find(IParameter parameter, int track)
+        {
+            byte group = (byte)parameter.Group.Type;
+            Parameter ByName(string name) => Parameters.FirstOrDefault(p => p.Name == name && p.Group == group && p.Track == track);
+
+            var machine = parameter.Group.Machine;
+            var keys = parameter.Group.Type == ParameterGroupType.Global ? KeysOf(machine) : null;
+            int index = parameter.IndexInGroup;
+            if (keys == null || index < 0 || index >= keys.Count) return ByName(parameter.Name);
+            string key = keys[index];
+
+            if (Parameters.Any(p => p.Id != null && p.Group == group))
+                return Parameters.FirstOrDefault(p => p.Id == key && p.Group == group && p.Track == track);
+
+            var former = (machine.ManagedMachine as IRenamedParameters)?.FormerParameterNames;
+            if (former == null || former.Count == 0) return ByName(parameter.Name);
+
+            var globals = parameter.Group.Parameters;
+            string CurrentName(string k)
+            {
+                for (int i = 0; i < keys.Count && i < globals.Count; i++)
+                    if (keys[i] == k) return globals[i].Name;
+                return null;
+            }
+            // A saved name is a former one when it is listed and the preset doesn't name its parameter by the current name.
+            string FormerKey(string name) =>
+                name != null && former.TryGetValue(name, out var k) && CurrentName(k) is { } current && ByName(current) == null ? k : null;
+
+            var mine = ByName(parameter.Name);
+            if (mine != null)
+            {
+                string meant = FormerKey(mine.Name);
+                if (meant == null || meant == key) return mine;
+            }
+            foreach (var p in Parameters)
+                if (p.Group == group && p.Track == track && FormerKey(p.Name) == key) return p;
+            return null;
         }
 
         static string cachedValidPresetString;

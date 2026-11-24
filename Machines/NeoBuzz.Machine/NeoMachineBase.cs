@@ -11,7 +11,7 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
 {
-    public abstract class NeoMachineBase : IVersionedMachine
+    public abstract class NeoMachineBase : IVersionedMachine, IRenamedParameters
     {
         protected readonly IBuzzMachineHost host;
         bool wasPlaying;
@@ -88,6 +88,22 @@ namespace NeoBuzz.Machine
         {
             try { return Chain.MapIndex(fromVersion, savedIndex); }
             catch { return -1; }
+        }
+
+        IReadOnlyDictionary<string, string> formerNames;
+
+        /// <summary>The global parameters' former names (Params.def `was`) → their keys, for user presets saved before presets stored ids.</summary>
+        public IReadOnlyDictionary<string, string> FormerParameterNames
+        {
+            get
+            {
+                if (formerNames != null) return formerNames;
+                var d = new Dictionary<string, string>();
+                foreach (var def in Table)
+                    foreach (var name in def.FormerNames)
+                        d[name] = def.Id;
+                return formerNames = d;
+            }
         }
 
         /// <summary>ReBuzz asks for the text of a value: ours for global parameters, its own otherwise.</summary>

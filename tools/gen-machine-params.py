@@ -24,6 +24,9 @@ Params.def lines:
     id snake_case_id                 optional, indented, after a parameter: the id the agent and the manifest use (default: Id)
     how One sentence: how the control changes the sound      Explain text (neo-learn.md §5.3); the description defaults to it
     sound One sentence: what you hear
+    was "Old name"                   optional, indented, once per former name: the name the parameter had before a rename. A user
+                                     preset saved before presets stored ids names it so (BuzzGUI.Common's Preset matches it while the
+                                     preset doesn't know the current name); the id, the index and saved state never change with a rename
 
 Kinds and their arguments:
   lin A B [unit] [digits]          A + t(B-A)
@@ -73,10 +76,13 @@ def parse(path):
             line = line.rstrip('\n')
             if not line.strip() or line.lstrip().startswith('#'):
                 continue
-            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound'):
+            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound', 'was'):
                 if not spec['params']:
                     sys.exit(f'{path}:{lineno}: {line.split(None, 1)[0]} needs a parameter before it')
                 key, _, rest = line.strip().partition(' ')
+                if key == 'was':
+                    spec['params'][-1].setdefault('was', []).extend(shlex.split(rest))
+                    continue
                 spec['params'][-1]['pubid' if key == 'id' else key] = rest.strip()
                 continue
             if line.lstrip().startswith('summary '):
@@ -219,6 +225,8 @@ def table_entry(p):
         named.append(f"how: {cs_string(p['how'])}")
     if p.get('sound'):
         named.append(f"sound: {cs_string(p['sound'])}")
+    if p.get('was'):
+        named.append('formerNames: new[] { ' + ', '.join(cs_string(n) for n in p['was']) + ' }')
     args = [f"P.{p['id']}", cs_string(p.get('pubid', p['id'])), cs_string(p['name']), str(p['min']), str(p['max']), str(p['def']),
             f"MapKind.{KINDS[kind]}"]
     if pos:
