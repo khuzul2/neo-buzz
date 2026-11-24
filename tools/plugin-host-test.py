@@ -276,12 +276,12 @@ for name, (pname, value, raw) in tweaks.items():
     check_known(now.get("raw") == raw, f"{name}: {pname} comes back as {value} (raw {raw}) after reopen; now {now.get('value')} (raw {now.get('raw')})", name)
 
 
-def machine_states(path):
+def machine_states(path, also=()):
     """The plug-in machines' saved data (PlugState) from a .nbl, by machine name (tools/nbl.py reads the MACH section)."""
     manifest, blobs = nbl.read(path)
     mach = nbl.section(manifest, blobs, "MACH") or b""
     out = {}
-    for n in names:
+    for n in list(names) + list(also):
         _, data = nbl.machine_data_at(mach, n, ("Neo Plug", "Neo Plug FX"))
         if data and b"PlugState" in data:
             out[n] = data
@@ -444,7 +444,7 @@ if args.fixtures and placed != "inprocess":
     ok, _, _ = call("machine_command", machine="Crash", command="Placement > Sandbox per instance")
     sbx_song = os.path.join(work, "sandbox.nbl")
     check(call("song_save", path=sbx_song, overwrite=True)[0], "song_save with a sandboxed plug-in")
-    check(b"<Placement>instance</Placement>" in machine_states(sbx_song).get("Crash", b""), "the placement is saved with the song")
+    check(b"<Placement>instance</Placement>" in machine_states(sbx_song, also=("Crash",)).get("Crash", b""), "the placement is saved with the song")
     call("song_open", path=sbx_song, discard_unsaved=True)
     ok, q = quirks_of("Crash")
     check("per instance" in q or bool(placed), "the song opens with Crash in its own sandbox")

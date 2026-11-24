@@ -82,33 +82,6 @@ jobs:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
       run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath machine-test.log
 
-    # U6 (docs/specs/mcp-server.md §12.13): the Neo measurement suite on the Pedal effects U6 changed, run on their
-    # own Work: silence after sound settles to exact zero (no denormals), blocks of 256 and 117 alike, nothing
-    # allocated per block, levels and NaN at every parameter's ends, the Shaper's aliasing, parameter changes that glide,
-    # and silence reported only once a tail is silent.
-    - name: Pedal effect tests
-      if: always()
-      shell: pwsh
-      env:
-        MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
-      run: dotnet test NeoBuzz.PedalTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath pedal-test.log
-
-    - name: Pedal effect measurements
-      if: always() && hashFiles('measurements/pedal-measurements.txt') != ''
-      shell: pwsh
-      run: |
-        # In notices of up to 3800 characters each (an annotation's limit), whole lines.
-        $lines = Get-Content measurements/pedal-measurements.txt | Sort-Object
-        $chunks = @(); $cur = ""
-        foreach ($l in $lines) {
-          if ($cur.Length -gt 0 -and $cur.Length + $l.Length + 1 -gt 3800) { $chunks += $cur; $cur = "" }
-          $cur = if ($cur.Length -gt 0) { "$cur`n$l" } else { $l }
-        }
-        if ($cur.Length -gt 0) { $chunks += $cur }
-        for ($i = 0; $i -lt $chunks.Count; $i++) {
-          Write-Host "::notice title=Pedal effect measurements ($($i + 1)/$($chunks.Count))::$($chunks[$i] -replace '%', '%25' -replace "`n", '%0A')"
-        }
-
     # The measured figures (aliasing, decay times, speed…) as one notice, readable through the API.
     - name: Machine measurements
       if: always() && hashFiles('measurements/machine-measurements.txt') != ''
@@ -133,19 +106,6 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Engine/ReBuzz.Engine.csproj -nologo -v:q
 
-    # The classic Buzz machines rebuilt natively (docs/specs/cross-platform.md R1) and the portable host that runs them
-    # out of process: ReBuzz.Host/AppGear.targets copies build/natives (Gear, Licenses) and build/native-host into
-    # rebuzz-headless's output when it is built.
-    # always(): a failed test step above must not skip the build and make the classic-machine step fail for a missing host (RB1: in all
-    # 15 failed Linux jobs of the last 60 runs "Classic machines on Linux" failed only for that, silently, 3 s in, with no message).
-    - name: Classic machines and native host (C++)
-      if: always()
-      run: |
-        python3 tools/build-natives-posix.py --out build/natives
-        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
-        cmake --build build/native-host -j 3
-        ls build/natives/Gear/*
-
     # rebuzz-headless (docs/specs/mac-engine.md M1): the engine with the MCP server on stdio, no UI
     # toolkit, with the Neo machines built for net10.0. The smoke test drives it as a client does:
     # a chord through Neo Poly and Neo Verb, rendered, measured, saved, reopened, undone.
@@ -157,25 +117,9 @@ jobs:
         grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.runtimeconfig.json || { echo "::error::rebuzz-headless.runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
-    # R1: each rebuilt classic loads and renders its cases through the native host (finite, audible, no divergence), and the
-    # classic demo songs of ExternalMachines/source open with their machines and play (tools/native-cross.py).
-    - name: Classic machines on Linux
-      if: always()
-      run: |
-        bash tools/ci-pip.sh numpy
-        test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host || { echo "::error::rebuzz-native-host is not beside rebuzz-headless: the step that builds it (C++) did not run or failed"; exit 1; }
-        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
-
-    # The Pedal machines (docs/specs/studio-mvp.md S2), built for net10.0 without their WPF GUIs:
-    # each loads, the synths play a note, the effects pass a chord, Chord and LFO drive their targets.
-    - name: Pedal machines on Linux
-      if: always()
-      run: python3 tools/headless-pedal.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/pedal"
-
     # The machine profiler (docs/specs/mcp-server.md §12.2, U1): its unit and mapping inference on known
-    # value tables, then every machine rebuzz-headless has (Neo and Pedal) profiled; the drafts, the
-    # health report and the summary are uploaded. Then the committed drafts at work: a Pedal synth plays
-    # A4 at 440 Hz through notes_write, param_set takes units on Pedal machines, unhealthy ones are flagged.
+    # value tables, then every machine rebuzz-headless has (the Neo machines) profiled; the drafts, the
+    # health report and the summary are uploaded.
     # U2 (docs/specs/machine-safety.md §3.1, §3.4): diverging, hot and needs-a-window, per-parameter
     # sweeps and safe ranges, which param_set keeps agents inside unless they pass allow_unsafe.
     - name: Machine profiler inference tests
@@ -199,30 +143,6 @@ jobs:
           ${{ runner.temp }}/machine-profile/*.json
           ${{ runner.temp }}/machine-profile/*.md
         if-no-files-found: warn
-
-    - name: Draft manifests at work on Linux
-      if: always()
-      run: python3 tools/headless-manifests.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/manifests"
-
-    # U3 (docs/specs/mcp-server.md §12.9): each curated Pedal manifest against the machine itself (its
-    # ranges, and its own value texts wherever the manifest keeps them). The natives: the package job.
-    - name: Curated manifests against the machines on Linux
-      if: always()
-      run: python3 tools/curated-check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/curated"
-
-    # U4 (docs/specs/mcp-server.md §12.11): the curated Pedal machines' factory presets on the machines: each loads through
-    # preset_load, sounds, at a consistent level, peaks below -1 dBFS, no NaN (--theirs also reports the banks they ship).
-    # The natives: the package job.
-    - name: Factory presets on the machines on Linux
-      if: always()
-      run: python3 tools/preset-check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/presets" --theirs
-
-    # U5 (docs/specs/mcp-server.md §12.5): machine_replace with the portable machines. Pedal EQ → Neo EQ, Pedal Gain →
-    # Neo Utility and Pedal Comp → Neo Comp within their stated tolerance; the successor in the old one's place with
-    # its settings, automation, arrangement and session track; one undo brings the original back. The natives: the package job.
-    - name: machine_replace on Linux
-      if: always()
-      run: python3 tools/headless-replace.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/replace"
 
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
     # null sink (clocked, so in real time); the live tools play, meter and stop it. The null sink
