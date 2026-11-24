@@ -12,7 +12,7 @@
   "gritty",
   "tape"
  ],
- "use_for": "Lo-fi character with zero latency: bit and sample-rate reduction (optionally anti-aliased), hiss, vinyl crackle, light wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds.",
+ "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds.",
  "tracks": 0,
  "track_parameters": [],
  "parameters": [

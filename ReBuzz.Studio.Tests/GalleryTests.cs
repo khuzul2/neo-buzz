@@ -1969,7 +1969,7 @@ namespace ReBuzz.Studio.Tests
                         w.Close();
                     });
                 }
-                Try("590-neo-lofi-editor", () =>
+                Try("640-neo-lofi-editor", () =>
                 {
                     var m = Add("Neo Lo-Fi", "LoFi");
                     Core.UiHost.OpenGui(m, null);
@@ -1983,7 +1983,7 @@ namespace ReBuzz.Studio.Tests
                     Set("Wow", 150);
                     Dispatcher.UIThread.RunJobs();
                     Wait(200);
-                    Shot(editor!, "590-neo-lofi-editor", "Neo Lo-Fi: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output), set to 8 bits, a low hold rate, a little hiss, crackle and wow.", "Add Neo Lo-Fi; open its editor.");
+                    Shot(editor!, "640-neo-lofi-editor", "Neo Lo-Fi: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output), set to 8 bits, a low hold rate, a little hiss, crackle and wow.", "Add Neo Lo-Fi; open its editor.");
                     Core.UiHost.CloseWindows(m);
                 });
                 Try("456-device-list-mode", () =>
