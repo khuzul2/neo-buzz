@@ -420,6 +420,48 @@ namespace NeoBuzz.MachineTests
             return (Mid(l, r), clicks.Count, plain.Count);
         }
 
+        const string PackReadme = """
+            # Neo Poly acid listening pack 2 (AC2, local only, no audio is committed)
+
+            What this is: the AC1 pack again, after the clicks and pops were taken out of the voice. The same 16-step acid line,
+            played twice (32 steps, 130 BPM, 16ths), on each of the six acid presets, once through the Diode 18 filter and once
+            through the 24 dB ladder with every other setting the same. Presets that changed since AC1: Acid Rubber and Acid Sub
+            have Accent level 3 dB (was 2), so an accent is at least 3 dB louder on every preset; nothing else in them.
+
+            The line (generated in code, `AcidLines.Pack`): notes A1, A1, A2, G2, C2, A1, C3, G1, A1, A2, A1, C2, D2, A1, G2, A1;
+            accents (velocity 127, the rest 90) on steps 1, 4, 7, 9, 12, 15; slides (the note overlaps the next) on steps 3, 6, 11
+            and 15. The same notes as in the AC1 pack, so the two can go side by side.
+
+            What was wrong in AC1, and what you should not hear now: a click on the note after every slide (the accent state of the
+            note changed at once: a 3 to 4 dB step in level and a step in the filter), on accented notes (the filter opened
+            several octaves in under a millisecond and rang), and on the first note. Listen at those three places.
+
+            Two folders (24 bit, 48 kHz, mono):
+
+            - `blind/` : six items (01 to 06), each a pair `NN_A.wav` and `NN_B.wav`. One is Diode 18, the other the 24 dB
+              ladder. Diode 18 is in slot A in exactly three of the six items and in slot B in the other three (the items and the
+              slots were drawn with a seeded shuffle, not a coin per item). The two renders of a pair have the same loudness (the
+              ladder one is brought to the diode's RMS; the gains are in the key, {GAINS}). Listen, write down per item which you
+              prefer for acid and why, and whether you hear any click or pop in either, then open the key.
+            - `named/` : by name, at the levels they come out of the machine (the ladder is a little quieter):
+              - `Acid-Squelch-diode18.wav`, `Acid-Squelch-ladder24.wav`, ... : the twelve renders of the blind pairs;
+              - `Acid-Squelch-busy-line.wav`, ... : each preset alone, as it ships (its own filter), on a second, busier line:
+                16ths with eight slides and seven accents (the pack line has four and six): notes A1 A2 A1 C2 C3 G2 A1 G1 /
+                A1 E2 A2 A1 C2 D2 G2 A1, accents on steps 1, 4, 7, 9, 11, 13 and 15, slides on steps 1, 3, 5, 6, 9, 11, 13 and 15
+                (1-based; the note slides into the next one). This is the line to listen to for the clean result.
+
+            `KEY-do-not-open-before-listening.txt` says which slot holds which filter in each item, and the number of clicks the
+            detector found in each render (0 in all of them).
+
+            What to listen for: the diode filter should squelch and bite harder on the accented notes, keep more of the low end as
+            the resonance rises, and sing on the slides; the ladder is rounder and loses bass when resonant. Accents are still
+            louder and brighter, slides still glide (in the preset's Slide time). The filter now opens over 5 ms at the quickest,
+            so the accent bites a little less like a zap than in AC1: if you miss the zap, say so.
+
+            Settings that differ from the preset: only `F1 type` (Diode 18 or Ladder 24) in the blind pairs. Accent, slide and every
+            other control are the preset's. Made by `NeoPolyClickTests.WritesTheCleanListeningPack` (NEO_ACID_PACK2=<folder>).
+            """;
+
         [Test]
         public void WritesTheCleanListeningPack()
         {
@@ -436,6 +478,7 @@ namespace NeoBuzz.MachineTests
             var diodeFirst = Enumerable.Range(0, acid.Length).OrderBy(_ => rng.Next()).Take(acid.Length / 2).ToHashSet();
             var key = new System.Text.StringBuilder("item\tpreset\tslot A\tslot B\tgain applied to the ladder render (dB)\tclicks (diode, ladder)\n");
             int clicksTotal = 0;
+            var gains = new List<double>();
             for (int item = 0; item < acid.Length; item++)
             {
                 string name = acid[order[item]];
@@ -444,6 +487,7 @@ namespace NeoBuzz.MachineTests
                 // The same loudness (RMS over the line) on both: the ladder render is brought to the diode's.
                 double gain = Measure.Rms(diode, 0, diode.Length) / Math.Max(1e-9, Measure.Rms(ladder, 0, ladder.Length));
                 var ladderMatched = ladder.Select(x => (float)(x * gain)).ToArray();
+                gains.Add(Measure.Db(gain));
                 double peak = Math.Max(Measure.Peak(diode, 0, diode.Length), Measure.Peak(ladderMatched, 0, ladderMatched.Length));
                 float trim = peak > 0.89 ? (float)(0.89 / peak) : 1f;     // both together, so the pair stays matched
                 bool diodeInA = diodeFirst.Contains(item);
@@ -464,6 +508,7 @@ namespace NeoBuzz.MachineTests
                 Measure.Report($"pack item {n} {name}: diode in {(diodeInA ? "A" : "B")}, ladder gain {Measure.Db(gain):F2} dB, peak {Measure.Db(peak):F1} dBFS, clicks diode {cd} ladder {cl} busy {cb} (without the edge exclusion {pd} {pl} {pb})");
             }
             File.WriteAllText(Path.Combine(dir, "KEY-do-not-open-before-listening.txt"), key.ToString());
+            File.WriteAllText(Path.Combine(dir, "README.md"), PackReadme.Replace("{GAINS}", $"{gains.Min():F1} to {gains.Max():F1} dB"));
             Assert.That(diodeFirst.Count, Is.EqualTo(3));
             Assert.That(clicksTotal, Is.EqualTo(0), "the detector finds nothing in the pack");
         }
