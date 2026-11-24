@@ -427,6 +427,7 @@ Drafts:
 | Neo LFO | control |  |  |  |  |  |  |  |  | ok |
 | Neo Macro | control |  |  |  |  |  |  |  |  | ok |
 | Neo Patch | polysynth | midi | +0 | 8 | -15.1 | -0.01 | 5 ms / 690 ms / — | 0.0 | 1.808 | ok |
+| Neo Organ | polysynth | midi | +0 | 8 | -27 | 0.03 | 730 ms / 15 ms / — | 3.5 | 0.818 | ok |
 | Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 2.79 | 0 ms / 45 ms / — | 0.0 | 0.851 | hot |
 | Neo Sampler | polysynth | midi | +0 | 8 | -18.1 | 8.43 | 0 ms / 5 ms / — | 0.0 | 0.743 | ok |
 | Neo Step | control |  |  |  |  |  |  |  |  | ok |

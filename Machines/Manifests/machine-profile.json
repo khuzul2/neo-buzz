@@ -30438,6 +30438,123 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Organ": {
+   "gear": "Neo Organ",
+   "kind": "generator",
+   "load_seconds": 0.41,
+   "gear_info": {
+    "file": "Generators/Neo Organ.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 32,
+   "track_parameters": 0,
+   "inferred": 32,
+   "from_description": 1,
+   "inference_check": {
+    "agree": 32,
+    "of": 32
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.5,
+    "heard": {
+     "A4": 69.0,
+     "A3": 56.99,
+     "A5": 81.02
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -26,
+     "2": -23.4,
+     "4": -20.8,
+     "8": -17.9
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -27,
+    "sample_peak_dbfs": -20.43,
+    "true_peak_dbtp": -20.43
+   },
+   "cpu_ms_per_s": 3.5,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -20.07,
+     "growth_db": -1.44,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 0.0,
+      "growth_db": 0.0,
+      "verdict": "ok"
+     }
+    }
+   },
+   "envelope": {
+    "peak_db": -26.31,
+    "attack_s": 0.73,
+    "final_db": -1.3,
+    "length_s": null,
+    "release_s": 0.015,
+    "release_past_window": false,
+    "bright_mid_hz": 493.7,
+    "bright_early_hz": 451.4,
+    "bright_late_hz": 453.2,
+    "level_wobble_db": 1.473,
+    "bright_wobble": 0.142,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 0.05,
+    "db_per_doubling": 0.03,
+    "curve": "none (velocity doesn't change its level)",
+    "levels_db": {
+     "16": -27.82,
+     "32": -26.75,
+     "64": -26.62,
+     "127": -27.77
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 17.787,
+    "silent_ms_per_s": 0.818,
+    "silent_worst_ms_per_s": 1.933,
+    "windows_ms_per_s": [
+     17.787,
+     1.933,
+     0.813,
+     0.812,
+     0.818,
+     0.805,
+     0.82,
+     0.812,
+     0.82,
+     0.81,
+     0.829
+    ]
+   },
+   "seconds": 2.3,
+   "platform": "linux",
+   "date": "2026-11-24",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Poly": {
    "gear": "Neo Poly",
    "kind": "generator",
