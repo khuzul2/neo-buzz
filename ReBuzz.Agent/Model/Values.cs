@@ -171,6 +171,9 @@ namespace ReBuzz.Agent.Model
                 case "bpm": return "bpm";
                 // Neo Learn Granular's Density.
                 case "grains/s": case "grains/sec": return "grains/s";
+                // Neo Lo-Fi: a word length in bits, crackle pops per second.
+                case "bit": case "bits": return "bit";
+                case "/s": case "per second": return "/s";
                 case "tick": case "ticks": return "ticks";
                 case "x": case "×": return "x";
                 case ":1": return "ratio";

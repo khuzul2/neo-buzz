@@ -19,11 +19,9 @@ namespace ReBuzz.Core
     {
         sealed class Pass
         {
-            public int Last = int.MinValue;     // pattern time of the last point written
+            public int Last = AutomationSweep.None;     // pattern time of the last point written
             public IPattern Pattern;
         }
-
-        const int Quarter = PatternEvent.TimeBase / 4;
 
         readonly ReBuzzCore buzz;
         readonly HashSet<(string Machine, ColumnKey Key)> armed = new();
@@ -134,10 +132,9 @@ namespace ReBuzz.Core
             int last = pass.Last;
             editor.Edit(seg, key, points =>
             {
-                // Replace what the pass sweeps over; a move within a quarter tick of the last takes that point's place.
-                int from = last == int.MinValue ? t : (t - last < Quarter ? last : last + 1);
-                points.RemoveAll(p => p.Time >= from && p.Time <= t);
-                points.Add(new AutoPoint(t, value, true));
+                // Replace what the pass sweeps over (AutomationSweep, shared with the Session's recorder); a move within a
+                // quarter tick of the last takes that point's place.
+                AutomationSweep.Write(points, p => p.Time, last, t, new AutoPoint(t, value, true));
                 return points;
             });
             pass.Last = t;

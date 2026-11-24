@@ -1,0 +1,115 @@
+name: Scope guard
+
+# Two checks that keep every agent inside the frozen scope (AGENTS.md §1, docs/tasks/README.md):
+# - scope-guard: an `ag/<issue>-<slug>` branch must belong to an open issue labelled `scope` and
+#   `owner:antigravity`, and may change only that issue's "Allowed paths" plus .github/scope/shared-paths.txt.
+#   Other branches pass (Claude's branches are checked when Claude integrates them).
+# - wave-gate: a pull request into main passes only from an `integrate/wave-N` branch. Branch protection
+#   on main requires it, so nothing else can be merged into main, by anyone.
+
+on:
+  push:
+    branches: [ 'ag/**' ]
+  pull_request:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  scope-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check the branch against its issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, subprocess, sys, urllib.request
+
+          branch = os.environ["BRANCH"]
+          if not branch.startswith("ag/"):
+              print(f"{branch}: not an ag/ branch, nothing to check.")
+              sys.exit(0)
+          m = re.match(r"ag/(\d+)-[a-z0-9][a-z0-9-]*$", branch)
+          if not m:
+              sys.exit(f"::error::{branch}: an Antigravity branch must be named ag/<issue number>-<slug> (lower case).")
+          number = m.group(1)
+
+          req = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['REPO']}/issues/{number}",
+              headers={"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json"})
+          try:
+              issue = json.load(urllib.request.urlopen(req))
+          except Exception as e:
+              sys.exit(f"::error::Issue #{number} could not be read: {e}")
+          labels = {l["name"] for l in issue.get("labels", [])}
+          problems = []
+          if "pull_request" in issue:
+              problems.append(f"#{number} is a pull request, not a task issue")
+          if issue.get("state") != "open":
+              problems.append(f"issue #{number} is not open")
+          for need in ("scope", "owner:antigravity"):
+              if need not in labels:
+                  problems.append(f"issue #{number} is not labelled {need}")
+          if problems:
+              sys.exit("::error::" + "; ".join(problems) + ". Work only on open scope issues assigned to Antigravity (AGENTS.md §1).")
+
+          body = issue.get("body") or ""
+          block = re.search(r"Allowed paths[^\n]*\n+```[^\n]*\n(.*?)```", body, re.S)
+          if not block:
+              sys.exit(f"::error::Issue #{number} has no 'Allowed paths' block; ask in the issue.")
+          allowed = [l.strip() for l in block.group(1).splitlines() if l.strip() and not l.strip().startswith("#")]
+          shared = [l.strip() for l in open(".github/scope/shared-paths.txt", encoding="utf-8")
+                    if l.strip() and not l.strip().startswith("#")]
+
+          def rx(glob):
+              out, i = "", 0
+              while i < len(glob):
+                  if glob.startswith("**/", i):
+                      out += "(?:.*/)?"; i += 3
+                  elif glob.startswith("**", i):
+                      out += ".*"; i += 2
+                  elif glob[i] == "*":
+                      out += "[^/]*"; i += 1
+                  elif glob[i] == "?":
+                      out += "[^/]"; i += 1
+                  else:
+                      out += re.escape(glob[i]); i += 1
+              if glob.endswith("/"):
+                  out += ".*"
+              return re.compile(out + r"\Z")
+
+          patterns = [rx(g) for g in allowed + shared]
+          subprocess.run(["git", "fetch", "-q", "origin", "main"], check=True)
+          files = subprocess.run(["git", "diff", "--name-only", "origin/main...HEAD"],
+                                 check=True, capture_output=True, text=True).stdout.split()
+          outside = [f for f in files if not any(p.match(f) for p in patterns)]
+          print(f"Issue #{number}: {issue['title']}")
+          print(f"{len(files)} files changed, {len(outside)} outside the allowed paths.")
+          if outside:
+              for f in outside:
+                  print(f"::error file={f}::{f} is outside issue #{number}'s allowed paths")
+              sys.exit(1)
+          EOF
+
+  wave-gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only integration waves merge into main
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          if [ "$BASE" != "main" ]; then echo "Not into main: nothing to check."; exit 0; fi
+          case "$HEAD" in
+            integrate/wave-*) echo "$HEAD is an integration wave."; exit 0 ;;
+            *) echo "::error::Only integrate/wave-N branches merge into main (AGENTS.md §1). Push your task branch and report in its issue instead."; exit 1 ;;
+          esac
