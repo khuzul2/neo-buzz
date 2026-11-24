@@ -84,27 +84,27 @@ namespace NeoBuzz.Poly
             // room (its width is set by the filter row), so the page stays as wide and as tall as it was.
             var acid = S("Accent · Slide", Layout.Column(
                 Build.Knobs(ctx, 3, D, P.AccentThr, P.AccentDecay, P.AccentSweep, P.AccentLevel, P.SlideTime, P.AcidRange, P.AcidSweepMax, P.AcidSoft),
-                Layout.Row(new ParamChoice(ctx, P.Slide, "Slide", 40), Layout.Gap(8), new ParamChoice(ctx, P.AcidQuality, "Filter quality", 38))));
+                Layout.Row(new ParamChoice(ctx, P.Slide, "Slide", 40), Layout.Gap(8), new ParamChoice(ctx, P.AcidQuality, "Filter quality", 52))));
             // The Acid view (AC3): six big knobs in the order of a hand-played bass line's front panel, the oscillator's waveform, the slide, and
             // the four limits beneath. The same parameters as the Full view's (no copies), so every knob has the same right-click menu, MIDI
             // map and automation.
-            const double Big = 64;
+            const double Big = 88;
             var acidKnobs = Layout.Row(
-                new ParamKnob(ctx, P.O1Fine, "Tuning", Big), Layout.Gap(8),
-                new ParamKnob(ctx, P.F1Cutoff, "Cutoff", Big), Layout.Gap(8),
-                new ParamKnob(ctx, P.F1Reso, "Resonance", Big), Layout.Gap(8),
-                new ParamKnob(ctx, P.F1Env, "Env mod", Big), Layout.Gap(8),
-                new ParamKnob(ctx, P.FltD, "Decay", Big), Layout.Gap(8),
+                new ParamKnob(ctx, P.O1Fine, "Tuning", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.F1Cutoff, "Cutoff", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.F1Reso, "Resonance", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.F1Env, "Env mod", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.FltD, "Decay", Big), Layout.Gap(18),
                 new ParamKnob(ctx, P.Accent, "Accent", Big));
             var acidLine = Layout.Row(
-                new ParamChoice(ctx, P.O1Shape, "Waveform", 46, false, new[] { "Saw", "Square" }, new[] { 667, 1000 }), Layout.Gap(18),
-                new ParamKnob(ctx, P.SlideTime, "Slide time", 46), Layout.Gap(10),
-                new ParamChoice(ctx, P.Slide, "Slide", 40));
+                new ParamChoice(ctx, P.O1Shape, "Waveform", 62, false, new[] { "Saw", "Square" }, new[] { 667, 1000 }), Layout.Gap(18),
+                new ParamKnob(ctx, P.SlideTime, "Slide time", 56), Layout.Gap(14),
+                new ParamChoice(ctx, P.Slide, "Slide", 56));
             var acidLimits = Layout.Row(
-                new ParamKnob(ctx, P.AcidRange, "Filter range", 40), Layout.Gap(8),
-                new ParamKnob(ctx, P.AcidSweepMax, "Sweep limit", 40), Layout.Gap(8),
-                new ParamKnob(ctx, P.AcidSoft, "Soft start", 40), Layout.Gap(8),
-                new ParamChoice(ctx, P.AcidQuality, "Filter quality", 38));
+                new ParamKnob(ctx, P.AcidRange, "Filter range", 52), Layout.Gap(14),
+                new ParamKnob(ctx, P.AcidSweepMax, "Sweep limit", 52), Layout.Gap(14),
+                new ParamKnob(ctx, P.AcidSoft, "Soft start", 52), Layout.Gap(18),
+                new ParamChoice(ctx, P.AcidQuality, "Filter quality", 62));
             var acidView = Layout.Column(S("Acid", Layout.Column(acidKnobs, Layout.Gap(1, 8), acidLine)), S("Limits", acidLimits));
             bool acidDefault = machine?.Engine.S.Acid ?? false;
             var modEnv = MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR);
