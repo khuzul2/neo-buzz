@@ -145,9 +145,9 @@ namespace NeoBuzz.Organ
                     double y = DrawbarInput.StepY(h, s);
                     g.Line(new NeoPoint(cx + 8, y), new NeoPoint(cx + 13, y), new NeoStroke(s == step ? AccentColor : Palette.Grid, 1, false));
                 }
-                // The rod from the top to the cap, then the cap.
+                // The level as a fill from the bottom of the slot up to the cap, then the cap.
                 double capY = DrawbarInput.StepY(h, step);
-                g.Rect(new NeoRect(cx - 2, trackTop - 4, 4, capY - trackTop + 4), step > 0 ? AccentColor : Palette.KnobTrack, default, 1);
+                if (step > 0) g.Rect(new NeoRect(cx - 2, capY, 4, trackBottom + 4 - capY), AccentColor, default, 1);
                 var cap = new NeoRect(cx - DrawbarInput.BarWidth / 2, capY - DrawbarInput.CapHeight / 2, DrawbarInput.BarWidth, DrawbarInput.CapHeight);
                 g.Rect(cap, CapColour[b], new NeoStroke(Palette.DimText, 1), 3);
                 var ink = CapColour[b] == White ? Black : White;

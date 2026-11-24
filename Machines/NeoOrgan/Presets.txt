@@ -22,7 +22,7 @@ Rotary = On
 Speed = Fast
 RotDepth = 90
 Doppler = 140
-Volume = -9
+Volume = -5
 
 preset "Full — Church Full"
 comment "Pipe-organ registration, no speaker, a little chorus: a broad, steady, hall-like organ."
@@ -106,11 +106,11 @@ KeyClick = 25
 Leakage = 60
 VibOn = On
 VibMode = V2
-Drive = 85
+Drive = 60
 Rotary = On
 Speed = Slow
 RotDepth = 60
-Volume = -10
+Volume = -5
 
 preset "Jazz — Warm Soul"
 comment "A round, even registration with deep chorus and a slow, wide speaker: warm and soft-edged."
@@ -156,7 +156,7 @@ Speed = Slow
 RotDepth = 40
 Doppler = 60
 Expression = 70
-Volume = -4
+Volume = -2
 
 preset "Soft — Mellow Flutes"
 comment "Flute stops: a pure 8' with a hollow twelfth and a breath of 2', deep vibrato, no speaker."
@@ -196,7 +196,7 @@ Drive = 100
 Rotary = On
 Speed = Fast
 RotDepth = 80
-Volume = -13
+Volume = -4
 
 preset "Percussive — Bright Percussion"
 comment "8', 4' and 2 2/3' with the third-harmonic percussion on, slow decay, soft off: a ringing, bell-bright attack."

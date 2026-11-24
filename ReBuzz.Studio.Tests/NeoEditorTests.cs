@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>Each Neo machine, its editor, its screenshot, and its WPF editor's size (CI's neo-*-editor.png).</summary>
         static readonly (string Machine, string Editor, string Shot, int WpfWidth, int WpfHeight)[] Editors =
         {
-            ("Neo Organ", "NeoOrganEditor", "neo-organ-editor", 880, 540),
+            ("Neo Organ", "NeoOrganEditor", "neo-organ-editor", 982, 496),
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 703),   // P5a: two pages in the studio (the classic editor's one screen is 950 x 972)
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
