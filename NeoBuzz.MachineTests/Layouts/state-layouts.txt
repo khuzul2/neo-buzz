@@ -40,7 +40,7 @@ NeoBuzz.MacroMachine	0	2	157abd3715f40da3
 NeoBuzz.Multiband	0	55	f3a4ac1dc49b0b56
 NeoBuzz.NeoAudio	0	2	a006a7ceaeea24e4
 NeoBuzz.Patch	0	20	bec0a8b17ee091b5
-NeoBuzz.Organ	0	32	70fb33be72aac28c
+NeoBuzz.Organ	0	32	830271717a1c8bf1
 NeoBuzz.Poly	0	91	dbaa32ac1ee1fb76
 NeoBuzz.Sampler	0	325	190329edfb1c45d8
 NeoBuzz.Scope	0	11	518994d8cbae37f0

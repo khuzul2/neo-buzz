@@ -27,7 +27,7 @@ A polyphonic tonewheel organ with a stereo output, 16 tracks. It is an instrumen
 3. **Scanner vibrato and chorus**: a delay line read with a triangle sweep, six settings: V1, V2, V3 (pitch swing of about ±6, ±12 and ±24 cents at 6.8 Hz) and C1, C2, C3 (the same sweep mixed with the dry sound at 0.5).
 4. **Drive**: a tube-style overdrive (asymmetric soft saturation, 2x oversampled) with level compensation at -14 dBFS, before the speaker.
 5. **Rotary speaker**: a horn (highs) and a drum (lows), each a rotor with its own slow and fast speed and its own acceleration (first-order lag; Stop brakes them to rest). Each makes an amplitude swell, a directivity change and a Doppler shift (a fractional delay); two virtual microphones at an angle (Mic spread) make the stereo; Horn/drum balances the two. `Speed` is Slow / Fast / Stop, so a mapped knob or pad switches it. With `Rotary` off the dry organ is in both channels.
-6. **Output**: `Expression` (a swell pedal before the drive and the speaker, gain the square of the setting) and `Volume` (dB, default 0 dB: one note at the defaults is about -21 LUFS, as Neo Poly), a soft limiter at 0.9.
+6. **Output**: `Expression` (a swell pedal before the drive and the speaker, gain the square of the setting) and `Volume` (dB, default -0.6 dB: one note at the defaults is about -21.6 LUFS, near Neo Poly's -20.8), a soft limiter at 0.9.
 
 ## 4. Documented values and gates
 

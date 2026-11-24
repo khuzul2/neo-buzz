@@ -490,7 +490,7 @@
    "group": "Output",
    "min": 0,
    "max": 1000,
-   "default": 833,
+   "default": 825,
    "kind": "db",
    "a": -60.0,
    "b": 12.0,

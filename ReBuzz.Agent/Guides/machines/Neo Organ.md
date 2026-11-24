@@ -27,7 +27,7 @@ Around the tone: Percussion (a single-trigger 2nd or 3rd harmonic, only when no 
 | Drive | 0% | 30 to 70% for blues and rock grit |
 | Speed | Fast | Slow is the chorale, Fast the tremolo; Stop holds the rotors |
 | Depth | 75% | how much the speaker moves the sound |
-| Volume | 0 dB | the default; check `peak_db` with Drive up |
+| Volume | -0.6 dB | the default; check `peak_db` with Drive up |
 
 ## Starting points
 
