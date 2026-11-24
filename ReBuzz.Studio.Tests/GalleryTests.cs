@@ -1969,6 +1969,23 @@ namespace ReBuzz.Studio.Tests
                         w.Close();
                     });
                 }
+                Try("590-neo-lofi-editor", () =>
+                {
+                    var m = Add("Neo Lo-Fi", "LoFi");
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    Set("Bits", 700);       // 8 bits
+                    Set("Rate", 380);       // a low hold rate
+                    Set("Hiss", 400);
+                    Set("Crackle", 150);
+                    Set("Wow", 150);
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "590-neo-lofi-editor", "Neo Lo-Fi: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output), set to 8 bits, a low hold rate, a little hiss, crackle and wow.", "Add Neo Lo-Fi; open its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
