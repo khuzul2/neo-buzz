@@ -159,7 +159,7 @@ namespace ReBuzz.Agent
                 if (m.EditorMachine != null) m.ClonePattern(copyName, src);
                 else m.CreatePattern(copyName, src.Length);
                 var copy = m.Patterns.FirstOrDefault(x => x.Name == copyName);
-                if (copy != null) EngineColumns.Copy(src, copy, core.SongCore.Machines);
+                if (copy != null && copy.Columns.Count == 0) EngineColumns.Copy(src, copy, core.SongCore.Machines);      // (ClonePattern copies them when the machine has an editor)
             }
             void Remove()
             {

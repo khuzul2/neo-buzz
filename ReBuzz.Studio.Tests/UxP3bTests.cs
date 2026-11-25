@@ -80,17 +80,28 @@ namespace ReBuzz.Studio.Tests
             /// <summary>The clip's notes as SongNotes reads them: (time, length, MIDI note).</summary>
             public (int Time, int Duration, int Note)[] Stored(string route = null) => StoredOf(Song.Core, Pattern, route);
 
-            /// <summary>How many steps the song's history can undo (it undoes them all, and redoes them again).</summary>
-            public int Undos
+            /// <summary>How many steps the song's history holds (an edit made now is one more).</summary>
+            public int Undos => Song.Core.SongCore.ActionStack.Steps.Count;
+
+            /// <summary>The shell's Undo and Redo: the roll's notes are the song's, so the song's history takes them.</summary>
+            public bool Undo()
             {
-                get
-                {
-                    var stack = Song.Core.SongCore.ActionStack;
-                    int n = 0;
-                    while (stack.CanUndo && n < 1000) { stack.Undo(); n++; }
-                    for (int i = 0; i < n; i++) stack.Redo();
-                    return n;
-                }
+                if (Page.Undo()) return true;
+                var stack = Song.Core.SongCore.ActionStack;
+                if (!stack.CanUndo) return false;
+                stack.Undo();
+                Roll.Poll();
+                return true;
+            }
+
+            public bool Redo()
+            {
+                if (Page.Redo()) return true;
+                var stack = Song.Core.SongCore.ActionStack;
+                if (!stack.CanRedo) return false;
+                stack.Redo();
+                Roll.Poll();
+                return true;
             }
 
             public void Dispose()
@@ -219,9 +230,9 @@ namespace ReBuzz.Studio.Tests
             r.ShowTracker();
             Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "the Tracker's view of the clip holds the same notes");
 
-            Assert.That(r.Page.Undo(), Is.True, "the Tracker's undo");
+            Assert.That(r.Undo(), Is.True, "the Tracker's undo");
             Assert.That(r.Stored(), Is.Empty);
-            Assert.That(r.Page.Redo(), Is.True);
+            Assert.That(r.Redo(), Is.True);
             Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
         }
 
@@ -277,8 +288,8 @@ namespace ReBuzz.Studio.Tests
 
             // Alt: off the grid, though the tracker's rows still take the note on a row.
             Drag(r, from, to, RawInputModifiers.Alt);
-            Assert.That(r.Notes.Notes[0].Time, Is.EqualTo(TB), "bypassed the beat grid: on the row at 1.5 ticks");
-            Assert.That(r.Stored()[0].Time, Is.EqualTo(TB));
+            Assert.That(r.Notes.Notes[0].Time, Is.EqualTo(TB + TB / 2), "bypassed the grid: the clip keeps the time as dragged (1.5 ticks)");
+            Assert.That(r.Stored()[0].Time, Is.EqualTo(TB + TB / 2));
         }
 
         [AvaloniaTest]
@@ -392,14 +403,14 @@ namespace ReBuzz.Studio.Tests
             Assert.That(r.Stored(), Is.EqualTo(new[] { (3 * TB, 2 * TB, 72) }), "moved and lengthened");
             Assert.That(r.Undos, Is.EqualTo(undos + 4), "a step each");
 
-            Assert.That(r.Page.Undo(), Is.True);
+            Assert.That(r.Undo(), Is.True);
             Assert.That(r.Stored(), Is.EqualTo(new[] { (3 * TB, TB, 72) }));
-            r.Page.Undo();
-            r.Page.Undo();
+            r.Undo();
+            r.Undo();
             Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
-            r.Page.Undo();
+            r.Undo();
             Assert.That(r.Stored(), Is.Empty, "the clip is as it was");
-            Assert.That(r.Page.Redo(), Is.True);
+            Assert.That(r.Redo(), Is.True);
             Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "and redo brings the note back");
             r.Roll.Poll();
             Assert.That(r.Notes.Notes.Count, Is.EqualTo(1));
@@ -456,7 +467,7 @@ namespace ReBuzz.Studio.Tests
             r.ShowRoll();
             r.Notes.AddNote(0, 60);
             Assert.That(r.Notes.Notes.Count, Is.EqualTo(1));
-            Assert.That(r.Page.Undo(), Is.True);
+            Assert.That(r.Undo(), Is.True);
             Assert.That(r.Notes.Notes, Is.Empty, "undone in the roll too");
             r.Notes.Focus();
             r.Window.KeyPressQwerty(PhysicalKey.Z, OperatingSystem.IsMacOS() ? RawInputModifiers.Meta | RawInputModifiers.Shift : RawInputModifiers.Control | RawInputModifiers.Shift);

@@ -75,7 +75,7 @@ For live playing the audio drivers, buffer sizes and what they cost are in `guid
 
 - `notes_write` puts notes in each pattern's engine MIDI column, and NeoBuzz Live sends them to the machine as MIDI. Neo machines play them.
 - Check: `machine_describe(machine=…)` (its notes field), then one note rendered solo and `analyze(source=…, metrics=["pitch"])`.
-- Fix: use a Neo synth or another machine. For a tracker-only machine the user can move the notes to the Pattern View's note lanes (Session View slot menu, "Move notes to the Pattern View").
+- Fix: use a Neo synth or another machine. A machine that takes notes only in its Note track parameter gets them in its Note and velocity lanes: `notes_write(…, input="tracks")`. `clip_get(machine=…, pattern=…)` shows where a clip's notes and lanes are.
 - An octave off: the tools use C4 = 60, which the Pattern View shows as C-3 by default (C-5 when Preferences ▸ General ▸ Note names is Buzz's). Some older machines play an octave away; measure the pitch and shift with `notes_transform(machine=…, pattern=…, transforms=[{"op": "transpose", "semitones": 12}])`.
 
 ## Hanging notes
