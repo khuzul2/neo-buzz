@@ -525,6 +525,18 @@ One store, one engine (D3). In the Studio and headless the engine plays every la
 
 Our own songs open as before. Their pattern data moves into the new clip store on open and is played by the engine's one player, so a few things sound slightly different: a value in a machine's pattern arrives at the start of its tick, about 6 ms earlier than before; a note on a machine that takes MIDI starts on its row, a tick earlier; a delay or cut inside a row now counts. What cannot move is dropped with a line in the log. Nothing is written to your file until you save. Saving writes `.nbl` format 3, which older builds refuse (they would play it without its pattern data).
 
+### 10.0c CU4 as built
+
+**One layer.** `SongNotes.For(buzz, pattern)` is the one reader and writer of a clip's notes in the store. The piano roll, Session, Arrangement, the agent (`notes_read`, `notes_write`, `clip_get`), imports and exports all go through it. Which lane it uses follows `KeyboardRoute`: the MIDI route reads the Notes lane, the tracks route reads the Note and velocity parameter lanes (one voice per track). `For(buzz, pattern, "midi"|"tracks")` overrides the route (a Neo Poly takes both). `StoreLanes` reads every lane of a parameter (the tracker's unmarked lane and the marked take or agent lanes), merged by time, and writes into the lane that holds the event, or into the home lane for a new one. A write is one `ColumnEventsAction`, one undo step. `AllowMoreTracks` raises the track count (an undo step of its own) when the agent writes more voices than the machine has tracks.
+
+**Gone.** `EditorTrackerNotes`, `EditorLaneNotes`, `EditorPreviewNotes`, `TrackerNoteSources`, the editor's `ExportClipNotes`/`ImportClipNotes`/`EditClipNotes`/`EditTrackerEvents` bridges, the Pattern View "Move notes" menu and `ClipNotesMoveAction`, the roll's lane box, and the agent's `ReplaceNotes`. Their tests were rewritten against `SongNotes`.
+
+**Agent.** `automation_read` and `notes_*` see every lane (`source` is `pattern`, `automation` or `both`). `clip_get` returns a clip's lanes, notes and view. Clone, replace and snapshots copy columns only.
+
+**CU3 follow-ups.** `MachineCore.ClonePattern` copies the original's columns when the copy has none, so a pasted or cloned machine plays its own pattern data (`ReplaceMachineAction` restores lanes the same way). The editor's MIDI Note and Velocity columns are hidden beside a Notes lane until they hold data or the user reveals them.
+
+**Limits.** A Neo Poly's typed Note-parameter column (tracks route) is a separate store from the roll's MIDI column. `automation_write` writes marked lanes only. Session takes and recorders write the MIDI column directly.
+
 ### 10.1 Gates (every wave from CU3; CU1 sets them)
 
 Direct engine (D3) changes the first gate: for data the engine now plays differently **by design**, the goldens become a **change report**; for everything else they stay a hard gate.
