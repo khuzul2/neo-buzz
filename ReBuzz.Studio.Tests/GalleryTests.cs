@@ -2184,6 +2184,26 @@ namespace ReBuzz.Studio.Tests
                         w.Close();
                     });
                 }
+                Try("650-neo-organ-editor", () =>
+                {
+                    var m = Add("Neo Organ", "Organ");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // A registration like the Church Full preset, set before the editor opens: the bars, percussion on, chorus, some drive, the speaker Fast.
+                    int[] bars = { 6, 5, 8, 6, 4, 5, 3, 2, 3 };
+                    string[] names = { "16'", "5 1/3'", "8'", "4'", "2 2/3'", "2'", "1 3/5'", "1 1/3'", "1'" };
+                    for (int i = 0; i < 9; i++) Set(names[i], bars[i]);
+                    Set("Percussion", 1);
+                    Set("Vibrato", 1);
+                    Set("Drive", 350);
+                    Set("Speed", 1);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "650-neo-organ-editor", "Neo Organ: the nine drawbars with their footage labels (set to a full registration), then Percussion, Key, Vibrato, Drive, Rotary (the Speed switch at Fast, with the two rotors' live speeds) and Output.", "Add Neo Organ, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {

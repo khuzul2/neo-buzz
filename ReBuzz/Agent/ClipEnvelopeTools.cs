@@ -86,7 +86,7 @@ namespace ReBuzz.Agent
             AnyOf(description, Number("Beats (0 = the start)", 0), String("\"bar.beat\": \"1.3\" is the third beat of the first bar"));
 
         /// <summary>The clip the call names: a pattern by name, a Session slot, or an arrangement clip.</summary>
-        static IPattern ClipOf(ReBuzzCore core, MachineCore m, ToolContext c)
+        internal static IPattern ClipOf(ReBuzzCore core, MachineCore m, ToolContext c)
         {
             if (c.String("pattern") is string name) return SongModel.Pattern(m, name);
             if (c.Int("scene") is int scene)

@@ -184,33 +184,6 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.ImportMidiEvents(pattern, data);
         }
 
-        // Fork (neo-buzz 0.7.1): the Session View moves a clip's notes into the MIDI note lanes and back.
-        public int[] ExportClipNotes(IPattern pattern)
-        {
-            return ModernPatternEditor.ExportClipNotes(pattern);
-        }
-
-        public bool ImportClipNotes(IPattern pattern, int[] notes)
-        {
-            return ModernPatternEditor.ImportClipNotes(pattern, notes);
-        }
-
-        // Fork (ux-overhaul.md P3b): the piano roll edits the tracker's Note columns through these.
-        public bool EditClipNotes(IPattern pattern, int[] notes)
-        {
-            return ModernPatternEditor.EditClipNotes(pattern, notes);
-        }
-
-        public bool EditTrackerEvents(IPattern pattern, int[] changes)
-        {
-            return ModernPatternEditor.EditTrackerEvents(pattern, changes);
-        }
-
-        public int[] GetTrackerBeatRows(IPattern pattern, int indexInGroup, int track)
-        {
-            return ModernPatternEditor.GetTrackerBeatRows(pattern, indexInGroup, track);
-        }
-
         public IEnumerable<IPatternEditorColumn> GetPatternEditorEvents(IPattern pattern, int tbegin, int tend)
         {
             return ModernPatternEditor.GetPatternColumnEvents(pattern, tbegin, tend);

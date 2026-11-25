@@ -151,6 +151,11 @@ CASES = [
     gen("chip-arp", "Neo Chip", "Arp — Major sparkle", [], CHORDS),
     gen("chip-raw-dac", "Neo Chip", "Raw — Lo-res grit", [], BASS),
     gen("chip-noise-snare", "Neo Chip", "Drums — Noise snare", [], [n("C4", 0, 0.5), n("E4", 1, 0.5), n("G4", 2, 0.5)]),
+    # Neo Organ (docs/specs/neo-organ.md): the tonewheel generator, percussion, the scanner, the drive and the rotary speaker.
+    gen("organ-gospel", "Neo Organ", "Full — Full Gospel", [], CHORDS),
+    gen("organ-jazz", "Neo Organ", "Jazz — Jazz Trio", [], CHORDS),
+    gen("organ-perc", "Neo Organ", "Percussive — Bright Percussion", [], LEAD),
+    gen("organ-fast", "Neo Organ", "Full — Fast Whirl", [], CHORDS),
     # Neo Wave: tables built in the background, warps, PM, sync, its filter.
     gen("wave-init", "Neo Wave", "Init — Basic", [], CHORDS),
     gen("wave-vowel-choir", "Neo Wave", "Pad — Vowel Choir", [], CHORDS),

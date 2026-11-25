@@ -35,6 +35,7 @@ FEATURES = [
     ("Piano roll (AR2)", "Notes in a clip or pattern", "daw-modes.md §8.3", ["notes_write", "notes_read", "notes_transform", "session_clip_set"], "the roll is a view of the same notes; view_show(editor=\"piano_roll\") opens it"),
     ("Piano roll (AR2)", "Showing the roll or the tracker", "daw-modes.md §8.3", ["view_show"], ""),
     ("Tracker lanes (AR3)", "Notes in the tracker's Note columns", "daw-modes.md §8.4", ["notes_write", "notes_read"], "input=\"tracks\""),
+    ("Clips (CU4)", "One read of a clip: its lanes (the Notes lane, every parameter and track, who made each), its notes and its view (rows per beat, mutes)", "clips.md §8", ["clip_get"], "notes_read and automation_read see every lane of the clip; the tracker's lanes and a take's are one clip"),
     ("Automation (AR4)", "Automation lanes and clips over the song", "daw-modes.md §8.5", ["arrangement_automation"], "list, add_lane, write, clear"),
     ("Automation (AR4)", "Automation inside a pattern", "daw-modes.md §8.5", ["automation_write", "automation_read"], ""),
     ("Envelopes (EV1)", "A clip's envelopes: points with ramps or steps in a Session or Arrangement clip, as the Detail panel's lane draws them", "daw-modes.md §8.8", ["clip_envelope"], "read, write, clear; the clip is a pattern, a scene's slot or an arrangement clip; the curves drawn on clips and the choice of the parameter a track shows are the studio's only"),

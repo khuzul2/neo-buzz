@@ -22,6 +22,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Comp | effect | Compressor: clean VCA, glue bus, FET and opto, with sidechain filter, lookahead and mix |
 | Neo Verb | effect | Algorithmic reverb: hall, room, chamber and plate, modulated, with freeze and shimmer |
 | Neo Poly | generator | Polyphonic virtual analog: 3 oscillators with sync, FM and ring, 2 filters, mod matrix |
+| Neo Organ | generator | Tonewheel organ (docs/specs/neo-organ.md): 91 shared sine wheels, 9 drawbars at 3 dB a step, single-trigger percussion, key click, scanner vibrato and chorus, tube-style drive and a rotary speaker (horn and drum, Slow / Fast / Stop with inertia); 61 keys cost the same as one |
 | Neo Learn Subtractive | generator | Teaching synth (box name Learn Sub): one Dye Essence patch behind 12 controls (wave morph, sub, 24 dB ladder low-pass, drive, ADSR, unison, output) with an Explain strip |
 | Neo Learn FM | generator | Teaching synth (box name Learn FM): one Dye Essence patch behind 12 controls (exact modulator ratio with whole and half detents, FM depth, depth decay, self-feedback, metallic edge, velocity to FM, ADSR, unison, output) with an Explain strip |
 | Neo Learn Wavetable | generator | Teaching synth (box name Learn WT): one Dye Essence patch behind 12 controls (table, frame position, phase warp, scanning motion rate and depth, sub anchor, ADSR, unison, output; a user table by WAV import) with an Explain strip |
@@ -121,6 +122,8 @@ NeoBuzz.MachineTests/ Linux NUnit project: links NeoBuzz.Dsp, every Engine/ fold
 tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params.g.cs + <Name>.machine.json
 tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 ```
+
+The generators take the gear name and kind from the machine's studio or portable project (`NeoName`, `NeoKind` for its `NeoFolder`). `--all --check` writes nothing and fails if any generated file differs from what the generator makes today; Fork CI runs it for both generators.
 
 - **Linked as source, not a shared DLL.** ReBuzz loads managed machines with `Assembly.LoadFile`, so a shared library DLL would load once per machine folder and version clashes would be silent. Each machine compiles its own copy; types are `internal`.
 - **Parameter table.** `Params.def` declares each parameter once: name, range, default, mapping (linear, exponential, dB, time, frequency, enum…) and unit. The generator writes the pure table (mapping and value text, used by the engine, the tests and the editor) and the machine's `[ParameterDecl]` properties. Continuous parameters use 0–1000 for fine control; discrete ones their own range.
