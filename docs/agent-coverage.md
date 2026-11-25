@@ -204,7 +204,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | note_wire_connect | 1 | 1 | yes |
 | note_wire_disconnect | 1 | 1 | yes |
 | note_wires | 1 | 1 | yes |
-| notes_read | 7 | 2 | yes |
+| notes_read | 8 | 2 | yes |
 | notes_transform | 4 | 5 | no |
 | notes_write | 25 | 9 | yes |
 | panel_set | 1 | 3 | yes |

@@ -35,7 +35,9 @@ namespace ReBuzz.Agent
         {
             var notes = SongModel.Manifest(m)?.Notes;
             var noteParameter = m.ParameterGroups.Count > 2 ? m.ParameterGroups[2].Parameters.FirstOrDefault(p => p.Type == ParameterType.Note) : null;
-            string mode = requested ?? (notes?.Input == "tracks" && noteParameter != null ? "tracks" : "midi");
+            // A machine that plays a sample per note (Neo Sampler's Tracker mode) keeps its notes in its tracks, with their sample, offset and tune.
+            bool perNote = noteParameter != null && m.ManagedMachine is Buzz.MachineInterface.INoteSampleProvider { PlaysSamplePerNote: true };
+            string mode = requested ?? (perNote || (notes?.Input == "tracks" && noteParameter != null) ? "tracks" : "midi");
             if (mode == "tracks" && noteParameter == null)
                 throw new ToolError($"{m.Name} ({m.DLL?.Name}) has no Note track parameter, so it takes notes as MIDI only; leave input out.");
             int offset = applyOffset && notes != null && notes.Pitched ? notes.PitchOffset : 0;
@@ -47,7 +49,7 @@ namespace ReBuzz.Agent
         /// <summary>The pattern's notes as the agent reads them (pitches as heard): SongNotes reads every lane of the clip.</summary>
         public static List<NoteEvent> Read(IPattern p, NoteInput input)
         {
-            var stored = Source(p, input)?.Notes().Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity, n.Channel)).ToList() ?? new List<NoteEvent>();
+            var stored = Source(p, input)?.Notes().Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune)).ToList() ?? new List<NoteEvent>();
             if (input.Offset == 0) return stored;
             return stored.Select(n => n with { Pitch = n.Pitch - input.Offset }).Where(n => n.Pitch >= 0 && n.Pitch <= 127).ToList();
         }
@@ -65,10 +67,13 @@ namespace ReBuzz.Agent
             NoteEvent Sent(NoteEvent n) => input.Offset == 0 && n.Pitch <= input.Highest ? n : n with { Pitch = TrackNotes.Sent(n.Pitch, input.Offset, input.Highest, input.Machine) };
             var source = SongNotes.For(core, p, input.Mode) ?? throw new ToolError($"{p.Machine?.Name} takes no notes.");
             if (source is TrackerColumnNotes tracker) tracker.AllowMoreTracks(problems);
-            ClipNote Note(NoteEvent n) => new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity, n.Channel);
+            ClipNote Note(NoteEvent n) => new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune);
             string refused = source.Edit(removed.Select(Sent).Select(Note).ToList(), added.Select(Sent).Select(Note).ToList());
             if (refused != null) throw new ToolError(refused);
         }
+
+        /// <summary>Whether the machine plays a sample per note now (its notes then carry a sample, an offset and a tune).</summary>
+        public static bool PerNoteSamples(MachineCore m) => m.ManagedMachine is Buzz.MachineInterface.INoteSampleProvider { PlaysSamplePerNote: true };
 
         /// <summary>Whether a pattern column holds a machine's track notes (not automation).</summary>
         public static bool IsNoteColumn(IPatternColumn column)

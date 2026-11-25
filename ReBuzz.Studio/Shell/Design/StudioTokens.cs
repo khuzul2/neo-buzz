@@ -47,6 +47,31 @@ namespace ReBuzz.Studio.Shell.Design
             return Color.FromArgb(alpha, c.R, c.G, c.B);
         });
 
+        // ---- TM1: the sample palette (a sample per note): nine colours that repeat by sample number, the ink on them and a chip's own back,
+        // in the theme in use. Dark: the light-on-dark set of the design canvas; light: the same hues deepened so the dark ink and the notes keep their contrast.
+        static readonly Color[] sampleDark =
+        {
+            Color.Parse("#F0B429"), Color.Parse("#5AA9FF"), Color.Parse("#FF7B54"), Color.Parse("#6FD08C"), Color.Parse("#C08CFF"),
+            Color.Parse("#35C9C1"), Color.Parse("#FF6FA8"), Color.Parse("#9AA7FF"), Color.Parse("#E9E3D0"),
+        };
+        static readonly Color[] sampleLight =
+        {
+            Color.Parse("#E0A010"), Color.Parse("#4A97EE"), Color.Parse("#F06A40"), Color.Parse("#4FBF77"), Color.Parse("#B07AF0"),
+            Color.Parse("#25B5AD"), Color.Parse("#F05A98"), Color.Parse("#8794F0"), Color.Parse("#D5CCB2"),
+        };
+
+        /// <summary>How many sample colours there are (they repeat).</summary>
+        public const int SamplePaletteCount = 9;
+
+        /// <summary>The colour of the <paramref name="index"/>-th sample colour (0 to 8), in the theme in use.</summary>
+        public static Color SamplePalette(int index) => (Tokens.IsLight ? sampleLight : sampleDark)[index % SamplePaletteCount];
+
+        /// <summary>The ink on a sample colour: dark in both themes, as every one of the nine is light.</summary>
+        public static Color SampleInk => Color.Parse("#121417");
+
+        /// <summary>A chip's own background: dark, with the colour of its number as the text.</summary>
+        public static Color SampleChipBack => Color.FromArgb(0xD1, 0x12, 0x14, 0x17);
+
         // ---- surfaces (the ramp of the theme in use; ux-overhaul.md §3.1)
         public static Color SurfaceBase => Of(Tokens.SurfaceBase);
         public static Color SurfaceView => Of(Tokens.SurfaceView);

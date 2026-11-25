@@ -207,7 +207,10 @@ namespace ReBuzz.Agent
                         Req("pitch", AnyOf("Pitch", Integer("MIDI number, 60 = C4", 0, 127), String("Name: \"C4\", \"F#3\", \"Bb2\""))),
                         Req("start", Position("Start, from the pattern start")),
                         Req("length", Number("Length in beats", 0)),
-                        Opt("velocity", Integer("1–127 (default 100)", 1, 127)),
+                        Opt("velocity", Integer("1–127 (default 100); the note's volume", 1, 127)),
+                        Opt("sample", Integer("Neo Sampler in Tracker mode: the sample this note plays, 1–200 the song's waves and 201–226 the built-ins (it plays at its own speed at C-4, the pitch moves it); leave out to play the zones", 1, 254)),
+                        Opt("offset", Integer("With a sample: where in it the note starts, in the sample's frames", 0, 8000000)),
+                        Opt("tune", Integer("With a sample: tune in cents, 100 = a semitone", -2400, 2400)),
                         Opt("name", String("The pitch's name, as notes_read and theory give it (pitch decides)")),
                         Opt("midi_channel", Integer("MIDI channel 1–16, as notes_read gives it (written notes use channel 1)", 1, 16))), "The notes")),
                     Opt("mode", String("add (default), replace or replace_range", "add", "replace", "replace_range")),
@@ -235,6 +238,8 @@ namespace ReBuzz.Agent
                         var problems = new List<string>();
                         var input = MachineNotes.For(m, c.String("input"), c.Bool("apply_pitch_offset") ?? true);
                         var added = NoteList.Parse(c.List("notes")!, tpb, bpb, p.Length, problems);
+                        if (added.Any(n => n.Sample > 0) && !(m is MachineCore mc && MachineNotes.PerNoteSamples(mc) && input.Tracks))
+                            throw new ToolError($"{m.Name} doesn't play a sample per note: sample, offset and tune are for Neo Sampler in its Tracker mode (param_set Mode = Tracker); leave them out.");
                         var existing = MachineNotes.Read(p, input);
                         List<NoteEvent> removed;
                         if (mode == "replace") removed = existing;
@@ -297,7 +302,7 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Opt("input", String("midi or tracks: where they were read")),
                     Opt("pitch_offset", Integer("Semitones taken off (the machine's manifest's)")),
-                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127"))), "Notes")),
+                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127")), Opt("sample", Integer("Tracker mode: the sample's number")), Opt("offset", Integer("Frames into the sample")), Opt("tune", Integer("Cents"))), "Notes")),
                     Req("length_beats", Number("The pattern's length"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>

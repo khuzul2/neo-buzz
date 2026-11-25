@@ -943,6 +943,17 @@ As built:
 - **Pedal M1 → Neo Sampler** is a pair (mcp-server.md §12.10): its two oscillators' waves and key zones become zones 1–4 and 5–8, within ±1 dB and ±2 dB per third octave but for resonance.
 - The Linux profile (`docs/machine-health.md`): ok; −17.3 LUFS for a note at its defaults (slot 1's test wave).
 
+#### Tracker mode: a sample per note (TM1)
+
+`Mode` has a third value, **Tracker**: each note names the sample it plays, as in a tracker, so a break chopped into slices or a song with hundreds of hits needs no 16-zone map. A note carries four values besides its key and length: **Sample** (1 to 254: 1-200 the song's waves, 201+ the built-in ones, no limit of 16), **Vol** (the note's velocity, the existing `Velocity`), **Offset** (frames into the sample, so offset k starts at sample k) and **Tune** (semitones and cents, ±24 semitones, stored in cents). A note with no sample number plays the zones exactly as in Instrument mode (the Instrument and Kit renders are bit-exact, hashes pinned in `SamplerTrackerTests`).
+
+- **Root:** the tracker convention, C-4 plays the sample at its own speed, whatever root the wave says; the key moves it from there (a layered slot still picks its layer by the note's key). In the MIDI numbering this is key 48 (Buzz C-4).
+- **Track parameters** (appended after `Tracks`, so nothing saved moves): `Sample` 1-254, `Offset` 0-32767 frames, `Offset hi` 0-254 (steps of 32768 frames, together up to 8 million frames), `Tune` 0-4800 cents (2400 = the note's pitch). `tools/gen-machine-params.py` now allows track parameters up to 65534 (Word).
+- **Storage:** the per-note values live in the clip's track columns at the note's time (`SongNotes` reads and writes them: `ClipNote` gains `Sample`, `Offset`, `Tune`), so they save in the `.nbl`; the machine's state version is 1 (an empty migration step: a song of version 0 opens unchanged, with no sample numbers). A clip's notes written in Instrument mode live in the MIDI column and aren't shown in the roll while the mode is Tracker; they still play.
+- **Sound:** a voice takes its sample and offset at the note-on, sample-accurate at any block size (tested at 16, 64 and 256); a stolen voice fades over 3 ms and the new note starts at its offset; tune within 1 cent. 0 bytes allocated per block with 64 note-ons over the 32 voices.
+- **Piano roll:** a chip on each note (the sample number, and the short name on wide notes), a picker (S, a click on a chip: search or type a number, ↑↓ and Enter, hover to hear, Each −1 / +1 for a mixed selection, Key map to give the note back to the zones, Load sample, Open in sampler), a Sample lane and Colour: by sample; Alt+wheel steps the sample. Every edit is one undo step. The machine tells the studio through `INoteSampleProvider`.
+- **Agent:** `notes_write` and `notes_read` take `sample`, `volume`, `offset` and `tune` for a Neo Sampler in Tracker mode.
+
 ### Neo Scope (oscilloscope and vectorscope; mcp-server.md §8.1)
 
 An effect whose output is its input, bit for bit, with zero latency, that draws what passes: an oscilloscope synced to the song or free with a trigger, and a vectorscope. It is for people watching a signal while it plays (mcp-server.md §8.1: "mostly for people; the agent's equivalent is `plot`"); agents get four readings and a guide that sends them to `render`, `plot` and `analyze`.

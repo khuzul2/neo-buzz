@@ -39,21 +39,32 @@ namespace NeoBuzz.Sampler
     internal sealed class SamplerSettings
     {
         public bool Kit;
+        /// <summary>Tracker mode (Mode 2): a note that carries a sample number plays that sample (TM1); the rest play as in Instrument mode.</summary>
+        public bool Tracker;
         public int KitBase, Polyphony, VelXfade;
         public float BendRange, VelAmp, Volume;
         public readonly float[] AmpEnv = new float[4], FltEnv = new float[4];
         public SamplerFilter Filter;
         public float Cutoff, Reso, FEnv, FKey, FVel;
-        public readonly ZoneSettings[] Zones = new ZoneSettings[SamplerEngine.ZoneCount];
+        public readonly ZoneSettings[] Zones = new ZoneSettings[SamplerEngine.ZoneCount + 1];   // the last: the zone a sample-per-note start plays through
         public int Version;
     }
 
-    internal sealed class SamplerEngine : INoteSink
+    internal sealed class SamplerEngine : INoteSink, ITrackNoteSink
     {
         public const int MaxBlock = 256;
         public const int VoiceCount = 32;
         public const int ControlRate = 16;
         public const int ZoneCount = 16;
+        /// <summary>The zone a sample-per-note start (Tracker mode) plays through: after the 16, whole wave, the wave's own loop, a gate.</summary>
+        public const int TrackerZone = ZoneCount;
+        /// <summary>
+        /// The tracker convention: a sample played at Buzz C-4 (MIDI 48 in the pitch the pattern and roll use, where Buzz C-5 is 60) plays at its own
+        /// speed, whatever the wave's own root says. A zone's Root (Instrument mode) is unchanged.
+        /// </summary>
+        public const int TrackerRoot = 48;
+        /// <summary>The Mode value of Tracker mode.</summary>
+        public const int ModeTracker = 2;
         /// <summary>Parameters per zone; zone z's field f is <c>P.Z1Wave + z · ZoneStride + f</c>.</summary>
         public const int ZoneStride = P.Z2Wave - P.Z1Wave;
         public const int FWave = 0, FKeyLo = 1, FKeyHi = 2, FVelLo = 3, FVelHi = 4, FRoot = 5, FTune = 6, FFine = 7, FLevel = 8, FPan = 9,
@@ -68,7 +79,7 @@ namespace NeoBuzz.Sampler
         readonly ParamValues values;
         readonly SamplerVoice[] voices = new SamplerVoice[VoiceCount];
         internal readonly SamplerSettings S = new SamplerSettings();
-        readonly int[] roundRobin = new int[ZoneCount];
+        readonly int[] roundRobin = new int[ZoneCount + 1];
         // A note's zones, gathered before voices start (no allocation).
         readonly int[] startZone = new int[2 * ZoneCount];
         readonly float[] startGain = new float[2 * ZoneCount];
@@ -85,6 +96,10 @@ namespace NeoBuzz.Sampler
             this.values = values;
             Bank = bank ?? new SampleBank();
             for (int i = 0; i < VoiceCount; i++) voices[i] = new SamplerVoice(this);
+            S.Zones[TrackerZone] = new ZoneSettings
+            {
+                KeyHi = 127, VelLo = 1, VelHi = 127, Root = RootFromWave, Level = 1f, Start = 0, End = 1, LoopStart = 0, LoopEnd = 1, Loop = ZoneLoop.Wave,
+            };
             SetSampleRate(48000);
         }
 
@@ -142,6 +157,7 @@ namespace NeoBuzz.Sampler
             if (!force && !values.AnyDirty) return;
             var s = S;
             s.Kit = values.Choice(P.Mode) == 1;
+            s.Tracker = values.Choice(P.Mode) == ModeTracker;
             s.KitBase = (int)values.Value(P.KitBase);
             s.Polyphony = (int)values.Value(P.Polyphony);
             s.BendRange = values.F(P.BendRange);
@@ -315,6 +331,35 @@ namespace NeoBuzz.Sampler
                 var voice = Allocate();
                 voice.Begin(key, note, z, layer, velGain * startGain[i], vel / 127f, serial, clock, s.Kit);
             }
+        }
+
+        /// <summary>
+        /// A note that carries a sample (Tracker mode, TM1): <paramref name="sample"/> is the wave a zone's Wave names (1 … 200 the song's, 201 … the
+        /// built-ins), played from frame <paramref name="offset"/> of its layer, <paramref name="tuneCents"/> cents off the note's pitch, with the
+        /// note's key as the pitch (Buzz C-4 = the sample's own speed). A note without a sample number, or any note outside Tracker mode, is an
+        /// ordinary note (the zones).
+        /// </summary>
+        public void NoteOnSample(int key, int note, float velocity, int sample, int offset, int tuneCents)
+        {
+            Update(false);
+            if (!S.Tracker || sample < 1)
+            {
+                NoteOn(key, note, velocity);
+                return;
+            }
+            clock++;
+            serial++;
+            ReleaseKey(key);
+            var slot = Bank.Get(sample);
+            if (slot == null || slot.Layers.Length == 0) return;
+            int vel = Math.Clamp((int)Math.Round(velocity * 127f), 1, 127);
+            var s = S;
+            ref var zs = ref s.Zones[TrackerZone];
+            var layer = PickLayer(TrackerZone, zs, slot, note);
+            if (layer.Length < 2) return;
+            float velGain = s.VelAmp <= 0 ? 1f : PortableMathF.Pow(vel / 127f, 2f * s.VelAmp);
+            var voice = Allocate();
+            voice.Begin(key, note, TrackerZone, layer, velGain, vel / 127f, serial, clock, false, TrackerRoot, Math.Max(0, offset), tuneCents / 100f);
         }
 
         /// <summary>A voice for a new start: a free one while under the polyphony; else the quietest released (or one-shot) one, else the oldest held.</summary>
