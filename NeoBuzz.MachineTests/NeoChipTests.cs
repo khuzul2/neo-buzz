@@ -1,7 +1,7 @@
 using System.Xml.Linq;
 using NeoBuzz.Chip;
 using NeoBuzz.Dsp;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {
