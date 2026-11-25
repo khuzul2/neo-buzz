@@ -75,6 +75,14 @@ namespace ReBuzz.Agent
                     ["loop_end_beats"] = SongModel.Beats(core, settings.LoopEnd),
                 },
                 ["length_beats"] = SongModel.Beats(core, p.Length),
+                ["auto_warp_grid"] = new JsonObject
+                {
+                    ["grid"] = a.AutoGrid,
+                    ["sensitivity"] = a.AutoSensitivity,
+                    ["reach_percent"] = a.AutoReach,
+                    ["leave_sustained"] = a.AutoLeaveSustained,
+                    ["strength_percent"] = layout.QuantizeStrength,
+                },
                 ["warp_markers"] = new JsonArray(a.Markers.Select(x => (JsonNode)new JsonObject { ["sample"] = x.Sample, ["beat"] = x.Beat }).ToArray()),
             };
             // Pro needs the native neostretch library; without it the clip plays as Complex (neo-audio.md section 11).
@@ -248,6 +256,7 @@ namespace ReBuzz.Agent
                     "follows it: 4 beats at 120 BPM are 8 at 60); detect_tempo=true finds the one steady tempo again from the audio (the markers are cleared). " +
                     "auto_warp=true finds the beats of the audio, follows a tempo that drifts or changes, and replaces the warp markers and the tempo (one undo step): a steady tempo gives one " +
                     "tempo and the first downbeat as bar 1 (a loop of whole bars is left as it is), a moving tempo gives a marker on every bar and on the beats that drift within a bar; " +
+                    "mode=\"grid\" (with auto_warp; default \"beat\") is auto-warp to grid: after the beats, a warp marker on every transient, each pulled to the nearest line of grid (1/4, 1/8, 1/16 the default, 1/32, 1/4T, 1/8T, 1/16T) by strength_percent (0-100, default 100: the song's Quantize strength), a transient further than reach_percent (0-50, default 40) of a grid step from every line is left alone, and in quiet or sustained passages there are none; sensitivity 0-100 (50) is how readily transients are found; grid, sensitivity and reach_percent are saved with the clip, and given without auto_warp only set them; the answer's to_grid says how many markers were made and how many were out of reach or in quiet or sustained parts. " +
                     "from_seconds (with auto_warp) starts at the first downbeat at or after that second of the audio and keeps the markers before it; nothing changes, and the call says so, when no beats are found. transpose -48..48 semitones, detune -50..50 cents, gain_db -70..24. " +
                     "loop on or off; region = {start_beats, loop_start_beats, loop_end_beats} inside the clip (loop_end 0 is its end). warp_markers = [{sample, beat}] " +
                     "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
@@ -261,6 +270,13 @@ namespace ReBuzz.Agent
                     Opt("tempo_bpm", Number("The audio's tempo", 1, 999)),
                     Opt("detect_tempo", Boolean("Find the tempo again from the audio (one steady tempo; the markers are cleared)")),
                     Opt("auto_warp", Boolean("Find the beats, follow the tempo where it moves, and replace the warp markers and the tempo (one undo step)")),
+                    Opt("mode", String("With auto_warp: beat (follow the beats, the default) or grid (then every transient pulled to the grid)", new[] { "beat", "grid" })),
+                    Opt("grid", String("Auto-warp to grid: the grid transients are pulled to (default 1/16; saved with the clip)", SessionDocument.AudioSettings.AutoGrids.Select(g => g.Name).ToArray())),
+                    Opt("sensitivity", Integer("Auto-warp to grid: transient sensitivity (default 50; saved with the clip)", 0, 100)),
+                    Opt("reach_percent", Integer("Auto-warp to grid: a transient further than this share of a grid step from every line is left alone (default 40; saved with the clip)", 0, 50)),
+                    Opt("leave_sustained", Boolean("Auto-warp to grid: leave long notes and pauses alone, no markers in quiet or sustained passages (default true; saved with the clip)")),
+                    Opt("to_seconds", Number("With auto_warp and from_seconds: only this range of the audio changes (its two ends are pinned with markers, the markers outside stay)", 0)),
+                    Opt("strength_percent", Integer("Auto-warp to grid: how far transients are pulled to the grid (default: the song's Quantize strength, 100; kept with the song)", 0, 100)),
                     Opt("from_seconds", Number("With auto_warp: start at the first downbeat at or after this second of the audio; the markers before it stay", 0)),
                     Opt("transpose", Integer("Semitones", -48, 48)),
                     Opt("detune", Integer("Cents", -50, 50)),
@@ -293,6 +309,12 @@ namespace ReBuzz.Agent
                             TempoBpm = c.Number("tempo_bpm"),
                             DetectTempo = c.Bool("detect_tempo") == true,
                             AutoWarp = c.Bool("auto_warp") == true,
+                            ToGrid = c.Bool("auto_warp") == true && string.Equals(c.String("mode"), "grid", StringComparison.OrdinalIgnoreCase),
+                            AutoGrid = c.String("grid"),
+                            AutoSensitivity = c.Int("sensitivity"),
+                            AutoReach = c.Int("reach_percent"),
+                            AutoLeaveSustained = c.Bool("leave_sustained"),
+                            ToSeconds = c.Number("to_seconds"),
                             FromSeconds = c.Number("from_seconds"),
                             FadeIn = c.Number("fade_in_beats"),
                             FadeOut = c.Number("fade_out_beats"),
@@ -311,6 +333,10 @@ namespace ReBuzz.Agent
                             if (region["loop_end_beats"] != null) edit.LoopEnd = Math.Max(0, SongModel.Ticks(core, region["loop_end_beats"]!.GetValue<double>()));
                         }
                         var editor = new ClipEditor(core);
+                        if (c.String("mode") is string mode && !string.Equals(mode, "beat", StringComparison.OrdinalIgnoreCase) && !string.Equals(mode, "grid", StringComparison.OrdinalIgnoreCase))
+                            throw new ToolError("mode: beat or grid.");
+                        if (c.String("mode") != null && c.Bool("auto_warp") != true) throw new ToolError("mode goes with auto_warp=true.");
+                        if (c.Int("strength_percent") is int strengthPercent) layout.SetQuantizeStrength(Math.Clamp(strengthPercent, 0, 100));
                         Check(layout.EditAudio(p, edit, editor));
                         if (c.Number("stretch_to_beats") is double stretch)
                         {
@@ -319,9 +345,13 @@ namespace ReBuzz.Agent
                         }
                         var after = layout.Document.CloneLayout();
                         AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
-                        return ClipJson(core, layout, m, p);
+                        var result = ClipJson(core, layout, m, p);
+                        if (edit.ToGrid && layout.LastGridReport is { } g)
+                            result["to_grid"] = new JsonObject { ["markers_made"] = g.Made, ["out_of_reach"] = g.OutOfReach, ["quiet_or_sustained"] = g.Gated, ["skipped"] = g.Skipped, ["beats_found"] = g.BeatsFound };
+                        return result;
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, {r["length_beats"]} beats.", r);
+                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, {r["length_beats"]} beats." +
+                        (r["to_grid"] is JsonObject tg ? $" To grid: {tg["markers_made"]} markers on transients, {tg["out_of_reach"]} out of reach, {tg["quiet_or_sustained"]} in quiet or sustained parts." : ""), r);
                 },
             });
 

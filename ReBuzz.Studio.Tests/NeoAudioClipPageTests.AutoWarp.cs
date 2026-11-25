@@ -14,7 +14,7 @@ namespace ReBuzz.Studio.Tests
 {
     public partial class NeoAudioClipPageTests
     {
-        static string WarpFile(string name, WarpSignals.Tempo tempo, double seconds)
+        internal static string WarpFile(string name, WarpSignals.Tempo tempo, double seconds)
         {
             var line = WarpSignals.Make(tempo, WarpSignals.Style.Mix, seconds);
             var stereo = new float[line.Audio.Length * 2];
