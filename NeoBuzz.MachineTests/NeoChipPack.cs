@@ -98,7 +98,7 @@ namespace NeoBuzz.MachineTests
             return evs.ToArray();
         }
 
-        static (float[] L, float[] R) RenderLine(ParamValues v, NoteEvent[] events, double totalBeats)
+        static (float[] L, float[] R, float[][] Gains) RenderLine(ParamValues v, NoteEvent[] events, double totalBeats)
         {
             var e = new ChipEngine(v);
             e.SetSampleRate(Rate);
@@ -108,6 +108,14 @@ namespace NeoBuzz.MachineTests
             int totalSamples = (int)Math.Ceiling((totalBeats + 2.0) * secPerBeat * Rate);
             var outL = new float[totalSamples];
             var outR = new float[totalSamples];
+            var gains = new float[4][];
+            var blockGains = new float[4][];
+            for (int c = 0; c < 4; c++)
+            {
+                gains[c] = new float[totalSamples];
+                blockGains[c] = new float[ChipEngine.MaxBlock];
+            }
+            e.GainTrace = blockGains;
             var bl = new float[ChipEngine.MaxBlock];
             var br = new float[ChipEngine.MaxBlock];
 
@@ -144,8 +152,9 @@ namespace NeoBuzz.MachineTests
                 e.Process(bl, br, n);
                 Array.Copy(bl, 0, outL, pos, n);
                 Array.Copy(br, 0, outR, pos, n);
+                for (int c = 0; c < 4; c++) Array.Copy(blockGains[c], 0, gains[c], pos, n);
             }
-            return (outL, outR);
+            return (outL, outR, gains);
         }
 
         /// <summary>
@@ -200,6 +209,43 @@ namespace NeoBuzz.MachineTests
                 }
             }
             return (times.Count, times);
+        }
+
+        /// <summary>
+        /// Direct second-difference click detector on a channel gain trace (listening round 1 gate).
+        /// An un-slewed 1/15 envelope step produces d2 = 0.0667; a hard note edge produces d2 = 1.0.
+        /// Any sample with |g[i+1] - 2*g[i] + g[i-1]| > 0.015 (with 5 ms refractory window) is flagged.
+        /// </summary>
+        internal static int DetectGainClicks(float[] gain, int rate = Rate)
+        {
+            int refractory = Math.Max(1, (int)(0.005 * rate));
+            int last = -refractory;
+            int clicks = 0;
+            for (int i = 1; i < gain.Length - 1; i++)
+            {
+                double d2 = Math.Abs(gain[i + 1] - 2.0 * gain[i] + gain[i - 1]);
+                if (d2 > 0.015 && i - last >= refractory)
+                {
+                    clicks++;
+                    last = i;
+                }
+            }
+            return clicks;
+        }
+
+        static double MaxGainD2(float[][] gains)
+        {
+            double max = 0;
+            for (int c = 0; c < gains.Length; c++)
+            {
+                var g = gains[c];
+                for (int i = 1; i < g.Length - 1; i++)
+                {
+                    double d2 = Math.Abs(g[i + 1] - 2.0 * g[i] + g[i - 1]);
+                    if (d2 > max) max = d2;
+                }
+            }
+            return max;
         }
 
         static void WriteWav16(string path, float[] l, float[] r, int rate = Rate)
@@ -258,13 +304,15 @@ namespace NeoBuzz.MachineTests
             readme.AppendLine("- `arpeggio`: 4-bar 3-note chord progression (Am – F – C – G) on MIDI channel 1.");
             readme.AppendLine("- `drums`: 4-bar noise percussion groove on Track 4 (8th-note hats and beats 2 & 4 snare accents).");
             readme.AppendLine();
-            readme.AppendLine("## Click detector");
-            readme.AppendLine("Frame-peak second-difference detector: each 128-sample frame's max `d2[n] = max(|L[n+1]-2L[n]+L[n-1]|, |R[n+1]-2R[n]+R[n-1]|)` compared against the local mean of its 14 neighbouring frames (±8 excluding ±1), threshold `4.5x local mean` and `> 0.15`, 20 ms refractory window.");
+            readme.AppendLine("## Click detectors (audio + gain trace)");
+            readme.AppendLine("- **Audio:** Frame-peak second-difference detector (128-sample frame max `d2` vs local mean of 14 neighbouring frames, threshold `4.5x` & `> 0.15`, 20 ms refractory window).");
+            readme.AppendLine("- **Gain trace:** Direct second-difference detector on each channel's live `envGain * stealGain` trace, threshold `|g[i+1] - 2g[i] + g[i-1]| > 0.015` (5 ms refractory; un-slewed 1/15 step = `0.0667`).");
             readme.AppendLine();
-            readme.AppendLine("| # | Preset | Line | File | RMS (dBFS) | Peak (dBFS) | Clicks | Notes |");
-            readme.AppendLine("|---|---|---|---|---:|---:|---:|---|");
+            readme.AppendLine("| # | Preset | Line | File | RMS (dBFS) | Peak (dBFS) | Audio clicks | Gain clicks | Max gain d2 | Notes |");
+            readme.AppendLine("|---|---|---|---|---:|---:|---:|---:|---:|---|");
 
-            int totalClicks = 0;
+            int totalAudioClicks = 0;
+            int totalGainClicks = 0;
             int idx = 1;
             foreach (var item in items)
             {
@@ -275,25 +323,32 @@ namespace NeoBuzz.MachineTests
 
                 foreach (var (lineName, evs) in lines)
                 {
-                    var (l, r) = RenderLine(v, evs, 16.0);
+                    var (l, r, gains) = RenderLine(v, evs, 16.0);
                     string file = $"{idx:00}-{Slug(name)}__{lineName}.wav";
                     WriteWav16(Path.Combine(outDir, file), l, r);
 
                     double rms = Math.Sqrt(0.5 * (Measure.Rms(l, 0, l.Length) * Measure.Rms(l, 0, l.Length) + Measure.Rms(r, 0, r.Length) * Measure.Rms(r, 0, r.Length)));
                     double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
-                    var (clicks, times) = DetectClicks(l, r);
-                    totalClicks += clicks;
-                    string note = clicks == 0 ? "clean" : $"clicks at {string.Join(", ", times.Take(5).Select(t => $"{t:F2}s"))}";
-                    readme.AppendLine($"| {idx:00} | {name} | {lineName} | `{file}` | {Measure.Db(rms):F1} | {Measure.Db(peak):F1} | {clicks} | {note} |");
+                    var (audioClicks, times) = DetectClicks(l, r);
+                    int gainClicks = 0;
+                    for (int c = 0; c < 4; c++) gainClicks += DetectGainClicks(gains[c]);
+                    double maxGd2 = MaxGainD2(gains);
+                    totalAudioClicks += audioClicks;
+                    totalGainClicks += gainClicks;
+                    string note = audioClicks == 0 && gainClicks == 0
+                        ? "clean"
+                        : $"audio={audioClicks} ({string.Join(", ", times.Take(3).Select(t => $"{t:F2}s"))}), gain={gainClicks}";
+                    readme.AppendLine($"| {idx:00} | {name} | {lineName} | `{file}` | {Measure.Db(rms):F1} | {Measure.Db(peak):F1} | {audioClicks} | {gainClicks} | {maxGd2:F5} | {note} |");
                 }
                 idx++;
             }
 
             readme.AppendLine();
-            readme.AppendLine($"**Total files:** {items.Count * lines.Length}. **Total detected clicks:** {totalClicks}.");
+            readme.AppendLine($"**Total files:** {items.Count * lines.Length}. **Total audio clicks:** {totalAudioClicks}. **Total gain-trace clicks:** {totalGainClicks}.");
             File.WriteAllText(Path.Combine(outDir, "README.md"), readme.ToString(), new UTF8Encoding(false));
-            TestContext.Out.WriteLine($"Wrote {items.Count * lines.Length} WAVs and README.md to {outDir} (total clicks: {totalClicks})");
-            Assert.That(totalClicks, Is.EqualTo(0), $"Expected 0 clicks across all renders (got {totalClicks}; see {Path.Combine(outDir, "README.md")})");
+            TestContext.Out.WriteLine($"Wrote {items.Count * lines.Length} WAVs and README.md to {outDir} (audio clicks: {totalAudioClicks}, gain-trace clicks: {totalGainClicks})");
+            Assert.That(totalAudioClicks, Is.EqualTo(0), $"Expected 0 audio clicks across all renders (got {totalAudioClicks})");
+            Assert.That(totalGainClicks, Is.EqualTo(0), $"Expected 0 gain-trace clicks across all renders (got {totalGainClicks})");
         }
     }
 }

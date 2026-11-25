@@ -150,16 +150,47 @@ namespace NeoBuzz.Chip
     {
         public enum EnvState { Idle, Attack, Decay, Sustain, Release, Hardware }
 
+        // Critically damped 2-stage slew time constants (10-90% rise = 3.36 * tau):
+        //   Clean step: tau = 0.50 ms -> 1.68 ms slew (within 1-2 ms), max slope (1/15)/1.36 ms, 97% depth on 18 ms Bell
+        //   Raw step:   tau = 0.18 ms -> 0.60 ms gritty slew (~0.5 ms), zero velocity-reset kinks on fast ADSR
+        //   Note-on/wrap edge: tau = 0.50 ms clean / 0.45 ms raw (>= 1 ms rise)
+        //   Hard note-off:     tau = 0.80 ms clean / 0.65 ms raw (>= 2 ms fall)
+        public const double CleanStepTauSec = 0.00050;
+        public const double RawStepTauSec = 0.00018;
+        public const double CleanEdgeTauSec = 0.00050;
+        public const double RawEdgeTauSec = 0.00045;
+        public const double CleanHardOffTauSec = 0.00080;
+        public const double RawHardOffTauSec = 0.00065;
+        public const double CleanStepSlewSec = 0.0015;   // nominal 1.5 ms clean slew reference
+        public const double RawStepSlewSec = 0.0005;     // nominal 0.5 ms raw slew reference
+
         EnvState state;
         ChipEnvMode hwMode;
         double level;       // 0..1 continuous accumulator for ADSR stages
         double relStart;    // level when release started
         double hwPhase;     // 0..1 hardware-envelope phase
-        int currentStep;    // 0..15
+        int currentStep;    // 0..15 discrete target step
 
-        public bool IsActive => state != EnvState.Idle;
+        // Two-stage critically damped (C1-continuous) slew state.
+        float y1;
+        float y2;
+        int lastTargetStep;
+        int edgeHoldSamples;
+        bool hardFading;
+
+        // Cached 1-pole coefficients for current (sampleRate, raw) to avoid per-sample Exp().
+        double cachedSr;
+        bool cachedRaw;
+        float aStep;
+        float aEdge;
+        float aHard;
+
+        public bool IsActive => state != EnvState.Idle || hardFading || y1 > 1e-6f || y2 > 1e-6f;
+        public bool IsAudible => y1 > 1e-5f || y2 > 1e-5f;
+        public bool IsDiscreteActive => state != EnvState.Idle;
         public EnvState State => state;
         public int CurrentStep => currentStep;
+        public float SmoothedGain => y2;
 
         public void Reset()
         {
@@ -168,11 +199,28 @@ namespace NeoBuzz.Chip
             relStart = 0.0;
             hwPhase = 0.0;
             currentStep = 0;
+            y1 = 0f;
+            y2 = 0f;
+            lastTargetStep = 0;
+            edgeHoldSamples = 0;
+            hardFading = false;
+        }
+
+        /// <summary>Resets smoothed gain to 0 when starting after a completed steal fade-out.</summary>
+        public void ResetGainToZero()
+        {
+            y1 = 0f;
+            y2 = 0f;
+            lastTargetStep = 0;
+            edgeHoldSamples = 0;
+            hardFading = false;
         }
 
         public void NoteOn(ChipEnvMode mode)
         {
             hwMode = mode;
+            hardFading = false;
+            edgeHoldSamples = -1; // sentinel: arm edge tau on first sample (computed from sampleRate)
             if (mode == ChipEnvMode.Adsr)
             {
                 state = EnvState.Attack;
@@ -204,13 +252,36 @@ namespace NeoBuzz.Chip
             }
         }
 
+        /// <summary>Hard note-off: fades smoothly to 0 over at least 2 ms instead of cutting in 1 sample.</summary>
+        public void HardFadeOut(double sampleRate, bool raw)
+        {
+            state = EnvState.Idle;
+            level = 0.0;
+            relStart = 0.0;
+            hwPhase = 0.0;
+            currentStep = 0;
+            edgeHoldSamples = 0;
+            lastTargetStep = 0;
+            if (y1 > 1e-6f || y2 > 1e-6f)
+            {
+                hardFading = true;
+            }
+            else
+            {
+                hardFading = false;
+                y1 = 0f;
+                y2 = 0f;
+            }
+        }
+
         public void Kill()
         {
             Reset();
         }
 
+        /// <summary>Advances only the discrete 16-step state machine and returns the exact step target (0/15..15/15).</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float Next(ChipEnvMode mode, double attackSec, double decaySec, int sustainStep, double releaseSec, double periodSec, double sampleRate)
+        public float StepNext(ChipEnvMode mode, double attackSec, double decaySec, int sustainStep, double releaseSec, double periodSec, double sampleRate)
         {
             switch (state)
             {
@@ -272,7 +343,8 @@ namespace NeoBuzz.Chip
 
                 case EnvState.Release:
                 {
-                    double samples = Math.Max(1.0, releaseSec * sampleRate);
+                    double effRelease = Math.Max(releaseSec, 0.002);
+                    double samples = Math.Max(1.0, effRelease * sampleRate);
                     level -= Math.Max(1e-6, relStart) / samples;
                     if (level <= 0.0)
                     {
@@ -347,6 +419,68 @@ namespace NeoBuzz.Chip
             }
             return 0f;
         }
+
+        /// <summary>
+        /// Advances the 16-step envelope and glides every step through a C1-continuous two-stage
+        /// critically damped slew (~1.7 ms clean, ~0.6 ms raw), with >= 1 ms note-on/wrap fade and
+        /// >= 2 ms hard note-off fade. Rapid steps never reset velocity, eliminating step and edge clicks.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float Next(ChipEnvMode mode, double attackSec, double decaySec, int sustainStep, double releaseSec, double periodSec, double sampleRate, bool raw = false)
+        {
+            if (sampleRate != cachedSr || raw != cachedRaw)
+            {
+                cachedSr = sampleRate;
+                cachedRaw = raw;
+                aStep = (float)(1.0 - PortableMath.Exp(-1.0 / Math.Max(1.0, (raw ? RawStepTauSec : CleanStepTauSec) * sampleRate)));
+                aEdge = (float)(1.0 - PortableMath.Exp(-1.0 / Math.Max(1.0, (raw ? RawEdgeTauSec : CleanEdgeTauSec) * sampleRate)));
+                aHard = (float)(1.0 - PortableMath.Exp(-1.0 / Math.Max(1.0, (raw ? RawHardOffTauSec : CleanHardOffTauSec) * sampleRate)));
+            }
+
+            float targetGain;
+            float a;
+
+            if (hardFading)
+            {
+                targetGain = 0f;
+                a = aHard;
+            }
+            else
+            {
+                targetGain = StepNext(mode, attackSec, decaySec, sustainStep, releaseSec, periodSec, sampleRate);
+                int targetStep = currentStep;
+                int delta = Math.Abs(targetStep - lastTargetStep);
+
+                // Arm smooth edge tau on NoteOn or multi-step hardware cycle wraps (SawDown 0->15, SawUp 15->0).
+                if (edgeHoldSamples < 0 || delta > 1)
+                    edgeHoldSamples = Math.Max(1, (int)Math.Round(0.0025 * sampleRate));
+
+                lastTargetStep = targetStep;
+
+                if (edgeHoldSamples > 0)
+                {
+                    a = aEdge;
+                    edgeHoldSamples--;
+                }
+                else
+                {
+                    a = aStep;
+                }
+            }
+
+            // Two-stage critically damped filter: C1-continuous with zero velocity-reset kinks.
+            y1 = DspMath.Flush(y1 + a * (targetGain - y1));
+            y2 = DspMath.Flush(y2 + a * (y1 - y2));
+
+            if (state == EnvState.Idle && y1 < 1e-6f && y2 < 1e-6f)
+            {
+                y1 = 0f;
+                y2 = 0f;
+                hardFading = false;
+            }
+
+            return y2;
+        }
     }
 
     /// <summary>
@@ -419,7 +553,7 @@ namespace NeoBuzz.Chip
 
             public bool IsSounding => Env.IsActive || Pending;
 
-            public void StartImmediate(int note, float vel, ChipEnvMode envMode)
+            public void StartImmediate(int note, float vel, ChipEnvMode envMode, bool wasSilent)
             {
                 BaseNote = note;
                 Velocity = vel;
@@ -431,12 +565,17 @@ namespace NeoBuzz.Chip
                 VibElapsed = 0.0;
                 VibPhase = 0.0;
                 VibFade = 0f;
+                if (wasSilent)
+                {
+                    if (!IsNoise) Pulse.Reset();
+                    Env.ResetGainToZero();
+                }
                 Env.NoteOn(envMode);
             }
 
             public void Trigger(int note, float vel, ChipEnvMode envMode, float sampleRate, bool stealFade)
             {
-                if (stealFade && Env.IsActive)
+                if (stealFade && Env.IsAudible)
                 {
                     Pending = true;
                     PendingNote = note;
@@ -446,25 +585,26 @@ namespace NeoBuzz.Chip
                 }
                 else
                 {
-                    StartImmediate(note, vel, envMode);
+                    StartImmediate(note, vel, envMode, wasSilent: !Env.IsAudible);
                 }
             }
 
             public void Release()
             {
                 Pending = false;
-                Steal.Cancel();
+                // Do not cancel an active StealFade mid-fade (that would jump stealGain back to 1);
+                // let StealFade finish smoothly to 0 and idle cleanly.
                 Env.NoteOff();
             }
 
-            public void HardKill()
+            public void HardKill(double sampleRate, bool raw)
             {
                 Pending = false;
                 Held = false;
                 Sustained = false;
                 OwnerKey = -1;
-                Steal.Cancel();
-                Env.Kill();
+                if (!Steal.Fading)
+                    Env.HardFadeOut(sampleRate, raw);
             }
         }
 
@@ -563,6 +703,9 @@ namespace NeoBuzz.Chip
 
         public double Tempo { get; set; } = 120.0;
         public readonly LevelMeter OutMeter = new LevelMeter();
+
+        /// <summary>Optional per-channel gain trace probe (4 x blockLen) used by tests and pack verification; null in normal audio use.</summary>
+        internal float[][] GainTrace;
 
         // Diagnostics for headless unit tests.
         internal int ActivePulseMask
@@ -840,9 +983,10 @@ namespace NeoBuzz.Chip
             pulseStack.Clear();
             noiseStack.Clear();
             sustainDown = false;
+            bool isRaw = values.On(P.Raw);
             for (int c = 0; c < ChannelCount; c++)
             {
-                if (hard) channels[c].HardKill();
+                if (hard) channels[c].HardKill(sampleRate, isRaw);
                 else
                 {
                     channels[c].Sustained = false;
@@ -1120,12 +1264,19 @@ namespace NeoBuzz.Chip
                     channels[c].DetuneSmooth.Advance(n);
                     for (int i = 0; i < n; i++) { channels[c].PanL.Next(); channels[c].PanR.Next(); }
                 }
+                if (GainTrace != null)
+                {
+                    for (int c = 0; c < ChannelCount; c++)
+                        if (GainTrace[c] != null) Array.Clear(GainTrace[c], 0, Math.Min(n, GainTrace[c].Length));
+                }
                 OutMeter.Feed(left, right, n);
                 return false;
             }
 
             double invSr = 1.0 / sampleRate;
             float vibFadeStep = (float)(invSr / 0.020);
+            bool isRaw = values.On(P.Raw);
+            var gainTrace = GainTrace;
             bool sound = false;
 
             for (int i = 0; i < n; i++)
@@ -1148,21 +1299,35 @@ namespace NeoBuzz.Chip
                     float detCents = ch.DetuneSmooth.Next();
                     float baseDuty = c < PulseCount ? ch.DutySmooth.Next() : 0.5f;
 
-                    if (!ch.IsSounding) continue;
+                    if (!ch.IsSounding)
+                    {
+                        if (gainTrace != null && gainTrace[c] != null && i < gainTrace[c].Length) gainTrace[c][i] = 0f;
+                        continue;
+                    }
 
-                    // Steal fade-out before starting a stolen note.
+                    // Steal fade-out before starting a stolen note (or finishing a released steal cleanly).
+                    // Shape the linear 2 ms StealFade with a C1 cubic Hermite S-curve (3t^2 - 2t^3) so
+                    // both ends have zero slope and zero second-difference corners.
                     float stealGain = 1f;
                     if (ch.Steal.Fading)
                     {
-                        if (!ch.Steal.Next(out stealGain))
+                        if (!ch.Steal.Next(out float stealLin))
                         {
+                            if (gainTrace != null && gainTrace[c] != null && i < gainTrace[c].Length)
+                                gainTrace[c][i] = 0f;
                             if (ch.Pending)
-                                ch.StartImmediate(ch.PendingNote, ch.PendingVel, ch.PendingEnvMode);
+                                ch.StartImmediate(ch.PendingNote, ch.PendingVel, ch.PendingEnvMode, wasSilent: true);
+                            else
+                                ch.Env.Reset();
+                            continue;
                         }
+                        stealGain = stealLin * stealLin * (3f - 2f * stealLin);
                     }
 
-                    // 16-step envelope.
-                    float envGain = ch.Env.Next(envMode, envAttack, envDecay, envSustain, envRelease, envPeriod, sampleRate);
+                    // 16-step envelope with per-step anti-click slew and note-edge fades.
+                    float envGain = ch.Env.Next(envMode, envAttack, envDecay, envSustain, envRelease, envPeriod, sampleRate, isRaw);
+                    if (gainTrace != null && gainTrace[c] != null && i < gainTrace[c].Length)
+                        gainTrace[c][i] = envGain * stealGain;
                     if (!ch.Env.IsActive && !ch.Pending) continue;
 
                     // Per-track sample-accurate arpeggio.
@@ -1236,10 +1401,18 @@ namespace NeoBuzz.Chip
                     float velGain = (1f - velDepth) + velDepth * ch.Velocity;
                     float chSample = oscOut * envGain * velGain * stealGain;
 
-                    // Optional 4-bit per-channel DAC quantisation (exact 0 at silence), mixed linearly.
+                    // Optional 4-bit per-channel DAC quantisation (exact 0 at silence, exact k/7 plateaus
+                    // with a narrow continuous transition knee so slewed envelope glides do not snap into
+                    // 1-sample 1/7 clicks), mixed linearly across channels.
                     if (dacMix > 0f)
                     {
-                        float q = MathF.Round(DspMath.Clamp(chSample, -1f, 1f) * 7f) * (1f / 7f);
+                        float u = DspMath.Clamp(chSample, -1f, 1f) * 7f;
+                        float k = MathF.Floor(u + 0.5f);
+                        float d = u - k;
+                        float uq = k;
+                        if (d > 0.35f) uq = k + (d - 0.35f) * (1f / 0.30f);
+                        else if (d < -0.35f) uq = k + (d + 0.35f) * (1f / 0.30f);
+                        float q = uq * (1f / 7f);
                         chSample = dacMix >= 1f ? q : chSample + (q - chSample) * dacMix;
                     }
 

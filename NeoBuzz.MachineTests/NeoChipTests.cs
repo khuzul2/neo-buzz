@@ -201,21 +201,20 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void EnvelopeTakesExactly16LevelsInSteppedMode()
         {
-            // ADSR Attack (0 -> 15) + Decay (15 -> 0)
+            // ADSR Attack (0 -> 15) + Decay (15 -> 0): discrete step target visits all 16 exact k / 15f levels.
             var env = new ChipEnvelope();
             env.NoteOn(ChipEnvMode.Adsr);
             var levels = new HashSet<float>();
             for (int i = 0; i < 48000; i++)
             {
-                float g = env.Next(ChipEnvMode.Adsr, 0.10, 0.20, 0, 0.10, 0.10, Measure.Rate);
+                float g = env.StepNext(ChipEnvMode.Adsr, 0.10, 0.20, 0, 0.10, 0.10, Measure.Rate);
                 levels.Add(g);
-                // Every level must be an exact k / 15f.
                 double scaled = g * 15.0;
                 Assert.That(Math.Abs(scaled - Math.Round(scaled)), Is.LessThan(1e-5), $"level {g} not on 16-step grid");
             }
             Assert.That(levels.Count, Is.EqualTo(16), "ADSR visits all 16 discrete levels 0..15");
 
-            // Hardware shapes all take exactly 16 levels.
+            // Hardware shapes all take exactly 16 discrete target levels.
             foreach (var mode in new[] { ChipEnvMode.SawDown, ChipEnvMode.SawUp, ChipEnvMode.Triangle, ChipEnvMode.DecayShot, ChipEnvMode.AttackHold })
             {
                 var hw = new ChipEnvelope();
@@ -223,14 +222,216 @@ namespace NeoBuzz.MachineTests
                 var hwLevels = new HashSet<float>();
                 for (int i = 0; i < 24000; i++)
                 {
-                    float g = hw.Next(mode, 0.01, 0.05, 8, 0.05, 0.10, Measure.Rate);
+                    float g = hw.StepNext(mode, 0.01, 0.05, 8, 0.05, 0.10, Measure.Rate);
                     hwLevels.Add(g);
                     double scaled = g * 15.0;
                     Assert.That(Math.Abs(scaled - Math.Round(scaled)), Is.LessThan(1e-5), $"{mode} level {g} not on 16-step grid");
                 }
                 Assert.That(hwLevels.Count, Is.EqualTo(16), $"{mode} visits all 16 discrete levels 0..15");
             }
-            Measure.Report("Neo Chip volume steps: ADSR and all 5 hardware envelope shapes verified at exactly 16 discrete levels (0/15..15/15)");
+
+            // Slewed envelope still settles onto all 16 discrete step plateaus when dwell > slew.
+            var slewed = new ChipEnvelope();
+            slewed.NoteOn(ChipEnvMode.Adsr);
+            var settled = new HashSet<int>();
+            for (int i = 0; i < 48000; i++)
+            {
+                float g = slewed.Next(ChipEnvMode.Adsr, 0.15, 0.25, 0, 0.15, 0.10, Measure.Rate, raw: false);
+                double scaled = g * 15.0;
+                int nearest = (int)Math.Round(scaled);
+                if (Math.Abs(scaled - nearest) < 1e-4) settled.Add(nearest);
+            }
+            Assert.That(settled.Count, Is.EqualTo(16), "slewed ADSR settles onto all 16 discrete step plateaus 0..15");
+            Measure.Report("Neo Chip volume steps: ADSR and all 5 hardware envelope shapes verified at exactly 16 discrete levels (0/15..15/15) with slewed plateaus");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void HeldNoteAdsrGainTraceSlewsEveryStepWithoutClicks(bool raw)
+        {
+            // Gate from listening round 1: on a held note through ADSR and release, every 1/15 step
+            // glides over at least the slew (1.8 ms clean, 0.5 ms raw), never changes by more than
+            // 1/15 in any 1 ms window during step-separated ADSR stages, and produces 0 gain-trace clicks.
+            var (e, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.Raw, raw ? 1 : 0);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                Set(v, P.EnvAttack, 0.15);   // 10 ms/step
+                Set(v, P.EnvDecay, 0.18);    // 36 ms/step (15 -> 10)
+                v.Set(P.EnvSustain, 10);
+                Set(v, P.EnvRelease, 0.15);  // 15 ms/step (10 -> 0)
+            });
+
+            int total = 36000; // 0.75 s
+            var gainTrace = new float[total];
+            var blockTrace = new[] { new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock] };
+            e.GainTrace = blockTrace;
+            var bl = new float[ChipEngine.MaxBlock];
+            var br = new float[ChipEngine.MaxBlock];
+
+            e.NoteOn(1060, 60, 0.9f, 0);
+            for (int pos = 0; pos < total; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == 22016) e.NoteOff(1060, 60, 0); // release at ~0.46 s
+                int n = Math.Min(ChipEngine.MaxBlock, total - pos);
+                e.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, gainTrace, pos, n);
+            }
+
+            const int OneMs = 48;
+            const double OneStep = 1.0 / 15.0;
+            double slewSec = raw ? ChipEnvelope.RawStepSlewSec : ChipEnvelope.CleanStepSlewSec;
+            double slewSamples = Math.Round(slewSec * Measure.Rate);
+            // Smoothstep peak slope is 1.5 * (1/15) / slewSamples.
+            double maxAllowedPerSample = 1.55 * OneStep / slewSamples;
+
+            double maxDelta1Ms = 0;
+            double maxPerSample = 0;
+            double maxD2 = 0;
+            for (int i = 1; i < total; i++)
+            {
+                double d1 = Math.Abs(gainTrace[i] - gainTrace[i - 1]);
+                if (d1 > maxPerSample) maxPerSample = d1;
+                if (i >= OneMs)
+                {
+                    double d1ms = Math.Abs(gainTrace[i] - gainTrace[i - OneMs]);
+                    if (d1ms > maxDelta1Ms) maxDelta1Ms = d1ms;
+                }
+                if (i + 1 < total)
+                {
+                    double d2 = Math.Abs(gainTrace[i + 1] - 2.0 * gainTrace[i] + gainTrace[i - 1]);
+                    if (d2 > maxD2) maxD2 = d2;
+                }
+            }
+
+            int gainClicks = NeoChipPack.DetectGainClicks(gainTrace, Measure.Rate);
+            Measure.Report($"Neo Chip ADSR gain trace (raw={raw}): max 1 ms delta {maxDelta1Ms:F5} (1/15={OneStep:F5}), max d1 {maxPerSample:F6} (limit {maxAllowedPerSample:F6}), max d2 {maxD2:F6}, clicks {gainClicks}");
+
+            Assert.That(maxDelta1Ms, Is.LessThanOrEqualTo(OneStep + 1e-4), "within any 1 ms, gain changes by <= 1/15");
+            Assert.That(maxPerSample, Is.LessThanOrEqualTo(maxAllowedPerSample), "each step is spread over at least the slew");
+            Assert.That(gainClicks, Is.EqualTo(0), "gain-trace click detector finds 0 clicks");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void HardEnvelopeAndHardNoteOffGainTraceHaveSmoothEdgesWithoutClicks(bool raw)
+        {
+            // Gate from listening round 1: hard-envelope note (SawDown starting at step 15 and wrapping
+            // 0 -> 15) has >= 1 ms note-on fade, >= 2 ms hard note-off fade (AllNotesOff(true) and
+            // min-release NoteOff), and 0 gain-trace clicks.
+            var (e, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.Raw, raw ? 1 : 0);
+                v.Set(P.EnvMode, (int)ChipEnvMode.SawDown);
+                Set(v, P.EnvPeriod, 0.12); // 120 ms repeating SawDown
+                Set(v, P.EnvRelease, 0.001); // minimum 1 ms setting (clamped >= 2 ms)
+            });
+
+            int total = 16384; // ~341 ms (2 full SawDown cycles + hard note-off)
+            var gainTrace = new float[total];
+            var blockTrace = new[] { new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock] };
+            e.GainTrace = blockTrace;
+            var bl = new float[ChipEngine.MaxBlock];
+            var br = new float[ChipEngine.MaxBlock];
+
+            e.NoteOn(1060, 60, 1f, 0);
+            int hardOffAt = 12288; // mid-cycle (~256 ms) where SawDown is active
+            for (int pos = 0; pos < total; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == hardOffAt) e.AllNotesOff(true);
+                int n = Math.Min(ChipEngine.MaxBlock, total - pos);
+                e.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, gainTrace, pos, n);
+            }
+
+            // 1. Note-on fade from 0 to >= 0.99 takes at least 1 ms (48 samples at 48 kHz).
+            int riseSamples = 0;
+            while (riseSamples < 500 && gainTrace[riseSamples] < 0.99f) riseSamples++;
+            Assert.That(riseSamples, Is.GreaterThanOrEqualTo(48), $"note-on fade must be >= 1 ms (was {riseSamples} samples)");
+
+            // 2. Hard note-off fade from active gain down to <= 0.001 takes at least 2 ms (96 samples at 48 kHz).
+            Assert.That(gainTrace[hardOffAt - 1], Is.GreaterThan(0.2f), "voice sounding before hard note-off");
+            int fallSamples = 0;
+            while (hardOffAt + fallSamples < total && gainTrace[hardOffAt + fallSamples] > 1e-3f) fallSamples++;
+            Assert.That(fallSamples, Is.GreaterThanOrEqualTo(96), $"hard note-off fade must be >= 2 ms (was {fallSamples} samples)");
+            Assert.That(gainTrace[total - 1], Is.EqualTo(0f), "voice reaches exact 0 after hard fade-out");
+
+            // 3. Minimum-release (1 ms param) normal NoteOff also fades over >= 2 ms.
+            var (eRel, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.Raw, raw ? 1 : 0);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                Set(v, P.EnvAttack, 0.002);
+                v.Set(P.EnvSustain, 15);
+                Set(v, P.EnvRelease, 0.001);
+            });
+            var relTrace = new float[4096];
+            eRel.GainTrace = blockTrace;
+            eRel.NoteOn(1060, 60, 1f, 0);
+            int relAt = 1024;
+            for (int pos = 0; pos < relTrace.Length; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == relAt) eRel.NoteOff(1060, 60, 0);
+                int n = Math.Min(ChipEngine.MaxBlock, relTrace.Length - pos);
+                eRel.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, relTrace, pos, n);
+            }
+            int relFall = 0;
+            while (relAt + relFall < relTrace.Length && relTrace[relAt + relFall] > 1e-3f) relFall++;
+            Assert.That(relFall, Is.GreaterThanOrEqualTo(96), $"min-release NoteOff must fade >= 2 ms (was {relFall} samples)");
+
+            // 4. Gain-trace click detector finds 0 clicks on both traces.
+            int hwClicks = NeoChipPack.DetectGainClicks(gainTrace, Measure.Rate);
+            int relClicks = NeoChipPack.DetectGainClicks(relTrace, Measure.Rate);
+            Measure.Report($"Neo Chip hard-env gain trace (raw={raw}): note-on rise {riseSamples} smp, hard-off fall {fallSamples} smp, min-rel fall {relFall} smp, clicks {hwClicks}/{relClicks}");
+            Assert.That(hwClicks, Is.EqualTo(0), "SawDown + hard note-off gain trace has 0 clicks");
+            Assert.That(relClicks, Is.EqualTo(0), "min-release ADSR gain trace has 0 clicks");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RetriggerFadesThroughZeroBeforePhaseResetWithZeroClicks(bool raw)
+        {
+            // Retriggering a sounding mono voice must fade smoothly through exact 0 (2 ms C1 steal fade)
+            // before resetting oscillator phase and starting the next note — zero gain-trace clicks.
+            var (e, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.Raw, raw ? 1 : 0);
+                v.Set(P.EnvMode, (int)ChipEnvMode.SawDown);
+                Set(v, P.EnvPeriod, 0.20);
+            });
+            int total = 8192;
+            var gainTrace = new float[total];
+            var blockTrace = new[] { new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock] };
+            e.GainTrace = blockTrace;
+            var bl = new float[ChipEngine.MaxBlock];
+            var br = new float[ChipEngine.MaxBlock];
+
+            e.NoteOn(1060, 60, 1f, 0);
+            int retrigAt = 2048;
+            for (int pos = 0; pos < total; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == retrigAt) e.NoteOn(1064, 64, 1f, 0);
+                int n = Math.Min(ChipEngine.MaxBlock, total - pos);
+                e.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, gainTrace, pos, n);
+            }
+
+            // Confirm the voice reaches exact 0 during the 2 ms steal fade before rising for the new note.
+            int zeroAt = -1;
+            for (int i = retrigAt; i < retrigAt + 256; i++)
+            {
+                if (gainTrace[i] == 0f) { zeroAt = i; break; }
+            }
+            Assert.That(zeroAt, Is.GreaterThanOrEqualTo(retrigAt + 90), "steal fade takes ~2 ms before reaching exact 0");
+            Assert.That(gainTrace[zeroAt + 128], Is.GreaterThan(0.5f), "new note rises after reaching silence");
+
+            int gainClicks = NeoChipPack.DetectGainClicks(gainTrace, Measure.Rate);
+            Assert.That(gainClicks, Is.EqualTo(0), "retrigger gain trace has 0 clicks");
         }
 
         // ------------------------------------------------------------------ 5. Timing gate (Arp, ADSR, HW Env)

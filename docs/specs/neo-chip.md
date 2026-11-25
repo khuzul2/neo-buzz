@@ -31,17 +31,22 @@ Neo Chip is a clean-room four-channel sound-chip synth built on `NeoBuzz.Dsp` (`
 - **MIDI / piano roll (`IChannelNoteSink`):**
   - `Noise MIDI ch` (`All`, `1..16`, default `10`): notes on the selected MIDI channel (or any channel when `All`, used by noise-drum presets) route exclusively to the noise channel with a last-note stack.
   - Other MIDI channels route across Pulse 1–3 according to `Voice mode`:
-    - **Poly:** persistent round-robin cursor across Pulse 1–3; prefers free, then oldest released, else steals the **oldest** held channel (monotonic `noteSeq++`) with a 2 ms `StealFade`.
+    - **Poly:** persistent round-robin cursor across Pulse 1–3; prefers free, then oldest released, else steals the **oldest** held channel (monotonic `noteSeq++`) with a 2 ms C¹ cubic-Hermite (`3t² − 2t³`) `StealFade` to exact silence before starting the stolen note.
     - **Mono:** Pulse 1 with a 32-entry last-note priority stack.
     - **Unison:** all three pulse channels stacked with a last-note stack, detuned by `-Detune`, `0`, `+Detune` cents.
+  - **Phase reset & note edges:** pulse oscillator phase resets **only** when the voice was silent (`!Env.IsAudible`, including after a completed `StealFade` at exact zero). Note-on always fades in over ≥ 1 ms; hard note-off (`AllNotesOff(true)`) and minimum-release note-off always fade out over ≥ 2 ms.
   - **Velocity depth (`0–100 %`):** linear amplitude scaling `(1 - depth) + depth * (vel / 127)`.
   - Real note-off with release, CC64 sustain pedal, and ±2 st pitch bend.
 
-### 1.3 Envelope (16-step / 4-bit)
-- Every envelope mode outputs strictly 16 discrete amplitude levels: `step / 15f` for `step ∈ {0, 1, …, 15}`.
-- **ADSR:** linear ramps quantised to `0..15` (Attack, Decay, Sustain `0–15`, Release).
+### 1.3 Envelope (16-step / 4-bit with Anti-Click Slew)
+- Every envelope mode's discrete generator outputs strictly 16 levels: `step / 15f` for `step ∈ {0, 1, …, 15}`.
+- **ADSR:** linear ramps quantised to `0..15` (Attack, Decay, Sustain `0–15`, Release clamped to ≥ 2 ms).
 - **Hardware-style shapes** (equal step dwell, period from `Env period` in ms or `Env sync` locked to song BPM):
   - `Saw down` (repeating `15 → 0`), `Saw up` (repeating `0 → 15`), `Triangle` (repeating `0 → 15 → 0`), `Decay shot` (one-shot `15 → 0` then idle), `Attack hold` (one-shot `0 → 15` then holds `15` until note-off). Note-off enters ADSR Release to `0`.
+- **Per-step slew & edge fades:** the discrete 16-level target passes through a cached two-stage critically damped (C¹-continuous) slew so the 16-step stair-step character stays audible while eliminating 1-sample step clicks:
+  - Normal step slew: `τ = 0.50 ms` (~1.68 ms 10–90 %) in Clean mode; `τ = 0.18 ms` (~0.60 ms 10–90 %) in Raw mode.
+  - Note-on and multi-step hardware cycle wraps (`Saw down` `0→15`, `Saw up` `15→0`): `τ = 0.50 ms` clean / `0.45 ms` raw (≥ 1 ms rise).
+  - Hard note-off (`AllNotesOff(true)`): `τ = 0.80 ms` clean / `0.65 ms` raw (≥ 2 ms fall, flushed to exact `0f` at `≤ 1e-6f`).
 
 ### 1.4 Per-Track Arpeggio & Motion
 - Independent per-channel state reset on each note-on:
@@ -51,7 +56,7 @@ Neo Chip is a clean-room four-channel sound-chip synth built on `NeoBuzz.Dsp` (`
 
 ### 1.5 Output & Headroom
 - Equal-power pan per channel (`cos/sin`, `0.7071` at center, `1.0` at hard pan) combined with `Stereo spread` (`0–100 %`).
-- **Lo-res DAC:** quantises each channel's mono post-envelope signal in `[-1, +1]` to 4-bit resolution with exact zero at silence (`MathF.Round(Clamp(x, -1, 1) * 7f) / 7f`), mixed linearly across all 4 channels and crossfaded via a 10 ms `SmoothRamp`.
+- **Lo-res DAC:** quantises each channel's mono post-envelope signal in `[-1, +1]` to 4-bit `k / 7` plateaus with exact zero at silence and a narrow continuous transition knee (`|u − k| ∈ (0.35, 0.50]`) so slewed envelope glides do not snap into 1-sample `1/7` clicks; mixed linearly across all 4 channels and crossfaded via a 10 ms `SmoothRamp`.
 - **Mix headroom:** fixed per-channel scaling `ChannelScale = 0.20f` so a 3-note pulse chord plus a noise hit at velocity 127, `Volume = 0 dB`, and `Lo-res DAC = On` peaks at or below `0 dBFS` across all duty settings.
 - **DC blocker:** gentle ~5 Hz stereo one-pole high-pass (`dcR = exp(-2π·5/sr)`, flushed with `DspMath.Flush`) after channel mixing and `Lo-res DAC`.
 
@@ -80,24 +85,25 @@ Neo Chip is a clean-room four-channel sound-chip synth built on `NeoBuzz.Dsp` (`
 | Band-limited aliasing (up to C7) | Raw off ≤ −60 dB; Raw on measurably higher | C4 `−97.0 dB`, A4 `−95.5 dB`, C6 `−98.2 dB`, C7 `−93.4 dB` (Raw C7: `−17.2` to `−23.4 dB`) |
 | Noise LFSR periods | Exactly 32767 (Long) and 127 (Short) | 32767 (Long) and 127 (Short), all non-zero states unique |
 | Noise pitch tracking | Follows note including > sampleRate | 7-bit 55.88 kHz clock → 440 Hz peak `+42.9 dB` over floor; Long centroid C3 `971 Hz` → C6 `5091 Hz` |
-| Volume steps | Exactly 16 discrete levels (`0/15..15/15`) | Verified across ADSR and all 5 hardware envelope modes |
+| Volume steps | Exactly 16 discrete levels (`0/15..15/15`) with slewed plateaus | Verified across ADSR and all 5 hardware envelope modes |
+| Gain-trace anti-click gate | Held ADSR: ≤ `1/15` per 1 ms, slewed per-sample slope, 0 gain clicks; hard env & hard note-off: ≥ 1 ms note-on, ≥ 2 ms fade-out, 0 gain clicks; retrigger fades through 0 before phase reset | ADSR clean: 1 ms Δ `0.0422`, max `d2 = 0.000111`, `0` clicks; ADSR raw: 1 ms Δ `0.0651`, max `d2 = 0.000796`, `0` clicks; hard-env note-on `158/129` smp, hard-off `348/282` smp, min-rel `284/155` smp, `0` clicks |
 | Arpeggio timing (1/32 synced) | Within ±1 sample at 120 and 174 BPM | `0.00` samples (120 BPM) and `≤ 0.97` samples (174 BPM) over 16 steps |
 | ADSR stage timing | Within ±5 % | `< 0.5 %` error across 20–600 ms stages |
 | Hardware envelope period | Within ±1 % | `50.00 ms` (`0.008%`), `200.00 ms` (`0.000%`), `124.35 ms` (`0.519%`), 174 BPM sync `< 0.2%` |
 | Poly voice allocation & velocity | 3-note chord, 4th steals oldest, note-off exact, velocity depth exact | Passes; vel 1 vs 127 at 0 / 50 / 100 %: `0.00` / `−5.95` / `−42.08 dB` (exact) |
-| Mix headroom (3-note chord + noise, vel 127, Vol 0 dB, DAC on) | Peak ≤ 0 dBFS across all duties | `−0.96 dBFS` (12.5%), `−2.01 dBFS` (25%), `−4.41 dBFS` (50%), `−2.03 dBFS` (75%) |
-| Lo-res DAC 4-bit grain | Audible difference in clean & raw modes | Residual `−22.5 dB` (clean) and `−22.6 dB` (raw) |
-| Presets (12) | All > −30 dBFS RMS; pairwise distance ≥ 4.0 dB; `PresetTests` RMS ∈ `[−30, −6]` & peak ∈ `[−20, −1]` dBFS | Min RMS `−17.9 dBFS`; min pairwise distance `8.60 dB` (`Lead — Thin 12 %` vs `Bass — Pulse bass`); `PresetTests` RMS `−18.0` to `−12.8 dBFS`, peak `−14.3` to `−5.2 dBFS` |
+| Mix headroom (3-note chord + noise, vel 127, Vol 0 dB, DAC on) | Peak ≤ 0 dBFS across all duties | `−0.96 dBFS` (12.5%), `−2.01 dBFS` (25%), `−4.38 dBFS` (50%), `−2.03 dBFS` (75%) |
+| Lo-res DAC 4-bit grain | Audible difference in clean & raw modes | Residual `−25.4 dB` (clean) and `−25.5 dB` (raw) |
+| Presets (12) | All > −30 dBFS RMS; pairwise distance ≥ 4.0 dB; `PresetTests` RMS ∈ `[−30, −6]` & peak ∈ `[−20, −1]` dBFS | Min RMS `−17.9 dBFS`; min pairwise distance ≥ 8 dB; all 12 pass `PresetTests` bounds |
 | Audio-thread allocation | 0 bytes across 2000 moving-parameter blocks | `0 bytes` (`AllocationCheck.Run`) |
-| Denormals & silence cost | 0 subnormals in 20 s silence; cost ≤ 1.5× playing | `0` subnormals; silence costs `0.100×` playing (`683.7×` real time) |
+| Denormals & silence cost | 0 subnormals in 20 s silence; cost ≤ 1.5× playing | `0` subnormals; silence costs `0.101×` playing (`634.8×` real time) |
 | Zipper noise under automation | ≤ −60 dB at block-rate sidebands | `−104.7` to `−132.3 dB` across automated parameters |
-| Modulation cost | Ratio ≤ 1.5× with all 24 continuous params moving | `1.08×` (`39.3×` real time moving vs `42.5×` still) |
-| CPU throughput | Within Neo instrument budget (`Floor(25, 25)`) | `77.0×` real time at reference speed (`31.3×` raw) |
+| Modulation cost | Ratio ≤ 1.5× with all 24 continuous params moving | `≤ 1.15×` |
+| CPU throughput | Within Neo instrument budget (`Floor(25, 25)`) | `65.7×` real time at reference speed (`31.6×` raw) |
 | Portable math & state version | No libm/SIMD sum issues; `StateVersion = 0` round-trip | `PortableMathTests` and `StateVersionTests` pass |
 
 ---
 
 ## 4. Listening Pack & Gallery
 
-- **Listening pack:** `listening-packs/186/` (local, git-ignored), generated by `NeoBuzz.MachineTests/NeoChipPack.cs` at 48 kHz 16-bit stereo WAV across all 12 presets × 3 lines (`melody`, `arpeggio`, `drums`), verified by the frame-peak second-difference click detector: **36 files, 0 clicks**.
+- **Listening pack:** `listening-packs/186/` (local, git-ignored), generated by `NeoBuzz.MachineTests/NeoChipPack.cs` at 48 kHz 16-bit stereo WAV across all 12 presets × 3 lines (`melody`, `arpeggio`, `drums`), verified by both the frame-peak audio click detector and the direct gain-trace second-difference click detector (`|d2| > 0.015`): **36 files, 0 audio clicks, 0 gain-trace clicks** (max gain `d2` across all 36 renders `≤ 0.00211`).
 - **Mac gallery:** `GalleryTests` shots `645-neo-chip-editor` (`Arp — Major sparkle`) and `646-neo-chip-hardware` (`Raw — Lo-res grit`) captured in both dark and light themes with parameter values applied before opening the editor.
