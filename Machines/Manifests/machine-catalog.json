@@ -629,6 +629,17 @@
    ],
    "use_for": "Pitch correction for a lead vocal or a solo line: moves the voice to a key and scale (or to MIDI notes), hard or natural, with formant control, transpose and added vibrato."
   },
+  "Neo Organ": {
+   "category": "Synths",
+   "tags": [
+    "organ",
+    "keys",
+    "vintage",
+    "warm",
+    "polyphonic"
+   ],
+   "use_for": "Drawbar tonewheel organ with percussion, key click, vibrato and chorus, overdrive and a rotary speaker: gospel, jazz, blues and rock organ, church sounds, flutes and stabs."
+  },
   "Neo Lo-Fi": {
    "category": "Distortion",
    "tags": [
