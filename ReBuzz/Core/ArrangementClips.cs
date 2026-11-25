@@ -64,7 +64,7 @@ namespace ReBuzz.Core
             int max = 0;
             foreach (var seq in sequences)
                 foreach (var e in seq.Events.Values)
-                    max = Math.Max(max, e.Clip);
+                    max = Math.Max(max, e.PlacementId);
             next = Math.Max(next, max + 1);
         }
 
@@ -90,15 +90,15 @@ namespace ReBuzz.Core
                     continue;
                 }
                 int span = Math.Max(0, e.Span);
-                if (open is ArrangementClip c && e.Clip != 0 && c.Id == e.Clip && ReferenceEquals(c.Pattern, e.Pattern) && openEnd == time)
+                if (open is ArrangementClip c && e.PlacementId != 0 && c.Id == e.PlacementId && ReferenceEquals(c.Pattern, e.Pattern) && openEnd == time)
                 {
                     open = c with { Length = time + span - c.Time, Events = c.Events + 1 };
                     openEnd = time + span;
                     continue;
                 }
                 if (open != null) clips.Add(open.Value);
-                ClipLoop? loop = e.Clip != 0 && loops.TryGetValue(e.Clip, out var l) ? l : null;
-                open = new ArrangementClip(e.Clip, e.Pattern, time, span, e.PlayedOffset, 1, loop);
+                ClipLoop? loop = e.PlacementId != 0 && loops.TryGetValue(e.PlacementId, out var l) ? l : null;
+                open = new ArrangementClip(e.PlacementId, e.Pattern, time, span, e.PlayedOffset, 1, loop);
                 openEnd = time + span;
             }
             if (open != null) clips.Add(open.Value);

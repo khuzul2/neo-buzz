@@ -83,7 +83,7 @@ namespace ReBuzz.Core.SongHistory
 
         public sealed class SeqEvent
         {
-            public int Time, Type, Span, Offset, End, Clip;
+            public int Time, Type, Span, Offset, End, PlacementId;
             public double Gain = 1;
             public string Pattern;
         }
@@ -173,7 +173,7 @@ namespace ReBuzz.Core.SongHistory
                     ls.Events.Add(new SeqEvent
                     {
                         Time = kv.Key, Type = (int)kv.Value.Type, Span = kv.Value.Span, Offset = kv.Value.Offset, End = kv.Value.End,
-                        Clip = kv.Value.Clip, Gain = kv.Value.Gain, Pattern = kv.Value.Pattern?.Name,
+                        PlacementId = kv.Value.PlacementId, Gain = kv.Value.Gain, Pattern = kv.Value.Pattern?.Name,
                     });
                 s.Sequences.Add(ls);
             }
@@ -226,7 +226,7 @@ namespace ReBuzz.Core.SongHistory
                     w.Write(q.Events.Count);
                     foreach (var e in q.Events)
                     {
-                        w.Write(e.Time); w.Write(e.Type); w.Write(e.Span); w.Write(e.Offset); w.Write(e.End); w.Write(e.Clip); w.Write(e.Gain); WriteN(w, e.Pattern);
+                        w.Write(e.Time); w.Write(e.Type); w.Write(e.Span); w.Write(e.Offset); w.Write(e.End); w.Write(e.PlacementId); w.Write(e.Gain); WriteN(w, e.Pattern);
                     }
                 }
             }
@@ -283,7 +283,7 @@ namespace ReBuzz.Core.SongHistory
                     var q = new Sequence { Machine = ReadN(r) };
                     int ne = r.ReadInt32();
                     for (int e = 0; e < ne; e++)
-                        q.Events.Add(new SeqEvent { Time = r.ReadInt32(), Type = r.ReadInt32(), Span = r.ReadInt32(), Offset = r.ReadInt32(), End = r.ReadInt32(), Clip = r.ReadInt32(), Gain = r.ReadDouble(), Pattern = ReadN(r) });
+                        q.Events.Add(new SeqEvent { Time = r.ReadInt32(), Type = r.ReadInt32(), Span = r.ReadInt32(), Offset = r.ReadInt32(), End = r.ReadInt32(), PlacementId = r.ReadInt32(), Gain = r.ReadDouble(), Pattern = ReadN(r) });
                     s.Sequences.Add(q);
                 }
                 return s;

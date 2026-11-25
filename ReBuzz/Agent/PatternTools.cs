@@ -394,7 +394,7 @@ namespace ReBuzz.Agent
                                     o["ends"] = SongModel.Beats(core, end);
                                     if (end - t < e.PlayedLength) o["cut_by_next"] = true;
                                     // Fork (daw-modes.md S2): the part played, the volume, the clip.
-                                    if (e.Clip != 0) o["clip"] = e.Clip;
+                                    if (e.PlacementId != 0) o["clip"] = e.PlacementId;
                                     if (e.Offset != 0 || e.End != 0)
                                         o["part_beats"] = new JsonArray(SongModel.Beats(core, e.PlayedOffset), SongModel.Beats(core, e.PlayedOffset + e.PlayedLength));
                                     if (e.Gain != 1.0) o["gain"] = Math.Round(e.Gain, 4);

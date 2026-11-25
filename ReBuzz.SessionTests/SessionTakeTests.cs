@@ -151,9 +151,9 @@ namespace ReBuzz.SessionTests
         [Test]
         public void WhereATracksClipWasAtAHeardTick()
         {
-            var s = new SessionScheduler<Track, Clip>(c => c.Length);
+            var s = new SessionScheduler<Track, TestClip>(c => c.Length);
             var keys = new Track("keys");
-            var take = new Clip("take", 8);
+            var take = new TestClip("take", 8);
             s.Start(0);
             s.LaunchAt(keys, take, 4, true);
             Assert.That(s.TryGetPlayingAt(keys, 2, out _, out _, out _, out _), Is.False, "before anything plays");
@@ -170,11 +170,11 @@ namespace ReBuzz.SessionTests
         [Test]
         public void ATakeQueuedWhileStoppedStartsAfterItsCountIn()
         {
-            var s = new SessionScheduler<Track, Clip>(c => c.Length);
+            var s = new SessionScheduler<Track, TestClip>(c => c.Length);
             var keys = new Track("keys");
             var bass = new Track("bass");
-            var take = new Clip("take", 16);
-            var line = new Clip("line", 16);
+            var take = new TestClip("take", 16);
+            var line = new TestClip("line", 16);
             s.LaunchAt(bass, line, 0, true);                    // stopped: "at the start"
             s.LaunchAt(keys, take, 16, true);                   // one bar of count-in
             s.Start(32);                                        // the song starts at bar 3

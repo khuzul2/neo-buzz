@@ -72,7 +72,7 @@ namespace ReBuzz.Core
             return Segments().Select(s =>
             {
                 int played = s.Offset + s.Length;
-                return (s.Time, new SequenceEvent(SequenceEventType.PlayPattern, Pattern) { Offset = s.Offset, End = played >= plen ? 0 : played, Gain = Gain, Clip = id });
+                return (s.Time, new SequenceEvent(SequenceEventType.PlayPattern, Pattern) { Offset = s.Offset, End = played >= plen ? 0 : played, Gain = Gain, PlacementId = id });
             }).ToList();
         }
 
@@ -340,7 +340,7 @@ namespace ReBuzz.Core
             }
 
             static bool Same(SequenceEvent a, SequenceEvent b) => a == null || b == null ? a == null && b == null :
-                a.Type == b.Type && ReferenceEquals(a.Pattern, b.Pattern) && a.Offset == b.Offset && a.End == b.End && a.Gain == b.Gain && a.Clip == b.Clip;
+                a.Type == b.Type && ReferenceEquals(a.Pattern, b.Pattern) && a.Offset == b.Offset && a.End == b.End && a.Gain == b.Gain && a.PlacementId == b.PlacementId;
         }
 
         internal int RoundUpToBar(int tick)

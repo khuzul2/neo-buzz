@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Tests
         static ColumnKey KeyOf(IMachine machine, string name) => AutomationParams.List(machine).First(p => p.Name == name).Key;
 
         /// <summary>A clip of the lead machine, in a Session slot or placed in the arrangement, open in the Detail panel with the cutoff lane.</summary>
-        sealed class Clip
+        sealed class EnvelopeClip
         {
             public Rig Rig;
             public IMachine Machine;
@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             public EnvelopeStack Stack => PatternView.Page.Roll.Envelopes;
             public EnvelopeLane Lane => Stack.LaneFor(Key);
 
-            public static Clip Open(Rig rig, bool arrangement, string parameter = Cutoff)
+            public static EnvelopeClip Open(Rig rig, bool arrangement, string parameter = Cutoff)
             {
                 var lead = rig.Lane("Lead");
                 var machine = lead.Machine;
@@ -62,7 +62,7 @@ namespace ReBuzz.Studio.Tests
                     pattern = layout.CreateClip(track, 0);
                 }
                 Assert.That(pattern, Is.Not.Null);
-                var clip = new Clip { Rig = rig, Machine = machine, Pattern = pattern, Key = KeyOf(machine, parameter) };
+                var clip = new EnvelopeClip { Rig = rig, Machine = machine, Pattern = pattern, Key = KeyOf(machine, parameter) };
                 clip.Param = AutomationParams.Find(machine, clip.Key);
                 clip.Show();
                 return clip;
@@ -124,7 +124,7 @@ namespace ReBuzz.Studio.Tests
         public void EveryGestureOfTheLaneIsOneStepOfTheHistory([Values(false, true)] bool arrangement)
         {
             using var rig = new Rig("Lead");
-            var clip = Clip.Open(rig, arrangement);
+            var clip = EnvelopeClip.Open(rig, arrangement);
             Assert.That(clip.Points(), Is.Empty);
             Assert.That(clip.Stack.CountText, Is.Not.Null);
 
@@ -196,7 +196,7 @@ namespace ReBuzz.Studio.Tests
         public void AGestureThatShiftHoldsMovesOffTheGrid()
         {
             using var rig = new Rig("Lead");
-            var clip = Clip.Open(rig, false);
+            var clip = EnvelopeClip.Open(rig, false);
             rig.Click(clip.P(4, 0.5));
             Assert.That(clip.Points(), Does.StartWith("4:"));
             var from = clip.PointP(4 * TB);
@@ -218,7 +218,7 @@ namespace ReBuzz.Studio.Tests
         public void ACurveAndAPerTrackChoiceAreSavedAndReopened([Values(".nbl")] string extension, [Values(false, true)] bool arrangement)
         {
             using var rig = new Rig("Lead");
-            var clip = Clip.Open(rig, arrangement);
+            var clip = EnvelopeClip.Open(rig, arrangement);
             rig.Click(clip.P(4, 0.3));
             rig.Click(clip.P(8, 0.9));
             rig.Key(PhysicalKey.R);
@@ -255,7 +255,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Core.Arrangement.EnvelopeChoice("Lead"), Is.Null);
             var xml = Core.Arrangement.ToXml();
             Assert.That(xml == null || !xml.ToString().Contains("Envelope"), "nothing differs from the default: nothing is saved");
-            var clip = Clip.Open(rig, false);
+            var clip = EnvelopeClip.Open(rig, false);
             Assert.That(ClipEnvelopes.DefaultKey(clip.Machine), Is.Null, "no data, no default");
             rig.Click(clip.P(4, 0.5));
             Assert.That(ClipEnvelopes.DefaultKey(clip.Machine), Is.EqualTo(clip.Key), "the one with data");
@@ -290,7 +290,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
 
             var key = KeyOf(machine, "Voice mode");
-            var clip = new Clip { Rig = rig, Machine = machine, Pattern = pattern, Key = key, Param = AutomationParams.Find(machine, key) };
+            var clip = new EnvelopeClip { Rig = rig, Machine = machine, Pattern = pattern, Key = key, Param = AutomationParams.Find(machine, key) };
             clip.Show();
             var env = clip.Lane.Envelope;
             Assert.That(env.Tracker, Is.Not.Null, "the pattern editor's column is read");
@@ -315,7 +315,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig("Lead");
             var lead = rig.Lane("Lead");
-            var clip = Clip.Open(rig, true);
+            var clip = EnvelopeClip.Open(rig, true);
             rig.Click(clip.P(2, 0.1));
             rig.Click(clip.P(10, 0.9));
             Assert.That(rig.Canvas.Envelopes, Is.False, "off until asked");
@@ -371,7 +371,7 @@ namespace ReBuzz.Studio.Tests
         public void SessionSlotsDrawAMiniCurveAndTheTracksChoiceChangesIt()
         {
             using var rig = new Rig("Lead");
-            var clip = Clip.Open(rig, false);
+            var clip = EnvelopeClip.Open(rig, false);
             rig.Click(clip.P(2, 0.1));
             rig.Click(clip.P(10, 0.9));
 
@@ -404,7 +404,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the exit test
 
         /// <summary>The first point of a curve, written the same way in both songs: AR4's lane adds to a curve a clip already has.</summary>
-        static void Seed(Clip clip)
+        static void Seed(EnvelopeClip clip)
         {
             Assert.That(new ClipEnvelopeEditor(Core).AddPoint(ClipEnvelopes.Read(clip.Pattern, clip.Key), 0, clip.Param.ValueAt(0.15)), Is.Null);
             clip.Refresh();
@@ -422,7 +422,7 @@ namespace ReBuzz.Studio.Tests
             {
                 var lead = rig.Lane("Lead");
                 Core.Looping = false;
-                var clip = Clip.Open(rig, true);
+                var clip = EnvelopeClip.Open(rig, true);
                 Notes(clip.Pattern, 16);
                 Core.SongCore.SongEnd = 64;
                 Seed(clip);
@@ -443,7 +443,7 @@ namespace ReBuzz.Studio.Tests
             {
                 var lead = rig.Lane("Lead");
                 Core.Looping = false;
-                var clip = Clip.Open(rig, true);
+                var clip = EnvelopeClip.Open(rig, true);
                 Notes(clip.Pattern, 16);
                 Core.SongCore.SongEnd = 64;
                 rig.Window.Detail.Close();
@@ -465,7 +465,7 @@ namespace ReBuzz.Studio.Tests
         public void ASessionClipDrawnInTheLaneHoldsTheSameEventsAsTheArrangementsAndTheLaneDoesNotTouchTheAudioPath()
         {
             using var rig = new Rig("Lead");
-            var session = Clip.Open(rig, false);
+            var session = EnvelopeClip.Open(rig, false);
             rig.Click(session.P(2, 0.2));
             rig.Click(session.P(8, 0.9));
             var events = session.Pattern.Columns.OfType<PatternColumnCore>().Single(c => c.EnginePlays).GetEvents(int.MinValue, int.MaxValue).ToList();
@@ -487,7 +487,7 @@ namespace ReBuzz.Studio.Tests
         public void TheLaneHasItsHeaderItsHintAndStacksLanesThatCollapseAndAreRemoved()
         {
             using var rig = new Rig("Lead");
-            var clip = Clip.Open(rig, false);
+            var clip = EnvelopeClip.Open(rig, false);
             rig.Click(clip.P(4, 0.5));
             var stack = clip.Stack;
             Assert.That(stack.AddButton.Content?.ToString(), Does.Contain("Envelope"));

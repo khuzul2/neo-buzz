@@ -86,13 +86,13 @@ namespace ReBuzz.Core
                 var ev = Events[index];
                 start = Times[index];
                 end = start + ev.Span;
-                int id = ev.Clip;
+                int id = ev.PlacementId;
                 if (id == 0) return;
                 int j = index;
-                while (j > 0 && Events[j - 1].Clip == id && ReferenceEquals(Events[j - 1].Pattern, ev.Pattern) && Times[j - 1] + Events[j - 1].Span == Times[j]) j--;
+                while (j > 0 && Events[j - 1].PlacementId == id && ReferenceEquals(Events[j - 1].Pattern, ev.Pattern) && Times[j - 1] + Events[j - 1].Span == Times[j]) j--;
                 start = Times[j];
                 j = index;
-                while (j + 1 < Times.Length && Events[j + 1].Clip == id && ReferenceEquals(Events[j + 1].Pattern, ev.Pattern) && Times[j] + Events[j].Span == Times[j + 1]) j++;
+                while (j + 1 < Times.Length && Events[j + 1].PlacementId == id && ReferenceEquals(Events[j + 1].Pattern, ev.Pattern) && Times[j] + Events[j].Span == Times[j + 1]) j++;
                 end = Times[j] + Events[j].Span;
             }
 

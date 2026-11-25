@@ -11,15 +11,15 @@ namespace ReBuzz.SessionTests
     [TestFixture]
     public class SessionHardeningTests
     {
-        SessionScheduler<Track, Clip> s = null!;
+        SessionScheduler<Track, TestClip> s = null!;
         Track drums = null!;
         Track bass = null!;
-        readonly Dictionary<Track, SessionScheduler<Track, Clip>.Slot?[]> columns = new();
+        readonly Dictionary<Track, SessionScheduler<Track, TestClip>.Slot?[]> columns = new();
 
         [SetUp]
         public void SetUp()
         {
-            s = new SessionScheduler<Track, Clip>(c => c.Length);
+            s = new SessionScheduler<Track, TestClip>(c => c.Length);
             drums = new Track("drums");
             bass = new Track("bass");
             columns.Clear();
@@ -31,17 +31,17 @@ namespace ReBuzz.SessionTests
         static LaunchSpec Next(int slot, ClipShape? shape = null) =>
             new LaunchSpec(shape ?? ClipShape.Looped, false, 0, 1.0, new FollowSpec(FollowAction.Next, FollowAction.None, 100, true, 1, 16), slot);
 
-        Clip[] Column(Track track, int length, params string[] names)
+        TestClip[] Column(Track track, int length, params string[] names)
         {
-            var clips = names.Select(n => new Clip(n, length)).ToArray();
-            columns[track] = clips.Select((c, i) => (SessionScheduler<Track, Clip>.Slot?)new SessionScheduler<Track, Clip>.Slot(c, Next(i))).ToArray();
+            var clips = names.Select(n => new TestClip(n, length)).ToArray();
+            columns[track] = clips.Select((c, i) => (SessionScheduler<Track, TestClip>.Slot?)new SessionScheduler<Track, TestClip>.Slot(c, Next(i))).ToArray();
             return clips;
         }
 
         void LaunchSlot(Track track, int slot, int quantize = 0)
         {
             var entry = columns[track][slot]!;
-            s.Launch(track, entry.Clip, quantize, s.Clock, entry.Spec, 0);
+            s.Launch(track, entry.TestClip, quantize, s.Clock, entry.Spec, 0);
         }
 
         void RunTo(long clock)
@@ -89,7 +89,7 @@ namespace ReBuzz.SessionTests
         public void AnUndoneLaunchResumesInStepAndFollowsFromWhereItIsHeard()
         {
             var clips = Column(drums, 16, "A", "B");
-            var x = new Clip("X", 16);
+            var x = new TestClip("X", 16);
             s.Start(0);
             LaunchSlot(drums, 0, 16);                       // A at 16; linked follow at 32
             RunTo(20);
@@ -112,8 +112,8 @@ namespace ReBuzz.SessionTests
         [Test]
         public void AnUndoneRequestWhoseTimeHasPassedStartsOnTheGridInStep()
         {
-            var a = new Clip("A", 12);
-            var b = new Clip("B", 16);
+            var a = new TestClip("A", 12);
+            var b = new TestClip("B", 16);
             s.Start(0);
             s.Launch(drums, a, 4, loop: true);              // A queued for 4
             var before = s.Capture(drums);
@@ -131,7 +131,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void AStartOffsetCountsFollowActionsFromWhereTheClipIsHeard()
         {
-            var a = new Clip("A", 16);
+            var a = new TestClip("A", 16);
             s.Start(0);
             var spec = new LaunchSpec(ClipShape.Looped, false, 0, 1.0, new FollowSpec(FollowAction.Stop, FollowAction.None, 100, false, 1, 6));
             s.Launch(drums, a, 0, s.Clock, spec, 6);        // at 1, 6 ticks in; stops 6 ticks after it is heard
@@ -164,7 +164,7 @@ namespace ReBuzz.SessionTests
         {
             var clips = Column(drums, 8, "A", "B");
             s.Start(0);
-            columns[drums][0] = new SessionScheduler<Track, Clip>.Slot(clips[0],
+            columns[drums][0] = new SessionScheduler<Track, TestClip>.Slot(clips[0],
                 new LaunchSpec(ClipShape.Looped, false, 0, 1.0, new FollowSpec(FollowAction.Next, FollowAction.None, 100, true, 3, 16), 0));
             LaunchSlot(drums, 0);                           // A at 1, three passes: follow at 25
             RunTo(12);                                      // second pass, position 3
@@ -190,14 +190,14 @@ namespace ReBuzz.SessionTests
         [Test]
         public void AClipLaunchedOnTwoTracksOnOneTickPlaysOnOne()
         {
-            var x = new Clip("X", 16);
-            var y = new Clip("Y", 4);
+            var x = new TestClip("X", 16);
+            var y = new TestClip("Y", 4);
             s.Start(0);
             s.LaunchAt(drums, x, 6, long.MinValue, LaunchSpec.Looped);          // the user's X on drums, at 6
             // Bass plays Y, whose follow action (after 5 ticks) jumps to X: due at 6 as well.
             var jump = new LaunchSpec(ClipShape.Looped, false, 0, 1.0, new FollowSpec(FollowAction.Jump, FollowAction.None, 100, false, 1, 5, 1), 0);
-            columns[bass] = new SessionScheduler<Track, Clip>.Slot?[] {
-                new SessionScheduler<Track, Clip>.Slot(y, jump), new SessionScheduler<Track, Clip>.Slot(x, LaunchSpec.Looped) };
+            columns[bass] = new SessionScheduler<Track, TestClip>.Slot?[] {
+                new SessionScheduler<Track, TestClip>.Slot(y, jump), new SessionScheduler<Track, TestClip>.Slot(x, LaunchSpec.Looped) };
             s.Launch(bass, y, 0, s.Clock, jump, 0);                             // Y at 1
             RunTo(6);
             Assert.That(new[] { Playing(drums), Playing(bass) }.Count(p => p == "X"), Is.EqualTo(1), "X plays on exactly one track, not on neither");
@@ -209,8 +209,8 @@ namespace ReBuzz.SessionTests
         [Test]
         public void ClipsAndTracksThatAreGoneCannotBeLaunched()
         {
-            var a = new Clip("A", 16);
-            var dead = new Clip("dead", 16);
+            var a = new TestClip("A", 16);
+            var dead = new TestClip("dead", 16);
             var removed = new Track("removed");
             s.IsLiveClip = c => c != dead;
             s.IsLiveTrack = t => t != removed;
@@ -226,8 +226,8 @@ namespace ReBuzz.SessionTests
         [Test]
         public void TheUndoHistoryKnowsWhichClipsItRefersTo()
         {
-            var a = new Clip("A", 16);
-            var b = new Clip("B", 16);
+            var a = new TestClip("A", 16);
+            var b = new TestClip("B", 16);
             s.Start(0);
             s.Launch(drums, a, 0, loop: true);
             RunTo(2);

@@ -11,14 +11,14 @@ namespace ReBuzz.SessionTests
     [TestFixture]
     public class SessionFollowTests
     {
-        SessionScheduler<Track, Clip> s = null!;
+        SessionScheduler<Track, TestClip> s = null!;
         Track drums = null!;
-        readonly Dictionary<Track, SessionScheduler<Track, Clip>.Slot?[]> columns = new();
+        readonly Dictionary<Track, SessionScheduler<Track, TestClip>.Slot?[]> columns = new();
 
         [SetUp]
         public void SetUp()
         {
-            s = new SessionScheduler<Track, Clip>(c => c.Length);
+            s = new SessionScheduler<Track, TestClip>(c => c.Length);
             drums = new Track("drums");
             columns.Clear();
             s.ColumnOf = t => columns.TryGetValue(t, out var c) ? c! : null!;
@@ -32,17 +32,17 @@ namespace ReBuzz.SessionTests
             new LaunchSpec(shape ?? ClipShape.Looped, legato, 0, 1.0, new FollowSpec(a, b, chanceA, linked, multiplier, time, jumpA), slot);
 
         /// <summary>A column of clips (null: empty slot), all with the same follow actions.</summary>
-        Clip?[] Column(Track track, int length, Func<int, LaunchSpec> spec, params string?[] names)
+        TestClip?[] Column(Track track, int length, Func<int, LaunchSpec> spec, params string?[] names)
         {
-            var clips = names.Select(n => n == null ? null : new Clip(n, length)).ToArray();
-            columns[track] = clips.Select((c, i) => c == null ? null : new SessionScheduler<Track, Clip>.Slot(c, spec(i))).ToArray();
+            var clips = names.Select(n => n == null ? null : new TestClip(n, length)).ToArray();
+            columns[track] = clips.Select((c, i) => c == null ? null : new SessionScheduler<Track, TestClip>.Slot(c, spec(i))).ToArray();
             return clips;
         }
 
         void Launch(Track track, int slot)
         {
             var entry = columns[track][slot]!;
-            s.Launch(track, entry.Clip, 0, s.Clock, entry.Spec, 0);
+            s.Launch(track, entry.TestClip, 0, s.Clock, entry.Spec, 0);
         }
 
         void RunTo(long clock)
@@ -192,7 +192,7 @@ namespace ReBuzz.SessionTests
         public void AFollowActionWaitsForTheTargetsOwnQuantization()
         {
             Column(drums, 4, i => Spec(i, FollowAction.Next), "A", "B");
-            columns[drums][1] = new SessionScheduler<Track, Clip>.Slot(columns[drums][1]!.Clip, columns[drums][1]!.Spec, quantization: 2);   // 8 ticks
+            columns[drums][1] = new SessionScheduler<Track, TestClip>.Slot(columns[drums][1]!.TestClip, columns[drums][1]!.Spec, quantization: 2);   // 8 ticks
             s.Start(0);
             Launch(drums, 0);                                            // starts at 1, follow due at 5
             RunTo(7);
@@ -287,8 +287,8 @@ namespace ReBuzz.SessionTests
         [Test]
         public void UndoingAQueuedLaunchCancelsIt()
         {
-            var a = new Clip("A", 16);
-            var b = new Clip("B", 16);
+            var a = new TestClip("A", 16);
+            var b = new TestClip("B", 16);
             s.Start(0);
             s.Launch(drums, a, 0, loop: true);
             RunTo(5);
@@ -303,8 +303,8 @@ namespace ReBuzz.SessionTests
         [Test]
         public void UndoingAStartedLaunchBringsBackThePreviousClipInStep()
         {
-            var a = new Clip("A", 16);
-            var b = new Clip("B", 16);
+            var a = new TestClip("A", 16);
+            var b = new TestClip("B", 16);
             s.Start(0);
             s.Launch(drums, a, 0, loop: true);                           // starts at 1
             RunTo(10);
@@ -320,7 +320,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void UndoingTheFirstLaunchOfATrackStopsIt()
         {
-            var a = new Clip("A", 16);
+            var a = new TestClip("A", 16);
             s.Start(0);
             var before = s.Capture(drums);
             s.Launch(drums, a, 0, loop: true);

@@ -10,9 +10,9 @@ namespace ReBuzz.SessionTests
         public override string ToString() => Name;
     }
 
-    sealed class Clip
+    sealed class TestClip
     {
-        public Clip(string name, int length) { Name = name; Length = length; }
+        public TestClip(string name, int length) { Name = name; Length = length; }
         public string Name { get; }
         public int Length { get; set; }
         public override string ToString() => Name;
@@ -25,19 +25,19 @@ namespace ReBuzz.SessionTests
 
         const int Stopped = 0, Queued = 1, Playing = 2, Stopping = 3;
 
-        SessionScheduler<Track, Clip> s = null!;
+        SessionScheduler<Track, TestClip> s = null!;
         Track drums = null!, bass = null!;
-        Clip loopA = null!, loopB = null!, odd = null!;
+        TestClip loopA = null!, loopB = null!, odd = null!;
 
         [SetUp]
         public void SetUp()
         {
-            s = new SessionScheduler<Track, Clip>(c => c.Length);
+            s = new SessionScheduler<Track, TestClip>(c => c.Length);
             drums = new Track("drums");
             bass = new Track("bass");
-            loopA = new Clip("A", Bar);
-            loopB = new Clip("B", Bar);
-            odd = new Clip("odd", 12);
+            loopA = new TestClip("A", Bar);
+            loopB = new TestClip("B", Bar);
+            odd = new TestClip("odd", 12);
         }
 
         /// <summary>Advance until the clock reaches <paramref name="clock"/>.</summary>
@@ -417,7 +417,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void StateFromAnotherSchedulerIsIgnored()
         {
-            var other = new SessionScheduler<Track, Clip>(c => c.Length);
+            var other = new SessionScheduler<Track, TestClip>(c => c.Length);
             other.Start(0);
             other.Launch(drums, loopA, 0, loop: true);
             other.Advance();
@@ -605,7 +605,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void LegatoIntoAShorterClipWrapsIntoItsLoop()
         {
-            var shortClip = new Clip("short", 8);
+            var shortClip = new TestClip("short", 8);
             s.Start(0);
             s.Launch(drums, loopA, 0, loop: true);
             RunTo(11);
@@ -750,7 +750,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void ZeroLengthClipsCountAsOneTick()
         {
-            var empty = new Clip("empty", 0);
+            var empty = new TestClip("empty", 0);
             s.Start(0);
             s.Launch(drums, empty, 0, loop: true);
             s.Advance();

@@ -239,21 +239,21 @@ namespace ReBuzz.Studio.Tests
             rig.DoubleClick(rig.At(lane, 0, 2));
             var machine = Core.Song.Machines.First(m => m.Name == "Lead");
             Notes(machine.Patterns.Single(), 16);
-            int original = lane.Events[0].Clip;
+            int original = lane.Events[0].PlacementId;
             Assert.That(original, Is.Positive);
 
             rig.Drag(rig.At(lane, 4), rig.At(lane, 36), Cmd);
             Assert.That(machine.Patterns.Count, Is.EqualTo(2), "a copy-drag makes a new pattern");
             var copy = lane.Events[32].Pattern;
             Assert.That(copy.Name, Is.Not.EqualTo(machine.Patterns.First(p => p.Name == "00").Name));
-            Assert.That(lane.Events[32].Clip, Is.Not.EqualTo(original), "and a clip id of its own");
+            Assert.That(lane.Events[32].PlacementId, Is.Not.EqualTo(original), "and a clip id of its own");
             Assert.That(copy.Columns.Count, Is.EqualTo(machine.Patterns.First(p => p.Name == "00").Columns.Count), "with the notes (the engine columns) copied");
             Assert.That(Events(lane), Is.EqualTo($"0:00[0,0] 32:{copy.Name}[0,0]"));
 
             rig.Drag(rig.At(lane, 4), rig.At(lane, 68), RawInputModifiers.Alt);
             Assert.That(machine.Patterns.Count, Is.EqualTo(2), "an Alt-drag makes no pattern");
             Assert.That(lane.Events[64].Pattern.Name, Is.EqualTo("00"), "it is another place of the same pattern");
-            Assert.That(lane.Events[64].Clip, Is.Not.EqualTo(original).And.Not.EqualTo(lane.Events[32].Clip), "with its own id");
+            Assert.That(lane.Events[64].PlacementId, Is.Not.EqualTo(original).And.Not.EqualTo(lane.Events[32].PlacementId), "with its own id");
             Assert.That(rig.Canvas.UsesOf(machine.Patterns.First(p => p.Name == "00")), Is.EqualTo(2), "the shared badge counts the places");
 
             // Make unique: the clip gets a pattern of its own.
@@ -277,7 +277,7 @@ namespace ReBuzz.Studio.Tests
             rig.Click(rig.At(lane, 24));           // the click puts the cursor on the beat
             rig.Key(PhysicalKey.S);
             Assert.That(rig.Clips(lane), Is.EqualTo("0-24 00 from 0 loop | 24-48 00 from 8 loop"), "two clips, the second starting partway into the pattern");
-            Assert.That(lane.Events[0].Clip, Is.Not.EqualTo(lane.Events[24].Clip));
+            Assert.That(lane.Events[0].PlacementId, Is.Not.EqualTo(lane.Events[24].PlacementId));
             rig.Click(rig.At(lane, 4));
             rig.Key(PhysicalKey.J);
             Assert.That(rig.Clips(lane), Is.EqualTo("0-48 00 from 0 loop"));

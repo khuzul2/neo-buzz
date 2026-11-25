@@ -505,7 +505,7 @@ namespace ReBuzz.Studio.Tests
             string before = State();
             var ok = s.OnTrack(lead, One(Pat("Lead", "Verse")), 1);
             Assert.That(ok.Ok, Is.True, ok.Message);
-            Assert.That(ok.Action, Is.EqualTo(DropAction.PatternClip));
+            Assert.That(ok.Action, Is.EqualTo(DropAction.Clip));
             Assert.That(s.Clips(lead), Is.EqualTo(new[] { (which == "arrangement" ? ArrangementSurface.Bar : 1, "Verse") }));
             AssertOneStep(before);
             Assert.That(s.PlanTrack(bass, One(Pat("Lead", "Verse"))).Refusal, Does.Contain("belongs to Lead"), "on another machine's track");

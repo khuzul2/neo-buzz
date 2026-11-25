@@ -130,7 +130,7 @@ namespace ReBuzz.Studio.Views.Session
             dropTargetNow = TargetAt(p);
             dropPlan = new DropRouter(buzz).Plan(items, dropTargetNow);
             var lit = new List<(int, int)>();
-            if (dropPlan.Allowed && dropTargetNow.Scene >= 0 && (dropPlan.Action is DropAction.AudioClips or DropAction.NewAudioTrack or DropAction.PatternClip or DropAction.MidiNewPattern or DropAction.MidiNewTrack or DropAction.NewTrack))
+            if (dropPlan.Allowed && dropTargetNow.Scene >= 0 && (dropPlan.Action is DropAction.AudioClips or DropAction.NewAudioTrack or DropAction.Clip or DropAction.MidiNewPattern or DropAction.MidiNewTrack or DropAction.NewTrack))
             {
                 int track = dropPlan.Target != null ? layout.FirstTrackOf(dropPlan.Target) : -1;
                 int count = dropPlan.Action == DropAction.AudioClips || dropPlan.Action == DropAction.NewAudioTrack ? items.Count : 1;

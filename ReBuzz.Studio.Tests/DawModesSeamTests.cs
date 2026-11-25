@@ -115,38 +115,38 @@ namespace ReBuzz.Studio.Tests
             int id = clips.NewId();
             clips.SetLoop(id, new ClipLoop(2, 6, true));
             // A clip: from tick 1 to the loop end, then the loop twice, the last repeat cut at 16.
-            track.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 1, End = 6, Clip = id });
-            track.SetEvent(5, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 2, End = 6, Clip = id });
-            track.SetEvent(9, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 2, End = 6, Clip = id });
+            track.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 1, End = 6, PlacementId = id });
+            track.SetEvent(5, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 2, End = 6, PlacementId = id });
+            track.SetEvent(9, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 2, End = 6, PlacementId = id });
             track.SetEvent(12, new SequenceEvent(SequenceEventType.Break));
             track.SetEvent(16, new SequenceEvent(SequenceEventType.PlayPattern, verse));          // a plain event: a clip of its own
 
             var read = clips.Of(track);
             Assert.That(read.Select(c => (c.Id, c.Time, c.Length, c.Offset, c.Events)), Is.EqualTo(new[] { (id, 0, 12, 1, 3), (0, 16, 8, 0, 1) }));
             Assert.That(read[0].Loop, Is.EqualTo(new ClipLoop(2, 6, true)));
-            Assert.That(new SequenceEvent(track.Events[5]).Clip, Is.EqualTo(id), "the copy constructor keeps it");
+            Assert.That(new SequenceEvent(track.Events[5]).PlacementId, Is.EqualTo(id), "the copy constructor keeps it");
 
             // The editors' actions keep it: BuzzGUI.Common's clear and its undo, the studio's move and its clipboard.
             var clear = new ClearAction(track, 0, 16);
             clear.Do();
             Assert.That(track.Events.Keys, Is.EqualTo(new[] { 16 }));
             clear.Undo();
-            Assert.That(track.Events.Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Key < 16).Select(e => e.Value.Clip), Is.All.EqualTo(id));
+            Assert.That(track.Events.Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Key < 16).Select(e => e.Value.PlacementId), Is.All.EqualTo(id));
             var edits = new SequenceEditing(rig.Core.Song, rig.Core.SongCore.ActionStack, rig.Core.SongMeter, new SequenceClipboard());
             Assert.That(edits.MoveEvent(0, 16, 32, clone: false), Is.True);
-            Assert.That(track.Events[32].Clip, Is.EqualTo(0));
+            Assert.That(track.Events[32].PlacementId, Is.EqualTo(0));
             var board = new SequenceClipboard();
             board.Copy(rig.Core.Song, new SequenceRect(0, 0, 16, 1));
             board.Paste(rig.Core.Song, 48, 0);
-            Assert.That(track.Events[53].Clip, Is.EqualTo(id), "paste keeps the clip (AR1 gives copies their own)");
+            Assert.That(track.Events[53].PlacementId, Is.EqualTo(id), "paste keeps the clip (AR1 gives copies their own)");
             rig.Core.SongCore.ActionStack.Undo();
             Assert.That(track.Events.ContainsKey(16) && !track.Events.ContainsKey(32), Is.True, "undo of the move");
 
             SaveAndOpen(rig, Work("clips" + extension));
             track = Track(rig, "Lead");
             var e5 = track.Events[5];
-            Assert.That((e5.Offset, e5.End, e5.Clip), Is.EqualTo((2, 6, id)));
-            Assert.That(track.Events[16].Clip, Is.EqualTo(0));
+            Assert.That((e5.Offset, e5.End, e5.PlacementId), Is.EqualTo((2, 6, id)));
+            Assert.That(track.Events[16].PlacementId, Is.EqualTo(0));
             Assert.That(rig.Core.Clips.Of(track)[0].Loop, Is.EqualTo(new ClipLoop(2, 6, true)), "the loop comes back");
             Assert.That(rig.Core.Clips.NewId(), Is.GreaterThan(id), "new ids follow the song's");
         }
@@ -212,8 +212,8 @@ namespace ReBuzz.Studio.Tests
             rig.Settle();
 
             var played = track.Events.OrderBy(e => e.Key).Where(e => e.Value.Type == SequenceEventType.PlayPattern).ToList();
-            Assert.That(played.Count, Is.GreaterThanOrEqualTo(5), string.Join(" ", track.Events.Select(e => $"{e.Key}:{e.Value.Type}/{e.Value.Clip}")));
-            Assert.That(played.All(e => e.Value.Clip != 0), Is.True, "recorded starts carry clip ids");
+            Assert.That(played.Count, Is.GreaterThanOrEqualTo(5), string.Join(" ", track.Events.Select(e => $"{e.Key}:{e.Value.Type}/{e.Value.PlacementId}")));
+            Assert.That(played.All(e => e.Value.PlacementId != 0), Is.True, "recorded starts carry clip ids");
             var clips = rig.Core.Clips.Of(track);
             Assert.That(clips.Count, Is.EqualTo(2), "the launch with its wraps, then the relaunch: " + string.Join(", ", clips.Select(c => $"{c.Id}@{c.Time}x{c.Events}")));
             Assert.That(clips[0].Events, Is.GreaterThanOrEqualTo(3));
@@ -424,7 +424,7 @@ namespace ReBuzz.Studio.Tests
                 var lines = new List<string> { "meter " + string.Join(" ", rig.Core.SongMeter.Entries.Select(e => $"{e.Key}:{e.Value}")) };
                 foreach (var s in rig.Core.SongCore.SequencesList)
                 {
-                    lines.Add($"{s.Machine.Name}: " + string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e => $"{e.Key}:{e.Value.Type}:{e.Value.Pattern?.Name}:{e.Value.Offset}-{e.Value.End}:c{e.Value.Clip}")));
+                    lines.Add($"{s.Machine.Name}: " + string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e => $"{e.Key}:{e.Value.Type}:{e.Value.Pattern?.Name}:{e.Value.Offset}-{e.Value.End}:c{e.Value.PlacementId}")));
                     lines.Add($"{s.Machine.Name} clips: " + string.Join(" ", rig.Core.Clips.Of(s).Select(c => $"{c.Time}+{c.Length}x{c.Events}:{c.Loop}")));
                 }
                 foreach (var c in rig.Machine("Lead").Patterns.First(p => p.Name == "Sweep").Columns)

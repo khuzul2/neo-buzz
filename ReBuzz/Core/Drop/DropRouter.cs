@@ -48,7 +48,7 @@ namespace ReBuzz.Core.Drop
         /// <summary>The files as samples of a sampler.</summary>
         LoadSample,
         /// <summary>A pattern as a clip of its machine's track.</summary>
-        PatternClip,
+        Clip,
         /// <summary>A new track with the MIDI file's notes on a default instrument.</summary>
         MidiNewTrack,
         /// <summary>The MIDI file's notes in a new pattern of the track.</summary>
@@ -311,7 +311,7 @@ namespace ReBuzz.Core.Drop
             if (machine != pattern.Machine) return DropPlan.Refuse($"“{pattern.Name}” belongs to {owner}: drop it on {owner}'s track.");
             if (!HasSequence(machine)) return DropPlan.Refuse($"{owner} has no track.");
             if (t.View == DropView.Session && (Layout == null || Layout.FirstTrackOf(machine) < 0)) return DropPlan.Refuse($"{owner} has no Session track.");
-            return new DropPlan { Action = DropAction.PatternClip, Target = machine, Describe = $"Clip: {pattern.Name}" };
+            return new DropPlan { Action = DropAction.Clip, Target = machine, Describe = $"Clip: {pattern.Name}" };
         }
 
         DropPlan PlanAudio(IReadOnlyList<BrowserDragData> items, DropTarget t, IMachine machine)
@@ -472,7 +472,7 @@ namespace ReBuzz.Core.Drop
                 case DropAction.NewAudioTrack:
                 case DropAction.AudioClips: return DoAudio(plan, items, t);
                 case DropAction.LoadSample: return DoSamples(machine, items);
-                case DropAction.PatternClip: return DoPatternClip(machine, first, t);
+                case DropAction.Clip: return DoPatternClip(machine, first, t);
                 case DropAction.MidiNewTrack:
                 case DropAction.MidiNewPattern: return DoMidi(plan, first, t);
             }
@@ -628,11 +628,11 @@ namespace ReBuzz.Core.Drop
                 int scene = t.Scene >= 0 ? t.Scene : FirstEmptyScene(layout, track);
                 EnsureScenes(scene);
                 layout.SetSlot(track, scene, pattern);
-                return new DropResult { Ok = true, Action = DropAction.PatternClip, Machine = machine, Patterns = new[] { pattern }, Message = $"“{pattern.Name}” in scene {scene + 1} of {machine.Name}." };
+                return new DropResult { Ok = true, Action = DropAction.Clip, Machine = machine, Patterns = new[] { pattern }, Message = $"“{pattern.Name}” in scene {scene + 1} of {machine.Name}." };
             }
             int time = Math.Max(0, t.Time);
             if (new ClipEditor(core).Place(LaneOf(machine, t), pattern, time) is { } why) throw new ToolError(why);
-            return new DropResult { Ok = true, Action = DropAction.PatternClip, Machine = machine, Patterns = new[] { pattern }, Message = $"“{pattern.Name}” placed on {machine.Name} at tick {time}." };
+            return new DropResult { Ok = true, Action = DropAction.Clip, Machine = machine, Patterns = new[] { pattern }, Message = $"“{pattern.Name}” placed on {machine.Name} at tick {time}." };
         }
 
         static int FirstEmptyScene(SessionLayout layout, int track)

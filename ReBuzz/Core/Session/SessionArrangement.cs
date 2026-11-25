@@ -32,7 +32,7 @@ namespace ReBuzz.Core.Session
             public int LastWrite;
             public bool Open = true;
             /// <summary>daw-modes.md S2: the clip the track's last start began, which its loop wraps continue (0: none).</summary>
-            public int Clip;
+            public int PlacementId;
             public PatternCore ClipPattern;
             /// <summary>
             /// 0.6.2: every time the pass wrote to, with what was there before its first write and
@@ -154,7 +154,7 @@ namespace ReBuzz.Core.Session
             {
                 ClearBetween(seq, track, track.LastWrite, e.Position);
                 track.Open = false;
-                track.Clip = 0;
+                track.PlacementId = 0;
                 return;
             }
 
@@ -167,13 +167,13 @@ namespace ReBuzz.Core.Session
                     Offset = Math.Max(0, e.Offset),
                     End = e.End > 0 && e.End < e.Pattern.Length ? e.End : 0,
                     Gain = Math.Clamp(e.Gain, 0f, 1f),
-                    Clip = ClipFor(track, e)
+                    PlacementId = ClipFor(track, e)
                 });
             else if (e.Kind == Kind.Stop)
                 Write(seq, track, e.Position, new SequenceEvent(SequenceEventType.Off));
             else if (e.Kind == Kind.Cut)
                 Write(seq, track, e.Position, new SequenceEvent(SequenceEventType.Break));
-            if (e.Kind != Kind.Start) track.Clip = 0;
+            if (e.Kind != Kind.Start) track.PlacementId = 0;
             track.LastWrite = e.Position;
         }
 
@@ -183,12 +183,12 @@ namespace ReBuzz.Core.Session
         /// </summary>
         int ClipFor(TrackPass track, Entry e)
         {
-            if (e.Wrap && track.Clip != 0 && ReferenceEquals(track.ClipPattern, e.Pattern))
-                return track.Clip;
+            if (e.Wrap && track.PlacementId != 0 && ReferenceEquals(track.ClipPattern, e.Pattern))
+                return track.PlacementId;
             var clips = buzz.Clips;
             int id = clips.NewId();
             clips.SetLoop(id, SceneToArrangement.LoopOf(layout, e.Pattern));
-            track.Clip = id;
+            track.PlacementId = id;
             track.ClipPattern = e.Pattern;
             return id;
         }
@@ -314,7 +314,7 @@ namespace ReBuzz.Core.Session
         /// <summary>Two events (or nothing) are the same.</summary>
         internal static bool Same(SequenceEvent a, SequenceEvent b) =>
             a == null || b == null ? a == null && b == null :
-            a.Type == b.Type && ReferenceEquals(a.Pattern, b.Pattern) && a.Offset == b.Offset && a.End == b.End && a.Gain == b.Gain && a.Clip == b.Clip;
+            a.Type == b.Type && ReferenceEquals(a.Pattern, b.Pattern) && a.Offset == b.Offset && a.End == b.End && a.Gain == b.Gain && a.PlacementId == b.PlacementId;
 
         /// <summary>Sets an event (null: removes it) if what is there is still as expected: edits made since stay.</summary>
         static void Put(ISequence seq, int time, SequenceEvent expected, SequenceEvent value)
@@ -410,7 +410,7 @@ namespace ReBuzz.Core.Session
                 int t = position, offset = start, lastEnd = position;
                 while (t < end)
                 {
-                    seq.SetEvent(t, new SequenceEvent(SequenceEventType.PlayPattern, pattern) { Offset = offset, End = endMark, Clip = id });
+                    seq.SetEvent(t, new SequenceEvent(SequenceEventType.PlayPattern, pattern) { Offset = offset, End = endMark, PlacementId = id });
                     lastEnd = t + (regionEnd - offset);
                     if (!c.Loop) break;
                     t = lastEnd;

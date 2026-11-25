@@ -7,7 +7,7 @@ namespace BuzzGUI.Interfaces
 
     public class SequenceEvent
     {
-        public SequenceEvent(SequenceEvent e) { Type = e.Type; Pattern = e.Pattern; Span = e.Span; Offset = e.Offset; End = e.End; Gain = e.Gain; Clip = e.Clip; }
+        public SequenceEvent(SequenceEvent e) { Type = e.Type; Pattern = e.Pattern; Span = e.Span; Offset = e.Offset; End = e.End; Gain = e.Gain; PlacementId = e.PlacementId; }
         public SequenceEvent(SequenceEventType type) { Type = type; }
         public SequenceEvent(SequenceEventType type, IPattern pattern) { Type = type; Pattern = pattern; }
         public SequenceEvent(SequenceEventType type, IPattern pattern, int span) { Type = type; Pattern = pattern; Span = span; }
@@ -39,7 +39,7 @@ namespace BuzzGUI.Interfaces
         // files keep it in the fork subsection; upstream ReBuzz plays each event, cut at the next.
 
         /// <summary>The clip's id (unique in the song), or 0: the event is a clip of its own.</summary>
-        public int Clip { get; set; }
+        public int PlacementId { get; set; }
 
         /// <summary>Where the pattern starts playing, within the pattern as it is now.</summary>
         public int PlayedOffset => Pattern == null ? 0 : Math.Clamp(Offset, 0, Math.Max(0, PlayedEnd - 1));

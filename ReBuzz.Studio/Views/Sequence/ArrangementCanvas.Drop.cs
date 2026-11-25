@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 double y = rows.Count == 0 ? SequenceGeometry.RulerHeight : YOf(rows[^1]) + rows[^1].Height;
                 DropSupport.DrawInsertion(ctx, new Point(tracks.X, y), new Point(tracks.Right, y));
             }
-            if (!refused && dropPlan.Action is DropAction.NewTrack or DropAction.NewAudioTrack or DropAction.AudioClips or DropAction.PatternClip or DropAction.MidiNewPattern or DropAction.MidiNewTrack && dropTarget.Time >= 0)
+            if (!refused && dropPlan.Action is DropAction.NewTrack or DropAction.NewAudioTrack or DropAction.AudioClips or DropAction.Clip or DropAction.MidiNewPattern or DropAction.MidiNewTrack && dropTarget.Time >= 0)
             {
                 double x = Math.Floor(geo.XOf(dropTarget.Time));
                 double top = dropPlan.MakesTrack ? Math.Max(tracks.Y, (rows.Count == 0 ? SequenceGeometry.RulerHeight : YOf(rows[^1]) + rows[^1].Height) - 20) : tracks.Y;

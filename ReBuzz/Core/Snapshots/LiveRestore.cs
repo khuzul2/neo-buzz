@@ -489,14 +489,14 @@ namespace ReBuzz.Core.SongHistory
             {
                 var e = then.Events[i++];
                 var v = kv.Value;
-                if (kv.Key != e.Time || (int)v.Type != e.Type || v.Span != e.Span || v.Offset != e.Offset || v.End != e.End || v.Clip != e.Clip || v.Gain != e.Gain || (v.Pattern?.Name) != e.Pattern)
+                if (kv.Key != e.Time || (int)v.Type != e.Type || v.Span != e.Span || v.Offset != e.Offset || v.End != e.End || v.PlacementId != e.PlacementId || v.Gain != e.Gain || (v.Pattern?.Name) != e.Pattern)
                     return false;
             }
             return true;
         }
 
         static SequenceEvent MakeEvent(LiveSong.SeqEvent e, PatternCore pattern) =>
-            new SequenceEvent((SequenceEventType)e.Type, pattern, e.Span) { Offset = e.Offset, End = e.End, Gain = e.Gain, Clip = e.Clip };
+            new SequenceEvent((SequenceEventType)e.Type, pattern, e.Span) { Offset = e.Offset, End = e.End, Gain = e.Gain, PlacementId = e.PlacementId };
 
         static string TempName(SongCore song, string name)
         {
