@@ -413,3 +413,19 @@ Steady loops of whole bars: the tempo is AW1's exactly (0.000 BPM apart; gate 0.
 **Item 01 and the pack.** The pack the user heard had item 01 at 101.1 BPM (AW1, 44 markers) and 101.0 (AW2, 2 markers): no 2:3 error. The difference is the single straight line of AW2's steady result against AW1's markers that follow the player. With the candidate's residual bounds item 01 stays one line (its beats are within 30 ms of it), so the candidate does not change what the ear heard there. Items where AW2 and AW1 differ by an octave (08: 81.8 against 164.1 BPM; 2362: 124.0 against 62.0) are not touched by AW3.
 
 **Listening pack v2** (`aw3-pack`, 16 held-out clips: the 8 of AW2's blind test and 8 new, each AW1 against the candidate; the slots are counterbalanced, AW1 in slot A in 8 of 16, the key is kept apart).
+
+## 18. AW5 as built: auto-warp that sticks to the grid
+
+**Why.** Round 4 (8 blind excerpts): AW2 won 5, the pretrained model (AW4, parked) 0, Neither 2 (solo guitar), Same 1. The user asked whether the warp is dynamic and sticks transients to the grid. Auto-warp puts markers on the beats and bars, so notes played off the beat, and free playing, are not moved. AW5 adds a second mode of the one command.
+
+**Two modes.** `Auto-warp` (follow the beat, as before) and `Auto-warp to grid`: auto-warp first (when no beats are found the clip's own tempo and markers are the line), then a marker on every detected transient, each pulled to the nearest line of the grid by the strength. One undo step (`SessionLayout.EditAudio` with `AudioClipEdit.ToGrid`; `AutoWarpClips` does several clips as one step). Import: `AutoWarpPolicy.Mode` Off / Beat (default) / Grid (file value 0 / 1 / 2; 1 is what the old file meant by on).
+
+**Rules** (`WarpMath.ToGrid`, `AudioAnalysis.GridOnsets`, pure):
+- Grid 1/4, 1/8, 1/16 (default), 1/32, 1/4T, 1/8T, 1/16T. Strength: the song's Quantize strength (0 to 100 %, default 100). Sensitivity 0 to 100 (50 is the slicing detector exactly; each 25 halves or doubles its thresholds). Reach: a transient more than 40 % (0 to 50) of a grid step from every line gets no marker and is counted.
+- Where to stop: no marker on a transient whose following 20 ms are more than 35 dB under the loud passages (quiet), or less than 2 dB louder than the 20 ms before (a sustained sound changing).
+- Two transients on one line: the closer stays. A beat marker on a transient's line gives way to it. No segment is stretched past 2x or squeezed under half; the transient that would is not marked. The markers cover the whole audio (ends added on the line they have).
+- Grid, sensitivity and reach are saved with the clip (`autoGrid`, `autoSens`, `autoReach` on the Audio element, written when not default); setting them moves no marker. The strength stays the song's.
+- Agent: `audio_clip_set` takes `mode` (beat | grid) with `auto_warp`, `grid`, `sensitivity`, `reach_percent`, `strength_percent`; the answer has `to_grid` (made, out of reach, quiet or sustained). The UI (menus, popover, Audio page, Preferences) waits for the user's approved design.
+- AW2 stays the beat source; AW4 stays unmerged.
+
+**Gates and the round-5 pack:** see the AW5 report on issue 215.

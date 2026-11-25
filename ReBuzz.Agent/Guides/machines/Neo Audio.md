@@ -15,7 +15,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (W
 - `Monitor` (auto): hear the input only while the track is armed; `in` always, `off` never.
 - `Input` (in): `in` records what is connected to the track; `master` records the song's output (resampling).
 - Each clip's warp: a new clip starts in Pro (songs saved earlier keep the mode they were saved with, Beats when none); Beats suits drums and loops. Off, Repitch, Beats, Complex or Pro; set it with `audio_clip_set`.
-- Each clip's tempo (found at import): the tempo of the audio, which sets the clip's length in beats; `detect_tempo` finds it again; `auto_warp=true` follows tempo changes (`from_seconds`: after it).
+- Each clip's tempo (found at import): the tempo of the audio, which sets the clip's length in beats; `detect_tempo` finds it again; `auto_warp=true` follows tempo changes (`from_seconds`: after it). `mode="grid"` (with `auto_warp`) then puts a marker on every transient, pulled to `grid` (1/16 default; 1/4, 1/8, 1/32, triplets 1/4T 1/8T 1/16T) by `strength_percent` (song's Quantize strength), skipping those beyond `reach_percent` (40) of a step and those in quiet or sustained parts; `sensitivity`, `grid`, `reach_percent` are saved with the clip.
 - Each clip's transpose (-48 to +48 semitones) and detune (cents): pitch without changing speed in Beats, Complex and Pro.
 - Each clip's gain (0 dB): -70 to +24 dB.
 - Each clip's loop and region: where it starts and what part repeats.
