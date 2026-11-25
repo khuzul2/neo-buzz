@@ -425,6 +425,10 @@ CASES = [
     fx("lofi-8bit", "Neo Lo-Fi", "Crush — 8-bit"),
     fx("lofi-cassette", "Neo Lo-Fi", "Tape — Cassette"),
     fx("lofi-vinyl", "Neo Lo-Fi", "Vinyl — Dusty vinyl"),
+    # Neo Chop (docs/specs/neo-chop.md): the stutter (the ring, the slice and the per-repeat pitch), the tape stop (the curved read) and the gate and pan (the smooth steps); on both platforms the engine runs on the same portable maths.
+    fx("chop-stutter", "Neo Chop", "Stutter — Sixteenth Stutter", beats=8),
+    fx("chop-tape", "Neo Chop", "Tape — Tape Stop at the Bar", beats=18),
+    fx("chop-gate", "Neo Chop", "Gate — Pumping Step Gate", beats=8),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),

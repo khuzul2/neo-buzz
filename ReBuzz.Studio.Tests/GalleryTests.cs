@@ -2331,6 +2331,29 @@ namespace ReBuzz.Studio.Tests
                     "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
+                // CHP1: Neo Chop's editor with a preset loaded (the values are set before the editor opens): the mode row with the stutter lit,
+                // the stutter's page, the sixteen steps and Output.
+                void ChopShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Chop", machineName);
+                        string[] names = { "Stutter", "Stutter trigger", "Stutter every", "Slice", "Slice feel", "Repeats", "Pitch per repeat", "Decay per repeat", "Filter per repeat", "Repeat", "Repeat trigger", "Interval", "Chance", "Length", "Grid", "Grid feel", "Variation", "Retrigger", "Retrigger trigger", "Retrigger every", "Retrigger length", "Retrigger grid", "Retrigger feel", "Back to", "Tape", "Tape trigger", "Tape every", "Stop sync", "Stop time", "Stop curve", "Start sync", "Start time", "Gate", "Gate lock", "Gate rate", "Gate attack", "Gate release", "Gate depth", "Accent", "Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6", "Step 7", "Step 8", "Step 9", "Step 10", "Step 11", "Step 12", "Step 13", "Step 14", "Step 15", "Step 16", "Pan", "Pan sync", "Pan rate", "Pan depth", "Pan shape", "Pan phase", "Smoothness", "Note picks slice", "Mix", "Amount" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Chop; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                ChopShot("660-neo-chop-editor", "Chop", new[] { 1, 0, 2, 2, 0, 7, 120, 5, 170, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 0, 0, 2, 199, 565, 1000, 40, 2, 1, 0, 1, 1, 0, 1, 0, 2, 1, 0, 1, 1, 0, 1, 1, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
+                    "Neo Chop with the preset \"Stutter — Sixteenth Stutter\" loaded: the mode row (Stutter lit, the other five dark), the Stutter page below it (Trigger, Every, Repeats, Slice and Feel, Pitch, Decay and Filter per repeat), the sixteen gate steps, and Output with Amount and Mix side by side, Smoothness, Note picks slice and the meters.");
+                ChopShot("661-neo-chop-gate", "Chop 2", new[] { 0, 0, 2, 2, 0, 3, 120, 0, 200, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 1, 0, 1, 88, 511, 1000, 25, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
+                    "Neo Chop with the preset \"Gate — Pumping Step Gate\" loaded: the Gate lit in the mode row and the sixteen steps as the preset sets them (accents on the beats).");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
