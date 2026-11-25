@@ -151,9 +151,9 @@ namespace ReBuzz.Studio.Views.Audio
         /// <summary>The Alt key as the hints name it: Option's symbol on a Mac.</summary>
         internal static string AltKey => KeyText.IsMac ? "⌥" : "Alt";
         // ---- Auto-warp (AW5): what the markers are, as the Audio page's legend says
-        static readonly IBrush BeatMarkerBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xB4, 0x29));
-        static readonly IBrush AttackBrush = new SolidColorBrush(Color.FromRgb(0x5B, 0x8D, 0xEF));
-        static readonly IBrush LeftAloneBrush = new SolidColorBrush(Color.FromRgb(0x8B, 0x92, 0x9C));
+        static readonly IBrush BeatMarkerBrush = StudioTokens.WarningBrush;
+        static readonly IBrush AttackBrush = StudioTokens.AccentBrush;
+        static readonly IBrush LeftAloneBrush = StudioTokens.TextSecondaryBrush;
         double[] attacks = Array.Empty<double>();
         double gridBeats = 0.25, reachShare = 0.4;
 

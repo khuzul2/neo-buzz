@@ -154,7 +154,7 @@ namespace ReBuzz.Studio.Views.Audio
             segBefore.Width = segAfter.Width = 62;
             segHalve = Btn("÷2", "Halve the tempo of the segment after the selected marker (before it, for the last marker)", () => ScaleSegment(0.5), "Halve segment tempo");
             segDouble = Btn("×2", "Double the tempo of the segment after the selected marker (before it, for the last marker)", () => ScaleSegment(2), "Double segment tempo");
-            markerInfo = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+            markerInfo = new TextBlock { MinWidth = 120, FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
             hintText = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, MaxLines = 2, Width = 320, Height = 30, VerticalAlignment = VerticalAlignment.Top, Text = wave.Hint };
             hintLabel.Text = wave.HintLabel;
             wave.HintChanged += t => { hintText.Text = t; hintLabel.Text = wave.HintLabel; };
@@ -624,10 +624,10 @@ namespace ReBuzz.Studio.Views.Audio
         Control Legend()
         {
             Control Item(Control mark, string text) => new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { mark, new TextBlock { Text = text, FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center } } };
-            var amber = new Avalonia.Controls.Shapes.Rectangle { Width = 8, Height = 8, Fill = new SolidColorBrush(Color.FromRgb(0xF0, 0xB4, 0x29)), RenderTransform = new RotateTransform(45), VerticalAlignment = VerticalAlignment.Center };
-            var blue = new Avalonia.Controls.Shapes.Ellipse { Width = 10, Height = 10, Fill = new SolidColorBrush(Color.FromRgb(0x5B, 0x8D, 0xEF)), VerticalAlignment = VerticalAlignment.Center };
-            var hollow = new Avalonia.Controls.Shapes.Ellipse { Width = 9, Height = 9, Stroke = new SolidColorBrush(Color.FromRgb(0x8B, 0x92, 0x9C)), StrokeThickness = 2, VerticalAlignment = VerticalAlignment.Center };
-            var dash = new Avalonia.Controls.Shapes.Rectangle { Width = 18, Height = 2, Fill = new SolidColorBrush(Color.FromRgb(0x8B, 0x92, 0x9C)), VerticalAlignment = VerticalAlignment.Center };
+            var amber = new Avalonia.Controls.Shapes.Rectangle { Width = 8, Height = 8, Fill = StudioTokens.WarningBrush, RenderTransform = new RotateTransform(45), VerticalAlignment = VerticalAlignment.Center };
+            var blue = new Avalonia.Controls.Shapes.Ellipse { Width = 10, Height = 10, Fill = StudioTokens.AccentBrush, VerticalAlignment = VerticalAlignment.Center };
+            var hollow = new Avalonia.Controls.Shapes.Ellipse { Width = 9, Height = 9, Stroke = StudioTokens.TextSecondaryBrush, StrokeThickness = 2, VerticalAlignment = VerticalAlignment.Center };
+            var dash = new Avalonia.Controls.Shapes.Rectangle { Width = 18, Height = 2, Fill = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center };
             return new WrapPanel
             {
                 Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), ItemSpacing = 16, LineSpacing = 2,

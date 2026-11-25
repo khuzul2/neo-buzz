@@ -111,6 +111,12 @@ namespace ReBuzz.Studio.Tests
 
         static void Choose(Rig rig, WarpEditor wave, string header, Point at, bool save = false, Action<string> check = null, bool undoable = true)
         {
+            // The page may lay itself out again as the pointer arrives (a toolbar row more or less): follow the waveform.
+            var o1 = wave.TranslatePoint(default, rig.Window);
+            rig.Window.MouseMove(at);
+            Settle();
+            var o2 = wave.TranslatePoint(default, rig.Window);
+            if (o1 != null && o2 != null) at += o2.Value - o1.Value;
             rig.Click(at, MouseButton.Right);
             Assert.That(wave.LastMenu, Is.Not.Null);
             Assert.That(wave.LastMenu!.IsOpen, Is.True, "a right click opens the waveform's menu");
