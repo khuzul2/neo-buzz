@@ -40,6 +40,22 @@ namespace NeoBuzz.MachineTests
         static readonly Dictionary<string, (ParamDef[] Table, Make Make)> Machines = new()
         {
             ["Neo Analyzer"] = (NeoBuzz.Analyzer.Params.Table, v => { var e = new NeoBuzz.Analyzer.AnalyzerEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
+            ["Neo Arp"] = (NeoBuzz.Arp.Params.Table, v =>
+            {
+                // Notes, not audio: the engine with a four-note chord held, one block at a time at 120 BPM.
+                var e = new NeoBuzz.Arp.ArpEngine(v);
+                e.SetSampleRate(Measure.Rate);
+                var chord = new[] { NeoBuzz.Arp.ArpEvent.On(0, 0, 48, 100), NeoBuzz.Arp.ArpEvent.On(0, 0, 55, 100), NeoBuzz.Arp.ArpEvent.On(0, 0, 60, 100), NeoBuzz.Arp.ArpEvent.On(0, 0, 64, 100) };
+                double beat = 0;
+                bool first = true;
+                return (l, r, n) =>
+                {
+                    var block = new NeoBuzz.Arp.ArpBlock { Samples = n, Playing = true, Beat = beat, SamplesPerBeat = Measure.Rate * 0.5, BeatsPerBar = 4 };
+                    beat += n / (Measure.Rate * 0.5);
+                    if (first) { e.Process(in block, chord); first = false; }
+                    else e.Process(in block, ReadOnlySpan<NeoBuzz.Arp.ArpEvent>.Empty);
+                };
+            }),
             ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, v => (l, r, n) => { }),   // its audio is the Session engine's (the app): nothing here to move
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, v => { var e = new NeoBuzz.Drive.DriveEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, v => { var e = new NeoBuzz.Comp.CompEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, null, null, n); }),

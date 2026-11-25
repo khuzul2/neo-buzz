@@ -183,7 +183,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_list | 10 | 0 | yes |
 | machine_open_editor | 3 | 2 | yes |
 | machine_pin | 1 | 2 | yes |
-| machine_readings | 50 | 43 | yes |
+| machine_readings | 51 | 44 | yes |
 | machine_remove | 2 | 0 | yes |
 | machine_set | 9 | 11 | yes |
 | machine_swap | 1 | 1 | yes |
@@ -263,7 +263,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | track_input | 5 | 9 | yes |
 | track_page_get | 1 | 2 | yes |
 | track_page_set | 1 | 1 | yes |
-| transport | 5 | 7 | yes |
+| transport | 6 | 8 | yes |
 | undo | 11 | 0 | yes |
 | view_show | 1 | 2 | yes |
 | wave_from_render | 2 | 2 | yes |

@@ -352,7 +352,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 1 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 1 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 1 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 20,
@@ -369,7 +371,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 2 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 2 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 2 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 21,
@@ -386,7 +390,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 3 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 3 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 3 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 22,
@@ -403,7 +409,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 4 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 4 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 4 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 23,
@@ -420,7 +428,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 5 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 5 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 5 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 24,
@@ -437,7 +447,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 6 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 6 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 6 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 25,
@@ -454,7 +466,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 7 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 7 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 7 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 26,
@@ -471,7 +485,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 8 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 8 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 8 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 27,
@@ -488,7 +504,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 9 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 9 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 9 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 28,
@@ -505,7 +523,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 10 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 10 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 10 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 29,
@@ -522,7 +542,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 11 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 11 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 11 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 30,
@@ -539,7 +561,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 12 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 12 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 12 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 31,
@@ -556,7 +580,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 13 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 13 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 13 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 32,
@@ -573,7 +599,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 14 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 14 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 14 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 33,
@@ -590,7 +618,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 15 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 15 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 15 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 34,
@@ -607,7 +637,9 @@
     "Tie",
     "Accent"
    ],
-   "description": "Step 16 of the row: Off, On, Tie (holds the note before it) or Accent"
+   "description": "Step 16 of the row: Off, On, Tie (holds the note before it) or Accent",
+   "how": "Sets what step 16 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).",
+   "sound": "Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm."
   },
   {
    "index": 35,
@@ -621,7 +653,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 1's transpose in semitones (−12 … +12)"
+   "description": "Step 1's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 1 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 36,
@@ -635,7 +669,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 2's transpose in semitones (−12 … +12)"
+   "description": "Step 2's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 2 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 37,
@@ -649,7 +685,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 3's transpose in semitones (−12 … +12)"
+   "description": "Step 3's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 3 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 38,
@@ -663,7 +701,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 4's transpose in semitones (−12 … +12)"
+   "description": "Step 4's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 4 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 39,
@@ -677,7 +717,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 5's transpose in semitones (−12 … +12)"
+   "description": "Step 5's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 5 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 40,
@@ -691,7 +733,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 6's transpose in semitones (−12 … +12)"
+   "description": "Step 6's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 6 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 41,
@@ -705,7 +749,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 7's transpose in semitones (−12 … +12)"
+   "description": "Step 7's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 7 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 42,
@@ -719,7 +765,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 8's transpose in semitones (−12 … +12)"
+   "description": "Step 8's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 8 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 43,
@@ -733,7 +781,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 9's transpose in semitones (−12 … +12)"
+   "description": "Step 9's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 9 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 44,
@@ -747,7 +797,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 10's transpose in semitones (−12 … +12)"
+   "description": "Step 10's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 10 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 45,
@@ -761,7 +813,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 11's transpose in semitones (−12 … +12)"
+   "description": "Step 11's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 11 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 46,
@@ -775,7 +829,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 12's transpose in semitones (−12 … +12)"
+   "description": "Step 12's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 12 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 47,
@@ -789,7 +845,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 13's transpose in semitones (−12 … +12)"
+   "description": "Step 13's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 13 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 48,
@@ -803,7 +861,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 14's transpose in semitones (−12 … +12)"
+   "description": "Step 14's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 14 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 49,
@@ -817,7 +877,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 15's transpose in semitones (−12 … +12)"
+   "description": "Step 15's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 15 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   },
   {
    "index": 50,
@@ -831,7 +893,9 @@
    "a": -12.0,
    "flag": true,
    "unit": "st",
-   "description": "Step 16's transpose in semitones (−12 … +12)"
+   "description": "Step 16's transpose in semitones (−12 … +12)",
+   "how": "Moves the note step 16 plays by this many semitones, up or down, in the Steps pattern.",
+   "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   }
  ]
 }

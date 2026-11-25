@@ -50,4 +50,4 @@ An arpeggiator: it takes the notes you hold and plays them one at a time, in a p
 
 - [ ] `param_get(machine="Arp", params=["Pattern", "Rate", "Gate"])` shows what you meant.
 - [ ] Hold a chord on the instrument's track, then `render(probes=["Poly"])`: a spectrogram shows the notes one at a time on the beat.
-- [ ] After the song stops, no note is left sounding.
+- [ ] `transport(action="stop")`, then `machine_readings(machine="Poly")`: no note is left sounding.
