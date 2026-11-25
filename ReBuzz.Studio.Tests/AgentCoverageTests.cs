@@ -15,6 +15,7 @@ using BuzzGUI.Common;
 using ReBuzz.Agent;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
+using ReBuzz.Core.Notes;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 
@@ -571,6 +572,117 @@ namespace ReBuzz.Studio.Tests
             var commands = Call("machine_command", Args(("machine", "Wobble")));
             Assert.That(commands["commands"]!.AsArray().Select(c => c!["command"]!.GetValue<string>()), Has.Some.Contain("About"));
             Assert.That(Err("machine_command", Args(("machine", "Wobble"), ("command", "Self Destruct"))), Does.Contain("About"));
+        }
+
+        // ------------------------------------------------------------------ CU4 (clips.md §8): one layer over the store
+
+        static JsonArray Notes(string machine, string pattern, string input = null) =>
+            Call("notes_read", input == null ? Args(("machine", machine), ("pattern", pattern)) : Args(("machine", machine), ("pattern", pattern), ("input", input)))["notes"]!.AsArray();
+
+        static JsonArray Note(int pitch, double start) => new(new JsonObject { ["pitch"] = pitch, ["start"] = start, ["length"] = 1 });
+
+        [AvaloniaTest]
+        public void ClipGetReadsALanesNotesAndViewAndTheNoteAndAutomationToolsSeeEveryLane()
+        {
+            var window = Song(out var restore);
+            using var _ = restore;
+            var core = Host.Core;
+            var bass = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
+            var verse = bass.Patterns.Single(p => p.Name == "Verse");
+
+            // Notes: one call is one undo step, on either route; both land in the store the clip plays.
+            int steps = Steps;
+            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(60, 0))));
+            Assert.That(Steps, Is.EqualTo(steps + 1), "a MIDI note: one undo step");
+            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(64, 1)), ("input", "tracks")));
+            Assert.That(Steps, Is.EqualTo(steps + 2), "a track note: one undo step");
+            Assert.That(Notes("Bass", "Verse"), Has.Count.EqualTo(1), "the MIDI route reads its Notes lane");
+            Assert.That(Notes("Bass", "Verse", "tracks"), Has.Count.EqualTo(1));
+
+            // A lane another writer made (a take's, marked) for the same Note parameter: the tracks route reads both lanes.
+            var noteParameter = bass.ParameterGroups[2].Parameters.First(q => q.Type == BuzzGUI.Interfaces.ParameterType.Note);
+            var key = new ColumnKey(2, noteParameter.IndexInGroup, 1);
+            var marked = SessionLayout.ColumnFor(verse, key, create: true);
+            Assert.That(marked, Is.Not.Null);
+            marked.SetEvents(new[] { new BuzzGUI.Interfaces.PatternEvent(2 * 240 * 4 / 4 * 2, BuzzGUI.Common.BuzzNote.FromMIDINote(67), 0) }, true);
+            var tracks = Notes("Bass", "Verse", "tracks");
+            Assert.That(tracks.Select(n => n!["pitch"]!.GetValue<int>()).OrderBy(x => x), Is.EqualTo(new[] { 64, 67 }), "every lane of the Note parameter");
+
+            // clip_get: the lanes with who made them, the notes, the view.
+            var got = Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse")));
+            Assert.That(got["input"]!.GetValue<string>(), Is.EqualTo("midi"));
+            Assert.That(got["notes"]!.AsArray(), Has.Count.EqualTo(1));
+            var lanes = got["lanes"]!.AsArray();
+            Assert.That(lanes.Any(l => l!["kind"]!.GetValue<string>() == "notes" && l["events"]!.GetValue<int>() == 1), Is.True, "the Notes lane");
+            var noteLanes = lanes.Where(l => l!["param"]?.GetValue<string>() == noteParameter.Name).ToList();
+            Assert.That(noteLanes.Select(l => l!["source"]!.GetValue<string>()).OrderBy(x => x), Is.EqualTo(new[] { "automation", "pattern" }), "the tracker's lane and the take's");
+            Assert.That(got["view"]!["placements"]!.GetValue<int>(), Is.EqualTo(0));
+
+            // The view: a lane's rows and mute are kept with the lane.
+            var lane = StoreLanes.All(verse, key).First();
+            lane.Metadata[BuzzGUI.Common.ClipMeta.Grid] = "rpb=6";
+            lane.Metadata[BuzzGUI.Common.ClipMeta.Mute] = "1";
+            var view = Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse")))["view"]!;
+            Assert.That(view["rows_per_beat"]!.GetValue<int>(), Is.EqualTo(6));
+            Assert.That(view["muted_lanes"]!.GetValue<int>(), Is.EqualTo(1));
+
+            // Automation: a parameter written by the agent (marked lane) and the tracker's lane (unmarked) read as one entry.
+            var param = SongModel.Params(bass).First(q => !q.IsTrack && q.Parameter.MaxValue - q.Parameter.MinValue > 20);
+            int lo = param.Parameter.MinValue, hi = param.Parameter.MaxValue;
+            Call("automation_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name), ("points", new JsonArray(
+                new JsonObject { ["at"] = 0, ["value"] = $"raw:{lo}" }, new JsonObject { ["at"] = 2, ["value"] = $"raw:{hi}" }))));
+            var pkey = new ColumnKey(param.Group, param.Parameter.IndexInGroup, 0);
+            Assert.That(StoreLanes.Home(verse, pkey, create: false), Is.Not.Null);
+            verse.InsertColumn(verse.Columns.Count, param.Parameter, 0);
+            var unmarked = StoreLanes.All(verse, pkey).First(c => !StoreLanes.IsMarked(c));
+            unmarked.SetEvents(new[] { new BuzzGUI.Interfaces.PatternEvent(3 * 240, lo, 0) }, true);
+            var read = Call("automation_read", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name)))["automation"]!.AsArray();
+            Assert.That(read, Has.Count.EqualTo(1), "one entry for the parameter");
+            Assert.That(read[0]!["source"]!.GetValue<string>(), Is.EqualTo("both"));
+            Assert.That(read[0]!["events"]!.GetValue<int>(), Is.GreaterThanOrEqualTo(3), "the events of both lanes");
+
+            Assert.That(Err("clip_get", Args(("machine", "Bass"))), Does.Contain("Say which clip"));
+            window.UpdateLayout();
+        }
+
+        [AvaloniaTest]
+        public void ACloneWithPatternsPlaysTheOriginalsDataAndASavedClipReopensWithEveryLane()
+        {
+            var window = Song(out var restore);
+            using var _ = restore;
+            var core = Host.Core;
+            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(60, 0))));
+            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(64, 2)), ("input", "tracks")));
+            var bass = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
+            var param = SongModel.Params(bass).First(q => !q.IsTrack && q.Parameter.MaxValue - q.Parameter.MinValue > 20);
+            Call("automation_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name), ("points", new JsonArray(
+                new JsonObject { ["at"] = 0, ["value"] = $"raw:{param.Parameter.MinValue}" }, new JsonObject { ["at"] = 2, ["value"] = $"raw:{param.Parameter.MaxValue}" }))));
+            var original = Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse")));
+
+            // Clone with patterns (what Copy then Paste does): the copy's clip has the same lanes and notes, so it plays them.
+            var cloned = Call("machine_clone", Args(("machines", new JsonArray("Bass")), ("with_patterns", true)));
+            string copy = cloned["copies"]![0]!["name"]!.GetValue<string>();
+            var copied = Call("clip_get", Args(("machine", copy), ("pattern", "Verse")));
+            Assert.That(copied["notes"]!.ToJsonString(), Is.EqualTo(original["notes"]!.ToJsonString()), "the MIDI notes");
+            Assert.That(Notes(copy, "Verse", "tracks").ToJsonString(), Is.EqualTo(Notes("Bass", "Verse", "tracks").ToJsonString()), "the track notes");
+            Assert.That(copied["lanes"]!.ToJsonString(), Is.EqualTo(original["lanes"]!.ToJsonString()), "every lane, with its events");
+
+            // Save and open again: every lane of both clips is as it was.
+            string path = NeoBuzz.TestSupport.TestTemp.Path($"cu4-lanes-{Environment.ProcessId}.nbl");
+            try
+            {
+                var before = (Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse"))).ToJsonString(), Call("clip_get", Args(("machine", copy), ("pattern", "Verse"))).ToJsonString());
+                core.SaveSongCopy(path);
+                core.Modified = false;
+                Assert.That(core.TryOpenSongFile(path), Is.True);
+                Settle(window);
+                var after = (Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse"))).ToJsonString(), Call("clip_get", Args(("machine", copy), ("pattern", "Verse"))).ToJsonString());
+                Assert.That(after, Is.EqualTo(before), "saved and opened: every lane, its events and its view");
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { }
+            }
         }
     }
 }

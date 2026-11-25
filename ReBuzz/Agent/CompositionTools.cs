@@ -245,7 +245,8 @@ namespace ReBuzz.Agent
                 Name = "automation_read",
                 Title = "Read automation",
                 Description =
-                    "The automation in a pattern: per parameter, its points (beat, value as the machine shows it). Example: automation_read(machine=\"Pad\", pattern=\"Build\").",
+                    "The automation in a pattern: per parameter (and track), its points (beat, value as the machine shows it), from every lane that holds it: " +
+                    "the lanes of the pattern editor (source \"pattern\"), of takes and automation_write (\"automation\"), or both. A parameter of another machine says which. Example: automation_read(machine=\"Pad\", pattern=\"Build\").",
                 Input = Object(null, Req("machine", String("The machine")), Req("pattern", String("The pattern")), Opt("param", String("Only this parameter"))),
                 Output = Object(null, Req("automation", Array(Object(null, Req("param", String("Name")), Req("points", Array(Object(null, Req("at", Number("Beat")), Req("value", String("Shown value"))), "Points"))), "Per parameter"))),
                 Annotations = ToolAnnotations.Read,
@@ -258,15 +259,22 @@ namespace ReBuzz.Agent
                         string only = c.String("param");
                         int tpb = SongModel.Tpb(core);
                         var list = new JsonArray();
-                        // Track note columns (machines that take notes in tracks) are notes, read with notes_read.
-                        foreach (var col in p.Columns.Where(x => x.Type == PatternColumnType.Parameter && x.Parameter != null && x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey) && !MachineNotes.IsNoteColumn(x)))
+                        // Every lane of a parameter and track counts, whoever wrote it (the tracker's, a take's, the agent's): one entry per
+                        // parameter and track, its events together. Track note columns are notes, read with notes_read.
+                        var lanes = p.Columns.Where(x => x.Type == PatternColumnType.Parameter && x.Parameter != null && !MachineNotes.IsNoteColumn(x))
+                            .GroupBy(x => (x.Parameter, x.Track, x.Machine)).ToList();
+                        foreach (var lane in lanes)
                         {
+                            var col = lane.First();
                             if (only != null && !string.Equals(col.Parameter.Name, only, StringComparison.OrdinalIgnoreCase)) continue;
-                            var events = col.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToList();
+                            var events = lane.SelectMany(x => x.GetEvents(int.MinValue, int.MaxValue)).OrderBy(e => e.Time).ToList();
                             if (events.Count == 0) continue;
                             var o = new JsonObject { ["param"] = col.Parameter.Name };
+                            if (col.Machine != null && !ReferenceEquals(col.Machine, p.Machine)) o["machine"] = col.Machine.Name;
                             if (col.Parameter.Group.Type == ParameterGroupType.Track) o["track"] = col.Track;
                             o["events"] = events.Count;
+                            bool marked = lane.Any(x => x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey)), unmarked = lane.Any(x => !x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey));
+                            o["source"] = marked && unmarked ? "both" : unmarked ? "pattern" : "automation";
                             // Ramps are many events; show the corners (where the direction changes) as points.
                             var corners = new JsonArray();
                             for (int i = 0; i < events.Count; i++)

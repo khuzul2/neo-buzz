@@ -31,6 +31,7 @@ namespace ReBuzz.Core.Session
     internal sealed partial class SessionLayout
     {
         readonly ReBuzzCore buzz;
+        internal ReBuzzCore Buzz => buzz;
         readonly SongCore song;
         readonly IUiDispatcher dispatcher;
         SessionDocument document;

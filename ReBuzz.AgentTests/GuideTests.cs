@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "midi-mapping", "note-wires", "live-performance", "dye-sound-design", "teaching", "performance", "recipes", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Lo-Fi", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Lo-Fi", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Organ", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -180,6 +180,8 @@ namespace ReBuzz.AgentTests
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
             // EV1 (daw-modes.md §8.8: ReBuzz/Agent/ClipEnvelopeTools.cs)
+            // CU4 (clips.md §8: ReBuzz/Agent/ClipTools.cs)
+            ["clip_get"] = new[] { "machine", "pattern", "scene", "lane", "clip", "at" },
             ["clip_envelope"] = new[] { "op", "machine", "pattern", "scene", "lane", "clip", "at", "param", "track", "points", "shape", "replace", "from", "to", "allow_unsafe" },
             // NA4b (neo-audio.md "Takes and comping": ReBuzz/Agent/ArrangementTools.cs)
             ["takes"] = new[] { "op", "machine", "take", "from", "to", "ranges" },

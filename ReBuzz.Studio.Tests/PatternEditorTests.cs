@@ -734,9 +734,9 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void NotesMovedOntoTheLanesOfAPatternNeverShownShowWhenItIs()
         {
-            // Fork (ui-gallery.md, bug 5): the editor makes a view of each pattern as it's created (and shows the newest),
-            // with the columns the pattern had then. Notes moved onto the MIDI note lanes of another pattern, before it
-            // was ever shown, made its lanes, but its view kept its old columns: the Pattern View showed no lanes and no
+            // Fork (ui-gallery.md, bug 5; clips.md, CU4): the editor makes a view of each pattern as it's created (and shows the newest),
+            // with the columns the pattern had then. Notes written into another pattern (the store's MIDI column), before it
+            // was ever shown, must show on its Notes lane when it is: the Pattern View showed no lanes and no
             // notes until the song was saved and opened again. Both apps share this code (PatternEditor.Core.cs).
             var core = Studio.Host.Core;
             core.SongCore.CreateMachine("Neo Poly", null, "PE Unseen", null, null, null, 2, 0.3f, 0.3f);
@@ -755,8 +755,7 @@ namespace ReBuzz.Studio.Tests
                 var notes = new[] { new ReBuzz.Core.Session.ClipNote(0, TB, 60, 100), new ReBuzz.Core.Session.ClipNote(4 * TB, TB, 64, 100),
                                     new ReBuzz.Core.Session.ClipNote(8 * TB, TB, 67, 100), new ReBuzz.Core.Session.ClipNote(12 * TB, 2 * TB, 72, 100) };
                 layout.EditNotes(a, null, notes);
-                Assert.That(layout.MoveNotesToPatternView(track, a), Is.Null, "the notes moved onto A's note lanes");
-                Assert.That(layout.PatternViewNotesOf(a).Count, Is.EqualTo(4), "the lanes have them");
+                Assert.That(layout.NotesOf(a).Count, Is.EqualTo(4), "the clip has them");
 
                 window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
                 window.Show();
@@ -768,10 +767,12 @@ namespace ReBuzz.Studio.Tests
                 dynamic vm = editor.SelectedMachine.SelectedPattern;
                 Assert.That((IPattern)vm.Pattern, Is.EqualTo(a));
                 System.Collections.Generic.Dictionary<string, string[]> shown = Shown(vm);
-                var lane = shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).Select(kv => kv.Value).FirstOrDefault();
-                Assert.That(lane, Is.Not.Null, "A's view has its MIDI Note lane (columns: " + string.Join(", ", shown.Keys) + ")");
-                Assert.That(shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).SelectMany(kv => kv.Value).Where(v => v != "off"), Is.EqualTo(new[] { "C-3", "E-3", "G-3", "C-4" }),
-                    "and the notes on it (MIDI 60 is C-3 as Preferences name notes by default; each ends in an off), as the song opened again would show them");
+                // The Notes lane's voices are the sets with a Dly column beside their Note column (the notes are the clip's, the lane only shows them).
+                var voiceSets = shown.Keys.Where(k => k.EndsWith("/Dly")).Select(k => k.Split('/')[0]).ToList();
+                Assert.That(voiceSets, Is.Not.Empty, "A's view has its Notes lane (columns: " + string.Join(", ", shown.Keys) + ")");
+                Assert.That(voiceSets.SelectMany(s => shown[s + "/Note"]).Where(v => v != "off").OrderBy(v => v), Is.EqualTo(new[] { "C-3", "C-4", "E-3", "G-3" }),
+                    "and the notes on it (MIDI 60 is C-3 as Preferences name notes by default), as the song opened again would show them");
+                Assert.That(shown.Keys.Any(k => k.EndsWith("/MIDI Note")), Is.False, "beside the Notes lane the editor's own empty MIDI Note column is not shown");
                 Studio.Screenshot(window, "pattern-editor-unseen-lanes");
             }
             finally

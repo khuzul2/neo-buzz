@@ -385,18 +385,18 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void EditorPreviewNotesReadAnEditorsExportAndCannotBeEdited()
+        public void SongNotesChoosesTheRouteAMachineTakesItsNotesByAndTheAgentCanAskForTheOther()
         {
-            // (time in 1/960 tick, MIDI message): C4 from 0 to tick 1, E4 from tick 2 on (no off).
-            var pairs = new[] { 0, SessionRig.NoteOn(60, 100), 960, SessionRig.NoteOff(60), 1920, SessionRig.NoteOn(64, 80) };
-            var notes = EditorPreviewNotes.FromEditorEvents(pairs, 4 * TB);
-            Assert.That(notes, Is.EqualTo(new[] { new ClipNote(0, TB, 60, 100), new ClipNote(2 * TB, 2 * TB, 64, 80) }));
-
             using var rig = new SessionRig("Lead");
             var p = rig.Pattern(rig.Machine("Lead"), "Riff", 4);
-            var source = new EditorPreviewNotes(rig.Core, p);
-            Assert.That(source.WhyNotEditable, Is.Not.Null);
-            Assert.That(source.Edit(null, new[] { new ClipNote(0, TB, 60, 100) }), Is.Not.Null);
+            Assert.That(SongNotes.For(rig.Core, p), Is.InstanceOf<MidiColumnNotes>(), "a synth that takes MIDI: the Notes lane");
+            Assert.That(SongNotes.For(rig.Core, p, "midi"), Is.InstanceOf<MidiColumnNotes>());
+            Assert.That(SongNotes.For(rig.Core, p, "tracks"), Is.InstanceOf<TrackerColumnNotes>(), "its Note parameter's lanes, when asked");
+            var fx = rig.Add("Neo Delay", "Echo");
+            fx.CreatePattern("00", 4);
+            Assert.That(SongNotes.For(rig.Core, fx.PatternsList.Single()), Is.Null, "an effect takes no notes");
+            Assert.That(SongNotes.For(rig.Core, null), Is.Null);
+            Assert.That(SongNotes.For(null, p), Is.Null);
         }
 
         // ------------------------------------------------------------------ the exit check (daw-modes.md §9, AR0)

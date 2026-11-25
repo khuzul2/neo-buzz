@@ -146,6 +146,11 @@ CASES = [
     gen("poly-svf-parallel", "Neo Poly", None,
         [("F1 type", "SVF BP"), ("F1 reso", "70%"), ("F2 type", "HP"), ("F2 reso", "60%"), ("Routing", "Parallel"),
          ("Noise", "30%"), ("Noise colour", "100%"), ("O1 shape", 3), ("O2 level", "50%"), ("FM 1 → 2", 1.5)], KEYS),
+    # Neo Organ (docs/specs/neo-organ.md): the tonewheel generator, percussion, the scanner, the drive and the rotary speaker.
+    gen("organ-gospel", "Neo Organ", "Full — Full Gospel", [], CHORDS),
+    gen("organ-jazz", "Neo Organ", "Jazz — Jazz Trio", [], CHORDS),
+    gen("organ-perc", "Neo Organ", "Percussive — Bright Percussion", [], LEAD),
+    gen("organ-fast", "Neo Organ", "Full — Fast Whirl", [], CHORDS),
     # Neo Wave: tables built in the background, warps, PM, sync, its filter.
     gen("wave-init", "Neo Wave", "Init — Basic", [], CHORDS),
     gen("wave-vowel-choir", "Neo Wave", "Pad — Vowel Choir", [], CHORDS),

@@ -1,0 +1,270 @@
+# Neo Organ factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoOrgan
+machine "Neo Organ"
+
+preset "Full — Full Gospel"
+comment "Every drawbar out, chorus, driven, fast speaker: the big, bright, swirling gospel wall."
+B16 = 8
+B513 = 8
+B8 = 8
+B4 = 8
+B223 = 8
+B2 = 8
+B135 = 8
+B113 = 8
+B1 = 8
+PercOn = Off
+KeyClick = 45
+Leakage = 40
+VibOn = On
+VibMode = C3
+Drive = 55
+Rotary = On
+Speed = Fast
+RotDepth = 90
+Doppler = 140
+Volume = -5
+
+preset "Full — Church Full"
+comment "Pipe-organ registration, no speaker, a little chorus: a broad, steady, hall-like organ."
+B16 = 6
+B513 = 5
+B8 = 8
+B4 = 6
+B223 = 4
+B2 = 5
+B135 = 3
+B113 = 2
+B1 = 3
+PercOn = Off
+KeyClick = 20
+Leakage = 20
+VibOn = On
+VibMode = C1
+Drive = 0
+Rotary = Off
+Volume = -8
+
+preset "Full — Fast Whirl"
+comment "A thin 8' and 4' flute tone under a hard, fast, deep speaker with strong Doppler: the speaker is the sound."
+B16 = 0
+B513 = 0
+B8 = 8
+B4 = 8
+B223 = 0
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = Off
+KeyClick = 25
+VibOn = Off
+Drive = 15
+Rotary = On
+Speed = Fast
+RotDepth = 100
+Doppler = 200
+Spread = 100
+HornAccel = 0.2
+Volume = -6
+
+preset "Jazz — Jazz Trio"
+comment "The classic hollow 16', 5 1/3' and 8' with a quick third-harmonic pluck, chorus and a slow speaker."
+B16 = 8
+B513 = 8
+B8 = 8
+B4 = 0
+B223 = 0
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = On
+PercHarm = 3rd
+PercDecay = Fast
+PercLevel = Normal
+KeyClick = 40
+VibOn = On
+VibMode = C3
+Drive = 20
+Rotary = On
+Speed = Slow
+Volume = -7
+
+preset "Jazz — Smoky Blues"
+comment "Dark 16' and 8' with a growling overdrive and a slow speaker, no percussion: smoky and thick."
+B16 = 8
+B513 = 0
+B8 = 6
+B4 = 4
+B223 = 0
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = Off
+KeyClick = 35
+Leakage = 60
+VibOn = On
+VibMode = V2
+Drive = 60
+Rotary = On
+Speed = Slow
+RotDepth = 60
+Volume = -5
+
+preset "Jazz — Warm Soul"
+comment "A round, even registration with deep chorus and a slow, wide speaker: warm and soft-edged."
+B16 = 8
+B513 = 4
+B8 = 8
+B4 = 3
+B223 = 2
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = Off
+KeyClick = 30
+VibOn = On
+VibMode = C2
+Drive = 30
+Rotary = On
+Speed = Slow
+RotDepth = 70
+Spread = 100
+Volume = -7
+
+preset "Soft — Soft Ballad"
+comment "Gentle 8' and 4' with a quiet vibrato and a slow, light speaker: a soft pad."
+B16 = 0
+B513 = 0
+B8 = 8
+B4 = 5
+B223 = 0
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = Off
+KeyClick = 10
+Leakage = 15
+VibOn = On
+VibMode = V1
+Drive = 0
+Rotary = On
+Speed = Slow
+RotDepth = 40
+Doppler = 60
+Expression = 70
+Volume = -2
+
+preset "Soft — Mellow Flutes"
+comment "Flute stops: a pure 8' with a hollow twelfth and a breath of 2', deep vibrato, no speaker."
+B16 = 0
+B513 = 0
+B8 = 8
+B4 = 0
+B223 = 3
+B2 = 0
+B135 = 4
+B113 = 0
+B1 = 0
+PercOn = Off
+KeyClick = 15
+VibOn = On
+VibMode = V3
+Drive = 0
+Rotary = Off
+Volume = -6
+
+preset "Rock — Rock Drive"
+comment "Wide 16', 8', 4' and 2 2/3' into a firm overdrive with a slow, moderate speaker: a driving rock organ that does not hurt."
+B16 = 8
+B513 = 0
+B8 = 8
+B4 = 8
+B223 = 8
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = Off
+KeyClick = 15
+Leakage = 50
+VibOn = Off
+Drive = 70
+Rotary = On
+Speed = Slow
+RotDepth = 60
+Doppler = 40
+Spread = 40
+Volume = -4
+
+preset "Percussive — Bright Percussion"
+comment "8', 4' and 2 2/3' with the third-harmonic percussion on, slow decay, soft off: a ringing, bell-bright attack."
+B16 = 0
+B513 = 0
+B8 = 8
+B4 = 8
+B223 = 8
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = On
+PercHarm = 3rd
+PercDecay = Slow
+PercLevel = Normal
+KeyClick = 55
+VibOn = Off
+Drive = 10
+Rotary = On
+Speed = Slow
+Volume = -8
+
+preset "Percussive — Reggae Bubble"
+comment "Staccato 5 1/3', 8' and 4' with the fast 2nd-harmonic percussion, strong click and no speaker: the dry bubble."
+B16 = 0
+B513 = 8
+B8 = 8
+B4 = 8
+B223 = 0
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = On
+PercHarm = 2nd
+PercDecay = Fast
+PercLevel = Normal
+KeyClick = 90
+Leakage = 10
+VibOn = Off
+Drive = 0
+Rotary = Off
+Volume = -7
+
+preset "Percussive — Funk Stabs"
+comment "A bare 8' with loud percussion, hard click, light drive and a snappy speaker: short, punchy stabs."
+B16 = 0
+B513 = 0
+B8 = 8
+B4 = 0
+B223 = 0
+B2 = 0
+B135 = 0
+B113 = 0
+B1 = 0
+PercOn = On
+PercHarm = 2nd
+PercDecay = Fast
+PercLevel = Normal
+KeyClick = 80
+VibOn = Off
+Drive = 40
+Rotary = On
+Speed = Fast
+RotDepth = 70
+HornAccel = 0.1
+DrumAccel = 0.5
+Volume = -6

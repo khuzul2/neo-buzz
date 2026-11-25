@@ -223,7 +223,10 @@ namespace WDE.ModernPatternEditor
             var shown = new List<IParameter>();
             foreach (var (p, always) in ColumnPlan.Arrange(pSet.parameters))
             {
-                if (always || RevealedParameters.Contains(p)) { shown.Add(p); continue; }
+                // Fork (clips.md §10.0b, CU4): beside a Notes lane the editor's own MIDI Note and Velocity columns hold nothing (the notes are
+                // the lane's), so they wait behind + Automation until something is written into them.
+                bool besideNotes = noteSetCount > 0 && p is MPEInternalParameter;
+                if ((always && !besideNotes) || RevealedParameters.Contains(p)) { shown.Add(p); continue; }
                 if (withData.Contains(p))
                 {
                     RevealedParameters.Add(p);

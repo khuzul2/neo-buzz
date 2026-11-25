@@ -504,14 +504,14 @@ namespace ReBuzz.Studio.Tests
 
             // (None ends on the last tick: the editor never sends a lane note's end there, and keeps
             // it queued for good, one more on every loop: upstream's, left as it is.)
-            var lanes = TrackerNotes.Pack(Enumerable.Range(0, 7).Select(i => new TrackerNote(i * 2 * TB, TB, 48 + i, 100)));
-            Assert.That(Core.SessionLayout.ImportToEditor(pattern, lanes), Is.True, "notes on the MIDI note lanes");
+            var lanes = Enumerable.Range(0, 7).Select(i => new ClipNote(i * 2 * TB, TB, 48 + i, 100)).ToArray();
+            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, pattern)!.Edit(null, lanes), Is.Null, "notes on the Notes lane");
             Pump();
 
             var columns = pattern.PatternEditorMachineEvents.ToList();
             Assert.That(columns.Single(c => c.Parameter.Name == "Note").Events.Count(), Is.EqualTo(16), "a note on every row");
             Assert.That(columns.Single(c => c.Parameter.Name == "Uni detune").Events.Count(), Is.EqualTo(16), "automation on every row");
-            Assert.That(columns.Where(c => c.Parameter.Name == "MIDI Note").Sum(c => c.Events.Count()), Is.GreaterThanOrEqualTo(7), "notes on the MIDI lanes");
+            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, pattern)!.Notes().Count, Is.EqualTo(7), "notes on the Notes lane");
             Arrange(m, pattern);
             return (m, pattern, window);
         }

@@ -1,6 +1,6 @@
-// Fork (docs/specs/daw-modes.md S4): a session clip's notes, as the Session View's piano roll
-// edited them before (session-view.md 0.7.1): its engine MIDI column through SessionLayout, each
-// edit one undo step of the session's own history.
+// Fork (docs/specs/daw-modes.md S4; clips.md §8, CU4): a session clip's notes for the Session View's piano roll. The clip is found again
+// each time (an undo in the session may have made it again, 0.7.1 hardening), and its notes are read and written by SongNotes, the one
+// layer over the store: each edit one undo step of the song's history.
 
 using System.Collections.Generic;
 using BuzzGUI.Interfaces;
@@ -27,16 +27,17 @@ namespace ReBuzz.Core.Notes
 
         public override List<ClipNote> Notes() => IsLive ? layout.NotesOf(Pattern) : new List<ClipNote>();
 
+        public override int RowTime => Inner()?.RowTime ?? base.RowTime;
+
+        INoteSource Inner() => Pattern is { } p ? SongNotes.For(layout.Buzz, p) : null;
+
         public override string WhyNotEditable =>
             !IsLive ? "The clip was deleted: undo in the Session View brings it back."
             : layout.IsRecordingClip(Pattern) ? "Recording: edits wait until it stops."
             : null;
 
-        protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
-        {
-            layout.EditNotes(Pattern, removed, added);
-            return null;
-        }
+        protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added) =>
+            (Inner() ?? new MidiColumnNotes(layout.Buzz, Pattern)).Edit(removed, added);
 
         public override void Preview(int note, int velocity, bool on) => layout.PreviewNote(Pattern, note, velocity, on);
 
