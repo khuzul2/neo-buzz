@@ -153,7 +153,13 @@ namespace NeoBuzz.Arp
                 g.Rect(new NeoRect(x + 8, r.Y + ArpStepInput.BarTop, ArpStepInput.Slot - 16, ArpStepInput.BarHeight), inRow ? Palette.Panel : Palette.Background, default, 3);
                 double y = r.Y + zero - tr * (ArpStepInput.BarHeight / 24.0);
                 if (inRow && tr != 0) g.Rect(new NeoRect(x + 10, Math.Min(y, r.Y + zero), ArpStepInput.Slot - 20, Math.Max(2, Math.Abs(y - (r.Y + zero)))), AccentColor.WithAlpha(0xB0), default, 2);
-                if (inRow && tr != 0) g.Text(tr > 0 ? "+" + tr : tr.ToString(), x + ArpStepInput.Slot / 2, tr > 0 ? y - 12 : y + 1, 9, Palette.Text, true, NeoAlign.Center);
+                if (inRow && tr != 0)
+                {
+                    // The value sits inside a tall bar, beside a short one (never over the step number above the row).
+                    double barH = Math.Abs(y - (r.Y + zero));
+                    double ty = barH >= 16 ? (tr > 0 ? y + 2 : y + barH - 12) : (tr > 0 ? y - 12 : y + barH + 1);
+                    g.Text(tr > 0 ? "+" + tr : tr.ToString(), x + ArpStepInput.Slot / 2, ty, 9, Palette.Text, true, NeoAlign.Center);
+                }
             }
             g.Line(r.X + ArpStepInput.Pad + 6, r.Y + zero, r.X + ArpStepInput.Width - ArpStepInput.Pad - 6, r.Y + zero, line);
             if (!used) g.Text("Used by the Steps pattern", r.X + ArpStepInput.Width - ArpStepInput.Pad - 4, r.Y + ArpStepInput.Height - 14, 10, Palette.DimText, false, NeoAlign.Right);
