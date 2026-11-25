@@ -17,7 +17,7 @@ using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Core.NoteWires;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
