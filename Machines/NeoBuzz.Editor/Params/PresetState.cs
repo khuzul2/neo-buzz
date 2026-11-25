@@ -103,7 +103,9 @@ namespace NeoBuzz.Editor
             }
         }
 
-        // A preset's values by (name, group, track), built once per preset object (the defaults: from the machine).
+        // A preset's values by the machine's (name, group, track), built once per preset object (the defaults: from the machine).
+        // Each value is the one the preset gives the parameter when it loads (Preset.GetValueOrDefault: by id, or by name and a
+        // renamed parameter's former name), so a preset saved before a rename still reads as itself.
         static readonly ConditionalWeakTable<Preset, Dictionary<(string, byte, int), int>> tables =
             new ConditionalWeakTable<Preset, Dictionary<(string, byte, int), int>>();
 
@@ -116,7 +118,14 @@ namespace NeoBuzz.Editor
             return tables.GetValue(preset, p =>
             {
                 var d = new Dictionary<(string, byte, int), int>();
-                foreach (var x in p.Parameters) d.TryAdd((x.Name, x.Group, x.Track), x.Value);
+                foreach (var g in machine.ParameterGroups)
+                {
+                    if (g.Type == ParameterGroupType.Input) continue;
+                    for (int track = 0; track < g.TrackCount; track++)
+                        foreach (var x in g.Parameters)
+                            if ((x.Flags & ParameterFlags.State) != 0) d.TryAdd((x.Name, (byte)g.Type, track), p.GetValueOrDefault(x, track));
+                }
+                foreach (var x in p.Parameters) d.TryAdd((x.Name, x.Group, x.Track), x.Value);   // tracks the machine has added since
                 return d;
             });
         }

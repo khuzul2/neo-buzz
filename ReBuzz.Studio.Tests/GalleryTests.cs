@@ -2204,7 +2204,7 @@ namespace ReBuzz.Studio.Tests
                 }
                 //                            Bits Dith Rate AA  Jit Hiss Fol Crk  CrkL Wow WowR Flu Dri Tone Mix  Out  Amount
                 LoFiShot("640-neo-lofi-editor", "LoFi", new[] { 1300, 1, 1000, 0, 0, 360, 0, 240, 380, 70, 202, 0, 0, 375, 1000, 500, 500 },
-                    "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount first and Mix under it).");
+                    "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
                 Try("456-device-list-mode", () =>
