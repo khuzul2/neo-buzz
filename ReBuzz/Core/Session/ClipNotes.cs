@@ -11,8 +11,13 @@ using System.Linq;
 
 namespace ReBuzz.Core.Session
 {
-    /// <summary>A note of a clip: where it starts and how long it lasts (1/240 tick), its pitch, velocity and channel.</summary>
-    internal readonly record struct ClipNote(int Time, int Duration, int Note, int Velocity, int Channel = 0)
+    /// <summary>
+    /// A note of a clip: where it starts and how long it lasts (1/240 tick), its pitch, velocity and channel. Notes of a machine that plays a sample per
+    /// note (Neo Sampler's Tracker mode, TM1) carry that too: <see cref="Sample"/> (the number of the sample it plays; 0: none, the machine plays
+    /// it as it plays any note), <see cref="Offset"/> (where in the sample it starts, in the sample's frames) and <see cref="Tune"/> (cents).
+    /// Only the tracker's store keeps them (the MIDI column has no room for them).
+    /// </summary>
+    internal readonly record struct ClipNote(int Time, int Duration, int Note, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0)
     {
         public int End => Time + Duration;
 

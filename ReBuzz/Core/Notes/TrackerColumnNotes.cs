@@ -7,10 +7,15 @@
 // track parameter when it has one. Each edit is one undo step of the song's history. The agent asks
 // for more tracks when a chord needs them (AllowMoreTracks): the notes are then given tracks again
 // as a whole and the machine's track count is raised in the same step.
+//
+// A machine that plays a sample per note (INoteSampleProvider: Neo Sampler in Tracker mode, TM1) has more per note: its Sample, Offset (low and high
+// part) and Tune track parameters, found by name beside the note's. They are written and read at the note's own time on its track, so a note's
+// sample, offset and tune are in the clip like its pitch and velocity, in the same undo step, and a note that moves takes them with it.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Model;
 using ReBuzz.Core.Session;
@@ -23,6 +28,7 @@ namespace ReBuzz.Core.Notes
         readonly IPattern pattern;
         readonly IParameter noteParameter;
         readonly IParameter velocityParameter;
+        readonly IParameter sampleParameter, offsetParameter, offsetHiParameter, tuneParameter;
         List<string> raised;
 
         TrackerColumnNotes(ReBuzzCore buzz, IPattern pattern, IParameter note, IParameter velocity)
@@ -31,7 +37,32 @@ namespace ReBuzz.Core.Notes
             this.pattern = pattern;
             noteParameter = note;
             velocityParameter = velocity;
+            if (pattern.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } } && pattern.Machine.ParameterGroups.Count > 2)
+            {
+                var track = pattern.Machine.ParameterGroups[2].Parameters;
+                IParameter Find(string name) => track.FirstOrDefault(p => p.Name == name);
+                var sample = Find("Sample");
+                var lo = Find("Offset");
+                var hi = Find("Offset hi");
+                var tune = Find("Tune");
+                if (sample != null && lo != null && hi != null && tune != null)
+                {
+                    sampleParameter = sample;
+                    offsetParameter = lo;
+                    offsetHiParameter = hi;
+                    tuneParameter = tune;
+                }
+            }
         }
+
+        /// <summary>Whether the notes carry a sample, an offset and a tune (the machine plays a sample per note, and has the parameters for it).</summary>
+        public bool PerNoteSamples => sampleParameter != null;
+
+        /// <summary>The Offset parameter's step: frames = Offset + this × Offset hi (the machine's own constant).</summary>
+        public const int OffsetStep = 32768;
+
+        /// <summary>The Tune parameter's value for the note's own pitch (cents are the value less this).</summary>
+        public const int TuneCentre = 2400;
 
         /// <summary>The pattern's tracker notes, or null when its machine has no Note track parameter.</summary>
         public static TrackerColumnNotes For(ReBuzzCore buzz, IPattern pattern)
@@ -65,6 +96,16 @@ namespace ReBuzz.Core.Notes
         ColumnKey NoteKey(int track) => new ColumnKey(2, noteParameter.IndexInGroup, track);
 
         ColumnKey VelocityKey(int track) => new ColumnKey(2, velocityParameter.IndexInGroup, track);
+
+        static ColumnKey KeyOf(IParameter p, int track) => new ColumnKey(2, p.IndexInGroup, track);
+
+        /// <summary>The value of each of a track's events of a parameter, by time.</summary>
+        Dictionary<int, int> ByTime(IParameter p, int track)
+        {
+            var d = new Dictionary<int, int>();
+            if (p != null) foreach (var e in Events(KeyOf(p, track))) d[e.Time] = e.Value;
+            return d;
+        }
 
         static List<PatternEvent> EventsOf(IPattern pattern, ColumnKey key) => StoreLanes.Events(pattern, key);
 
@@ -119,8 +160,30 @@ namespace ReBuzz.Core.Notes
                     velocities = new Dictionary<(int, int), int>();
                     foreach (var e in Events(VelocityKey(t))) velocities[(t, e.Time)] = e.Value;
                 }
+                Dictionary<int, int> samples = null, offsets = null, offsetsHi = null, tunes = null;
+                if (PerNoteSamples)
+                {
+                    samples = ByTime(sampleParameter, t);
+                    offsets = ByTime(offsetParameter, t);
+                    offsetsHi = ByTime(offsetHiParameter, t);
+                    tunes = ByTime(tuneParameter, t);
+                }
                 foreach (var ne in TrackNotes.Read(notes, PatternTime, PatternEvent.TimeBase, velocities, VelocityRange))
-                    list.Add((new ClipNote(ne.Time, ne.Duration, ne.Pitch, Math.Clamp(ne.Velocity, 1, 127)), t));
+                {
+                    var clip = new ClipNote(ne.Time, ne.Duration, ne.Pitch, Math.Clamp(ne.Velocity, 1, 127));
+                    if (samples != null && samples.TryGetValue(ne.Time, out int sample) && sample > 0)
+                    {
+                        offsets.TryGetValue(ne.Time, out int lo);
+                        offsetsHi.TryGetValue(ne.Time, out int hi);
+                        clip = clip with
+                        {
+                            Sample = sample,
+                            Offset = Math.Max(0, lo) + OffsetStep * Math.Max(0, hi),
+                            Tune = tunes.TryGetValue(ne.Time, out int tune) ? tune - TuneCentre : 0,
+                        };
+                    }
+                    list.Add((clip, t));
+                }
             }
             list.Sort((a, b) => a.Item1.Time != b.Item1.Time ? a.Item1.Time.CompareTo(b.Item1.Time) : a.Item1.Note.CompareTo(b.Item1.Note));
             return list;
@@ -152,7 +215,8 @@ namespace ReBuzz.Core.Notes
             {
                 // The agent's way: all the notes get tracks again, and the machine gets the tracks they need.
                 foreach (var n in added) notes.Add((n, -1));
-                var all = notes.Select(n => new NoteEvent(n.Note.Time, n.Note.Duration, n.Note.Note, n.Note.Velocity)).OrderBy(n => n, Comparer<NoteEvent>.Create(NoteList.Order)).ToList();
+                var sorted = notes.Select(n => n.Note).OrderBy(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity), Comparer<NoteEvent>.Create(NoteList.Order)).ToList();
+                var all = sorted.Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity)).ToList();
                 var (given, needed) = TrackNotes.Allocate(all);
                 var machine = (MachineCore)pattern.Machine;
                 int most = Math.Max(machine.DLL.Info.MinTracks, machine.DLL.Info.MaxTracks);
@@ -165,7 +229,7 @@ namespace ReBuzz.Core.Notes
                     buzz.SongCore.ActionStack.Do(new BuzzGUI.Common.Actions.MachineActions.SetTrackCountAction(machine, needed));
                     tracks = machine.TrackCount;
                 }
-                notes = all.Select((n, i) => (new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity), given[i])).ToList();
+                notes = sorted.Select((n, i) => (n, given[i])).ToList();
                 tracks = Math.Max(tracks, needed);
             }
             else
@@ -198,6 +262,19 @@ namespace ReBuzz.Core.Notes
                 var velocityNew = events.Where(e => e.Track == t && e.Velocity.HasValue).Select(e => new PatternEvent(e.Time, e.Velocity.Value, 0)).ToList();
                 AddChange(changes, VelocityKey(t), velocityOld, velocityNew);
             }
+            if (PerNoteSamples)
+                for (int t = 0, n = Math.Max(tracks, TracksWithColumns()); t < n; t++)
+                {
+                    var mine = notes.Where(x => x.Track == t).Select(x => x.Note).ToList();
+                    AddChange(changes, KeyOf(sampleParameter, t), Events(KeyOf(sampleParameter, t)), mine.Where(x => x.Sample > 0).Select(x => new PatternEvent(x.Time, Math.Min(x.Sample, sampleParameter.MaxValue), 0)).ToList());
+                    // The offset and tune cells are written only where they differ from the default, as a tracker writes them.
+                    AddChange(changes, KeyOf(offsetParameter, t), Events(KeyOf(offsetParameter, t)),
+                        mine.Where(x => x.Sample > 0 && x.Offset % OffsetStep > 0).Select(x => new PatternEvent(x.Time, x.Offset % OffsetStep, 0)).ToList());
+                    AddChange(changes, KeyOf(offsetHiParameter, t), Events(KeyOf(offsetHiParameter, t)),
+                        mine.Where(x => x.Sample > 0 && x.Offset >= OffsetStep).Select(x => new PatternEvent(x.Time, Math.Min(x.Offset / OffsetStep, offsetHiParameter.MaxValue), 0)).ToList());
+                    AddChange(changes, KeyOf(tuneParameter, t), Events(KeyOf(tuneParameter, t)),
+                        mine.Where(x => x.Sample > 0 && x.Tune != 0).Select(x => new PatternEvent(x.Time, Math.Clamp(TuneCentre + x.Tune, tuneParameter.MinValue, tuneParameter.MaxValue), 0)).ToList());
+                }
             if (changes.Count == 0) return null;
             return Commit(changes);
         }
