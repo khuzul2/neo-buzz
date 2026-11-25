@@ -410,7 +410,7 @@ namespace ReBuzz.Core
         void Do(IPattern pattern, ColumnKey key, PatternEvent[] removed, PatternEvent[] added)
         {
             if (removed.Length == 0 && added.Length == 0) return;
-            core.SongCore.ActionStack.Do(new ColumnEventsAction(core, pattern, new[] { new ColumnEventsAction.Change(key, removed, added) }));
+            core.SongCore.ActionStack.Do(new ColumnEventsAction(core, pattern, new[] { new ColumnEventsAction.Change(key, removed, added) }, automation: true));
             core.SetModifiedFlag();
         }
 

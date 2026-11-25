@@ -70,9 +70,12 @@ namespace ReBuzz.Core.Notes
         readonly string machine;
         readonly string name;
         readonly Change[] changes;
+        readonly bool automation;
 
-        public ColumnEventsAction(ReBuzzCore buzz, IPattern pattern, IReadOnlyList<Change> changes)
+        /// <param name="automation">An arrangement or clip envelope: new events go to the marked lane, not the tracker's.</param>
+        public ColumnEventsAction(ReBuzzCore buzz, IPattern pattern, IReadOnlyList<Change> changes, bool automation = false)
         {
+            this.automation = automation;
             this.buzz = buzz;
             machine = pattern.Machine.Name;
             name = pattern.Name;
@@ -93,7 +96,7 @@ namespace ReBuzz.Core.Notes
         {
             var p = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(x => x.Name == name);
             if (p == null) return;
-            StoreLanes.Change(p, key, take, put);
+            StoreLanes.Change(p, key, take, put, automation);
         }
     }
 }

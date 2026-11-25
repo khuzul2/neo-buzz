@@ -50,8 +50,11 @@ namespace ReBuzz.Core.Notes
         }
 
         /// <summary>The lane new events go to: the first there is, else (when asked) a new one. Null when there is none and none is made.</summary>
-        public static IPatternColumn Home(IPattern clip, ColumnKey key, bool create)
+        public static IPatternColumn Home(IPattern clip, ColumnKey key, bool create, bool automation = false)
         {
+            // An automation edit (an arrangement or clip envelope) lives in the marked lane, as before: the tracker's lane is the tracker's.
+            if (automation && !key.IsMidi)
+                return All(clip, key).FirstOrDefault(IsMarked) ?? (create ? SessionLayout.ColumnFor(clip, key, create: true) : null);
             if (All(clip, key).FirstOrDefault() is { } lane) return lane;
             if (!create) return null;
             if (key.IsMidi || !PatternColumnCore.PlaysEveryLane) return SessionLayout.ColumnFor(clip, key, create: true);
@@ -62,7 +65,7 @@ namespace ReBuzz.Core.Notes
         }
 
         /// <summary>One change: <paramref name="take"/> go out of every lane that holds them, <paramref name="put"/> come into the home lane.</summary>
-        public static void Change(IPattern clip, ColumnKey key, IReadOnlyCollection<PatternEvent> take, IReadOnlyCollection<PatternEvent> put)
+        public static void Change(IPattern clip, ColumnKey key, IReadOnlyCollection<PatternEvent> take, IReadOnlyCollection<PatternEvent> put, bool automation = false)
         {
             if (take.Count > 0)
                 foreach (var lane in All(clip, key))
@@ -71,7 +74,7 @@ namespace ReBuzz.Core.Notes
                     var gone = take.Where(held.Contains).ToArray();
                     if (gone.Length > 0) lane.SetEvents(gone, false);
                 }
-            if (put.Count > 0 && Home(clip, key, create: true) is { } home) home.SetEvents(put, true);
+            if (put.Count > 0 && Home(clip, key, create: true, automation) is { } home) home.SetEvents(put, true);
         }
     }
 }
