@@ -618,6 +618,17 @@
    "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training.",
    "note_out": true
   },
+  "Neo Chord": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "chords"
+   ],
+   "use_for": "Turn single notes into chords before a synth: 20 chord shapes or a chord built in a key and scale, inversions and spreads, a bass note, velocity shaping and a strum with its own timing; sits before an instrument or on a note wire.",
+   "note_in": true,
+   "note_out": true
+  },
   "Neo Tune": {
    "category": "Modulation",
    "tags": [
