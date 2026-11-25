@@ -146,6 +146,8 @@ namespace NeoBuzz.Chop
         double gateFreePos;
         double gateAttackSamples = 100, gateReleaseSamples = 1000;
         double gateO, gateFrom, gateTo, gateU = 1, gateInv;
+        long curT;                                 // the sample being made
+        double accO, accFrom, accTo;               // the accent, moved by the same smooth step apart from the open value so the two curves meet without a corner
         float gateAccent = 1.5f;
         float gateGain = 1f;
 
@@ -218,7 +220,7 @@ namespace NeoBuzz.Chop
             havePos = false;
             wasPlaying = false;
             gateInit = false;
-            gateGain = 1f; gateO = gateFrom = gateTo = 1; gateU = 1;
+            gateGain = 1f; gateO = gateFrom = gateTo = 1; accO = accFrom = accTo = 0; gateU = 1;
             gateDepthR.Reset(0f); gateOnR.Reset(0f); panDepthR.Reset(0f);
             noteCount = 0;
             LogCount = 0;
@@ -457,6 +459,7 @@ namespace NeoBuzz.Chop
             for (int i = 0; i < n; i++)
             {
                 long t = t0 + i;
+                curT = t;
 
                 while (ni < noteCount && noteOffset[ni] <= i)
                 {
@@ -802,7 +805,8 @@ namespace NeoBuzz.Chop
                 r = ringR[k];
                 return;
             }
-            int a = (int)((i - 1) & mask), b = (int)(i & mask), c = (int)((i + 1) & mask), d = (int)((i + 2) & mask);
+            // A reader never looks past the sample being made (the ring holds the whole block, but a later sample is not the song's yet).
+            int a = (int)((i - 1) & mask), b = (int)(i & mask), c = (int)(Math.Min(i + 1, curT) & mask), d = (int)(Math.Min(i + 2, curT) & mask);
             l = Hermite(ringL[a], ringL[b], ringL[c], ringL[d], (float)f);
             r = Hermite(ringR[a], ringR[b], ringR[c], ringR[d], (float)f);
         }
@@ -1089,21 +1093,28 @@ namespace NeoBuzz.Chop
             return st == 0 ? 0.0 : st == 1 ? 1.0 : 2.0;
         }
 
+        static double OpenOf(double o) => o < 1.0 ? o : 1.0;
+        static double AccentOf(double o) => o > 1.0 ? 1.0 : 0.0;
+
         void SnapGate(int step)
         {
-            gateO = gateFrom = gateTo = StepTarget(step);
+            double o = StepTarget(step);
+            gateO = gateFrom = gateTo = OpenOf(o);
+            accO = accFrom = accTo = AccentOf(o);
             gateU = 1;
         }
 
         /// <summary>A step begins: the open value starts its smooth move to the step's level.</summary>
         void GoGate(int step)
         {
-            double to = StepTarget(step);
-            if (to == gateTo && gateU >= 1) return;
-            gateFrom = gateO;
-            gateTo = to;
+            double o = StepTarget(step);
+            double to = OpenOf(o), at = AccentOf(o);
+            if (to == gateTo && at == accTo && gateU >= 1) return;
+            bool rising = to + at > gateO + accO;
+            gateFrom = gateO; accFrom = accO;
+            gateTo = to; accTo = at;
             gateU = 0;
-            gateInv = 1.0 / (to > gateFrom ? gateAttackSamples : gateReleaseSamples);
+            gateInv = 1.0 / (rising ? gateAttackSamples : gateReleaseSamples);
         }
 
         void GateSample(int i, long t, ref float ol, ref float or)
@@ -1139,10 +1150,11 @@ namespace NeoBuzz.Chop
                 if (gateU > 1) gateU = 1;
                 double s = gateU * gateU * (3 - 2 * gateU);
                 gateO = gateFrom + (gateTo - gateFrom) * s;
+                accO = accFrom + (accTo - accFrom) * s;
             }
             float w = gateOnR.Next();
             float depth = gateDepthR.Next();
-            double g = gateO <= 1.0 ? 1.0 - depth * (1.0 - gateO) : 1.0 + (gateAccent - 1.0) * (gateO - 1.0);
+            double g = (1.0 - depth * (1.0 - gateO)) * (1.0 + (gateAccent - 1.0) * accO);
             gateGain = (float)(1.0 + (g - 1.0) * w);
             if (gateGain != 1f) { ol *= gateGain; or *= gateGain; }
         }
@@ -1174,7 +1186,7 @@ namespace NeoBuzz.Chop
             switch (panShape)
             {
                 case 1:
-                    p = ph < 0.5 ? 4 * ph - 1 : 3 - 4 * ph;
+                    p = ph < 0.25 ? 4 * ph : ph < 0.75 ? 2 - 4 * ph : 4 * ph - 4;   // from the centre, going right, like the sine
                     break;
                 case 2:
                 {

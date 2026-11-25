@@ -109,7 +109,7 @@ namespace NeoBuzz.MachineTests
         /// A drum loop in code at <paramref name="bpm"/>: a kick (a sine falling from 120 to 45 Hz), a snare (noise and a 190 Hz tone) on 2 and 4, and
         /// closed and open hats on the eighths and sixteenths, every sound with a 1 ms attack, about -1 dBFS at the loudest.
         /// </summary>
-        public static (float[] L, float[] R) Drums(int length, double bpm = 120)
+        public static (float[] L, float[] R) DrumLoop(int length, double bpm = 120)
         {
             double spb = Spb(bpm);
             var l = new float[length];

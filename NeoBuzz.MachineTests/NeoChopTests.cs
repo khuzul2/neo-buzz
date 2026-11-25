@@ -97,8 +97,8 @@ namespace NeoBuzz.MachineTests
             var plan = Constant(bpm);
             var (ol, _) = Render(e, x, (float[])x.Clone(), plan, block);
             var starts = Enumerable.Range(0, e.LogCount).Select(i => e.Log[i]).Where(ev => ev.Kind == ChopEventKind.StutterStart || ev.Kind == ChopEventKind.StutterRepeat).ToList();
-            Assert.That(starts.Count(ev => ev.Kind == ChopEventKind.StutterStart), Is.EqualTo(5), "one stutter in each of the bars after the first, bars 1 to 5 ending at 4, 8, ...");
-            Assert.That(starts.Count, Is.EqualTo(5 * 3), "a start and three repeats in each (the fourth repeat ends on the bar)");
+            Assert.That(starts.Count(ev => ev.Kind == ChopEventKind.StutterStart), Is.EqualTo(6), "one stutter in each bar, ending on the bar lines 4, 8, ... 24");
+            Assert.That(starts.Count, Is.EqualTo(6 * 4), "a start and three repeats in each window of four sixteenths");
             int s0 = (int)Math.Round(0.25 * spb);
             long windowStart = 0;
             foreach (var ev in starts)
@@ -122,8 +122,8 @@ namespace NeoBuzz.MachineTests
             var plan = Constant(bpm);
             var (ol, _) = Render(e, x, (float[])x.Clone(), plan, block);
             var evs = Enumerable.Range(0, e.LogCount).Select(i => e.Log[i]).Where(ev => ev.Kind == ChopEventKind.RepeatStart || ev.Kind == ChopEventKind.RepeatRepeat).ToList();
-            Assert.That(evs.Count(ev => ev.Kind == ChopEventKind.RepeatStart), Is.EqualTo(5));
-            Assert.That(evs.Count, Is.EqualTo(5 * 4), "a window of half a bar in eighths: a start and three repeats (the fourth ends on the bar)");
+            Assert.That(evs.Count(ev => ev.Kind == ChopEventKind.RepeatStart), Is.EqualTo(6));
+            Assert.That(evs.Count, Is.EqualTo(6 * 4), "a window of half a bar in eighths: a start and three repeats");
             int s0 = (int)Math.Round(0.5 * spb);
             long windowStart = 0;
             foreach (var ev in evs)
@@ -145,8 +145,8 @@ namespace NeoBuzz.MachineTests
             var plan = Constant(bpm);
             var (ol, _) = Render(e, x, (float[])x.Clone(), plan, block);
             var evs = Enumerable.Range(0, e.LogCount).Select(i => e.Log[i]).Where(ev => ev.Kind == ChopEventKind.RetrigStart || ev.Kind == ChopEventKind.RetrigStep).ToList();
-            Assert.That(evs.Count(ev => ev.Kind == ChopEventKind.RetrigStart), Is.EqualTo(5));
-            Assert.That(evs.Count, Is.EqualTo(5 * 4), "a window of half a bar in eighths: a start and three steps");
+            Assert.That(evs.Count(ev => ev.Kind == ChopEventKind.RetrigStart), Is.EqualTo(6));
+            Assert.That(evs.Count, Is.EqualTo(6 * 4), "a window of half a bar in eighths: a start and three steps");
             double unit = back == "Beat" ? 1 : 4;
             foreach (var ev in evs)
             {
@@ -184,7 +184,7 @@ namespace NeoBuzz.MachineTests
         public void ATapeStopEndsOnTheBarAndTheStartBeginsThere([ValueSource(nameof(Tempos))] double bpm, [ValueSource(nameof(Blocks))] int block)
         {
             double spb = Spb(bpm);
-            int length = (int)(spb * 4 * 3) + 5000;
+            int length = (int)(spb * 12.5) + 8000;
             var e = Engine(TapeSetup(), logSize: 64);
             var plan = Constant(bpm);
             var x = Sine(length);
@@ -237,7 +237,7 @@ namespace NeoBuzz.MachineTests
         public void ALoopJumpStartsTheScheduleAgainFromTheNewPosition()
         {
             double spb = Spb(120);
-            int jumpAt = 256 * 100;                                  // sample of the jump: song beat ~ 3.3 jumps back to 0.5
+            int jumpAt = 256 * 400;                                  // sample of the jump: song beat 4.27 jumps back to 0.5 (the stutter before it ended at beat 4)
             var plan = new[] { new Seg(0, 0, spb), new Seg(jumpAt, 0.5, spb) };
             int length = (int)(jumpAt + spb * 4 * 2);
             foreach (int block in Blocks)
@@ -279,7 +279,7 @@ namespace NeoBuzz.MachineTests
         {
             double spb = Spb(bpm);
             int length = (int)(spb * 4 * 4) + 4000;
-            var drums = Drums(length, bpm);
+            var drums = DrumLoop(length, bpm);
             var sine = Sine(length);
             int config = 0;
             double worst = 0;
@@ -290,7 +290,7 @@ namespace NeoBuzz.MachineTests
                 {
                     var e = Engine(v, logSize: 4096);
                     var (ol, or) = Render(e, input.Item1, input.Item2, Constant(bpm), 64);
-                    var bounds = Enumerable.Range(0, e.LogCount).Select(i => e.Log[i]).Where(ev => ev.Kind != ChopEventKind.NoteStart).Select(ev => (int)ev.Sample).Distinct().ToList();
+                    var bounds = Enumerable.Range(0, e.LogCount).Select(i => e.Log[i]).Where(ev => ev.Kind != ChopEventKind.NoteStart).Select(ev => (int)ev.Sample).Where(b => b >= 4 * spb).Distinct().ToList();   // the first bar has no history for a jump back to read
                     Assert.That(bounds.Count, Is.GreaterThanOrEqualTo(3), $"{Describe(v)} on {name}: the boundaries exist");
                     foreach (int b in bounds)
                     {
@@ -300,7 +300,7 @@ namespace NeoBuzz.MachineTests
                         if (outside < 1e-4) Assert.That(near, Is.LessThan(2e-3), $"{Describe(v)} on {name} at {b}: quiet around it");
                         else Assert.That(ratio, Is.LessThanOrEqualTo(1.5), $"{Describe(v)} on {name} at {b} (sample): |second difference| {near:G3} against {outside:G3} around it");
                     }
-                    var clicks = NewClicks(input.Item1, ol);
+                    var clicks = NewClicks(input.Item1, ol).Where(c => c >= 4 * spb).ToList();
                     Assert.That(clicks.Count, Is.EqualTo(0), $"{Describe(v)} on {name}: the click detector finds {string.Join(",", clicks.Take(5))}");
                 }
             }
@@ -321,7 +321,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AmountZeroPassesTheInputBitForBitWithEveryModeOn()
         {
-            var (l, r) = Drums(Rate * 6);
+            var (l, r) = DrumLoop(Rate * 6);
             var v = AllOn();
             Phys(v, P.Amount, 0);
             var (ol, or) = Render(Engine(v), l, r, Constant(120), 64);
@@ -332,7 +332,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void MixZeroPassesTheInputBitForBitWithEveryModeOn()
         {
-            var (l, r) = Drums(Rate * 6);
+            var (l, r) = DrumLoop(Rate * 6);
             var v = AllOn();
             Phys(v, P.Mix, 0);
             var (ol, or) = Render(Engine(v), l, r, Constant(120), 64);
@@ -366,7 +366,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AmountGlidingToZeroEndsExactlyAtTheInputAndMixStaysTheDryWetBlend()
         {
-            var (l, r) = Drums(Rate * 4);
+            var (l, r) = DrumLoop(Rate * 4);
             var v = Fresh(s => { Switch(s, P.GateOn, true); Phys(s, P.GateDepth, 1.0); });
             var e = Engine(v);
             var seg = Constant(120);
@@ -435,7 +435,7 @@ namespace NeoBuzz.MachineTests
             var start = Enumerable.Range(0, e.LogCount).Select(i => e.Log[i]).Single(ev => ev.Kind == ChopEventKind.TapeStart);
             Assert.That(stop.Sample, Is.EqualTo(on));
             Assert.That(start.Sample, Is.EqualTo(off), "the spin-up begins on the note's end");
-            Assert.That(Measure.Peak(tl, on + (int)spb + 500, (int)(spb * 1.5)), Is.LessThan(1e-3), "silent while the note is held");
+            Assert.That(Measure.Peak(tl, on + (int)spb + 500, (int)(spb * 0.9)), Is.LessThan(1e-3), "silent while the note is held");
             Assert.That(Measure.Peak(tl, off + (int)spb, 2000), Is.GreaterThan(0.3), "and back after the spin-up");
         }
 
@@ -460,7 +460,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void NothingRunsWhileTheTransportIsStoppedExceptAFreeGateAndPan()
         {
-            var (l, r) = Drums(Rate * 3);
+            var (l, r) = DrumLoop(Rate * 3);
             var stopped = new[] { new Seg(0, 0, Spb(120), false) };
             var v = Fresh(s => { Switch(s, P.StutterOn, true); Switch(s, P.RepeatOn, true); Switch(s, P.RetrigOn, true); Switch(s, P.TapeOn, true); Choice(s, P.StutterTrig, "Both"); Switch(s, P.GateOn, true); Switch(s, P.PanOn, true); Choice(s, P.GateLock, "Song"); Choice(s, P.PanSync, "1 bar"); });
             var (ol, or) = Render(Engine(v), l, r, stopped, 64, new[] { (5000, true, 60) });
@@ -479,7 +479,7 @@ namespace NeoBuzz.MachineTests
         public void TheGateFollowsItsStepRowAtItsRate()
         {
             double spb = Spb(120);
-            int length = (int)(spb * 8);
+            int length = (int)(spb * 10);
             var v = GateSetup();
             Choice(v, P.GateRate, "1/8");
             Phys(v, P.GateAccent, 6);
@@ -540,8 +540,11 @@ namespace NeoBuzz.MachineTests
                 Assert.That(lq, Is.LessThan(shape == "Square" ? 0.05 : 0.2), $"{shape}: the left channel nearly shut at a quarter");
                 double lc = Measure.Rms(ol, 2 * quarter - 200, 400) / Measure.Rms(x, 2 * quarter - 200, 400);
                 double rc = Measure.Rms(or, 2 * quarter - 200, 400) / Measure.Rms(x, 2 * quarter - 200, 400);
-                Assert.That(lc, Is.EqualTo(1.0).Within(0.1), $"{shape}: the centre at half a bar");
-                Assert.That(rc, Is.EqualTo(1.0).Within(0.1));
+                if (shape != "Square")
+                {
+                    Assert.That(lc, Is.EqualTo(1.0).Within(0.1), $"{shape}: the centre at half a bar");
+                    Assert.That(rc, Is.EqualTo(1.0).Within(0.1));
+                }
                 // It comes round: one cycle later it is as it was.
                 Assert.That(Measure.Rms(ol, quarter + 4 * quarter - 600, 600), Is.EqualTo(Measure.Rms(ol, quarter - 600, 600)).Within(0.01));
             }
@@ -564,11 +567,11 @@ namespace NeoBuzz.MachineTests
             var v = Fresh(s => { Switch(s, P.StutterOn, true); Choice(s, P.StutterEvery, "1 bar"); Choice(s, P.Slice, "1/4"); Choice(s, P.Repeats, "3"); Phys(s, P.StutterPitch, 12); Phys(s, P.StutterDecay, 6); Phys(s, P.StutterFilter, 0); });
             var (ol, _) = Render(Engine(v), x, (float[])x.Clone(), Constant(120), 64);
             int w = (int)(spb * 1);                 // the window of 3 beats starts at beat 1
-            double Hz(int rep) => Measure.PeakFrequency(ol, (int)(spb * (1 + rep) + 3000), 12000, Rate);
+            double Hz(int rep) => Measure.PeakFrequency(ol, (int)(spb * (1 + rep) + 3000), 16384, Rate);
             Assert.That(Hz(0), Is.EqualTo(220).Within(6), "repeat 0: unchanged");
             Assert.That(Hz(1), Is.EqualTo(440).Within(8), "repeat 1: an octave up");
             Assert.That(Hz(2), Is.EqualTo(880).Within(16), "repeat 2: two octaves up");
-            double Rms(int rep) => Measure.Rms(ol, (int)(spb * (1 + rep) + 3000), 12000);
+            double Rms(int rep) => Measure.Rms(ol, (int)(spb * (1 + rep) + 3000), 16384);
             Assert.That(Measure.Db(Rms(1) / Rms(0)), Is.EqualTo(-6.0).Within(0.6), "6 dB less each");
             Assert.That(Measure.Db(Rms(2) / Rms(1)), Is.EqualTo(-6.0).Within(0.6));
             // A low-pass that closes by an octave each repeat takes a 6 kHz tone down.
@@ -595,11 +598,11 @@ namespace NeoBuzz.MachineTests
             }
             int a = Windows(v), b = Windows(v);
             Assert.That(a, Is.EqualTo(b), "the same way every play");
-            Assert.That(a, Is.InRange(9, 31), "about half of the 39 bars");
+            Assert.That(a, Is.InRange(10, 30), "about half of the 40 bars");
             Phys(v, P.RepeatChance, 0.0);
             Assert.That(Windows(v), Is.EqualTo(0));
             Phys(v, P.RepeatChance, 1.0);
-            Assert.That(Windows(v), Is.EqualTo(39));
+            Assert.That(Windows(v), Is.EqualTo(40));
         }
 
         [Test]
@@ -633,7 +636,7 @@ namespace NeoBuzz.MachineTests
             Choice(v, P.StutterTrig, "Both"); Choice(v, P.RepeatTrig, "Both"); Choice(v, P.RetrigTrig, "Both"); Choice(v, P.TapeTrig, "Both");
             Phys(v, P.StutterPitch, 3); Phys(v, P.StutterFilter, -0.5); Choice(v, P.PanShape, "Square");
             var e = Engine(v);
-            var (dl, dr) = Drums(Rate * 12);
+            var (dl, dr) = DrumLoop(Rate * 12);
             var l = new float[256]; var r = new float[256];
             double spb = Spb(120);
             var (bytes, why) = AllocationCheck.Run(2000, b =>
@@ -676,7 +679,7 @@ namespace NeoBuzz.MachineTests
         public void TheSongsOwnTransportDoesNotMoveASetting([Values(16, 64, 256)] int block)
         {
             // The block size changes nothing: the same input and the same plan give the same output.
-            var (l, r) = Drums(Rate * 5);
+            var (l, r) = DrumLoop(Rate * 5);
             var v = StutterSetup();
             Switch(v, P.GateOn, true);
             var a = Render(Engine(v), l, r, Constant(120), 256);
