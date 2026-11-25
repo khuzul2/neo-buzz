@@ -406,7 +406,7 @@
         <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="88" />
         <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="511" />
         <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
-        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="25" />
         <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
         <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="0" />
         <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="1" />
