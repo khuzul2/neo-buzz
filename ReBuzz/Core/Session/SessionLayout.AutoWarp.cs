@@ -76,6 +76,36 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
+        /// Auto-warps several audio clips as one undo step (the command the clip menus will call): each by the beats, or to grid when <paramref name="toGrid"/>. <paramref name="options"/>
+        /// (grid, sensitivity, reach) are saved with every clip first when given. A clip with no beats found is named in the answer and left as it was; the others are done.
+        /// Returns why nothing was done, or null (then <see cref="LastGridReports"/> has what "to grid" did to each).
+        /// </summary>
+        internal string AutoWarpClips(IReadOnlyList<IPattern> clips, bool toGrid, AudioClipEdit options = null, string label = null)
+        {
+            if (clips == null || clips.Count == 0) return "No clip.";
+            var reports = new List<(IPattern Clip, GridWarpReport Report)>();
+            var skipped = new List<string>();
+            UndoStack.BeginActionGroup();
+            try
+            {
+                UndoStack.Label(label ?? (toGrid ? "Auto-warp to grid" : "Auto-warp"));
+                foreach (var clip in clips)
+                {
+                    var edit = new AudioClipEdit { AutoWarp = true, ToGrid = toGrid, AutoGrid = options?.AutoGrid, AutoSensitivity = options?.AutoSensitivity, AutoReach = options?.AutoReach };
+                    string why = EditAudio(clip, edit, null);
+                    if (why != null) skipped.Add($"{clip?.Name}: {why}");
+                    else if (toGrid && LastGridReport != null) reports.Add((clip, LastGridReport));
+                }
+            }
+            finally { UndoStack.EndActionGroup(); }
+            LastGridReports = reports;
+            return skipped.Count == clips.Count ? string.Join(" ", skipped) : null;
+        }
+
+        /// <summary>What "to grid" did to each clip of the last <see cref="AutoWarpClips"/>.</summary>
+        internal IReadOnlyList<(IPattern Clip, GridWarpReport Report)> LastGridReports { get; private set; } = Array.Empty<(IPattern, GridWarpReport)>();
+
+        /// <summary>
         /// A file just imported (not yet in a slot) that is longer than eight bars and has a tempo is warped by its beats where they move; false when it isn't
         /// (the preference is off, it is shorter, or no beats were found: it keeps the one tempo the import found).
         /// </summary>
