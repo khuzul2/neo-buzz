@@ -15,7 +15,7 @@ namespace ReBuzz.Studio.Tests
 {
     public partial class NeoAudioClipPageTests
     {
-        sealed class WarpModeScope : IDisposable
+        internal sealed class WarpModeScope : IDisposable
         {
             readonly AutoWarpMode was = AutoWarpPolicy.Mode;
             public WarpModeScope(AutoWarpMode mode) { AutoWarpPolicy.Mode = mode; }
@@ -49,11 +49,35 @@ namespace ReBuzz.Studio.Tests
             var clip = rig.SessionClip;
             Layout.AutoWarp(clip, 0, out _);
             var before = Audio(clip).Markers.ToList();
-            Assert.That((Audio(clip).AutoGrid, Audio(clip).AutoSensitivity, Audio(clip).AutoReach), Is.EqualTo(("1/16", 50, 40)), "the defaults");
+            Assert.That((Audio(clip).AutoGrid, Audio(clip).AutoSensitivity, Audio(clip).AutoReach), Is.EqualTo(("1/16", 60, 40)), "the defaults");
             Steps(rig, clip, () => Assert.That(Layout.EditAudio(clip, new AudioClipEdit { AutoGrid = "1/8T", AutoSensitivity = 70, AutoReach = 25 }, null), Is.Null), save: true,
                 check: _ => Assert.That((Audio(clip).AutoGrid, Audio(clip).AutoSensitivity, Audio(clip).AutoReach), Is.EqualTo(("1/8T", 70, 25))));
             Assert.That(Audio(clip).Markers.SequenceEqual(before), Is.True, "nothing runs until the command does");
             Assert.That(Layout.EditAudio(clip, new AudioClipEdit { AutoGrid = "1/3" }, null), Is.Not.Null, "an unknown grid is refused");
+        }
+
+        [AvaloniaTest]
+        public void AutoWarpOfARangeChangesOnlyTheMarkersInsideItAndPinsItsEnds()
+        {
+            using var off = new WarpModeScope(AutoWarpMode.Off);
+            using var rig = new Rig(WarpFile("grid-range.wav", WarpSignals.Tempo.Drift, 48));
+            var clip = rig.SessionClip;
+            Layout.AutoWarp(clip, 0, out _);
+            var before = Audio(clip).Markers.ToList();
+            double rate = Layout.AudioSourceOf(clip)!.SampleRate;
+            double from = 16, to = 32;
+            Steps(rig, clip, () => Assert.That(Layout.EditAudio(clip, new AudioClipEdit { AutoWarp = true, ToGrid = true, FromSeconds = from, ToSeconds = to }, null), Is.Null), save: true, check: _ =>
+            {
+                var after = Audio(clip).Markers.ToList();
+                var src = Layout.AudioSourceOf(clip)!;
+                var was = WarpMath.Effective(before, src.Length, rate, Audio(clip).Bpm);
+                Assert.That(was.Where(m => m.Sample < from * rate - 20 || m.Sample > to * rate + 20).All(m => after.Any(a => a.Sample == m.Sample && a.Beat == m.Beat)), Is.True, "every marker outside the range is still there");
+                Assert.That(after.Where(m => (m.Sample < from * rate - 20 || m.Sample > to * rate + 20) && m.Sample > 0 && m.Sample < src.Length).All(m => was.Any(a => a.Sample == m.Sample && a.Beat == m.Beat)), Is.True, "and none was added outside it (but the two ends of the audio, on the line they had)");
+                Assert.That(after.Any(m => Math.Abs(m.Sample - from * rate) <= 20), Is.True, "a marker pins its start");
+                Assert.That(after.Any(m => Math.Abs(m.Sample - to * rate) <= 20), Is.True, "and its end");
+                Assert.That(after.Count(m => m.Sample > from * rate && m.Sample < to * rate), Is.GreaterThan(before.Count(m => m.Sample > from * rate && m.Sample < to * rate)), "more markers inside: the transients");
+                Assert.That(WarpMath.Validate(after), Is.Null);
+            });
         }
 
         [AvaloniaTest]

@@ -31,6 +31,8 @@ namespace ReBuzz.Core.Session
             public AudioAsset Asset;
             public AudioSource Source;
             public List<double> Onsets;
+            public List<double> GridOnsets;
+            public (int Sensitivity, bool Sustained) GridOnsetsKey;
             /// <summary>The audio backwards, and its transients, made once for clips that play it reversed (NA2).</summary>
             public AudioSource Reversed;
             public List<double> ReversedOnsets;
@@ -394,13 +396,14 @@ namespace ReBuzz.Core.Session
             {
                 warp = AnalyseAutoWarp(pattern, edit.FromSeconds ?? 0, out why);
                 if (warp == null && !edit.ToGrid) return why;
+                if (warp == null && edit.ToSeconds != null) return why;
                 if (edit.ToGrid)
                 {
                     // AW5: the beats first (a clip with none found keeps its own line), then the transients, with the sensitivity this edit sets or the clip has.
                     var src = AudioSourceOf(pattern);
                     if (src == null) return "The clip's audio is not there.";
                     gridReport = new GridWarpReport();
-                    gridTransients = AudioAnalysis.GridOnsets(src, edit.AutoSensitivity ?? AudioOf(pattern).AutoSensitivity, out int gated);
+                    gridTransients = AudioAnalysis.GridOnsets(src, edit.AutoSensitivity ?? AudioOf(pattern).AutoSensitivity, out int gated, edit.AutoLeaveSustained ?? AudioOf(pattern).AutoLeaveSustained);
                     gridReport.Gated = gated;
                 }
             }
@@ -411,8 +414,8 @@ namespace ReBuzz.Core.Session
                 if (label != null) UndoStack.Label(label);
                 var settings = ClipOf(pattern).Clone();
                 edit.ApplyTo(settings);
-                if (warp != null) ApplyAutoWarp(settings.Audio, AudioSourceOf(pattern), warp, edit.FromSeconds ?? 0);
-                if (gridTransients != null) ApplyToGrid(settings.Audio, AudioSourceOf(pattern), gridTransients, gridReport, edit.FromSeconds ?? 0, warp != null);
+                if (warp != null) ApplyAutoWarp(settings.Audio, AudioSourceOf(pattern), warp, edit.FromSeconds ?? 0, edit.ToSeconds);
+                if (gridTransients != null) ApplyToGrid(settings.Audio, AudioSourceOf(pattern), gridTransients, gridReport, edit.FromSeconds ?? 0, warp != null, edit.ToSeconds);
                 SetAudio(pattern, settings.Audio);
                 SetClipSettings(pattern, settings);
                 if (edit.DetectTempo) DetectTempo(pattern);
@@ -441,6 +444,20 @@ namespace ReBuzz.Core.Session
         {
             var audio = AudioOf(pattern);
             return audio == null ? null : ClipAudioOf(audio)?.Source;
+        }
+
+        /// <summary>The attacks Auto-warp to grid looks at for a clip: its transients at the clip's sensitivity without those in quiet or sustained passages (cached while the options stay).</summary>
+        internal IReadOnlyList<double> GridOnsetsOf(IPattern pattern)
+        {
+            var audio = AudioOf(pattern);
+            var w = audio == null ? null : ClipAudioOf(audio);
+            if (w == null) return Array.Empty<double>();
+            if (w.GridOnsets == null || w.GridOnsetsKey != (audio.AutoSensitivity, audio.AutoLeaveSustained))
+            {
+                w.GridOnsets = AudioAnalysis.GridOnsets(w.Source, audio.AutoSensitivity, out _, audio.AutoLeaveSustained);
+                w.GridOnsetsKey = (audio.AutoSensitivity, audio.AutoLeaveSustained);
+            }
+            return w.GridOnsets;
         }
 
         /// <summary>An audio clip's transients (audio samples), found once per wave; empty if none.</summary>

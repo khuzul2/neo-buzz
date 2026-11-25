@@ -19,6 +19,8 @@ using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Core.Clips;
 using ReBuzz.Core.Session;
+using ReBuzz.SessionTests.AutoWarp;
+using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Audio;
 using static ReBuzz.Studio.Tests.NeoAudioClipPageTests;
 
@@ -266,7 +268,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ against the audio
 
         [AvaloniaTest]
-        public void AltDragMovesAMarkerAlongTheAudioKeepingItsBeat()
+        public void ShiftDragMovesAMarkerAlongTheAudioKeepingItsBeat()
         {
             Contexts((rig, clip, page) =>
             {
@@ -274,10 +276,10 @@ namespace ReBuzz.Studio.Tests
                 Seed(rig, clip, 3);
                 var before = Marks(clip)[1];
                 Assert.That(page.HintText, Is.Not.Null);
-                rig.Window.MouseMove(MarkerAt(rig, wave, 1), RawInputModifiers.Alt);
+                rig.Window.MouseMove(MarkerAt(rig, wave, 1), RawInputModifiers.Shift);
                 Settle();
-                Assert.That(wave.Hint, Does.Contain(WarpEditor.AltName + "+drag"), "the status line names the modifier");
-                Steps(rig, clip, () => rig.Drag(MarkerAt(rig, wave, 1), MarkerAt(rig, wave, 1) + new Vector(9, 0), RawInputModifiers.Alt), save: false, check: _ =>
+                Assert.That(wave.Hint, Does.Contain("Shift: slide the audio"), "the status line names the modifier");
+                Steps(rig, clip, () => rig.Drag(MarkerAt(rig, wave, 1), MarkerAt(rig, wave, 1) + new Vector(9, 0), RawInputModifiers.Shift), save: false, check: _ =>
                 {
                     var after = Marks(clip)[1];
                     Assert.That(after.Beat, Is.EqualTo(before.Beat).Within(1e-12), "the marker keeps its beat");
@@ -286,7 +288,7 @@ namespace ReBuzz.Studio.Tests
                 });
                 // The pinned end can't move along the audio.
                 string was = State(clip.Machine.Name, clip.Name);
-                rig.Drag(MarkerAt(rig, wave, 0), MarkerAt(rig, wave, 0) + new Vector(12, 0), RawInputModifiers.Alt);
+                rig.Drag(MarkerAt(rig, wave, 0), MarkerAt(rig, wave, 0) + new Vector(12, 0), RawInputModifiers.Shift);
                 Assert.That(State(clip.Machine.Name, clip.Name), Is.EqualTo(was), "the audio's first end stays pinned");
                 Assert.That(Saved(clip.Machine.Name, clip.Name), Is.EqualTo(was), "saved and opened again as .nbl");
             });
@@ -299,7 +301,8 @@ namespace ReBuzz.Studio.Tests
             rig.SelectInSession();
             var page = rig.OpenPage();
             string tip = ToolTip.GetTip(page.Wave) as string ?? "";
-            Assert.That(tip, Does.Contain(WarpEditor.AltName + "+drag"));
+            Assert.That(tip, Does.Contain("Shift+drag"));
+            Assert.That(tip, Does.Contain(WarpEditor.AltName + ": free"));
             Assert.That(WarpEditor.AltName, Is.EqualTo(OperatingSystem.IsMacOS() ? "Option" : "Alt"));
         }
 
@@ -796,6 +799,273 @@ namespace ReBuzz.Studio.Tests
             AssertOrdered(clip);
             Assert.That(Saved(clip.Machine.Name, clip.Name), Does.Contain("<Marker"));
             Assert.That(Layout.QuantizeStrength, Is.EqualTo(100));
+        }
+
+        // ------------------------------------------------------------------ AW5: markers by hand, the hint, auto-warp on a range
+
+        static double OffGrid(double beat) => Math.Abs(beat / Grid - Math.Round(beat / Grid));
+
+        [AvaloniaTest]
+        public void DoubleClickAddsAMarkerOnAnAttackOrOnPlainAudioAndTheEditsAfterwardsAreTheSameAsOnAnyMarker()
+        {
+            Contexts((rig, clip, page) =>
+            {
+                var wave = page.Wave;
+                double t = Layout.TransientsOf(clip)[4];
+                Steps(rig, clip, () => rig.DoubleClick(TransientAt(rig, wave, t)), save: false, check: _ =>
+                {
+                    var m = Marks(clip);
+                    Assert.That(m.Count, Is.EqualTo(3), "the two ends and the new marker");
+                    Assert.That(m.Count(x => Math.Abs(x.Sample - t) < 0.5), Is.EqualTo(1), "on the attack");
+                    AssertOrdered(clip);
+                });
+                Steps(rig, clip, () => rig.DoubleClick(WaveAt(rig, 9.5, 0.5)), save: false, check: _ =>
+                {
+                    Assert.That(Marks(clip).Count, Is.EqualTo(4), "and one on plain audio");
+                    AssertOrdered(clip);
+                });
+                // As any other: a drag moves it, Delete takes it out.
+                rig.Click(MarkerAt(rig, wave, 1));
+                Steps(rig, clip, () => rig.Key(PhysicalKey.Delete), save: false, check: _ => Assert.That(Marks(clip).Count, Is.EqualTo(3), "Delete removes the selected marker"));
+            });
+        }
+
+        [AvaloniaTest]
+        public void DraggingSnapsToTheGridAndAltDraggingMovesFreely()
+        {
+            Contexts((rig, clip, page) =>
+            {
+                var wave = page.Wave;
+                Seed(rig, clip, 3);
+                var from = MarkerAt(rig, wave, 1);
+                Steps(rig, clip, () => rig.Drag(from, from + new Vector(7, 0)), save: false, check: _ =>
+                    Assert.That(OffGrid(Marks(clip)[1].Beat), Is.LessThan(1e-9), "by default the marker lands on a grid line"));
+                Steps(rig, clip, () => rig.Drag(from, from + new Vector(7, 0), RawInputModifiers.Alt), save: false, check: _ =>
+                    Assert.That(OffGrid(Marks(clip)[1].Beat), Is.GreaterThan(0.01), "with Alt it lands where the pointer is, between the lines"));
+                // From an attack, with and without Alt.
+                double t = Layout.TransientsOf(clip)[8];
+                Steps(rig, clip, () => rig.Drag(TransientAt(rig, wave, t), TransientAt(rig, wave, t) + new Vector(7, 0)), save: false, check: _ =>
+                    Assert.That(Marks(clip).Where(x => Math.Abs(x.Sample - t) < 0.5).Select(x => OffGrid(x.Beat)), Is.All.LessThan(1e-9), "a marker made on an attack snaps too"));
+                Steps(rig, clip, () => rig.Drag(TransientAt(rig, wave, t), TransientAt(rig, wave, t) + new Vector(7, 0), RawInputModifiers.Alt), save: false, check: _ =>
+                    Assert.That(Marks(clip).Where(x => Math.Abs(x.Sample - t) < 0.5).Select(x => OffGrid(x.Beat)), Is.All.GreaterThan(0.01), "and is free with Alt"));
+            });
+        }
+
+        [AvaloniaTest]
+        public void TheToolbarHintFollowsThePointerOverTheAudioAnAttackAMarkerADragAndARange()
+        {
+            Contexts((rig, clip, page) =>
+            {
+                var wave = page.Wave;
+                string cmd = OperatingSystem.IsMacOS() ? "⌘" : "Ctrl", alt = WarpEditor.AltName == "Option" ? "⌥" : "Alt";
+                rig.Window.MouseMove(WaveAt(rig, 9.5, 0.5));
+                Settle();
+                Assert.That(page.HintLabelText, Is.EqualTo("Over the audio"));
+                Assert.That(wave.Hint, Is.EqualTo("Double-click to add a marker · drag to select a range"));
+                double t = Layout.TransientsOf(clip)[3];
+                rig.Window.MouseMove(TransientAt(rig, wave, t));
+                Settle();
+                Assert.That(page.HintLabelText, Is.EqualTo("Over an attack"));
+                Assert.That(wave.Hint, Is.EqualTo($"Drag to place a marker here (snaps to the grid) · hold {alt} to drag freely"));
+                Seed(rig, clip, 3);
+                rig.Window.MouseMove(MarkerAt(rig, wave, 1));
+                Settle();
+                Assert.That(page.HintLabelText, Is.EqualTo("Over a marker"));
+                Assert.That(wave.Hint, Does.Contain("Drag to move it").And.Contain(alt + ": no snap").And.Contain("Shift: slide the audio").And.Contain("removes it"));
+                // Dragging: the step it snaps to, and that Alt frees it.
+                var from = MarkerAt(rig, wave, 1);
+                rig.Window.MouseMove(from);
+                rig.Window.MouseDown(from, MouseButton.Left);
+                rig.Window.MouseMove(from + new Vector(7, 0), RawInputModifiers.LeftMouseButton);
+                Settle();
+                Assert.That(page.HintLabelText, Is.EqualTo("Dragging"));
+                Assert.That(wave.Hint, Is.EqualTo($"Snapping to {wave.SnapName} · hold {alt} to move freely"));
+                Assert.That(wave.SnapName, Is.EqualTo("1/8"), "a step of half a beat at this zoom");
+                rig.Window.MouseMove(from + new Vector(8, 0), RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
+                Settle();
+                Assert.That(wave.Hint, Does.Contain("freely"));
+                rig.Window.MouseUp(from + new Vector(8, 0), MouseButton.Left, RawInputModifiers.Alt);
+                Settle();
+                // A range selected.
+                rig.Drag(WaveAt(rig, 5.5, 0.6), WaveAt(rig, 8.5, 0.6));
+                Assert.That(wave.Range, Is.Not.Null);
+                rig.Window.MouseMove(WaveAt(rig, 12.5, 0.5));
+                Settle();
+                Assert.That(page.HintLabelText, Is.EqualTo("Range selected"));
+                Assert.That(wave.Hint, Is.EqualTo($"Right-click: Auto-warp selection · {cmd}+U: quantize the range"));
+            });
+        }
+
+        [AvaloniaTest]
+        public void AutoWarpOfARangeFromTheWaveformMenuChangesOnlyThatRangeInOneUndoStep()
+        {
+            using var off = new WarpModeScope(AutoWarpMode.Off);
+            Contexts((rig, clip, page) =>
+            {
+                var wave = page.Wave;
+                Seed(rig, clip, 2, 14);
+                var was = Marks(clip);
+                // Without a range the page's menu says Auto-warp; with one, Auto-warp selection.
+                rig.Click(WaveAt(rig, 9.5, 0.5), MouseButton.Right);
+                var whole = wave.LastMenu!.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp");
+                Assert.That(whole.IsEnabled, Is.True);
+                wave.LastMenu.Close();
+                rig.Drag(WaveAt(rig, 5.5, 0.6), WaveAt(rig, 10.5, 0.6));
+                var range = wave.RangeSeconds!.Value;
+                rig.Click(WaveAt(rig, 8, 0.6), MouseButton.Right);
+                var root = wave.LastMenu!.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp selection");
+                Assert.That(root.Items.OfType<MenuItem>().Select(i => i.Tag as string), Is.EqualTo(new[] { "Auto-warp: Follow the beat", "Auto-warp: To grid", "Auto-warp: Options" }));
+                var toGrid = root.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp: To grid");
+                var src = Layout.AudioSourceOf(clip)!;
+                double a = range.From * src.SampleRate, b = range.To * src.SampleRate;
+                Steps(rig, clip, () => { toGrid.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); wave.LastMenu.Close(); Settle(); }, save: true, check: _ =>
+                {
+                    var now = Marks(clip);
+                    Assert.That(now.Where(m => m.Sample < a - 20 || m.Sample > b + 20).Select(m => (m.Sample, m.Beat)), Is.EqualTo(was.Where(m => m.Sample < a - 20 || m.Sample > b + 20).Select(m => (m.Sample, m.Beat))), "the markers outside the range are as they were");
+                    Assert.That(now.Any(m => Math.Abs(m.Sample - a) <= 20) && now.Any(m => Math.Abs(m.Sample - b) <= 20), Is.True, "the ends of the range are pinned");
+                    Assert.That(now.Count(m => m.Sample > a + 20 && m.Sample < b - 20), Is.GreaterThan(0), "and the range has the markers auto-warp made");
+                    AssertOrdered(clip);
+                });
+            });
+        }
+
+        [AvaloniaTest]
+        public void TheSplitButtonRunsTheLastModeTheChipNamesTheOptionsAndTheLegendMarksTheAttacks()
+        {
+            using var off = new WarpModeScope(AutoWarpMode.Off);
+            Contexts((rig, clip, page) =>
+            {
+                var wave = page.Wave;
+                Assert.That(page.DetectButton.Content, Is.EqualTo("Auto-warp: Follow the beat"));
+                Assert.That(page.ChipText, Is.EqualTo($"1/16 · {Layout.QuantizeStrength} % · reach 40 %"));
+                // The arrow opens the same menu as the right click.
+                rig.Click(rig.Of(page.DetectMoreButton));
+                var items = page.AutoWarpMenuOpen.Items.OfType<MenuItem>().Where(i => i.Tag is string).Select(i => (string)i.Tag).ToList();
+                Assert.That(items, Is.EqualTo(new[] { "Auto-warp: Follow the beat", "Auto-warp: To grid", "Auto-warp: Options" }));
+                var toGrid = page.AutoWarpMenuOpen.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp: To grid");
+                Steps(rig, clip, () => { toGrid.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); page.AutoWarpMenuOpen.Close(); Settle(); }, save: false, check: _ =>
+                {
+                    Assert.That(Marks(clip).Count, Is.GreaterThan(2));
+                });
+                Settle();
+                Assert.That(page.DetectButton.Content, Is.EqualTo("Auto-warp: To grid"), "the button takes the mode that ran");
+                var kinds = Enumerable.Range(0, wave.Markers.Count).Select(wave.MarkerKind).ToList();
+                Assert.That(kinds, Does.Contain("attack"), "a marker on an attack is drawn as one");
+                Assert.That(wave.LeftAlone().Count, Is.GreaterThanOrEqualTo(0));
+            });
+        }
+
+        [AvaloniaTest]
+        public void TheAutoWarpMenuIsOnTheClipOfTheSessionTheArrangementAndTheAudioPageAndRunsInOneUndoStep()
+        {
+            using var off = new WarpModeScope(AutoWarpMode.Off);
+            using var rig = new Rig(WarpFile("grid-views.wav", WarpSignals.Tempo.Drift, 48));
+            foreach (string view in new[] { "Session", "Arrangement", "Audio page" })
+            {
+                var clip = view == "Arrangement" ? rig.ArrangedClip : rig.SessionClip;
+                MenuItem root;
+                if (view == "Session")
+                {
+                    rig.Show("Session");
+                    int track = Layout.FirstTrackOf(rig.A);
+                    rig.Session.ShowSlotMenu(rig.Session.SlotAt(track, 0));
+                    root = rig.Session.LastMenu.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp");
+                }
+                else if (view == "Arrangement")
+                {
+                    var item = rig.SelectInArrangement();
+                    var r = rig.Sequence.Arrangement.ClipRect(item);
+                    rig.Click(rig.Sequence.Arrangement.TranslatePoint(new Point(r.X + r.Width * 0.3, r.Y + r.Height * 0.8), rig.Window)!.Value, MouseButton.Right);
+                    Assert.That(rig.Sequence.OpenMenu?.IsOpen, Is.True, "the clip's menu opens");
+                    root = rig.Sequence.OpenMenu!.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp");
+                }
+                else
+                {
+                    rig.SelectInSession();
+                    var page = rig.OpenPage();
+                    rig.WaitPeaks(rig.SessionClip);
+                    rig.Click(rig.In(page.Wave, 0.5, 0.5), MouseButton.Right);
+                    root = page.Wave.LastMenu!.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp");
+                    clip = rig.SessionClip;
+                }
+                Assert.That(root.IsEnabled, Is.True, view + ": the item is there and enabled");
+                Assert.That(root.Items.OfType<MenuItem>().Select(i => i.Tag as string).Where(t => t != null), Is.EqualTo(new[] { "Auto-warp: Follow the beat", "Auto-warp: To grid", "Auto-warp: Options" }));
+                var run = root.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp: To grid");
+                string machine = clip.Machine.Name;
+                // A clip already warped by the beat before: To grid adds to it; the first view starts from an unwarped clip.
+                Steps(rig, clip, () => { run.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle(); }, save: view == "Audio page", check: _ =>
+                {
+                    Assert.That(Layout.AudioOf(clip)!.Markers.Count, Is.GreaterThan(4), view + ": the clip is warped to the grid");
+                    Assert.That(AutoWarpFlow.LastWasError, Is.False, AutoWarpFlow.LastSummary);
+                    Assert.That(AutoWarpFlow.LastSummary, Does.StartWith("Auto-warped to grid"));
+                });
+                rig.Sequence.OpenMenu?.Close();
+                rig.Session.LastMenu?.Close();
+                rig.Page.Wave.LastMenu?.Close();
+                Settle();
+                if (view != "Audio page") Assert.That(rig.Page.Pattern, Is.SameAs(clip), view + ": the Audio page opens on the clip");
+                rig.Undo();
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheOptionsDialogShowsTheSavedOptionsRunsFromThereAndSavesThemWithTheClip()
+        {
+            using var off = new WarpModeScope(AutoWarpMode.Off);
+            using var rig = new Rig(WarpFile("grid-options-ui.wav", WarpSignals.Tempo.Drift, 48));
+            var clip = rig.SessionClip;
+            rig.Show("Session");
+            int track = Layout.FirstTrackOf(rig.A);
+            rig.Session.ShowSlotMenu(rig.Session.SlotAt(track, 0));
+            var root = rig.Session.LastMenu.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp");
+            var options = root.Items.OfType<MenuItem>().Single(i => i.Tag as string == "Auto-warp: Options");
+            int strength = Layout.QuantizeStrength;
+            AutoWarpFlow.AutoWarpChoice shown = default;
+            try
+            {
+                AutoWarpFlow.Responder = start =>
+                {
+                    shown = start;
+                    return new AutoWarpFlow.AutoWarpChoice { ToGrid = true, Grid = "1/8T", Strength = 80, Sensitivity = 70, Reach = 25, LeaveSustained = false };
+                };
+                Steps(rig, clip, () => { options.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle(); }, save: true, check: _ =>
+                {
+                    var a = Layout.AudioOf(clip)!;
+                    Assert.That((a.AutoGrid, a.AutoSensitivity, a.AutoReach, a.AutoLeaveSustained), Is.EqualTo(("1/8T", 70, 25, false)), "the options are saved with the clip");
+                    Assert.That(Layout.QuantizeStrength, Is.EqualTo(80), "the strength is the song's");
+                    Assert.That(a.Markers.Count, Is.GreaterThan(4));
+                });
+                Assert.That((shown.Grid, shown.Sensitivity, shown.Reach, shown.LeaveSustained, shown.ToGrid), Is.EqualTo(("1/16", 60, 40, true, true)), "the dialog opened on the defaults");
+            }
+            finally { AutoWarpFlow.Responder = null; Layout.SetQuantizeStrength(strength); }
+        }
+
+        [AvaloniaTest]
+        public void TheOptionsDialogsControlsHoldAndReturnTheChoice()
+        {
+            using var off = new WarpModeScope(AutoWarpMode.Off);
+            using var rig = new Rig(WarpFile("grid-dialog-ui.wav", WarpSignals.Tempo.Drift, 48));
+            var clip = rig.SessionClip;
+            var win = new AutoWarpFlow.OptionsWindow(new[] { clip }, null, new AutoWarpFlow.AutoWarpChoice { ToGrid = true, Grid = "1/16", Strength = 100, Sensitivity = 60, Reach = 40, LeaveSustained = true });
+            win.Show();
+            Settle();
+            try
+            {
+                var c = win.Choice();
+                Assert.That((c.ToGrid, c.Grid, c.Strength, c.Sensitivity, c.Reach, c.LeaveSustained), Is.EqualTo((true, "1/16", 100, 60, 40, true)));
+                Assert.That(win.GridButtons.Select(b => b.IsChecked == true), Is.EqualTo(new[] { false, false, true, false }));
+                win.GridButtons[1].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                win.TripletsBox.IsChecked = true;
+                win.StrengthSlider.Value = 50;
+                win.ReachSlider.Value = 30;
+                win.SustainedBox.IsChecked = false;
+                Assert.That(win.Choice().Grid, Is.EqualTo("1/8T"), "a triplet grid");
+                Assert.That((win.Choice().Strength, win.Choice().Reach, win.Choice().LeaveSustained), Is.EqualTo((50, 30, false)));
+                win.FollowButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.That(win.Choice().ToGrid, Is.False, "Follow the beat");
+                Assert.That(win.StrengthSlider.IsEnabled, Is.False, "the grid options rest while it only follows the beat");
+            }
+            finally { win.Close(); Settle(); }
         }
     }
 }

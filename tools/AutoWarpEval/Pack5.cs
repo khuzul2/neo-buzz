@@ -21,7 +21,7 @@ namespace NeoBuzz.AutoWarpEval
             Directory.CreateDirectory(outDir);
             var aw2 = Aw2Commands.LoadModel("embedded");
             double seconds = double.Parse(Environment.GetEnvironmentVariable("AW4_SECONDS") ?? "15", CultureInfo.InvariantCulture);
-            int sens = int.Parse(Environment.GetEnvironmentVariable("AW5_SENS") ?? "50", CultureInfo.InvariantCulture);
+            int sens = int.Parse(Environment.GetEnvironmentVariable("AW5_SENS") ?? "60", CultureInfo.InvariantCulture);
             var mapErr = new List<double>(); var allErr = new List<double>(); var renderErr = new List<double>(); var renderFar = 0; var renderAll = 0;
             int outOfReach = 0, gatedTotal = 0, madeTotal = 0, detectedTotal = 0, clicksGrid = 0, clicksBeat = 0;
             var rows = new List<string> { "clip\tsong_bpm\tbeats_found\tmarkers_beat\tmarkers_grid\traw_onsets\tgated\tmade\tout_of_reach\tmap_median_ms\tmap_p90_ms\trender_onsets\trender_median_ms\trender_p90_ms\tclicks_beat\tclicks_grid" };

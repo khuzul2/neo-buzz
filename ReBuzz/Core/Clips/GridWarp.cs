@@ -38,11 +38,11 @@ namespace ReBuzz.Core.Clips
         /// 35 dB under the audio's loud passages) and without those that are no attack (under 2 dB louder than the 20 ms before it, a sustained note changing). Audio samples;
         /// <paramref name="gated"/> counts what was left out.
         /// </summary>
-        public static List<double> GridOnsets(AudioSource source, int sensitivity, out int gated)
+        public static List<double> GridOnsets(AudioSource source, int sensitivity, out int gated, bool leaveSustained = true)
         {
             var all = Onsets(source, sensitivity);
             gated = 0;
-            if (all.Count == 0) return all;
+            if (all.Count == 0 || !leaveSustained) return all;
             source = source.ForAnalysis();
             int rate = source.SampleRate, w = Math.Max(16, rate / 50), step = Math.Max(1, rate / 40);
             // The loud passages: the 90th percentile of 20 ms block levels over the audio.
@@ -96,7 +96,7 @@ namespace ReBuzz.Core.Clips
         /// on the line they have.
         /// </summary>
         public static WarpResult ToGrid(List<(double Sample, double Beat)> m, IReadOnlyList<double> transients, double grid, double strength, double reach, double fromSample,
-            double length, GridWarpReport report = null)
+            double length, GridWarpReport report = null, double toSample = double.PositiveInfinity)
         {
             report ??= new GridWarpReport();
             if (!double.IsFinite(grid) || grid <= 0) return WarpResult.Fail("The grid is a positive number of beats.");
@@ -107,7 +107,7 @@ namespace ReBuzz.Core.Clips
             var span = old.ToList();
             if (span[0].Sample > MinSamples) span.Insert(0, (0, BeatAt(old, 0)));
             if (length - span[^1].Sample > MinSamples) span.Add((length, BeatAt(old, length)));
-            double lo = Math.Max(fromSample, span[0].Sample) + MinSamples, hi = span[^1].Sample - MinSamples;
+            double lo = Math.Max(fromSample, span[0].Sample) + MinSamples, hi = Math.Min(toSample, span[^1].Sample) - MinSamples;
 
             var items = new List<(double Sample, double Beat, double Target, double Dist, double Line)>();
             foreach (double t in transients.OrderBy(t => t))
@@ -130,7 +130,7 @@ namespace ReBuzz.Core.Clips
             for (int i = 0; i < span.Count; i++)
             {
                 bool end = i == 0 || i == span.Count - 1;
-                bool pinned = end || span[i].Sample <= fromSample + MinSamples;
+                bool pinned = end || span[i].Sample <= fromSample + MinSamples || span[i].Sample >= toSample - MinSamples;
                 bool given = !pinned && items.Any(x => Math.Abs(x.Line - span[i].Beat) < MinGap || Math.Abs(x.Sample - span[i].Sample) < MinSamples || Math.Abs(x.Target - span[i].Beat) < MinGap);
                 if (given) report.Replaced++; else keep.Add(span[i]);
             }

@@ -32,6 +32,10 @@ namespace ReBuzz.Core
         /// <summary>The clip's options of Auto-warp to grid (AW5), saved with the clip whether or not it is run now: a grid of <see cref="SessionDocument.AudioSettings.AutoGrids"/>, the sensitivity 0 to 100, the reach 0 to 50 %.</summary>
         public string AutoGrid;
         public int? AutoSensitivity, AutoReach;
+        /// <summary>Leave long notes and pauses alone (no markers in quiet or sustained passages); saved with the clip.</summary>
+        public bool? AutoLeaveSustained;
+        /// <summary>With <see cref="AutoWarp"/> and <see cref="FromSeconds"/>: only the audio from there to this many seconds changes; its two ends are pinned with markers and every marker outside it stays (AW5, "Auto-warp selection").</summary>
+        public double? ToSeconds;
         /// <summary>Auto-warp from this many seconds into the audio (default: from its start).</summary>
         public double? FromSeconds;
         public int? Transpose, Detune;
@@ -55,6 +59,7 @@ namespace ReBuzz.Core
             if (AutoSensitivity is int sn && (sn < 0 || sn > 100)) return "grid_sensitivity: 0 to 100.";
             if (AutoReach is int rc && (rc < 0 || rc > 50)) return "grid_reach: 0 to 50 (percent of a grid step).";
             if (ToGrid && !AutoWarp) return "to grid needs auto-warp.";
+            if (ToSeconds is double to && (!double.IsFinite(to) || to <= (FromSeconds ?? 0))) return "to_seconds: after from_seconds.";
             if (FromSeconds is double from && (!double.IsFinite(from) || from < 0)) return "from_seconds: 0 or more.";
             if (Markers != null && Markers.Count(x => double.IsFinite(x.Sample) && double.IsFinite(x.Beat)) == 1) return "warp_markers needs at least 2 markers (or [] for none).";
             return null;
@@ -77,6 +82,7 @@ namespace ReBuzz.Core
             if (AutoGrid != null) a.AutoGrid = SessionDocument.AudioSettings.AutoGrids.First(g => string.Equals(g.Name, AutoGrid, StringComparison.OrdinalIgnoreCase)).Name;
             if (AutoSensitivity is int sens) a.AutoSensitivity = Math.Clamp(sens, 0, 100);
             if (AutoReach is int reach) a.AutoReach = Math.Clamp(reach, 0, 50);
+            if (AutoLeaveSustained is bool leave) a.AutoLeaveSustained = leave;
             if (FadeIn is double fi) { a.FadeIn = Math.Max(0, fi); if (fi <= 0) a.CrossIn = false; }
             if (FadeOut is double fo) a.FadeOut = Math.Max(0, fo);
             if (Transpose is int tr) a.Transpose = Math.Clamp(tr, -48, 48);

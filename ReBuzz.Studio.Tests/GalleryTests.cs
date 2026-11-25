@@ -414,6 +414,19 @@ namespace ReBuzz.Studio.Tests
             foreach (var w in mains) foreach (var mi in w.GetVisualDescendants().OfType<MenuItem>().Where(i => i.IsSubMenuOpen)) mi.Close();
         }
 
+        /// <summary>Closes every menu still open on the main windows, those of buttons too (their menus are not in <see cref="menus"/>).</summary>
+        static void CloseAllPopups()
+        {
+            CloseMenus();
+            foreach (var w in mains)
+            {
+                var layer = Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(w);
+                if (layer == null) continue;
+                foreach (var cm in layer.GetVisualDescendants().OfType<MenuItem>().Select(i => i.FindAncestorOfType<ContextMenu>()).Where(c => c != null).Distinct().ToList()) cm!.Close();
+            }
+            Settle();
+        }
+
         static int failuresBefore;
 
         /// <summary>At a test's start: its failures are the ones listed after this.</summary>
@@ -1642,6 +1655,15 @@ namespace ReBuzz.Studio.Tests
                         }
                     });
                 }
+                Try("304-prefs-autowarp", () =>
+                {
+                    prefs.ShowPage("Audio");
+                    Settle();
+                    var audio = prefs.Page<AudioPage>();
+                    audio.AutoWarpButtons[0].BringIntoView();
+                    Settle();
+                    Shot(prefs, "304-prefs-autowarp", "Preferences ▸ Audio ▸ Warping (AW5): what a long file gets on import (Off, Follow the beat, To grid) and the defaults To grid starts from; any clip can be auto-warped later from its right-click menu.", $"{Product.Name} ▸ Preferences… (⌘,) ▸ Audio ▸ Warping.", notes: Devices);
+                });
                 Try("320-prefs-agent-on", () =>
                 {
                     prefs.ShowPage("Agent");
@@ -2610,7 +2632,7 @@ namespace ReBuzz.Studio.Tests
                         window.MouseUp(from + new Vector(wave.PixelsPerBeat, 0), MouseButton.Left);
                         Settle();
                     }
-                    Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the beat grid (Shift is free), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
+                    Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the grid (" + (OperatingSystem.IsMacOS() ? "Option" : "Alt") + " moves it freely, Shift slides the audio under it), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
                 });
                 Try("462-warp-ghost-marker", () =>
                 {
@@ -2644,6 +2666,107 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here (auto-warp from that moment: it follows the tempo changes, AW1), Warp from here, straight (one tempo), Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
                     CloseMenus();
+                });
+                // Fork (neo-audio.md, AW5): Auto-warp from the clip's menu in every view, its options, the page's controls and a range.
+                Try("465-autowarp-session-menu", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5), MouseButton.Right);
+                    var menu = session.LastMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on an audio clip opens its menu");
+                    menus.Add(menu!);
+                    Hover(ItemOf(menu!, "Auto-warp"));
+                    Shot(window, "465-autowarp-session-menu", "Session: an audio clip's menu with Auto-warp ▸ Follow the beat, To grid (with the clip's grid and the song's strength) and Options… (AW5). The Arrangement's clip menu and the Audio page's waveform menu offer the same; the Audio page behind it shows the toolbar hint at its right end.", "Right-click an audio clip ▸ Auto-warp.");
+                    CloseAllPopups();
+                });
+                Try("466-autowarp-arrangement-menu", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    var item = editor.Read(laneV).First();
+                    Point Clip() { var r = seq.Arrangement.ClipRect(item); return seq.Arrangement.TranslatePoint(new Point(r.X + r.Width * 0.3, r.Y + r.Height * 0.8), window)!.Value; }
+                    window.Detail.ShowAudio();
+                    Settle();
+                    // The clip's lane is further down: scroll it into view.
+                    var rect0 = seq.Arrangement.ClipRect(item);
+                    var geo0 = seq.Arrangement.Geometry;
+                    seq.Arrangement.ScrollTo(System.Math.Max(0, geo0.ScrollX + rect0.X - 120), System.Math.Max(0, geo0.ScrollY + rect0.Y - 40));
+                    Settle();
+                    Click(window, Clip());
+                    Click(window, Clip(), MouseButton.Right);
+                    Assert.That(seq.OpenMenu?.IsOpen, Is.True, "a right click on an arranged clip opens its menu");
+                    menus.Add(seq.OpenMenu!);
+                    Hover(ItemOf(seq.OpenMenu!, "Auto-warp"));
+                    Shot(window, "466-autowarp-arrangement-menu", "Arrangement: an audio clip's menu with Auto-warp ▸ Follow the beat, To grid and Options… (AW5); it works on the selected clip, in one undo step.", "Right-click an audio clip in the Arrangement ▸ Auto-warp.");
+                    CloseAllPopups();
+                    seq.SetArrangementMode(false);
+                });
+                Try("467-autowarp-options", () =>
+                {
+                    CloseAllPopups();
+                    var start = new ReBuzz.Studio.Shell.AutoWarpFlow.AutoWarpChoice { ToGrid = true, Grid = "1/16", Strength = 100, Sensitivity = 60, Reach = 40, LeaveSustained = true };
+                    var options = new ReBuzz.Studio.Shell.AutoWarpFlow.OptionsWindow(new[] { inSession }, null, start);
+                    options.Show();
+                    Settle();
+                    try
+                    {
+                        DialogShot(window, options, "467-autowarp-options", "Auto-warp ▸ Options… (AW5): Follow the beat or To grid; the grid (1/4, 1/8, 1/16, 1/32 and triplets), the strength (the song's Quantize strength), the sensitivity, the reach (a share of a step) and \"leave long notes and pauses alone\". The clip's saved options are shown; Auto-warp runs from here as one undo step.", "Right-click an audio clip ▸ Auto-warp ▸ Options….");
+                    }
+                    finally { options.Close(); Settle(); }
+                });
+                Try("468-autowarp-audio-page", () =>
+                {
+                    window.ShowView("Session");
+                    var sv = Tab<SessionView>(window, "Session");
+                    Click(window, Centre(sv.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
+                    Settle();
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    page.Refresh(force: true);
+                    Settle();
+                    ReBuzz.Studio.Shell.AutoWarpFlow.Run(new[] { inSession }, true);
+                    page.Refresh(force: true);
+                    var wave = page.Wave;
+                    wave.SetZoom(40);
+                    Settle();
+                    var kinds = Enumerable.Range(0, wave.Markers.Count).Where(k => wave.MarkerKind(k) == "attack").ToList();
+                    Point Mid(double x) => Centre(wave, window, 0, 0.5) + new Vector(x, 0);
+                    if (kinds.Count > 0) window.MouseMove(Mid(wave.MarkerX(kinds[kinds.Count / 2])));
+                    Settle();
+                    Shot(window, "468-autowarp-audio-page", "The Audio page after Auto-warp ▸ To grid (AW5): the split button \"Auto-warp: To grid ▾\", the chip of the clip's options (grid · strength · reach), amber diamonds for beats, blue circles for attacks snapped to the grid, hollow circles for attacks left alone beyond the reach, \"Long note: no markers\" over sustained sounds, and the live hint at the right end of the toolbar (here over a marker).", "Audio page ▸ Auto-warp ▸ To grid.");
+                });
+                Try("469-autowarp-range-menu", () =>
+                {
+                    CloseAllPopups();
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    var wave = page.Wave;
+                    Point Px(double x) => Centre(wave, window, 0, 0.6) + new Vector(x - wave.Bounds.Width / 2 * 0, 0);
+                    var busy = Enumerable.Range(0, wave.Markers.Count).Select(k => wave.MarkerX(k)).Concat(layout.TransientsOf(inSession).Select(t => wave.TransientX(t))).ToList();
+                    var clear = Enumerable.Range(40, (int)wave.Bounds.Width - 80).Where(x => busy.All(m => Math.Abs(m - x) > 14)).ToList();
+                    Assert.That(clear.Count, Is.GreaterThan(2), "free places on the waveform");
+                    double x1 = clear[0], x2 = clear.Last(x => x > x1 + 120 || x == clear[^1]);
+                    var from = Px(x1);
+                    window.MouseMove(from); window.MouseDown(from, MouseButton.Left);
+                    for (int i = 1; i <= 4; i++) window.MouseMove(from + (Px(x2) - from) * (i / 4.0), RawInputModifiers.LeftMouseButton);
+                    window.MouseUp(Px(x2), MouseButton.Left);
+                    Settle();
+                    Assert.That(wave.Range, Is.Not.Null, "a range is selected");
+                    Click(window, Px(x2), MouseButton.Right);
+                    menus.Add(wave.LastMenu!);
+                    Hover(ItemOf(wave.LastMenu!, "Auto-warp selection"));
+                    Shot(window, "469-autowarp-range-menu", "A range selected on the waveform (AW5): the menu reads Auto-warp selection ▸ Follow the beat, To grid, Options…; only the markers inside the range change, its two ends are pinned, one undo step. The toolbar hint says what the selection offers.", "Drag on the waveform to select a range, then right-click it.");
+                    CloseAllPopups();
+                    wave.Focus();
+                    window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+                    window.KeyReleaseQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+                    Settle();
                 });
             }
             finally

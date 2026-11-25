@@ -14,6 +14,7 @@ using Avalonia.Layout;
 using ReBuzz.Audio;
 using ReBuzz.Core.AudioLibrary;
 using ReBuzz.Core.Clips;
+using ReBuzz.Core.Session;
 using ReBuzz.Host;
 using ReBuzz.Core;
 using ReBuzz.Platform;
@@ -47,7 +48,11 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly TextBlock cacheText = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 460, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
         readonly Button clearCache = new Button { Content = "Clear" };
         // Auto-warp (neo-audio.md, AW1): a file the app keeps beside the streaming settings, not a registry setting.
-        readonly CheckBox autoWarp = new CheckBox { Content = "Auto-warp long files on import" };
+        // AW5: what a long file gets on import: Off, Follow the beat (the default) or To grid.
+        readonly Avalonia.Controls.Primitives.ToggleButton[] autoWarpModes =
+        {
+            new Avalonia.Controls.Primitives.ToggleButton { Content = "Off" }, new Avalonia.Controls.Primitives.ToggleButton { Content = "Follow the beat" }, new Avalonia.Controls.Primitives.ToggleButton { Content = "To grid" },
+        };
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
         Button asioPanel;
@@ -88,8 +93,23 @@ namespace ReBuzz.Studio.Shell.Preferences
             Row("Work algorithm", algorithm, $"The default is {Algorithms[DefaultAlgorithm]}. Takes effect after a restart.");
 
             Heading("Warping");
-            Row("Auto-warp", autoWarp, $"On: an audio file longer than {AutoWarpPolicy.LongBars} bars that has a tempo is warped by its beats when it is imported, so a recording whose tempo drifts or changes lands on the song's grid (a steady file keeps one tempo, a loop stays as it is). The Audio page's Auto-warp button does it for a clip at any time.");
-            autoWarp.IsCheckedChanged += (s, e) => { if (!Filling) { AutoWarpPolicy.Enabled = autoWarp.IsChecked == true; AutoWarpPolicy.Save(); } };
+            var modes = new Avalonia.Controls.Primitives.UniformGrid { Columns = 3, MinWidth = 400 };
+            for (int i = 0; i < autoWarpModes.Length; i++)
+            {
+                int mode = i;
+                var b = autoWarpModes[i];
+                b.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+                b.HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center;
+                Avalonia.Automation.AutomationProperties.SetName(b, "Auto-warp on import: " + b.Content);
+                b.Click += (s, e) => { if (Filling) return; AutoWarpPolicy.Mode = (AutoWarpMode)mode; AutoWarpPolicy.Save(); ShowAutoWarpMode(); };
+                modes.Children.Add(b);
+            }
+            Row("Auto-warp long files", modes, $"When an audio file longer than {AutoWarpPolicy.LongBars} bars that has a tempo is imported. Follow the beat (the default): warped by its beats, so a recording whose tempo drifts or changes lands on the song's grid (a steady file keeps one tempo, a loop stays as it is). To grid: the same, then a marker on every attack, snapped to the grid. Any clip can be auto-warped later: right-click it ▸ Auto-warp.");
+            Row("Defaults for To grid", new TextBlock
+            {
+                Text = $"Grid {SessionDocument.AudioSettings.DefaultAutoGrid} (1/4 · 1/8 · 1/16 · 1/32, triplets) · Strength 100 % · Sensitivity {SessionDocument.AudioSettings.DefaultAutoSensitivity} % · Reach {SessionDocument.AudioSettings.DefaultAutoReach} % of a step · long notes and pauses left alone",
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 460,
+            }, "New clips start with these. A clip keeps its own options once you change them in its Auto-warp ▸ Options….");
 
             Heading("Disk streaming");
             Row("Audio cache", new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8, Children = { cacheText, clearCache } },
@@ -114,13 +134,14 @@ namespace ReBuzz.Studio.Shell.Preferences
         public override void RestoreOwn()
         {
             Model?.Restore("audio");
-            AutoWarpPolicy.Enabled = true;
+            AutoWarpPolicy.Mode = AutoWarpMode.Beat;
             AutoWarpPolicy.Save();
             Refresh();
         }
 
         public ComboBox OutputBox => output;
-        public CheckBox AutoWarpBox => autoWarp;
+        public IReadOnlyList<Avalonia.Controls.Primitives.ToggleButton> AutoWarpButtons => autoWarpModes;
+        void ShowAutoWarpMode() { for (int i = 0; i < autoWarpModes.Length; i++) autoWarpModes[i].IsChecked = (int)AutoWarpPolicy.Mode == i; }
         public TextBlock CacheText => cacheText;
         public Button ClearCacheButton => clearCache;
         public ComboBox StreamThresholdBox => streamThreshold;
@@ -198,7 +219,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 cacheLimit.ItemsSource = CacheLimitsGb.Select(g => $"{g} GB").ToList();
                 cacheLimit.SelectedIndex = Math.Max(0, Array.IndexOf(CacheLimitsGb, (int)(StreamingPolicy.CacheLimitBytes >> 30)));
                 ShowCache();
-                autoWarp.IsChecked = AutoWarpPolicy.Enabled;
+                ShowAutoWarpMode();
 
                 threads.ItemsSource = Enumerable.Range(1, 8).Select(n => n.ToString()).ToList();
                 threads.SelectedIndex = Math.Clamp(registry.Read("AudioThreads", DefaultThreads, "Settings"), 1, 8) - 1;
