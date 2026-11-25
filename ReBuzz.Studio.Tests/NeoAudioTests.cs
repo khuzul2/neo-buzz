@@ -1,5 +1,5 @@
 // Fork (docs/specs/neo-audio.md, NA1): Neo Audio in the studio's host: the name a song used to know it by, audio kept in the song
-// (embedded in the .nbl, bit exact, once however often it is used), an old song's wave-based clips, saving as .bmx, and the agent's tools.
+// (embedded in the .nbl, bit exact, once however often it is used), and the agent's tools.
 
 using System;
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ using ReBuzz.FileOps;
 using ReBuzz.FileOps.Nbl;
 using ReBuzz.MachineManagement;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -79,27 +79,6 @@ namespace ReBuzz.Studio.Tests
             Assert.That(MachineAliases.Resolve(Installed("Neo Audio"), "Neo Audio", out aliased), Is.EqualTo("Neo Audio"));
             Assert.That(aliased, Is.False);
             Assert.That(MachineAliases.Resolve(Installed("Neo Audio"), null, out _), Is.Null);
-        }
-
-        [AvaloniaTest]
-        public void ABmxmlSongNamingSessionClipPlayerOpensAsNeoAudioWithItsClip()
-        {
-            using var untitled = SnapshotTests.Untitled(out _);
-            using var rig = new SessionRig();
-            var core = rig.Core;
-            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            rig.Layout.Ensure();
-            var track = rig.Layout.NewAudioTrack("Loops");
-            Assert.That(track, Is.Not.Null, "Neo Audio is installed");
-            string a = Work("old.bmxml");
-            core.SaveSongCopy(a);
-            string text = File.ReadAllText(a, Encoding.UTF8);
-            Assert.That(text, Does.Contain("Neo Audio"));
-            File.WriteAllText(a, text.Replace("Neo Audio", "Session Clip Player"), new UTF8Encoding(false));
-            Reopen(core, a);
-            var m = core.SongCore.MachinesList.First(x => x.Name == "Loops");
-            Assert.That(m.DLL.Name, Is.EqualTo("Neo Audio"), "the old name loads as the new machine");
-            Assert.That(SessionLayout.IsClipPlayer(m), Is.True);
         }
 
         // ------------------------------------------------------------------ the store, in the song
@@ -187,42 +166,6 @@ namespace ReBuzz.Studio.Tests
         }
 
         // ------------------------------------------------------------------ saving for upstream
-
-        [AvaloniaTest]
-        public void AudioClipsGoIntoWavesOfABmxAndTheExportReportSaysSo()
-        {
-            using var untitled = SnapshotTests.Untitled(out _);
-            using var rig = new SessionRig();
-            var core = rig.Core;
-            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var layout = rig.Layout;
-            layout.Ensure();
-            var machine = layout.NewAudioTrack("Loops")!;
-            int track = layout.FirstTrackOf(machine);
-            var clip = layout.ImportAudio(track, 0, Tones("export.wav", 440, 660), out string error);
-            Assert.That(clip, Is.Not.Null, error);
-            var original = layout.AudioSourceOf(clip)!;
-            var left = original.Left.ToArray();
-            int waves = core.SongCore.Wavetable.Waves.Count(w => w != null);
-
-            var preview = core.PreviewBuzzExport();
-            Assert.That(preview.Losses.Any(l => l.Category == "Audio" && l.Item.Contains("1 audio assets written as waves")), Is.True, preview.ToText());
-            Assert.That(core.SongCore.Wavetable.Waves.Count(w => w != null), Is.EqualTo(waves), "a preview leaves the wavetable as it was");
-
-            string file = Work("export.bmx");
-            var report = core.ExportForBuzz(file);
-            Assert.That(report.Losses.Any(l => l.Category == "Audio"), Is.True, report.ToText());
-            Assert.That(core.SongCore.Wavetable.Waves.Count(w => w != null), Is.EqualTo(waves), "the waves made for the file are gone again");
-            Assert.That(core.AudioAssets.Count, Is.EqualTo(1));
-
-            core.NewSong();
-            Reopen(core, file);
-            var m = core.SongCore.MachinesList.First(x => x.Name == "Loops");
-            var again = m.PatternsList.First(p => core.SessionLayout.IsAudioClip(p));
-            var source = core.SessionLayout.AudioSourceOf(again)!;
-            Assert.That(source.Length, Is.EqualTo(left.Length).Within(1), "the clip's audio came back from its wave");
-            Assert.That(source.Left.Take(2000).ToArray(), Is.EqualTo(left.Take(2000).ToArray()).Within(1e-6), "float waves keep every sample");
-        }
 
         // ------------------------------------------------------------------ the agent
 

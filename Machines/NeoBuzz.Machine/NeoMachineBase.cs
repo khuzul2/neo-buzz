@@ -11,7 +11,7 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
 {
-    public abstract class NeoMachineBase : IVersionedMachine
+    public abstract class NeoMachineBase : IVersionedMachine, IRenamedParameters, INoteMapProvider
     {
         protected readonly IBuzzMachineHost host;
         bool wasPlaying;
@@ -88,6 +88,70 @@ namespace NeoBuzz.Machine
         {
             try { return Chain.MapIndex(fromVersion, savedIndex); }
             catch { return -1; }
+        }
+
+        // ---------------------------------------------------------------- note map (docs/specs/daw-modes.md §8.9, NM1)
+
+        readonly object noteMapGate = new();
+        int noteMapVersion, noteMapSignature = int.MinValue;
+
+        /// <summary>
+        /// A Neo machine that plays sounds on notes says which keys do by overriding this: the playable keys now, each with its short name
+        /// (and a group or colour if it has them), for a MIDI channel (0 to 15, or -1 for any). Null: no map (a machine whose manifest declares
+        /// a fixed <c>note_map</c> needs no code). Called on the UI thread; read the machine's values, never take a lock the audio thread holds.
+        /// </summary>
+        internal virtual IReadOnlyList<NoteMapEntry> BuildNoteMap(int channel) => null;
+
+        /// <summary>
+        /// A number that changes whenever <see cref="BuildNoteMap"/> would answer differently. The default builds the map and hashes it;
+        /// a machine whose map follows a few values can override it with a cheaper hash of those (<see cref="NoteMapHash"/>).
+        /// </summary>
+        internal virtual int NoteMapSignature() => NoteMapHash.Of(BuildNoteMap(-1));
+
+        /// <summary>The machine tells the host its map changed (the host polls <see cref="NoteMapVersion"/> too, so this is optional).</summary>
+        protected void RaiseNoteMapChanged() => NoteMapChanged?.Invoke();
+
+        public event Action NoteMapChanged;
+
+        public int NoteMapVersion
+        {
+            get
+            {
+                int signature;
+                try { signature = NoteMapSignature(); }
+                catch (Exception) { signature = noteMapSignature; }
+                lock (noteMapGate)
+                {
+                    if (signature != noteMapSignature)
+                    {
+                        noteMapSignature = signature;
+                        noteMapVersion++;
+                    }
+                    return noteMapVersion;
+                }
+            }
+        }
+
+        public IReadOnlyList<NoteMapEntry> ReadNoteMap(int channel)
+        {
+            try { return BuildNoteMap(channel); }
+            catch (Exception) { return null; }
+        }
+
+        IReadOnlyDictionary<string, string> formerNames;
+
+        /// <summary>The global parameters' former names (Params.def `was`) → their keys, for user presets saved before presets stored ids.</summary>
+        public IReadOnlyDictionary<string, string> FormerParameterNames
+        {
+            get
+            {
+                if (formerNames != null) return formerNames;
+                var d = new Dictionary<string, string>();
+                foreach (var def in Table)
+                    foreach (var name in def.FormerNames)
+                        d[name] = def.Id;
+                return formerNames = d;
+            }
         }
 
         /// <summary>ReBuzz asks for the text of a value: ours for global parameters, its own otherwise.</summary>
@@ -172,6 +236,38 @@ namespace NeoBuzz.Machine
             for (int i = 0; i < n; i++)
                 if (MathF.Abs(x[i].L) > 0.03f || MathF.Abs(x[i].R) > 0.03f) return true;
             return false;
+        }
+    }
+}
+
+namespace NeoBuzz.Machine
+{
+    /// <summary>A hash of a note map (FNV-1a over the keys, names, groups and colours), for <see cref="NeoMachineBase.NoteMapSignature"/>.</summary>
+    internal static class NoteMapHash
+    {
+        public const int Seed = unchecked((int)2166136261);
+
+        public static int Add(int h, int v) => unchecked((h ^ v) * 16777619);
+
+        public static int Add(int h, string s)
+        {
+            if (s == null) return Add(h, -1);
+            foreach (char c in s) h = Add(h, c);
+            return Add(h, s.Length);
+        }
+
+        public static int Of(IReadOnlyList<NoteMapEntry> entries)
+        {
+            if (entries == null) return 0;
+            int h = Seed;
+            foreach (var e in entries)
+            {
+                h = Add(h, e.Key);
+                h = Add(h, e.Name);
+                h = Add(h, e.Group);
+                h = Add(h, (int)e.Color);
+            }
+            return Add(h, entries.Count);
         }
     }
 }

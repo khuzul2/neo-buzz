@@ -3,6 +3,7 @@
 
     python3 tools/gen-machine-params.py Machines/NeoDrive [Machines/NeoComp ...]
     python3 tools/gen-machine-params.py --all
+    python3 tools/gen-machine-params.py --all --check    (CI: writes nothing; fails if a generated file is out of date)
 
 Writes, next to Params.def:
   Engine/Params.g.cs     the pure table (indices, ranges, mappings, value text): engine, tests, editor
@@ -18,12 +19,18 @@ Params.def lines:
   track Id "Name" switch | what    cell does nothing), passed to the machine's OnTrackParameter(TP.Id, track, value)
   summary What it is. Use it for…   optional: the machine in a sentence or two (the manifest's summary)
   import kind .ext[,.ext] | what     optional: a data file the machine loads (machine_data_import)
+  notekey 36 "Kick" [Group]        optional: a key that makes a sound, with its name (and group): the manifest's note_map, the piano
+  notekey 48 60 [Group]            roll's key names and Fold: playable (docs/specs/daw-modes.md §8.9); a second number makes a range of
+                                   unnamed keys. For a machine with a fixed map and no code for it
   group Shape                      group shown in the editor for the following parameters
   reading key unit | what           optional: a value the machine measures (its public Readings, machine_readings)
   Id  "Name"  min max def  kind args...  | description
     id snake_case_id                 optional, indented, after a parameter: the id the agent and the manifest use (default: Id)
     how One sentence: how the control changes the sound      Explain text (neo-learn.md §5.3); the description defaults to it
     sound One sentence: what you hear
+    was "Old name"                   optional, indented, once per former name: the name the parameter had before a rename. A user
+                                     preset saved before presets stored ids names it so (BuzzGUI.Common's Preset matches it while the
+                                     preset doesn't know the current name); the id, the index and saved state never change with a rename
 
 Kinds and their arguments:
   lin A B [unit] [digits]          A + t(B-A)
@@ -66,17 +73,20 @@ def num(x):
 
 
 def parse(path):
-    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': [], 'track_params': []}
+    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': [], 'track_params': [], 'note_map': []}
     group = ''
     with open(path, encoding='utf-8') as f:
         for lineno, line in enumerate(f, 1):
             line = line.rstrip('\n')
             if not line.strip() or line.lstrip().startswith('#'):
                 continue
-            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound'):
+            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound', 'was'):
                 if not spec['params']:
                     sys.exit(f'{path}:{lineno}: {line.split(None, 1)[0]} needs a parameter before it')
                 key, _, rest = line.strip().partition(' ')
+                if key == 'was':
+                    spec['params'][-1].setdefault('was', []).extend(shlex.split(rest))
+                    continue
                 spec['params'][-1]['pubid' if key == 'id' else key] = rest.strip()
                 continue
             if line.lstrip().startswith('summary '):
@@ -87,6 +97,24 @@ def parse(path):
                 parts = head.split()
                 spec['imports'].append({'kind': parts[0], 'extensions': [e.lower() for e in (parts[1].split(',') if len(parts) > 1 else [])],
                                         'description': what.strip()})
+                continue
+            if line.lstrip().startswith('notekey '):
+                toks = shlex.split(line, comments=True)[1:]
+                if len(toks) < 1 or not toks[0].isdigit() or not 0 <= int(toks[0]) <= 127:
+                    sys.exit(f'{path}:{lineno}: expected notekey KEY "Name" [Group], or notekey FROM TO [Group] (keys 0 to 127)')
+                entry = {'key': int(toks[0])}
+                rest = toks[1:]
+                if rest and rest[0].isdigit():
+                    entry['to'] = int(rest[0])
+                    if not entry['key'] <= entry['to'] <= 127:
+                        sys.exit(f'{path}:{lineno}: a note range runs up from its first key to at most 127')
+                    rest = rest[1:]
+                elif rest:
+                    entry['name'] = rest[0]
+                    rest = rest[1:]
+                if rest:
+                    entry['group'] = rest[0]
+                spec['note_map'].append(entry)
                 continue
             desc = ''
             if '|' in line:
@@ -219,6 +247,8 @@ def table_entry(p):
         named.append(f"how: {cs_string(p['how'])}")
     if p.get('sound'):
         named.append(f"sound: {cs_string(p['sound'])}")
+    if p.get('was'):
+        named.append('formerNames: new[] { ' + ', '.join(cs_string(n) for n in p['was']) + ' }')
     args = [f"P.{p['id']}", cs_string(p.get('pubid', p['id'])), cs_string(p['name']), str(p['min']), str(p['max']), str(p['def']),
             f"MapKind.{KINDS[kind]}"]
     if pos:
@@ -275,17 +305,73 @@ def manifest_param(index, p):
 
 
 def gear_of(folder):
-    """The machine's gear name and kind, from its csproj (AssemblyName "Neo Poly.NET", output under Gear/Generators)."""
+    """The machine's gear name and kind ("generator" or "effect").
+
+    Since the clean break (CB1) a Neo machine's folder holds only its sources; its builds are the studio and portable
+    projects, Machines/Studio/<X>/<X>.Studio.csproj and Machines/Portable/<X>/<X>.Portable.csproj, which name the folder
+    (NeoFolder), the gear (NeoName) and its kind (NeoKind: Generators or Effects). A folder with its own csproj
+    (AssemblyName "Neo Poly.NET", output under Gear/Generators) still works, and the manifest already there is the last
+    resort for a folder with neither."""
+    name = os.path.basename(os.path.normpath(folder))
+    machines = os.path.dirname(os.path.normpath(os.path.abspath(folder)))
+    found = []
+    for flavour in ('Studio', 'Portable'):
+        base = os.path.join(machines, flavour)
+        if not os.path.isdir(base):
+            continue
+        for d in sorted(os.listdir(base)):
+            sub = os.path.join(base, d)
+            if not os.path.isdir(sub):
+                continue
+            for f in sorted(os.listdir(sub)):
+                if not f.endswith('.csproj'):
+                    continue
+                text = open(os.path.join(sub, f), encoding='utf-8-sig').read()
+                nf = re.search(r'<NeoFolder>([^<]+)</NeoFolder>', text)
+                gear = re.search(r'<NeoName>([^<]+)</NeoName>', text)
+                kind = re.search(r'<NeoKind>([^<]+)</NeoKind>', text)
+                if nf and nf.group(1).strip() == name and gear and kind:
+                    found.append((gear.group(1).strip(), 'generator' if kind.group(1).strip() == 'Generators' else 'effect',
+                                  os.path.join(flavour, d, f)))
+    if found:
+        if len({(g, k) for g, k, _ in found}) > 1:
+            sys.exit(f'{folder}: its projects disagree on the gear: ' + ', '.join(f'{p} says {g} ({k})' for g, k, p in found))
+        return found[0][0], found[0][1]
     for f in sorted(os.listdir(folder)):
         if f.endswith('.csproj'):
             text = open(os.path.join(folder, f), encoding='utf-8-sig').read()
-            name = re.search(r'<AssemblyName>([^<]+)</AssemblyName>', text)
-            if not name:
-                break
-            gear = re.sub(r'\.NET$', '', name.group(1))
-            kind = 'generator' if 'Gear\\Generators' in text or 'Gear/Generators' in text else 'effect'
-            return gear, kind
-    sys.exit(f'{folder}: no csproj with an AssemblyName')
+            m = re.search(r'<AssemblyName>([^<]+)</AssemblyName>', text)
+            if m:
+                gear = re.sub(r'\.NET$', '', m.group(1))
+                kind = 'generator' if 'Gear\\Generators' in text or 'Gear/Generators' in text else 'effect'
+                return gear, kind
+    for f in sorted(os.listdir(folder)):
+        if f.endswith('.machine.json'):
+            doc = json.load(open(os.path.join(folder, f), encoding='utf-8-sig'))
+            if doc.get('gear') and doc.get('kind') in ('generator', 'effect'):
+                return doc['gear'], doc['kind']
+    sys.exit(f'{folder}: no studio or portable project names it (NeoFolder {name}), no csproj with an AssemblyName '
+             f'and no manifest to take the gear from')
+
+
+CHECK = False          # --check: compare instead of writing
+STALE = []             # files --check found out of date
+
+
+def emit(out, text, what=''):
+    """Writes a generated file, or with --check compares it with the file on disk."""
+    if CHECK:
+        try:
+            with open(out, encoding='utf-8', newline='') as f:
+                same = f.read() == text
+        except FileNotFoundError:
+            same = False
+        if not same:
+            STALE.append(out)
+        return
+    with open(out, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(text)
+    print(f'wrote {out}{what}')
 
 
 def write_manifest(folder, spec, rel):
@@ -294,7 +380,6 @@ def write_manifest(folder, spec, rel):
         'format': 'rebuzz-machine-manifest/1',
         'gear': gear,
         'kind': kind,
-        'clipEdit': True,        # clips.md §5.7: a Neo machine's clips are editable (the flag is data, LM changes it by editing a manifest)
         'source': f'generated by tools/gen-machine-params.py from {rel}',
         'summary': spec['summary'],
         'tracks': spec['tracks'],
@@ -304,12 +389,11 @@ def write_manifest(folder, spec, rel):
     }
     if spec['imports']:
         doc['imports'] = spec['imports']
+    if spec['note_map']:
+        doc['note_map'] = spec['note_map']
     mc.apply(doc)
     out = os.path.join(folder, gear + '.machine.json')
-    with open(out, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(doc, f, ensure_ascii=False, indent=1)
-        f.write('\n')
-    print(f'wrote {out}')
+    emit(out, json.dumps(doc, ensure_ascii=False, indent=1) + '\n')
 
 
 def generate(folder):
@@ -373,21 +457,28 @@ def generate(folder):
     for name, lines in (('Engine/Params.g.cs', engine), ('Machine.Params.g.cs', machine)):
         out = os.path.join(folder, name)
         text = '\n'.join(lines)
-        with open(out, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(text)
-        print(f'wrote {out} ({len(params)} parameters)')
+        emit(out, text, f' ({len(params)} parameters)')
     write_manifest(folder, spec, rel)
 
 
 def main(argv):
+    global CHECK
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-    folders = argv
+    CHECK = '--check' in argv
+    folders = [a for a in argv if a != '--check']
     if not folders or folders == ['--all']:
         mroot = os.path.join(root, 'Machines')
         folders = [os.path.join(mroot, d) for d in sorted(os.listdir(mroot))
                    if os.path.exists(os.path.join(mroot, d, 'Params.def'))]
     for folder in folders:
         generate(folder)
+    if CHECK:
+        if STALE:
+            print('out of date (run python3 tools/gen-machine-params.py on its folder and commit the result):')
+            for out in STALE:
+                print('  ' + os.path.relpath(out, root).replace('\\', '/'))
+            sys.exit(1)
+        print(f'{len(folders)} machines: every generated file is up to date')
 
 
 if __name__ == '__main__':

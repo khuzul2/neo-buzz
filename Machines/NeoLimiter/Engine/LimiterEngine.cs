@@ -132,6 +132,7 @@ namespace NeoBuzz.Limiter
         public const int HistoryLength = 400;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
 
         // ---- v2 ----------------------------------------------------------------------------------
@@ -224,9 +225,16 @@ namespace NeoBuzz.Limiter
         int chunk, chunkLeft;
         float chunkIn, chunkOut, chunkGr;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.InputGain, 0), AmountRule.Lin(P.Ceiling, 0), AmountRule.Lin(P.Upward, 0), AmountRule.Lin(P.Transients, 0), AmountRule.Lin(P.SlowStage, 0),
+        };
+
         public LimiterEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             Delta = new DeltaListen(2048, 48000);
             Match = new NeoBuzz.Analysis.GainMatch(48000);
             SetSampleRate(48000);
@@ -247,6 +255,7 @@ namespace NeoBuzz.Limiter
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int maxHold = (int)Math.Ceiling(MaxLookaheadSeconds * sr) + 2;
             int cap = 1;
@@ -294,6 +303,7 @@ namespace NeoBuzz.Limiter
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var c in ch) c.Reset();
             index = 0;
             grNow = 0;
@@ -430,6 +440,13 @@ namespace NeoBuzz.Limiter
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

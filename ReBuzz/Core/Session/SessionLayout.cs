@@ -31,6 +31,7 @@ namespace ReBuzz.Core.Session
     internal sealed partial class SessionLayout
     {
         readonly ReBuzzCore buzz;
+        internal ReBuzzCore Buzz => buzz;
         readonly SongCore song;
         readonly IUiDispatcher dispatcher;
         SessionDocument document;
@@ -1042,10 +1043,7 @@ namespace ReBuzz.Core.Session
             var stream = save.CreateSubSection(SessionDocument.SubSectionName);
             if (stream != null)
             {
-                if (save is SaveSongCore { Legacy: true } legacy)
-                    SaveDocumentWithWaves(legacy, stream);          // 1.0 / neo-audio.md: .bmx and .bmxml hold audio clips as waves
-                else
-                    document.Save(stream);
+                document.Save(stream);
             }
         }
 

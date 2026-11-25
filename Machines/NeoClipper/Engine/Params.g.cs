@@ -23,7 +23,8 @@ namespace NeoBuzz.Clipper
         public const int Mix = 12;
         public const int Output = 13;
         public const int Delta = 14;
-        public const int Count = 15;
+        public const int Amount = 15;
+        public const int Count = 16;
     }
 
     internal static class Params
@@ -48,6 +49,7 @@ namespace NeoBuzz.Clipper
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (the dry signal is delayed to match). Below 100 % the dry signal can pass the ceiling", how: "Blends the clipped signal with the dry signal, delayed to line up with it.", sound: "Below 100 % some natural dynamics come back, but dry peaks can pass the ceiling."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the clipper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the clipper.", sound: "It lets you match the loudness to the unclipped sound so you judge the tone rather than the volume."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the clipper changes: the output minus the input, delayed to match (gliding over 10 ms)", how: "Plays only the difference between the clipper's output and its input.", sound: "You hear just what the clipper removed or added, which shows what it costs the sound."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales how hard the clipper works: the drive, the ceiling's distance from 0 dB and each band's drive. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to ease off the clipping, up to clip harder without touching the other controls."),
         };
     }
 }

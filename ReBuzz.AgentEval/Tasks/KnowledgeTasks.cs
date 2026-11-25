@@ -34,14 +34,6 @@ namespace ReBuzz.AgentEval
 
         // ---- shared setups and checks -------------------------------------------------------------------
 
-        /// <summary>Leaves the task out when this build lacks a classic machine (the quick package has no Pedal set).</summary>
-        static void Need(Studio s, params string[] gear)
-        {
-            var have = J.Objects(s.C.Ok("gear_list", new JsonObject { ["limit"] = 1000 })["gear"]).Select(g => J.Str(g["name"])).ToHashSet();
-            var missing = gear.Where(g => !have.Contains(g)).ToList();
-            if (missing.Count > 0) throw new TaskSkipped("not installed in this build: " + string.Join(", ", missing));
-        }
-
         static void BassSong(Studio s, TaskContext c) => K.Replay(s, "hear-a-bass");
 
         /// <summary>Bass still plays its two notes (C2 at 0, G2 at 2).</summary>
@@ -225,29 +217,6 @@ namespace ReBuzz.AgentEval
                     K.Choice(ck, "exciter", s, dye, "A exciter", "Struck");
                     K.Value(ck, "force", s, dye, "A force", 60, 0.02, 0.5, " %");
                     ck.Add("note_a3", K.Placed(s, dye).Any(n => n.Pitch == K.Pitch("A3")), string.Join(" ", K.Placed(s, dye).Select(n => $"{n.Pitch}@{n.Start}")));
-                    K.Sounds(ck, s);
-                }),
-
-            Recipe("replace-a-classic", "Recipe: replace a classic",
-                "The song has a Neo Poly called Bass and, after it, a classic Pedal Plate reverb called Room. Move Room onto its Neo successor: look at what the replacement would do first, then do it with the before-and-after comparison, and keep the new machine in the song in the same place in the chain.",
-                (s, c) =>
-                {
-                    Need(s, "Pedal Plate");
-                    K.Replay(s, "hear-a-bass");
-                    Recipes.Add(s, "Pedal Plate", "Room", 0, insertAfter: "Bass");
-                },
-                (s, c) =>
-                {
-                    s.C.Ok("machine_replace", new JsonObject { ["machine"] = "Room", ["dry_run"] = true });
-                    s.C.Ok("machine_replace", new JsonObject { ["machine"] = "Room", ["with"] = "Neo Verb", ["from"] = 0, ["to"] = 4 });
-                },
-                (s, c, ck) =>
-                {
-                    var g = s.Graph();
-                    var room = g.Find("Room");
-                    ck.Add("replaced", room?.Gear == "Neo Verb", room?.Gear ?? "no Room");
-                    ck.Add("no_classic", !g.Machines.Any(m => m.Gear == "Pedal Plate"), "no Pedal Plate left");
-                    ck.Add("same_place", room != null && room.Inputs.Any(i => i.From == "Bass") && room.Outputs.Any(o => o.To == "Master"), room == null ? "no Room" : $"in from {string.Join(",", room.Inputs.Select(i => i.From))}, out to {string.Join(",", room.Outputs.Select(o => o.To))}");
                     K.Sounds(ck, s);
                 }),
 
@@ -489,6 +458,20 @@ namespace ReBuzz.AgentEval
                     ck.Add("controller", b != null && J.Num(b["controller"]) == 21 && J.Num(b["channel"]) == 2, b != null ? $"controller {J.Num(b["controller"])} on channel {J.Num(b["channel"])}" : "no binding");
                 }),
 
+            Guide("note-wires", "Guide: note wires",
+                "The song has a Neo Poly called Lead and a Neo Voice to MIDI called Voice. Make the notes that Voice detects play Lead, with a note wire (not by audio), so that the song has exactly that one note wire.",
+                (s, c) =>
+                {
+                    s.C.Ok("machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Lead" });
+                    s.C.Ok("machine_add", new JsonObject { ["gear"] = "Neo Voice to MIDI", ["name"] = "Voice" });
+                },
+                (s, c) => s.C.Ok("note_wire_connect", new JsonObject { ["source"] = "Voice", ["target"] = "Lead" }),
+                (s, c, ck) =>
+                {
+                    var wires = J.Objects(s.C.Ok("note_wires")["wires"]).ToList();
+                    ck.Add("wire", wires.Count == 1 && J.Str(wires[0]["source"]) == "Voice" && J.Str(wires[0]["target"]) == "Lead", wires.Count == 1 ? $"{J.Str(wires[0]["source"])} to {J.Str(wires[0]["target"])}" : $"{wires.Count} note wires");
+                }),
+
             Guide("midi-mapping", "Guide: MIDI mapping",
                 "The song has a Neo Poly called Bass. Two hardware controllers are connected: Faders, whose eight knobs send controller numbers 21 to 28 on channel 1, and Pads, whose first pad sends note 36 on channel 10. " +
                 "Set the song up so that Faders' eight knobs are taught as one group, Faders' first knob drives Bass's F1 cutoff while Bass's track is the selected one (it is part of Bass's track, and the song keeps it), " +
@@ -511,34 +494,6 @@ namespace ReBuzz.AgentEval
                     var pad = J.Objects(s.C.Ok("midi_map_list", new JsonObject { ["scope"] = "global" })["mappings"]).FirstOrDefault(x => J.Str(x["command"]) == "play");
                     ck.Add("pad", pad != null && J.Str(pad["kind"]) == "note" && J.Num(pad["number"]) == 36 && J.Num(pad["channel"]) == 10 && string.Equals(J.Str(pad["device"]), "Pads", StringComparison.OrdinalIgnoreCase),
                         pad != null ? $"{J.Str(pad["control"])} → {J.Str(pad["command"])}" : "no global play mapping");
-                }),
-
-            Guide("migrating-songs", "Guide: migrating songs",
-                "An old song: a Neo Poly called Bass feeds a classic Pedal Comp called Squash, which feeds a classic Pedal Plate reverb called Room. Move every classic machine onto its Neo successor, one at a time, looking at each move first, so the chain keeps its order and the song still sounds.",
-                (s, c) =>
-                {
-                    Need(s, "Pedal Comp", "Pedal Plate");
-                    K.Replay(s, "hear-a-bass");
-                    Recipes.Add(s, "Pedal Comp", "Squash", 0, insertAfter: "Bass");
-                    Recipes.Add(s, "Pedal Plate", "Room", 0, insertAfter: "Squash");
-                },
-                (s, c) =>
-                {
-                    foreach (var m in new[] { "Squash", "Room" })
-                    {
-                        s.C.Ok("machine_replace", new JsonObject { ["machine"] = m, ["dry_run"] = true });
-                        s.C.Ok("machine_replace", new JsonObject { ["machine"] = m, ["from"] = 0, ["to"] = 4 });
-                    }
-                },
-                (s, c, ck) =>
-                {
-                    var g = s.Graph();
-                    ck.Add("no_classics", !g.Machines.Any(m => m.Gear.StartsWith("Pedal ")), string.Join(", ", g.Machines.Select(m => m.Gear)));
-                    var comp = g.Machines.FirstOrDefault(m => m.Gear == "Neo Comp");
-                    var verb = g.Machines.FirstOrDefault(m => m.Gear == "Neo Verb");
-                    ck.Add("successors", comp != null && verb != null, $"Neo Comp {(comp != null ? "yes" : "no")}, Neo Verb {(verb != null ? "yes" : "no")}");
-                    ck.Add("order", comp != null && verb != null && comp.Inputs.Any(i => i.From == "Bass") && verb.Inputs.Any(i => i.From == comp.Name) && verb.Outputs.Any(o => o.To == "Master"), "Bass → comp → verb → Master");
-                    K.Sounds(ck, s);
                 }),
 
             Guide("mixing-dynamics", "Guide: mixing dynamics",

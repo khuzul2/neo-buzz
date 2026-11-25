@@ -20,7 +20,7 @@ using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Detail;
 using ReBuzz.Studio.Views.Session;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -190,9 +190,9 @@ namespace ReBuzz.Studio.Tests
 
             // One undo step, in the song's history; the roll's Undo takes it first.
             Assert.That(roll.Ruler.LoopOn, Is.EqualTo(r.Song.Core.Looping));
-            Assert.That(r.Page.Undo(), Is.True);
+            Assert.That(r.Undo(), Is.True);
             Assert.That((core.LoopStart, core.LoopEnd), Is.EqualTo((oldStart, oldEnd)), "both ends in one step");
-            Assert.That(r.Page.Redo(), Is.True);
+            Assert.That(r.Redo(), Is.True);
             Assert.That((core.LoopStart, core.LoopEnd), Is.EqualTo((20, 28)));
 
             // Drag the brace's right edge to tick 8.
@@ -216,10 +216,10 @@ namespace ReBuzz.Studio.Tests
             Point Tick(int tick) => InWindow(r, r.Roll.Ruler, new Point(r.Notes.X(tick * TB) - r.Roll.Scroll.Offset.X, 20));
             UxP3bTests.Drag(r, Tick(4), Tick(8));
             Assert.That(core.LoopEnd, Is.EqualTo(8));
-            Assert.That(r.Page.Undo(), Is.True);              // the loop (the last gesture)
+            Assert.That(r.Undo(), Is.True);              // the loop (the last gesture)
             Assert.That(r.Notes.Notes.Count, Is.EqualTo(1), "the note stays");
-            Assert.That(r.Page.Undo(), Is.True);              // now the note
-            Assert.That(r.Column(), Is.Empty);
+            Assert.That(r.Undo(), Is.True);              // now the note
+            Assert.That(r.Stored(), Is.Empty);
         }
 
         // ------------------------------------------------------------------ the velocity lane
@@ -245,9 +245,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(after.Velocity, Is.EqualTo(40).Within(2), "the pointer's height, as the velocity");
             Assert.That(r.Notes.Notes.First(n => n.Note == 60).Velocity, Is.EqualTo(100), "the other note untouched");
             Assert.That(r.Undos, Is.EqualTo(undos + 1), "one step for the whole drag");
-            Assert.That(r.Page.Undo(), Is.True);
+            Assert.That(r.Undo(), Is.True);
             Assert.That(r.Notes.Notes.First(n => n.Note == 64).Velocity, Is.EqualTo(100), "undone");
-            Assert.That(r.Page.Redo(), Is.True);
+            Assert.That(r.Redo(), Is.True);
             Assert.That(r.Notes.Notes.First(n => n.Note == 64).Velocity, Is.EqualTo(after.Velocity));
         }
 
@@ -305,7 +305,7 @@ namespace ReBuzz.Studio.Tests
                     Is.EqualTo(new[] { (2 * TB, 60), (4 * TB, 67), (8 * TB, 60), (10 * TB, 67) }));
                 Assert.That(r.Notes.Selection.Count, Is.EqualTo(2), "the pasted notes are selected");
                 Assert.That(r.Undos, Is.EqualTo(undos + 1), "one step");
-                r.Page.Undo();
+                r.Undo();
                 Assert.That(r.Notes.Notes.Count, Is.EqualTo(2), "undone: only the paste");
 
                 // Cut: the notes go, one step; they paste back.
@@ -372,7 +372,7 @@ namespace ReBuzz.Studio.Tests
             var pattern = (PatternCore)r.Pattern;
             try
             {
-                string a = Path.Combine(dir, "a.bmx"), b = Path.Combine(dir, "b.bmx");
+                string a = Path.Combine(dir, "a.nbl"), b = Path.Combine(dir, "b.nbl");
                 r.Song.Core.SaveSongCopy(a);
                 r.ShowRoll();
                 pattern.PlayPosition = 5 * TB;

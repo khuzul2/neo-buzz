@@ -89,7 +89,7 @@ jobs:
           patterns = [rx(g) for g in allowed + shared]
           subprocess.run(["git", "fetch", "-q", "origin", "main"], check=True)
           files = subprocess.run(["git", "diff", "--name-only", "origin/main...HEAD"],
-                                 check=True, capture_output=True, text=True).stdout.split()
+                                 check=True, capture_output=True, text=True).stdout.splitlines()
           outside = [f for f in files if not any(p.match(f) for p in patterns)]
           print(f"Issue #{number}: {issue['title']}")
           print(f"{len(files)} files changed, {len(outside)} outside the allowed paths.")

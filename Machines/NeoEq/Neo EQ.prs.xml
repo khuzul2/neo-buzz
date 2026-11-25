@@ -198,6 +198,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -401,6 +403,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -604,6 +608,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -807,6 +813,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1010,6 +1018,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1213,6 +1223,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1416,6 +1428,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1619,6 +1633,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1822,6 +1838,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2025,6 +2043,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2228,6 +2248,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2431,6 +2453,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2634,6 +2658,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2837,6 +2863,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3040,6 +3068,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3243,6 +3273,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3446,6 +3478,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3649,6 +3683,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3852,6 +3888,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -4055,6 +4093,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -4258,6 +4298,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -4461,6 +4503,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -4664,6 +4708,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -4867,6 +4913,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -5070,6 +5118,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -5273,6 +5323,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -5476,6 +5528,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -5679,6 +5733,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -5882,6 +5938,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -6085,6 +6143,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -6288,6 +6348,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -6491,6 +6553,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -6694,6 +6758,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -6897,6 +6963,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -7100,6 +7168,8 @@
         <Parameter Name="Curve 30" Group="1" Index="192" Track="0" Value="240" />
         <Parameter Name="Curve 31" Group="1" Index="193" Track="0" Value="240" />
         <Parameter Name="Curve 32" Group="1" Index="194" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="195" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="196" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

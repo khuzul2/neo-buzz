@@ -29,7 +29,7 @@ using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Device;
 using ReBuzz.Studio.Views.Machines;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -235,7 +235,7 @@ namespace ReBuzz.Studio.Tests
         public void ASongKeepsItsModulatorsTargetsAndBases()
         {
             NewSong();
-            string path = TestTemp.Path("neo-modulators-" + Guid.NewGuid().ToString("N") + ".bmx");
+            string path = TestTemp.Path("neo-modulators-" + Guid.NewGuid().ToString("N") + ".nbl");
             try
             {
                 var (_, filter) = PlayingFilter();

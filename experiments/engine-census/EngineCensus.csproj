@@ -60,7 +60,6 @@
     <Compile Include="$(R)MachineManagement\**\*.cs" Link="ReBuzz\MachineManagement\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(R)FileOps\**\*.cs" Link="ReBuzz\FileOps\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(R)ManagedMachine\**\*.cs" Link="ReBuzz\ManagedMachine\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)NativeMachine\**\*.cs" Link="ReBuzz\NativeMachine\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(R)Midi\**\*.cs" Link="ReBuzz\Midi\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(R)Agent\**\*.cs" Link="ReBuzz\Agent\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
@@ -111,8 +110,8 @@
     <Compile Remove="$(R)Core\UserMessagesViaMessageBox.cs;$(R)Core\WindowsGuiDispatcher.cs;
                      $(R)Core\FileNameChoiceThroughOpenFileDialog.cs;$(R)Core\FileNameToSaveChoiceThroughSaveFileDialog.cs;
                      $(R)MachineManagement\WindowsKeyboard.cs" />
-    <!-- HWND hosting of native editors; the app hosts for studio and headless mode -->
-    <Compile Remove="$(R)NativeMachine\NativeEditorHost.cs;$(R)Agent\StudioAgent.cs;$(R)Agent\HeadlessAgent.cs" />
+    <!-- The app hosts for studio and headless mode -->
+    <Compile Remove="$(R)Agent\StudioAgent.cs;$(R)Agent\HeadlessAgent.cs" />
     <!-- BuzzGUI.Common: controls, behaviours, window chrome, converters, WPF helpers -->
     <Compile Remove="$(C)AttachedCommandBehavior\**;$(C)Microsoft.Windows.Shell\**;
                      $(C)Knob.cs;$(C)SnappyKnob.cs;$(C)ParameterSlider.cs;$(C)NumericUpDown.cs;$(C)SearchTextBox.cs;

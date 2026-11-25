@@ -19,7 +19,8 @@ namespace NeoBuzz.Drive
         public const int AutoGain = 8;
         public const int Mix = 9;
         public const int Quality = 10;
-        public const int Count = 11;
+        public const int Amount = 11;
+        public const int Count = 12;
     }
 
     internal static class Params
@@ -40,6 +41,7 @@ namespace NeoBuzz.Drive
             new ParamDef(P.AutoGain, "AutoGain", "Auto gain", 0, 1, 1, MapKind.Switch, group: "Output", description: "Holds the level steady as the drive changes", how: "Keeps the output level steady as Drive changes.", sound: "You hear the character change rather than a simple volume increase."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (the dry signal is delayed to match)", how: "Blends the saturated signal with the dry signal, delayed to match.", sound: "Lower values keep the original punch and add the saturation as a subtle layer."),
             new ParamDef(P.Quality, "Quality", "Quality", 0, 2, 1, MapKind.Enum, names: new[] { "2×", "4×", "8×" }, group: "Output", description: "Oversampling", how: "Chooses the oversampling: 2x, 4x or 8x.", sound: "Higher settings keep high-frequency distortion clean and free of aliasing, but use more processing power."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the drive in dB and the bias. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to ease the saturation in, up to push the sound harder."),
         };
     }
 }

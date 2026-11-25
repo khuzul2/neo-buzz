@@ -40,7 +40,7 @@ namespace NeoBuzz.Dsp
     {
         public ParamDef(int index, string id, string name, int min, int max, int def, MapKind kind,
             double a = 0, double b = 1, double exponent = 1, string unit = "", int digits = -1,
-            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "", double detent = 0)
+            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "", double detent = 0, string[] formerNames = null)
         {
             Index = index;
             Id = id;
@@ -61,6 +61,7 @@ namespace NeoBuzz.Dsp
             How = how ?? "";
             Sound = sound ?? "";
             Detent = detent;
+            FormerNames = formerNames ?? Array.Empty<string>();
         }
 
         public int Index { get; }
@@ -89,6 +90,11 @@ namespace NeoBuzz.Dsp
         /// (a ratio's whole and half numbers) reads as that multiple (see <see cref="DetentWindow"/>), so the knob rests on it; 0: none.
         /// </summary>
         public double Detent { get; }
+        /// <summary>
+        /// The names the parameter was shown under before a rename (Params.def `was`), newest first: a user preset saved before
+        /// presets stored ids names the parameter by one of them (BuzzGUI.Common's Preset, IRenamedParameters).
+        /// </summary>
+        public string[] FormerNames { get; }
         /// <summary>How near a detent a value must be to rest on it, as a fraction of the value, at most 12 % of the detent spacing either way (so at high values free ratios remain between detents).</summary>
         public const double DetentWindow = 0.015, DetentWindowMax = 0.12;
         /// <summary>Whether the control has Explain text (How or Sound).</summary>
@@ -266,13 +272,43 @@ namespace NeoBuzz.Dsp
 
         public int this[int index] => raw[index];
 
-        public double Value(int index) => Table[index].Value(raw[index]);
+        public double Value(int index) => over != null && hasOver[index] ? over[index] : Table[index].Value(raw[index]);
 
-        public float F(int index) => (float)Table[index].Value(raw[index]);
+        public float F(int index) => (float)Value(index);
 
-        public int Choice(int index) => (int)Table[index].Value(raw[index]);
+        public int Choice(int index) => (int)Value(index);
 
-        public bool On(int index) => Table[index].Value(raw[index]) > 0;
+        public bool On(int index) => Value(index) > 0;
+
+        // A physical value that stands in for the raw one (FxStage's Amount: the effective settings are not on the raw grid).
+        double[] over;
+        bool[] hasOver;
+
+        /// <summary>Makes room for <see cref="SetPhysical"/> (once, before the audio runs).</summary>
+        public void AllowPhysical()
+        {
+            over ??= new double[Table.Length];
+            hasOver ??= new bool[Table.Length];
+        }
+
+        /// <summary>The parameter's physical value is <paramref name="value"/> whatever its raw value says, until <see cref="ClearPhysical"/> (needs <see cref="AllowPhysical"/>).</summary>
+        public void SetPhysical(int index, double value)
+        {
+            if (hasOver[index] && over[index] == value) return;
+            over[index] = value;
+            hasOver[index] = true;
+            dirty[index] = true;
+            anyDirty = true;
+        }
+
+        /// <summary>The raw value rules again.</summary>
+        public void ClearPhysical(int index)
+        {
+            if (over == null || !hasOver[index]) return;
+            hasOver[index] = false;
+            dirty[index] = true;
+            anyDirty = true;
+        }
 
         public void Set(int index, int value)
         {

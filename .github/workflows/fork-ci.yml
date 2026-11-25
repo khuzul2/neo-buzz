@@ -3,8 +3,6 @@ name: Fork CI
 # Fast checks for fork work:
 #  - session-tests: Session View engine unit tests, the agent server's core, the Neo
 #    machines' DSP measurements and the engine's net10.0 build (Linux, a few minutes)
-#  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects), and checks
-#    that the portable machine API is a subset of the Windows one
 # The full solution + package build is fork-package.yml.
 
 # Pushes to main and PRs only (not every branch push), to keep Actions minutes down on a
@@ -24,6 +22,14 @@ jobs:
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
+
+    # Every Neo machine's generated files (Engine/Params.g.cs, Machine.Params.g.cs, the manifest and the factory presets)
+    # match what the generators make from Params.def and Presets.txt today: a generator that breaks, or a file edited
+    # by hand or left stale, fails here in seconds. Fix: run the generator on the machine's folder and commit.
+    - name: Generated machine files are up to date
+      run: |
+        python3 tools/gen-machine-params.py --all --check
+        python3 tools/gen-machine-presets.py --all --check
 
     # PortAudio for the Mac engine's audio binding (docs/specs/mac-engine.md M5), tested here on
     # Linux: same LP64 ABI as macOS. The runner has no sound card, so a PulseAudio server with a
@@ -82,33 +88,6 @@ jobs:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
       run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath machine-test.log
 
-    # U6 (docs/specs/mcp-server.md §12.13): the Neo measurement suite on the Pedal effects U6 changed, run on their
-    # own Work: silence after sound settles to exact zero (no denormals), blocks of 256 and 117 alike, nothing
-    # allocated per block, levels and NaN at every parameter's ends, the Shaper's aliasing, parameter changes that glide,
-    # and silence reported only once a tail is silent.
-    - name: Pedal effect tests
-      if: always()
-      shell: pwsh
-      env:
-        MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
-      run: dotnet test NeoBuzz.PedalTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath pedal-test.log
-
-    - name: Pedal effect measurements
-      if: always() && hashFiles('measurements/pedal-measurements.txt') != ''
-      shell: pwsh
-      run: |
-        # In notices of up to 3800 characters each (an annotation's limit), whole lines.
-        $lines = Get-Content measurements/pedal-measurements.txt | Sort-Object
-        $chunks = @(); $cur = ""
-        foreach ($l in $lines) {
-          if ($cur.Length -gt 0 -and $cur.Length + $l.Length + 1 -gt 3800) { $chunks += $cur; $cur = "" }
-          $cur = if ($cur.Length -gt 0) { "$cur`n$l" } else { $l }
-        }
-        if ($cur.Length -gt 0) { $chunks += $cur }
-        for ($i = 0; $i -lt $chunks.Count; $i++) {
-          Write-Host "::notice title=Pedal effect measurements ($($i + 1)/$($chunks.Count))::$($chunks[$i] -replace '%', '%25' -replace "`n", '%0A')"
-        }
-
     # The measured figures (aliasing, decay times, speed…) as one notice, readable through the API.
     - name: Machine measurements
       if: always() && hashFiles('measurements/machine-measurements.txt') != ''
@@ -133,19 +112,6 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Engine/ReBuzz.Engine.csproj -nologo -v:q
 
-    # The classic Buzz machines rebuilt natively (docs/specs/cross-platform.md R1) and the portable host that runs them
-    # out of process: ReBuzz.Host/AppGear.targets copies build/natives (Gear, Licenses) and build/native-host into
-    # rebuzz-headless's output when it is built.
-    # always(): a failed test step above must not skip the build and make the classic-machine step fail for a missing host (RB1: in all
-    # 15 failed Linux jobs of the last 60 runs "Classic machines on Linux" failed only for that, silently, 3 s in, with no message).
-    - name: Classic machines and native host (C++)
-      if: always()
-      run: |
-        python3 tools/build-natives-posix.py --out build/natives
-        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
-        cmake --build build/native-host -j 3
-        ls build/natives/Gear/*
-
     # rebuzz-headless (docs/specs/mac-engine.md M1): the engine with the MCP server on stdio, no UI
     # toolkit, with the Neo machines built for net10.0. The smoke test drives it as a client does:
     # a chord through Neo Poly and Neo Verb, rendered, measured, saved, reopened, undone.
@@ -157,25 +123,9 @@ jobs:
         grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.runtimeconfig.json || { echo "::error::rebuzz-headless.runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
-    # R1: each rebuilt classic loads and renders its cases through the native host (finite, audible, no divergence), and the
-    # classic demo songs of ExternalMachines/source open with their machines and play (tools/native-cross.py).
-    - name: Classic machines on Linux
-      if: always()
-      run: |
-        bash tools/ci-pip.sh numpy
-        test -x ReBuzz.Headless/bin/Release/net10.0/rebuzz-native-host || { echo "::error::rebuzz-native-host is not beside rebuzz-headless: the step that builds it (C++) did not run or failed"; exit 1; }
-        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --json "$RUNNER_TEMP/natives.json"
-
-    # The Pedal machines (docs/specs/studio-mvp.md S2), built for net10.0 without their WPF GUIs:
-    # each loads, the synths play a note, the effects pass a chord, Chord and LFO drive their targets.
-    - name: Pedal machines on Linux
-      if: always()
-      run: python3 tools/headless-pedal.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/pedal"
-
     # The machine profiler (docs/specs/mcp-server.md §12.2, U1): its unit and mapping inference on known
-    # value tables, then every machine rebuzz-headless has (Neo and Pedal) profiled; the drafts, the
-    # health report and the summary are uploaded. Then the committed drafts at work: a Pedal synth plays
-    # A4 at 440 Hz through notes_write, param_set takes units on Pedal machines, unhealthy ones are flagged.
+    # value tables, then every machine rebuzz-headless has (the Neo machines) profiled; the drafts, the
+    # health report and the summary are uploaded.
     # U2 (docs/specs/machine-safety.md §3.1, §3.4): diverging, hot and needs-a-window, per-parameter
     # sweeps and safe ranges, which param_set keeps agents inside unless they pass allow_unsafe.
     - name: Machine profiler inference tests
@@ -200,30 +150,6 @@ jobs:
           ${{ runner.temp }}/machine-profile/*.md
         if-no-files-found: warn
 
-    - name: Draft manifests at work on Linux
-      if: always()
-      run: python3 tools/headless-manifests.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/manifests"
-
-    # U3 (docs/specs/mcp-server.md §12.9): each curated Pedal manifest against the machine itself (its
-    # ranges, and its own value texts wherever the manifest keeps them). The natives: the package job.
-    - name: Curated manifests against the machines on Linux
-      if: always()
-      run: python3 tools/curated-check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/curated"
-
-    # U4 (docs/specs/mcp-server.md §12.11): the curated Pedal machines' factory presets on the machines: each loads through
-    # preset_load, sounds, at a consistent level, peaks below -1 dBFS, no NaN (--theirs also reports the banks they ship).
-    # The natives: the package job.
-    - name: Factory presets on the machines on Linux
-      if: always()
-      run: python3 tools/preset-check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/presets" --theirs
-
-    # U5 (docs/specs/mcp-server.md §12.5): machine_replace with the portable machines. Pedal EQ → Neo EQ, Pedal Gain →
-    # Neo Utility and Pedal Comp → Neo Comp within their stated tolerance; the successor in the old one's place with
-    # its settings, automation, arrangement and session track; one undo brings the original back. The natives: the package job.
-    - name: machine_replace on Linux
-      if: always()
-      run: python3 tools/headless-replace.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/replace"
-
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
     # null sink (clocked, so in real time); the live tools play, meter and stop it. The null sink
     # through ALSA's PulseAudio plugin takes nothing for about 2 s after an underrun, and at its
@@ -242,26 +168,12 @@ jobs:
         dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
         dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
 
-    # Songs with missing machines (mac-engine.md M2): off Windows every native machine is a
-    # placeholder, which must save back what the song says about it. The demo songs open, save as
-    # BMX and BMXML, reopen and save again: the two saves are identical, and the first keeps every
-    # machine's values, data, attributes, tracks and pattern contents. So does a Windows-style song
-    # whose pattern editor machines are missing too.
-    - name: Songs with placeholders round-trip
-      if: always()
-      env:
-        REBUZZ_NATIVE_MACHINES: 'off'   # R1: the check is of placeholders; the rebuilt classics have tools/native-cross.py
-      run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
-
-    # The clip goldens (docs/specs/clips.md §10.1, CU1): every song of the corpus (the repo's songs and one generated song a feature
-    # of a clip) renders to the hash in eval/clip-goldens.json for this platform, twice (deterministic). A difference fails the step and
-    # names the song. Placeholders stand in for the classic machines, as in the step above. The observed hashes are uploaded.
+    # The clip goldens (docs/specs/clips.md §10.1, CU1): every song of the corpus (the two song templates and one generated song) renders to the hash in eval/clip-goldens.json for this platform, twice (deterministic). A difference fails the step and
+    # names the song. The observed hashes are uploaded.
     - name: Clip goldens on Linux (rebuzz-headless)
       if: always()
-      env:
-        REBUZZ_NATIVE_MACHINES: 'off'
       run: |
-        python3 tools/clip-null.py --audio "$RUNNER_TEMP/clip-audio" check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
+        python3 tools/clip-null.py check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip" --twice
         python3 tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/clip-open"
 
     - name: Upload the clip goldens observed
@@ -274,17 +186,6 @@ jobs:
           ${{ runner.temp }}/clip-open/open-times.json
         if-no-files-found: ignore
 
-    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
-    - name: Upload the clip renders (audio)
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: clip-audio-linux
-        path: ${{ runner.temp }}/clip-audio/*.wav
-        retention-days: 30
-        compression-level: 6
-        if-no-files-found: ignore
-
     # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)
     # and driven by simulated input; what they drew is uploaded with the run.
     - name: Studio (Avalonia, headless)
@@ -292,8 +193,6 @@ jobs:
       shell: bash
       env:
         SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
-        CLIP_ROUNDTRIP_OUT: ${{ github.workspace }}/clip-roundtrip/round-trips.txt
-        CLIP_MIGRATION_LOG: ${{ github.workspace }}/clip-roundtrip/migration-log.json
       run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
 
     # P3's exit (studio-mvp.md S9): the studio app itself, on Xvfb's display with the PulseAudio null
@@ -315,22 +214,12 @@ jobs:
         name: studio-screenshots
         path: studio-screenshots/
 
-    # CU2 (clips.md S10): the round trips over the corpus, and the migration log (every step with its cause tag) that
-    # tools/clip-change-report.py reads in CU3.
-    - name: Clip round trips and migration log
-      if: always() && hashFiles('clip-roundtrip/*') != ''
-      uses: actions/upload-artifact@v6
-      with:
-        name: clip-roundtrip
-        path: clip-roundtrip/
-
     - name: Annotate test log
       if: failure()
       shell: pwsh
       run: |
         if (Test-Path test.log) { ./tools/ci-annotate-log.ps1 test.log }
         if (Test-Path machine-test.log) { ./tools/ci-annotate-log.ps1 machine-test.log }
-        if (Test-Path pedal-test.log) { ./tools/ci-annotate-log.ps1 pedal-test.log }
         if (Test-Path agent-test.log) { ./tools/ci-annotate-log.ps1 agent-test.log }
 
   # Plug-in host (docs/specs/plugin-host.md, H1): neoplug built with CMake, Surge XT (CLAP and VST3), the SDK's AGain and Note
@@ -364,54 +253,3 @@ jobs:
         name: plugin-host-linux
         path: plugin-host-results
         if-no-files-found: ignore
-
-  core-build:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        submodules: recursive
-
-    - uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-
-    # The projects place their output under $(SolutionDir); set it, since we build the
-    # project rather than the solution.
-    - name: Build ReBuzz (C# only)
-      shell: pwsh
-      run: dotnet build ReBuzz/ReBuzz.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
-
-    # The app people launch is NeoBuzzLive.exe: ReBuzz.csproj names its apphost so, beside the assembly it
-    # starts, ReBuzz.dll (machines, plugins and tests load it by name), and the file says NeoBuzz Live.
-    - name: The app's executable (NeoBuzzLive.exe)
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not built under bin\' }
-        if (Test-Path (Join-Path $exe.DirectoryName 'ReBuzz.exe')) { throw "a ReBuzz.exe beside $($exe.FullName)" }
-        foreach ($f in 'ReBuzz.dll', 'ReBuzz.runtimeconfig.json') { if (-not (Test-Path (Join-Path $exe.DirectoryName $f))) { throw "$f isn't beside it" } }
-        $v = $exe.VersionInfo
-        if ($v.FileDescription -ne 'NeoBuzz Live' -or $v.ProductName -ne 'NeoBuzz Live') { throw "its version info says '$($v.FileDescription)', '$($v.ProductName)'" }
-        Write-Host "::notice title=The app's executable::$($exe.Name) beside ReBuzz.dll; FileDescription and ProductName '$($v.FileDescription)'"
-
-    # The Modern Pattern Editor (WPF): its machine side is shared with its portable builds
-    # (docs/specs/studio-mvp.md S6), so the Windows editor builds here too.
-    - name: Build the Modern Pattern Editor (WPF)
-      shell: pwsh
-      run: dotnet build ModernPatternEditor/ModernPatternEditor.NET/ModernPatternEditor.NET.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath mpe-build.log
-
-    # Machine API (docs/specs/engine-split.md §4.3): the portable builds of BuzzGUI.Interfaces and
-    # BuzzGUI.Common must stay a subset of the Windows builds that machine DLLs bind to.
-    - name: Surface check
-      shell: pwsh
-      env:
-        PYTHONIOENCODING: utf-8
-      run: python experiments/engine-census/census.py surface "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true
-
-    - name: Annotate build log
-      if: failure()
-      shell: pwsh
-      run: |
-        ./tools/ci-annotate-log.ps1 build.log
-        if (Test-Path mpe-build.log) { ./tools/ci-annotate-log.ps1 mpe-build.log }

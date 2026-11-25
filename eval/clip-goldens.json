@@ -2,33 +2,9 @@
  "note": "SHA-256 of each corpus song's render, per platform (docs/specs/clips.md \u00a710.1). Made by tools/clip-null.py; no audio.",
  "open_ms": {
   "linux-x64": {
-   "gen/rows256": {
-    "best_ms": 254,
-    "bytes": 293581
-   },
-   "gen/tracks8": {
-    "best_ms": 259,
-    "bytes": 297355
-   },
    "repo/Bass House Template.nbl": {
     "best_ms": 3575,
     "bytes": 88303
-   },
-   "repo/FSM_Infector_Demo.bmx": {
-    "best_ms": 131,
-    "bytes": 378333
-   },
-   "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
-    "best_ms": 133,
-    "bytes": 109764
-   },
-   "repo/Jeskola_NiNjA_dElaY.bmx": {
-    "best_ms": 123,
-    "bytes": 73043
-   },
-   "repo/MadBrain_Dynamite6_Demo.bmx": {
-    "best_ms": 152,
-    "bytes": 59235
    },
    "repo/Tech House Template.nbl": {
     "best_ms": 3155,
@@ -36,33 +12,9 @@
    }
   },
   "macos-arm64": {
-   "gen/rows256": {
-    "best_ms": 259,
-    "bytes": 293583
-   },
-   "gen/tracks8": {
-    "best_ms": 263,
-    "bytes": 297357
-   },
    "repo/Bass House Template.nbl": {
     "best_ms": 3558,
     "bytes": 88303
-   },
-   "repo/FSM_Infector_Demo.bmx": {
-    "best_ms": 142,
-    "bytes": 378333
-   },
-   "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
-    "best_ms": 133,
-    "bytes": 109764
-   },
-   "repo/Jeskola_NiNjA_dElaY.bmx": {
-    "best_ms": 115,
-    "bytes": 73043
-   },
-   "repo/MadBrain_Dynamite6_Demo.bmx": {
-    "best_ms": 156,
-    "bytes": 59235
    },
    "repo/Tech House Template.nbl": {
     "best_ms": 3078,
@@ -70,33 +22,9 @@
    }
   },
   "windows-x64": {
-   "gen/rows256": {
-    "best_ms": 428,
-    "bytes": 294473
-   },
-   "gen/tracks8": {
-    "best_ms": 426,
-    "bytes": 298415
-   },
    "repo/Bass House Template.nbl": {
     "best_ms": 5111,
     "bytes": 88303
-   },
-   "repo/FSM_Infector_Demo.bmx": {
-    "best_ms": 2676,
-    "bytes": 378333
-   },
-   "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
-    "best_ms": 463,
-    "bytes": 109764
-   },
-   "repo/Jeskola_NiNjA_dElaY.bmx": {
-    "best_ms": 216,
-    "bytes": 73043
-   },
-   "repo/MadBrain_Dynamite6_Demo.bmx": {
-    "best_ms": 485,
-    "bytes": 59235
    },
    "repo/Tech House Template.nbl": {
     "best_ms": 4566,
@@ -108,131 +36,11 @@
   "linux-x64": {
    "machines": "placeholders",
    "songs": {
-    "gen/chord4": {
-     "seconds": 3.003,
-     "sha256": "8466fe8376bd5d09f8a274a02b9951b606c1af6aa751c3714c997fb7aec3c63d",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/chord4-midi": {
-     "seconds": 3.003,
-     "sha256": "e4e7263fa1398a6c62a04ff371c0ae27c6008270fa9e7e5c7eaca4b8864671b7",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/classic-tracks": {
-     "seconds": 5.005,
-     "sha256": "aefdeb77f6b50a3112dada5ff792e599a2090d04126f263c4da7ea510b44f995",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/explicit-off": {
-     "seconds": 5.005,
-     "sha256": "f411c088e239644a5871ae6fadf6e917b23bd5feba36a216dbc6b6a289f00b30",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/midi-lanes": {
-     "seconds": 5.005,
-     "sha256": "b44984c18cb6307d88602fa62520d99bc73103e9f5ebd1cf352a19012e812dcb",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/midi-lanes-rpb4": {
-     "seconds": 5.005,
-     "sha256": "803b7c66ac2c6432fa7481e5ae7a445ea64e9d4fc072ec5da9993def9c867bb0",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/other-machine": {
-     "seconds": 5.005,
-     "sha256": "519366cd8c183ac5cf15975c21f35a4c742b739ce674daffb7fce5fe1c65770a",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/pxp-blob": {
-     "seconds": 3.003,
-     "sha256": "61d611d7226ddbb213f07ab5e764a05bcf73349129d6e50aa9c53a8e2612af9a",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rows1": {
-     "seconds": 3.13,
-     "sha256": "bd148e37e7f9413dae1fd4da85e3f8aacae1fc338ed33b11d96be0072810754b",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rows256": {
-     "seconds": 17.004,
-     "sha256": "7b16a69a7dccb74ed6737fb2c03d02ddb2477ecca8774c8f0e25a82dc7ff1b05",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rpb6": {
-     "seconds": 5.005,
-     "sha256": "216b22749d15cde438deba16ea09eb54bb39504cacb8ddc08d850be087945732",
-     "silent": false,
-     "tracker": true
-    },
     "gen/session-loop": {
      "seconds": 9.005,
      "sha256": "945c2a1bc34b7fc6d53bec84f5afbbd01774e8caf86cc2fb285fecf400a62e9e",
      "silent": false,
      "tracker": false
-    },
-    "gen/subdivided": {
-     "seconds": 3.003,
-     "sha256": "ebc03fd5b2429f6fc957364a6376b15d76d2aacba4eee8446d58f4a179b74de1",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb1": {
-     "seconds": 17.004,
-     "sha256": "4ff299cd15b42c6be10a533d68b997d03145364fc589e181e6aca10b07c44566",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb4": {
-     "seconds": 5.005,
-     "sha256": "5a1811951119f96e32eccc73826c346f5eef3753e10cf9f29b950bb7acf65bcb",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb8": {
-     "seconds": 3.003,
-     "sha256": "2c7f0089b7f25fc74d982482b0450e9b2e638111118179ef59e31a55ca64a780",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/track-change": {
-     "seconds": 9.005,
-     "sha256": "5ddebac4388eca4e715424032516dc19879c08e37b8dabded275e24286d3f94b",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tracks8": {
-     "seconds": 5.005,
-     "sha256": "d19879be5efb336c93bad0be1338ea2ccc16bd76d4ca57bd0dfd4d2b257831fd",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/11Stereo.bmx": {
-     "seconds": 16.36,
-     "sha256": "58406a8b8746c84a820f2ad66cfe8b7a7ad7611a9f62e6b65a53aaa8c0ac2add",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/909.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/909_excite.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
     },
     "repo/Bass House Template.nbl": {
      "seconds": 16.122,
@@ -240,108 +48,10 @@
      "silent": false,
      "tracker": true
     },
-    "repo/Csi.bmx": {
-     "seconds": 16.36,
-     "sha256": "58406a8b8746c84a820f2ad66cfe8b7a7ad7611a9f62e6b65a53aaa8c0ac2add",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/CyanPhase_DTMF-1_Demo.bmx": {
-     "seconds": 29.862,
-     "sha256": "2908d0b6b687590c26f0240b6dc788993c62207eb46f89219ceb10c5a40d01a7",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Elak_Dist2.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Elak_SVF.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FSM_Infector_Demo.bmx": {
-     "seconds": 16.238,
-     "sha256": "fef56dab7823961716519ae4a09d765d094eb682beda44164f1a261f7497b414",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FSM_Kick_Demo.bmx": {
-     "status": "open failed",
-     "tracker": true
-    },
-    "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
-     "seconds": 16.238,
-     "sha256": "fef56dab7823961716519ae4a09d765d094eb682beda44164f1a261f7497b414",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FrequencyUnknown_O-Delay_sparkle.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Jeskola_NiNjA_dElaY.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/MadBrain_Dynamite6_Demo.bmx": {
-     "seconds": 8.187,
-     "sha256": "7ae5ce25ede59b0a5d71322cd8841109a434ead79bb76763419bbc949dc45b4d",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Makk_M4.bmw": {
-     "status": "open failed",
-     "tracker": true
-    },
-    "repo/Masterizer_test.bmx": {
-     "seconds": 14.526,
-     "sha256": "886b793fc9f8cab094391aa948a048af43c8fb2aa4f9ab0e23614a09a6ff70da",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Oomek_Aggressor_ctrack.bmx": {
-     "seconds": 2.852,
-     "sha256": "19e4719838862fef4cdb2d55ab82f948122813b418e091e028eaaec9ad18d89f",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Oomek_Aggressor_demo.bmx": {
-     "seconds": 14.717,
-     "sha256": "10d2265706caac8c823489976d51763ebce4f8b7fc784a001f2a566336d4e1ff",
-     "silent": true,
-     "tracker": true
-    },
     "repo/Tech House Template.nbl": {
      "seconds": 16.36,
      "sha256": "30f45c78b618c030c77ef04b0418ce69d5cfb98beebb07a91606f2b6b3009adc",
      "silent": false,
-     "tracker": true
-    },
-    "repo/elenzil_ampmod.bmx": {
-     "seconds": 3.003,
-     "sha256": "621eb03117c99cd523b73cad433c295141ec84bfb53a111d2063de9af5f155a9",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/sinesynthdemo.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/test.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
      "tracker": true
     }
    }
@@ -349,131 +59,11 @@
   "macos-arm64": {
    "machines": "placeholders",
    "songs": {
-    "gen/chord4": {
-     "seconds": 3.003,
-     "sha256": "8466fe8376bd5d09f8a274a02b9951b606c1af6aa751c3714c997fb7aec3c63d",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/chord4-midi": {
-     "seconds": 3.003,
-     "sha256": "e4e7263fa1398a6c62a04ff371c0ae27c6008270fa9e7e5c7eaca4b8864671b7",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/classic-tracks": {
-     "seconds": 5.005,
-     "sha256": "aefdeb77f6b50a3112dada5ff792e599a2090d04126f263c4da7ea510b44f995",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/explicit-off": {
-     "seconds": 5.005,
-     "sha256": "f411c088e239644a5871ae6fadf6e917b23bd5feba36a216dbc6b6a289f00b30",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/midi-lanes": {
-     "seconds": 5.005,
-     "sha256": "b44984c18cb6307d88602fa62520d99bc73103e9f5ebd1cf352a19012e812dcb",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/midi-lanes-rpb4": {
-     "seconds": 5.005,
-     "sha256": "803b7c66ac2c6432fa7481e5ae7a445ea64e9d4fc072ec5da9993def9c867bb0",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/other-machine": {
-     "seconds": 5.005,
-     "sha256": "519366cd8c183ac5cf15975c21f35a4c742b739ce674daffb7fce5fe1c65770a",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/pxp-blob": {
-     "seconds": 3.003,
-     "sha256": "61d611d7226ddbb213f07ab5e764a05bcf73349129d6e50aa9c53a8e2612af9a",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rows1": {
-     "seconds": 3.13,
-     "sha256": "bd148e37e7f9413dae1fd4da85e3f8aacae1fc338ed33b11d96be0072810754b",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rows256": {
-     "seconds": 17.004,
-     "sha256": "7b16a69a7dccb74ed6737fb2c03d02ddb2477ecca8774c8f0e25a82dc7ff1b05",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rpb6": {
-     "seconds": 5.005,
-     "sha256": "216b22749d15cde438deba16ea09eb54bb39504cacb8ddc08d850be087945732",
-     "silent": false,
-     "tracker": true
-    },
     "gen/session-loop": {
      "seconds": 9.005,
      "sha256": "945c2a1bc34b7fc6d53bec84f5afbbd01774e8caf86cc2fb285fecf400a62e9e",
      "silent": false,
      "tracker": false
-    },
-    "gen/subdivided": {
-     "seconds": 3.003,
-     "sha256": "ebc03fd5b2429f6fc957364a6376b15d76d2aacba4eee8446d58f4a179b74de1",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb1": {
-     "seconds": 17.004,
-     "sha256": "4ff299cd15b42c6be10a533d68b997d03145364fc589e181e6aca10b07c44566",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb4": {
-     "seconds": 5.005,
-     "sha256": "5a1811951119f96e32eccc73826c346f5eef3753e10cf9f29b950bb7acf65bcb",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb8": {
-     "seconds": 3.003,
-     "sha256": "2c7f0089b7f25fc74d982482b0450e9b2e638111118179ef59e31a55ca64a780",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/track-change": {
-     "seconds": 9.005,
-     "sha256": "5ddebac4388eca4e715424032516dc19879c08e37b8dabded275e24286d3f94b",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tracks8": {
-     "seconds": 5.005,
-     "sha256": "d19879be5efb336c93bad0be1338ea2ccc16bd76d4ca57bd0dfd4d2b257831fd",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/11Stereo.bmx": {
-     "seconds": 16.36,
-     "sha256": "58406a8b8746c84a820f2ad66cfe8b7a7ad7611a9f62e6b65a53aaa8c0ac2add",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/909.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/909_excite.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
     },
     "repo/Bass House Template.nbl": {
      "seconds": 16.122,
@@ -481,108 +71,10 @@
      "silent": false,
      "tracker": true
     },
-    "repo/Csi.bmx": {
-     "seconds": 16.36,
-     "sha256": "58406a8b8746c84a820f2ad66cfe8b7a7ad7611a9f62e6b65a53aaa8c0ac2add",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/CyanPhase_DTMF-1_Demo.bmx": {
-     "seconds": 29.862,
-     "sha256": "2908d0b6b687590c26f0240b6dc788993c62207eb46f89219ceb10c5a40d01a7",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Elak_Dist2.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Elak_SVF.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FSM_Infector_Demo.bmx": {
-     "seconds": 16.238,
-     "sha256": "fef56dab7823961716519ae4a09d765d094eb682beda44164f1a261f7497b414",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FSM_Kick_Demo.bmx": {
-     "status": "open failed",
-     "tracker": true
-    },
-    "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
-     "seconds": 16.238,
-     "sha256": "fef56dab7823961716519ae4a09d765d094eb682beda44164f1a261f7497b414",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FrequencyUnknown_O-Delay_sparkle.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Jeskola_NiNjA_dElaY.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/MadBrain_Dynamite6_Demo.bmx": {
-     "seconds": 8.187,
-     "sha256": "7ae5ce25ede59b0a5d71322cd8841109a434ead79bb76763419bbc949dc45b4d",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Makk_M4.bmw": {
-     "status": "open failed",
-     "tracker": true
-    },
-    "repo/Masterizer_test.bmx": {
-     "seconds": 14.526,
-     "sha256": "886b793fc9f8cab094391aa948a048af43c8fb2aa4f9ab0e23614a09a6ff70da",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Oomek_Aggressor_ctrack.bmx": {
-     "seconds": 2.852,
-     "sha256": "19e4719838862fef4cdb2d55ab82f948122813b418e091e028eaaec9ad18d89f",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Oomek_Aggressor_demo.bmx": {
-     "seconds": 14.717,
-     "sha256": "10d2265706caac8c823489976d51763ebce4f8b7fc784a001f2a566336d4e1ff",
-     "silent": true,
-     "tracker": true
-    },
     "repo/Tech House Template.nbl": {
      "seconds": 16.36,
      "sha256": "30f45c78b618c030c77ef04b0418ce69d5cfb98beebb07a91606f2b6b3009adc",
      "silent": false,
-     "tracker": true
-    },
-    "repo/elenzil_ampmod.bmx": {
-     "seconds": 3.003,
-     "sha256": "621eb03117c99cd523b73cad433c295141ec84bfb53a111d2063de9af5f155a9",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/sinesynthdemo.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/test.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
      "tracker": true
     }
    }
@@ -590,131 +82,11 @@
   "windows-x64": {
    "machines": "real",
    "songs": {
-    "gen/chord4": {
-     "seconds": 3.003,
-     "sha256": "8466fe8376bd5d09f8a274a02b9951b606c1af6aa751c3714c997fb7aec3c63d",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/chord4-midi": {
-     "seconds": 3.003,
-     "sha256": "e4e7263fa1398a6c62a04ff371c0ae27c6008270fa9e7e5c7eaca4b8864671b7",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/classic-tracks": {
-     "seconds": 5.005,
-     "sha256": "aefdeb77f6b50a3112dada5ff792e599a2090d04126f263c4da7ea510b44f995",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/explicit-off": {
-     "seconds": 5.005,
-     "sha256": "f411c088e239644a5871ae6fadf6e917b23bd5feba36a216dbc6b6a289f00b30",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/midi-lanes": {
-     "seconds": 5.005,
-     "sha256": "b44984c18cb6307d88602fa62520d99bc73103e9f5ebd1cf352a19012e812dcb",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/midi-lanes-rpb4": {
-     "seconds": 5.005,
-     "sha256": "803b7c66ac2c6432fa7481e5ae7a445ea64e9d4fc072ec5da9993def9c867bb0",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/other-machine": {
-     "seconds": 5.005,
-     "sha256": "519366cd8c183ac5cf15975c21f35a4c742b739ce674daffb7fce5fe1c65770a",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/pxp-blob": {
-     "seconds": 3.003,
-     "sha256": "61d611d7226ddbb213f07ab5e764a05bcf73349129d6e50aa9c53a8e2612af9a",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rows1": {
-     "seconds": 3.13,
-     "sha256": "bd148e37e7f9413dae1fd4da85e3f8aacae1fc338ed33b11d96be0072810754b",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rows256": {
-     "seconds": 17.004,
-     "sha256": "7b16a69a7dccb74ed6737fb2c03d02ddb2477ecca8774c8f0e25a82dc7ff1b05",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/rpb6": {
-     "seconds": 5.005,
-     "sha256": "216b22749d15cde438deba16ea09eb54bb39504cacb8ddc08d850be087945732",
-     "silent": false,
-     "tracker": true
-    },
     "gen/session-loop": {
      "seconds": 9.005,
      "sha256": "945c2a1bc34b7fc6d53bec84f5afbbd01774e8caf86cc2fb285fecf400a62e9e",
      "silent": false,
      "tracker": false
-    },
-    "gen/subdivided": {
-     "seconds": 3.003,
-     "sha256": "ebc03fd5b2429f6fc957364a6376b15d76d2aacba4eee8446d58f4a179b74de1",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb1": {
-     "seconds": 17.004,
-     "sha256": "4ff299cd15b42c6be10a533d68b997d03145364fc589e181e6aca10b07c44566",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb4": {
-     "seconds": 5.005,
-     "sha256": "5a1811951119f96e32eccc73826c346f5eef3753e10cf9f29b950bb7acf65bcb",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tpb8": {
-     "seconds": 3.003,
-     "sha256": "2c7f0089b7f25fc74d982482b0450e9b2e638111118179ef59e31a55ca64a780",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/track-change": {
-     "seconds": 9.005,
-     "sha256": "5ddebac4388eca4e715424032516dc19879c08e37b8dabded275e24286d3f94b",
-     "silent": false,
-     "tracker": true
-    },
-    "gen/tracks8": {
-     "seconds": 5.005,
-     "sha256": "d19879be5efb336c93bad0be1338ea2ccc16bd76d4ca57bd0dfd4d2b257831fd",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/11Stereo.bmx": {
-     "seconds": 16.36,
-     "sha256": "58406a8b8746c84a820f2ad66cfe8b7a7ad7611a9f62e6b65a53aaa8c0ac2add",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/909.bmx": {
-     "seconds": 2.91,
-     "sha256": "8262118f93412ac02916a83160219d2ecf20c88240ca83a2ebdd47fb02a51a3d",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/909_excite.bmx": {
-     "seconds": 2.91,
-     "sha256": "7461489f0010bfe5b4fb15e2217320f45fccdde18e886e83a6dd80567e7060f3",
-     "silent": false,
-     "tracker": true
     },
     "repo/Bass House Template.nbl": {
      "seconds": 16.122,
@@ -722,107 +94,9 @@
      "silent": false,
      "tracker": true
     },
-    "repo/Csi.bmx": {
-     "seconds": 16.36,
-     "sha256": "ad3e61cb4f2c22787dd07cd7901bfd4756e7722bd0b011be9cc55b0f4d2f7b62",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/CyanPhase_DTMF-1_Demo.bmx": {
-     "seconds": 29.862,
-     "sha256": "2908d0b6b687590c26f0240b6dc788993c62207eb46f89219ceb10c5a40d01a7",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Elak_Dist2.bmx": {
-     "seconds": 2.91,
-     "sha256": "74284f84c69c67a1c403fbbc027df2a333d01a9ca2abd678ae0e025191a5ff5a",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Elak_SVF.bmx": {
-     "seconds": 8.622,
-     "sha256": "2f1dbd48f3384dee5bda885a7e7cb0b9f78b8a88bedf3bab13f07821aa9e1e59",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/FSM_Infector_Demo.bmx": {
-     "seconds": 16.238,
-     "sha256": "9f7d9875902b6f2615fe64c2278f33b5e0847d156b8e587279761e0eba5661a7",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/FSM_Kick_Demo.bmx": {
-     "status": "open failed",
-     "tracker": true
-    },
-    "repo/FrequencyUnknown_O-Delay_delaytest.bmx": {
-     "seconds": 16.238,
-     "sha256": "fef56dab7823961716519ae4a09d765d094eb682beda44164f1a261f7497b414",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/FrequencyUnknown_O-Delay_sparkle.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Jeskola_NiNjA_dElaY.bmx": {
-     "seconds": 2.91,
-     "sha256": "e9a7792e20f308178ff417f518418b90ecd9592515d459192f8e9e1e81c50903",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/MadBrain_Dynamite6_Demo.bmx": {
-     "seconds": 8.187,
-     "sha256": "7ae5ce25ede59b0a5d71322cd8841109a434ead79bb76763419bbc949dc45b4d",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/Makk_M4.bmw": {
-     "status": "open failed",
-     "tracker": true
-    },
-    "repo/Masterizer_test.bmx": {
-     "seconds": 14.526,
-     "sha256": "c04b101f084b595c7a8cce5f4259705dd0dada15390c231e65a1e102591982be",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/Oomek_Aggressor_ctrack.bmx": {
-     "seconds": 2.852,
-     "sha256": "a8c0844f9a4383b4f391aa1dacb4396ed879287a71764df31d3a51ff0d3d617b",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/Oomek_Aggressor_demo.bmx": {
-     "seconds": 14.717,
-     "sha256": "e92411e48581e7554422be5f147c7bab1f8fb4f3c459dc163c22a27a40c6b56e",
-     "silent": false,
-     "tracker": true
-    },
     "repo/Tech House Template.nbl": {
      "seconds": 16.36,
      "sha256": "30f45c78b618c030c77ef04b0418ce69d5cfb98beebb07a91606f2b6b3009adc",
-     "silent": false,
-     "tracker": true
-    },
-    "repo/elenzil_ampmod.bmx": {
-     "seconds": 3.003,
-     "sha256": "621eb03117c99cd523b73cad433c295141ec84bfb53a111d2063de9af5f155a9",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/sinesynthdemo.bmx": {
-     "seconds": 8.622,
-     "sha256": "ca649c071ddda74b35b27364a6eacdf3cb0f4cb0f5a4f1cb2353e1d39b02e200",
-     "silent": true,
-     "tracker": true
-    },
-    "repo/test.bmx": {
-     "seconds": 2.91,
-     "sha256": "91ac8b6ef76c953f4f34780275fa73790d4f2ad45c0ea9de212a30bd02ed2a1b",
      "silent": false,
      "tracker": true
     }

@@ -415,6 +415,17 @@ public:
     }
     void guiCloseWindow() override { int32_t rc; rpc(OpGuiCloseWindow, nullptr, rc); }
 
+    // The plug-in's note names, from the server's (main thread; one round trip).
+    int noteNames(std::vector<np_note_name>& out) override
+    {
+        int32_t rc = 0; std::vector<uint8_t> resp;
+        if (!rpc(OpNoteNames, nullptr, rc, &resp) || rc <= 0) return 0;
+        size_t n = std::min<size_t>((size_t)rc, resp.size() / sizeof(np_note_name));
+        out.resize(n);
+        if (n) std::memcpy(out.data(), resp.data(), n * sizeof(np_note_name));
+        return (int)n;
+    }
+
     int outCount() override { int32_t rc = 1; return rpc(OpOutCount, nullptr, rc) ? rc : 1; }
     bool outInfo(int index, std::string& name, int& ch) override
     {

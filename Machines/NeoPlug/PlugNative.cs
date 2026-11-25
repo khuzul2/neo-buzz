@@ -9,7 +9,7 @@ namespace NeoBuzz.Plug
 {
     static class PlugNative
     {
-        public const int Abi = 4;
+        public const int Abi = 5;
         const string Lib = "neoplug";
 
         static PlugNative()
@@ -54,7 +54,7 @@ namespace NeoBuzz.Plug
         public const int FormatVst3 = 1, FormatClap = 2;
         public const int ParamAutomatable = 1, ParamStepped = 2, ParamReadOnly = 4, ParamHidden = 8, ParamBypass = 16;
         public const int EvNoteOn = 1, EvNoteOff = 2, EvParam = 3, EvCc = 4, EvPitchBend = 5, EvChannelPressure = 6, EvPolyPressure = 7, EvNoteExpr = 8, EvAllNotesOff = 9;
-        public const int PollLatency = 1, PollParams = 2, PollRestart = 4, PollDirty = 8, PollFlush = 16;
+        public const int PollLatency = 1, PollParams = 2, PollRestart = 4, PollDirty = 8, PollFlush = 16, PollNoteNames = 32;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct ClassInfo
@@ -133,6 +133,9 @@ namespace NeoBuzz.Plug
         [DllImport(Lib)] public static extern int np_tail(IntPtr p);
         [DllImport(Lib)] public static extern void np_idle(IntPtr p);
         [DllImport(Lib)] public static extern int np_poll(IntPtr p);
+        // ABI 5: the plug-in's note names, main thread. out holds cap entries of 72 bytes each (int32 key, int32 channel, char name[64]).
+        public const int NoteNameSize = 72;
+        [DllImport(Lib)] public static extern int np_note_names(IntPtr p, byte[] buf, int cap);
         [DllImport(Lib)] public static extern void np_flush(IntPtr p);
         [DllImport(Lib)] public static extern void np_reset(IntPtr p);
         // GUI (ABI 3)

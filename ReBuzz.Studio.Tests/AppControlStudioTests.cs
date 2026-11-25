@@ -16,7 +16,7 @@ using ReBuzz.Agent;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

@@ -474,16 +474,6 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        /// <summary>The editor data of the song as it saves: where the editor views the store, the blob derived from the lanes (older builds read it).</summary>
-        byte[] DerivedEditorData()
-        {
-#if !WINDOWS
-            if (StoreAttached && TargetMachine != null && ClipDerived.Provider != null)
-                return ClipDerived.Provider(TargetMachine) ?? Array.Empty<byte>();
-#endif
-            return null;
-        }
-
         byte[] patternEditorData;
         // From native
         public void SetPatternEditorData(byte[] data)
@@ -502,8 +492,6 @@ namespace WDE.ModernPatternEditor
         // From native
         public byte[] GetPatternEditorData()
         {
-            var derived = DerivedEditorData();
-            if (derived != null) return derived;
             if (Settings.PXPDataFormat)
                 return PatternEditorUtils.CreatePatternXPPatternData(MPEPatternsDB.GetPatterns());
             else
@@ -657,110 +645,6 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        // Fork (neo-buzz 0.7.1): a pattern's MIDI note lanes as notes, and back (the Session View).
-        public int[] ExportClipNotes(IPattern pat)
-        {
-            lock (syncLock)
-            {
-                return pat == null ? new int[0] : PatternEditorUtils.ExportClipNotes(MPEPatternsDB.GetMPEPattern(pat));
-            }
-        }
-
-        public bool ImportClipNotes(IPattern pat, int[] data)
-        {
-            if (pat == null) return false;
-            var mpePattern = MPEPatternsDB.GetMPEPattern(pat);
-            List<TrackerRow> rows;
-            int tracks;
-            lock (syncLock)
-            {
-                // Planned first: notes that don't fit change nothing.
-                rows = PatternEditorUtils.PlanClipNotes(mpePattern, data, out tracks);
-            }
-            if (rows == null) return false;
-            // Outside the lock: a native machine's track count takes the audio lock, and the audio
-            // thread holds that while it runs this editor's Work, which takes ours.
-            var machine = pat.Machine;
-            if (machine != null && tracks > machine.TrackCount)
-                machine.TrackCount = tracks;
-            if (machine == null || machine.TrackCount < tracks) return false;
-            lock (syncLock)
-            {
-                PatternEditorUtils.WriteClipNotes(mpePattern, rows, tracks);
-            }
-            bool done = true;
-            // The pattern's view shows its lanes as they are now, whether it is shown or not (fork, ui-gallery.md bug 5):
-            // a view keeps the columns its pattern had when it was made (as the pattern was created), so the view of a
-            // pattern never shown yet kept none of the lanes made here, and the Pattern View showed no notes on them
-            // until the song was opened again.
-            var view = SelectedMachine?.Patterns.FirstOrDefault(p => p.Pattern == pat);
-            if (view != null)
-                view.Pattern = pat;
-            SetModifiedFlag();
-            return done;
-        }
-
-        // Fork (ux-overhaul.md P3b): the piano roll in the detail panel edits the notes of the pattern's Note parameter
-        // columns, the tracker's own, through these. The engine works out the events (TrackNotes, as the agent writes
-        // notes for machines that take them in their tracks); here they are applied, as one action on this editor's
-        // undo stack, so the tracker and the piano roll share one history.
-
-        /// <summary>
-        /// Changes track parameter columns' events in one undoable step. <paramref name="changes"/> are records of five
-        /// ints: the parameter's index in its track group, the track, 1 to add or 0 to remove, the time, the value.
-        /// False, changing nothing, when a column isn't there.
-        /// </summary>
-        public bool EditTrackerEvents(IPattern pat, int[] changes)
-        {
-            if (pat == null || changes == null || changes.Length % 5 != 0) return false;
-            MPEPattern mpePattern = MPEPatternsDB.GetMPEPattern(pat);
-            var action = MPEEventChangesAction.Plan(pat, mpePattern, changes);
-            if (action == null) return false;
-            DoAction(action);
-            return true;
-        }
-
-        /// <summary>
-        /// ImportClipNotes as one undoable step of this editor (the piano roll in the detail panel): the pattern's MIDI note lanes
-        /// are made again from the notes (int triples), and an undo puts the lanes back as they were. False, changing nothing, when
-        /// the notes don't fit.
-        /// </summary>
-        public bool EditClipNotes(IPattern pat, int[] data)
-        {
-            if (pat == null) return false;
-            var mpePattern = MPEPatternsDB.GetMPEPattern(pat);
-            List<TrackerRow> rows;
-            int tracks;
-            lock (syncLock)
-            {
-                rows = PatternEditorUtils.PlanClipNotes(mpePattern, data, out tracks);
-            }
-            if (rows == null) return false;
-            var machine = pat.Machine;
-            if (machine != null && tracks > machine.TrackCount)
-                machine.TrackCount = tracks;          // outside the lock, as ImportClipNotes does
-            if (machine == null || machine.TrackCount < tracks) return false;
-            DoAction(new MPELaneNotesAction(pat, mpePattern, rows, tracks));
-            return true;
-        }
-
-        /// <summary>The pattern's view shows its lanes as they are now (new lanes came or went).</summary>
-        internal void RefreshPatternView(IPattern pat)
-        {
-            var view = SelectedMachine?.Patterns.FirstOrDefault(p => p.Pattern == pat);
-            if (view != null)
-                view.Pattern = pat;
-        }
-
-        /// <summary>The rows in each beat of a track parameter's column (its own subdivisions), or null when there is no such column.</summary>
-        public int[] GetTrackerBeatRows(IPattern pat, int indexInGroup, int track)
-        {
-            if (pat == null) return null;
-            MPEPattern mpePattern = MPEPatternsDB.GetMPEPattern(pat);
-            var column = MPEEventChangesAction.Find(mpePattern, indexInGroup, track);
-            return column == null ? null : PatternEditorUtils.BeatRowsOf(mpePattern, column).ToArray();
-        }
-
         public bool ImportMidiEvents(IPattern pat, int [] data)
         {
             lock (syncLock)
@@ -898,9 +782,6 @@ namespace WDE.ModernPatternEditor
                 {
                     if (Global.Buzz.Playing && TargetMachine != null)
                     {
-#if WINDOWS
-                        playRecordManager.Play(songTime);
-#endif
                     }
                 }
 

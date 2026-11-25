@@ -24,10 +24,6 @@ errors than the baseline fails (exit 1) and lists the files that gained errors; 
 asks for the baseline to be lowered. --update rewrites baseline.json with the current counts
 (each P1 PR lowers it, engine-split.md §5).
 
-    python3 experiments/engine-census/census.py surface [msbuild -p: args]
-
-builds both builds of BuzzGUI.Interfaces and BuzzGUI.Common (Windows only) and checks that the
-public surface of the portable build is a subset of the Windows build's (engine-split.md §4.3).
 """
 import json, os, re, subprocess, sys
 from collections import defaultdict, Counter
@@ -713,56 +709,6 @@ def check(outdir, idx, update):
     return 0
 
 
-# ---------------------------------------------------------------- surface check (Windows CI)
-
-WIN_TFM = 'net10.0-windows10.0.26100.0'
-API_PROJECTS = [os.path.join(REPO, 'ReBuzzGUI', 'BuzzGUI.Interfaces', 'BuzzGUI.Interfaces.csproj'),
-                os.path.join(REPO, 'ReBuzzGUI', 'BuzzGUI.Common', 'BuzzGUI.Common.csproj')]
-
-
-def surface(outdir, extra):
-    """The portable build's public surface is a subset of the Windows build's (engine-split.md §4.3).
-
-    Builds both target frameworks of each library (Windows only: the Windows build needs the
-    Windows targeting pack) and compares one line per visible type and member.
-    """
-    failed = 0
-    for proj in API_PROJECTS:
-        name = os.path.splitext(os.path.basename(proj))[0]
-        b = run(['dotnet', 'build', proj, '-c', 'Release', '-nologo', '-v:q'] + extra)
-        if b.returncode != 0:
-            print(b.stdout[-6000:], b.stderr[-2000:])
-            gh('error', f'{name}: build failed', title='Surface check')
-            return 1
-        lines = {}
-        for tfm in (WIN_TFM, 'net10.0'):
-            q = run(['dotnet', 'msbuild', proj, '-getProperty:TargetPath', f'-p:TargetFramework={tfm}',
-                     '-p:Configuration=Release', '-nologo'] + extra)
-            dll = q.stdout.strip().splitlines()[-1].strip() if q.stdout.strip() else ''
-            out = os.path.join(outdir, f'surface-{name}-{tfm}.txt')
-            t = run(['dotnet', 'run', '--no-build', '--project', TOOL, '-c', 'Release', '--', 'surface', out, dll])
-            if t.returncode != 0 or not os.path.exists(out):
-                print(q.stdout, q.stderr, t.stdout, t.stderr)
-                gh('error', f'{name} ({tfm}): could not read {dll}', title='Surface check')
-                return 1
-            lines[tfm] = set(open(out, encoding='utf-8').read().splitlines())
-        missing = sorted(lines['net10.0'] - lines[WIN_TFM])
-        extra_win = len(lines[WIN_TFM] - lines['net10.0'])
-        print(f'{name}: portable {len(lines["net10.0"])} lines, Windows {len(lines[WIN_TFM])} '
-              f'({extra_win} Windows-only), {len(missing)} portable lines missing from Windows')
-        for m in missing[:50]:
-            print('  ' + m)
-        if missing:
-            failed += 1
-            gh('error', f'{name}: {len(missing)} public types or members of the portable build differ from the '
-               f'Windows build (first: {missing[0]}). #if WINDOWS may add members, never change them.',
-               title='Surface check')
-        else:
-            gh('notice', f'{name}: the portable build ({len(lines["net10.0"])} lines) is a subset of the '
-               f'Windows build ({extra_win} Windows-only lines)', title='Surface check')
-    return 1 if failed else 0
-
-
 def main():
     argv = sys.argv[1:]
     outdir = os.path.join(HERE, 'out')
@@ -778,8 +724,6 @@ def main():
     idx = index_repo()
     if '--check' in argv:
         sys.exit(check(outdir, idx, '--update' in argv))
-    if argv and argv[0] == 'surface':
-        sys.exit(surface(outdir, argv[1:]))
     if argv and argv[0] == 'closure':
         closure(outdir, idx)
         return

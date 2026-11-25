@@ -26,6 +26,8 @@ The LFO runs at `Rate` in Hz or follows the tempo with `Sync`; `Spread` offsets 
 | Feedback | 50% | Flanger and Phaser; negative is hollower |
 | Mix | 50% | the deepest comb or notches; 100 % is only the wet |
 
+`Amount` (default 100 %) scales mix, depth and feedback: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Chorus — Classic", "Chorus — Wide Stereo", "Chorus — Subtle Doubling", "Ensemble — Strings", "Ensemble — Thick (3 Voices)".
@@ -42,10 +44,6 @@ The LFO runs at `Rate` in Hz or follows the tempo with `Sync`; `Spread` offsets 
 ## Pairs well with
 
 - Neo Poly, Neo Wave or Neo Sampler pads before it; Neo Verb after it; Neo Delay for echoes of the swept sound; Neo EQ to keep the lows out of the wet.
-
-## Successor
-
-Neo Ensemble replaces Jeskola Chorus, Jeskola Flanger, FSM Chorus2 and Pedal Chorus: `machine_replace(machine="Chorus")` carries the settings over in their units.
 
 ## Checklist
 

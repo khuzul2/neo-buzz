@@ -1,0 +1,35 @@
+# Neo Lo-Fi at its defaults and every factory preset, at Amount 100 %, 50 % and 150 %: SHA-256 (first 16 hex) of the float32 render of a drum loop and of a chord (LoFiGoldenTests).
+# machine<TAB>preset<TAB>amount<TAB>drums<TAB>chord. Made on machines/neo-lofi-lf1 at 120d54b3 (LF2, the sound the user approved), before Lo-Fi used FxStage.
+Neo Lo-Fi	(defaults)	100%	2cf2ee1d6047cfa4	fa61026250e177d6
+Neo Lo-Fi	(defaults)	50%	7442f9317c4991df	8beb92efaaab2bf4
+Neo Lo-Fi	(defaults)	150%	604bbb35b09d9de7	44bd97b536181185
+Neo Lo-Fi	Crush — 8-bit	100%	4926c3148941ceee	a72bd565a12f458e
+Neo Lo-Fi	Crush — 8-bit	50%	713342929a1d9c7f	3c28480a9df6c071
+Neo Lo-Fi	Crush — 8-bit	150%	4b60ed9a508bd3ba	b213348b1db6735f
+Neo Lo-Fi	Crush — 12-bit sampler	100%	7d429a07b6b25e9b	410f584ea0d09866
+Neo Lo-Fi	Crush — 12-bit sampler	50%	61716c08e5927e41	f6666933d1ed0e84
+Neo Lo-Fi	Crush — 12-bit sampler	150%	5dd0f7f0d1c3ea06	c72b3bd39477f20e
+Neo Lo-Fi	Crush — Crushed drums	100%	6783493caa98e32c	d42e2ac362ed51ba
+Neo Lo-Fi	Crush — Crushed drums	50%	3cfd9781bfeec4ec	d84f18f2db15d4d9
+Neo Lo-Fi	Crush — Crushed drums	150%	ec868aee2a14cb3b	99fbeb551288d303
+Neo Lo-Fi	Crush — Broken toy	100%	3c00c2994b2e7375	a50d6487dc6109bc
+Neo Lo-Fi	Crush — Broken toy	50%	5ba04e60476f57eb	2c19c6bb750a3936
+Neo Lo-Fi	Crush — Broken toy	150%	8f79f55d387c54b1	dcb75cb49e9ff057
+Neo Lo-Fi	Tape — Cassette	100%	a0d2169c4a349b65	098f31b97e6f3d6f
+Neo Lo-Fi	Tape — Cassette	50%	60475728a4a9f86f	782c17214844e4cc
+Neo Lo-Fi	Tape — Cassette	150%	e0fb9fc1f27b4c02	f718fe5b1cb12189
+Neo Lo-Fi	Tape — Worn tape	100%	8a2e56e275869a64	dc07448a26928743
+Neo Lo-Fi	Tape — Worn tape	50%	bb6e92147606b9e2	57696611f7d9cea8
+Neo Lo-Fi	Tape — Worn tape	150%	1408e407c30acf69	e7543cca91cc1a73
+Neo Lo-Fi	Vinyl — Dusty vinyl	100%	836065519a867bae	fde19e30bc502dc8
+Neo Lo-Fi	Vinyl — Dusty vinyl	50%	49632c5b7f87126f	bf7301a2aa730462
+Neo Lo-Fi	Vinyl — Dusty vinyl	150%	11603f1c28be1002	648f2d8de66f9201
+Neo Lo-Fi	Radio — AM radio	100%	9e5f582c55abba68	62df6ed72cef8dea
+Neo Lo-Fi	Radio — AM radio	50%	78a9257f27ad68b1	d18c12aeef5c84fc
+Neo Lo-Fi	Radio — AM radio	150%	7d5199df310ca5b0	5e043133b8ba71aa
+Neo Lo-Fi	Radio — Telephone	100%	309039c5ee0b11ef	2d0cd5fe43f13aa1
+Neo Lo-Fi	Radio — Telephone	50%	18dc8cb4a035f41a	d9fbd44598e022f7
+Neo Lo-Fi	Radio — Telephone	150%	20e2a6319a90c91b	5c3fe224e06788f3
+Neo Lo-Fi	Warm — Gentle warmth	100%	9b7f3c3b90fdd24d	c8294811006e12cb
+Neo Lo-Fi	Warm — Gentle warmth	50%	532f1ed7b0b6c6ba	ffe74edde301b66a
+Neo Lo-Fi	Warm — Gentle warmth	150%	db3e6d6bed76db56	f4e1e206a83be819

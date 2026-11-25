@@ -6,7 +6,6 @@ using ReBuzz.Common;
 using ReBuzz.Common.Interfaces;
 using ReBuzz.MachineManagement;
 using ReBuzz.ManagedMachine;
-using ReBuzz.NativeMachine;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -24,7 +23,7 @@ using System.Windows.Input;
 
 namespace ReBuzz.Core
 {
-    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget
+    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget, INoteEmitter
     {
         public static long machineHostId = 1;
         public readonly Lock workLock = new();
@@ -40,7 +39,6 @@ namespace ReBuzz.Core
         // value listeners for the last track only. Fork (engine hardening): preallocated bits, no
         // longer a ConcurrentDictionary that allocated on the audio thread for every change.
         internal ParameterChanges ParameterChanges { get; } = new ParameterChanges();
-        internal ConcurrentQueue<int> wavesEventsPending = new ConcurrentQueue<int>();   // fork (HS3): a queue; a ConcurrentBag allocated its thread list on the audio thread's first TryTake
 
         internal MachineDLL MachineDLL { get => machineDLL; set => machineDLL = value; }
 
@@ -768,7 +766,28 @@ namespace ReBuzz.Core
             get => attributes;
             set { attributes = value; PropertyChanged.Raise(this, "Attributes"); }
         }
-        public bool Ready { get; internal set; }
+        bool ready;
+        public bool Ready
+        {
+            get => ready;
+            internal set
+            {
+                ready = value;
+                if (value) (graph?.Buzz as ReBuzzCore)?.NoteWires?.MachineReady();     // fork (note-wires.md): its note ports are known now
+            }
+        }
+
+        /// <summary>Fork (docs/specs/note-wires.md): this machine's note wires as the audio thread reads them (null: none). Swapped whole under the audio lock.</summary>
+        internal volatile ReBuzz.Core.NoteWires.NoteNode NoteNode;
+
+        /// <summary>INoteEmitter: sends the event down this machine's note wires, to arrive in the same block at the same offset (audio thread, from Work; allocates nothing).</summary>
+        public void EmitNote(in NoteMessage e)
+        {
+            var node = NoteNode;
+            if (node == null) return;
+            var outs = node.Out;
+            for (int i = 0; i < outs.Length; i++) outs[i].Add(e);
+        }
 
         /// <summary>
         /// Fork (machine keyboard): the notes the machine plays now, for the keyboards under its windows to
@@ -779,7 +798,6 @@ namespace ReBuzz.Core
 
 
         public long CMachineHost { get; internal set; }
-        public List<CMachineEvent> CMachineEventType { get; internal set; }
 
         public event Action<IPattern> PatternAdded;
         public event Action<IPattern> PatternRemoved;
@@ -832,7 +850,6 @@ namespace ReBuzz.Core
             MachineDLL.Is64Bit = is64Bit;
             MachineDLL.IsOutOfProcess = (IntPtr.Size == 4 && is64Bit) || (IntPtr.Size == 8 && !is64Bit);
 
-            CMachineEventType = new List<CMachineEvent>();
             CMachineHost = machineHostId;
             machineHostId++;
 
@@ -869,6 +886,10 @@ namespace ReBuzz.Core
                     var buzz = graph.Buzz as ReBuzzCore;
                     buzz.MachineManager.CreatePatternCopy(EditorMachine, newp, p);
                 }
+                // Fork (clips.md §8, CU4): the copy has the original's lanes: the clip's data is its columns in the store, whatever its editor copied.
+                // (The editor copies its view; a copy that already has columns, made by a caller, is left as it is.)
+                if (newp.Columns.Count == 0 && p.Columns.Count > 0)
+                    EngineColumns.Copy(p, newp, ((graph.Buzz as ReBuzzCore)?.SongCore?.MachinesList ?? new List<MachineCore>()).Cast<IMachine>().ToList());
                 // Fork (0.4.1): events and UI after releasing AudioLock.
                 PatternAdded?.Invoke(newp);
                 PropertyChanged.Raise(this, "Patterns");
@@ -967,49 +988,13 @@ namespace ReBuzz.Core
             }
 #endif
 
-            if (!DLL.IsManaged)
+            if (DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI)
             {
-                var me = CMachineEventType.FirstOrDefault(e => e.Type == BEventType.DoubleClickMachine);
-                if (me.Event_Handler != IntPtr.Zero)
-                {
-                    // Let native machine handle double click
-                    var buzzCore = (ReBuzzCore)graph.Buzz;
-
-                    bool handled = buzzCore.MachineManager.MachineEvent(this, me, 0);
-                    if (!handled)
-                    {
-                        // Open parameter windows
-                        OpenEditorOrParameterWindow();
-                    }
-                    else
-                    {
-                        // Fork (ux-overhaul.md P6c): the machine showed a window of its own, in its host process; a UI host may embed it.
-                        int pid = buzzCore.MachineManager.NativeHostProcessId(this);
-                        if (pid != 0) UiHostOf(graph)?.NativeGuiShown(this, pid);
-                    }
-                }
-                else
-                {
-                    if (DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI)
-                    {
-                        OpenWindowedGUI();
-                    }
-                    else
-                    {
-                        OpenEditorOrParameterWindow();
-                    }
-                }
+                OpenWindowedGUI();
             }
             else
             {
-                if (DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI)
-                {
-                    OpenWindowedGUI();
-                }
-                else
-                {
-                    OpenEditorOrParameterWindow();
-                }
+                OpenEditorOrParameterWindow();
             }
         }
 

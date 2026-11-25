@@ -1,22 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Fork (docs/specs/engine-split.md §4): one assembly identity, two builds. The Windows build is
-    the machine API as it always was (the WPF-typed members under #if WINDOWS); the portable
-    net10.0 build is a strict subset of it, for the engine off Windows. Windows ships the Windows
-    build. Off Windows only the portable build is made (no Windows targeting pack there).
+    Fork (docs/specs/engine-split.md §4): the portable net10.0 build of the machine API. The Windows
+    (WPF) build was removed in CB1.
   -->
   <PropertyGroup>
-    <TargetFrameworks>net10.0-windows10.0.26100.0;net10.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BaseOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\bin</BaseOutputPath>
 	<IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\obj</IntermediateOutputPath>
     <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
-  <PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
-    <UseWPF>true</UseWPF>
   </PropertyGroup>
   
   <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild" Condition="'$(OS)' == 'Windows_NT'">	

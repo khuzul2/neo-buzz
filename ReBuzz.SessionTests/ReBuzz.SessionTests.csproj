@@ -24,7 +24,7 @@
   <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
 
   <ItemGroup>
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionMidiMap.cs" Link="Engine\SessionMidiMap.cs" />
@@ -39,6 +39,9 @@
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\NoteNames.cs" Link="Engine\NoteNames.cs" />
     <!-- The machine delay compensation's ring and plan (docs/specs/mastering-tools.md §4.1), with the Sample they carry. -->
     <Compile Include="..\ReBuzz\Core\Tracks\TrackModel.cs" Link="Engine\TrackModel.cs" />
+    <!-- Note wires (docs/specs/note-wires.md): the state, the rules and the queue and merge. -->
+    <Compile Include="..\ReBuzz\Core\NoteWires\NoteWirePlan.cs" Link="Engine\NoteWirePlan.cs" />
+    <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\INoteWires.cs" Link="Engine\INoteWires.cs" />
     <Compile Include="..\ReBuzz\Core\LatencyRing.cs;..\ReBuzz\Core\LatencyPlan.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\MachineInterface\Sample.cs" Link="Engine\Sample.cs" />
     <Compile Include="..\ReBuzz\Core\Sync\SyncTime.cs" Link="Engine\SyncTime.cs" />
@@ -79,7 +82,7 @@
     <Compile Include="..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Engine\Dsp\DspMath.cs" />
     <EmbeddedResource Include="..\3rdParty\basic-pitch\nmp.onnx" LogicalName="ReBuzz.BasicPitch.nmp.onnx" Link="Engine\nmp.onnx" />
     <!-- Song Notes' formats (docs/specs/machine-safety.md §3.5): Markdown, the RTF reader, Info's saved state. -->
-    <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs;..\ReBuzz\Core\Notes\RtfToMarkdown.cs;..\ReBuzz\Core\Notes\InfoMachineState.cs" Link="Engine\%(Filename)%(Extension)" />
+    <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs" Link="Engine\%(Filename)%(Extension)" />
     <!-- The seams for hosts without Windows or a UI toolkit (docs/specs/mac-engine.md M0), with the interfaces they implement. -->
     <Compile Include="..\ReBuzz\Platform\*.cs" Link="Platform\%(Filename)%(Extension)" />
     <!-- The app's name (NeoBuzz Live), which the seams' messages and CoreMIDI's names use. -->
@@ -111,7 +114,7 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
-    <Using Include="ReBuzzTests.Automation" />
+    <Using Include="NeoBuzz.TestSupport" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,7 @@
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 using NeoBuzz.Patch;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {

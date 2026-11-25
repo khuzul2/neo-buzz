@@ -22,6 +22,7 @@ namespace NeoBuzz.Comp
         const double AutoMakeupLevel = -12;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
 
         CompMode mode;
@@ -52,9 +53,18 @@ namespace NeoBuzz.Comp
             }
         }
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount"): the gain taken off above the threshold (1 − 1/ratio), the makeup and the character.</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Ratio(P.Ratio),
+            AmountRule.Lin(P.Makeup, 0),
+            AmountRule.Lin(P.Character, 0),
+        };
+
         public CompEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules, maxLatency: (int)Math.Ceiling(MaxLookahead * 192000) + 8);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -72,6 +82,7 @@ namespace NeoBuzz.Comp
         public void SetSampleRate(float sr)
         {
             sampleRate = sr;
+            fx.SetSampleRate(sr);
             int max = (int)Math.Ceiling(MaxLookahead * sr) + 2;
             foreach (var c in ch)
             {
@@ -88,6 +99,7 @@ namespace NeoBuzz.Comp
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var c in ch) c.Reset();
             grMeter = 0;
         }
@@ -184,6 +196,7 @@ namespace NeoBuzz.Comp
         public void Process(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
+            fx.Begin(left, right, n);
             Update(false);
             InMeter.Feed(left, right, n);
             float blockGr = 0;
@@ -290,6 +303,7 @@ namespace NeoBuzz.Comp
             c0.ScLowCut.Flush(); c1.ScLowCut.Flush();
             float fall = PortableMathF.Pow(10f, -20f / 20f * n / sampleRate * 1.5f);
             grMeter = Math.Max(blockGr, grMeter * fall);
+            fx.End(left, right, n, lookahead);
             OutMeter.Feed(left, right, n);
         }
 

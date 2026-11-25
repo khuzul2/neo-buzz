@@ -22,7 +22,7 @@ enum Op : uint32_t
     OpOpen = 1, OpClose, OpActivate, OpDeactivate, OpChannels, OpParamCount, OpParamInfo, OpParamGet, OpParamText, OpParamFromText,
     OpParamSet, OpParamPlain, OpAuxChannels, OpReset, OpStateSave, OpStateGet, OpStatePut, OpStateLoad, OpLatency, OpTail,
     OpGuiSupport, OpGuiAttach, OpGuiDetach, OpGuiSize, OpGuiCanResize, OpGuiSetSize, OpGuiSetScale, OpGuiResizeDone,
-    OpGuiOpenWindow, OpGuiCloseWindow, OpOutCount, OpOutInfo, OpQuit, OpPing, OpCrash, OpFlush
+    OpGuiOpenWindow, OpGuiCloseWindow, OpOutCount, OpOutInfo, OpQuit, OpPing, OpCrash, OpFlush, OpNoteNames
 };
 
 // Mach doorbell ids (macOS)

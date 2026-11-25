@@ -59,14 +59,15 @@ namespace ReBuzz.Agent
             MachineTools.Register(tools, this);
             MachineEditTools.Register(tools, this); // K3b: machine_clone, machine_group, machine_latency, machine_attributes, machine_command
             TrackTools.Register(tools, this);       // MT1 (ux-overhaul.md §11): machine_tracks
+            NoteWireTools.Register(tools, this);    // NW1 (docs/specs/note-wires.md §7): note_wires, note_wire_connect, note_wire_disconnect, note_chain
             MidiMapTools.Register(tools, this);     // MM1 (docs/specs/midi-mapping.md): controller_list, midi_map_*, track_page_*
-            ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
-            ReplaceTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
+            SwapTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
             ParamTools.Register(tools, this);
             ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);
             ArrangementTools.Register(tools, this);   // K3b (agent-knowledge.md §11): arrangement_clip, arrangement_lane, arrangement_automation, arrangement_takes
             ClipEnvelopeTools.Register(tools, this);  // EV1 (daw-modes.md §8.8): clip_envelope
+            ClipTools.Register(tools, this);          // CU4 (clips.md §8): clip_get
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);
             MasteringTools.Register(tools, this);   // mastering-tools.md §6: target_build, eq_fit

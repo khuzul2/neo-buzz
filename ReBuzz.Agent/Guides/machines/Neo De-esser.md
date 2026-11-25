@@ -23,6 +23,8 @@ A de-esser: a band-pass detector on the sibilance band (`Frequency`, `Width` oct
 | Max reduction | 6 dB | the most it takes out; lower it first if it lisps |
 | Action | Split | only the band is reduced; Split linear for no phase shift |
 
+`Amount` (default 100 %) scales the ratio and range: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "Vocal — Gentle De-ess" (Relative, 6.5 kHz, ratio 3, up to 6 dB), "Vocal — Female, Strong" (7.5 kHz, ratio 6, up to 12 dB), "Vocal — Male, Warm Shelf" (5.5 kHz, dynamic high shelf), "Vocal — Transparent (Linear Phase Split)".

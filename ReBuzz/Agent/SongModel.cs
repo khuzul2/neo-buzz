@@ -91,20 +91,11 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>
-        /// The pattern's notes as the agent reads them, in time order: its engine MIDI column's
-        /// note-ons, or its Note track columns for a machine that takes notes in tracks, with the
-        /// machine's pitch offset taken off (§12.2, MachineNotes).
+        /// The pattern's notes as the agent reads them, in time order: SongNotes' notes (the engine MIDI column's note-ons, or the Note
+        /// track lanes for a machine that takes notes in tracks), with the machine's pitch offset taken off (§12.2, MachineNotes).
         /// </summary>
         public static List<NoteEvent> Notes(IPattern p) =>
-            p.Machine is MachineCore m ? MachineNotes.Read(p, MachineNotes.For(m)) : MidiColumnNotes(p);
-
-        /// <summary>The note-ons in the pattern's engine MIDI column as stored (no pitch offset).</summary>
-        public static List<NoteEvent> MidiColumnNotes(IPattern p)
-        {
-            var column = SessionLayout.ColumnFor(p, ColumnKey.Midi, create: false);
-            if (column == null) return new List<NoteEvent>();
-            return NoteList.FromEvents(column.GetEvents(int.MinValue, int.MaxValue).Select(e => (e.Time, e.Value, e.Duration)));
-        }
+            p.Machine is MachineCore m ? MachineNotes.Read(p, MachineNotes.For(m)) : new List<NoteEvent>();
 
         /// <summary>Where the pattern is placed in the arrangement, in ticks.</summary>
         public static List<int> Placements(ReBuzzCore core, IPattern p) =>
@@ -241,7 +232,7 @@ namespace ReBuzz.Agent
         static bool IsSnakeId(string s) => s.Length > 0 && s[0] >= 'a' && s[0] <= 'z' && s.All(ch => (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_');
 
         /// <param name="track">Whether the caller named a track (param_set's track): a global and a track parameter
-        /// with the same name (Pedal M1's Volume) then resolve to the track one.</param>
+        /// with the same name then resolve to the track one.</param>
         public static AgentParam Param(MachineCore m, List<AgentParam> all, string name, bool track = false)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ToolError("param: give a parameter's name (machine_describe lists them).");

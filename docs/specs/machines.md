@@ -22,6 +22,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Comp | effect | Compressor: clean VCA, glue bus, FET and opto, with sidechain filter, lookahead and mix |
 | Neo Verb | effect | Algorithmic reverb: hall, room, chamber and plate, modulated, with freeze and shimmer |
 | Neo Poly | generator | Polyphonic virtual analog: 3 oscillators with sync, FM and ring, 2 filters, mod matrix |
+| Neo Organ | generator | Tonewheel organ (docs/specs/neo-organ.md): 91 shared sine wheels, 9 drawbars at 3 dB a step, single-trigger percussion, key click, scanner vibrato and chorus, tube-style drive and a rotary speaker (horn and drum, Slow / Fast / Stop with inertia); 61 keys cost the same as one |
 | Neo Learn Subtractive | generator | Teaching synth (box name Learn Sub): one Dye Essence patch behind 12 controls (wave morph, sub, 24 dB ladder low-pass, drive, ADSR, unison, output) with an Explain strip |
 | Neo Learn FM | generator | Teaching synth (box name Learn FM): one Dye Essence patch behind 12 controls (exact modulator ratio with whole and half detents, FM depth, depth decay, self-feedback, metallic edge, velocity to FM, ADSR, unison, output) with an Explain strip |
 | Neo Learn Wavetable | generator | Teaching synth (box name Learn WT): one Dye Essence patch behind 12 controls (table, frame position, phase warp, scanning motion rate and depth, sub anchor, ADSR, unison, output; a user table by WAV import) with an Explain strip |
@@ -121,6 +122,8 @@ tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params
 tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 ```
 
+The generators take the gear name and kind from the machine's studio or portable project (`NeoName`, `NeoKind` for its `NeoFolder`). `--all --check` writes nothing and fails if any generated file differs from what the generator makes today; Fork CI runs it for both generators.
+
 - **Linked as source, not a shared DLL.** ReBuzz loads managed machines with `Assembly.LoadFile`, so a shared library DLL would load once per machine folder and version clashes would be silent. Each machine compiles its own copy; types are `internal`.
 - **Parameter table.** `Params.def` declares each parameter once: name, range, default, mapping (linear, exponential, dB, time, frequency, enum…) and unit. The generator writes the pure table (mapping and value text, used by the engine, the tests and the editor) and the machine's `[ParameterDecl]` properties. Continuous parameters use 0–1000 for fine control; discrete ones their own range.
 - **Engine contract.** `Process(float[] left, float[] right, int n)` in ±1.0 floats, sample rate set by the machine from `MasterInfo`. No allocation and no locks on the audio thread; parameter changes are smoothed inside the engine.
@@ -179,7 +182,16 @@ internal override StateMigrations Migrations => Chain;
 
 **Checklist for any change to a machine's layout or saved data:** key stable? (ids never recycled for another meaning) · `Params.def` regenerated · old keys copied into the step · `Migrations` overridden · `state-layouts.txt` line added · migration test for every older version · `Validate()` clean · presets regenerated · null test unchanged · agent knowledge/manifest (`machine.json`) regenerated · this section's table still true.
 
-**Known limits.** A song's **pattern data** (the pattern editor's columns are saved by parameter index), **MIDI bindings**, **automation targets** and the **modulators' targets** (the canvas modulators name a parameter) are not rewritten by the loaders yet; `MapParameterIndex` and `MigrateKeyed` are what the loaders and `.nbl` use to do it. Until a machine's first step exists nothing changes for any of them. **User presets** are saved by parameter name, group and index, so a preset made before a rename or reorder loads by its old names. `machine_describe` reports the current layout and `state_version` (when above 0); `param_set` takes current names and `#index`.
+**Known limits.** A song's **pattern data** (the pattern editor's columns are saved by parameter index), **MIDI bindings**, **automation targets** and the **modulators' targets** (the canvas modulators name a parameter) are not rewritten by the loaders yet; `MapParameterIndex` and `MigrateKeyed` are what the loaders and `.nbl` use to do it. Until a machine's first step exists nothing changes for any of them. **User presets** are saved by parameter name, group and index and, since FX1b, by each global parameter's key (`Id` on the preset's parameter, XML only; the copy-and-paste string keeps its layout): a preset with keys loads by key, whatever the names. A preset saved before keys loads by name; where a machine renamed a parameter, `Params.def` lists the old name under it (`was "Old name"`, generated into `ParamDef.FormerNames` and the machine's `IRenamedParameters`), and the preset's old name stands for that parameter while the preset doesn't name it by its current name (Neo Tune: "Amount" was the correction strength, now `Correction`; FX1's effect strength is called Amount). A reorder or a migration's rename is not followed for presets without keys. `machine_describe` reports the current layout and `state_version` (when above 0); `param_set` takes current names and `#index`.
+
+### 3.3 Note maps (NM1)
+
+A machine that plays sounds on notes says which keys make a sound and what to call them, and the piano roll names its rows and offers **Fold: playable** (`docs/specs/daw-modes.md` §8.9). Two ways, no view code:
+
+- **In code (a machine whose keys depend on its state):** override `BuildNoteMap(int channel)` in the machine (`NeoMachineBase`, in the Neo machine library, so the SDK gives it to every Neo machine) and return the playable keys as `NoteMapEntry` (key, name, group, colour; null for none). Read the machine's own parameters (the host's values: `Raw(index)` in Neo Sampler), never an audio-thread buffer. The base hashes the built map and bumps `NoteMapVersion` when it changes, raising `NoteMapChanged`, so the studio takes a renamed or moved key within a quarter of a second; a machine whose map depends on something the hash can't see (the song's waves) overrides `NoteMapSignature()` to fold it in. Neo Sampler: in Kit mode key Kit base + zone for each zone that holds a wave, named by the wave; in Instrument mode each zone's key range, grouped by the zone's wave. Neo Drums: its voices on the keys `DrumsEngine.VoiceOfKey` plays, named, grouped (Kick, Snare and clap, Hats, Toms, Percussion, Cymbals) and coloured.
+- **In the manifest (a fixed map):** `note_map` in the `.machine.json`: `[{"key": 36, "name": "Kick", "group": "Drums", "color": "#E0457B"}, {"key": "C3", "to": "B3"}]` (a key is a number or a pitch name, `to` makes a range, the rest is optional). For a machine made with `tools/gen-machine-params.py`, write `notekey 36 "Kick" Drums` and `notekey 48 59 Keys` lines in its Params.def. A machine with its own map in code uses that; the manifest is used when the code has none; the profiler's `notes.map` counts as a manifest map.
+
+The map is never saved with the song or a preset. A machine with neither has no map and the views behave as they did. Plug-ins hosted by Neo Plug provide theirs from the plug-in (`plugin-host.md` §12).
 
 ## 4. Shared foundation (M0)
 
@@ -1065,6 +1077,44 @@ As built:
 - **The classic filters, measured** (`FilterCalibration`, ReBuzzTests, Windows; held noise through each, 12 points an octave): Jeskola Filter and Filter 2 are Chamberlin state-variable filters, f from the cutoff scale (Jeskola Filter's sin(π · Cutoff / 256), so its top is fs/6, 7.35 kHz at 44.1 kHz; Filter 2's its own smooth scale from 0.0123 to 1) and damping q = 1 − sin(π · Resonance / 256), within 0.1 dB of that model in every type up to Resonance 116; FSM WahMan its source's biquad (coefficients for 44.1 kHz at any rate), within 0.14 dB; Pedal Filter its source's TPT SVF, within 0.13 dB. Jeskola Filter's Bandwidth changes its band-pass alone, widening it (its skirts up to 4.7 dB at cutoff 64, 22 dB at 16), not a shape Neo Filter's band-pass makes: left out of the pair.
 - **The successor pairs** (mcp-server.md §12.10; Windows, package run 42001593667, and Linux, on Neo Poly's noise): Jeskola Filter and Filter 2 → Neo Filter on tables fitted point by point (their cutoff, Q and level per type), within 0.4 dB of loudness and 0.9 dB in every third octave at their defaults, a resonant low-pass, a high-pass and a resonant band-pass (Filter 2's at Q 41: −0.34 dB, 0.9 dB); FSM WahMan → Neo Filter (SVF LP) with its LFO still within 0.2 dB and 0.8 dB, at its defaults (its LFO free-running, at another point of its cycle) +0.4 dB and 2.6 dB, reported; Pedal Filter → Neo Filter (the same filter, its units carried over) within 0.2 dB, its defaults' 10 kHz band 2.7–2.8 dB (its SVF closes toward Nyquist at the base rate), a resonant high-pass 0.3 dB. Joachims Mars filter 2 is a distortion: no pair.
 - The Linux profile (`docs/machine-health.md`): warn, hot with Output at +24 dB (+5.1 dBFS), as every Neo machine with an output gain; at its defaults (Ladder 24 at 2 kHz) −12.2 dB on the profiler's noise.
+
+### Mix and Amount (FX1, the user's decision of 2026-11-24)
+
+Every Neo effect has **Amount** (0 - 200 %, default 100 %) and **Mix** (0 - 100 %, default 100 %), appended to the end of its parameter list (no state version: §3.2), in the Output (or last) section of its editor, Amount first. One helper, `NeoBuzz.Dsp.FxStage` (`Machines/NeoBuzz.Dsp/FxStage.cs`), does both inside the engine, so Strip, Dye FX and the plug-in export get them with the machine.
+
+- **Amount** moves each named parameter from its neutral value by Amount times its distance (`AmountRule`: `Lin` in the parameter's own scale, `Log` for frequencies and times, `Ratio` for the reduction 1 - 1/R, `Fun` for a rule of its own), within the parameter's range. The engine reads an *effective* `ParamValues` (the raw one with a physical-value override). At 100 % the overrides are cleared and the engine reads the raw values: the render is bit-identical to what it was. At 0 % the effect runs on neutral settings (so its state is warm) and the stage outputs the input delayed by the effect's reported latency, bit for bit; below 5 % the wet weight fades in (a 20 ms glide that lands exactly) so there is no step. 200 % is bounded by each parameter's own range, so the stability limits of the effect (Verb's loop gain, Delay's feedback) hold.
+- **Mix** is wet against dry with the dry delayed by the latency the effect reports, so linear-phase EQ, lookahead and Spectral never comb against themselves (±0.1 dB at 50 % with neutral settings, tested). The ten effects without a Mix (De-esser, Dither, EQ, Exciter, Gate, Imager, Limiter, Low End, Strip, Utility) get the stage's. The twelve that had one keep it (id, name, text): its own dry is already aligned. Neo Multiband's own Mix in minimum phase blends against the bands' sum at unity (its crossovers' allpasses, as before), so a parallel blend never combs and a soloed band still wins over it: its Mix 0 % there is that dry, not the input (Amount 0 % is the input in every mode).
+- In Delta mode (De-esser, Gate) the stage scales the delta by the same weight, so 0 is silence; Listen passes through. Neo Plug FX has Mix only (stage in `PlugCore`, a 20 ms ramp, the dry delayed by the hosted plug-in's latency); its editor is the plug-in's own window, so Mix is on the parameter window.
+- Meters in an editor sit before the stage and show the wet signal.
+- Gates: `FxGoldenTests` (22 effects, defaults and every factory preset, drum loop and chord, SHA-256 against a file made on origin/main before the change), `FxMixAmountTests` (dry at zero, monotonic Amount, finite and bounded at 200 %, parameters appended with defaults, no allocation, no zipper, no comb).
+
+| Effect | Amount scales (from neutral) | Mix | Existing control that is the same? |
+|---|---|---|---|
+| Clipper | Drive, Ceiling (toward 0 dB), the three band drives | its own | no |
+| Comp | the ratio's reduction 1 - 1/R, Makeup, Character | its own | no (Mix is parallel, not strength) |
+| De-esser | ratio reduction, Range | stage | no |
+| Delay | Feedback and its wet Mix toward 0 | its own | no |
+| Dither | dither level (TPDF amplitude) and noise-shaping depth, in the engine | stage | no |
+| Drive | Drive (dB), Bias | its own | no |
+| EQ | every band gain and every graphic slider, toward 0 dB | stage | no |
+| Ensemble | Mix, Depth, Feedback toward 0 | its own | no |
+| Exciter | Drive, Shelf gain, Amount 1 - 4 (band amounts) | stage | Amount 1 - 4 are per band; the new Amount is the whole |
+| Filter | Cutoff toward open (LP types toward 20 kHz, HP toward 20 Hz, others unchanged), Resonance (types 3 and 6, from 0.5 oct), Drive, Env amount, LFO depth | its own | no |
+| Gate | ratio reduction, Range | stage | no |
+| Imager | band Widths toward 100 %, Stereo 1 - 4 toward 0 | stage | no |
+| Limiter | Input gain, Ceiling (toward 0 dB), Upward, Transients, Slow stage | stage | no |
+| Lo-Fi | its own rules (LF2): bits removed from 24, octaves of rate reduction, hiss and crackle in dB, wow, flutter and drift in cents, the tone cut (`LoFiEngine.Update`); the stage owns 0 % and the fade to 5 % | its own (no latency) | no |
+| Low End | Punch, Sustain, Contrast, Balance | stage | no |
+| Multiband | per band ratio reduction, upward ratio, Range, Makeup | its own | no |
+| Spectral | Depth, Lift, Tilt | its own | no |
+| Strip | gate Range, comp ratio and Makeup, Drive, the four EQ gains, Ceiling | stage | no |
+| Tape | Drive, Emphasis, Bump, Loss, Electronics, Wow, Flutter | its own | no |
+| Transient | Attack, Sustain, Impact 1 - 4 | its own | no |
+| Tune | the correction strength (`Correction`, capped at 100 %) and Retune toward 400 ms | its own | **in part: `Correction` is the correction strength.** It was shown as "Amount" before FX1 and keeps its id `Amount` and index; the new parameter is id `FxAmount`, shown as "Amount" |
+| Verb | wet Mix toward 0 and Decay (log, from 0.2 s) | its own | no |
+| Utility | Gain and Pan toward 0, Width toward 100 % | stage | no |
+
+Notes: Clipper's and Limiter's Ceiling goes toward 0 dB, so Amount 0 is not a louder signal than the input. Dither's engine sets the level and depth from Amount directly (no rule). Neo Lo-Fi (LF2) joined after: its Amount keeps LF2's raw range (0 … 1000 for 0 … 200 %, whole per cent) and its own perceptual scaling, which the user approved by ear; the stage gives it the same bit-exact 0 % and fade as the others, and `LoFiGoldenTests` holds its ten presets (and the defaults) at 100, 50 and 150 % bit-identical to LF2's head 120d54b3. Neo Poly is not part of this (its own branch); analysers, scopes, audio in and the generators have none.
 
 ## 6. Phases
 

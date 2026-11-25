@@ -62,3 +62,10 @@ reading correlation_3     ratio | The third band's correlation
 reading correlation_4     ratio | The fourth band's correlation
 reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
 reading latency_samples   samples | Always 0: the imager adds no latency
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales each band's width away from 100 % and the stereoize amounts. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to bring the image back to normal, up to widen or narrow it further.
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)
+    how Blends the processed signal with the dry signal, which is delayed to match the effect's latency.
+    sound Lower values keep more of the original sound, so the effect works as a parallel layer.

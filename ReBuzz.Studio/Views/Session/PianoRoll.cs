@@ -30,6 +30,7 @@ namespace ReBuzz.Studio.Views.Session
 
     internal sealed class PianoRoll : Control
     {
+        /// <summary>The key column's width: a machine with named keys widens it (<see cref="KeyColumn"/>).</summary>
         public const double KeysWidth = 46;
         const double EdgeGrab = 6;
         const double DragDistance = 4;
@@ -70,6 +71,8 @@ namespace ReBuzz.Studio.Views.Session
             Focusable = true;
             FocusAdorner = null;
             ClipToBounds = true;
+            map = NoteMaps.For(Machine);
+            UpdateKeyColumn();
             Reload();
         }
 
@@ -135,7 +138,7 @@ namespace ReBuzz.Studio.Views.Session
 
         // ------------------------------------------------------------------ geometry
 
-        internal double X(int time) => KeysWidth + time / (double)ClipNotes.TimeBase * TickWidth;
+        internal double X(int time) => KeyColumn + time / (double)ClipNotes.TimeBase * TickWidth;
 
         // Fork (daw-modes.md AR2): a fold keeps some pitches only (rows, highest first); without one every pitch has a row.
         int[] rows;
@@ -162,7 +165,7 @@ namespace ReBuzz.Studio.Views.Session
 
         internal double Y(int note) => RowOf(note) * RowHeight;
 
-        internal int TimeAt(double x) => (int)Math.Round(Math.Max(0, x - KeysWidth) / TickWidth * ClipNotes.TimeBase);
+        internal int TimeAt(double x) => (int)Math.Round(Math.Max(0, x - KeyColumn) / TickWidth * ClipNotes.TimeBase);
 
         int NoteAt(double y) => NoteOfRow(Math.Max(0, (int)Math.Floor(y / RowHeight)));
 
@@ -215,9 +218,114 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>New notes and moved ones land on the scale's pitches.</summary>
         public bool SnapToScale { get; set; }
 
+        // ------------------------------------------------------------------ Fork (daw-modes.md §8.9, NM1): the machine's note map
+
+        NoteMap map = NoteMap.None;
+        double keyColumn = KeysWidth;
+        readonly DispatcherTimer mapTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(250) };
+
+        /// <summary>The machine the roll plays: the track's, else its clip's.</summary>
+        internal IMachine Machine => Track?.Machine ?? Source.Pattern?.Machine;
+
+        /// <summary>The machine's keys: which make a sound and their names (<see cref="NoteMap.None"/> when it reports none).</summary>
+        internal NoteMap Map => map;
+
+        /// <summary>The key column's width: <see cref="KeysWidth"/>, or wider when the machine names its keys (the ruler and the lanes under the roll follow it).</summary>
+        public double KeyColumn => keyColumn;
+
+        /// <summary>Raised after the machine's note map changed and the rows were made again (the host updates its Fold choice).</summary>
+        internal event Action MapChanged;
+
+        /// <summary>
+        /// Takes the machine's note map as it is now (it checks the provider's version first): when it changed the key column and the rows
+        /// follow, with no reopening. The roll does this itself a few times a second while it is on screen; tests call it.
+        /// </summary>
+        internal bool SyncMap()
+        {
+            var fresh = NoteMaps.For(Machine);
+            if (ReferenceEquals(fresh, map)) return false;
+            map = fresh;
+            UpdateKeyColumn();
+            RefreshRows();
+            InvalidateMeasure();
+            InvalidateVisual();
+            MapChanged?.Invoke();
+            return true;
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            NoteMaps.Changed += OnNoteMapsChanged;
+            mapTimer.Tick += OnMapTick;
+            mapTimer.Start();
+            SyncMap();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            NoteMaps.Changed -= OnNoteMapsChanged;
+            mapTimer.Stop();
+            mapTimer.Tick -= OnMapTick;
+            base.OnDetachedFromVisualTree(e);
+        }
+
+        void OnNoteMapsChanged(IMachine machine)
+        {
+            if (ReferenceEquals(machine, Machine)) SyncMap();
+        }
+
+        void OnMapTick(object sender, EventArgs e)
+        {
+            // Neo machines' maps follow their parameters and the song's waves, which raise no event: ask a few times a second.
+            NoteMaps.Poll(Machine);
+            SyncMap();
+        }
+
+        // The widest a name column grows, and what a note name next to a name takes.
+        const double MaxKeyColumn = 132, NoteNameWidth = 26;
+
+        void UpdateKeyColumn()
+        {
+            double want = KeysWidth;
+            if (map.HasNames)
+            {
+                double widest = 0;
+                foreach (int k in map.PlayableKeys)
+                    if (map.NameOf(k) is string name) widest = Math.Max(widest, KeyText(name, Brushes.Black).Width);
+                want = Math.Min(MaxKeyColumn, Math.Max(KeysWidth, widest + 10 + NoteNameWidth));
+            }
+            keyColumn = Math.Ceiling(want);
+        }
+
+        FormattedText KeyText(string text, IBrush brush) =>
+            new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, Math.Min(10, RowHeight - 1), brush);
+
+        // A key's tooltip: its name, its note and its group ("Kick · C2 · Drums"), while the pointer is over the key column.
+        string keyTip;
+
+        void UpdateKeyTip(Point p)
+        {
+            string tip = p.X >= KeysLeft && p.X < KeysLeft + KeyColumn && !map.IsEmpty ? KeyTip(NoteAt(p.Y)) : null;
+            if (tip == keyTip) return;
+            keyTip = tip;
+            ToolTip.SetTip(this, tip);
+        }
+
+        /// <summary>What the tooltip over a key says (tests).</summary>
+        internal string KeyTip(int note)
+        {
+            var parts = new List<string>();
+            if (map.NameOf(note) is string name) parts.Add(name);
+            parts.Add(ClipNotes.Name(note));
+            if (map.GroupOf(note) is string group && group != map.NameOf(note)) parts.Add(group);
+            if (!map.IsEmpty && !map.IsPlayable(note)) parts.Add("no sound");
+            return string.Join(" · ", parts);
+        }
+
         void RefreshRows()
         {
-            rows = NoteScale.Rows(fold, notes.Select(n => n.Note), scale);
+            rows = NoteScale.Rows(fold, notes.Select(n => n.Note), scale, map);
             InvalidateMeasure();
         }
 
@@ -520,6 +628,9 @@ namespace ReBuzz.Studio.Views.Session
         static readonly IPen BoxPen = SessionPalette.PairPen("#F0C24B", "#8F6200", 1, DashStyle.Dash);
         static readonly IPen PlayheadPen = SessionPalette.PairPen("#6FD98A", "#008A20", 1.5);
         static readonly IBrush ScaleRow = SessionPalette.Pair("#2A2A3A", "#E4E6F6");
+        // NM1: keys the machine's note map says make no sound are dimmed (their rows too); a key's colour hint is a stripe at its edge.
+        static readonly IBrush UnplayableRow = SessionPalette.Pair("#40000000", "#14000000");
+        static readonly IBrush UnplayableKey = SessionPalette.Pair("#99141417", "#99E8E8EE");
         static readonly IBrush ScaleRoot = SessionPalette.Pair("#35355A", "#D2D6F2");
         static readonly IBrush GhostFill = SessionPalette.Pair("#55E0457B", "#55C2185B");
         static readonly IPen GhostEdge = SessionPalette.PairPen("#80E0457B", "#80C2185B", 1);
@@ -538,7 +649,7 @@ namespace ReBuzz.Studio.Views.Session
             dc.FillRectangle(Back, new Rect(left, top, Math.Max(0, right - left), Math.Max(0, bottom - top)));
             int rowFirst = Math.Clamp((int)Math.Floor(top / RowHeight), 0, RowCount - 1);
             int rowLast = Math.Clamp((int)Math.Floor((bottom - 0.01) / RowHeight), 0, RowCount - 1);
-            double gridLeft = Math.Max(left, KeysWidth);
+            double gridLeft = Math.Max(left, KeyColumn);
 
             // Rows: black-key rows darker, a line under each C; the scale's pitches lighter, its root marked.
             for (int row = rowFirst; row <= rowLast; row++)
@@ -549,6 +660,8 @@ namespace ReBuzz.Studio.Views.Session
                     dc.FillRectangle(BlackKeyRow, new Rect(gridLeft, y, Math.Max(0, right - gridLeft), RowHeight));
                 if (scale != null && scale.Contains(note))
                     dc.FillRectangle(scale.IsRoot(note) ? ScaleRoot : ScaleRow, new Rect(gridLeft, y, Math.Max(0, right - gridLeft), RowHeight));
+                if (!map.IsEmpty && !map.IsPlayable(note))
+                    dc.FillRectangle(UnplayableRow, new Rect(gridLeft, y, Math.Max(0, right - gridLeft), RowHeight));
                 if (note % 12 == 0 || rows != null)
                     dc.DrawLine(RowLine, new Point(gridLeft, y + RowHeight), new Point(right, y + RowHeight));
             }
@@ -560,8 +673,8 @@ namespace ReBuzz.Studio.Views.Session
 
             // Time lines: ticks when they are wide enough, beats, bars; those in view.
             int tickTime = ClipNotes.TimeBase;
-            int firstTick = Math.Max(0, (int)Math.Floor((gridLeft - KeysWidth) / TickWidth));
-            int lastTick = Math.Min(Length / tickTime, (int)Math.Ceiling((right - KeysWidth) / TickWidth));
+            int firstTick = Math.Max(0, (int)Math.Floor((gridLeft - KeyColumn) / TickWidth));
+            int lastTick = Math.Min(Length / tickTime, (int)Math.Ceiling((right - KeyColumn) / TickWidth));
             for (int k = firstTick; k <= lastTick; k++)
             {
                 int t = k * tickTime;
@@ -612,20 +725,57 @@ namespace ReBuzz.Studio.Views.Session
                 }
             }
 
-            // Keys, at the viewer's left edge.
+            // Keys, at the viewer's left edge. A machine that names its keys: the name (and the note beside it when there is room); keys
+            // that make no sound are dimmed, and a colour hint is a stripe at the key's left edge.
             double keysX = KeysLeft;
+            bool mapped = !map.IsEmpty;
             for (int row = rowFirst; row <= rowLast; row++)
             {
                 int note = NoteOfRow(row);
                 double y = row * RowHeight;
                 bool black = IsBlack(note);
-                dc.DrawRectangle(black ? BlackKey : WhiteKey, NoteEdge, new Rect(keysX, y, KeysWidth, RowHeight));
-                if (note % 12 == 0 || note == keyNote || rows != null)
+                var keyRect = new Rect(keysX, y, KeyColumn, RowHeight);
+                dc.DrawRectangle(black ? BlackKey : WhiteKey, NoteEdge, keyRect);
+                var brush = black ? WhiteKey : BlackKey;
+                string name = mapped ? map.NameOf(note) : null;
+                if (mapped && map.ColorOf(note) is uint argb and not 0)
+                    dc.FillRectangle(StripeBrush(argb), new Rect(keysX + 1, y + 1, 3, Math.Max(0, RowHeight - 2)));
+                if (name != null)
                 {
-                    var text = new FormattedText(ClipNotes.Name(note), CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                        Typeface.Default, Math.Min(10, RowHeight - 1), black ? WhiteKey : BlackKey);
+                    double textLeft = keysX + (map.ColorOf(note) != 0 ? 7 : 3);
+                    var label = KeyText(name, brush);
+                    var pitch = KeyText(ClipNotes.Name(note), brush);
+                    bool both = label.Width + NoteNameWidth + 6 <= KeyColumn - (textLeft - keysX);
+                    if (!both && label.Width > KeyColumn - (textLeft - keysX) - 2)
+                    {
+                        label.MaxTextWidth = Math.Max(10, KeyColumn - (textLeft - keysX) - 2);
+                        label.MaxLineCount = 1;
+                        label.Trimming = TextTrimming.CharacterEllipsis;
+                    }
+                    dc.DrawText(label, new Point(textLeft, y + (RowHeight - label.Height) / 2));
+                    if (both)
+                    {
+                        dc.DrawText(pitch, new Point(keysX + KeyColumn - pitch.Width - 3, y + (RowHeight - pitch.Height) / 2));
+                    }
+                }
+                else if (note % 12 == 0 || note == keyNote || rows != null)
+                {
+                    var text = KeyText(ClipNotes.Name(note), brush);
                     dc.DrawText(text, new Point(keysX + 3, y + (RowHeight - text.Height) / 2));
                 }
+                if (mapped && !map.IsPlayable(note)) dc.FillRectangle(UnplayableKey, keyRect);
+            }
+        }
+
+        static readonly Dictionary<uint, IBrush> stripes = new Dictionary<uint, IBrush>();
+
+        static IBrush StripeBrush(uint argb)
+        {
+            lock (stripes)
+            {
+                if (!stripes.TryGetValue(argb, out var b))
+                    stripes[argb] = b = new ImmutableSolidColorBrush(Color.FromUInt32(argb));
+                return b;
             }
         }
 
@@ -658,12 +808,12 @@ namespace ReBuzz.Studio.Views.Session
             var p = e.GetPosition(this);
             down = p;
             downTime = TimeAt(p.X);
-            if (p.X >= KeysLeft + KeysWidth) InsertTime = Math.Min(downTime, Math.Max(0, Length - 1));
+            if (p.X >= KeysLeft + KeyColumn) InsertTime = Math.Min(downTime, Math.Max(0, Length - 1));
             downNote = NoteAt(p.Y);
             var mods = e.KeyModifiers;
             bool additive = Additive(mods);
 
-            if (p.X < KeysLeft + KeysWidth && p.X >= KeysLeft)
+            if (p.X < KeysLeft + KeyColumn && p.X >= KeysLeft)
             {
                 keyNote = downNote;
                 Source.Preview(keyNote, lastVelocity, true);
@@ -733,10 +883,11 @@ namespace ReBuzz.Studio.Views.Session
             base.OnPointerMoved(e);
             var p = e.GetPosition(this);
             var mods = e.KeyModifiers;
-            hoverTime = p.X >= KeysLeft + KeysWidth ? TimeAt(p.X) : -1;
+            hoverTime = p.X >= KeysLeft + KeyColumn ? TimeAt(p.X) : -1;
             if (drag == Drag.None)
             {
-                int hit = p.X >= KeysLeft + KeysWidth ? ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y)) : -1;
+                int hit = p.X >= KeysLeft + KeyColumn ? ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y)) : -1;
+                UpdateKeyTip(p);
                 Cursor = hit >= 0 && p.X >= RectOf(notes[hit]).Right - EdgeGrab ? SizeWE : hit >= 0 ? SizeAll : null;
                 return;
             }

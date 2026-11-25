@@ -84,6 +84,7 @@ namespace NeoBuzz.Multiband
         }
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         LinearSplit linear;
         MinimumSplit minimum;
@@ -131,9 +132,28 @@ namespace NeoBuzz.Multiband
         readonly float[] scope = new float[ScopeLength];
         volatile int scopePos;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules = MakeAmountRules();
+
+        static AmountRule[] MakeAmountRules()
+        {
+            int[] ratio = { P.B1Ratio, P.B2Ratio, P.B3Ratio, P.B4Ratio }, up = { P.B1UpRatio, P.B2UpRatio, P.B3UpRatio, P.B4UpRatio };
+            int[] range = { P.B1Range, P.B2Range, P.B3Range, P.B4Range }, makeup = { P.B1Makeup, P.B2Makeup, P.B3Makeup, P.B4Makeup };
+            var rules = new AmountRule[16];
+            for (int b = 0; b < 4; b++)
+            {
+                rules[b * 4] = AmountRule.Ratio(ratio[b]);
+                rules[b * 4 + 1] = AmountRule.Ratio(up[b]);
+                rules[b * 4 + 2] = AmountRule.Lin(range[b], 0);
+                rules[b * 4 + 3] = AmountRule.Lin(makeup[b], 0);
+            }
+            return rules;
+        }
+
         public MultibandEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -171,6 +191,7 @@ namespace NeoBuzz.Multiband
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             var v = values;
             target = MultibandDesign.Effective(v, sr);
@@ -243,6 +264,7 @@ namespace NeoBuzz.Multiband
 
         public void Reset()
         {
+            fx.Reset();
             linear.Reset();
             minimum.Reset();
             Array.Clear(inL);
@@ -380,6 +402,13 @@ namespace NeoBuzz.Multiband
         /// (null: nothing connected, the external bands hear silence).
         /// </summary>
         public void Process(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, keyLeft, keyRight, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

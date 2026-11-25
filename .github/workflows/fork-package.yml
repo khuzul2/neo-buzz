@@ -1,40 +1,19 @@
-name: Fork package (NeoBuzz Live + all machines)
+name: Fork package (NeoBuzz Live for Windows)
 
-# Builds the whole solution plus ExternalMachines with build.ps1, uploads the zip and runs
-# upstream's test suite (ReBuzzTests). Run it by hand from the Actions tab, or push a tag
-# like fork-v0.1.0 to also attach the zip to a GitHub release.
+# Builds the Windows package with build.ps1 (the studio, its Neo machines, the plug-in host, the Link helper and the Pro warp
+# mode), checks it and uploads the zip. Run it by hand from the Actions tab, or push a tag like fork-v0.1.0 to also attach
+# the zip to a GitHub release.
 #
-# It also renders the null test's references (Neo machines, tools/null-test.py) with NeoBuzzLive.exe;
-# two jobs then render the same cases with rebuzz-headless on Linux and macOS and compare
-# (docs/specs/mac-engine.md M3/M4).
+# It also renders the null test's references (Neo machines, tools/null-test.py) and the clip goldens with rebuzz-headless on
+# Windows; two jobs then render the same cases with rebuzz-headless on Linux and macOS and compare (docs/specs/mac-engine.md M3/M4).
 #
-# Manual inputs for test work: "quick" skips the external machines and the zip,
-# "test_filter" runs a subset of tests (dotnet test --filter syntax), and "profile_only"
-# profiles some machines (tools/machine-profiler.py --only) instead of every one.
-# "diag" (full builds) adds a natives diagnosis step: Infector's 0.4 case rendered 12 times against four instances of
-# upstream's binary (the gate, over all renders), and the work time of Jeskola Delay's and NiNjA dElaY's builds side by side.
+# Manual input for test work: "quick" leaves out the zip.
 
 on:
   workflow_dispatch:
     inputs:
       quick:
-        description: 'Quick: build the solution and run tests only (no external machines, no zip)'
-        type: boolean
-        default: false
-      test_filter:
-        description: 'dotnet test --filter expression (empty = all tests)'
-        type: string
-        default: ''
-      profile_only:
-        description: 'Machine profiler --only patterns, comma-separated (empty = every machine)'
-        type: string
-        default: ''
-      diag:
-        description: 'Natives diagnosis (fix/ci-flakes-4): Infector repeated, work time of Jeskola Delay and NiNjA builds (full builds only)'
-        type: boolean
-        default: false
-      crash_selftest:
-        description: 'RB1: crash a program named ReBuzzEngine64.exe on purpose, to see that the crash dump is written, read and uploaded'
+        description: 'Quick: build and check the package folder only (no zip)'
         type: boolean
         default: false
   push:
@@ -58,27 +37,6 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
-    # bin64\dsplib.dll (upstream binary) needs the x64 VC++ 2010 runtime, which the runner
-    # image lacks: without it every 64-bit native machine host dies at start (0xC0000135).
-    # build.ps1 bundles it into the package from here; the tests need it installed.
-    - name: Install VC++ 2010 runtime
-      shell: pwsh
-      # Chocolatey's feed is sometimes down (503/504): three tries, then Microsoft's own installer.
-      run: |
-        $dll = "$env:WINDIR\System32\msvcr100.dll"
-        for ($i = 1; $i -le 3 -and -not (Test-Path $dll); $i++) {
-          choco install vcredist2010 -y --no-progress *> vcredist.log
-          if (-not (Test-Path $dll)) { Write-Host "choco try $i failed"; Start-Sleep -Seconds 20 }
-        }
-        if (-not (Test-Path $dll)) {
-          Write-Host 'Installing the VC++ 2010 SP1 x64 runtime from download.microsoft.com'
-          Invoke-WebRequest -Uri 'https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x64.exe' -OutFile vcredist_x64.exe
-          Start-Process -FilePath .\vcredist_x64.exe -ArgumentList '/q', '/norestart' -Wait
-        }
-        if (-not (Test-Path $dll)) { if (Test-Path vcredist.log) { Get-Content vcredist.log -Tail 20 }; throw 'msvcr100.dll (x64) not installed' }
-
-    # The C++ projects target v145 (VS 2026). build.ps1 falls back to v143 when the
-    # runner image only has VS 2022.
     - name: Build and package
       id: build
       shell: pwsh
@@ -87,7 +45,7 @@ jobs:
       run: |
         # Hashtable splatting: an array of '-Switch' strings would bind as positional arguments.
         $extra = @{}
-        if ($env:QUICK -eq 'true') { $extra = @{ SkipManagedMachines = $true; SkipNativeMachines = $true; SkipBinaries = $true; NoZip = $true } }
+        if ($env:QUICK -eq 'true') { $extra = @{ NoZip = $true } }
         ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" @extra *>&1 | Tee-Object -FilePath build.log
 
     # Every .NET app in the package runs with methods that have loops compiled fully optimised at once, so the
@@ -96,23 +54,21 @@ jobs:
       if: steps.build.outcome == 'success'
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        $configs = Get-ChildItem (Split-Path $exe.FullName) -Filter *.runtimeconfig.json
+        $app = Get-ChildItem dist -Directory | Where-Object Name -like 'NeoBuzz-Live-*-x64' | Select-Object -First 1
+        $configs = Get-ChildItem (Join-Path $app.FullName 'App') -Filter *.runtimeconfig.json
         foreach ($c in $configs) { Write-Host "$($c.Name): $((Get-Content $c.FullName -Raw) -replace '\s+', ' ')" }
         $bad = $configs | Where-Object { -not ((Get-Content $_.FullName -Raw) -match '"System.Runtime.TieredCompilation.QuickJitForLoops":\s*false') }
         if (-not $configs -or $bad) { throw "quick JIT for loops not off in: $(($bad | ForEach-Object Name) -join ', ')" }
 
     # Copies error lines and the log tail into annotations, readable through the API.
     - name: Annotate build log
-      if: failure() && hashFiles('TestResults/*.trx') == ''
+      if: failure()
       shell: pwsh
       run: ./tools/ci-annotate-log.ps1 build.log
 
-    # The package as people get it is NeoBuzz Live (tools/package-check.py): NeoBuzz-Live-<version>-x64.zip (the
-    # folder alone in a quick run), the studio as NeoBuzzLive.exe at its root and the WPF app as NeoBuzz Live Classic,
-    # Classic\NeoBuzzLiveClassic.exe beside ReBuzz.dll (ux-overhaul.md P6c; build.ps1 -StudioMain), no ReBuzz.exe,
-    # README-FIRST.txt and the licences; and Classic started from the package answers MCP as neobuzz-live.
-    - name: Package check (names)
+    # The package as people get it is NeoBuzz Live (tools/package-check.py): NeoBuzz-Live-<version>-x64.zip (the folder alone in a
+    # quick run), NeoBuzzLive.exe at its root starting App\ReBuzz.Studio.dll, its Gear, README-FIRST.txt and the licences.
+    - name: Package check
       if: steps.build.outcome == 'success'
       timeout-minutes: 15
       shell: pwsh
@@ -134,224 +90,24 @@ jobs:
       with:
         files: dist/*.zip
 
-    # RB1 (docs/specs/machine-safety.md section 6): the native host (ReBuzzEngine64.exe, ReBuzzEngine32.exe for the 32-bit bridge) died with
-    # 0xc0000409 in ucrtbase on a few runs, each time in another machine, and there was no dump. Windows Error Reporting writes a full dump
-    # of it from here on (the tests, the agent evaluation, the profiler and the studio smoke test all start it): "Native host crash dumps"
-    # below prints the faulting stack and module and uploads the files. REBUZZ_ENGINE_KEEP_WER keeps the host from opting out of
-    # Windows Error Reporting (its PL1 change, which ends it at once so the parent's calls do not wait a minute), as it would write no dump.
-    # Never committed: .gitignore has *.dmp.
-    - name: Windows Error Reporting dumps for the native host
-      shell: pwsh
-      run: ./tools/ci-crash-dumps.ps1 register
-
-    # The UI gallery (docs/specs/ui-gallery.md, UiGalleryTests) draws ReBuzz's window at 1440×900: a screen that holds
-    # it, so that menus open where they would for a user (the runner's is smaller; the gallery copes if this fails).
-    - name: Screen for the UI gallery
-      continue-on-error: true
-      shell: pwsh
-      run: |
-        Set-DisplayResolution -Width 1920 -Height 1080 -Force
-        Get-CimInstance Win32_VideoController | ForEach-Object { Write-Host "screen: $($_.CurrentHorizontalResolution)x$($_.CurrentVerticalResolution)" }
-
-    # Upstream's NUnit suite (ReBuzzTests), built by build.ps1 as part of the solution.
-    # It drives the real audio engine, so it catches regressions in the playback code.
-    - name: Run ReBuzz tests
-      timeout-minutes: 30
-      shell: pwsh
-      env:
-        TEST_FILTER: ${{ inputs.test_filter }}
-      run: |
-        $dll = Get-ChildItem build -Recurse -Filter ReBuzzTests.dll |
-            Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $dll) { throw 'ReBuzzTests.dll not found under build\' }
-        $filter = @()
-        if ($env:TEST_FILTER) { $filter = @('--filter', $env:TEST_FILTER) }
-        # UI tests (SessionViewTests) render PNGs here; published below.
-        $env:SESSION_SCREENSHOT_DIR = Join-Path $PWD 'screenshots'
-        # Link tests (SessionSyncTests) run the helper build.ps1 built.
-        $link = Get-ChildItem build -Recurse -Filter ReBuzzLink.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($link) { $env:REBUZZ_LINK_HELPER = $link.FullName }
-        # --blame-hang: a test stuck for 5 minutes (e.g. on a modal dialog) is killed and named.
-        dotnet test $dll.FullName @filter --blame-hang --blame-hang-timeout 5m --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
-
-    # Failed tests grouped by error, with message and top stack frames, as annotations.
-    - name: Summarise tests
-      if: always() && hashFiles('TestResults/*.trx') != ''
-      timeout-minutes: 10
-      shell: pwsh
-      run: ./tools/ci-test-summary.ps1 TestResults/tests.trx
-
-    # The agent server's evaluation (docs/specs/mcp-server.md §10, A6): ReBuzz.AgentEval drives the
-    # built NeoBuzzLive.exe --agent over MCP stdio, as a client does: the scripted checks, then each task's
-    # setup, scripted reference solution and score. Runs in quick and full builds alike (the Neo
-    # machines are part of the solution). Fails on a regression against eval/baseline.json; the
-    # results are in the step summary, as annotations, and in the eval-results artifact.
-    - name: Agent evaluation
+    # rebuzz-headless on Windows renders the references the Linux and macOS jobs compare with, and the clip goldens.
+    # build.ps1 built neostretch.dll into build\NeoStretch, which the build copies beside it; libsndfile reads the waves.
+    - name: Build rebuzz-headless
       if: (success() || failure()) && steps.build.outcome == 'success'
-      timeout-minutes: 15
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        dotnet build ReBuzz.AgentEval -c Release -nologo -v:q
-        if ($LASTEXITCODE -ne 0) { throw 'ReBuzz.AgentEval did not build' }
-        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe $exe.FullName --out eval-out --baseline eval/baseline.json *>&1 | Tee-Object -FilePath eval.log
-        exit $LASTEXITCODE
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -p:ReBuzzCleanBuild=true -nologo -v:q
+        if ($LASTEXITCODE -ne 0) { throw 'rebuzz-headless did not build' }
+        Copy-Item 3rdParty/libsndfile-1.dll ReBuzz.Headless/bin/Release/net10.0/ -Force
 
-    - name: Upload evaluation results
-      if: always() && hashFiles('eval-out/eval-results.json') != ''
-      uses: actions/upload-artifact@v6
-      with:
-        name: eval-results
-        path: |
-          eval-out/*.json
-          eval-out/*.md
-          eval-out/tasks/**/*.md
-          eval-out/tasks/**/*.bmxml
-          eval-out/tasks/**/*.wav
-          eval.log
-        if-no-files-found: warn
-
-    # The machine profiler (docs/specs/mcp-server.md §12.2, U1) through NeoBuzzLive.exe --agent, which hosts the
-    # native machines: every machine in its Gear (quick builds leave out the external ones). Draft manifests,
-    # docs/machine-health.md and the summary go up as the machine-profile-windows artifact, to commit with
-    # `python tools/machine-profiler.py --merge <artifact folder> --repo .`. They are also packed into the
-    # log (--pack; --unpack takes them out of a downloaded job log), for where artifacts can't be fetched.
-    # A machine that crashes or hangs is a finding (the profiler restarts the app and goes on), and the
-    # step never fails the job. U2 (docs/specs/machine-safety.md §3.1) adds the level tests and
-    # per-parameter sweeps: diverging, hot, needs a window, and safe ranges in the drafts. U2 in
-    # depth (docs/specs/mcp-server.md §12.12): the test signal, suggested roles, velocity and envelope,
-    # pitch by harmonic sieve, triggers, and slowdowns after the input goes silent.
-    - name: Machine profile
-      id: profile
-      if: (success() || failure()) && steps.build.outcome == 'success'
-      timeout-minutes: 75
-      continue-on-error: true
-      shell: pwsh
-      env:
-        PROFILE_ONLY: ${{ inputs.profile_only }}
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        $only = @()
-        if ($env:PROFILE_ONLY) { $only = @('--only', $env:PROFILE_ONLY) }
-        python tools/machine-profiler.py $exe.FullName --out machine-profile @only *>&1 | Tee-Object -FilePath machine-profile.log
-        $code = $LASTEXITCODE
-        if (Test-Path machine-profile/machine-profile.json) { python tools/machine-profiler.py --pack machine-profile }
-        exit $code
-
-    # U3 (docs/specs/mcp-server.md §12.9): each curated manifest whose machine this build has (the natives;
-    # the Pedal machines too in a full build) against the machine itself: its ranges, and its own value texts
-    # wherever the manifest keeps them. Fails on a disagreement.
-    - name: Curated manifests against the machines
-      if: (success() || failure()) && steps.build.outcome == 'success'
-      timeout-minutes: 15
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        python tools/curated-check.py $exe.FullName curated-check
-        exit $LASTEXITCODE
-
-    # U4 (docs/specs/mcp-server.md §12.11): the curated natives' factory presets on the machines: each loads through
-    # preset_load, sounds, at a consistent level, peaks below -1 dBFS, no NaN. Fails on a preset that doesn't.
-    - name: Factory presets on the machines
-      if: (success() || failure()) && steps.build.outcome == 'success'
-      timeout-minutes: 20
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        python tools/preset-check.py $exe.FullName preset-check
-        exit $LASTEXITCODE
-
-    # U7 (docs/specs/mcp-server.md §12.14): the natives with sources, rebuilt by build.ps1 (step 4b, x86 and x64), against
-    # the binaries upstream ships (RunTime/Gear): every build of each machine plays the same cases side by side in one
-    # render, each probed (tools/native-compare.py). Fails when a machine the package ships rebuilt doesn't render as
-    # upstream's does (bit for bit, or within -100 dBFS), or a pitched generator doesn't play the written pitch through
-    # notes_write. A machine with a source fix, whose upstream instances start as their heap happens to be, is held instead
-    # to the same bits in every instance of its own, x64 and x86, and to upstream's binary on a zeroed heap (the start the fix
-    # gives; build-natives.ps1 -ZeroHeap) in every case. Full builds only (quick ones build no natives).
-    - name: Natives, rebuilt against shipped
-      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
-      timeout-minutes: 40
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        ./tools/build-natives.ps1 -OutDir build/ExternalMachines/natives-zeroed -ZeroHeap
-        if ($LASTEXITCODE -ne 0) { throw "upstream's binaries on a zeroed heap weren't made" }
-        python tools/native-compare.py $exe.FullName native-compare --gate --pitch --json native-compare/native-compare.json `
-          --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear `
-          --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear --save-renders native-references
-        exit $LASTEXITCODE
-
-    # R1 (docs/specs/cross-platform.md): this build's render of every case of the natives it ships rebuilt, which the Linux and
-    # macOS jobs below compare their own rebuilds with (tools/native-cross.py --ref).
-    - name: Upload the natives' Windows references
-      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
-      uses: actions/upload-artifact@v6
-      with:
-        name: native-references
-        path: native-references
-        if-no-files-found: ignore
-
-    - name: Natives, diagnosis (fix/ci-flakes-4)
-      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true && inputs.diag == true
-      timeout-minutes: 40
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        ./tools/build-natives.ps1 -OutDir build/ExternalMachines/natives-o2 -Flags '/O2' -Platforms x64 -Only 'Jeskola Delay','Jeskola NiNjA dElaY'
-        python tools/native-cpu.py $exe.FullName native-cpu --only 'Jeskola Delay,Jeskola NiNjA dElaY' --reps 5 --variant O2=build/ExternalMachines/natives-o2/x64/Gear
-        python tools/native-compare.py $exe.FullName native-compare-diag --only 'Jeskola Delay,Jeskola NiNjA dElaY' --variant O2=build/ExternalMachines/natives-o2/x64/Gear
-        python tools/native-compare.py $exe.FullName native-compare-infector --only 'FSM Infector' --repeat 12 --gate `
-          --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear
-        exit $LASTEXITCODE
-
-    # §12.14: songs saved with upstream's binaries of the natives the package ships rebuilt (three songs built with them here,
-    # and the classic Buzz songs in ExternalMachines/source that use them) open with the rebuilt ones, Jeskola's x64 builds
-    # in place of the 32-bit originals among them: the same parameters on every track, the same bits (or within -100 dBFS)
-    # from every machine, the same file saved again (tools/native-songs.py). The x64 rebuilds of the natives the package keeps
-    # upstream's 32-bit binaries of are measured the same way and reported. It also checks that the machine profile above
-    # profiled each one from the package's file. Full builds only.
-    - name: Natives, songs saved with upstream's binaries
-      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
-      timeout-minutes: 20
-      shell: pwsh
-      run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        $profile = @()
-        if (Test-Path machine-profile/machine-profile.json) { $profile = @('--profile', 'machine-profile/machine-profile.json') }
-        python tools/native-songs.py $exe.FullName native-songs --candidate build/ExternalMachines/natives/x64/Gear --json native-songs.json @profile
-        exit $LASTEXITCODE
-
-    - name: Upload machine profile
-      if: always() && hashFiles('machine-profile/machine-profile.json') != ''
-      uses: actions/upload-artifact@v6
-      with:
-        name: machine-profile-windows
-        path: |
-          machine-profile/manifests/**
-          machine-profile/*.json
-          machine-profile/*.md
-          machine-profile/work/*.stderr.txt
-          machine-profile.log
-        if-no-files-found: warn
-
-    # The null test's references (docs/specs/mac-engine.md decision 6, M3/M4): every Neo machine, in
-    # fixed cases, rendered by the built NeoBuzzLive.exe --agent, one fresh process per case. The Linux and
-    # macOS jobs below render the same cases with rebuzz-headless and compare, sample by sample.
+    # The null test's references (docs/specs/mac-engine.md decision 6, M3/M4): every Neo machine, in fixed cases, rendered by
+    # rebuzz-headless --agent, one fresh process per case. The Linux and macOS jobs below render the same cases and compare, sample by sample.
     - name: Null test references
       if: (success() || failure()) && steps.build.outcome == 'success'
       timeout-minutes: 25
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        python tools/null-test.py render $exe.FullName null-ref
+        python tools/null-test.py render ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.exe null-ref
         exit $LASTEXITCODE
 
     - name: Upload null test references
@@ -362,19 +118,16 @@ jobs:
         path: null-ref/*.wav
         if-no-files-found: error
 
-    # The clip goldens (docs/specs/clips.md §10.1, CU1) with the real machines: the repo's songs and one generated song a feature of a
-    # clip, rendered by NeoBuzzLive.exe twice and compared with the hashes of windows-x64 in eval/clip-goldens.json. A difference fails the
-    # step and names the song. Open times of the largest songs are reported.
+    # The clip goldens (docs/specs/clips.md §10.1, CU1) with the real machines: the repo's template songs and one generated song,
+    # rendered twice and compared with the hashes of eval/clip-goldens.json. Open times are reported.
     - name: Clip goldens
       if: (success() || failure()) && steps.build.outcome == 'success'
       timeout-minutes: 40
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
-        python tools/clip-null.py --audio clip-audio check $exe.FullName clip-work --twice
+        python tools/clip-null.py check ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.exe clip-work --twice
         $code = $LASTEXITCODE
-        python tools/clip-null.py opentime $exe.FullName clip-open
+        python tools/clip-null.py opentime ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.exe clip-open
         exit $code
 
     - name: Upload the clip goldens observed
@@ -387,170 +140,23 @@ jobs:
           clip-open/open-times.json
         if-no-files-found: ignore
 
-    # CU3: the renders themselves, for tools/clip-change-report.py (clip-change-report.yml). Never committed.
-    - name: Upload the clip renders (audio)
-      if: always() && hashFiles('clip-audio/*.wav') != ''
-      uses: actions/upload-artifact@v6
-      with:
-        name: clip-audio-windows
-        path: clip-audio/*.wav
-        retention-days: 30
-        compression-level: 6
-        if-no-files-found: ignore
-
-    # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts
-    # branch: viewable in the repo (and fetchable with git) without downloading artifacts. Among
-    # them ReBuzz.exe's half of the UI gallery (UiGalleryTests: win-*.png, docs/specs/ui-gallery.md).
-    - name: Publish screenshots
-      if: always() && hashFiles('screenshots/*.png') != ''
-      continue-on-error: true
-      shell: pwsh
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        $dir = Join-Path $env:RUNNER_TEMP 'ci-artifacts'
-        New-Item -ItemType Directory -Force $dir | Out-Null
-        Copy-Item screenshots/*.png $dir
-        # The UI gallery's index (docs/specs/ui-gallery.md: index-windows.md), beside its pictures.
-        Copy-Item screenshots/*.md $dir -ErrorAction SilentlyContinue
-        Set-Content (Join-Path $dir 'README.md') "Screenshots from run $env:GITHUB_RUN_ID of $env:GITHUB_REF_NAME at $env:GITHUB_SHA."
-        Push-Location $dir
-        git init -q -b ci-artifacts
-        git add -A
-        git -c user.name='github-actions' -c user.email='github-actions@users.noreply.github.com' commit -q -m "Screenshots: run $env:GITHUB_RUN_ID ($env:GITHUB_REF_NAME $env:GITHUB_SHA)"
-        git push -q -f "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" ci-artifacts
-        Pop-Location
-        Write-Host "::notice title=Screenshots::$((Get-ChildItem screenshots/*.png | ForEach-Object Name) -join ', ') pushed to ci-artifacts"
-
-    # Why native engine hosts (ReBuzzEngine32/64.exe) die during tests: crash events from
-    # the Windows event log, and a standalone start of the host against a named mapping.
-    - name: Engine host diagnostics
-      if: failure() && hashFiles('TestResults/*.trx') != ''
-      continue-on-error: true
-      shell: pwsh
-      run: |
-        $lines = @()
-        $events = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; ProviderName = 'Application Error' } -MaxEvents 30 -ErrorAction SilentlyContinue |
-            Where-Object { $_.Message -match 'ReBuzzEngine' } | Select-Object -First 3
-        foreach ($e in $events) { $lines += ($e.Message -split "`r?`n" | Select-Object -First 12) -join ' | ' }
-        if (-not $events) { $lines += 'No Application Error events for ReBuzzEngine.' }
-
-        $loc = Get-ChildItem build -Recurse -Filter ReBuzzLocation.txt | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        $dir = if ($loc) { (Get-Content $loc.FullName -First 1).Trim() } else { '' }
-        $lines += "ReBuzzLocation: $dir"
-        foreach ($b in 'bin32', 'bin64') {
-            $lines += "${b}: " + ((Get-ChildItem (Join-Path $dir $b) -ErrorAction SilentlyContinue | ForEach-Object Name) -join ', ')
-        }
-
-        foreach ($exe in @((Join-Path $dir 'bin64\ReBuzzEngine64.exe'), (Join-Path $dir 'bin32\ReBuzzEngine32.exe'))) {
-            if (-not (Test-Path $exe)) { $lines += "missing: $exe"; continue }
-            $name = 'neo-buzz-probe-' + [guid]::NewGuid().ToString('N')
-            $map = [System.IO.MemoryMappedFiles.MemoryMappedFile]::CreateNew($name, 64MB)
-            $p = Start-Process $exe -ArgumentList $name -PassThru
-            if ($p.WaitForExit(8000)) { $lines += ('{0}: exited with 0x{1:X8}' -f (Split-Path $exe -Leaf), $p.ExitCode) }
-            else { $lines += ('{0}: still running after 8 s' -f (Split-Path $exe -Leaf)); $p.Kill() }
-            $map.Dispose()
-        }
-
-        # Where the VC++ 2010 runtime that dsplib.dll (x64) imports is found, and whether a
-        # copy of bin64 runs from a temp dir with a minimal PATH (as in the tests' root dir).
-        $lines += 'where msvcr100.dll: ' + ((& where.exe msvcr100.dll 2>$null) -join ', ')
-        $lines += 'System32\msvcr100.dll: ' + (Test-Path "$env:WINDIR\System32\msvcr100.dll") + '; SysWOW64\msvcr100.dll: ' + (Test-Path "$env:WINDIR\SysWOW64\msvcr100.dll")
-        $copy = Join-Path $env:RUNNER_TEMP 'engine-copy'
-        New-Item -ItemType Directory -Force $copy | Out-Null
-        Get-ChildItem (Join-Path $dir 'bin64') -File | Copy-Item -Destination $copy
-        $name = 'neo-buzz-probe-' + [guid]::NewGuid().ToString('N')
-        $map = [System.IO.MemoryMappedFiles.MemoryMappedFile]::CreateNew($name, 64MB)
-        $savedPath = $env:PATH
-        $env:PATH = "$env:WINDIR\system32;$env:WINDIR"
-        $p = Start-Process (Join-Path $copy 'ReBuzzEngine64.exe') -ArgumentList $name -WorkingDirectory $copy -PassThru
-        $env:PATH = $savedPath
-        if ($p.WaitForExit(8000)) { $lines += ('copy of bin64, minimal PATH: exited with 0x{0:X8}' -f $p.ExitCode) } else { $lines += 'copy of bin64, minimal PATH: still running after 8 s'; $p.Kill() }
-        $map.Dispose()
-
-        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-        $dumpbin = & $vswhere -latest -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
-        if ($dumpbin) {
-            foreach ($exe in @((Join-Path $dir 'bin64\ReBuzzEngine64.exe'), (Join-Path $dir 'bin32\ReBuzzEngine32.exe'))) {
-                $deps = & $dumpbin /dependents $exe | Select-String '^\s+\S+\.dll\s*$' | ForEach-Object { $_.Line.Trim() }
-                $lines += (Split-Path $exe -Leaf) + ' imports: ' + ($deps -join ', ')
-            }
-        }
-        $i = 0
-        foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
-
-    # NeoBuzz Live (the studio, NeoBuzzLive.exe at the package root; docs/specs/ux-overhaul.md P6), last so that it never hides the tests above.
-    # the package, started with a song of native Buzz machines (FSM Infector, x64, in its host; Jeskola Bass 3 and Reverb, x86,
-    # through the 32-bit bridge), its MCP server, a render on the null device, and a clean quit (tools/studio-windows-smoke.py).
+    # NeoBuzz Live as the package has it (NeoBuzzLive.exe at its root; docs/specs/ux-overhaul.md P6): devices, its MCP server,
+    # Neo Poly rendering, a saved song opened again, the transport and a clean quit (tools/studio-windows-smoke.py).
     - name: Studio smoke test (the package's NeoBuzzLive.exe)
       if: always() && steps.build.outcome == 'success'
       timeout-minutes: 30
       shell: pwsh
       run: |
         $pkg = (Get-ChildItem dist -Directory | Where-Object Name -like 'NeoBuzz-Live-*-x64' | Select-Object -First 1).FullName
-        python tools/studio-windows-smoke.py "$pkg\NeoBuzzLive.exe" "$env:RUNNER_TEMP\studio-package-smoke" --song "ExternalMachines/source/buzztrax-buzzmachines/FSM/Infector/FSM_Infector_Demo.bmx" --native-gear "FSM Infector,Jeskola Bass 3,Jeskola Reverb"
+        python tools/studio-windows-smoke.py "$pkg\NeoBuzzLive.exe" "$env:RUNNER_TEMP\studio-package-smoke"
         exit $LASTEXITCODE
-
-    # RB1: a dump of the native host, if one was written: the faulting module, the exception and the stack at the fault in the job log (cdb, from the
-    # Windows SDK's debugging tools if the runner has them), the list of loaded modules (which machine DLL the host had), and the files as an artifact.
-    - name: Native host crash dumps
-      id: dumps
-      if: always()
-      continue-on-error: true
-      shell: pwsh
-      run: ./tools/ci-crash-dumps.ps1 analyze
-
-    - name: Upload native host crash dumps
-      if: always() && steps.dumps.outputs.found == 'true'
-      continue-on-error: true
-      uses: actions/upload-artifact@v6
-      with:
-        name: native-host-crash-dumps
-        path: |
-          ${{ env.REBUZZ_CRASHDUMPS }}/*.dmp
-          ${{ env.REBUZZ_CRASHDUMPS }}/*.txt
-        retention-days: 14
-        if-no-files-found: warn
-
-  # RB1: the dump pipeline end to end with no real crash to wait for (dispatch input crash_selftest): a program named ReBuzzEngine64.exe
-  # that fails fast, then the same steps as the end of the package job (tools/ci-crash-dumps.ps1) on its dump.
-  crash-dump-selftest:
-    if: inputs.crash_selftest == true
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-    - name: Windows Error Reporting dumps for the native host
-      shell: pwsh
-      run: ./tools/ci-crash-dumps.ps1 register
-    - name: A program named ReBuzzEngine64.exe that fails fast
-      shell: pwsh
-      run: ./tools/ci-crash-dumps.ps1 selftest
-    - name: Native host crash dumps
-      id: dumps
-      if: always()
-      shell: pwsh
-      run: ./tools/ci-crash-dumps.ps1 analyze
-    - name: Upload native host crash dumps
-      if: always() && steps.dumps.outputs.found == 'true'
-      uses: actions/upload-artifact@v6
-      with:
-        name: native-host-crash-dumps-selftest
-        path: |
-          ${{ env.REBUZZ_CRASHDUMPS }}/*.dmp
-          ${{ env.REBUZZ_CRASHDUMPS }}/*.txt
-        retention-days: 3
-        if-no-files-found: warn
 
   # NeoBuzz Live (the studio) on Windows (docs/specs/ux-overhaul.md P6): the studio (ReBuzz.Studio, Avalonia) on a Windows
   # runner. Its headless tests there, its headless UI gallery drawn on Windows (win-NNN-*.png, pushed to the branch
   # ci-artifacts-studio-windows), then it is published for win-x64 with PortAudio built from source with CMake
   # (tools/build-portaudio.ps1: MME, DirectSound, WASAPI and WDM-KS, no ASIO) and the published NeoBuzzLive.exe is
   # smoke-tested (tools/studio-windows-smoke.py): devices listed, started, its MCP server answers, a song plays on the null
-  # device and renders, the window closes cleanly. The package job above puts the same folder at the zip's root (the WPF
-  # app moves to Classic\) and smoke-tests that too, with a song of native Buzz machines.
+  # device and renders, the window closes cleanly. The package job above puts the same folder in the zip and smoke-tests that too.
   studio-windows:
     runs-on: windows-latest
     timeout-minutes: 120
@@ -652,14 +258,14 @@ jobs:
         path: dist/*.zip
 
   # The null test (docs/specs/mac-engine.md decision 6, M3/M4): rebuzz-headless renders the same cases
-  # as the package job's NeoBuzzLive.exe, and each must be bit-identical to the Windows reference, every
+  # as the package job's rebuzz-headless on Windows, and each must be bit-identical to the Windows reference, every
   # sample. A case that differs reports its first differing sample and its largest difference (dBFS).
   # The per-case results are a notice annotation and in the step summary.
   null-test-linux:
     needs: package
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v5
 
@@ -708,7 +314,7 @@ jobs:
     needs: package
     if: ${{ !cancelled() }}
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v5
 
@@ -746,98 +352,6 @@ jobs:
       with:
         name: null-test-macos
         path: ${{ runner.temp }}/null-test/renders/*.wav
-        if-no-files-found: ignore
-
-  # R1 (docs/specs/cross-platform.md): the classic machines rebuilt natively on Linux x64 (tools/build-natives-posix.py), run by the
-  # portable host in rebuzz-headless: each loads and renders every case of tools/native-compare.py, which is held to the
-  # package job's render of the same case (bit for bit or within -100 dBFS; else level within 0.5 dB and third-octave bands
-  # within 1 dB), and the classic demo songs play. Full builds only (quick ones build no natives, hence no references).
-  natives-linux:
-    needs: package
-    if: ${{ !cancelled() && inputs.quick != true }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-    - uses: actions/checkout@v5
-
-    - uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-
-    - name: Classic machines and native host (C++)
-      run: |
-        python3 tools/build-natives-posix.py --out build/natives
-        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
-        cmake --build build/native-host -j 3
-
-    - name: Build rebuzz-headless
-      run: |
-        git submodule update --init --depth 1 3rdParty/serilog/serilog
-        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
-
-    - name: Download the Windows references
-      uses: actions/download-artifact@v7
-      with:
-        name: native-references
-        path: native-ref
-
-    - name: Natives, Linux x64 vs Windows
-      run: |
-        bash tools/ci-pip.sh numpy
-        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
-
-    - name: Upload the results
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: natives-linux
-        path: ${{ runner.temp }}/natives.json
-        if-no-files-found: ignore
-
-  # R1 (docs/specs/cross-platform.md): the classic machines rebuilt natively on macOS arm64 (tools/build-natives-posix.py), run by the
-  # portable host in rebuzz-headless: each loads and renders every case of tools/native-compare.py, which is held to the
-  # package job's render of the same case (bit for bit or within -100 dBFS; else level within 0.5 dB and third-octave bands
-  # within 1 dB), and the classic demo songs play. Full builds only (quick ones build no natives, hence no references).
-  natives-macos:
-    needs: package
-    if: ${{ !cancelled() && inputs.quick != true }}
-    runs-on: macos-15
-    timeout-minutes: 40
-    steps:
-    - uses: actions/checkout@v5
-
-    - uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-
-    - name: Classic machines and native host (C++)
-      run: |
-        python3 tools/build-natives-posix.py --out build/natives
-        cmake -S ReBuzzEngine/portable -B build/native-host >/dev/null
-        cmake --build build/native-host -j 3
-
-    - name: Build rebuzz-headless
-      run: |
-        git submodule update --init --depth 1 3rdParty/serilog/serilog
-        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
-
-    - name: Download the Windows references
-      uses: actions/download-artifact@v7
-      with:
-        name: native-references
-        path: native-ref
-
-    - name: Natives, macOS arm64 vs Windows
-      run: |
-        bash tools/ci-pip.sh numpy
-        python3 tools/native-cross.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/natives" --ref native-ref --json "$RUNNER_TEMP/natives.json"
-
-    - name: Upload the results
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: natives-macos
-        path: ${{ runner.temp }}/natives.json
         if-no-files-found: ignore
 
   # Plug-in host (docs/specs/plugin-host.md, H1): neoplug built with CMake, Surge XT (CLAP and VST3), the SDK's AGain and Note

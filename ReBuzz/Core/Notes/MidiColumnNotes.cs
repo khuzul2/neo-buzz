@@ -33,7 +33,6 @@ namespace ReBuzz.Core.Notes
         public override string WhyNotEditable =>
             !IsLive ? "The pattern was deleted."
             : buzz.SessionLayout?.IsRecordingClip(pattern) == true ? "Recording: edits wait until it stops."
-            : !ClipEditPolicy.CanEdit(pattern.Machine, out var oldMachine) ? oldMachine          // clips.md §5.7: an old machine's clips are view only
             : null;
 
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
@@ -71,9 +70,12 @@ namespace ReBuzz.Core.Notes
         readonly string machine;
         readonly string name;
         readonly Change[] changes;
+        readonly bool automation;
 
-        public ColumnEventsAction(ReBuzzCore buzz, IPattern pattern, IReadOnlyList<Change> changes)
+        /// <param name="automation">An arrangement or clip envelope: new events go to the marked lane, not the tracker's.</param>
+        public ColumnEventsAction(ReBuzzCore buzz, IPattern pattern, IReadOnlyList<Change> changes, bool automation = false)
         {
+            this.automation = automation;
             this.buzz = buzz;
             machine = pattern.Machine.Name;
             name = pattern.Name;
@@ -94,10 +96,7 @@ namespace ReBuzz.Core.Notes
         {
             var p = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(x => x.Name == name);
             if (p == null) return;
-            var column = SessionLayout.ColumnFor(p, key, create: put.Length > 0);
-            if (column == null) return;
-            if (take.Length > 0) column.SetEvents(take, false);
-            if (put.Length > 0) column.SetEvents(put, true);
+            StoreLanes.Change(p, key, take, put, automation);
         }
     }
 }

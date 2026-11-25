@@ -6,12 +6,10 @@
 #    --agent-port and --agent-token (nothing saved), answers as "studio" (the runner has no sound card: --no-audio,
 #    the null device: the song plays on the engine's clock, and renders offline);
 #  - Neo Poly plays and renders audibly, and a saved song opens again and renders the same;
-#  - with --song, a song of native Buzz machines (--native-gear: gear that must load, x64 in its host, x86 through the 32-bit
-#    bridge) opens and renders, its other machines audible, and the native ones are not "missing";
 #  - the transport plays and stops;
 #  - the app quits when its window closes (WM_CLOSE: what the user's close button sends), with exit code 0.
 #
-#   python tools/studio-windows-smoke.py <NeoBuzzLive.exe> [work folder] [--song <bmx>] [--native-gear "FSM Infector,Jeskola Bass 3"]
+#   python tools/studio-windows-smoke.py <NeoBuzzLive.exe> [work folder]
 
 import ctypes
 import json
@@ -38,8 +36,6 @@ def option(name):
     return value
 
 
-song_path = option("--song")
-native_gear = [g for g in (option("--native-gear") or "").split(",") if g]
 exe = os.path.abspath(args.pop(0))
 work = os.path.abspath(args[0] if args else tempfile.mkdtemp(prefix="studio-smoke-"))
 os.makedirs(work, exist_ok=True)
@@ -134,7 +130,7 @@ def call(tool, **arguments):
     return (not res.get("isError", True)) and "error" not in r, text, (res.get("structuredContent") or {})
 
 
-init, until = None, time.time() + 600       # the first start scans every machine in Gear (native ones in their hosts)
+init, until = None, time.time() + 600       # the first start scans every machine in Gear
 while init is None:
     if studio.poll() is not None:
         check(False, f"the studio exited ({studio.returncode}) before agents could connect")
@@ -156,8 +152,6 @@ check(ok and status.get("mode") == "studio", f"studio mode ({status.get('mode')}
 ok, _, gear = call("gear_list", limit=1000, include_unhealthy=True)
 names = {g.get("name"): g for g in gear.get("gear", [])}
 check("Neo Poly" in names and "Neo Verb" in names, f"the Neo machines are installed ({len(names)} gear in all)")
-natives = {n: g for n, g in names.items() if g.get("author") and not n.startswith("Neo ")}
-print(f"     {len(natives)} other machines listed here")
 
 # --- the null device: Neo Poly plays a song and renders
 check(call("song_set", tempo_bpm=120, song_end_beats=8)[0], "song_set")
@@ -173,43 +167,15 @@ check(ok, "transport play")
 time.sleep(1)
 check(call("transport", action="stop")[0], "transport stop")
 
-mine = os.path.join(work, "smoke.bmxml")
+mine = os.path.join(work, "smoke.nbl")
 check(call("song_save", path=mine, overwrite=True)[0], "song_save")
 check(call("song_open", path=mine, discard_unsaved=True)[0], "song_open (the saved song)")
 ok, _, r2 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1})
 loud2 = (r2.get("measure") or {}).get("loudness", {}).get("integrated_lufs")
 check(ok and loud2 == loud, f"the reopened song renders the same ({loud2} LUFS)")
 
-# --- native Buzz machines: x64 in its host, x86 through the 32-bit bridge, and a song with them
-for g in native_gear:
-    row = names.get(g)
-    check(row is not None and row.get("health") not in ("missing", "crashed"), f"native machine {g!r} is installed and not missing ({(row or {}).get('health', 'ok')})")
-if song_path:
-    check(call("song_open", path=os.path.abspath(song_path), discard_unsaved=True)[0], f"song_open a song of native machines ({os.path.basename(song_path)})")
-    ok, _, listed = call("machine_list")
-    gears = [m.get("gear") for m in listed.get("machines", [])]
-    print(f"     its machines: {gears}")
-    ok, _, r3 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1})
-    loud3 = (r3.get("measure") or {}).get("loudness", {}).get("integrated_lufs")
-    check(ok and isinstance(loud3, (int, float)) and loud3 > -70, f"it renders, and is audible ({loud3} LUFS)")
-    ok, _, again = call("gear_list", limit=1000, include_unhealthy=True)
-    health = {g.get("name"): g.get("health") for g in again.get("gear", [])}
-    states = ", ".join(g + ": " + str(health.get(g, "ok")) for g in native_gear)
-    check(all(health.get(g) not in ("missing", "crashed") for g in native_gear), "no native machine crashed (" + states + ")")
-bits = [g for g in native_gear if g]
-for g in bits[1:]:      # the others (x86 ones, by the caller's choice), added to a new song with a note
-    check(call("song_new", discard_unsaved=True)[0], "song_new")
-    kind = names.get(g, {}).get("kind")
-    ok, _, _ = call("machine_add", gear=g, name="N")
-    check(ok, f"machine_add {g} (a {kind})")
-    ok, _, rn = call("render", **{"from": 0, "to": 2, "tail_seconds": 0.5})
-    check(ok, f"{g} renders in its host")
-
 # --- the window closes: the exit code is the app's
-if song_path:
-    call("song_open", path=os.path.abspath(song_path), discard_unsaved=True)       # nothing unsaved: closing asks nothing
-else:
-    call("song_open", path=mine, discard_unsaved=True)
+call("song_open", path=mine, discard_unsaved=True)       # nothing unsaved: closing asks nothing
 user32 = ctypes.windll.user32
 WM_CLOSE = 0x0010
 found = []

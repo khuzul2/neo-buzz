@@ -457,7 +457,7 @@ namespace ReBuzz.Core.SongHistory
                 }
                 parts.Add((s.Magic, ms.ToArray()));
             }
-            return ReBuzz.FileOps.BMXFile.Assemble(parts);
+            return ReBuzz.FileOps.NblCoreSections.Assemble(parts);
         }
 
         /// <summary>

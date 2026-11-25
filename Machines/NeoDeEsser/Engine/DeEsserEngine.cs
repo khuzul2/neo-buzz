@@ -37,6 +37,7 @@ namespace NeoBuzz.DeEsser
         const double SilenceDb = -70;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         readonly KeyDetector band = new KeyDetector();
         readonly KeyDetector full = new KeyDetector();
@@ -66,9 +67,16 @@ namespace NeoBuzz.DeEsser
         int pubLatency;
         float bandNorm = 1;             // 1 / the band-pass's gain at the centre, so a tone there reads (and is reduced) at its own level
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Ratio(P.Ratio), AmountRule.Lin(P.Range, 0),
+        };
+
         public DeEsserEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules, deltaIndex: P.Delta, listenIndex: P.Listen);
+            this.values = fx.Effective;
             Delta = new DeltaListen(FirHalf + 1 + (int)Math.Ceiling(MaxLookahead * 192000), 48000);
             Match = new GainMatch(48000);
         }
@@ -81,6 +89,7 @@ namespace NeoBuzz.DeEsser
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int max = (int)Math.Ceiling(MaxLookahead * sr) + 2;
             audioL = new DelayLineF(max + FirHalf + 2);
@@ -98,6 +107,7 @@ namespace NeoBuzz.DeEsser
 
         public void Reset()
         {
+            fx.Reset();
             band.Reset();
             full.Reset();
             audioL.Reset(); audioR.Reset(); bandL.Reset(); bandR.Reset();
@@ -195,6 +205,13 @@ namespace NeoBuzz.DeEsser
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

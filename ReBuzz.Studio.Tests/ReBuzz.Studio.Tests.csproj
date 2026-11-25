@@ -56,26 +56,14 @@
 
   <!-- The audio hygiene tests describe a buffer that allocated as the engine's and the machines' tests do (AllocationWindow). -->
   <ItemGroup>
-    <Compile Include="..\ReBuzzTests\Automation\GuardPolicy.cs" Link="Automation\GuardPolicy.cs" />
-    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
-    <Compile Include="..\ReBuzzTests\Automation\TestTemp.cs" Link="Automation\TestTemp.cs" />
-  </ItemGroup>
-
-  <!-- The UI gallery's demo song (docs/specs/ui-gallery.md), shared with ReBuzz.exe (its ui-shots switch). -->
-  <ItemGroup>
-    <Compile Include="..\ReBuzz\AppViews\GallerySong.cs" Link="GallerySong.cs" />
-  </ItemGroup>
-
-  <!-- Fixtures the tests read beside them: Info's saved state (machine-safety.md §3.5). -->
-  <ItemGroup>
-    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="..\TestSupport\GuardPolicy.cs" Link="TestSupport\GuardPolicy.cs" />
+    <Compile Include="..\TestSupport\AllocationWindow.cs" Link="TestSupport\AllocationWindow.cs" />
+    <Compile Include="..\TestSupport\TestTemp.cs" Link="TestSupport\TestTemp.cs" />
   </ItemGroup>
 
   <!-- The engine the tests start finds its gear beside them, as the app does (Neo editors included). -->
   <PropertyGroup>
     <NeoGearFlavour>Studio</NeoGearFlavour>
-    <!-- R1: the studio tests pin the gear menu and the placeholders of old songs; the rebuilt classics have tests of their own (tools/native-cross.py). -->
-    <SkipNativeClassics>true</SkipNativeClassics>
   </PropertyGroup>
   <Import Project="..\ReBuzz.Host\AppGear.targets" />
 
@@ -92,6 +80,9 @@
     <!-- The machine keyboard's synth that takes notes only in its Note track (TestMachines/KeysTest), the same way. -->
     <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_KeysTestRestore=true" />
     <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <!-- The note wires' test machine (TestMachines/NoteEcho, docs/specs/note-wires.md §8), the same way. -->
+    <MSBuild Projects="TestMachines\NoteEcho\NoteEcho.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_NoteEchoRestore=true" />
+    <MSBuild Projects="TestMachines\NoteEcho\NoteEcho.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
     <!-- The timing probe's machine (TestMachines/ClipProbe, docs/specs/clips.md §5.6), the same way. -->
     <MSBuild Projects="TestMachines\ClipProbe\ClipProbe.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_ClipProbeRestore=true" />
     <MSBuild Projects="TestMachines\ClipProbe\ClipProbe.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />

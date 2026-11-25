@@ -23,7 +23,9 @@ namespace NeoBuzz.LowEnd
         public const int MonoFreq = 12;
         public const int Output = 13;
         public const int Delta = 14;
-        public const int Count = 15;
+        public const int Amount = 15;
+        public const int Mix = 16;
+        public const int Count = 17;
     }
 
     internal static class Params
@@ -48,6 +50,8 @@ namespace NeoBuzz.LowEnd
             new ParamDef(P.MonoFreq, "MonoFreq", "Mono freq", 0, 10000, 5119, MapKind.Freq, a: 20, b: 300, group: "Mono", description: "Below this the low band's side signal is removed (a 4th-order Linkwitz–Riley high-pass on it, −6 dB here)", how: "Sets the frequency, from 20 to 300 Hz, below which the sides of the low band are removed.", sound: "Higher values centre more of the bass, lower ones keep stereo width higher up."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the shaper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the low-end shaping.", sound: "It matches the loudness to the untreated sound so you judge the low end fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what Low End changes: the output minus the input, delayed to match (gliding over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear only what Low End changes, which shows how much bass has been added or taken away."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the punch and sustain in dB, the contrast and the balance. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to relax the low end towards what it was, up to push the shaping further."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

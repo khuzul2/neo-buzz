@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             Model.EndSwap();
         }
 
-        static string Temp(string name) => ReBuzzTests.Automation.TestTemp.Path("br1-studio-" + name + "-" + Guid.NewGuid().ToString("N")[..8]);
+        static string Temp(string name) => NeoBuzz.TestSupport.TestTemp.Path("br1-studio-" + name + "-" + Guid.NewGuid().ToString("N")[..8]);
 
         /// <summary>A WAV of a sine (16-bit mono) so a preview has something to mix.</summary>
         static void WriteSine(string path, double seconds, int rate = 44100, double hz = 440)
@@ -183,9 +183,9 @@ namespace ReBuzz.Studio.Tests
             PutBack();
             var presets = Model.PresetItems().ToList();
             Assert.That(presets, Is.Not.Empty, "the factory presets beside the machines in Gear");
-            var one = presets.First(p => p.Id == "Pedal Juno106");
+            var one = presets.First(p => p.Id == "Neo Poly");
             Assert.That(one.Kind, Is.EqualTo(BrowserKind.Preset));
-            Assert.That(one.Drag, Is.EqualTo(new BrowserDragData(BrowserKind.Preset, "Pedal Juno106", one.Preset, one.Name)));
+            Assert.That(one.Drag, Is.EqualTo(new BrowserDragData(BrowserKind.Preset, "Neo Poly", one.Preset, one.Name)));
             Assert.That(Model.ItemsOf("cat:presets").Select(i => i.Tag), Does.Contain(one.Tag));
 
             Model.ToggleFavourite(one);
@@ -366,21 +366,21 @@ namespace ReBuzz.Studio.Tests
             var (window, view) = OpenEmpty();
             try
             {
-                var preset = Model.PresetItems().First(p => p.Id == "Pedal Juno106");
+                var preset = Model.PresetItems().First(p => p.Id == "Neo Poly");
                 // On empty canvas: the machine, with the preset, at that place; one undo removes both.
                 var empty = new Point(60, 60);
                 Assert.That(view.Canvas.MachineAt(view.Canvas.ToLogical(empty)), Is.Null);
                 var made = view.Canvas.DropBrowserItem(preset.Drag, empty);
                 Settle();
                 Assert.That(made, Is.Not.Null);
-                Assert.That(made.DLL.Name, Is.EqualTo("Pedal Juno106"));
+                Assert.That(made.DLL.Name, Is.EqualTo("Neo Poly"));
                 Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(2));
                 var values = made.AllNonInputParameters().Select(p => p.GetValue(0)).ToList();
-                var plain = Model.PresetItems().Where(p => p.Id == "Pedal Juno106").Select(p => p.Preset).Distinct().Skip(1).First();
+                var plain = Model.PresetItems().Where(p => p.Id == "Neo Poly").Select(p => p.Preset).Distinct().Skip(1).First();
                 // The same machine's box takes another preset: it loads instead of replacing.
                 string name = made.Name;
                 int machines = Core.SongCore.Machines.Count;
-                var again = view.Canvas.DropBrowserItem(new BrowserDragData(BrowserKind.Preset, "Pedal Juno106", plain), ViewPoint(view, made));
+                var again = view.Canvas.DropBrowserItem(new BrowserDragData(BrowserKind.Preset, "Neo Poly", plain), ViewPoint(view, made));
                 Settle();
                 Assert.That(again, Is.SameAs(made), "the same machine: nothing was replaced");
                 Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(machines));

@@ -12,7 +12,7 @@ using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Core.SongHistory;
 using ReBuzz.Studio.Views.Inspector;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

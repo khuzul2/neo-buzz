@@ -327,75 +327,6 @@ namespace ReBuzz.Core.Session
             migratedWaves.Remove(index);
         }
 
-        // ------------------------------------------------------------------ .bmx and .bmxml
-
-        /// <summary>
-        /// Writes the document for a format that has no audio store: each audio clip names a wave of the wavetable. An asset migrated from a wave
-        /// uses that wave while it is as it was; the others go into free slots (temporary: the song's wavetable is put back after the file
-        /// is written, <see cref="SaveSongCore.RunCleanup"/>). An asset with no slot left is listed (the export's loss report) and its clips
-        /// stay silent when the file is opened again. The live document is not changed.
-        /// </summary>
-        void SaveDocumentWithWaves(SaveSongCore ss, Stream stream)
-        {
-            var waves = song.Wavetable?.Waves;
-            var placed = new Dictionary<string, int>(StringComparer.Ordinal);
-            var taken = new HashSet<int>();
-            var changed = new List<(SessionDocument.AudioSettings Audio, int Wave)>();
-            foreach (var c in document.Clips.Values)
-            {
-                var a = c.Audio;
-                if (a == null) continue;
-                var asset = Assets.Get(EnsureAsset(a));
-                if (asset == null) continue;
-                if (!placed.TryGetValue(asset.Id, out int w))
-                {
-                    w = -1;
-                    int origin = asset.OriginWave;
-                    if (origin >= 0 && waves != null && origin < waves.Count && waves[origin]?.Layers.FirstOrDefault() is { } layer && layer.SampleCount == asset.Frames)
-                        w = origin;
-                    else
-                    {
-                        w = FreeWave(taken);
-                        if (w >= 0 && !ss.DryRun)
-                        {
-                            if (!FillWave(w, asset)) w = -1;
-                            else { int slot = w; ss.Cleanup.Add(() => ClearWave(slot)); }
-                        }
-                    }
-                    placed[asset.Id] = w;
-                    if (w >= 0) { taken.Add(w); ss.AudioWaves++; }
-                    else ss.AudioLosses.Add(string.IsNullOrEmpty(asset.Name) ? asset.Id : asset.Name);
-                }
-                if (w >= 0) changed.Add((a, a.Wave));
-                if (w >= 0) a.Wave = w;
-            }
-            try
-            {
-                document.Save(stream);
-            }
-            finally
-            {
-                // Put every clip's wave back (changed holds each clip's own).
-                foreach (var (a, wave) in changed) a.Wave = wave;
-            }
-        }
-
-        /// <summary>An asset as a wave of the wavetable (float, mono or stereo); false if it can't be made.</summary>
-        bool FillWave(int index, AudioAsset asset)
-        {
-            var source = asset.Source;
-            bool stereo = asset.Channels > 1;
-            song.Wavetable.AllocateWave(index, asset.SourcePath ?? "", asset.Name ?? "", source.Length, WaveFormat.Float32, stereo, 65, false, false);
-            var layer = song.Wavetable.Waves[index]?.Layers.FirstOrDefault();
-            if (layer == null) return false;
-            layer.SampleRate = source.SampleRate;
-            var (l, r) = source.ToArrays();                 // exact: the cache file's audio too (neo-audio.md, NA1b)
-            layer.SetDataAsFloat(l, 0, 1, 0, 0, source.Length);
-            if (stereo) layer.SetDataAsFloat(r, 0, 1, 1, 0, source.Length);
-            layer.InvalidateData();
-            return true;
-        }
-
         // ------------------------------------------------------------------ edits
 
         /// <summary>
@@ -563,7 +494,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Frames a take drops at its start so it lines up with what was heard: a device input comes back the output latency plus its own
-        /// late, a track source the tap's delay, a hardware input wired through ReBuzz Audio In the output latency. None for the rest.
+        /// late, a track source the tap's delay. None for the rest.
         /// </summary>
         long CaptureSkip(IMachine machine)
         {
@@ -575,31 +506,12 @@ namespace ReBuzz.Core.Session
                 case AudioFromKind.Stereo:
                     return Engine.LatencyCompensation ? buzz.OutputLatencySamples + buzz.EngineInput.LatencyFrames : 0;
                 case AudioFromKind.None: return 0;
-                default: return Engine.LatencyCompensation && HearsHardware(machine) ? buzz.OutputLatencySamples : 0;
+                default: return 0;
             }
         }
 
         /// <summary>Frames an audio take of this machine drops at its start so it lines up (the round trip of what it records).</summary>
         internal long CaptureSkipOf(IMachine machine) => Engine == null || InputOf(machine) == 1 ? 0 : CaptureSkip(machine);
-
-        /// <summary>The ReBuzz Audio In machine: an audio track fed by it records a hardware input.</summary>
-        const string AudioInName = "ReBuzz Audio In";
-
-        /// <summary>Whether what the machine records comes from a hardware input (ReBuzz Audio In, through any machines).</summary>
-        static bool HearsHardware(IMachine machine)
-        {
-            var seen = new HashSet<IMachine>();
-            var next = new Stack<IMachine>();
-            next.Push(machine);
-            while (next.Count > 0 && seen.Count < 256)
-            {
-                var m = next.Pop();
-                if (m == null || !seen.Add(m)) continue;
-                if (m.DLL?.Info?.Name == AudioInName) return true;
-                foreach (var input in m.Inputs) next.Push(input.Source);
-            }
-            return false;
-        }
 
         /// <summary>Frames of audio a number of ticks lasts at a tempo.</summary>
         long FramesOf(long ticks, double bpm, int ticksPerBeat) =>

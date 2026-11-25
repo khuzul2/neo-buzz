@@ -66,10 +66,10 @@ namespace ReBuzz.SessionTests
         {
             var r = new JsonRegistry(File1, Root);
             var key = r.CreateCurrentUserSubKey(Root + @"\Recent File List");
-            key.SetValue("File1", "/songs/a.bmx");
-            key.SetValue("File2", "/songs/b.bmx");
-            key.SetValue("File4", "/songs/d.bmx");
-            Assert.That(r.ReadNumberedList<string>("File", "Recent File List"), Is.EqualTo(new[] { "/songs/a.bmx", "/songs/b.bmx" }), "up to the first gap");
+            key.SetValue("File1", "/songs/a.nbl");
+            key.SetValue("File2", "/songs/b.nbl");
+            key.SetValue("File4", "/songs/d.nbl");
+            Assert.That(r.ReadNumberedList<string>("File", "Recent File List"), Is.EqualTo(new[] { "/songs/a.nbl", "/songs/b.nbl" }), "up to the first gap");
 
             r.DeleteCurrentUserSubKey(Root + @"\Recent File List");
             Assert.That(r.ReadNumberedList<string>("File", "Recent File List"), Is.Empty);

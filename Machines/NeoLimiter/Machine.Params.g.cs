@@ -54,5 +54,11 @@ namespace NeoBuzz.Limiter
 
         [ParameterDecl(Name = "Delta", Description = "Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Delta { get => Values[P.Delta]; set => Values.Set(P.Delta, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
+
+        [ParameterDecl(Name = "Mix", Description = "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int Mix { get => Values[P.Mix]; set => Values.Set(P.Mix, value); }
     }
 }

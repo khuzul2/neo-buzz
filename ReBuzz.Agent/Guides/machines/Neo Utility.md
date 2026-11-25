@@ -25,6 +25,8 @@ Order: Matrix Decode, inversions, Swap, DC removal, Width and Bass mono, Pan, Ga
 | Bass mono | On | with Bass mono freq 120 Hz (80 Hz on a master) |
 | Matrix | Off | Encode M/S before and Decode M/S after a machine |
 
+`Amount` (default 100 %) scales gain, pan and width offsets: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "Gain — Trim −6 dB", "Gain — Boost +6 dB", "Gain — Stage to −18 dBFS (−12 dB)".
@@ -44,10 +46,6 @@ Order: Matrix Decode, inversions, Swap, DC removal, Width and Bass mono, Pan, Ga
 ## Pairs well with
 
 - Neo Comp, Neo Drive and Neo Exciter in mid/side; Neo Imager for per-band width; Neo Analyzer for `correlation`.
-
-## Successor
-
-Neo Utility replaces Jeskola Gain and Pedal Gain: `machine_replace(machine="Gain")`.
 
 ## Checklist
 

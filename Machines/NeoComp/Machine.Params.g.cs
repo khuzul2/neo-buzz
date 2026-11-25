@@ -54,5 +54,8 @@ namespace NeoBuzz.Comp
 
         [ParameterDecl(Name = "Output", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Output { get => Values[P.Output]; set => Values.Set(P.Output, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
     }
 }

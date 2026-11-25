@@ -39,6 +39,9 @@ namespace NeoBuzz.Dsp
         bool tpdf = true;
         readonly uint seed;
 
+        /// <summary>The dither's amplitude and the noise shaper's depth, 1 = as designed (Neo Dither's Amount): 2 doubles the TPDF noise and the shaping filter.</summary>
+        public double Level = 1, Depth = 1;
+
         public Dither(int bits, bool tpdf, DitherShape shape, uint seed = 1)
         {
             this.seed = seed;
@@ -90,8 +93,9 @@ namespace NeoBuzz.Dsp
             double v = (double)x * scale;
             double u = v;
             var bb = b;
-            for (int k = 0; k < bb.Length; k++) u += bb[k] * err[(pos - 1 - k) & 7];
-            double d = tpdf ? Uniform(ref s1) - Uniform(ref s2) : 0;
+            double depth = Depth;
+            for (int k = 0; k < bb.Length; k++) u += bb[k] * depth * err[(pos - 1 - k) & 7];
+            double d = tpdf ? (Uniform(ref s1) - Uniform(ref s2)) * Level : 0;
             double q = Math.Floor(u + d + 0.5);
             double e = q - u;
             if (q > hi) { q = hi; e = 0; }

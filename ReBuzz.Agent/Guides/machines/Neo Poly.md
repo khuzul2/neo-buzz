@@ -48,10 +48,6 @@ A polyphonic analogue-style synth: warm saws and pulses through a resonant ladde
 
 - Neo Filter for extra sweeps, Neo Ensemble for chorus, Neo Delay and Neo Verb for space, Neo Comp on basses, Neo Drive for grit, Neo Learn Subtractive to learn the ideas first.
 
-## Successor
-
-Neo Poly replaces Jeskola Bass, Bass 2 and Bass 3: `machine_replace(machine="Bass")` carries the settings over in their units. It also takes over the acid role of the old Aggressor and Bass 3 lines with Diode 18, `Accent` and `Slide`.
-
 ## Checklist
 
 - [ ] `preset_load(machine="Poly", preset="Pad — Warm Strings")`, then `notes_write` a chord and `render(probes=["Poly"])`.

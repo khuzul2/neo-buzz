@@ -50,3 +50,7 @@ Mix       "Mix"       0 1000 500  pct                                 | Dry agai
 Output    "Output"    0 240  120  db -12 12                           | Output gain, −12 … +12 dB in 0.1 dB steps
     how Sets the output gain, from minus 12 to plus 12 dB.
     sound Use it to match the level with the dry sound.
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the wet mix, the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for a calmer, subtler movement, up for a deeper, more obvious sweep.

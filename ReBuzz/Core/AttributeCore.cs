@@ -23,8 +23,6 @@ namespace ReBuzz.Core
                 if (this.value != value)
                 {
                     this.value = value;
-                    var buzz = Global.Buzz as ReBuzzCore;
-                    buzz.MachineManager.AttributesChanged(machine);
                 }
             }
         }

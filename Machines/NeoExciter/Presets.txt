@@ -49,7 +49,7 @@ Drive = 12
 Stereo = M/S
 Amount4 = 35
 
-preset "Old Exciter (Oomek-style)"
+preset "Tube Exciter (Warm)"
 Mode = Tube
 Drive = 18
 Amount4 = 60

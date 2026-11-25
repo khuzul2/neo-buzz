@@ -335,7 +335,6 @@ namespace ReBuzz.Core
 
         private readonly IUiDispatcher dispatcher;
         private readonly EngineSettings engineSettings;
-        //internal Dictionary<MachineCore, MachineInitData> DictInitData = new Dictionary<MachineCore, MachineInitData>();
         //private bool initImportDone;
 
         //internal bool Importing { get; set; }
@@ -402,7 +401,8 @@ namespace ReBuzz.Core
                 dst.DLL.Info.Type != MachineType.Generator &&
                 dst.Outputs.FirstOrDefault(o => o.Destination == src) == null &&
                 src.Outputs.FirstOrDefault(o => o.Destination == dst) == null &&
-                !FindDestinationFromSourceConnetions(src, dst))
+                !FindDestinationFromSourceConnetions(src, dst) &&
+                reBuzzCore?.NoteWires?.CheckAudio(src.Name, dst.Name) == null)      // fork (note-wires.md §4): nor a loop through the note wires
                 return true;
             else
                 return false;
@@ -498,7 +498,6 @@ namespace ReBuzz.Core
         {
             //initImportDone = false;
             //Importing = true;
-            //DictInitData.Clear();
             this.importDictionary = machinerename;
         }
 
@@ -521,25 +520,7 @@ namespace ReBuzz.Core
                 }
             }
             //Importing = false;
-            //DictInitData.Clear();
         }
-        /*
-        private void InitNativeMachines()
-        {
-            if (!initImportDone)
-            {
-                foreach (var machine in DictInitData.Keys.Where(m => !m.Hidden))
-                {
-                    if (!machine.DLL.IsManaged && !machine.DLL.IsMissing)
-                    {
-                        var idata = DictInitData[machine];
-                        BuzzCore.MachineManager.CallInit(machine, idata.data, idata.tracks);
-                    }
-                }
-                initImportDone = true;
-            }
-        }
-        */
 
         public void ImportSong(float x, float y)
         {

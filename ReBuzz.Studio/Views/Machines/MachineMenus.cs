@@ -85,6 +85,47 @@ namespace ReBuzz.Studio.Views.Machines
             return menu;
         }
 
+        /// <summary>NW1: "Send notes to" (a machine that sends notes: the machines that take them, ticked when wired) and "Note chain" (a machine that takes notes: put it before an instrument or take it out).</summary>
+        List<MenuItem> NoteItems(IMachine machine)
+        {
+            var store = core.NoteWires;
+            var ports = store.PortsOf(machine.Name);
+            var root = new List<MenuItem>();
+            if (ports is not { Control: false } p || !(p.In || p.Out)) return root;
+            if (p.Out)
+            {
+                var wired = store.State.Wires.Where(w => w.From == machine.Name).Select(w => w.To).ToHashSet();
+                var items = store.NoteTargetCandidates(machine).Select(n =>
+                {
+                    string name = n;
+                    string why = store.WhyNot(machine.Name, name);
+                    bool on = wired.Contains(name);
+                    var it = Check(name, on, () => { if (on) store.Disconnect(machine.Name, name); else store.Connect(machine.Name, name); }, enabled: on || why == null);
+                    if (why != null && !on) ToolTip.SetTip(it, why);
+                    return (object)it;
+                }).ToList();
+                if (items.Count == 0) items.Add(Item("No machine takes notes", () => { }, false));
+                root.Add(Sub("Send notes to", items));
+            }
+            if (p.In && p.Out)
+            {
+                var inst = store.State.InstrumentOf(machine.Name);
+                var targets = core.SongCore.Machines.Where(t => t != machine && store.PortsOf(t.Name) is { In: true, Control: false }).Select(t => t.Name).ToList();
+                var items = targets.Select(t => (object)Item(t, () => store.AddInsert(t, machine.Name))).ToList();
+                if (inst != null) items.Add(Item("Take out of " + inst + "'s chain", () => store.RemoveInsert(machine.Name)));
+                root.Add(Sub("Note insert before", items));
+            }
+            return root;
+        }
+
+        /// <summary>NW1: a note wire's menu.</summary>
+        public ContextMenu ForNoteWire(ReBuzz.Core.NoteWires.NoteEdge edge)
+        {
+            var menu = new ContextMenu();
+            menu.Items.Add(Item("Remove", () => canvas.RemoveNoteWire(edge)));
+            return menu;
+        }
+
         /// <summary>A machine's menu (MachineControl.CreateMenu); its commands act on the selection, as there.</summary>
         public ContextMenu ForMachine(IMachine machine, IReadOnlyList<IMachine> selection)
         {
@@ -126,14 +167,11 @@ namespace ReBuzz.Studio.Views.Machines
                 menu.Items.Add(Check("Double-click Opens Editor", opens, () => ReBuzz.Agent.ManifestEditorSettings.Set(machine.DLL, !opens)));
             }
             menu.Items.Add(Sub("MIDI Input Channel", MidiChannels(machine)));
+            foreach (var note in NoteItems(machine)) menu.Items.Add(note);
             menu.Items.Add(Item("Latency...", () => _ = Shell.Tools.LatencyDialog.Ask(machine), !machine.IsControlMachine));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Signal Analysis...", () => Shell.Tools.SignalAnalysisWindow.Open(Shell.StudioHost.Current, machine)));
             menu.Items.Add(new Separator());
-            // U5 (mcp-server.md §12.5): a classic machine's Neo successors, the song moved over as machine_replace does it.
-            if (machine is MachineCore classic)
-                foreach (var successor in ReBuzz.Agent.MachineReplace.Successors(core, machine.DLL))
-                    menu.Items.Add(Item($"Replace with {successor.To}...", () => MachineEdits.ReplaceWithSuccessor(core, classic, successor.To)));
             menu.Items.Add(Sub("Replace", Gear(i => MachineEdits.Replace(core, machine, i))));
             // BR1 (docs/specs/browser.md): the browser opens in swap mode for this machine; the next double-click on a result replaces it.
             menu.Items.Add(Item("Hot-swap", () => canvas.Browser?.BeginSwap(machine), machine.DLL.Info.Type != MachineType.Master));

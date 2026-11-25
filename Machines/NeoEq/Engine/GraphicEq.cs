@@ -1,6 +1,5 @@
 #nullable disable
-// Neo EQ's graphic mode (docs/specs/machines.md §5, machine-safety.md §4: H2, the successor of
-// Joachims Hyperion): 31 bells at the ISO third-octave centres, 20 Hz – 20 kHz.
+// Neo EQ's graphic mode (docs/specs/machines.md §5, machine-safety.md §4: H2): 31 bells at the ISO third-octave centres, 20 Hz – 20 kHz.
 //
 // - Constant-Q: each bell is the analog prototype H(s) = (s² + (A/Q)s + 1) / (s² + s/(AQ) + 1), whose
 //   half-gain points (half the gain in dB) are 2/3 octave apart whatever its gain, cuts the mirror of

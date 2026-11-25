@@ -28,16 +28,9 @@
     <MSBuild Projects="$(PatternEditorProject)" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
-  <!-- The Pedal machines (ExternalMachines/source/thepedal), built for net10.0 without their WPF
-       GUIs (studio-mvp.md S2), in the same Gear folder (skip with SkipPedalGear=true). -->
-  <Target Name="PedalGear" AfterTargets="Build" Condition="'$(SkipPedalGear)' != 'true'">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\ExternalMachines\portable\Pedal.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
-  </Target>
-
   <!-- The profiled draft manifests (docs/specs/mcp-server.md §12.2: Machines/Manifests/<Generators|Effects>,
        written by tools/machine-profiler.py) beside the machines' DLLs, where the agent server looks for
-       "<Gear>.machine.json". Drafts of machines that aren't here (Windows natives) are copied too and
-       ignored. The Neo machines' generated manifests come with their builds and are never replaced. -->
+       "<Gear>.machine.json". Drafts of machines that aren't here are copied too and ignored. The Neo machines' generated manifests come with their builds and are never replaced. -->
   <Target Name="DraftManifests" AfterTargets="Build">
     <ItemGroup>
       <_DraftManifest Include="$(MSBuildThisFileDirectory)..\Machines\Manifests\**\*.machine.json" />
@@ -62,22 +55,6 @@
   <Target Name="LinkHelper" AfterTargets="Build">
     <Copy SourceFiles="$(MSBuildThisFileDirectory)..\build\LinkHelper\ReBuzzLink" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildThisFileDirectory)..\build\LinkHelper\ReBuzzLink')" />
     <Copy SourceFiles="$(MSBuildThisFileDirectory)..\build\LinkHelper\Release\ReBuzzLink.exe" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildThisFileDirectory)..\build\LinkHelper\Release\ReBuzzLink.exe')" />
-  </Target>
-
-  <!-- Fork (docs/specs/cross-platform.md R1): the classic native machines rebuilt for this platform (the 17 open-source
-       ones; tools/build-natives-posix.py, output build/natives) in Gear, and the portable host that runs them
-       (ReBuzzEngine/portable, built with CMake into build/native-host) beside the app, where NativeMachineHost looks.
-       Without the host they stay placeholders in songs; skip with SkipNativeClassics=true. -->
-  <Target Name="NativeClassics" AfterTargets="Build" Condition="'$(SkipNativeClassics)' != 'true'">
-    <ItemGroup>
-      <_NativeClassics Include="$(MSBuildThisFileDirectory)..\build\natives\Gear\**\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_NativeClassics)" DestinationFiles="@(_NativeClassics->'$(OutDir)Gear/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-    <ItemGroup>
-      <_NativeClassicLicences Include="$(MSBuildThisFileDirectory)..\build\natives\Licenses\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_NativeClassicLicences)" DestinationFolder="$(OutDir)Licenses" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\build\native-host\rebuzz-native-host" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildThisFileDirectory)..\build\native-host\rebuzz-native-host')" />
   </Target>
 
   <!-- Fork (docs/specs/plugin-host.md, H1): the plug-in host's native library and scanner, once built with CMake
@@ -106,7 +83,6 @@
     </ItemGroup>
     <Copy SourceFiles="@(_GearFiles)" DestinationFiles="@(_GearFiles->'$(PublishDir)Gear/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(OutDir)ReBuzzLink" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)ReBuzzLink')" />
-    <Copy SourceFiles="$(OutDir)rebuzz-native-host" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)rebuzz-native-host')" />
     <ItemGroup>
       <_PublishLicences Include="$(OutDir)Licenses/**/*" />
     </ItemGroup>

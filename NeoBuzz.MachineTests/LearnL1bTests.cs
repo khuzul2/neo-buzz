@@ -2,7 +2,7 @@ using System.Threading;
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
 using NeoBuzz.Learn;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using DyeP = NeoBuzz.DyeEssence.P;
 using GP = NeoBuzz.LearnGrain.P;
 using PP = NeoBuzz.LearnPhys.P;

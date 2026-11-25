@@ -54,11 +54,7 @@ namespace WDE.ModernPatternEditor
                         }
                         catch (Exception e)
                         {
-#if WINDOWS
-                            System.Windows.MessageBox.Show(e.ToString(), "User PEKeys.xml");
-#else
                             Global.Buzz.DCWriteLine("[PE] User PEKeys.xml: " + e.Message);
-#endif
                         }
 
                         if (_default == null)
@@ -71,10 +67,6 @@ namespace WDE.ModernPatternEditor
                             }
                             catch (Exception e)
                             {
-#if WINDOWS
-                                System.Windows.MessageBox.Show(e.ToString(), "PEKeys.xml");
-                                return new KeyboardMappingFile();
-#else
                                 // Fork (docs/specs/studio-mvp.md S6): off Windows the editor carries ReBuzz's PEKeys.xml.
                                 _default = LoadBuiltIn();
                                 if (_default == null)
@@ -82,7 +74,6 @@ namespace WDE.ModernPatternEditor
                                     Global.Buzz.DCWriteLine("[PE] PEKeys.xml: " + e.Message);
                                     return new KeyboardMappingFile();
                                 }
-#endif
                             }
                         }
 
@@ -94,7 +85,6 @@ namespace WDE.ModernPatternEditor
         }
 
         public KeyboardMapping DefaultMapping { get { return Mappings != null ? Mappings[0] : new KeyboardMapping(); } }
-#if !WINDOWS
 
         // Fork (docs/specs/studio-mvp.md S6): RunTime/PEKeys.xml, built into the portable editor.
         static KeyboardMappingFile LoadBuiltIn()
@@ -102,7 +92,6 @@ namespace WDE.ModernPatternEditor
             using var stream = typeof(KeyboardMappingFile).Assembly.GetManifestResourceStream("PEKeys.xml");
             return stream != null ? Load(stream) : null;
         }
-#endif
 
     }
 }

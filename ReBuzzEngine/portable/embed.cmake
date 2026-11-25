@@ -1,6 +1,0 @@
-# Writes <OUT> as a C array of <IN> (the oscillator tables: rebe/osctbl.cpp's OscTblRaw)
-file(READ "${IN}" hex HEX)
-string(LENGTH "${hex}" hexlen)
-math(EXPR size "${hexlen} / 2")
-string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," bytes "${hex}")
-file(WRITE "${OUT}" "extern const unsigned char OscTblRaw[] = {${bytes}};\nextern const unsigned int OscTblRawSize = ${size};\n")

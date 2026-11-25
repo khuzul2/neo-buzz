@@ -74,13 +74,6 @@ namespace ReBuzz.Core
         /// </summary>
         internal FileOps.BuiltInPattern BuiltInData;
 
-        /// <summary>
-        /// Fork (docs/specs/clips.md §7.1, CU2): the cells of the connections' amp and pan an old song's pattern held, by the name of the source
-        /// machine, when a pattern editor took the pattern's other contents and dropped these (the editor's data has no input columns). Only
-        /// for the migration log (tag input-column); nothing reads it to play or save. Null when there are none or the pattern kept its contents.
-        /// </summary>
-        internal Dictionary<string, int> LostInputCells;
-
         // Fork (0.6.3): copy on write. The audio thread walks the list without a lock; a change
         // makes a new list, so a walk in progress never sees one inserted or removed under it.
         volatile List<IPatternColumn> columns;

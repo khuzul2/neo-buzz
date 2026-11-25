@@ -10,7 +10,7 @@ VibKeep = 0
 Humanize = 0
 Glide = 0
 Stick = 15
-Amount = 100
+Correction = 100
 Range = Quality
 
 preset "Lead — Pop polish"
@@ -22,7 +22,7 @@ VibKeep = 67
 Humanize = 40
 Glide = 40
 Stick = 49
-Amount = 100
+Correction = 100
 Range = Quality
 
 preset "Lead — Natural"
@@ -34,7 +34,7 @@ VibKeep = 100
 Humanize = 75
 Glide = 75
 Stick = 79
-Amount = 100
+Correction = 100
 Range = Quality
 
 preset "Lead — Transparent"
@@ -46,7 +46,7 @@ VibKeep = 100
 Humanize = 100
 Glide = 100
 Stick = 100
-Amount = 100
+Correction = 100
 Range = Quality
 
 preset "Live — Low Latency Natural"
@@ -58,7 +58,7 @@ VibKeep = 100
 Humanize = 75
 Glide = 75
 Stick = 79
-Amount = 100
+Correction = 100
 Range = Low latency
 
 preset "Special — MIDI-led"
@@ -71,7 +71,7 @@ Zone = 100
 Humanize = 0
 Glide = 20
 Stick = 30
-Amount = 100
+Correction = 100
 VibKeep = 50
 Range = Quality
 
@@ -84,7 +84,7 @@ Zone = 100
 Humanize = 0
 Glide = 0
 Stick = 15
-Amount = 100
+Correction = 100
 Transpose = -7
 Preserve = Off
 Formant = 5
@@ -95,7 +95,7 @@ preset "Special — Thick"
 comment "Half dry, half hard-tuned with a slow vibrato added: a doubled, steadier voice"
 Retune = 20
 Humanize = 20
-Amount = 100
+Correction = 100
 VibKeep = 20
 VibDepth = 25
 VibRate = 5.5

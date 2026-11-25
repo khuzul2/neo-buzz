@@ -81,6 +81,7 @@ namespace NeoBuzz.Strip
         const int GateStage = 0, EqStage = 1, CompStage = 2, DriveStage = 3, ClipStage = 4, LimitStage = 5, Stages = 6;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
 
         // The engines, each with its own parameter values.
@@ -126,9 +127,17 @@ namespace NeoBuzz.Strip
             }
         }
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.GateRange, 0), AmountRule.Ratio(P.CompRatio), AmountRule.Lin(P.CompMakeup, 0), AmountRule.Lin(P.DriveAmount, 0),
+            AmountRule.Lin(P.LoShelfGain, 0), AmountRule.Lin(P.LmGain, 0), AmountRule.Lin(P.HmGain, 0), AmountRule.Lin(P.HiShelfGain, 0), AmountRule.Lin(P.Ceiling, 0),
+        };
+
         public StripEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             for (int i = 0; i < Stages; i++) stage[i] = new Stage();
             eq = new NeoBuzz.Eq.EqEngine(eqV);
             comp = new NeoBuzz.Comp.CompEngine(compV);
@@ -188,6 +197,7 @@ namespace NeoBuzz.Strip
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             // The engines take the strip's settings first, so each starts from them (not gliding from its defaults).
             Update(true);
@@ -212,6 +222,7 @@ namespace NeoBuzz.Strip
 
         public void Reset()
         {
+            fx.Reset();
             eq.Reset();
             comp.Reset();
             drive.Reset();
@@ -281,6 +292,13 @@ namespace NeoBuzz.Strip
 
         /// <summary>Processes a stereo block in place (up to 256 samples).</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

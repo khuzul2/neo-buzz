@@ -40,7 +40,7 @@ using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -270,8 +270,30 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Takes a shot, or lists why not and goes on.</summary>
+        /// <summary>A machine of the gear with a pattern of notes, shown in the piano roll maximised, Fold: playable chosen (the note-map shots).</summary>
+        static object NoteMapShot(MainWindow window, string gear, string name, System.Action<MachineCore, System.Action<MachineCore, string, int>> setup, (int Tick, int Key)[] notes, int extra = -1)
+        {
+            Core.SongCore.CreateMachine(gear, null, name, null, null, null, -1, 0.3f, 0.3f);
+            var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
+            setup(machine, (m, p, v) => m.ParameterGroups[1].Parameters.First(x => x.Name == p).SetValue(0, v));
+            machine.CreatePattern(name + " beat", 16);
+            window.Detail.ShowPage(true, true);
+            PatternView.Edit(machine.PatternsList.First(p => p.Name == name + " beat"));
+            Wait(250);
+            var roll = PatternView.Page.Roll;
+            roll.Poll();
+            foreach (var (tick, key) in notes) roll.Roll.AddNote(tick * PatternEvent.TimeBase, key);
+            if (extra >= 0) roll.Roll.AddNote(12 * PatternEvent.TimeBase, extra);
+            Wait(150);
+            roll.FoldBox.SelectedIndex = 3;
+            Wait(250);
+            return machine;
+        }
+
         static void Try(string id, System.Action shot)
         {
+            // GALLERY_ONLY=059,061: only the shots whose id starts with one of these (a quick look at a new screen; unset in CI).
+            if (System.Environment.GetEnvironmentVariable("GALLERY_ONLY") is { Length: > 0 } only && !only.Split(',').Any(p => id.StartsWith(p))) return;
             try
             {
                 shot();
@@ -463,7 +485,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>
-        /// The demo song, built in a new song and saved as "Night Drive.bmxml" (the title names it). Not opened again: the
+        /// The demo song, built in a new song and saved as "Night Drive.nbl" (the title names it). Not opened again: the
         /// notes moved onto the note lanes show in the Pattern View as they are written (they showed only once the song was
         /// opened again before; ui-gallery.md).
         /// </summary>
@@ -472,7 +494,7 @@ namespace ReBuzz.Studio.Tests
             NewSong();
             var built = GallerySong.Build(Core);
             foreach (var p in built.Problems) TestContext.Out.WriteLine("[gallery] demo song: " + p);
-            string path = Path.Combine(SongFolder, GallerySong.Title + ".bmxml");
+            string path = Path.Combine(SongFolder, GallerySong.Title + ".nbl");
             SongFiles.Picker = _ => path;
             try
             {
@@ -483,7 +505,7 @@ namespace ReBuzz.Studio.Tests
                 SongFiles.Picker = null;
             }
             Core.Modified = false;
-            File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".bmxml"), true);      // beside the pictures (the Mac job opens it in the app)
+            File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".nbl"), true);      // beside the pictures (the Mac job opens it in the app)
             Settle();
             return GallerySong.Find(Core);
         }
@@ -835,6 +857,41 @@ namespace ReBuzz.Studio.Tests
                     finally
                     {
                         ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        Settle();
+                    }
+                });
+
+                Try("040-machines-note-wires", () =>
+                {
+                    // NW1 (note-wires.md §6): the note ports (a diamond on the top edge of a machine that takes notes, on the bottom edge of one that
+                    // sends them) and the dotted note wires in the source's colour; the same in Tracks mode; and with "Note wires" off (the ports stay).
+                    var song = Core.SongCore;
+                    song.CreateMachine("Neo Voice to MIDI", null, "Voice", null, null, null, -1, -0.82f, -0.93f);
+                    var voice = song.MachinesList.First(m => m.Name == "Voice");
+                    song.CreateMachine("Neo Audio to MIDI", null, "Pitch", null, null, null, -1, -0.5f, 0.36f);
+                    var pitch = song.MachinesList.First(m => m.Name == "Pitch");
+                    try
+                    {
+                        Assert.That(Core.NoteWires.Connect("Voice", "Drums"), Is.Null);
+                        Assert.That(Core.NoteWires.Connect("Pitch", "Pad"), Is.Null);
+                        ReBuzz.Studio.Views.Machines.NoteWiresPreference.On = true;
+                        Settle();
+                        Shot(window, "040-machines-note-wires", "Machines with note wires (NW1): Neo Voice to MIDI sends notes to Drums and Neo Audio to MIDI to Pad; each machine that takes notes has a diamond on its top edge, the sender one on its bottom edge, and a dotted wire with an arrowhead joins them in the sender's colour.", "Drag from a note-out diamond to a machine, or right-click a machine and choose Send notes to.");
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = true;
+                        Settle();
+                        Shot(window, "040-machines-note-wires-tracks", "The same song with Tracks on: the note wires take their track's colour.", "Tracks, in the top bar of the Machines view.");
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        ReBuzz.Studio.Views.Machines.NoteWiresPreference.On = false;
+                        Settle();
+                        Shot(window, "040-machines-note-wires-hidden", "Note wires hidden (the Note wires button in the top bar): the wires are gone and the diamond ports stay.", "Note wires, in the top bar of the Machines view.");
+                    }
+                    finally
+                    {
+                        ReBuzz.Studio.Views.Machines.NoteWiresPreference.On = true;
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        Core.UiHost.ReleaseMachine(voice);
+                        Core.UiHost.ReleaseMachine(pitch);
+                        song.DeleteMachines(new[] { voice, pitch });
                         Settle();
                     }
                 });
@@ -1250,6 +1307,30 @@ namespace ReBuzz.Studio.Tests
                     window.Detail.SetPage(false);
                 });
 
+                // Note maps (daw-modes.md §8.9, NM1): the key column names the rows of a machine that says which keys play, and Fold: playable
+                // shows those keys (and any key that holds notes): a Neo Sampler kit of six zones, and Neo Drums.
+                Try("059-piano-roll-note-map-kit", () =>
+                {
+                    NoteMapShot(window, "Neo Sampler", "Kit", (m, set) =>
+                    {
+                        set(m, "Mode", 1);
+                        set(m, "Kit base", 36);
+                        int[] waves = { 201, 203, 204, 206, 207, 205 };
+                        for (int z = 0; z < 16; z++) set(m, $"Z{z + 1} wave", z < waves.Length ? waves[z] : 0);
+                    }, new (int, int)[] { (0, 36), (4, 41), (8, 36), (8, 37), (12, 39), (14, 39), (2, 39), (6, 39), (10, 39), (10, 41) }, extra: 61);
+                    Shot(window, "059-piano-roll-note-map-kit", "Piano roll on a Neo Sampler kit of six zones (Kick, Snare, Clap, Closed hat, Open hat, Rim): the key column names each row with its key, and Fold: playable shows the six keys that make a sound plus the one row that holds a note on a key with no sound (dimmed, 61).",
+                        "Open a Neo Sampler's pattern in the Piano roll; the fold box ▸ Fold: playable.");
+                    window.Detail.SetPage(false);
+                });
+                Try("061-piano-roll-note-map-drums", () =>
+                {
+                    NoteMapShot(window, "Neo Drums", "Drums", (m, set) => { },
+                        new (int, int)[] { (0, 36), (4, 38), (8, 36), (12, 38), (0, 42), (2, 42), (4, 42), (6, 42), (8, 42), (10, 42), (12, 42), (14, 46), (15, 49) });
+                    Shot(window, "061-piano-roll-note-map-drums", "Piano roll on Neo Drums: its voices by name on their keys (kick, snare, hats, toms, cymbals), Fold: playable showing only the keys the drum machine plays.",
+                        "Open a Neo Drums pattern in the Piano roll; the fold box ▸ Fold: playable.");
+                    window.Detail.SetPage(false);
+                });
+
                 Try("060-song-notes", () =>
                 {
                     window.Detail.Restore();
@@ -1350,7 +1431,7 @@ namespace ReBuzz.Studio.Tests
                     file.IsSubMenuOpen = true;
                     Settle();
                     Hover(ItemOf(file, "Open Recent"));
-                    Shot(window, "107-menu-file-recent", "File ▸ Open Recent: the recent songs (Night Drive.bmxml), Clear Menu.", "File ▸ Open Recent.", notes: Bar);
+                    Shot(window, "107-menu-file-recent", "File ▸ Open Recent: the recent songs (Night Drive.nbl), Clear Menu.", "File ▸ Open Recent.", notes: Bar);
                     file.IsSubMenuOpen = false;
                 });
                 ((DockPanel)bar.Parent!).Children.Remove(bar);
@@ -1392,7 +1473,7 @@ namespace ReBuzz.Studio.Tests
                     });
                 }
                 MachineMenu("200-machines-menu-canvas", view.PointOf(0.1, 0.85, window), "Machines: the menu on empty space (New ▸, Unmute all, Snap, Select All, Deselect…).", "Right-click empty space in the Machine View.");
-                MachineMenu("201-machines-menu-new-generators", view.PointOf(0.1, 0.85, window), "Machines: New ▸ Generators, the installed generators (the machine browser): Neo and Pedal machines.", "Right-click empty space ▸ New ▸ Generators.", "New", "Generators");
+                MachineMenu("201-machines-menu-new-generators", view.PointOf(0.1, 0.85, window), "Machines: New ▸ Generators, the installed generators (the machine browser): the Neo machines.", "Right-click empty space ▸ New ▸ Generators.", "New", "Generators");
                 MachineMenu("202-machines-menu-new-effects", view.PointOf(0.1, 0.85, window), "Machines: New ▸ Effects, the installed effects.", "Right-click empty space ▸ New ▸ Effects.", "New", "Effects");
                 MachineMenu("203-machines-menu-generator", view.PointOf(demo.Bass, window), "Machines: a generator's menu (Bass, Neo Poly): Mute, Solo, Parameters…, Editor…, MIDI input, Replace, Rename…, Delete.", "Right-click a generator.");
                 MachineMenu("204-machines-menu-effect", view.PointOf(demo.Delay, window), "Machines: an effect's menu (Delay, Neo Delay): Mute, Bypass, Parameters…, Editor…, Rename…, Delete.", "Right-click an effect.");
@@ -1764,9 +1845,15 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("338-error-open", () =>
                 {
-                    string broken = Path.Combine(SongFolder, "Broken song.bmx");
+                    string broken = Path.Combine(SongFolder, "Broken song.nbl");
                     File.WriteAllBytes(broken, Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
                     DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened. What happened in words; the exception under Details (closed).", "File ▸ Open… a damaged file.");
+                });
+                Try("349-error-old-format", () =>
+                {
+                    string old = Path.Combine(SongFolder, "Old song.bmx");
+                    File.WriteAllBytes(old, Encoding.ASCII.GetBytes("Buzz\0an old song"));
+                    DialogOnOpen(window, () => _ = SongFiles.Open(old), "349-error-old-format", "Opening a .bmx: one plain message, NeoBuzz Live opens .nbl songs only.", "File ▸ Open, choose a .bmx.");
                 });
             }
             finally
@@ -2024,8 +2111,34 @@ namespace ReBuzz.Studio.Tests
                     var pads = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "InteractiveGraph" && System.Math.Abs(c.Bounds.Width - 480) < 1);
                     ClickIn(w, pads, 6 + 1 * (((480 - 12 - 5 * 6) / 6.0) + 6) + 10, 20);
                 }, "Neo Drums' editor with the snare's pad selected (P5a): its panel alone, the mix strip with every pad's level and pan, the pad lit by the hit it played.", "Double-click Neo Drums, then click the snare's pad.");
+                // FX1 (machines.md, "Mix and Amount"): every Neo effect's editor has Amount and Mix, Amount first, in its Output (or last) section.
+                // Set off their defaults (the values before the editor opens) so the knobs and the graphs show them.
+                void FxShot(string id, string gear, string name, (string Param, int Raw)[] values, string what)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add(gear, name);
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        foreach (var (param, raw) in values) group.Parameters.First(p => p.Name == param).SetValue(0, raw);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, what, "Double-click the effect; Amount and Mix are the last two knobs of its Output section.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                FxShot("650-editor-neo-comp-amount-mix", "Neo Comp", "FX Comp", new[] { ("Amount", 1500), ("Mix", 700) },
+                    "Neo Comp's editor with Amount at 150 % and Mix at 70 %: the Output section has Amount and Mix side by side (Amount first) above Makeup and Character; the static curve shows the steeper ratio the Amount makes.");
+                FxShot("651-editor-neo-eq-amount-mix", "Neo EQ", "FX EQ", new[] { ("B2 gain", 360), ("Amount", 500), ("Mix", 1000) },
+                    "Neo EQ's editor with band 2 at +12 dB and Amount at 50 %: the curve shows the +6 dB the Amount makes; Amount and Mix in the Output section.");
+                FxShot("652-editor-neo-verb-amount-mix", "Neo Verb", "FX Verb", new[] { ("Amount", 1500), ("Mix", 300) },
+                    "Neo Verb's editor with Amount at 150 % and its own Mix at 30 %: Amount and Mix in the Output section (Width moved beside Shimmer); the decay picture follows the Amount.");
+                FxShot("653-editor-neo-utility-amount-mix", "Neo Utility", "FX Utility", new[] { ("Amount", 1000), ("Mix", 500) },
+                    "Neo Utility's editor with Mix at 50 %: Amount and Mix after the channel controls, the same size and order as every Neo effect's.");
 
-                // The generic parameter window: a Neo machine, a Pedal synth, a Pedal effect.
+                // The generic parameter window: a Neo machine.
                 void Parameters(string id, MachineCore m, string what, string how)
                 {
                     Try(id, () =>
@@ -2039,12 +2152,6 @@ namespace ReBuzz.Studio.Tests
                     });
                 }
                 Parameters("450-parameters-neo-poly", demo.Bass, "The parameter window of Bass (Neo Poly): every parameter as a slider with its value, presets, track choice.", "Right-click a machine ▸ Parameters….");
-                string synth = new[] { "Pedal SH101", "Pedal Juno106", "Pedal M1", "Pedal FM" }.FirstOrDefault(Core.MachineDLLs.ContainsKey);
-                string effect = new[] { "Pedal Comp", "Pedal Plate", "Pedal Chorus" }.FirstOrDefault(Core.MachineDLLs.ContainsKey);
-                if (synth != null) Parameters("451-parameters-pedal-synth", Add(synth, synth.Replace("Pedal ", "")), $"The parameter window of a Pedal synth ({synth}): the generic view (Pedal machines have no editor of their own here).", "Double-click a Pedal machine, or its menu ▸ Parameters….");
-                else failures.Add("mac-451: no Pedal synth in Gear");
-                if (effect != null) Parameters("452-parameters-pedal-effect", Add(effect, effect.Replace("Pedal ", "")), $"The parameter window of a Pedal effect ({effect}).", "Double-click a Pedal machine, or its menu ▸ Parameters….");
-                else failures.Add("mac-452: no Pedal effect in Gear");
                 Try("453-parameters-menu", () =>
                 {
                     Core.UiHost.OpenParameterWindow(demo.Bass, null);
@@ -2058,7 +2165,7 @@ namespace ReBuzz.Studio.Tests
 
                 // The Device panel (ux-overhaul.md, the parameter panel): cards of knobs docked (one row, scrolling sideways) and floating
                 // (wrapping), for four machines, and the Inspector with the macros and the pinned parameters.
-                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq"), ("Pedal Gain Multi", "pedal-gain-multi") })
+                foreach (var (gear, slug) in new[] { ("Neo Filter", "neo-filter"), ("Neo Poly", "neo-poly"), ("Neo Drums", "neo-drums"), ("Dye Essence", "dye-essence"), ("Neo EQ", "neo-eq") })
                 {
                     Try("454-device-docked-" + slug, () =>
                     {
@@ -2083,6 +2190,26 @@ namespace ReBuzz.Studio.Tests
                         w.Close();
                     });
                 }
+                Try("650-neo-organ-editor", () =>
+                {
+                    var m = Add("Neo Organ", "Organ");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // A registration like the Church Full preset, set before the editor opens: the bars, percussion on, chorus, some drive, the speaker Fast.
+                    int[] bars = { 6, 5, 8, 6, 4, 5, 3, 2, 3 };
+                    string[] names = { "16'", "5 1/3'", "8'", "4'", "2 2/3'", "2'", "1 3/5'", "1 1/3'", "1'" };
+                    for (int i = 0; i < 9; i++) Set(names[i], bars[i]);
+                    Set("Percussion", 1);
+                    Set("Vibrato", 1);
+                    Set("Drive", 350);
+                    Set("Speed", 1);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "650-neo-organ-editor", "Neo Organ: the nine drawbars with their footage labels (set to a full registration), then Percussion, Key, Vibrato, Drive, Rotary (the Speed switch at Fast, with the two rotors' live speeds) and Output.", "Add Neo Organ, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {
@@ -2103,7 +2230,7 @@ namespace ReBuzz.Studio.Tests
                 }
                 //                            Bits Dith Rate AA  Jit Hiss Fol Crk  CrkL Wow WowR Flu Dri Tone Mix  Out  Amount
                 LoFiShot("640-neo-lofi-editor", "LoFi", new[] { 1300, 1, 1000, 0, 0, 360, 0, 240, 380, 70, 202, 0, 0, 375, 1000, 500, 500 },
-                    "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount first and Mix under it).");
+                    "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
                 Try("456-device-list-mode", () =>
@@ -2226,19 +2353,6 @@ namespace ReBuzz.Studio.Tests
                         Core.UiHost.CloseWindows(demo.Bass);
                     }
                 });
-                if (synth != null)
-                {
-                    Try("460-manifest-editor-pedal-synth", () =>
-                    {
-                        var m = made.First(x => x.DLL.Name == synth);
-                        Assert.That(Core.UiHost.OpenEditor(m), Is.True, "Editor... opened");
-                        var w = StudioMachineUiHost.EditorWindowOf(m);
-                        Assert.That(w, Is.Not.Null);
-                        Wait(200);
-                        Shot(w!, "460-manifest-editor-pedal-synth", $"{synth}'s manifest editor (Editor…): its curated face, knobs in sections, the preset bar.", "Right-click a machine ▸ Editor… (or a double click, where Double-click Opens Editor is on).");
-                        Core.UiHost.CloseWindows(m);
-                    });
-                }
             }
             finally
             {
@@ -2249,7 +2363,7 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
-        // ------------------------------------------------------------------ 5xx: old songs, natives, safety, many machines
+        // ------------------------------------------------------------------ 5xx: old songs, safety, many machines
 
         // ------------------------------------------------------------------ 36x: Neo Audio clips in the Arrangement
 
@@ -2545,37 +2659,6 @@ namespace ReBuzz.Studio.Tests
             AfterAll();
         }
 
-        /// <summary>Clips CU3 (clips.md §7.1): a song whose tracker data was moved into the store on open: the tracker views the lanes.</summary>
-        [AvaloniaTest, Order(8)]
-        public void ClipsOfOldSongs()
-        {
-            BeforeAll();
-            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; });
-            NewSong();
-            var window = Open("Machines");
-            try
-            {
-                const string Song = "a song with one old machine (Clip Probe) whose pattern data was moved into the store on open";
-                var machine = ClipOpenTests.MigratedProbe();
-                window.RefreshNow();
-                Settle();
-                var pattern = machine.Patterns.First(p => p.Name == "P");
-                Try("600-clips-old-machine-tracker", () =>
-                {
-                    window.Detail.Show(true);
-                    PatternView.Edit(pattern);
-                    window.ShowView("Pattern");
-                    Wait(300);
-                    Shot(window, "600-clips-old-machine-tracker", "The Tracker on a song whose pattern data was moved into the store on open (the clip conversion): the columns are views of the pattern's lanes, the Level step and the note at row 4, the MIDI note at row 8 on the Notes lane.", "Open a song of old machines; F2.", Song);
-                });
-            }
-            finally
-            {
-                Close(window);
-            }
-            AfterAll();
-        }
-
         [AvaloniaTest, Order(6)]
         public void SongsAndStates()
         {
@@ -2591,45 +2674,11 @@ namespace ReBuzz.Studio.Tests
             var window = Open("Machines");
             try
             {
-                string old = repo == null ? null : Path.Combine(repo, "ExternalMachines", "source", "buzztrax-buzzmachines", "FSM", "Infector", "FSM_Infector_Demo.bmx");
-                if (old != null && File.Exists(old))
-                {
-                    const string Song = "FSM_Infector_Demo.bmx (a Windows Buzz song)";
-                    const string Natives = "Native (Windows) machines don't load on the Mac: they open as placeholders that keep their data.";
-                    Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                    try
-                    {
-                        Assert.That(Await(SongFiles.Open(old)), Is.True, "the old song opened");
-                    }
-                    finally
-                    {
-                        Dialogs.Responder = null;
-                    }
-                    Settle();
-                    window.RefreshNow();
-                    Settle();
-                    Try("500-old-song-machines", () => Shot(window, "500-old-song-machines", "An old Windows song with native machines: each a placeholder box marked Windows only, and the problem bar saying so in plain words (the song plays without them and saves them back unchanged), with Show Them.", "File ▸ Open… a .bmx made on Windows.", Song, Natives));
-                    Try("501-old-song-sequence", () => { window.ShowView("Sequence"); Shot(window, "501-old-song-sequence", "The old song's arrangement.", "F4.", Song, Natives); });
-                    Try("502-old-song-placeholder-parameters", () =>
-                    {
-                        var native = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type != MachineType.Master);
-                        Core.UiHost.OpenParameterWindow(native, null);
-                        var w = StudioMachineUiHost.ParameterWindowOf(native);
-                        Assert.That(w, Is.Not.Null);
-                        Settle();
-                        Shot(w!, "502-old-song-placeholder-parameters", $"The parameter window of a placeholder ({native.Name}, {native.DLL.Name}).", "Right-click a placeholder ▸ Parameters….", Song, Natives);
-                        Core.UiHost.CloseWindows(native);
-                    });
-                    window.ShowView("Machines");
-                    NewSong();
-                }
-                else failures.Add("mac-500..502: the old demo song isn't in this checkout");
-
-                // Many machines: every Neo and Pedal machine in one song.
+                // Many machines: every Neo machine in one song.
                 Try("510-machines-many", () =>
                 {
                     NewSong();
-                    var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && !d.Name.StartsWith("Neo Plug") && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence" || d.Name.StartsWith("Pedal ")))
+                    var gear = Core.MachineDLLs.Values.Where(d => d?.Info != null && d.Info.Type != MachineType.Master && !d.Name.StartsWith("Neo Plug") && (d.Name.StartsWith("Neo ") || d.Name == "Dye Essence"))
                         .Select(d => d.Name).OrderBy(x => x).ToList();
                     int cols = 6;
                     for (int k = 0; k < gear.Count; k++)
@@ -2638,11 +2687,11 @@ namespace ReBuzz.Studio.Tests
                         // As right-click ▸ New makes them (a spot taken moves to free space).
                         var instrument = Core.Instruments.First(i => i.MachineDLL?.Name == gear[k]);
                         var made = ReBuzz.Studio.Views.Machines.MachineEdits.Create(Core, instrument, x, y);
-                        if (made is MachineCore mc) mc.Name = gear[k].Replace("Neo ", "").Replace("Pedal ", "P ");
+                        if (made is MachineCore mc) mc.Name = gear[k].Replace("Neo ", "");
                     }
                     Settle();
                     window.ShowView("Machines");
-                    Shot(window, "510-machines-many", $"Machines with many machines: every Neo and Pedal machine ({gear.Count}) in one song.", "Add machines (right-click ▸ New).", song: "a song of every Neo and Pedal machine");
+                    Shot(window, "510-machines-many", $"Machines with many machines: every Neo machine ({gear.Count}) in one song.", "Add machines (right-click ▸ New).", song: "a song of every Neo machine");
                 });
 
                 Try("343-machines-many-meters", () =>
@@ -2660,7 +2709,7 @@ namespace ReBuzz.Studio.Tests
                     canvas.TickMeters(1);
                     canvas.SetZoom(-2);                  // the whole song in the view (P SH101 was cut off by the foot of it)
                     Settle();
-                    Shot(window, "343-machines-many-meters", $"The same song of every Neo and Pedal machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo and Pedal machine", notes: Headless);
+                    Shot(window, "343-machines-many-meters", $"The same song of every Neo machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo machine", notes: Headless);
                     canvas.SetZoom(0);
                     canvas.PeakSource = ReBuzz.Core.Session.SessionMixer.PeakOf;
                     canvas.TickMeters(10);

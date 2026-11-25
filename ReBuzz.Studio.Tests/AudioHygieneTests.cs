@@ -51,7 +51,7 @@ using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -141,7 +141,7 @@ namespace ReBuzz.Studio.Tests
 
             /// <summary>
             /// Reads <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, on that thread). With
-            /// <paramref name="describe"/>, each buffer is measured by ReBuzzTests' AllocationWindow too, and a buffer that
+            /// <paramref name="describe"/>, each buffer is measured by AllocationWindow too, and a buffer that
             /// allocated is described in the log: the types the runtime's allocation ticks name, JIT, type loads, GCs.
             /// </summary>
             public Cost Read(int buffers, Action perBuffer = null, bool describe = false)
@@ -149,7 +149,7 @@ namespace ReBuzz.Studio.Tests
                 var cost = new Cost();
                 On(() =>
                 {
-                    using var window = describe ? new ReBuzzTests.Automation.AllocationWindow(buffers) : null;
+                    using var window = describe ? new NeoBuzz.TestSupport.AllocationWindow(buffers) : null;
                     long workerMethods = Interlocked.Read(ref RenderJobs.WorkerMethods);
                     long methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: true);
                     for (int i = 0; i < buffers; i++)
@@ -215,7 +215,7 @@ namespace ReBuzz.Studio.Tests
         static Cost Measured(Func<Cost> read)
         {
             Cost cost = null;
-            for (int attempt = 0; attempt < ReBuzzTests.Automation.GuardPolicy.Attempts; attempt++)
+            for (int attempt = 0; attempt < NeoBuzz.TestSupport.GuardPolicy.Attempts; attempt++)
             {
                 var next = read();
                 if (cost != null && next.Bytes != 0) next.Log.Insert(0, $"(attempt {attempt + 1}; the one before allocated {cost.Bytes} bytes)");
@@ -504,14 +504,14 @@ namespace ReBuzz.Studio.Tests
 
             // (None ends on the last tick: the editor never sends a lane note's end there, and keeps
             // it queued for good, one more on every loop: upstream's, left as it is.)
-            var lanes = TrackerNotes.Pack(Enumerable.Range(0, 7).Select(i => new TrackerNote(i * 2 * TB, TB, 48 + i, 100)));
-            Assert.That(Core.SessionLayout.ImportToEditor(pattern, lanes), Is.True, "notes on the MIDI note lanes");
+            var lanes = Enumerable.Range(0, 7).Select(i => new ClipNote(i * 2 * TB, TB, 48 + i, 100)).ToArray();
+            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, pattern)!.Edit(null, lanes), Is.Null, "notes on the Notes lane");
             Pump();
 
             var columns = pattern.PatternEditorMachineEvents.ToList();
             Assert.That(columns.Single(c => c.Parameter.Name == "Note").Events.Count(), Is.EqualTo(16), "a note on every row");
             Assert.That(columns.Single(c => c.Parameter.Name == "Uni detune").Events.Count(), Is.EqualTo(16), "automation on every row");
-            Assert.That(columns.Where(c => c.Parameter.Name == "MIDI Note").Sum(c => c.Events.Count()), Is.GreaterThanOrEqualTo(7), "notes on the MIDI lanes");
+            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, pattern)!.Notes().Count, Is.EqualTo(7), "notes on the Notes lane");
             Arrange(m, pattern);
             return (m, pattern, window);
         }
@@ -1198,7 +1198,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ANeoTuneWithEveryControlAllocatesNothing()
         {
-            // neo-tune.md: Neo Tune (the scale, Retune speed, Amount, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
+            // neo-tune.md: Neo Tune (the scale, Retune speed, Correction, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
             NewSong();
             var m = AddPoly("Hygiene Tune Poly");
             m.CreatePattern("00", 16);
@@ -1209,7 +1209,7 @@ namespace ReBuzz.Studio.Tests
             var tg = tune.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             var scale = tg.First(p => p.Name == "Scale");
             var retune = tg.First(p => p.Name == "Retune speed");
-            var amount = tg.First(p => p.Name == "Amount");
+            var amount = tg.First(p => p.Name == "Correction");   // the correction strength (id Amount; FX1's Amount is the effect strength)
             var transpose = tg.First(p => p.Name == "Transpose");
             var formant = tg.First(p => p.Name == "Formant shift");
             var vib = tg.First(p => p.Name == "Add vibrato");
