@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using Avalonia;
 using Avalonia.Media;
+using ReBuzz.Studio.Shell.Design;
 using Avalonia.Media.Immutable;
 using Buzz.MachineInterface;
 
@@ -16,26 +17,20 @@ namespace ReBuzz.Studio.Views.Session
     /// <summary>The colour of each sample number: nine that repeat (a re-sequenced break reads at a glance by its colours).</summary>
     internal static class SampleColours
     {
-        static readonly Color[] colours =
-        {
-            Color.Parse("#F0B429"), Color.Parse("#5AA9FF"), Color.Parse("#FF7B54"), Color.Parse("#6FD08C"), Color.Parse("#C08CFF"),
-            Color.Parse("#35C9C1"), Color.Parse("#FF6FA8"), Color.Parse("#9AA7FF"), Color.Parse("#E9E3D0"),
-        };
+        static readonly IBrush[] brushes = Enumerable.Range(0, StudioTokens.SamplePaletteCount).Select(i => StudioTokens.Themed(() => StudioTokens.SamplePalette(i))).ToArray();
 
-        static readonly IBrush[] brushes = colours.Select(c => (IBrush)new ImmutableSolidColorBrush(c)).ToArray();
-
-        /// <summary>The colour of sample <paramref name="number"/> (1 and up).</summary>
-        public static Color Of(int number) => colours[Index(number)];
+        /// <summary>The colour of sample <paramref name="number"/> (1 and up), in the theme in use.</summary>
+        public static Color Of(int number) => StudioTokens.SamplePalette(Index(number));
 
         public static IBrush BrushOf(int number) => brushes[Index(number)];
 
-        static int Index(int number) => (Math.Max(1, number) - 1) % colours.Length;
+        static int Index(int number) => (Math.Max(1, number) - 1) % StudioTokens.SamplePaletteCount;
 
         /// <summary>The ink on a chip or a note of the colour: dark, as every one of the nine is light.</summary>
-        public static readonly IBrush Ink = new ImmutableSolidColorBrush(Color.Parse("#121417"));
+        public static readonly IBrush Ink = StudioTokens.Themed(() => StudioTokens.SampleInk);
 
         /// <summary>The chip's own background: dark with the colour of its number as the text.</summary>
-        public static readonly IBrush ChipBack = new ImmutableSolidColorBrush(Color.FromArgb(0xD1, 0x12, 0x14, 0x17));
+        public static readonly IBrush ChipBack = StudioTokens.Themed(() => StudioTokens.SampleChipBack);
 
         /// <summary>A chip's text: the number as the roll shows it (two digits at least).</summary>
         public static string Label(int number) => number <= 0 ? "–" : number.ToString("00", CultureInfo.InvariantCulture);

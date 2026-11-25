@@ -244,7 +244,7 @@ namespace ReBuzz.Studio.Views.Detail
         {
             var back = number > 0 ? SampleColours.BrushOf(number) : (IBrush)StudioTokens.SurfaceControlBrush;
             var b = new Border { Width = width, Height = 18, CornerRadius = new CornerRadius(4), Background = back, VerticalAlignment = VerticalAlignment.Center };
-            b.Child = new TextBlock { Text = SampleColours.Label(number), FontSize = 10, FontFamily = new FontFamily("JetBrains Mono, Cascadia Mono, Menlo, Consolas, monospace"), FontWeight = FontWeight.Medium, Foreground = number > 0 ? SampleColours.Ink : StudioTokens.TextSecondaryBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            b.Child = new TextBlock { Text = SampleColours.Label(number), FontSize = 11, FontFamily = new FontFamily("JetBrains Mono, Cascadia Mono, Menlo, Consolas, monospace"), FontWeight = FontWeight.Medium, Foreground = number > 0 ? SampleColours.Ink : StudioTokens.TextSecondaryBrush, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             return b;
         }
 
