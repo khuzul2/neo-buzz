@@ -3,6 +3,7 @@
 
     python3 tools/gen-machine-params.py Machines/NeoDrive [Machines/NeoComp ...]
     python3 tools/gen-machine-params.py --all
+    python3 tools/gen-machine-params.py --all --check    (CI: writes nothing; fails if a generated file is out of date)
 
 Writes, next to Params.def:
   Engine/Params.g.cs     the pure table (indices, ranges, mappings, value text): engine, tests, editor
@@ -304,17 +305,73 @@ def manifest_param(index, p):
 
 
 def gear_of(folder):
-    """The machine's gear name and kind, from its csproj (AssemblyName "Neo Poly.NET", output under Gear/Generators)."""
+    """The machine's gear name and kind ("generator" or "effect").
+
+    Since the clean break (CB1) a Neo machine's folder holds only its sources; its builds are the studio and portable
+    projects, Machines/Studio/<X>/<X>.Studio.csproj and Machines/Portable/<X>/<X>.Portable.csproj, which name the folder
+    (NeoFolder), the gear (NeoName) and its kind (NeoKind: Generators or Effects). A folder with its own csproj
+    (AssemblyName "Neo Poly.NET", output under Gear/Generators) still works, and the manifest already there is the last
+    resort for a folder with neither."""
+    name = os.path.basename(os.path.normpath(folder))
+    machines = os.path.dirname(os.path.normpath(os.path.abspath(folder)))
+    found = []
+    for flavour in ('Studio', 'Portable'):
+        base = os.path.join(machines, flavour)
+        if not os.path.isdir(base):
+            continue
+        for d in sorted(os.listdir(base)):
+            sub = os.path.join(base, d)
+            if not os.path.isdir(sub):
+                continue
+            for f in sorted(os.listdir(sub)):
+                if not f.endswith('.csproj'):
+                    continue
+                text = open(os.path.join(sub, f), encoding='utf-8-sig').read()
+                nf = re.search(r'<NeoFolder>([^<]+)</NeoFolder>', text)
+                gear = re.search(r'<NeoName>([^<]+)</NeoName>', text)
+                kind = re.search(r'<NeoKind>([^<]+)</NeoKind>', text)
+                if nf and nf.group(1).strip() == name and gear and kind:
+                    found.append((gear.group(1).strip(), 'generator' if kind.group(1).strip() == 'Generators' else 'effect',
+                                  os.path.join(flavour, d, f)))
+    if found:
+        if len({(g, k) for g, k, _ in found}) > 1:
+            sys.exit(f'{folder}: its projects disagree on the gear: ' + ', '.join(f'{p} says {g} ({k})' for g, k, p in found))
+        return found[0][0], found[0][1]
     for f in sorted(os.listdir(folder)):
         if f.endswith('.csproj'):
             text = open(os.path.join(folder, f), encoding='utf-8-sig').read()
-            name = re.search(r'<AssemblyName>([^<]+)</AssemblyName>', text)
-            if not name:
-                break
-            gear = re.sub(r'\.NET$', '', name.group(1))
-            kind = 'generator' if 'Gear\\Generators' in text or 'Gear/Generators' in text else 'effect'
-            return gear, kind
-    sys.exit(f'{folder}: no csproj with an AssemblyName')
+            m = re.search(r'<AssemblyName>([^<]+)</AssemblyName>', text)
+            if m:
+                gear = re.sub(r'\.NET$', '', m.group(1))
+                kind = 'generator' if 'Gear\\Generators' in text or 'Gear/Generators' in text else 'effect'
+                return gear, kind
+    for f in sorted(os.listdir(folder)):
+        if f.endswith('.machine.json'):
+            doc = json.load(open(os.path.join(folder, f), encoding='utf-8-sig'))
+            if doc.get('gear') and doc.get('kind') in ('generator', 'effect'):
+                return doc['gear'], doc['kind']
+    sys.exit(f'{folder}: no studio or portable project names it (NeoFolder {name}), no csproj with an AssemblyName '
+             f'and no manifest to take the gear from')
+
+
+CHECK = False          # --check: compare instead of writing
+STALE = []             # files --check found out of date
+
+
+def emit(out, text, what=''):
+    """Writes a generated file, or with --check compares it with the file on disk."""
+    if CHECK:
+        try:
+            with open(out, encoding='utf-8', newline='') as f:
+                same = f.read() == text
+        except FileNotFoundError:
+            same = False
+        if not same:
+            STALE.append(out)
+        return
+    with open(out, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(text)
+    print(f'wrote {out}{what}')
 
 
 def write_manifest(folder, spec, rel):
@@ -336,10 +393,7 @@ def write_manifest(folder, spec, rel):
         doc['note_map'] = spec['note_map']
     mc.apply(doc)
     out = os.path.join(folder, gear + '.machine.json')
-    with open(out, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(doc, f, ensure_ascii=False, indent=1)
-        f.write('\n')
-    print(f'wrote {out}')
+    emit(out, json.dumps(doc, ensure_ascii=False, indent=1) + '\n')
 
 
 def generate(folder):
@@ -403,21 +457,28 @@ def generate(folder):
     for name, lines in (('Engine/Params.g.cs', engine), ('Machine.Params.g.cs', machine)):
         out = os.path.join(folder, name)
         text = '\n'.join(lines)
-        with open(out, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(text)
-        print(f'wrote {out} ({len(params)} parameters)')
+        emit(out, text, f' ({len(params)} parameters)')
     write_manifest(folder, spec, rel)
 
 
 def main(argv):
+    global CHECK
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-    folders = argv
+    CHECK = '--check' in argv
+    folders = [a for a in argv if a != '--check']
     if not folders or folders == ['--all']:
         mroot = os.path.join(root, 'Machines')
         folders = [os.path.join(mroot, d) for d in sorted(os.listdir(mroot))
                    if os.path.exists(os.path.join(mroot, d, 'Params.def'))]
     for folder in folders:
         generate(folder)
+    if CHECK:
+        if STALE:
+            print('out of date (run python3 tools/gen-machine-params.py on its folder and commit the result):')
+            for out in STALE:
+                print('  ' + os.path.relpath(out, root).replace('\\', '/'))
+            sys.exit(1)
+        print(f'{len(folders)} machines: every generated file is up to date')
 
 
 if __name__ == '__main__':

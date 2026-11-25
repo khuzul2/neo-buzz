@@ -121,6 +121,8 @@ tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params
 tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 ```
 
+The generators take the gear name and kind from the machine's studio or portable project (`NeoName`, `NeoKind` for its `NeoFolder`). `--all --check` writes nothing and fails if any generated file differs from what the generator makes today; Fork CI runs it for both generators.
+
 - **Linked as source, not a shared DLL.** ReBuzz loads managed machines with `Assembly.LoadFile`, so a shared library DLL would load once per machine folder and version clashes would be silent. Each machine compiles its own copy; types are `internal`.
 - **Parameter table.** `Params.def` declares each parameter once: name, range, default, mapping (linear, exponential, dB, time, frequency, enum…) and unit. The generator writes the pure table (mapping and value text, used by the engine, the tests and the editor) and the machine's `[ParameterDecl]` properties. Continuous parameters use 0–1000 for fine control; discrete ones their own range.
 - **Engine contract.** `Process(float[] left, float[] right, int n)` in ±1.0 floats, sample rate set by the machine from `MasterInfo`. No allocation and no locks on the audio thread; parameter changes are smoothed inside the engine.

@@ -3,6 +3,7 @@
 
     python3 tools/gen-machine-presets.py Machines/NeoDrive [...]
     python3 tools/gen-machine-presets.py --all
+    python3 tools/gen-machine-presets.py --all --check    (CI: writes nothing; fails if a .prs.xml is out of date)
 
 Reads Params.def and Presets.txt in the machine folder and writes "<Display Name>.prs.xml", the
 file ReBuzz loads presets from (next to the machine DLL). Presets.txt:
@@ -172,20 +173,43 @@ def build(folder):
         out.append('  </Item>')
     out.append('</PresetDictionary>')
     path = os.path.join(folder, f'{machine}.prs.xml')
+    text = '\n'.join(out) + '\n'
+    if CHECK:
+        try:
+            with open(path, 'rb') as f:
+                same = f.read() == ('\ufeff' + text.replace('\n', '\r\n')).encode('utf-8')
+        except FileNotFoundError:
+            same = False
+        if not same:
+            STALE.append(path)
+        return
     with open(path, 'w', encoding='utf-8-sig', newline='\r\n') as f:
-        f.write('\n'.join(out) + '\n')
+        f.write(text)
     print(f'wrote {path} ({len(presets)} presets)')
 
 
+CHECK = False          # --check: compare instead of writing
+STALE = []             # files --check found out of date
+
+
 def main(argv):
+    global CHECK
     root = os.path.join(HERE, '..')
-    folders = argv
+    CHECK = '--check' in argv
+    folders = [a for a in argv if a != '--check']
     if not folders or folders == ['--all']:
         mroot = os.path.join(root, 'Machines')
         folders = [os.path.join(mroot, d) for d in sorted(os.listdir(mroot))
                    if os.path.exists(os.path.join(mroot, d, 'Presets.txt'))]
     for folder in folders:
         build(folder)
+    if CHECK:
+        if STALE:
+            print('out of date (run python3 tools/gen-machine-presets.py on its folder and commit the result):')
+            for path in STALE:
+                print('  ' + os.path.relpath(path, root).replace('\\', '/'))
+            sys.exit(1)
+        print(f'{len(folders)} machines: every .prs.xml is up to date')
 
 
 if __name__ == '__main__':

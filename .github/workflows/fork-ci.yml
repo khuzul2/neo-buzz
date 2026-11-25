@@ -23,6 +23,14 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # Every Neo machine's generated files (Engine/Params.g.cs, Machine.Params.g.cs, the manifest and the factory presets)
+    # match what the generators make from Params.def and Presets.txt today: a generator that breaks, or a file edited
+    # by hand or left stale, fails here in seconds. Fix: run the generator on the machine's folder and commit.
+    - name: Generated machine files are up to date
+      run: |
+        python3 tools/gen-machine-params.py --all --check
+        python3 tools/gen-machine-presets.py --all --check
+
     # PortAudio for the Mac engine's audio binding (docs/specs/mac-engine.md M5), tested here on
     # Linux: same LP64 ABI as macOS. The runner has no sound card, so a PulseAudio server with a
     # null sink is the default device (PortAudio 19.7 initialises its PulseAudio host, and fails
