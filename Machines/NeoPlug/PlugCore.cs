@@ -164,9 +164,10 @@ namespace NeoBuzz.Plug
         /// <summary>Raised on PlugMain when the placement or the crash state changed (the machine refreshes its menu and manifest).</summary>
         public event Action PlacementChanged;
 
-        // MIDI out
-        volatile IMachine midiTarget;
+        // MIDI out: a note wire now (docs/specs/note-wires.md). A song saved before kept one target machine by name: it waits here until the host takes it and makes the wire.
         volatile string midiTargetName = "";
+        INoteEmitter emitter;
+        volatile bool notesOut;
 
         public PlugCore(IBuzzMachineHost host, bool effect)
         {
@@ -637,7 +638,6 @@ namespace NeoBuzz.Plug
                     any = true;
                 }
                 if (any && Interlocked.Exchange(ref applyQueued, 1) == 0) ThreadPool.QueueUserWorkItem(_ => ApplyToEngine());
-                UpdateMidiTarget();
             }
             catch (Exception) { }
         }
@@ -821,7 +821,8 @@ namespace NeoBuzz.Plug
         public void LoadState(PlugState s)
         {
             MidiChannel = Math.Clamp(s.MidiChannel, 0, 15);
-            SetMidiTarget(s.MidiOut);
+            SetLegacyTarget(s.MidiOut);
+            notesOut = s.NotesOut || !string.IsNullOrEmpty(s.MidiOut);
             StateArrived();
             if (Missing || plugin == IntPtr.Zero)
             {
@@ -831,6 +832,7 @@ namespace NeoBuzz.Plug
             }
             State.MidiChannel = s.MidiChannel;
             State.MidiOut = s.MidiOut;
+            State.NotesOut = notesOut;
             var blob = PlugState.Unpack(s.Blob);
             if (blob == null || blob.Length == 0) return;
             try
@@ -912,7 +914,6 @@ namespace NeoBuzz.Plug
         /// <summary>A render starts: the plug-in is told it's offline, and forgets what rang before.</summary>
         public void BeginRender()
         {
-            UpdateMidiTarget();   // a render starts in a moment: the pump may not have found the MIDI target yet
             if (Missing || plugin == IntPtr.Zero) return;
             try
             {
@@ -1003,40 +1004,46 @@ namespace NeoBuzz.Plug
 
         // --- MIDI out --------------------------------------------------------------------------------------
 
-        public string MidiOutName => midiTargetName;
-
-        public void SetMidiTarget(string name)
+        /// <summary>True when the plug-in is known to make notes (it played some, or a wire was made from it, or the person said so): the machine then shows a note-out port.</summary>
+        public bool NotesOut
         {
-            midiTargetName = name ?? "";
-            midiTarget = null;
-            State.MidiOut = midiTargetName;
+            get => notesOut;
+            set { notesOut = value; State.NotesOut = value; }
         }
 
-        void UpdateMidiTarget()
+        /// <summary>What a song saved before note wires named as the MIDI target: kept until the host takes it (once); it makes the plug-in a note sender.</summary>
+        public string TakeLegacyTarget()
         {
-            string name = midiTargetName;
-            if (string.IsNullOrEmpty(name)) { midiTarget = null; return; }
-            var t = midiTarget;
-            try
-            {
-                if (t != null && t.Graph != null && t.Name == name) return;
-                foreach (var m in host.Machine.Graph.Machines)
-                    if (m.Name == name && !ReferenceEquals(m, host.Machine)) { midiTarget = m; return; }
-                midiTarget = null;
-            }
-            catch (Exception) { midiTarget = null; }
+            string t = midiTargetName;
+            midiTargetName = "";
+            State.MidiOut = "";
+            if (string.IsNullOrEmpty(t)) return null;
+            NotesOut = true;
+            return t;
         }
 
-        public IEnumerable<string> MidiTargets()
+        void SetLegacyTarget(string name)
         {
-            var list = new List<string>();
-            try
+            if (string.IsNullOrEmpty(name)) return;
+            midiTargetName = name;
+            State.MidiOut = name;
+        }
+
+        /// <summary>Audio thread, from a render: the plug-in's note events of one chunk go down the note wires at their frame in the block.</summary>
+        void EmitOut(int blockOffset, int count)
+        {
+            var em = emitter ??= host.Machine as INoteEmitter;
+            for (int k = 0; k < count; k++)
             {
-                foreach (var m in host.Machine.Graph.Machines)
-                    if (!ReferenceEquals(m, host.Machine)) list.Add(m.Name);
+                var o = outEvents[k];
+                NoteMessage m = default;
+                m.Offset = blockOffset + (int)o.frame; m.Channel = (byte)(o.channel & 15);
+                if (o.type == PlugNative.EvNoteOn) { m.Kind = NoteMessageKind.NoteOn; m.Data1 = (byte)(o.key & 127); m.Data2 = Math.Clamp((int)Math.Round(o.value * 127), 1, 127); }
+                else if (o.type == PlugNative.EvNoteOff) { m.Kind = NoteMessageKind.NoteOff; m.Data1 = (byte)(o.key & 127); }
+                else continue;
+                if (!notesOut) NotesOut = true;
+                em?.EmitNote(m);
             }
-            catch (Exception) { }
-            return list;
         }
 
         // --- Input events (any thread) ------------------------------------------------------------------
@@ -1045,6 +1052,24 @@ namespace NeoBuzz.Plug
         {
             lock (midiLock)
                 if (midiCount < midiRing.Length) midiRing[midiCount++] = e;
+        }
+
+        /// <summary>Events a note wire carried this block (audio thread, just before Work): queued at their frame in the block.</summary>
+        public void ReceiveNotes(ReadOnlySpan<NoteMessage> events)
+        {
+            for (int i = 0; i < events.Length; i++)
+            {
+                ref readonly var e = ref events[i];
+                int ch = e.Channel & 15;
+                switch (e.Kind)
+                {
+                    case NoteMessageKind.NoteOn: QueueMidi(new PlugNative.Event { frame = (uint)e.Offset, type = PlugNative.EvNoteOn, channel = ch, key = e.Data1 & 127, note_id = -1, value = Math.Max(1, e.Data2) / 127.0 }); break;
+                    case NoteMessageKind.NoteOff: QueueMidi(new PlugNative.Event { frame = (uint)e.Offset, type = PlugNative.EvNoteOff, channel = ch, key = e.Data1 & 127, note_id = -1 }); break;
+                    case NoteMessageKind.PitchBend: QueueMidi(new PlugNative.Event { frame = (uint)e.Offset, type = PlugNative.EvPitchBend, channel = ch, value = Math.Clamp((e.Data2 - 8192) / 8192.0, -1, 1) }); break;
+                    case NoteMessageKind.Pressure: QueueMidi(new PlugNative.Event { frame = (uint)e.Offset, type = PlugNative.EvChannelPressure, channel = ch, value = Math.Clamp(e.Data2 / 127.0, 0, 1) }); break;
+                    case NoteMessageKind.Controller: if (e.Data1 < 128) QueueMidi(new PlugNative.Event { frame = (uint)e.Offset, type = PlugNative.EvCc, channel = ch, key = e.Data1, value = Math.Clamp(e.Data2 / 127.0, 0, 1) }); break;
+                }
+            }
         }
 
         public void MidiNote(int channel, int value, int velocity)
@@ -1212,7 +1237,6 @@ namespace NeoBuzz.Plug
 
                 bool any = false;
                 int ei = 0;
-                var target = midiTarget;
                 for (int off = 0; off < n; off += Chunk)
                 {
                     int c = Math.Min(Chunk, n - off);
@@ -1252,14 +1276,8 @@ namespace NeoBuzz.Plug
                             output[off + i].R = r;
                             if (l != 0 || r != 0) any = true;
                         }
-                        if (outCount > 0 && DebugMidi) Console.Error.WriteLine($"[neoplug] {outCount} events out, target {(target == null ? "none" : target.Name)} ({midiTargetName})");
-                        if (target != null && outCount > 0)
-                            for (int k = 0; k < outCount; k++)
-                            {
-                                var o = outEvents[k];
-                                if (o.type == PlugNative.EvNoteOn) target.SendMIDINote(o.channel, o.key, Math.Clamp((int)Math.Round(o.value * 127), 1, 127));
-                                else if (o.type == PlugNative.EvNoteOff) target.SendMIDINote(o.channel, o.key, 0);
-                            }
+                        if (outCount > 0 && DebugMidi) Console.Error.WriteLine($"[neoplug] {outCount} events out");
+                        if (outCount > 0) EmitOut(off, outCount);
                     }
                     if (playing) beatPos += c * bpm / (60.0 * rate);
                 }

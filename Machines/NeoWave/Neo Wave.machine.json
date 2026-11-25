@@ -14,6 +14,7 @@
   "bass"
  ],
  "use_for": "Wavetable pads, sweeps, wobble basses and vowel-like leads from two warped table oscillators.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

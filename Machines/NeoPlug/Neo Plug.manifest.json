@@ -12,6 +12,8 @@
   "vst3"
  ],
  "use_for": "Play a CLAP or VST3 instrument from patterns, MIDI and the agent.",
+ "note_in": true,
+ "note_out": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

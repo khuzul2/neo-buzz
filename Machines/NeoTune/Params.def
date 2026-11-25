@@ -27,6 +27,7 @@ Humanize   "Humanize"        0 1000  300   pct                                 |
 Amount     "Correction"     0 1000  1000  pct                                 | How much of the correction is applied: 0 % leaves the voice as sung, 100 % moves it fully to the note
     how Blends the correction in, from 0 to 100 % of the distance to the note (in cents).
     sound Lower values tune the voice only part of the way, which hides the effect.
+    was "Amount"
 Transpose  "Transpose"      0 48    24    int -24 st signed                   | Moves the whole voice up or down by whole semitones, after the correction
     how Moves the corrected voice by whole semitones, from -24 to +24.
     sound An octave up or down gives a different voice; the formant setting decides if it stays a human size.

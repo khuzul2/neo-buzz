@@ -29,7 +29,7 @@ namespace NeoBuzz.VoiceToMidi
     }
 
     [MachineDecl(Name = "Neo Voice to MIDI", ShortName = "Voice MIDI", Author = "neo-buzz", MaxTracks = 0, InputCount = 1, OutputCount = 1)]
-    public partial class NeoVoiceToMidiMachine : NeoMachineBase, IBuzzMachine, IMachineMidiSource
+    public partial class NeoVoiceToMidiMachine : NeoMachineBase, IBuzzMachine, IMachineMidiSource, INoteCapable, INoteLegacyTarget
     {
         public static readonly string[] DefaultNames = { "Kick", "Snare", "Closed hat", "Open hat", "Clap", "Rim", "Crash", "Ride" };
 
@@ -59,7 +59,7 @@ namespace NeoBuzz.VoiceToMidi
         {
             get
             {
-                state.Target = router.TargetName;
+                state.Target = "";      // the target is a note wire now (docs/specs/note-wires.md); songs saved before carry it, and the host turns it into a wire once
                 state.Device = router.DeviceName;
                 state.Training = Engine.Classifier.Count > 0 ? Engine.Classifier.Serialize() : "";
                 return state;
@@ -68,7 +68,7 @@ namespace NeoBuzz.VoiceToMidi
             {
                 state = value ?? new NeoVoiceToMidiState();
                 // A preset carries the sounds and their training, not where the MIDI goes: an empty Target or Device leaves the routing as it is.
-                if (!string.IsNullOrEmpty(state.Target)) SetTarget(state.Target);
+                router.SetLegacyTarget(state.Target);
                 if (!string.IsNullOrEmpty(state.Device)) SetDevice(state.Device);
                 if (string.IsNullOrEmpty(state.Training)) Engine.Classifier.Clear();
                 else if (!Engine.Classifier.Deserialize(state.Training)) Engine.Classifier.Clear();
@@ -91,6 +91,11 @@ namespace NeoBuzz.VoiceToMidi
             state.Names = string.Join("|", parts);
             StateChanged?.Invoke();
         }
+
+        // Note wires: this machine sends notes, takes none.
+        bool INoteCapable.AcceptsNotes => false;
+        bool INoteCapable.SendsNotes => true;
+        public string TakeLegacyTarget() => router.TakeLegacyTarget();
 
         public string TargetName => router.TargetName;
         public string DeviceName => router.DeviceName;

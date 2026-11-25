@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (dst.DLL.Info.Type == MachineType.Generator) return dst.Name + " is an instrument: it has no input";
             if (src.Outputs.Any(o => o.Destination == dst)) return "Already connected";
             if (dst.Outputs.Any(o => o.Destination == src)) return dst.Name + " already feeds " + src.Name + ": that would make a loop";
-            return "That would make a loop";
+            return core.NoteWires?.CheckAudio(src.Name, dst.Name) ?? "That would make a loop";
         }
 
         public static void Disconnect(ReBuzzCore core, IMachineConnection c) => core.SongCore.DisconnectMachines(c);

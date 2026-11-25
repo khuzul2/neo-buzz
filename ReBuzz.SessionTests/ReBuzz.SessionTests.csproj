@@ -39,6 +39,9 @@
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\NoteNames.cs" Link="Engine\NoteNames.cs" />
     <!-- The machine delay compensation's ring and plan (docs/specs/mastering-tools.md §4.1), with the Sample they carry. -->
     <Compile Include="..\ReBuzz\Core\Tracks\TrackModel.cs" Link="Engine\TrackModel.cs" />
+    <!-- Note wires (docs/specs/note-wires.md): the state, the rules and the queue and merge. -->
+    <Compile Include="..\ReBuzz\Core\NoteWires\NoteWirePlan.cs" Link="Engine\NoteWirePlan.cs" />
+    <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\INoteWires.cs" Link="Engine\INoteWires.cs" />
     <Compile Include="..\ReBuzz\Core\LatencyRing.cs;..\ReBuzz\Core\LatencyPlan.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\MachineInterface\Sample.cs" Link="Engine\Sample.cs" />
     <Compile Include="..\ReBuzz\Core\Sync\SyncTime.cs" Link="Engine\SyncTime.cs" />

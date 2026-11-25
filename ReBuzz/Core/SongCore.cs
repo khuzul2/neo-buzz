@@ -401,7 +401,8 @@ namespace ReBuzz.Core
                 dst.DLL.Info.Type != MachineType.Generator &&
                 dst.Outputs.FirstOrDefault(o => o.Destination == src) == null &&
                 src.Outputs.FirstOrDefault(o => o.Destination == dst) == null &&
-                !FindDestinationFromSourceConnetions(src, dst))
+                !FindDestinationFromSourceConnetions(src, dst) &&
+                reBuzzCore?.NoteWires?.CheckAudio(src.Name, dst.Name) == null)      // fork (note-wires.md §4): nor a loop through the note wires
                 return true;
             else
                 return false;

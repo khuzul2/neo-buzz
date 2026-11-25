@@ -57,6 +57,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 | `build-a-synth` | learning Neo Patch: the empty patch to sound in three steps, then each template node by node |
 | `app-control` | preferences, the audio device, MIDI bindings, the studio window, export to WAV, clone, groups, latency, recording the Master |
 | `midi-mapping` | MIDI controllers, maps and track pages: map a knob, key or pad to a parameter or a command |
+| `note-wires` | Notes from one machine to another: free wires, a track's note inserts, and why a loop is refused |
 | `live-performance` | the Session View played live: scenes, clips, controllers, levels, a safe restore |
 | `dye-sound-design` | Dye Essence's seven engines: which for what, what to move, what to measure |
 | `teaching` | explaining sound design with the machines' Explain text and the Neo Learn machines |
