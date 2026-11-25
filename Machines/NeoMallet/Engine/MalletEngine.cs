@@ -1,10 +1,10 @@
 #nullable disable
 // Neo Mallet (docs/specs/neo-mallet.md): a modal synth. Each voice is a bank of up to 32 modes, each a decaying complex oscillator
-//     z[n+1] = z[n] * r e^{j w} + g x[n],   output = Im z,
+//     z[n+1] = z[n] * r e^{j w} + g x[n],   output = Re z less half the input (the mode's velocity),
 // which is a 2-pole resonator with its own frequency, gain and T60 (Adrien 1991; Cook, Real Sound Synthesis). Mallet source: x is a
 // raised-cosine force pulse (area 1) whose contact time follows Hardness and velocity, plus a little noise; Resonator source: x is
 // the audio coming in, and a voice is a bank tuned to a held note. Coefficients follow the settings with a short slew; a released
-// voice is damped by Release damping, a stolen or killed one fades in 4 ms. 16 voices. Pure; no allocation after construction.
+// voice is damped by Release damping, a stolen or killed one fades out in 5 ms (a raised cosine, so the fade has no corner). 16 voices. Pure; no allocation after construction.
 
 using System;
 using NeoBuzz.Dsp;
@@ -20,12 +20,12 @@ namespace NeoBuzz.Mallet
         /// <summary>The highest mode frequency, as a fraction of the sample rate (modes above it are dropped).</summary>
         public const double TopFraction = 0.45;
         /// <summary>The length of a steal's or a kill's fade, seconds (at least 3 ms).</summary>
-        public const double FadeSeconds = 0.004;
+        public const double FadeSeconds = 0.005;
         const double ResonatorRise = 0.005;
         const float StrikeGain = 0.42f;
         const float ResonatorGain = 0.5f;
         const float NoiseGain = 4f;
-        const double SlewPerTick = 0.15;
+        const double SlewPerTick = 0.012;
 
         const int Free = 0, Held = 1, Released = 2, Fading = 3;
         const int HannSize = 512;
@@ -44,7 +44,7 @@ namespace NeoBuzz.Mallet
         readonly float[] velocity = new float[Voices];
         readonly long[] age = new long[Voices];
         readonly float[] damper = new float[Voices];
-        readonly float[] fadeStep = new float[Voices];
+        readonly float[] fadeFrom = new float[Voices], fadeAt = new float[Voices];
         readonly bool[] resonator = new bool[Voices];
         readonly bool[] sustained = new bool[Voices];
         readonly bool[] retarget = new bool[Voices];
@@ -63,7 +63,7 @@ namespace NeoBuzz.Mallet
 
         // Per voice per mode (voice * Modes + mode): the state, the coefficients the loop reads (float), and the double ones they follow.
         readonly float[] zr = new float[Voices * Modes], zi = new float[Voices * Modes];
-        readonly float[] cf = new float[Voices * Modes], sf = new float[Voices * Modes], gf = new float[Voices * Modes];
+        readonly float[] cf = new float[Voices * Modes], sf = new float[Voices * Modes], gf = new float[Voices * Modes], gp = new float[Voices * Modes];   // gp: the drive gain the last chunk ended on
         readonly double[] cd = new double[Voices * Modes], sd = new double[Voices * Modes], gd = new double[Voices * Modes];
         readonly double[] tc = new double[Voices * Modes], ts = new double[Voices * Modes], tg = new double[Voices * Modes];
         readonly double[] gainScratch = new double[Modes];
@@ -139,7 +139,7 @@ namespace NeoBuzz.Mallet
             damper[v] = 0f;
             int b = v * Modes;
             Array.Clear(zr, b, Modes); Array.Clear(zi, b, Modes);
-            Array.Clear(gf, b, Modes); Array.Clear(gd, b, Modes); Array.Clear(tg, b, Modes);
+            Array.Clear(gf, b, Modes); Array.Clear(gp, b, Modes); Array.Clear(gd, b, Modes); Array.Clear(tg, b, Modes);
         }
 
         // ── settings ────────────────────────────────────────────────────────
@@ -211,7 +211,8 @@ namespace NeoBuzz.Mallet
         {
             state[v] = Fading;
             sustained[v] = false;
-            fadeStep[v] = Math.Max(damper[v], 1e-6f) / (float)(FadeSeconds * fs);
+            fadeFrom[v] = damper[v];
+            fadeAt[v] = 0f;
         }
 
         public void ModWheel(float value) { }
@@ -256,7 +257,7 @@ namespace NeoBuzz.Mallet
             {
                 int i = b + m;
                 cd[i] = tc[i]; sd[i] = ts[i]; gd[i] = tg[i];
-                cf[i] = (float)cd[i]; sf[i] = (float)sd[i]; gf[i] = (float)gd[i];
+                cf[i] = (float)cd[i]; sf[i] = (float)sd[i]; gf[i] = (float)gd[i]; gp[i] = gf[i];
             }
             slewing[v] = false;
             if (res)
@@ -296,14 +297,14 @@ namespace NeoBuzz.Mallet
             double sum2 = 0;
             for (int m = 0; m < set.Count; m++)
             {
-                double f = f0 * set.Ratio[m];
+                double ratio = set.Ratio[m] / refRatio;       // the table's ratio to the mode that carries the note: a stiff string's fundamental sits at the note too
+                double f = f0 * ratio;
                 int i = b + m;
                 if (f >= top || f <= 0.5)
                 {
                     tc[i] = 0; ts[i] = 0; gainScratch[m] = 0; tg[i] = 0;
                     continue;
                 }
-                double ratio = set.Ratio[m] / refRatio;
                 double t60 = decay * Math.Clamp(PortableMath.Pow(ratio, -2.0 * tilt), 0.001, 3.0);
                 t60 = Math.Clamp(t60, 0.008, 80.0);
                 double r = PortableMath.Pow(10.0, -3.0 / (t60 * fs));
@@ -410,14 +411,17 @@ namespace NeoBuzz.Mallet
 
                 // The damper: 1 while held (a resonator's gate rises first), the release's decay, the fade's ramp.
                 float d = damper[v];
+                float fadeT = fadeAt[v];
+                float fadeD = (float)(1.0 / (FadeSeconds * fs));
                 for (int i = 0; i < m; i++)
                 {
                     if (st == Held) { if (res && d < 1f) { d += (float)(1.0 / (ResonatorRise * fs)); if (d > 1f) d = 1f; } }
                     else if (st == Released) d *= releaseCoef;
-                    else { d -= fadeStep[v]; if (d < 0f) d = 0f; }
+                    else { fadeT += fadeD; d = fadeT >= 1f ? 0f : fadeFrom[v] * (0.5f + 0.5f * (float)Math.Cos(Math.PI * fadeT)); }
                     damp[i] = d;
                 }
                 damper[v] = d;
+                fadeAt[v] = fadeT;
 
                 // The drive: the mallet's force pulse, or the audio gated by the damper.
                 if (res)
@@ -449,14 +453,21 @@ namespace NeoBuzz.Mallet
                 {
                     int ix = b + k;
                     float c = cf[ix], s = sf[ix], g = gf[ix];
-                    if (c == 0f && s == 0f) { zr[ix] = 0f; zi[ix] = 0f; continue; }
+                    if (c == 0f && s == 0f) { zr[ix] = 0f; zi[ix] = 0f; gp[ix] = g; continue; }
                     float r = zr[ix], q = zi[ix];
+                    // The drive gain glides from where the last chunk left it to its new value over this chunk, so a change of Position,
+                    // Brightness, Decay or the input drive makes no step in what the mode is fed.
+                    float gi = gp[ix], dgi = (g - gi) / m;
+                    gp[ix] = g;
                     for (int i = 0; i < m; i++)
                     {
-                        float nr = r * c - q * s + g * drive[i];
+                        gi += dgi;
+                        float nr = r * c - q * s + gi * drive[i];
                         q = r * s + q * c;
                         r = nr;
-                        acc[i] += q;
+                        // The mode's velocity (the cosine phase), less the half sample of the input that the one-step update puts into it: a slow force
+                        // (the mallet's own pulse) then leaves nothing in the output but what it sets ringing, and a strike starts without a thump.
+                        acc[i] += r - 0.5f * gi * drive[i];
                     }
                     zr[ix] = r; zi[ix] = q;
                 }
@@ -533,8 +544,8 @@ namespace NeoBuzz.Mallet
         static float SoftLimit(float x)
         {
             float a = Math.Abs(x);
-            if (a <= 0.9f) return x;
-            float y = 0.9f + 0.1f * DspMath.FastTanh((a - 0.9f) * 10f);
+            if (a <= 0.6f) return x;
+            float y = 0.6f + 0.4f * DspMath.FastTanh((a - 0.6f) * 2.5f);          // a wide knee: a strike's coherent peak is rounded, not clipped
             return x < 0 ? -y : y;
         }
 

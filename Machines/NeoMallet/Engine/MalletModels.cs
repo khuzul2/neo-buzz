@@ -53,7 +53,7 @@ namespace NeoBuzz.Mallet
         /// <summary>The weight floor of the strike position: a strike at a node still sounds a little (-30 dB).</summary>
         public const float PositionFloor = 0.03f;
 
-        static readonly float[] Trim = { 1.0f, 0.85f, 0.9f, 0.8f, 0.75f, 0.44f, 1.0f, 0.92f, 0.65f, 0.76f, 0.83f };
+        static readonly float[] Trim = { 1.25f, 0.94f, 1.05f, 0.90f, 0.70f, 0.30f, 1.03f, 0.66f, 0.79f, 0.78f, 0.79f };
 
         static readonly double[] FreeBeta = { 4.730040745, 7.853204624, 10.99560784, 14.13716549 };
         static readonly double[] ClampedBeta = { 1.875104069, 4.694091133, 7.854757438, 10.99554073 };
@@ -79,13 +79,16 @@ namespace NeoBuzz.Mallet
         /// <summary>Stiff-string inharmonicity coefficient B for the Inharmonicity setting (0 ... 1): 0.02 at 100 %.</summary>
         public static double StiffnessB(double inharmonicity) => 0.02 * inharmonicity * inharmonicity;
 
-        /// <summary>The weight of mode <paramref name="k"/> for a strike at <paramref name="x"/> (0 ... 1 along the bar, round the ring, across the plate).</summary>
+        /// <summary>The signed weight of mode <paramref name="k"/> for a strike at <paramref name="x"/> (0 ... 1 along the bar, round the ring, across the plate).</summary>
         public static float Weight(ModeSet set, int k, double x)
         {
             double m = set.Shape[k];
             double a = m * Math.PI * x;
-            double w = set.Partner[k] ? Math.Abs(Math.Cos(a)) : Math.Abs(Math.Sin(a));
-            return (float)(PositionFloor + (1.0 - PositionFloor) * w);
+            double sh = set.Partner[k] ? Math.Cos(a) : Math.Sin(a);
+            double w = PositionFloor + (1.0 - PositionFloor) * Math.Abs(sh);
+            // The sign is the mode shape's: neighbouring modes move in opposite senses at a strike, so the strike does not start them all in phase
+            // (which would add up to one sharp pulse).
+            return (float)(sh < 0 ? -w : w);
         }
 
         /// <summary>Fills <paramref name="s"/> with the modes of <paramref name="model"/>, at most <paramref name="modes"/> of them.</summary>

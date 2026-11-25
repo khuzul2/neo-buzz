@@ -29,6 +29,7 @@ Bright = 30
 Release = 900
 Modes = 16
 Spread = 60
+Volume = -9
 
 preset "Bars — Tremolo Bars"
 comment "Metal bars with the motor on: a long, warm ring that swells and fades at 5 Hz, as on a vibraphone."
