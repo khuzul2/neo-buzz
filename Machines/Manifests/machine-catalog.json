@@ -627,7 +627,7 @@
     "sequencer",
     "tempo-sync"
    ],
-   "use_for": "Turn held notes or a chord into an arpeggio or a stepped line before any synth: twelve patterns, a rate from 1/1 to 1/64 or in milliseconds, swing, gate, octaves, a latch and a 16-step row with ties and accents.",
+   "use_for": "Turn held notes into an arpeggio or a stepped line before any synth: 12 patterns, 1/1 to 1/64 or ms rates, swing, gate, octaves, latch and a 16-step row with ties and accents.",
    "note_in": true,
    "note_out": true
   },

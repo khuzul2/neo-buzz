@@ -39,7 +39,7 @@ Feel        "Feel"           0 2 0      enum Straight Dotted Triplet         | S
     id feel
     how Makes the steps straight, dotted (one and a half times as long) or triplet (two thirds as long).
     sound Dotted steps lilt against the beat; triplets make a rolling, three-against-two feel.
-FreeMs      "Free time"      20 2000 125 int 0 ms                            | The length of a step in milliseconds when Timing is Free time (20 … 2000)
+FreeMs      "Free time"      20 2000 125 lin 20 2000 ms 0                            | The length of a step in milliseconds when Timing is Free time (20 … 2000)
     id free_time
     how Sets the length of a step in milliseconds when Timing is Free time.
     sound Shorter times are faster; the pattern no longer follows the song's tempo.
@@ -67,7 +67,7 @@ AccentLevel "Accent"         0 100 60   int 0 %                              | H
     id accent_level
     how Sets how far an accented step lifts the velocity from the fixed value toward 127 (Accent mode, Steps pattern).
     sound Higher values make the accented steps hit harder.
-HumTime     "Humanize time"  0 20 0     int 0 ms                             | Random lateness of each note, up to this many milliseconds
+HumTime     "Humanize time"  0 20 0     lin 0 20 ms 0                             | Random lateness of each note, up to this many milliseconds
     id humanize_time
     how Delays each note by a random time up to this many milliseconds, the same every time the song is played.
     sound A little looseness takes the machine-like edge off the pattern.
