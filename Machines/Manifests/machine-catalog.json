@@ -651,6 +651,18 @@
     "tape"
    ],
    "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
+  },
+  "Neo Mallet": {
+   "category": "Synths",
+   "tags": [
+    "physical-model",
+    "percussion",
+    "pluck",
+    "bright",
+    "polyphonic"
+   ],
+   "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, tubular chimes, bells, tines, plucks and glass, and a resonator that tunes any audio input to the notes held: tuned percussion, bell pads, drum loops turned into pitched resonances.",
+   "note_in": true
   }
  }
 }
