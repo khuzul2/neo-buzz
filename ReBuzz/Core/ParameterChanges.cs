@@ -1,5 +1,5 @@
 // Fork (engine hardening, docs/specs/daw-modes.md §8.1): the parameters a machine's next tick
-// sends. Every parameter change (pattern editors, engine automation columns and their ramps,
+// sends. Every parameter change (clip editors, engine automation columns and their ramps,
 // MIDI-mapped controls, parameter windows, agents) is recorded here by ParameterCore.SetValue,
 // and the machine's tick (MachineWorkInstance.Tick) takes them, sends them to a managed machine,
 // raises them as value events and clears their pvals. Upstream kept them in a

@@ -1,5 +1,5 @@
 // Fork (docs/specs/browser.md, BR1): the browser as tools. browser_search is the panel's one search (machines, plug-ins, presets, the song's
-// patterns, and the sample and MIDI files of the user's places); browser_places lists, adds and removes the folders it indexes. Studio mode
+// clips, and the sample and MIDI files of the user's places); browser_places lists, adds and removes the folders it indexes. Studio mode
 // only; elsewhere they say so.
 
 using System;
@@ -12,7 +12,7 @@ namespace ReBuzz.Agent.App
 {
     internal static class BrowserTools
     {
-        static readonly string[] Kinds = { "machine", "plugin", "preset", "audio", "midi", "pattern" };
+        static readonly string[] Kinds = { "machine", "plugin", "preset", "audio", "midi", "clip" };
 
         static IBrowserControl Browser(IAppServices app)
         {
@@ -28,15 +28,15 @@ namespace ReBuzz.Agent.App
                 Title = "Search the browser",
                 Description =
                     "The studio browser's one search over everything the person can drag into a song: machines and plug-ins (the installed gear, plug-ins from Neo Plug's scan by vendor), " +
-                    "factory presets, the song's patterns, and the sample and MIDI files in the folders added with browser_places (name, folder, length, rate, tempo, key). " +
-                    "kind narrows it to machine, plugin, preset, audio, midi or pattern. Every word of the query must match. Results carry what machine_add, machine_swap and wave_import take: " +
+                    "factory presets, the song's clips, and the sample and MIDI files in the folders added with browser_places (name, folder, length, rate, tempo, key). " +
+                    "kind narrows it to machine, plugin, preset, audio, midi or clip. Every word of the query must match. Results carry what machine_add, machine_swap and wave_import take: " +
                     "a gear name, a preset's gear and name, a file's path. Studio mode only. Example: browser_search(query=\"kick 808\", kind=\"audio\").",
                 Input = Object(null,
                     Req("query", String("Words to find (all of them)")),
                     Opt("kind", String("Only this kind", Kinds)),
                     Opt("limit", Integer("At most this many results (default 25)", 1, 200))),
                 Output = Object(null,
-                    Req("results", Array(Object("A result", Req("kind", String("machine, plugin, preset, audio, midi or pattern")), Req("name", String("What it is called")), Req("id", String("Gear name, \"Machine/Pattern\" or file path")),
+                    Req("results", Array(Object("A result", Req("kind", String("machine, plugin, preset, audio, midi or clip")), Req("name", String("What it is called")), Req("id", String("Gear name, \"Machine/Clip\" or file path")),
                         Opt("group", String("Its vendor, category, machine or folder")), Opt("detail", String("Tags, length and rate, rows")), Opt("path", String("The file, for audio and midi")), Opt("preset", String("A preset's name; id is its gear"))), "Best first")),
                     Req("count", Integer("How many are returned"))),
                 Annotations = ToolAnnotations.Read,

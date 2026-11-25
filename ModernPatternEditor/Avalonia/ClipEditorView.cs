@@ -1,8 +1,8 @@
 // Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor's view on Avalonia, a port of
-// PatternEditor.xaml: its toolbar (play the pattern, new/clone/delete pattern, beats, tracks, wave,
+// ClipEditor.xaml: its toolbar (play the clip, new/clone/delete clip, beats, tracks, wave,
 // base octave, the keyboard mapping's root note, mapping, steps down and right, MIDI edit and
-// velocity, play notes, zoom, help), the pattern grid (PatternGrid) and the status bar. The engine
-// gets it from the machine (PatternEditorControl) and the studio's Pattern tab shows it.
+// velocity, play notes, zoom, help), the clip grid (ClipGrid) and the status bar. The engine
+// gets it from the machine (ClipEditorControl) and the studio's Clip tab shows it.
 
 using Avalonia;
 using Avalonia.Controls;
@@ -29,8 +29,8 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly TextBlock status1 = StatusText(100), status2 = StatusText(150), status3 = StatusText(double.NaN);
         readonly Border help;
 
-        // Fork: Space plays and stops the song (the studio's window has it); Shift+Space this pattern, from the cursor.
-        readonly ToggleButton playButton = SmallToggle("▶", "Play/Stop Pattern (Shift+Space: from the cursor)");
+        // Fork: Space plays and stops the song (the studio's window has it); Shift+Space this clip, from the cursor.
+        readonly ToggleButton playButton = SmallToggle("▶", "Play/Stop Clip (Shift+Space: from the cursor)");
         readonly NumericUpDown beatsBox = Number(1, 8192, "Beats");
         readonly NumericUpDown tracksBox = Number(0, 128, "Tracks");
         readonly ComboBox waveBox = new ComboBox { Width = 160, Margin = new Thickness(4, 4, 0, 4) };
@@ -52,13 +52,13 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly ToggleButton hexToggle = SmallToggle("Hex", "Show and type values in hex, as Buzz does (Preferences > General > Pattern values)");
         readonly ToggleButton centreToggle = SmallToggle("Centre", "Keep the cursor row in the middle of the view (the play row while it plays)");
         // Fork (daw-modes.md AR3): the MIDI column's notes as lanes of their own.
-        readonly ToggleButton notesToggle = SmallToggle("Notes", "Show the Notes lanes: the notes of the pattern's MIDI column, which the engine plays, as rows (shown by themselves when it has notes)");
+        readonly ToggleButton notesToggle = SmallToggle("Notes", "Show the Notes lanes: the notes of the clip's MIDI column, which the engine plays, as rows (shown by themselves when it has notes)");
         readonly TextBox automationFilter = new TextBox { Watermark = "Filter parameters", Width = 240 };
         readonly ListBox automationList = new ListBox { Width = 240, MaxHeight = 320 };
         readonly Button automationAll = new Button { Content = "Show all", Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
         readonly TextBlock emptyHint = new TextBlock
         {
-            Text = "No columns to show yet.\nUse + Automation above to pick the parameters this pattern should show.",
+            Text = "No columns to show yet.\nUse + Automation above to pick the parameters this clip should show.",
             TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
@@ -87,9 +87,9 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Background = ClipTheme.Background;
             Focusable = false;
 
-            var create = SmallButton("+", "Create Pattern (Ctrl+Return)", editor.CreateClipCommand);
-            var clone = SmallButton("C", "Clone Pattern (Ctrl+Shift+Return)", editor.CloneClipCommand);
-            var delete = SmallButton("-", "Delete Pattern (Ctrl+Del)", editor.DeleteClipCommand);
+            var create = SmallButton("+", "Create Clip (Ctrl+Return)", editor.CreateClipCommand);
+            var clone = SmallButton("C", "Clone Clip (Ctrl+Shift+Return)", editor.CloneClipCommand);
+            var delete = SmallButton("-", "Delete Clip (Ctrl+Del)", editor.DeleteClipCommand);
             mappingControls = new Control[] { rootBox, mappingBox, Label("Down:"), downBox, Label("Right:"), rightBox, midiEditBox, midiVelocityBox };
             toolbar.Children.AddRange(new Control[]
             {
@@ -99,7 +99,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             });
             toolbar.Children.AddRange(mappingControls);
             toolbar.Children.AddRange(new Control[] { playNotesToggle, zoom, automationButton, hexToggle, centreToggle, notesToggle });
-            ToolTip.SetTip(automationButton, "Show columns for parameters this pattern has no data for");
+            ToolTip.SetTip(automationButton, "Show columns for parameters this clip has no data for");
             automationButton.Flyout = MakeAutomationFlyout();
 
             var bar = new DockPanel { Background = ClipTheme.ToolbarBackground };
@@ -327,7 +327,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Dispatcher.UIThread.Post(UpdateAll);
         }
 
-        /// <summary>Follows the machine and the pattern shown (WPF binds to SelectedMachine.SelectedPattern).</summary>
+        /// <summary>Follows the machine and the clip shown (WPF binds to SelectedMachine.SelectedClip).</summary>
         void Follow(MachineVM m)
         {
             if (machine != null)
@@ -361,7 +361,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
         void Machine_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "SelectedPattern" || e.PropertyName == "Machine")
+            if (e.PropertyName == "SelectedClip" || e.PropertyName == "Machine")
             {
                 if (e.PropertyName == "Machine") Follow(machine);
                 else FollowClip(machine.SelectedClip);
@@ -377,7 +377,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
         void Clip_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "Pattern") FollowClip(clip);
+            if (e.PropertyName == "Clip") FollowClip(clip);
             if (e.PropertyName != "CursorPosition" && e.PropertyName != "Selection")
                 Dispatcher.UIThread.Post(UpdateAll);
         }
@@ -429,7 +429,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 help.IsVisible = editor.IsHelpVisible;
                 int hidden = clip?.HiddenColumns?.Count ?? 0;
                 automationButton.IsEnabled = hasClip && hidden > 0;
-                ToolTip.SetTip(automationButton, hidden > 0 ? "Show columns for the " + hidden + " parameters this pattern has no data for" : "Every parameter's column is shown");
+                ToolTip.SetTip(automationButton, hidden > 0 ? "Show columns for the " + hidden + " parameters this clip has no data for" : "Every parameter's column is shown");
                 hexToggle.IsChecked = ValueDisplay.IsHex;
                 centreToggle.IsChecked = ClipEditor.Settings.CenteredScrolling;
                 notesToggle.IsEnabled = hasClip;
@@ -492,7 +492,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return n;
         }
 
-        /// <summary>A tip's words before its key: "Create Pattern (Ctrl+Return)" is named "Create Pattern" (a glyph button's name for a screen reader).</summary>
+        /// <summary>A tip's words before its key: "Create Clip (Ctrl+Return)" is named "Create Clip" (a glyph button's name for a screen reader).</summary>
         static string NameOf(string tip)
         {
             int at = tip.IndexOf(" (", StringComparison.Ordinal);
@@ -546,18 +546,18 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 new[] { "F1", "Show/hide help" },
                 new[] { "Ctrl+Z/Y", "Undo/Redo" },
                 new[] { "Ctrl+X/C/V", "Cut/Copy/Paste" },
-                new[] { "+/- (numpad)", "Select pattern" },
+                new[] { "+/- (numpad)", "Select clip" },
                 new[] { "/ and * (numpad), Alt+B", "Select keyboard base octave" },
                 new[] { "Alt+R", "Select keyboard root note" },
                 new[] { "Alt+Y", "Select keyboard mapping" },
                 new[] { "Alt+N", "Toggle Play Notes" },
                 new[] { "Return", "Switch to sequence editor" },
                 new[] { "Space", "Play/stop the song" },
-                new[] { "Shift+Space", "Play pattern from cursor position / stop it" },
-                new[] { "Ctrl+Return", "Create pattern" },
-                new[] { "Ctrl+Shift+Return", "Clone pattern" },
-                new[] { "Ctrl+Del", "Delete pattern" },
-                new[] { "Ctrl+Backspace", "Pattern properties" },
+                new[] { "Shift+Space", "Play clip from cursor position / stop it" },
+                new[] { "Ctrl+Return", "Create clip" },
+                new[] { "Ctrl+Shift+Return", "Clone clip" },
+                new[] { "Ctrl+Del", "Delete clip" },
+                new[] { "Ctrl+Backspace", "Clip properties" },
                 new[] { "Arrows/PageUp/PageDown/Home/End/(Shift+)Tab", "Move cursor (+shift selects)" },
                 new[] { ". (period)", "Clear field under cursor" },
                 new[] { "Z,S,X,D,C,... (note column)", "Enter notes at base octave" },
@@ -606,7 +606,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         }
     }
 
-    /// <summary>The grid's context menu (PatternControl.xaml): edits, undo, clipboard, selection, properties.</summary>
+    /// <summary>The grid's context menu (ClipControl.xaml): edits, undo, clipboard, selection, properties.</summary>
     internal static class ClipMenus
     {
         public static ContextMenu Create(ClipControl c)
@@ -648,7 +648,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             menu.Items.Add(Item("Select All", c.SelectAllCommand, mod + "+A"));
             menu.Items.Add(Item("Unselect", c.UnselectCommand, mod + "+U"));
             menu.Items.Add(new Separator());
-            menu.Items.Add(Item("Pattern Properties...", c.PropertiesCommand, mod + "+Backspace"));
+            menu.Items.Add(Item("Clip Properties...", c.PropertiesCommand, mod + "+Backspace"));
             // The commands don't say when they can run (SimpleCommand off Windows); ask when the menu opens.
             menu.Opening += (s, e) =>
             {

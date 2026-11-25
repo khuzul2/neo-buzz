@@ -51,17 +51,17 @@ namespace WDE.ModernPatternEditor.MPEStructures
         ClipEvent[] emptyClipEventList = Array.Empty<ClipEvent>();
         Lock clipEventsLock = new Lock();
 
-        // ---- Fork (docs/specs/clips.md §6, CU3): the seam. Where the song's clips are lanes in the pattern's columns (the Studio), this column is a view
-        // of one lane, the unmarked column of the pattern for its parameter and track: it reads and writes the lane's events, and keeps none of its
+        // ---- Fork (docs/specs/clips.md §6, CU3): the seam. Where the song's clips are lanes in the clip's columns (the Studio), this column is a view
+        // of one lane, the unmarked column of the clip for its parameter and track: it reads and writes the lane's events, and keeps none of its
         // own. The lane is made on the first write (a template's thousand empty columns are not in the song). Classic keeps its list.
 
-        /// <summary>The pattern editor views the store for this column: its parameter is a machine's (not one of the editor's own lanes).</summary>
+        /// <summary>The clip editor views the store for this column: its parameter is a machine's (not one of the editor's own lanes).</summary>
         internal bool Bound => MPEClip?.Editor != null && MPEClip.Editor.StoreAttached && Parameter != null && Parameter is not MPEInternalParameter;
 
         IClipColumn store;
         Action<IEnumerable<ClipEvent>, bool> storeChanged;
 
-        /// <summary>The store's lane of this column (the pattern's unmarked parameter column for the parameter and track), made when asked to.</summary>
+        /// <summary>The store's lane of this column (the clip's unmarked parameter column for the parameter and track), made when asked to.</summary>
         internal IClipColumn StoreLane(bool create)
         {
             var clip = MPEClip.Clip;
@@ -312,7 +312,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             }
 
             // Need to refresh editor view
-            //topLeftDigit.PatternVM.Editor.InvalidateVisual();
+            //topLeftDigit.ClipVM.Editor.InvalidateVisual();
             HashSet<int> beats = new HashSet<int>();
             Digit iterator = topLeftDigit;
             while (true)
@@ -364,7 +364,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         public int GetTimeQuantized(int time)
         {
-            //int beats = BuzzTicksToBeats(MPEPattern.Pattern.Length);
+            //int beats = BuzzTicksToBeats(MPEClip.Clip.Length);
             int beatTime = ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase;
             int beat = time / beatTime;
             int beatRows = beat < BeatRowsList.Count ? BeatRowsList[beat] : BeatRowsList[BeatRowsList.Count - 1];
@@ -376,7 +376,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         public int GetTimeQuantized(int time, int rpb)
         {
-            //int beats = BuzzTicksToBeats(MPEPattern.Pattern.Length);
+            //int beats = BuzzTicksToBeats(MPEClip.Clip.Length);
             int beatTime = ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase;
             int beat = time / beatTime;
             double rowTime = beatTime / rpb;
@@ -392,7 +392,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal double GetRelativeTimeInRow(int time)
         {
-            //int beats = MPEPattern.Pattern.Length / MPEPattern.RowsPerBeat;
+            //int beats = MPEClip.Clip.Length / MPEClip.RowsPerBeat;
             int beatTime = ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase;
             int beat = time / beatTime;
             double rowTime = beatTime / BeatRowsList[beat];
@@ -437,7 +437,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal int RowLenghtAt(int time)
         {
-            //int beats = BuzzTicksToBeats(MPEPattern.Pattern.Length);
+            //int beats = BuzzTicksToBeats(MPEClip.Clip.Length);
             int beatTime = ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase;
             int beat = time / beatTime;
             int beatRows = beat < BeatRowsList.Count ? BeatRowsList[beat] : BeatRowsList[BeatRowsList.Count - 1];

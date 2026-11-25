@@ -213,7 +213,7 @@ namespace ReBuzz.Agent.App
                 Title = "Map a macro to a control",
                 Description =
                     "Maps one of the machine's 16 macros (1 to 16) to a node control, so the macro sweeps the control from low to high in the control's real units (default: from where it is to the far end of its range), and names the macro (label). " +
-                    "A control has one mapping; mapping it again moves it. unmap=true takes the mapping off. Without node, label alone names the macro. Macros are the machine's Macro 1 to Macro 16 parameters, so patterns, automation and param_set move them; " +
+                    "A control has one mapping; mapping it again moves it. unmap=true takes the mapping off. Without node, label alone names the macro. Macros are the machine's Macro 1 to Macro 16 parameters, so clips, automation and param_set move them; " +
                     "they start at 50 %. One undo step. Example: patch_macro_map(macro=1, node=4, control=\"Cutoff\", low=\"200 Hz\", high=\"8 kHz\", label=\"Brightness\").",
                 Input = Object(null,
                     Req("macro", Integer("The macro, 1 to 16", 1, 16)),

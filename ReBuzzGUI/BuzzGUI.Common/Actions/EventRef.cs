@@ -8,7 +8,7 @@ namespace BuzzGUI.Common.Actions
         public SequenceEventType Type { get; private set; }
         public string ClipName { get; private set; }
         public int ClipLength { get; private set; }
-        // Fork (0.5.1): the part of the pattern the event plays, and its volume.
+        // Fork (0.5.1): the part of the clip the event plays, and its volume.
         public int Offset { get; private set; }
         public int End { get; private set; }
         public double Gain { get; private set; } = 1.0;

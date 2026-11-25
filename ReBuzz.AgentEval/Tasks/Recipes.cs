@@ -67,14 +67,14 @@ namespace ReBuzz.AgentEval
 
         public static void Clip(Studio s, string machine, string clip, double beats, IEnumerable<JsonObject> notes)
         {
-            s.C.Ok("pattern_create", new JsonObject { ["machine"] = machine, ["name"] = clip, ["length_beats"] = beats });
-            s.C.Ok("notes_write", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["notes"] = J.Notes(notes), ["mode"] = "replace" });
+            s.C.Ok("clip_create", new JsonObject { ["machine"] = machine, ["name"] = clip, ["length_beats"] = beats });
+            s.C.Ok("notes_write", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["notes"] = J.Notes(notes), ["mode"] = "replace" });
         }
 
-        /// <summary>Places a pattern at <paramref name="at"/>, then every <paramref name="every"/> beats, <paramref name="times"/> times in all.</summary>
+        /// <summary>Places a clip at <paramref name="at"/>, then every <paramref name="every"/> beats, <paramref name="times"/> times in all.</summary>
         public static void Place(Studio s, string machine, string clip, double at, double every = 0, int times = 1)
         {
-            var args = new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["at"] = at };
+            var args = new JsonObject { ["machine"] = machine, ["clip"] = clip, ["at"] = at };
             if (times > 1)
             {
                 args["repeat_every_beats"] = every;

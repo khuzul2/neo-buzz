@@ -51,7 +51,7 @@ namespace BuzzGUI.Interfaces
         int BaseOctave { get; set; }
 
         byte[] Data { get; set; }                                           // calls CMachineInterface::Save and CMachineInterfaceEx::Load
-        byte[] ClipEditorData { get; }                                   // calls CMachineInterface::Save of the pattern editor machine
+        byte[] ClipEditorData { get; }                                   // calls CMachineInterface::Save of the clip editor machine
 
         IntPtr CMachinePtr { get; }                                         // native CMachine *
 

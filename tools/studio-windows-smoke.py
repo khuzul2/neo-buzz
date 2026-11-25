@@ -156,9 +156,9 @@ check("Neo Poly" in names and "Neo Verb" in names, f"the Neo machines are instal
 # --- the null device: Neo Poly plays a song and renders
 check(call("song_set", tempo_bpm=120, song_end_beats=8)[0], "song_set")
 check(call("machine_add", gear="Neo Poly", name="Keys")[0], "machine_add Neo Poly")
-check(call("pattern_create", machine="Keys", name="A", length_beats=8)[0], "pattern_create")
-check(call("notes_write", machine="Keys", pattern="A", notes=[{"pitch": p, "start": 0, "length": 8} for p in ("C4", "E4", "G4")])[0], "notes_write")
-check(call("arrangement_place", machine="Keys", pattern="A", at=[0])[0], "arrangement_place")
+check(call("clip_create", machine="Keys", name="A", length_beats=8)[0], "clip_create")
+check(call("notes_write", machine="Keys", clip="A", notes=[{"pitch": p, "start": 0, "length": 8} for p in ("C4", "E4", "G4")])[0], "notes_write")
+check(call("arrangement_place", machine="Keys", clip="A", at=[0])[0], "arrangement_place")
 ok, _, r1 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1})
 loud = (r1.get("measure") or {}).get("loudness", {}).get("integrated_lufs")
 check(ok and isinstance(loud, (int, float)) and -45 < loud < -6, f"render is audible ({loud} LUFS)")

@@ -2,7 +2,7 @@
 // Fork (docs/specs/mcp-server.md §12.2, U1): notes for machines that take them only in their Note
 // track parameter, as trackers do, not as MIDI. Notes are
 // given voices (one track each), and become per-track Note events (Buzz notes: octave << 4 | 1…12,
-// 255 = off) in the pattern's engine-played parameter columns, and are read back from them. Also
+// 255 = off) in the clip's engine-played parameter columns, and are read back from them. Also
 // the pitch offset a profiled manifest records, so the written pitch is the pitch heard. Pure.
 
 using System;
@@ -42,7 +42,7 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// The Note column events of each track: a note-on at each start, an off at each end unless
-        /// the track's next note starts there. A note that runs to the pattern's end is let go on its
+        /// the track's next note starts there. A note that runs to the clip's end is let go on its
         /// last tick (an event at the end itself would never play). Velocity, when the machine has a
         /// velocity track parameter (<paramref name="velocity"/> is its raw range), goes beside each note-on.
         /// </summary>
@@ -68,7 +68,7 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// Notes from per-track Note events (time, Buzz note): each note-on lasts to the track's next
-        /// event (or the pattern's end). Velocities by (track, time), when the machine has them.
+        /// event (or the clip's end). Velocities by (track, time), when the machine has them.
         /// </summary>
         public static List<NoteEvent> Read(IEnumerable<(int Track, int Time, int Value)> noteEvents, int clipTime, int timePerTick,
             IReadOnlyDictionary<(int Track, int Time), int> velocities = null, (int Min, int Max)? velocity = null)

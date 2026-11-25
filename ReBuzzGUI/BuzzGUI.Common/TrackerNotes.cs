@@ -13,24 +13,24 @@ using System.Linq;
 
 namespace BuzzGUI.Common
 {
-    /// <summary>A note: start and length in pattern time (1/240 tick), MIDI note number and velocity.</summary>
+    /// <summary>A note: start and length in clip time (1/240 tick), MIDI note number and velocity.</summary>
     public readonly record struct TrackerNote(int Time, int Duration, int Midi, int Velocity);
 
     /// <summary>
-    /// One row of one track's lanes: where the row starts and how long it is (pattern time), a
+    /// One row of one track's lanes: where the row starts and how long it is (clip time), a
     /// note (<see cref="Midi"/> 0-127) or a note-off (-1), its velocity (0: none), and its delay
     /// and cut in 1/<see cref="TrackerNotes.Fraction"/> of the row (0: none).
     /// </summary>
     public readonly record struct TrackerRow(int Track, int Time, int Length, int Midi, int Velocity, int Delay, int Cut);
 
     /// <summary>
-    /// Where a pattern's rows are: every row the same length, or a number of rows in each beat
+    /// Where a clip's rows are: every row the same length, or a number of rows in each beat
     /// (the Modern Pattern Editor's rows per beat, which needn't divide the beat evenly: a row
     /// starts at beat + beat length × row / rows, rounded down, as the editor places them).
     /// </summary>
     public sealed class RowGrid
     {
-        /// <summary>A beat in pattern time: 4 ticks of 240.</summary>
+        /// <summary>A beat in clip time: 4 ticks of 240.</summary>
         public const int BeatLength = 4 * 240;
 
         readonly int uniform;
@@ -116,7 +116,7 @@ namespace BuzzGUI.Common
         /// note-on ends the note before it on its track). A note ends with a cut when it ends in
         /// its own row, with nothing when its track's next note starts right then, else with a
         /// note-off (delayed into its row). Notes needing more than <paramref name="maxTracks"/>
-        /// tracks, above <paramref name="maxNote"/>, or starting past the pattern, are left out.
+        /// tracks, above <paramref name="maxNote"/>, or starting past the clip, are left out.
         /// </summary>
         public static List<TrackerRow> ToRows(IEnumerable<TrackerNote> notes, RowGrid grid, int length, int maxTracks, out int tracks, out int dropped, int maxNote = 127) =>
             ToRowsIndexed(notes, grid, length, maxTracks, out tracks, out dropped, out _, maxNote);
@@ -184,7 +184,7 @@ namespace BuzzGUI.Common
 
         /// <summary>
         /// The notes tracker lanes play: a note starts at its row plus its delay and lasts until
-        /// its cut, or the track's next note or note-off (plus its delay), or the pattern's end.
+        /// its cut, or the track's next note or note-off (plus its delay), or the clip's end.
         /// </summary>
         public static List<TrackerNote> FromRows(IEnumerable<TrackerRow> rows, int length, int defaultVelocity = 100)
         {

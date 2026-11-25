@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3a): the inspector, the main window's panel on the right. It shows what is selected
-// (StudioSelection, one for every view): a machine, a pattern or clip, or the song. The Session View's clip panel lives in it
+// (StudioSelection, one for every view): a machine, a clip or clip, or the song. The Session View's clip panel lives in it
 // (the Clip and Scene sections), Song Notes are its Song tab. It collapses to a rail, remembers whether it is open and its
 // width, and is the same in every main view.
 
@@ -128,7 +128,7 @@ namespace ReBuzz.Studio.Views.Inspector
             subtitle = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) };
             facts = new Grid { Margin = new Thickness(0, 8, 0, 0), ColumnDefinitions = new ColumnDefinitions("Auto,*") };
             hint = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-            clipButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
+            clipButton = ActionButton("Open in Tracker", "Edit this clip in the Tracker", () => showView("Clip"));
             notesButton = ActionButton("Song notes", "Write about the song: the Song tab", () => ShowTab(SongTab, focus: true));
             audioButton = ActionButton("Audio settings…", "Warp, tempo, pitch, gain, fades and warp markers of this audio clip: the detail panel's Audio page", () => ShowAudio?.Invoke());
             audioButton.IsVisible = false;
@@ -370,7 +370,7 @@ namespace ReBuzz.Studio.Views.Inspector
             int? scene = selection.Scene;
             if (selection.Clip is { } clip)
             {
-                // A clip is a pattern in a slot: the scene the selection has when the pattern is there, else its first.
+                // A clip is a clip in a slot: the scene the selection has when the clip is there, else its first.
                 if (scene is { } sc && sc < doc.Scenes.Count && doc.GetSlot(track, sc) == clip.Name) return (track, sc);
                 for (int s = 0; s < doc.Scenes.Count; s++)
                     if (doc.GetSlot(track, s) == clip.Name) return (track, s);
@@ -410,13 +410,13 @@ namespace ReBuzz.Studio.Views.Inspector
                 title = machine.Name;
                 sub = TypeLabel(machine);
                 rows.Add(("Type", machine.DLL?.Name ?? ""));
-                rows.Add(("Patterns", machine.Clips.Count.ToString()));
+                rows.Add(("Clips", machine.Clips.Count.ToString()));
                 rows.Add(("Wires", $"{machine.Inputs.Count} in, {machine.Outputs.Count} out"));
                 if (machine.IsMuted) rows.Add(("State", machine.IsBypassed ? "Muted, bypassed" : "Muted"));
                 else if (machine.IsBypassed) rows.Add(("State", "Bypassed"));
                 if (clip != null)
                 {
-                    rows.Add(("Pattern", clip.Name));
+                    rows.Add(("Clip", clip.Name));
                     rows.Add(("Length", $"{clip.Length} ticks, {clip.Length / (double)tpb:0.##} beats"));
                     if (core.SessionLayout?.AudioOf(clip) is { } audio) AudioRows(rows, audio);
                 }
@@ -441,7 +441,7 @@ namespace ReBuzz.Studio.Views.Inspector
                     facts.Children.Add(label);
                     facts.Children.Add(value);
                 }
-                hint.Text = machine == null ? "Select a machine, a pattern or a clip in any view to see its settings here." : "";
+                hint.Text = machine == null ? "Select a machine, a clip or a clip in any view to see its settings here." : "";
                 hint.IsVisible = machine == null;
                 bool audioClip = clip != null && core.SessionLayout?.IsAudioClip(clip) == true;
                 clipButton.IsVisible = clip != null && !audioClip;

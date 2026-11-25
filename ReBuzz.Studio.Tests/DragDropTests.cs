@@ -1,5 +1,5 @@
 // Fork (docs/specs/drag-drop.md, DD1): drag and drop into the Arrangement, the Session View and the Machine View: every row of the brief's rules
-// table in both views (what a generator, an instrument plug-in, an effect, audio files, a pattern, a MIDI file and a preset do on empty space and
+// table in both views (what a generator, an instrument plug-in, an effect, audio files, a clip, a MIDI file and a preset do on empty space and
 // on a track), each as one undo step with redo, kept by a save and a reload, the drag's feedback (the lit track, the line for a new track, the
 // snap, the refusal and its reason), the files from the desktop and the agent's drop_item.
 
@@ -98,7 +98,7 @@ namespace ReBuzz.Studio.Tests
             return machine;
         }
 
-        /// <summary>Everything a drop can change, as text: the graph, the sequences' events, the machines' patterns, the Session's slots and the audio store.</summary>
+        /// <summary>Everything a drop can change, as text: the graph, the sequences' events, the machines' clips, the Session's slots and the audio store.</summary>
         static string State()
         {
             var sb = new StringBuilder(Graph());
@@ -161,10 +161,10 @@ namespace ReBuzz.Studio.Tests
             public abstract DropPlan PlanEmpty(IReadOnlyList<BrowserDragData> items, int pos = 0);
             public abstract DropPlan PlanTrack(IMachine track, IReadOnlyList<BrowserDragData> items, int pos = 0);
 
-            /// <summary>The clips of a track: where each is (the time in ticks; the scene) and its pattern.</summary>
+            /// <summary>The clips of a track: where each is (the time in ticks; the scene) and its clip.</summary>
             public abstract List<(int Pos, string Clip)> Clips(IMachine track);
 
-            /// <summary>A drop on empty space puts the first pattern of a new instrument track at the drop time (the arrangement); the session's slots stay empty.</summary>
+            /// <summary>A drop on empty space puts the first clip of a new instrument track at the drop time (the arrangement); the session's slots stay empty.</summary>
             public abstract bool NewTrackHasAClip { get; }
             public abstract void Dispose();
         }
@@ -286,7 +286,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
             string before = State();
 
-            // On empty space: a new machine and track, wired to Master; the arrangement's first clip is an empty pattern at the drop time.
+            // On empty space: a new machine and track, wired to Master; the arrangement's first clip is an empty clip at the drop time.
             var made = s.OnEmpty(One(Gear("Neo Poly")), 2);
             Assert.That(made.Ok, Is.True, made.Message);
             Assert.That(made.Action, Is.EqualTo(DropAction.NewTrack));
@@ -296,12 +296,12 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Core.SongCore.Sequences.Any(q => q.Machine == lead), Is.True, "with a track");
             if (s.NewTrackHasAClip)
             {
-                Assert.That(s.Clips(lead), Is.EqualTo(new[] { (2 * ArrangementSurface.Bar, "00") }), "a clip of the empty pattern at the drop time");
+                Assert.That(s.Clips(lead), Is.EqualTo(new[] { (2 * ArrangementSurface.Bar, "00") }), "a clip of the empty clip at the drop time");
                 Assert.That(lead.Clips.Single().Length, Is.GreaterThan(0));
             }
             AssertOneStep(before);
 
-            // On an existing track: its generator is replaced, the wires and the patterns kept.
+            // On an existing track: its generator is replaced, the wires and the clips kept.
             var track = AddTrack("Neo Poly", "Lead");
             track.CreateClip("Verse", 32);
             Settle();
@@ -312,7 +312,7 @@ namespace ReBuzz.Studio.Tests
             var now = Machine("Lead");
             Assert.That(now.DLL.Name, Is.EqualTo("Neo Drums"), "the track plays the new generator");
             Assert.That(now.Outputs.Select(c => c.Destination.Name), Is.EqualTo(new[] { "Master" }), "connections kept");
-            Assert.That(now.Clips.Select(p => p.Name + "/" + p.Length), Does.Contain("Verse/32"), "patterns kept where they fit");
+            Assert.That(now.Clips.Select(p => p.Name + "/" + p.Length), Does.Contain("Verse/32"), "clips kept where they fit");
             Assert.That(Core.SongCore.Sequences.Count(q => q.Machine == now), Is.EqualTo(1), "and its track");
             AssertOneStep(beforeSwap);
 
@@ -493,7 +493,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest] public void AudioOnASamplerLoadsTheSamplesInTheArrangement() => SamplerRow("arrangement");
         [AvaloniaTest] public void AudioOnASamplerLoadsTheSamplesInTheSession() => SamplerRow("session");
 
-        // ------------------------------------------------------------------ patterns
+        // ------------------------------------------------------------------ clips
 
         void ClipRows(string which)
         {
@@ -540,13 +540,13 @@ namespace ReBuzz.Studio.Tests
             Assert.That(NotesOf(clip).Select(n => n.Pitch), Is.EqualTo(new[] { 60, 64, 67 }));
             Assert.That(NotesOf(clip).Select(n => n.Time), Is.EqualTo(new[] { 0, tpb, 2 * tpb }), "a beat apart, in the song's ticks (the file's tempo is not applied)");
             Assert.That(made.Message, Does.Contain("120").And.Contain("3/4"), "its tempo and meter are only reported");
-            Assert.That(made.Machine.Clips.Count, Is.EqualTo(1), "the notes' pattern is the track's only one");
+            Assert.That(made.Machine.Clips.Count, Is.EqualTo(1), "the notes' clip is the track's only one");
             var clips = s.Clips(made.Machine);
             Assert.That(clips.Count, Is.EqualTo(1));
             Assert.That(clips[0].Pos, Is.EqualTo(which == "arrangement" ? ArrangementSurface.Bar : 0));
             AssertOneStep(before);
 
-            // On a track: the notes in a new pattern at the drop time.
+            // On a track: the notes in a new clip at the drop time.
             var lead = AddTrack("Neo Poly", "Lead");
             lead.CreateClip("Verse", 32);
             Settle();
@@ -555,7 +555,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(on.Ok, Is.True, on.Message);
             Assert.That(on.Action, Is.EqualTo(DropAction.MidiNewClip));
             Assert.That(on.Machine, Is.SameAs(lead));
-            Assert.That(lead.Clips.Count, Is.EqualTo(2), "a new pattern beside the old");
+            Assert.That(lead.Clips.Count, Is.EqualTo(2), "a new clip beside the old");
             Assert.That(NotesOf(on.Clips.Single()).Count, Is.EqualTo(3));
             Assert.That(s.Clips(lead).Single().Pos, Is.EqualTo(which == "arrangement" ? 2 * ArrangementSurface.Bar : 2));
             AssertOneStep(beforeTrack);
@@ -803,7 +803,7 @@ namespace ReBuzz.Studio.Tests
                 var notes = view.Canvas.DropItems(Files(MidiFile("mv.mid", 60, 64)), view.PointOf(poly, view.Canvas));
                 Settle();
                 Assert.That(notes.Ok, Is.True, notes.Message);
-                Assert.That(notes.Action, Is.EqualTo(DropAction.MidiNewClip), "a MIDI file on a box: a new pattern with the notes");
+                Assert.That(notes.Action, Is.EqualTo(DropAction.MidiNewClip), "a MIDI file on a box: a new clip with the notes");
                 Assert.That(NotesOf(notes.Clips.Single()).Count, Is.EqualTo(2));
 
                 var track = view.Canvas.DropItems(One(Gear("Neo Drums")), new Point(300, 200));

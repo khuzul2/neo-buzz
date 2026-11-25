@@ -40,9 +40,9 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                // ToDo: 1. Rename all MPEPatternColumnBeatRef to MPEMPEPatternColumnBeatRef and same with MPEPatternColumnRef
+                // ToDo: 1. Rename all MPEClipColumnBeatRef to MPEMPEClipColumnBeatRef and same with MPEClipColumnRef
                 //       2. Create new versions of these
-                //       3. Make sure MPEMPEPatternColumnBeatRef return correct index
+                //       3. Make sure MPEMPEClipColumnBeatRef return correct index
                 return new MPEClipColumnBeatRef(new MPEClipColumnRef(ParameterColumn.ClipColumn), Beat);
             }
         }

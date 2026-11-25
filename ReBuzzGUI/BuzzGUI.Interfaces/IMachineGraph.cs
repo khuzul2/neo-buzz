@@ -12,7 +12,7 @@ namespace BuzzGUI.Interfaces
 
         // undoable actions
         void CreateMachine(int id, float x, float y);
-        void CreateMachine(string machine, string instrument, string name, byte[] data, string clipeditor, byte[] clipeditordata, int trackcount, float x, float y);      // NOTE: patterneditor == null means default editor, patterneditor == "" means built-in editor
+        void CreateMachine(string machine, string instrument, string name, byte[] data, string clipeditor, byte[] clipeditordata, int trackcount, float x, float y);      // NOTE: clipeditor == null means default editor, clipeditor == "" means built-in editor
         void ReplaceMachine(IMachine m, int id, float x, float y);
         void ReplaceMachine(IMachine m, string machine, string instrument, float x, float y);
         void InsertMachine(IMachineConnection m, int id, float x, float y);

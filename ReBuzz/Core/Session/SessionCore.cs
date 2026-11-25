@@ -9,7 +9,7 @@ namespace ReBuzz.Core.Session
 {
     /// <summary>
     /// Session View engine (fork addition): ReBuzz side of <see cref="SessionScheduler{TTrack,TClip}"/>.
-    /// Tracks are sequences, clips are patterns. See docs/specs/session-view.md, section 4.1.
+    /// Tracks are sequences, clips are clips. See docs/specs/session-view.md, section 4.1.
     ///
     /// Locking: the scheduler is guarded by its own small lock (<see cref="gate"/>), never by
     /// ReBuzzCore.AudioLock, so a request (UI or MIDI thread) never waits for a whole audio
@@ -26,11 +26,11 @@ namespace ReBuzz.Core.Session
     /// Engine hooks:
     ///  - <see cref="OnTick"/> from WorkManager at every tick boundary while playing
     ///  - <see cref="OnTransportStopped"/> from ReBuzzCore.Playing
-    ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnPatternDeleted"/>, <see cref="Reset"/>
+    ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnClipDeleted"/>, <see cref="Reset"/>
     /// </summary>
     internal sealed partial class SessionCore : ISession
     {
-        const int DoNotRecordFlag = 1 << 16;    // ParameterCore.SetValue: don't record into patterns
+        const int DoNotRecordFlag = 1 << 16;    // ParameterCore.SetValue: don't record into clips
         const int MidiAllNotesOff = 123;
 
         readonly ReBuzzCore buzz;
@@ -108,7 +108,7 @@ namespace ReBuzz.Core.Session
             // Follow actions (0.6): each track's column comes from the launch map; slot quantization codes are LaunchQuantization values.
             scheduler.ColumnOf = seq => seq.FollowColumn as SessionScheduler<SequenceCore, ClipCore>.Slot[];
             scheduler.QuantizeTicksOf = code => GetQuantizationTicks((LaunchQuantization)code);
-            // 0.6.1: deleted patterns and removed sequences can't come back through stale references.
+            // 0.6.1: deleted clips and removed sequences can't come back through stale references.
             scheduler.IsLiveClip = p => !p.IsDeleted;
             scheduler.IsLiveTrack = seq => !seq.IsRemoved;
         }
@@ -1060,7 +1060,7 @@ namespace ReBuzz.Core.Session
             }
 
             // Launches and Repeat restarts on this tick. A late (catch-up) launch is written at its
-            // grid point, where it is heard to start. Each start carries the part of the pattern
+            // grid point, where it is heard to start. Each start carries the part of the clip
             // it plays (0.5.1: from a start marker or where legato picked it up, to the clip's
             // end marker) and its velocity, so the arrangement plays back what was heard.
             long clock = scheduler.Clock;
@@ -1150,14 +1150,14 @@ namespace ReBuzz.Core.Session
             seq.GainSource = null;
         }
 
-        /// <summary>A pattern was deleted (AudioLock held).</summary>
+        /// <summary>A clip was deleted (AudioLock held).</summary>
         internal void OnClipDeleted(ClipCore clip)
         {
             var stopped = new List<SequenceCore>();
             lock (gate)
             {
                 scheduler.ForgetClip(clip, stopped);
-                // 0.6.1: nor a deleted pattern (launched, or what a launch replaced or cancelled).
+                // 0.6.1: nor a deleted clip (launched, or what a launch replaced or cancelled).
                 ForgetHistory(e => e.Clip == clip || scheduler.Refers(e.Before, clip));
             }
             foreach (var seq in stopped)
@@ -1166,7 +1166,7 @@ namespace ReBuzz.Core.Session
                 RaiseTrackStateChanged(stopped.ToArray());
         }
 
-        /// <summary>A pattern's length changed (any thread: native editors change it from the IPC thread).</summary>
+        /// <summary>A clip's length changed (any thread: native editors change it from the IPC thread).</summary>
         internal void OnClipLengthChanged(ClipCore clip)
         {
             lock (gate)
@@ -1249,9 +1249,9 @@ namespace ReBuzz.Core.Session
         static ClipCore ToClip(SequenceCore seq, IClip clip)
         {
             if (clip is not ClipCore pat)
-                throw new ArgumentException("Not a pattern of this engine.", nameof(clip));
+                throw new ArgumentException("Not a clip of this engine.", nameof(clip));
             if (pat.Machine != seq.Machine)
-                throw new ArgumentException($"Pattern '{pat.Name}' belongs to '{pat.Machine?.Name}', not to the track's machine '{seq.Machine?.Name}'.", nameof(clip));
+                throw new ArgumentException($"Clip '{pat.Name}' belongs to '{pat.Machine?.Name}', not to the track's machine '{seq.Machine?.Name}'.", nameof(clip));
             return pat;
         }
 

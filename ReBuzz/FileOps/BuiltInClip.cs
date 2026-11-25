@@ -8,15 +8,15 @@ using System.Linq;
 namespace ReBuzz.FileOps
 {
     /// <summary>
-    /// Fork (docs/specs/mac-engine.md M2): a pattern's contents as Buzz's built-in pattern editor
-    /// keeps them, the per-pattern part of a BMX file's PATT section: an amp/pan column for each
+    /// Fork (docs/specs/mac-engine.md M2): a clip's contents as Buzz's built-in clip editor
+    /// keeps them, the per-clip part of a BMX file's PATT section: an amp/pan column for each
     /// input, then a row of values per tick for the global parameters and for each track's.
     ///
-    /// On load they go to the default pattern editor, converted to its PXP format (<see cref="ToPXP"/>).
+    /// On load they go to the default clip editor, converted to its PXP format (<see cref="ToPXP"/>).
     /// A host without one (rebuzz-headless off Windows: the Modern Pattern Editor is WPF) keeps them
-    /// on the pattern instead (<see cref="PatternCore.BuiltInData"/>), so the song saves back with
-    /// them: into PATT for BMX (XTAP still gives the patterns to the built-in editor), and as the
-    /// pattern's BuiltInPattern element for BMXML. A host with the editor converts them as it does
+    /// on the clip instead (<see cref="ClipCore.BuiltInData"/>), so the song saves back with
+    /// them: into PATT for BMX (XTAP still gives the clips to the built-in editor), and as the
+    /// clip's BuiltInClip element for BMXML. A host with the editor converts them as it does
     /// for any old song.
     /// </summary>
     internal sealed class BuiltInClip
@@ -79,7 +79,7 @@ namespace ReBuzz.FileOps
             return ampPan != null && i < ampPan.Length ? ampPan[i] : (ushort)65535;
         }
 
-        /// <summary>The value rows for a pattern of <paramref name="rows"/> rows and the machine's tracks, as BMX writes them.</summary>
+        /// <summary>The value rows for a clip of <paramref name="rows"/> rows and the machine's tracks, as BMX writes them.</summary>
         internal void WriteValues(Action<int, int> write, MachineCore machine, int rows, int tracks)
         {
             void WriteGroup(int group, int track)
@@ -152,7 +152,7 @@ namespace ReBuzz.FileOps
         }
 
         /// <summary>
-        /// The patterns as the default pattern editor's data (PXP version 3), as upstream's BMX loader
+        /// The clips as the default clip editor's data (PXP version 3), as upstream's BMX loader
         /// converted them: a column per parameter, an event per row with a value. Input columns aren't
         /// in the PXP format, so they don't carry over.
         /// </summary>
@@ -160,11 +160,11 @@ namespace ReBuzz.FileOps
         {
             var ms = new MemoryStream();
             NblCoreSections.WriteByte(ms, 3);                                   // PXP version
-            NblCoreSections.WriteInt(ms, clips.Count);                       // pattern count
+            NblCoreSections.WriteInt(ms, clips.Count);                       // clip count
             int globals = Group(machine, 1).Count;
             foreach (var (name, data) in clips)
             {
-                NblCoreSections.WriteString(ms, name, System.Text.Encoding.Latin1);                          // pattern name
+                NblCoreSections.WriteString(ms, name, System.Text.Encoding.Latin1);                          // clip name
                 NblCoreSections.WriteInt(ms, 4);                                // rows per beat
                 NblCoreSections.WriteInt(ms, globals + Group(machine, 2).Count * data.Tracks.Length);   // columns (global + tracks)
                 WriteColumns(ms, machine, 1, 0, data.Global, 0);

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace ReBuzz.Core.Session
 {
-    /// <summary>Pattern positions are in 1/240 of a tick (BuzzGUI's PatternEvent.TimeBase).</summary>
+    /// <summary>Clip positions are in 1/240 of a tick (BuzzGUI's ClipEvent.TimeBase).</summary>
     internal static class TakeTime
     {
         public const int TimeBase = 240;
@@ -38,14 +38,14 @@ namespace ReBuzz.Core.Session
             return Math.Max(0, heardTicks - earlierSamples / samplesPerTick);
         }
 
-        /// <summary>A position in ticks as pattern time (1/240 tick), rounded to the nearest unit.</summary>
+        /// <summary>A position in ticks as clip time (1/240 tick), rounded to the nearest unit.</summary>
         public static long ToTime(double ticks) => (long)Math.Round(ticks * TimeBase);
     }
 
     /// <summary>
     /// One MIDI message as heard on a recording track (0.7): the message, when it was heard
     /// (session clock, 1/240 tick), and where the track's clip was then (1/240 tick into its
-    /// pattern) with the end of the clip's region (exclusive).
+    /// clip) with the end of the clip's region (exclusive).
     /// </summary>
     internal readonly struct TakeStamp
     {
@@ -63,7 +63,7 @@ namespace ReBuzz.Core.Session
         public int End { get; }
     }
 
-    /// <summary>A pattern event of a clip's MIDI column: time and duration in 1/240 tick, the MIDI message as value.</summary>
+    /// <summary>A clip event of a clip's MIDI column: time and duration in 1/240 tick, the MIDI message as value.</summary>
     internal readonly record struct TakeEvent(int Time, int Value, int Duration);
 
     /// <summary>

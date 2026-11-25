@@ -1,7 +1,7 @@
-// Fork (docs/specs/studio-mvp.md S6): the pattern properties (PatternPropertiesWindow on WPF): the
-// pattern's name, length in beats and rows per beat, and its columns: for each machine in the song,
-// the editor's MIDI lanes and the machine's parameters, ticked when the pattern has them. OK applies
-// them as one undo step (PatternEditor.ApplyPatternProperties).
+// Fork (docs/specs/studio-mvp.md S6): the clip properties (ClipPropertiesWindow on WPF): the
+// clip's name, length in beats and rows per beat, and its columns: for each machine in the song,
+// the editor's MIDI lanes and the machine's parameters, ticked when the clip has them. OK applies
+// them as one undo step (ClipEditor.ApplyClipProperties).
 
 using Avalonia;
 using Avalonia.Controls;
@@ -27,7 +27,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         ClipPropertiesDialog(ClipEditor editor)
         {
             this.editor = editor;
-            Title = "Pattern Properties";
+            Title = "Clip Properties";
             Width = 420;
             Height = 520;
             CanResize = true;
@@ -58,11 +58,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             var tree = new StackPanel { Margin = new Thickness(8, 0) };
             foreach (var mac in Global.Buzz.Song.Machines)
             {
-                // The hidden pattern editors. Ordinal (fork, ui-gallery.md): the culture's comparison ignores control
+                // The hidden clip editors. Ordinal (fork, ui-gallery.md): the culture's comparison ignores control
                 // characters, so every name "started with" U+0001 and the list was empty on macOS and Linux.
                 if (mac.Name.StartsWith('\u0001')) continue;
                 tree.Children.Add(new TextBlock { Text = mac.Name, FontWeight = FontWeight.Bold, Margin = new Thickness(0, 6, 0, 2) });
-                AddGroup(tree, "Pattern Editor", ClipEditorUtils.GetInternalParameters(mac));
+                AddGroup(tree, "Clip Editor", ClipEditorUtils.GetInternalParameters(mac));
                 AddGroup(tree, "Parameters", mac.ParameterGroups[1].Parameters.Concat(mac.ParameterGroups[2].Parameters));
             }
 
@@ -94,7 +94,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             }
         }
 
-        /// <summary>Asks for the properties and applies them (WPF: PatternEditor.ShowPatternProperties).</summary>
+        /// <summary>Asks for the properties and applies them (WPF: ClipEditor.ShowClipProperties).</summary>
         public static async Task Show(Control owner, ClipEditor editor)
         {
             if (editor.SelectedMachine?.SelectedClip?.Clip == null) return;

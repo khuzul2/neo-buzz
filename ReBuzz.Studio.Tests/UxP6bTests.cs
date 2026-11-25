@@ -1,4 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P6b, §9): the Windows-parity features of the studio, headless: Clone with patterns; Latency; Signal
+// Fork (docs/specs/ux-overhaul.md P6b, §9): the Windows-parity features of the studio, headless: Clone with clips; Latency; Signal
 // Analysis (the tap's ring, the FFT, the window's subscriptions); the CPU monitor; the Hard Disk Recorder (the wave writer, the
 // recorder's loop rules, 0 bytes per block); the debug console; MIDI bindings and the MIDI focus; Song Properties.
 
@@ -32,7 +32,7 @@ namespace ReBuzz.Studio.Tests
 
         static IMachine Machine(string name) => Core.SongCore.Machines.First(m => m.Name == name);
 
-        // ------------------------------------------------------------------ Clone with patterns
+        // ------------------------------------------------------------------ Clone with clips
 
         [AvaloniaTest]
         public void CloneWithClipsCopiesTheMachineItsClipsItsSequenceAndTheWiresBetweenTheClones()
@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Tests
             int machines = Core.SongCore.Machines.Count, sequences = Core.SongCore.Sequences.Count;
             int events = Core.SongCore.Sequences.First(s => s.Machine == voice).Events.Count;
             var plain = MachineEdits.Duplicate(Core, new[] { voice });
-            Assert.That(plain[0].Clips.Count, Is.EqualTo(0), "Duplicate leaves the patterns behind");
+            Assert.That(plain[0].Clips.Count, Is.EqualTo(0), "Duplicate leaves the clips behind");
             Core.SongCore.ActionStack.Undo();
             Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(machines));
 
@@ -53,12 +53,12 @@ namespace ReBuzz.Studio.Tests
             Assert.That(copies, Has.Count.EqualTo(2));
             Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(machines + 2));
             var v2 = copies[0];
-            Assert.That(v2.Clips.Select(p => p.Name), Is.EqualTo(new[] { "P" }), "the pattern came along");
+            Assert.That(v2.Clips.Select(p => p.Name), Is.EqualTo(new[] { "P" }), "the clip came along");
             Assert.That(v2.Clips[0].Length, Is.EqualTo(voice.Clips[0].Length));
             Assert.That(Core.SongCore.Sequences.Count, Is.EqualTo(sequences + 1), "and its row in the sequence");
             var row = Core.SongCore.Sequences.First(s => s.Machine == v2);
             Assert.That(row.Events.Count, Is.EqualTo(events));
-            Assert.That(row.Events.Values.Where(e => e.Clip != null).All(e => e.Clip == v2.Clips[0]), "playing the copy's pattern, not the original's");
+            Assert.That(row.Events.Values.Where(e => e.Clip != null).All(e => e.Clip == v2.Clips[0]), "playing the copy's clip, not the original's");
             Assert.That(copies[0].Outputs.Select(c => c.Destination), Contains.Item(copies[1]), "the wire between the two selected machines was cloned");
             Assert.That(voice.Outputs.Select(c => c.Destination), Does.Not.Contain(copies[1]), "and not crossed with the originals");
             Core.SongCore.ActionStack.Undo();
@@ -75,7 +75,7 @@ namespace ReBuzz.Studio.Tests
             var menus = new MachineMenus(Core, canvas);
             var voice = menus.ForMachine(Machine("Voice"), new[] { Machine("Voice") });
             var headers = voice.Items.OfType<Avalonia.Controls.MenuItem>().Select(i => i.Header?.ToString()).ToList();
-            Assert.That(headers, Is.SupersetOf(new[] { "Duplicate", "Clone with patterns", "Latency...", "Signal Analysis..." }));
+            Assert.That(headers, Is.SupersetOf(new[] { "Duplicate", "Clone with clips", "Latency...", "Signal Analysis..." }));
             var master = menus.ForMachine(Machine("Master"), new[] { Machine("Master") });
             Assert.That(master.Items.OfType<Avalonia.Controls.MenuItem>().Select(i => i.Header?.ToString()), Contains.Item("Signal Analysis..."));
         }

@@ -45,13 +45,13 @@ namespace ReBuzz.ManagedMachine
 
         private delegate string GetChannelNameDelegate(bool input, int index);
 
-        #region Pattern Editor
-        // Fork (engine-split.md S3): to the engine a pattern editor's control is an object: a WPF
+        #region Clip Editor
+        // Fork (engine-split.md S3): to the engine a clip editor's control is an object: a WPF
         // UserControl, or, for machines that do not support .NET 9.0 WPF (such as CLR), a .NET
         // Framework 4.x WinForms UserControl that the UI wraps (WrapWinFormsControl).
         private delegate object ClipEditorControlDelegate();
 
-        /// <summary>Wraps a WinForms pattern editor control (NativeMachineFrameworkUI in the app).</summary>
+        /// <summary>Wraps a WinForms clip editor control (NativeMachineFrameworkUI in the app).</summary>
         internal static Func<object, object> WrapWinFormsControl { get; set; }
 
         private delegate void SetEditorClipDelegate(IClip clip);
@@ -76,7 +76,7 @@ namespace ReBuzz.ManagedMachine
 
         private delegate void ActivateDelegate();
 
-        // Fork (docs/specs/clips.md §6, CU3): a pattern editor that views the store (the song's clips are its data) is told when the song's clips are in it.
+        // Fork (docs/specs/clips.md §6, CU3): a clip editor that views the store (the song's clips are its data) is told when the song's clips are in it.
         private delegate void AttachClipStoreDelegate();
 
         private delegate void ReleaseDelegate();
@@ -117,7 +117,7 @@ namespace ReBuzz.ManagedMachine
         private GetChannelNameDelegate GetChannelNameFunction;
 
 
-        #region Pattern Editor
+        #region Clip Editor
 
         private ClipEditorControlDelegate ClipEditorControlFunction;
 
@@ -389,8 +389,8 @@ namespace ReBuzz.ManagedMachine
         }
 
         /// <summary>
-        /// The machine's PatternEditorControl(): a WPF UserControl as it is, a WinForms UserControl
-        /// wrapped by the UI, or, from a portable pattern editor (declared as returning object), what
+        /// The machine's ClipEditorControl(): a WPF UserControl as it is, a WinForms UserControl
+        /// wrapped by the UI, or, from a portable clip editor (declared as returning object), what
         /// its UI makes: an Avalonia control in the studio, null without a UI (studio-mvp.md S6). Any
         /// other return type fails as binding the WPF delegate type did.
         /// </summary>
@@ -418,7 +418,7 @@ namespace ReBuzz.ManagedMachine
                     return wrap != null ? wrap(control) : control;
                 };
             }
-            throw new ArgumentException("PatternEditorControl must return a WPF or WinForms UserControl: " + method.ReturnType.FullName);
+            throw new ArgumentException("ClipEditorControl must return a WPF or WinForms UserControl: " + method.ReturnType.FullName);
         }
 
         static bool IsOrDerivesFrom(Type type, string fullName)
@@ -753,7 +753,7 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        /// <summary>Fork (clips.md §6, CU3): whether this pattern editor views the store, and tells it that the song's clips are there now.</summary>
+        /// <summary>Fork (clips.md §6, CU3): whether this clip editor views the store, and tells it that the song's clips are there now.</summary>
         internal bool HasClipStore => AttachClipStoreFunction != null;
 
         internal void AttachClipStore() => AttachClipStoreFunction?.Invoke();

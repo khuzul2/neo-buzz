@@ -361,7 +361,7 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 window.UpdateLayout();
                 var view = seq.GetVisualDescendants().OfType<Control>().Single(c => c.GetType().Name == "InteractiveGraph" && c.IsEffectivelyVisible);
-                string Steps() => Get(m.ManagedMachine, "Pattern").ToString()!;
+                string Steps() => Get(m.ManagedMachine, "Clip").ToString()!;
                 var stack = Core.SongCore.ActionStack;
                 int steps = stack.Actions.Count();
                 Assert.That(Steps(), Is.EqualTo(""), "plain steps to start with");

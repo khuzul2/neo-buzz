@@ -1,7 +1,7 @@
 // Fork (docs/specs/studio-mvp.md S4): the sequence editor's timeline, code-drawn as the WPF
 // horizontal editor draws it (ReBuzzGUI/ModernSequenceEditorHorizontal, Default theme): the time
 // ruler (TimelineElement), the track headers with mute, solo and disable (TrackHeaderControl),
-// a row per sequence with its pattern blocks and their contents (PatternVisual, PatternElement).
+// a row per sequence with its clip blocks and their contents (ClipVisual, ClipElement).
 // SequenceOverlay draws above it what moves often (cursor, selection, drag ghosts, markers, the
 // play position), so playback redraws only that layer. The mouse: click, drag to move, edges to
 // resize, rubber-band selection, double click, the ruler, the wheel and pinch for scroll and zoom.
@@ -94,25 +94,25 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Follow the play position while playing (scroll a page when it leaves the view).</summary>
         public bool Follow { get; set; } = true;
 
-        /// <summary>The pattern under the cursor goes to the pattern editor as the cursor moves (AutoSelectPattern, on by default in WPF).</summary>
+        /// <summary>The clip under the cursor goes to the clip editor as the cursor moves (AutoSelectClip, on by default in WPF).</summary>
         public bool AutoSelectClip { get; set; } = true;
 
         /// <summary>The edits, on the song's undo history.</summary>
         public SequenceEditing Edits => new SequenceEditing(core.Song, core.SongCore.ActionStack, state.TimeSignatures, state.Clipboard);
 
-        /// <summary>The cursor moved (the pattern list follows its track).</summary>
+        /// <summary>The cursor moved (the clip list follows its track).</summary>
         public event Action CursorChanged;
 
         /// <summary>Scroll, zoom or extent changed (the scroll bars and the slider follow).</summary>
         public event Action ViewChanged;
 
-        /// <summary>A double click on a pattern block.</summary>
+        /// <summary>A double click on a clip block.</summary>
         public event Action<IClip> ClipDoubleClicked;
 
         /// <summary>A right click: the view opens its menu here.</summary>
         public event Action<Point> MenuRequested;
 
-        /// <summary>The track headers or blocks changed (the pattern list may need a refresh).</summary>
+        /// <summary>The track headers or blocks changed (the clip list may need a refresh).</summary>
         public event Action TracksChanged;
 
         public ISequence SequenceAt(int row) => row >= 0 && row < Rows ? Song.Sequences[row] : null;
@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public int CursorSpan => state.TimeSignatures.GetBarLengthAt(cursorTime);
 
-        /// <summary>A new pattern's length (General settings' PatternLength).</summary>
+        /// <summary>A new clip's length (General settings' ClipLength).</summary>
         public static int NewClipLength => Math.Max(1, BuzzGUI.Common.Global.GeneralSettings?.ClipLength ?? 16);
 
         /// <summary>The end of the cursor's bar (Set End marks there).</summary>
@@ -194,7 +194,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnSequencesChanged(int index, ISequence s) => OnUi(() =>
         {
             WatchSequences();
-            UnwatchClips();      // patterns are watched again as they are drawn (a closed song's let go)
+            UnwatchClips();      // clips are watched again as they are drawn (a closed song's let go)
             selection.Kill();
             ClampCursor();
             Changed();
@@ -275,10 +275,10 @@ namespace ReBuzz.Studio.Views.Sequence
                 case "Name":
                 case "IsMuted":
                 case "IsSoloed":
-                case "Patterns":
+                case "Clips":
                     OnUi(() =>
                     {
-                        if (e.PropertyName == "Patterns") previews.Clear();
+                        if (e.PropertyName == "Clips") previews.Clear();
                         Changed();
                     });
                     break;
@@ -313,7 +313,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void OnClipContentChanged(IClipColumn c) => OnUi(() =>
         {
-            // A column came or went: watch the pattern's columns afresh.
+            // A column came or went: watch the clip's columns afresh.
             previews.Clear();
             UnwatchClips();
             InvalidateVisual();
@@ -415,7 +415,7 @@ namespace ReBuzz.Studio.Views.Sequence
             CursorChanged?.Invoke();
             var seq = CursorSequence;
             if (seq?.Machine == null) return;
-            // UpdateSelectedRow: the pattern under the cursor to the editor; a generator takes MIDI.
+            // UpdateSelectedRow: the clip under the cursor to the editor; a generator takes MIDI.
             if (AutoSelectClip && CursorClip is IClip p)
             {
                 try
@@ -698,7 +698,7 @@ namespace ReBuzz.Studio.Views.Sequence
             var colour = BlockColour(kind, e.Clip);
             var box = BoxBrushes.Of(colour);
 
-            // PatternVisual: border, fill, then the 3D highlight (top, left) and shadow (bottom, right).
+            // ClipVisual: border, fill, then the 3D highlight (top, left) and shadow (bottom, right).
             ctx.FillRectangle(Brushes.Black, new Rect(0, 0, w + 1, h + 1));
             if (h > 1) ctx.FillRectangle(box.Fill, new Rect(1, 1, w - 1, h - 1));
             ctx.FillRectangle(box.Highlight, new Rect(1, 1, w - 2, 1));
@@ -734,8 +734,8 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>
-        /// A block's fill. A pattern keeps the colour the song gave it (§3.4); one with none wears its machine's identity colour (P3h, decision 86;
-        /// Classic Buzz keeps its own, one by the pattern's place); the other kinds have their fixed colours.
+        /// A block's fill. A clip keeps the colour the song gave it (§3.4); one with none wears its machine's identity colour (P3h, decision 86;
+        /// Classic Buzz keeps its own, one by the clip's place); the other kinds have their fixed colours.
         /// </summary>
         internal Color BlockColour(int kind, IClip clip)
         {
@@ -746,10 +746,10 @@ namespace ReBuzz.Studio.Views.Sequence
             return ci >= 0 && ci < palette.Count
                 ? Color.FromUInt32(palette[ci].Argb)
                 : Look.BoxColours is { } own ? own[kind]
-                : Theme(kind switch { 1 => "SE Break Box", 2 => "SE Mute Box", 3 => "SE Off Box", _ => "SE Pattern Box" });
+                : Theme(kind switch { 1 => "SE Break Box", 2 => "SE Mute Box", 3 => "SE Off Box", _ => "SE Clip Box" });
         }
 
-        /// <summary>The pattern's contents in the block, below the name (PatternElement's event hint canvas, DrawPatternEvents).</summary>
+        /// <summary>The clip's contents in the block, below the name (ClipElement's event hint canvas, DrawClipEvents).</summary>
         void DrawPreview(DrawingContext ctx, SequenceEvent e, double w, double h)
         {
             var p = e.Clip;
@@ -770,7 +770,7 @@ namespace ReBuzz.Studio.Views.Sequence
             // WPF sizes the lanes to the whole track height and clips the lowest; here they fit the area below the name.
             double drawHeight = acrossSize * 0.9;
             double marginTop = acrossSize * 0.05;
-            double lineWidth = Math.Max(drawWidth / p.Length, 6);       // PatternEventWidth
+            double lineWidth = Math.Max(drawWidth / p.Length, 6);       // ClipEventWidth
             double shift = -e.PlayedOffset * geo.PxPerTick;              // fork (0.5.1): an event that starts partway
             foreach (var m in marks)
             {
@@ -985,7 +985,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
             if (e.ClickCount == 2 && !mods.HasFlag(KeyModifiers.Shift) && !mods.HasFlag(CommandKey))
             {
-                // A double click: on a pattern, choose it for editing; on an empty cell, make a pattern there.
+                // A double click: on a clip, choose it for editing; on an empty cell, make a clip there.
                 if (ev?.Type == SequenceEventType.PlayClip && ev.Clip != null)
                 {
                     MoveCursor(btime, brow);
@@ -1096,7 +1096,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     {
                         0 => "Mute the track's machine",
                         1 => "Solo the track's machine",
-                        _ => "Disable the track: its patterns don't play (the machine still sounds)",
+                        _ => "Disable the track: its clips don't play (the machine still sounds)",
                     };
             return null;
         }
@@ -1148,7 +1148,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     }
                     return;
             }
-            // Hovering: the edges of pattern blocks resize.
+            // Hovering: the edges of clip blocks resize.
             var (_, _, ev, part) = BlockAt(p);
             Cursor = part == BlockPart.LeftEdge || part == BlockPart.RightEdge ? (geo.Vertical ? ResizeCursorVertical : ResizeCursor) : ev != null ? MoveCursorShape : Cursor.Default;
         }

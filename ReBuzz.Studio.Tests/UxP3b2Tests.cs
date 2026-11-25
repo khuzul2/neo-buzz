@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3b, second step: decisions 45-49): what the docked piano roll has around its grid: the bar and
-// beat ruler (the song's bar length and ticks a beat), the playhead that follows the pattern, the loop brace that is the song's own
+// beat ruler (the song's bar length and ticks a beat), the playhead that follows the clip, the loop brace that is the song's own
 // loop, the velocity lane (one undo step a drag, relative for several notes) and cut, copy and paste of notes.
 
 using System;
@@ -30,7 +30,7 @@ namespace ReBuzz.Studio.Tests
     {
         const int TB = ClipEvent.TimeBase;
 
-        /// <summary>The pattern placed on its machine's track at a song tick (the loop brace needs it in the song).</summary>
+        /// <summary>The clip placed on its machine's track at a song tick (the loop brace needs it in the song).</summary>
         static void Place(UxP3bTests.Rig r, int time)
         {
             var seq = r.Song.Core.Song.Sequences.First(s => s.Machine == r.Lead);
@@ -174,7 +174,7 @@ namespace ReBuzz.Studio.Tests
             r.Window.UpdateLayout();
             UxP3bTests.Pump();
 
-            // The pattern isn't in the song yet: nothing to set.
+            // The clip isn't in the song yet: nothing to set.
             roll.RefreshBars();
             Assert.That(roll.Ruler.CanSetLoop, Is.False, "no place in the song, no loop to set");
 
@@ -185,7 +185,7 @@ namespace ReBuzz.Studio.Tests
 
             Point Tick(int tick) => InWindow(r, roll.Ruler, new Point(r.Notes.X(tick * TB) - roll.Scroll.Offset.X, 20));
             UxP3bTests.Drag(r, Tick(4), Tick(12));
-            Assert.That((core.LoopStart, core.LoopEnd), Is.EqualTo((16 + 4, 16 + 12)), "the pattern's ticks 4-12, where it lies in the song, snapped to beats");
+            Assert.That((core.LoopStart, core.LoopEnd), Is.EqualTo((16 + 4, 16 + 12)), "the clip's ticks 4-12, where it lies in the song, snapped to beats");
             Assert.That((roll.Ruler.LoopStartTick, roll.Ruler.LoopEndTick), Is.EqualTo((4, 12)), "the brace shows it");
 
             // One undo step, in the song's history; the roll's Undo takes it first.
@@ -348,7 +348,7 @@ namespace ReBuzz.Studio.Tests
                 r.Notes.Paste();
                 Assert.That(r.Notes.Notes.Select(n => n.Time), Is.EquivalentTo(new[] { TB, 8 * TB }));
 
-                // A note past the pattern's end is dropped, one that runs over is cut to fit.
+                // A note past the clip's end is dropped, one that runs over is cut to fit.
                 r.Notes.SelectAll();
                 r.Notes.CopySelected();
                 Assert.That(r.Notes.Paste(15 * TB), Is.True);

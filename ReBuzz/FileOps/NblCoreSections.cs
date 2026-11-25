@@ -89,8 +89,8 @@ namespace ReBuzz.FileOps
             GLDP = 0x474C4450, // Dialog states?
             XNOC = 0x584E4F43, // MultiIO Connections
             XCAM = 0x5843414D, // Machine properties
-            XTAP = 0x58544150, // Link pattern to editor machine
-            TAP2 = 0x32544150, // Experimental pattern editor data. Dropped?
+            XTAP = 0x58544150, // Link clip to editor machine
+            TAP2 = 0x32544150, // Experimental clip editor data. Dropped?
             IUGB = 0x49554742, // Ok, SubSections
             RBSG = 0x52425347, // ReBuzz Song Settings
             XQES = 0x58514553, // Sequence properties
@@ -174,7 +174,7 @@ namespace ReBuzz.FileOps
                 {
                     if (machine.Ready)
                     {
-                        // Assign editor to pattern before calling UpdateWaveReferences
+                        // Assign editor to clip before calling UpdateWaveReferences
                         if (machine.EditorMachine != null)
                         {
                             buzz.MachineManager.SetClipEditorClip(machine.EditorMachine, machine.Clips.FirstOrDefault());
@@ -471,7 +471,7 @@ namespace ReBuzz.FileOps
                 {
                     if (!buzz.Gear.HasSameDataFormat(machineLibrary, buzz.DefaultClipEditor))
                     {
-                        // Clear pattern editor data if not compatible with MPE
+                        // Clear clip editor data if not compatible with MPE
                         data = null;
                     }
                     machineDLL = (MachineDLL)buzz.MachineDLLs[buzz.DefaultClipEditor];
@@ -615,18 +615,18 @@ namespace ReBuzz.FileOps
             }
         }
 
-        // Fork (mac-engine.md M2): whether the default pattern editor is installed. Off Windows it
+        // Fork (mac-engine.md M2): whether the default clip editor is installed. Off Windows it
         // isn't (the Modern Pattern Editor is WPF).
         internal static bool HasDefaultClipEditor(ReBuzzCore buzz) =>
             buzz.DefaultClipEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultClipEditor);
 
-        // Fork (mac-engine.md M2): a machine without an editor whose patterns kept the built-in
-        // editor's contents (a host without a pattern editor). All its patterns stay the built-in
+        // Fork (mac-engine.md M2): a machine without an editor whose clips kept the built-in
+        // editor's contents (a host without a clip editor). All its clips stay the built-in
         // editor's when the song is saved.
         internal static bool KeepsBuiltInClips(MachineCore machine) =>
             machine.EditorMachine == null && machine.PlaceholderEditor == null && machine.ClipsList.Any(p => p.BuiltInData != null);
 
-        // Fork (mac-engine.md M2): links a machine to its pattern editor. One that isn't installed
+        // Fork (mac-engine.md M2): links a machine to its clip editor. One that isn't installed
         // (only when there's no default to replace it) is a placeholder the engine mustn't drive,
         // so it is kept as the machine's PlaceholderEditor instead.
         internal static void SetEditor(MachineCore machine, MachineCore editor)
@@ -834,7 +834,7 @@ namespace ReBuzz.FileOps
             Section section;
             if (sections.TryGetValue(SectionType.PATT, out section))
             {
-                FileOpsEvent(FileEventType.StatusUpdate, "Load Patterns...");
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Clips...");
                 fs.Position = section.Offset;
 
                 foreach (MachineCore machine in machines)
@@ -842,8 +842,8 @@ namespace ReBuzz.FileOps
                     ushort clips = ReadUShort(fs);
                     ushort tracks = ReadUShort(fs);
 
-                    // Fork (mac-engine.md M2): each pattern's contents are read once (BuiltInPattern),
-                    // then converted to PXP for the pattern editor as before, or kept on the pattern
+                    // Fork (mac-engine.md M2): each clip's contents are read once (BuiltInClip),
+                    // then converted to PXP for the clip editor as before, or kept on the clip
                     // when there's no editor to take them.
                     var contents = new List<(string Name, BuiltInClip Data)>();
                     Func<int, int> read = size => size == 1 ? ReadByte(fs) : size == 2 ? ReadUShort(fs) : 0;
@@ -903,13 +903,13 @@ namespace ReBuzz.FileOps
                         contents.Add((name, data));
                     }
 
-                    // Don't import Master patterns
+                    // Don't import Master clips
                     if (import && machine.DLL.Info.Type == MachineType.Master)
                     {
                         continue;
                     }
 
-                    // Create patterns
+                    // Create clips
                     int first = machine.ClipsList.Count;
                     bool builtIn = builtInPeDictionary.ContainsKey(machine.Name) && clips > 0;
                     buzz.ClipsAwaitingEditor = builtIn ? machine : null;     // fork (studio-mvp.md S6)
@@ -931,7 +931,7 @@ namespace ReBuzz.FileOps
                         // Create PXP compatible editor and input converted data
                         buzz.CreateEditor(machine, buzz.DefaultClipEditor, BuiltInClip.ToPXP(machine, contents));
 
-                        // Fork (mac-engine.md M2): no pattern editor here, so the patterns keep their contents.
+                        // Fork (mac-engine.md M2): no clip editor here, so the clips keep their contents.
                         if (machine.EditorMachine == null)
                         {
                             for (int j = 0; j < contents.Count && first + j < machine.ClipsList.Count; j++)
@@ -951,7 +951,7 @@ namespace ReBuzz.FileOps
             Section section;
             if (sections.TryGetValue(SectionType.XTAP, out section))
             {
-                FileOpsEvent(FileEventType.StatusUpdate, "Load Pattern Editor Connections...");
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Clip Editor Connections...");
                 fs.Position = section.Offset;
 
                 byte version = ReadByte(fs);
@@ -968,9 +968,9 @@ namespace ReBuzz.FileOps
                         {
                             ushort clipEditorIndex = ReadUShort(fs);
 
-                            if (clipEditorIndex == 65535)    // If pattern is assigned to built in editor
+                            if (clipEditorIndex == 65535)    // If clip is assigned to built in editor
                             {
-                                // Don't do anything if master and builtin pattern data
+                                // Don't do anything if master and builtin clip data
                                 if (import && i == 0)
                                 {
                                 }
@@ -1018,7 +1018,7 @@ namespace ReBuzz.FileOps
             Section section;
             if (sections.TryGetValue(SectionType.TAP2, out section))
             {
-                FileOpsEvent(FileEventType.StatusUpdate, "Load New Pattern Editor Data...");
+                FileOpsEvent(FileEventType.StatusUpdate, "Load New Clip Editor Data...");
                 fs.Position = section.Offset;
 
                 byte version = ReadByte(fs);
@@ -1062,7 +1062,7 @@ namespace ReBuzz.FileOps
                             if (clip != null && targetParameter != null)
                             {
                                 // Fork (daw-modes.md AR0): in the order saved. Upstream clamped to Count - 1, which put a
-                                // pattern's second column before its first (a MIDI column and an automation column
+                                // clip's second column before its first (a MIDI column and an automation column
                                 // swapped places on every open, so a saved song never saved back the same).
                                 int newIndex = Math.Clamp(j, 0, clip.Columns.Count);
                                 clip.InsertColumn(newIndex, targetParameter, track);
@@ -1171,7 +1171,7 @@ namespace ReBuzz.FileOps
                             }
                             else if (value >= 0x10)
                             {
-                                // machine+value -> pattern id
+                                // machine+value -> clip id
                                 int ptnidx = (int)(value - 0x10);
                                 if (ptnidx >= 0 && ptnidx < machine.Clips.Count)
                                 {
@@ -2086,7 +2086,7 @@ namespace ReBuzz.FileOps
 
                         if (conn != null)
                         {
-                            // Fork (mac-engine.md M2): a pattern that kept its built-in contents writes its input columns back.
+                            // Fork (mac-engine.md M2): a clip that kept its built-in contents writes its input columns back.
                             var builtIn = clip.BuiltInData;
                             for (int k1 = 0; k1 < rows; k1++)
                             {
@@ -2124,7 +2124,7 @@ namespace ReBuzz.FileOps
         private bool WriteTrack(MemoryStream ms, MachineCore machine, ClipCore Clip, int group, int track, int rows)
         {
             // We don't use these so write no values
-            // Fork (mac-engine.md M2): except a pattern's kept built-in contents (BuiltInData).
+            // Fork (mac-engine.md M2): except a clip's kept built-in contents (BuiltInData).
             var builtIn = Clip.BuiltInData;
             for (int i = 0; i < rows; i++)
             {
@@ -2142,9 +2142,9 @@ namespace ReBuzz.FileOps
                         WriteUShort(ms, (ushort)value);
 
                     //if (value != param.NoValue)
-                    //    events.Add(new PatternEvent(i * PatternEvent.TimeBase, value));
+                    //    events.Add(new ClipEvent(i * ClipEvent.TimeBase, value));
                     //if (result != 0 && value != zzub_parameter_get_value_none(param))
-                    //    insert_pattern_value(result, plugin.plugin, group, track, j, i, value);
+                    //    insert_clip_value(result, plugin.plugin, group, track, j, i, value);
 
                 }
             }
@@ -2163,9 +2163,9 @@ namespace ReBuzz.FileOps
                 var machine = machines[i];
                 ushort numClips = (ushort)machine.Clips.Count;
 
-                // Fork (mac-engine.md M2): a placeholder editor is still the patterns' editor, and
-                // patterns that kept built-in contents stay the built-in editor's (65535), so a host
-                // with a pattern editor converts them as it does for an old song.
+                // Fork (mac-engine.md M2): a placeholder editor is still the clips' editor, and
+                // clips that kept built-in contents stay the built-in editor's (65535), so a host
+                // with a clip editor converts them as it does for an old song.
                 var editor = machine.EditorMachine ?? machine.PlaceholderEditor;
                 int editorIndex = buzz.SongCore.MachinesList.IndexOf(editor);
                 if (editorIndex == -1 && KeepsBuiltInClips(machine))
@@ -2258,7 +2258,7 @@ namespace ReBuzz.FileOps
                 WriteUShort(ms, machineIndex);
                 // Fork (0.6.1): events are collected first, so positions past 65,535 ticks get
                 // 4-byte positions (the loader reads either size; upstream always wrote 2 and
-                // truncated them), and an event whose pattern is gone is left out rather than
+                // truncated them), and an event whose clip is gone is left out rather than
                 // written as an invalid index.
                 var written = new List<(int Pos, ulong Value)>(sequence.Events.Count);
                 foreach (var kv in sequence.Events)
@@ -2289,7 +2289,7 @@ namespace ReBuzz.FileOps
                     }
                     else
                     {
-                        // machine+value -> pattern id
+                        // machine+value -> clip id
                         int ptnidx = sequence.Machine.Clips.IndexOf(sequenceEvent.Clip);
                         if (ptnidx < 0)
                             continue;
@@ -2740,7 +2740,7 @@ namespace ReBuzz.FileOps
         [ThreadStatic] static bool utf8Strings;
 
         /// <summary>
-        /// Fork (native-format.md): inside this scope the section strings (machine, pattern and wave names…) are UTF-8, not
+        /// Fork (native-format.md): inside this scope the section strings (machine, clip and wave names…) are UTF-8, not
         /// Latin-1. The native writer and reader use it; .bmx files keep Latin-1. Per thread, so a file operation on the UI
         /// thread doesn't touch another thread's reads.
         /// </summary>
@@ -2829,7 +2829,7 @@ namespace ReBuzz.FileOps
             WriteString(ms, str, utf8Strings ? Encoding.UTF8 : Encoding.Latin1);
         }
 
-        /// <summary>A string in a given encoding (the pattern editor's data keeps Latin-1 whatever file it goes in).</summary>
+        /// <summary>A string in a given encoding (the clip editor's data keeps Latin-1 whatever file it goes in).</summary>
         public static void WriteString(MemoryStream ms, string str, Encoding encoding)
         {
             byte[] buffer = encoding.GetBytes(str);

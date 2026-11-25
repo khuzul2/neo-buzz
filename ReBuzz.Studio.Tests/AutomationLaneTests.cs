@@ -334,7 +334,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(seg.Points.Select(p => p.Ramp), Is.EqualTo(new[] { true, true, false }), "ramps to the next point");
             Assert.That(seg.Points[0].Time, Is.EqualTo(0));
             Assert.That(seg.Points[1].Time, Is.EqualTo(128 * TB));
-            Assert.That(seg.Points[2].Time, Is.EqualTo(256 * TB - 1), "the last point is the pattern's last unit");
+            Assert.That(seg.Points[2].Time, Is.EqualTo(256 * TB - 1), "the last point is the clip's last unit");
             Assert.That(seg.Points[0].Value, Is.InRange(130, 170), "drawn at about 15 %");
             Assert.That(seg.Points[1].Value, Is.InRange(270, 330));
             Assert.That(seg.Points[2].Value, Is.InRange(860, 940));
@@ -349,7 +349,7 @@ namespace ReBuzz.Studio.Tests
             var cutoff = machine.ParameterGroups[1].Parameters.First(p => p.Name == Cutoff);
             Assert.That(cutoff.GetValue(0), Is.EqualTo(seg.Points[2].Value), "the sweep ends where it was drawn to end");
 
-            // ...is, bit for bit, the render of the same points written as plain engine events: one 16-bar pattern with a ramp event
+            // ...is, bit for bit, the render of the same points written as plain engine events: one 16-bar clip with a ramp event
             // for each point, no clip id, no automation lane role, no arrangement data...
             string clipName = autoLane.Events[0].Clip.Name;
             var key = rig.ParamRow("Lead", Cutoff).Param.Key;
@@ -476,7 +476,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That((seg.Start, seg.End), Is.EqualTo((16 * TB, 48 * TB)));
             Assert.That(seg.Points[0].Value, Is.LessThan(seg.Points[1].Value), "low on the left, high on the right");
 
-            // A clip's own automation column, on its pattern: it shows on each repeat of a looped clip, stitched along the timeline.
+            // A clip's own automation column, on its clip: it shows on each repeat of a looped clip, stitched along the timeline.
             rig.DoubleClick(rig.At(lead, 64, 2));
             var clip = machine.Clips.Last();
             var key = rig.ParamRow("Lead", Cutoff).Param.Key;
@@ -487,7 +487,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(repeats.Select(s => s.Start / TB), Is.EqualTo(new[] { 64, 80, 96, 112 }), "a placement for each repeat");
             Assert.That(repeats.All(s => s.Editable), Is.True);
             Assert.That(repeats[2].ValueAt(100 * TB), Is.EqualTo(100));
-            Assert.That(repeats[2].ValueAt(105 * TB), Is.EqualTo(700), "the step at the pattern's tick 8");
+            Assert.That(repeats[2].ValueAt(105 * TB), Is.EqualTo(700), "the step at the clip's tick 8");
             var first = rig.Canvas.ItemsOf(lead)[0];
             Assert.That(first.Clip, Is.SameAs(clip));
             rig.Canvas.Changed();
@@ -507,7 +507,7 @@ namespace ReBuzz.Studio.Tests
             machine.CreateClip("00", 16);
             var clip = machine.Clips.First(p => p.Name == "00");
 
-            // The tracker's data: Voice mode 2 on row 4 and 1 on row 8, typed in the Pattern tab.
+            // The tracker's data: Voice mode 2 on row 4 and 1 on row 8, typed in the Clip tab.
             rig.Window.Detail.Show(true);
             Settle();
             ClipView.Edit(clip);
@@ -552,7 +552,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(o.From, Is.GreaterThanOrEqualTo(4 * TB), "from the tracker's first step");
             Assert.That(lane.Overlaps.Any(x => x.From <= 4 * TB && x.To > 4 * TB), Is.True, "over the first step");
             Assert.That(lane.Overlaps.Any(x => x.From <= 8 * TB && x.To > 8 * TB), Is.True, "over the second");
-            Assert.That(lane.Overlaps.All(x => x.To <= 16 * TB), Is.True, "not past the tracker's pattern");
+            Assert.That(lane.Overlaps.All(x => x.To <= 16 * TB), Is.True, "not past the tracker's clip");
         }
 
         [AvaloniaTest]
@@ -616,7 +616,7 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
             var lane = rig.Read("Lead", Cutoff);
-            Assert.That(lane.Segments, Is.Not.Empty, $"armed {recorder.Any}; sequences {Core.Song.Sequences.Count}; status {rig.Canvas.Status}; patterns {Core.Song.Machines.First(m => m.Name == "Lead").Clips.Count}");
+            Assert.That(lane.Segments, Is.Not.Empty, $"armed {recorder.Any}; sequences {Core.Song.Sequences.Count}; status {rig.Canvas.Status}; clips {Core.Song.Machines.First(m => m.Name == "Lead").Clips.Count}");
             var seg = lane.Segments.Single();
             Assert.That(seg.Source, Is.EqualTo(AutoSource.AutomationClip), "a clip was drawn for the pass");
             Assert.That(seg.Points.Select(p => (p.Time / TB, p.Value, p.Ramp)), Is.EqualTo(new[] { (4, 100, true), (8, 400, true), (12, 800, true) }), "a point for each move, ramps between: " + Pts(seg));

@@ -1,10 +1,10 @@
-// Agent server (docs/specs/mcp-server.md §5.5): composition. Patterns, their notes and the
-// arrangement. pattern_list, pattern_create, pattern_delete, pattern_rename, pattern_duplicate,
+// Agent server (docs/specs/mcp-server.md §5.5): composition. Clips, their notes and the
+// arrangement. clip_list, clip_create, clip_delete, clip_rename, clip_duplicate,
 // notes_write, notes_read, arrangement_get, arrangement_place, arrangement_clear.
 //
-// Notes live in each pattern's engine MIDI column (docs/specs/session-view.md 0.7): ReBuzz plays
+// Notes live in each clip's engine MIDI column (docs/specs/session-view.md 0.7): ReBuzz plays
 // it to the machine itself, songs save it, the Session View's piano roll edits it, and its slot
-// menu moves the notes to the Pattern View's note lanes and back. Machines whose profiled manifest
+// menu moves the notes to the Clip View's note lanes and back. Machines whose profiled manifest
 // says they take notes in tracks get them in their Note track columns instead, and every pitch
 // goes through the manifest's pitch offset (§12.2, MachineNotes).
 
@@ -36,19 +36,19 @@ namespace ReBuzz.Agent
 
             tools.Add(new ToolDef
             {
-                Name = "pattern_list",
-                Title = "List patterns",
+                Name = "clip_list",
+                Title = "List clips",
                 Description =
-                    "Patterns of one machine or of all: name, length in beats, note count and where each is placed in the arrangement. " +
-                    "Example: pattern_list(machine=\"Bass\").",
-                Input = Object(null, Opt("machine", String("Only this machine's patterns"))),
-                Output = Object(null, Req("machines", Array(Object(null, Req("machine", String("Name")), Req("patterns", Array(Object(null,
-                    Req("name", String("Pattern name")), Req("length_beats", Number("Length")), Req("notes", Integer("Notes")),
-                    Req("placed_at", Array(Number("Beat"), "Arrangement positions in beats"))), "Its patterns"))), "Per machine"))),
+                    "Clips of one machine or of all: name, length in beats, note count and where each is placed in the arrangement. " +
+                    "Example: clip_list(machine=\"Bass\").",
+                Input = Object(null, Opt("machine", String("Only this machine's clips"))),
+                Output = Object(null, Req("machines", Array(Object(null, Req("machine", String("Name")), Req("clips", Array(Object(null,
+                    Req("name", String("Clip name")), Req("length_beats", Number("Length")), Req("notes", Integer("Notes")),
+                    Req("placed_at", Array(Number("Beat"), "Arrangement positions in beats"))), "Its clips"))), "Per machine"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
-                    var r = await host.Engine("pattern_list", false, _ =>
+                    var r = await host.Engine("clip_list", false, _ =>
                     {
                         var ms = c.String("machine") is string name ? new List<MachineCore> { SongModel.Machine(core, name) }
                             : SongModel.Machines(core).Where(m => !SongModel.IsMaster(m)).ToList();
@@ -57,66 +57,66 @@ namespace ReBuzz.Agent
                             ["machines"] = new JsonArray(ms.Select(m => (JsonNode)new JsonObject
                             {
                                 ["machine"] = m.Name,
-                                ["patterns"] = new JsonArray(m.Clips.Select(p => (JsonNode)ClipJson(core, p)).ToArray()),
+                                ["clips"] = new JsonArray(m.Clips.Select(p => (JsonNode)ClipJson(core, p)).ToArray()),
                             }).ToArray()),
                         };
                     }, c.Cancellation);
-                    var parts = r["machines"]!.AsArray().Select(m => $"{m!["machine"]}: " + (m["patterns"]!.AsArray().Count == 0 ? "no patterns"
-                        : string.Join(", ", m["patterns"]!.AsArray().Select(p => $"{p!["name"]} ({p["length_beats"]} beats, {p["notes"]} notes)"))));
+                    var parts = r["machines"]!.AsArray().Select(m => $"{m!["machine"]}: " + (m["clips"]!.AsArray().Count == 0 ? "no clips"
+                        : string.Join(", ", m["clips"]!.AsArray().Select(p => $"{p!["name"]} ({p["length_beats"]} beats, {p["notes"]} notes)"))));
                     return ToolResult.Ok(string.Join("; ", parts), r);
                 },
             });
 
             tools.Add(new ToolDef
             {
-                Name = "pattern_create",
-                Title = "Create a pattern",
+                Name = "clip_create",
+                Title = "Create a clip",
                 Description =
-                    "Makes an empty pattern for a machine, length in beats (default 4 bars). Then notes_write fills it and arrangement_place " +
-                    "puts it on the timeline. One undo step. Example: pattern_create(machine=\"Bass\", name=\"Verse\", length_beats=16).",
+                    "Makes an empty clip for a machine, length in beats (default 4 bars). Then notes_write fills it and arrangement_place " +
+                    "puts it on the timeline. One undo step. Example: clip_create(machine=\"Bass\", name=\"Verse\", length_beats=16).",
                 Input = Object(null,
                     Req("machine", String("The machine it plays")),
                     Opt("name", String("Its name (unique for the machine); default the next number")),
                     Opt("length_beats", Number("Length in beats (default 4 bars)", 0.0001, 4096))),
-                Output = Object(null, Req("pattern", Object(null, Req("name", String("Name")), Req("length_beats", Number("Length"))))),
+                Output = Object(null, Req("clip", Object(null, Req("name", String("Name")), Req("length_beats", Number("Length"))))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    var r = await host.Engine("pattern_create", true, _ =>
+                    var r = await host.Engine("clip_create", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        if (SongModel.IsMaster(m)) throw new ToolError("Master's patterns hold tempo changes; make patterns for the instruments.");
+                        if (SongModel.IsMaster(m)) throw new ToolError("Master's clips hold tempo changes; make clips for the instruments.");
                         double beats = c.Number("length_beats") ?? SongModel.BeatsPerBar(core) * 4;
                         int ticks = SongModel.Ticks(core, beats);
                         if (ticks < 1) throw new ToolError($"length_beats {beats} is shorter than one tick (1/{SongModel.Tpb(core)} beat).");
                         string name = c.String("name")?.Trim();
                         if (name != null && m.Clips.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))
-                            throw new ToolError($"{m.Name} already has a pattern \"{name}\". Choose another name, or notes_write into it.");
+                            throw new ToolError($"{m.Name} already has a clip \"{name}\". Choose another name, or notes_write into it.");
                         name ??= NextName(m);
                         AgentActions.Do(core, new CreateClipAction(m, name, ticks));
-                        var p = m.Clips.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create the pattern \"{name}\".");
-                        return new JsonObject { ["machine"] = m.Name, ["pattern"] = ClipJson(core, p) };
+                        var p = m.Clips.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create the clip \"{name}\".");
+                        return new JsonObject { ["machine"] = m.Name, ["clip"] = ClipJson(core, p) };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"Created {r["machine"]}'s pattern \"{r["pattern"]!["name"]}\", {r["pattern"]!["length_beats"]} beats.", r);
+                    return ToolResult.Ok($"Created {r["machine"]}'s clip \"{r["pattern"]!["name"]}\", {r["pattern"]!["length_beats"]} beats.", r);
                 },
             });
 
             tools.Add(new ToolDef
             {
-                Name = "pattern_delete",
-                Title = "Delete a pattern",
+                Name = "clip_delete",
+                Title = "Delete a clip",
                 Description =
-                    "Deletes a pattern with its notes and its places in the arrangement. One undo step (undo restores all three). " +
-                    "Example: pattern_delete(machine=\"Bass\", pattern=\"Old\").",
-                Input = Object(null, Req("machine", String("The machine")), Req("pattern", String("The pattern"))),
+                    "Deletes a clip with its notes and its places in the arrangement. One undo step (undo restores all three). " +
+                    "Example: clip_delete(machine=\"Bass\", clip=\"Old\").",
+                Input = Object(null, Req("machine", String("The machine")), Req("clip", String("The clip"))),
                 Output = Object(null, Req("deleted", String("Its name")), Req("was_placed", Integer("Arrangement places removed"))),
                 Annotations = ToolAnnotations.Delete,
                 Handler = async c =>
                 {
-                    var r = await host.Engine("pattern_delete", true, _ =>
+                    var r = await host.Engine("clip_delete", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         int placed = 0;
                         foreach (var seq in core.SongCore.Sequences.Where(s => s.Machine == m).ToList())
                             foreach (var t in seq.Events.Where(e => e.Value.Clip == p).Select(e => e.Key).ToList())
@@ -129,61 +129,61 @@ namespace ReBuzz.Agent
                         AgentActions.DeleteClip(core, p);
                         return new JsonObject { ["machine"] = m.Name, ["deleted"] = name, ["was_placed"] = placed, ["notes"] = notes.Count };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"Deleted {r["machine"]}'s pattern \"{r["deleted"]}\" ({r["notes"]} notes, {r["was_placed"]} places in the arrangement).", r);
+                    return ToolResult.Ok($"Deleted {r["machine"]}'s clip \"{r["deleted"]}\" ({r["notes"]} notes, {r["was_placed"]} places in the arrangement).", r);
                 },
             });
 
             tools.Add(new ToolDef
             {
-                Name = "pattern_rename",
-                Title = "Rename a pattern",
-                Description = "Renames a pattern; its notes and arrangement places stay. One undo step. Example: pattern_rename(machine=\"Bass\", pattern=\"00\", new_name=\"Verse\").",
-                Input = Object(null, Req("machine", String("The machine")), Req("pattern", String("The pattern")), Req("new_name", String("Its new name"))),
-                Output = Object(null, Req("pattern", Object(null, Req("name", String("Name now"))))),
+                Name = "clip_rename",
+                Title = "Rename a clip",
+                Description = "Renames a clip; its notes and arrangement places stay. One undo step. Example: clip_rename(machine=\"Bass\", clip=\"00\", new_name=\"Verse\").",
+                Input = Object(null, Req("machine", String("The machine")), Req("clip", String("The clip")), Req("new_name", String("Its new name"))),
+                Output = Object(null, Req("clip", Object(null, Req("name", String("Name now"))))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {
-                    var r = await host.Engine("pattern_rename", true, _ =>
+                    var r = await host.Engine("clip_rename", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         string to = c.RequiredString("new_name").Trim();
                         if (to.Length == 0) throw new ToolError("new_name: give a name.");
                         if (to != p.Name)
                         {
                             if (m.Clips.Any(x => x != p && string.Equals(x.Name, to, StringComparison.OrdinalIgnoreCase)))
-                                throw new ToolError($"{m.Name} already has a pattern \"{to}\".");
+                                throw new ToolError($"{m.Name} already has a clip \"{to}\".");
                             AgentActions.RenameClip(core, p, to);
                         }
-                        return new JsonObject { ["machine"] = m.Name, ["pattern"] = ClipJson(core, p) };
+                        return new JsonObject { ["machine"] = m.Name, ["clip"] = ClipJson(core, p) };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]}'s pattern is now \"{r["pattern"]!["name"]}\".", r);
+                    return ToolResult.Ok($"{r["machine"]}'s clip is now \"{r["pattern"]!["name"]}\".", r);
                 },
             });
 
             tools.Add(new ToolDef
             {
-                Name = "pattern_duplicate",
-                Title = "Duplicate a pattern",
+                Name = "clip_duplicate",
+                Title = "Duplicate a clip",
                 Description =
-                    "Copies a pattern under a new name, with its notes, automation and its Pattern View data, to make a variation (a fill, a second verse). One undo step. " +
-                    "Example: pattern_duplicate(machine=\"Drums\", pattern=\"Beat\", new_name=\"Beat fill\").",
-                Input = Object(null, Req("machine", String("The machine")), Req("pattern", String("The pattern to copy")), Opt("new_name", String("The copy's name (default: numbered)"))),
-                Output = Object(null, Req("pattern", Object(null, Req("name", String("The copy's name"))))),
+                    "Copies a clip under a new name, with its notes, automation and its Clip View data, to make a variation (a fill, a second verse). One undo step. " +
+                    "Example: clip_duplicate(machine=\"Drums\", clip=\"Beat\", new_name=\"Beat fill\").",
+                Input = Object(null, Req("machine", String("The machine")), Req("clip", String("The clip to copy")), Opt("new_name", String("The copy's name (default: numbered)"))),
+                Output = Object(null, Req("clip", Object(null, Req("name", String("The copy's name"))))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    var r = await host.Engine("pattern_duplicate", true, _ =>
+                    var r = await host.Engine("clip_duplicate", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         string name = c.String("new_name")?.Trim();
                         if (name != null && m.Clips.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
-                            throw new ToolError($"{m.Name} already has a pattern \"{name}\".");
+                            throw new ToolError($"{m.Name} already has a clip \"{name}\".");
                         name ??= BuzzGUI.Common.Actions.ClipNames.Copy(m, p.Name);
                         AgentActions.DuplicateClip(core, p, name);
                         var copy = m.Clips.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create \"{name}\".");
-                        return new JsonObject { ["machine"] = m.Name, ["from"] = p.Name, ["pattern"] = ClipJson(core, copy) };
+                        return new JsonObject { ["machine"] = m.Name, ["from"] = p.Name, ["clip"] = ClipJson(core, copy) };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Copied {r["machine"]}'s \"{r["from"]}\" to \"{r["pattern"]!["name"]}\" ({r["pattern"]!["notes"]} notes).", r);
                 },
@@ -194,18 +194,18 @@ namespace ReBuzz.Agent
                 Name = "notes_write",
                 Title = "Write notes",
                 Description =
-                    "Writes notes into a pattern. Each note: pitch (MIDI number or name, 60 = \"C4\"), start (beats from the pattern start, or " +
+                    "Writes notes into a clip. Each note: pitch (MIDI number or name, 60 = \"C4\"), start (beats from the clip start, or " +
                     "\"bar.beat\" in it), length in beats, velocity 1–127 (default 100). Chords are notes with the same start. mode: add (default) " +
-                    "keeps what's there, replace clears the pattern first, replace_range clears only from range_start to range_end. One undo step. " +
+                    "keeps what's there, replace clears the clip first, replace_range clears only from range_start to range_end. One undo step. " +
                     "The pitch written is the pitch heard: a machine whose manifest records a pitch offset or note input in tracks gets them converted. " +
-                    "Returns a summary and problems (overlapping same pitches). Example: notes_write(machine=\"Bass\", pattern=\"Verse\", " +
+                    "Returns a summary and problems (overlapping same pitches). Example: notes_write(machine=\"Bass\", clip=\"Verse\", " +
                     "notes=[{\"pitch\": \"A1\", \"start\": 0, \"length\": 0.5, \"velocity\": 110}, {\"pitch\": \"A1\", \"start\": 1.5, \"length\": 0.5}]).",
                 Input = Object(null,
                     Req("machine", String("The machine that plays them")),
-                    Req("pattern", String("The pattern")),
+                    Req("clip", String("The clip")),
                     Req("notes", Array(Object("A note",
                         Req("pitch", AnyOf("Pitch", Integer("MIDI number, 60 = C4", 0, 127), String("Name: \"C4\", \"F#3\", \"Bb2\""))),
-                        Req("start", Position("Start, from the pattern start")),
+                        Req("start", Position("Start, from the clip start")),
                         Req("length", Number("Length in beats", 0)),
                         Opt("velocity", Integer("1–127 (default 100); the note's volume", 1, 127)),
                         Opt("sample", Integer("Neo Sampler in Tracker mode: the sample this note plays, 1–200 the song's waves and 201–226 the built-ins (it plays at its own speed at C-4, the pitch moves it); leave out to play the zones", 1, 254)),
@@ -214,7 +214,7 @@ namespace ReBuzz.Agent
                         Opt("name", String("The pitch's name, as notes_read and theory give it (pitch decides)")),
                         Opt("midi_channel", Integer("MIDI channel 1–16, as notes_read gives it (written notes use channel 1)", 1, 16))), "The notes")),
                     Opt("mode", String("add (default), replace or replace_range", "add", "replace", "replace_range")),
-                    Opt("range_start", Position("replace_range: from here (in the pattern)")),
+                    Opt("range_start", Position("replace_range: from here (in the clip)")),
                     Opt("range_end", Position("replace_range: to here (exclusive)")),
                     Opt("input", String(MachineNotes.InputHelp, "midi", "tracks")),
                     Opt("apply_pitch_offset", Boolean(MachineNotes.OffsetHelp))),
@@ -223,7 +223,7 @@ namespace ReBuzz.Agent
                     Opt("pitch_offset", Integer("Semitones added on the way to the machine (its manifest's)")),
                     Req("written", Integer("Notes written")),
                     Req("removed", Integer("Notes cleared first")),
-                    Req("total", Integer("Notes in the pattern now")),
+                    Req("total", Integer("Notes in the clip now")),
                     Req("problems", Array(String("A problem"), "Overlaps, shortened notes"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
@@ -233,7 +233,7 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         if (SongModel.IsMaster(m)) throw new ToolError("Master doesn't play notes.");
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
                         var problems = new List<string>();
                         var input = MachineNotes.For(m, c.String("input"), c.Bool("apply_pitch_offset") ?? true);
@@ -246,9 +246,9 @@ namespace ReBuzz.Agent
                         else if (mode == "replace_range")
                         {
                             if (c.Arguments["range_start"] == null || c.Arguments["range_end"] == null)
-                                throw new ToolError("replace_range needs range_start and range_end (beats in the pattern).");
-                            int from = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_start"], bpb, "range_start", "the pattern start"), tpb);
-                            int to = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_end"], bpb, "range_end", "the pattern start"), tpb);
+                                throw new ToolError("replace_range needs range_start and range_end (beats in the clip).");
+                            int from = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_start"], bpb, "range_start", "the clip start"), tpb);
+                            int to = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_end"], bpb, "range_end", "the clip start"), tpb);
                             if (to <= from) throw new ToolError("range_end must be after range_start.");
                             removed = existing.Where(n => n.Time >= from && n.Time < to).ToList();
                             int outside = added.Count(n => n.Time < from || n.Time >= to);
@@ -264,11 +264,11 @@ namespace ReBuzz.Agent
                         if (removed.Count > 0 || unique.Count > 0) MachineNotes.Replace(core, p, input, removed, unique, problems);
                         var now = MachineNotes.Read(p, input);
                         if (now.Count > 0 && SongModel.Placements(core, p).Count == 0)
-                            problems.Add($"\"{p.Name}\" isn't placed in the arrangement yet, so the song doesn't play it: arrangement_place(machine=\"{m.Name}\", pattern=\"{p.Name}\", at=…).");
+                            problems.Add($"\"{p.Name}\" isn't placed in the arrangement yet, so the song doesn't play it: arrangement_place(machine=\"{m.Name}\", clip=\"{p.Name}\", at=…).");
                         return new JsonObject
                         {
                             ["machine"] = m.Name,
-                            ["pattern"] = p.Name,
+                            ["clip"] = p.Name,
                             ["input"] = input.Mode,
                             ["pitch_offset"] = input.Offset,
                             ["written"] = unique.Count,
@@ -290,12 +290,12 @@ namespace ReBuzz.Agent
                 Name = "notes_read",
                 Title = "Read notes",
                 Description =
-                    "The notes of a pattern in the same shape notes_write takes (pitch, name, start and length in beats, velocity), optionally " +
-                    "from range_start to range_end. Example: notes_read(machine=\"Bass\", pattern=\"Verse\").",
+                    "The notes of a clip in the same shape notes_write takes (pitch, name, start and length in beats, velocity), optionally " +
+                    "from range_start to range_end. Example: notes_read(machine=\"Bass\", clip=\"Verse\").",
                 Input = Object(null,
                     Req("machine", String("The machine")),
-                    Req("pattern", String("The pattern")),
-                    Opt("range_start", Position("From here (in the pattern)")),
+                    Req("clip", String("The clip")),
+                    Opt("range_start", Position("From here (in the clip)")),
                     Opt("range_end", Position("To here (exclusive)")),
                     Opt("input", String(MachineNotes.InputHelp, "midi", "tracks")),
                     Opt("apply_pitch_offset", Boolean("Take the machine's pitch offset off, as notes_write puts it on (default true)"))),
@@ -303,31 +303,31 @@ namespace ReBuzz.Agent
                     Opt("input", String("midi or tracks: where they were read")),
                     Opt("pitch_offset", Integer("Semitones taken off (the machine's manifest's)")),
                     Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127")), Opt("sample", Integer("Tracker mode: the sample's number")), Opt("offset", Integer("Frames into the sample")), Opt("tune", Integer("Cents"))), "Notes")),
-                    Req("length_beats", Number("The pattern's length"))),
+                    Req("length_beats", Number("The clip's length"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
                     var r = await host.Engine("notes_read", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
                         var input = MachineNotes.For(m, c.String("input"), c.Bool("apply_pitch_offset") ?? true);
                         var notes = MachineNotes.Read(p, input);
                         if (c.Arguments["range_start"] != null)
                         {
-                            int from = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_start"], bpb, "range_start", "the pattern start"), tpb);
+                            int from = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_start"], bpb, "range_start", "the clip start"), tpb);
                             notes = notes.Where(n => n.Time >= from).ToList();
                         }
                         if (c.Arguments["range_end"] != null)
                         {
-                            int to = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_end"], bpb, "range_end", "the pattern start"), tpb);
+                            int to = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_end"], bpb, "range_end", "the clip start"), tpb);
                             notes = notes.Where(n => n.Time < to).ToList();
                         }
                         return new JsonObject
                         {
                             ["machine"] = m.Name,
-                            ["pattern"] = p.Name,
+                            ["clip"] = p.Name,
                             ["length_beats"] = SongModel.Beats(core, p.Length),
                             ["input"] = input.Mode,
                             ["pitch_offset"] = input.Offset,
@@ -344,22 +344,22 @@ namespace ReBuzz.Agent
                 Name = "arrangement_get",
                 Title = "Read the arrangement",
                 Description =
-                    "The timeline: one lane per machine with its patterns' places (start and end in beats and bar.beat), plus the song end and " +
-                    "loop. A place that plays part of its pattern says which (part_beats) and its volume (gain); places joined into a clip " +
-                    "(a start, then loop repeats, cut at its end) carry the clip's id, and each lane lists its clips with their loop. " +
+                    "The timeline: one lane per machine with its clips' places (start and end in beats and bar.beat), plus the song end and " +
+                    "loop. A place that plays part of its clip says which (part_beats) and its volume (gain); places joined into a placement " +
+                    "(a start, then loop repeats, cut at its end) carry the placement's id, and each lane lists its placements with their loop. " +
                     "meter: the song's bars, as the sequence editor sets them. Each lane has its number (lane) and role (main, take or automation); arrangement_clip, arrangement_lane and arrangement_takes take them. Optionally only from/to (beats). Example: arrangement_get().",
                 Input = Object(null, Opt("from", Position("From here")), Opt("to", Position("To here (exclusive)"))),
                 Output = Object(null,
                     Req("lanes", Array(Object(null, Req("machine", String("Machine")), Opt("lane", Integer("The lane's number among the machine's lanes", 0)),
                         Opt("role", String("main, take or automation", "main", "take", "automation")), Req("events", Array(Object(null,
-                        Req("at", Number("Start, beats")), Req("pattern", String("Pattern")), Req("ends", Number("Where it stops, beats")),
-                        Opt("clip", Integer("The clip it belongs to")), Opt("part_beats", Array(Number("Beats into the pattern"), "The part of the pattern it plays: from, to")),
+                        Req("at", Number("Start, beats")), Req("clip", String("Clip")), Req("ends", Number("Where it stops, beats")),
+                        Opt("placement", Integer("The placement it belongs to")), Opt("part_beats", Array(Number("Beats into the clip"), "The part of the clip it plays: from, to")),
                         Opt("gain", Number("Its volume, 0-1"))), "Placements")),
-                        Opt("clips", Array(Object(null, Req("id", Integer("Clip id")), Req("pattern", String("Pattern")), Req("at", Number("Start, beats")),
-                            Req("ends", Number("End, beats")), Req("start_beats", Number("Where its first place starts in the pattern, beats")),
+                        Opt("placements", Array(Object(null, Req("id", Integer("Placement id")), Req("clip", String("Clip")), Req("at", Number("Start, beats")),
+                            Req("ends", Number("End, beats")), Req("start_beats", Number("Where its first place starts in the clip, beats")),
                             Req("places", Integer("Places it is made of: the start and its repeats")),
-                            Opt("loop", Object(null, Req("start_beats", Number("Loop start in the pattern")), Req("end_beats", Number("Loop end in the pattern")), Req("on", Boolean("Whether it loops"))))),
-                            "Clips: places joined by a clip id"))), "Lanes")),
+                            Opt("loop", Object(null, Req("start_beats", Number("Loop start in the clip")), Req("end_beats", Number("Loop end in the clip")), Req("on", Boolean("Whether it loops"))))),
+                            "Placements: places joined by a placement id"))), "Lanes")),
                     Req("song_end_beats", Number("Song end")),
                     Req("beats_per_bar", Integer("Beats per bar")),
                     Req("meter", Array(Object(null, Req("from_beats", Number("From here")), Req("bar_beats", Number("Each bar's length, beats"))), "The song's bars"))),
@@ -390,11 +390,11 @@ namespace ReBuzz.Agent
                                 };
                                 if (e.Type == SequenceEventType.PlayClip)
                                 {
-                                    o["pattern"] = e.Clip.Name;
+                                    o["clip"] = e.Clip.Name;
                                     o["ends"] = SongModel.Beats(core, end);
                                     if (end - t < e.PlayedLength) o["cut_by_next"] = true;
-                                    // Fork (daw-modes.md S2): the part played, the volume, the clip.
-                                    if (e.PlacementId != 0) o["clip"] = e.PlacementId;
+                                    // Fork (daw-modes.md S2): the part played, the volume, the placement.
+                                    if (e.PlacementId != 0) o["placement"] = e.PlacementId;
                                     if (e.Offset != 0 || e.End != 0)
                                         o["part_beats"] = new JsonArray(SongModel.Beats(core, e.PlayedOffset), SongModel.Beats(core, e.PlayedOffset + e.PlayedLength));
                                     if (e.Gain != 1.0) o["gain"] = Math.Round(e.Gain, 4);
@@ -413,7 +413,7 @@ namespace ReBuzz.Agent
                                 var co = new JsonObject
                                 {
                                     ["id"] = clip.Id,
-                                    ["pattern"] = clip.Clip.Name,
+                                    ["clip"] = clip.Clip.Name,
                                     ["at"] = SongModel.Beats(core, clip.Time),
                                     ["ends"] = SongModel.Beats(core, clip.End),
                                     ["start_beats"] = SongModel.Beats(core, clip.Offset),
@@ -428,7 +428,7 @@ namespace ReBuzz.Agent
                                     };
                                 clips.Add(co);
                             }
-                            if (clips.Count > 0) lane["clips"] = clips;
+                            if (clips.Count > 0) lane["placements"] = clips;
                             lanes.Add(lane);
                         }
                         // Fork (daw-modes.md S1): the song's bars.
@@ -455,14 +455,14 @@ namespace ReBuzz.Agent
             tools.Add(new ToolDef
             {
                 Name = "arrangement_place",
-                Title = "Place a pattern",
+                Title = "Place a clip",
                 Description =
-                    "Puts a pattern on its machine's lane in the arrangement at one or more positions (beats, or \"bar.beat\"), optionally repeated " +
-                    "every N beats. A pattern plays until it ends or the lane's next pattern starts. Extends the song end to cover it. One undo step. " +
-                    "Example: arrangement_place(machine=\"Bass\", pattern=\"Verse\", at=[0], repeat_every_beats=16, times=4).",
+                    "Puts a clip on its machine's lane in the arrangement at one or more positions (beats, or \"bar.beat\"), optionally repeated " +
+                    "every N beats. A clip plays until it ends or the lane's next clip starts. Extends the song end to cover it. One undo step. " +
+                    "Example: arrangement_place(machine=\"Bass\", clip=\"Verse\", at=[0], repeat_every_beats=16, times=4).",
                 Input = Object(null,
                     Req("machine", String("The machine")),
-                    Req("pattern", String("Its pattern")),
+                    Req("clip", String("Its clip")),
                     Req("at", AnyOf("Where", Number("Beats", 0), String("\"bar.beat\""), Array(Position("A position"), "Several positions", 1))),
                     Opt("repeat_every_beats", Number("Also place it again this many beats after each position", 0.0001)),
                     Opt("times", Integer("How many places in all with repeat_every_beats (default 1)", 1, 1024))),
@@ -473,7 +473,7 @@ namespace ReBuzz.Agent
                     var r = await host.Engine("arrangement_place", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         var starts = new List<int>();
                         if (c.Arguments["at"] is JsonArray list)
                             for (int i = 0; i < list.Count; i++) starts.Add(SongModel.ParseTicks(core, list[i], $"at[{i}]"));
@@ -511,7 +511,7 @@ namespace ReBuzz.Agent
                         {
                             var next = ordered.FirstOrDefault(e => e.Key > t);
                             if (next.Value != null && next.Key < t + p.Length)
-                                notes.Add($"the place at {SongModel.Where(core, t)} is cut at beat {NoteList.Fmt(SongModel.Beats(core, next.Key))} by the next pattern");
+                                notes.Add($"the place at {SongModel.Where(core, t)} is cut at beat {NoteList.Fmt(SongModel.Beats(core, next.Key))} by the next clip");
                         }
                         if (SongModel.Notes(p).Count == 0) notes.Add($"\"{p.Name}\" has no notes yet");
                         if (core.SongCore.LoopEnd != loopEndBefore)
@@ -519,7 +519,7 @@ namespace ReBuzz.Agent
                         return new JsonObject
                         {
                             ["machine"] = m.Name,
-                            ["pattern"] = p.Name,
+                            ["clip"] = p.Name,
                             ["placed_at"] = new JsonArray(starts.Select(t => (JsonNode)SongModel.Beats(core, t)).ToArray()),
                             ["song_end_beats"] = SongModel.Beats(core, core.SongCore.SongEnd),
                             ["notes"] = new JsonArray(notes.Select(x => (JsonNode)x).ToArray()),
@@ -538,7 +538,7 @@ namespace ReBuzz.Agent
                 Name = "arrangement_clear",
                 Title = "Clear part of the arrangement",
                 Description =
-                    "Removes pattern places that start from from to to (beats or \"bar.beat\"), on one machine's lane or on all. Patterns themselves stay. " +
+                    "Removes clip places that start from from to to (beats or \"bar.beat\"), on one machine's lane or on all. Clips themselves stay. " +
                     "One undo step. Example: arrangement_clear(machine=\"Drums\", from=32, to=48).",
                 Input = Object(null,
                     Opt("machine", String("Only this machine's lane (default all)")),

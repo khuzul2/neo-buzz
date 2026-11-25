@@ -376,7 +376,7 @@ namespace ReBuzz.Core
         void RaiseHistoryApplied(HistoryChange change) => HistoryApplied?.Invoke(change);
 
         /// <summary>
-        /// Fork (0.4.1): patterns given a play position in the last block, so the next block
+        /// Fork (0.4.1): clips given a play position in the last block, so the next block
         /// clears just those. Audio thread (WorkManager, under AudioLock).
         /// </summary>
         internal readonly List<ClipCore> PositionedClips = new List<ClipCore>(256);   // fork (audio hygiene): room made here, not by the first play

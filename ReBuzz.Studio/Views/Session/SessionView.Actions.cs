@@ -49,7 +49,7 @@ namespace ReBuzz.Studio.Views.Session
             PublishSelection();
         }
 
-        /// <summary>Fork (ux-overhaul.md P2c): the selected slot's track (its machine), clip (its pattern) and scene are the studio's selection.</summary>
+        /// <summary>Fork (ux-overhaul.md P2c): the selected slot's track (its machine), clip (its clip) and scene are the studio's selection.</summary>
         void PublishSelection()
         {
             if (followingSelection || selected is not { } sel) return;
@@ -62,7 +62,7 @@ namespace ReBuzz.Studio.Views.Session
 
         /// <summary>
         /// Another view selected a machine: its track is selected here, in the scene already selected, else the scene of the
-        /// selected pattern's slot, else the first. Nothing moves when the track already is the selected one.
+        /// selected clip's slot, else the first. Nothing moves when the track already is the selected one.
         /// </summary>
         void FollowSelection(object source)
         {
@@ -252,8 +252,8 @@ namespace ReBuzz.Studio.Views.Session
             // NA3: an audio clip has no notes: a double click shows its Audio page (the detail panel).
             if (cell.Clip != null && layout.IsAudioClip(cell.Clip) && Audio.AudioClipPage.Opener?.Invoke(cell.Clip) == true)
                 return;
-            // Until the pattern editor is in the studio (S6), a clip's notes open in the piano roll.
-            if (cell.Clip != null && (mods.HasFlag(KeyModifiers.Control) || !StudioViews.Has("Pattern")))
+            // Until the clip editor is in the studio (S6), a clip's notes open in the piano roll.
+            if (cell.Clip != null && (mods.HasFlag(KeyModifiers.Control) || !StudioViews.Has("Clip")))
                 EditNotes(cell.Sequence, cell.Clip);
             else if (cell.Clip != null)
                 EditClip(cell.Clip);
@@ -270,7 +270,7 @@ namespace ReBuzz.Studio.Views.Session
                 Select(track, scene);
         }
 
-        /// <summary>Daw-modes.md AR5, §6: the slot's pattern becomes a clip on its machine's main lane, after the lane's last clip (shared with the slot; its region from the clip settings).</summary>
+        /// <summary>Daw-modes.md AR5, §6: the slot's clip becomes a clip on its machine's main lane, after the lane's last clip (shared with the slot; its region from the clip settings).</summary>
         void SendToArrangement(SlotCell cell)
         {
             string why = buzz.Arrangement.Links.SlotToLane(cell.Track, cell.Scene);
@@ -286,10 +286,10 @@ namespace ReBuzz.Studio.Views.Session
         async Task RenameClip(IClip clip)
         {
             if (clip == null) return;
-            string name = await Prompt("Rename clip", $"New name for pattern '{clip.Name}' of {clip.Machine?.Name}", clip.Name);
+            string name = await Prompt("Rename clip", $"New name for clip '{clip.Name}' of {clip.Machine?.Name}", clip.Name);
             if (name == null) return;
             if (!layout.RenameClip(clip, name) && name.Trim() != clip.Name)
-                await Dialogs.Info($"'{name.Trim()}' is empty or already used by another pattern of {clip.Machine?.Name}.", "Rename clip");
+                await Dialogs.Info($"'{name.Trim()}' is empty or already used by another clip of {clip.Machine?.Name}.", "Rename clip");
         }
 
         async Task DeleteClip(IClip clip)
@@ -299,14 +299,14 @@ namespace ReBuzz.Studio.Views.Session
             if (arranged)
             {
                 var answer = await Dialogs.Ask(
-                    $"Pattern '{clip.Name}' is also used in the arrangement. Deleting it removes it there too, and undo only brings the pattern back.\n\nDelete it?",
-                    "Delete pattern", UserButtons.YesNo, DialogChoices.Delete);
+                    $"Clip '{clip.Name}' is also used in the arrangement. Deleting it removes it there too, and undo only brings the clip back.\n\nDelete it?",
+                    "Delete clip", UserButtons.YesNo, DialogChoices.Delete);
                 if (answer != UserAnswer.Yes) return;
             }
             layout.DeleteClip(clip);
         }
 
-        /// <summary>The clip in the pattern editor: the Pattern tab (step S6 brings its editor).</summary>
+        /// <summary>The clip in the clip editor: the Clip tab (step S6 brings its editor).</summary>
         void EditClip(IClip clip)
         {
             if (clip == null) return;
@@ -314,7 +314,7 @@ namespace ReBuzz.Studio.Views.Session
             buzz.ActiveView = BuzzView.ClipView;
             if (this.FindAncestorOfType<TabControl>() is TabControl tabs)
             {
-                var tab = tabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == "Pattern");
+                var tab = tabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == "Clip");
                 if (tab != null) tabs.SelectedItem = tab;
             }
         }
@@ -526,7 +526,7 @@ namespace ReBuzz.Studio.Views.Session
                 return true;
             }
             // Fork (ux-overhaul.md §4): ⌫ deletes in every view: here the clip leaves its slot (⌫ stopped the track; Enter on an
-            // empty slot, its ■, or the track menu do that); ⇧⌫ deletes its pattern, after asking.
+            // empty slot, its ■, or the track menu do that); ⇧⌫ deletes its clip, after asking.
             if (none && key is Key.Back or Key.Delete) { layout.ClearSlot(at.Track, at.Scene); return true; }
             if (mods == KeyModifiers.Shift && key is Key.Back or Key.Delete) { _ = DeleteClip(clip); return true; }
             if (mods == (KeyModifiers.Control | KeyModifiers.Shift) && key == Key.M) { CreateClip(at.Track, at.Scene); return true; }
@@ -583,7 +583,7 @@ namespace ReBuzz.Studio.Views.Session
             {
                 menu.Items.Add(Item("Launch", () => LaunchSlot(cell), "Enter"));
                 menu.Items.Add(Item("Clip settings", ShowClipPanel));
-                menu.Items.Add(Item("Edit pattern", () => EditClip(clip), "double-click"));
+                menu.Items.Add(Item("Edit clip", () => EditClip(clip), "double-click"));
                 menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, clip)));
                 menu.Items.Add(Item("Rename…", () => _ = RenameClip(clip), KeyOf("Cmd+R")));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
@@ -604,7 +604,7 @@ namespace ReBuzz.Studio.Views.Session
                     menu.Items.Add(Item($"Clear recorded automation ({moves})", () => layout.ClearRecordedAutomation(clip)));
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Remove from slot", () => layout.ClearSlot(cell.Track, cell.Scene), KeyOf(DeleteKeys)));
-                menu.Items.Add(Item("Delete pattern…", () => _ = DeleteClip(clip), KeyOf("Shift+" + DeleteKeys)));
+                menu.Items.Add(Item("Delete clip…", () => _ = DeleteClip(clip), KeyOf("Shift+" + DeleteKeys)));
             }
             else
             {
@@ -614,7 +614,7 @@ namespace ReBuzz.Studio.Views.Session
 
             if (machine != null)
             {
-                var assign = new MenuItem { Header = $"Assign pattern of {machine.Name}", Tag = "Assign pattern" };
+                var assign = new MenuItem { Header = $"Assign clip of {machine.Name}", Tag = "Assign clip" };
                 foreach (var p in machine.Clips.ToList())
                 {
                     var choice = p;
@@ -628,7 +628,7 @@ namespace ReBuzz.Studio.Views.Session
                     });
                 }
                 if (assign.Items.Count == 0)
-                    assign.Items.Add(new MenuItem { Header = "(machine has no patterns)", IsEnabled = false });
+                    assign.Items.Add(new MenuItem { Header = "(machine has no clips)", IsEnabled = false });
                 menu.Items.Add(new Separator());
                 menu.Items.Add(assign);
             }

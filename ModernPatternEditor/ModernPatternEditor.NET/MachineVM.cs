@@ -33,7 +33,7 @@ namespace WDE.ModernPatternEditor
                     machine.ClipAdded += machine_ClipAdded;
                     machine.ClipRemoved += machine_ClipRemoved;
 
-                    //BaseOctave = PatternEditor.Settings.DefaultBaseOctave ? 3 : machine.BaseOctave;
+                    //BaseOctave = ClipEditor.Settings.DefaultBaseOctave ? 3 : machine.BaseOctave;
 
                     AddAllClips();
                 }
@@ -52,7 +52,7 @@ namespace WDE.ModernPatternEditor
             {
                 PropertyChanged.Raise(this, "UndoableTrackCount");
             }
-            else if (e.PropertyName == "Patterns")
+            else if (e.PropertyName == "Clips")
             {
                 SortAllClips();
                 PropertyChanged.Raise(this, "Machine");
@@ -134,8 +134,8 @@ namespace WDE.ModernPatternEditor
             set
             {   
                 selectedClip = value;
-                PropertyChanged.Raise(this, "SelectedPattern");
-                PropertyChanged.Raise(this, "HasSelectedPattern");
+                PropertyChanged.Raise(this, "SelectedClip");
+                PropertyChanged.Raise(this, "HasSelectedClip");
             }
         }
 

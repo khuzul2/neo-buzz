@@ -220,7 +220,7 @@ namespace ReBuzz.Core
 
         List<ParameterGroup> parameterGroups;
         // Fork (engine hardening): the copy is kept while the list holds the same groups (it was
-        // made on every call). Pattern editors set values through it, on the audio thread.
+        // made on every call). Clip editors set values through it, on the audio thread.
         ReadOnlyCollection<IParameterGroup> parameterGroupsView;
         public ReadOnlyCollection<IParameterGroup> ParameterGroups { get => ParameterGroup.ViewOf(ref parameterGroupsView, parameterGroups); }
         internal List<ParameterGroup> ParameterGroupsList { get => parameterGroups; set => parameterGroups = value; }
@@ -678,10 +678,10 @@ namespace ReBuzz.Core
             }
         }
 
-        /// <summary>Fork (clips.md §6, CU3): this machine's pattern editor views the store (the song's clips are lanes in the pattern's columns).</summary>
+        /// <summary>Fork (clips.md §6, CU3): this machine's clip editor views the store (the song's clips are lanes in the clip's columns).</summary>
         internal bool ClipsAttached { get; set; }
 
-        /// <summary>Fork (clips.md §7.1, CU3): for a pattern editor machine, the data the song file gave it (what the migration reads and checks the stamp of); null once the clips are in the store.</summary>
+        /// <summary>Fork (clips.md §7.1, CU3): for a clip editor machine, the data the song file gave it (what the migration reads and checks the stamp of); null once the clips are in the store.</summary>
         internal byte[] LoadedEditorData { get; set; }
 
         public byte[] ClipEditorData
@@ -809,7 +809,7 @@ namespace ReBuzz.Core
         public MachineCore EditorMachine { get; internal set; }
 
         /// <summary>
-        /// Fork (mac-engine.md M2): the song's pattern editor for this machine when it isn't
+        /// Fork (mac-engine.md M2): the song's clip editor for this machine when it isn't
         /// installed and no default editor replaces it (rebuzz-headless off Windows has none). It is
         /// a hidden missing machine that keeps its data; it isn't <see cref="EditorMachine"/>, which
         /// the engine drives, but the song saves back with it as the machine's editor.
@@ -892,7 +892,7 @@ namespace ReBuzz.Core
                     EngineColumns.Copy(p, newp, ((graph.Buzz as ReBuzzCore)?.SongCore?.MachinesList ?? new List<MachineCore>()).Cast<IMachine>().ToList());
                 // Fork (0.4.1): events and UI after releasing AudioLock.
                 ClipAdded?.Invoke(newp);
-                PropertyChanged.Raise(this, "Patterns");
+                PropertyChanged.Raise(this, "Clips");
                 graph.Buzz.SetClipEditorClip(newp);
                 graph.Buzz.SetModifiedFlag();
             }
@@ -912,7 +912,7 @@ namespace ReBuzz.Core
                 this.clips.Add(pc);
             }
             ClipAdded?.Invoke(pc);
-            PropertyChanged.Raise(this, "Patterns");
+            PropertyChanged.Raise(this, "Clips");
             graph.Buzz.SetClipEditorClip(pc);
             graph.Buzz.SetModifiedFlag();
         }
@@ -935,7 +935,7 @@ namespace ReBuzz.Core
             }
             // Fork (0.4.1): events after releasing AudioLock (listeners redraw editors).
             ClipRemoved?.Invoke(p);
-            PropertyChanged.Raise(this, "Patterns");
+            PropertyChanged.Raise(this, "Clips");
             (p as ClipCore).ClearEvents();
             foreach (var seq in changedSequences)
                 seq.InvokeEvents();
@@ -955,13 +955,13 @@ namespace ReBuzz.Core
             }
         }
 
-        /// <summary>Renames a pattern with the events and flags a rename raises (no history step).</summary>
+        /// <summary>Renames a clip with the events and flags a rename raises (no history step).</summary>
         internal void SetClipName(IClip p, string newName)
         {
             if (p != null)
             {
                 (p as ClipCore).Name = newName;
-                PropertyChanged?.Raise(this, "Patterns");
+                PropertyChanged?.Raise(this, "Clips");
 
                 foreach (var sequence in Global.Buzz.Song.Sequences)
                 {

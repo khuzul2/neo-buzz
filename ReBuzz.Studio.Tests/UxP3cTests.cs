@@ -1,4 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P3c): the pattern editor, notes first. Written after the helper the older editor tests share.
+// Fork (docs/specs/ux-overhaul.md P3c): the clip editor, notes first. Written after the helper the older editor tests share.
 
 using System;
 using System.Linq;
@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Tests
 {
     using Control = Avalonia.Controls.Control;
 
-    /// <summary>Moving the pattern editor's cursor by column name (the old tests' Tab and arrow chains no longer reach the same columns).</summary>
+    /// <summary>Moving the clip editor's cursor by column name (the old tests' Tab and arrow chains no longer reach the same columns).</summary>
     internal static class EditorNav
     {
         /// <summary>
@@ -152,7 +152,7 @@ namespace ReBuzz.Studio.Tests
             {
                 Assert.That(Labels(s, 0).Take(2), Is.EqualTo(new[] { "Note", "Velocity" }), "track 0: the note, then its velocity");
                 Assert.That((string)s.Vm.ColumnSets[0].Label, Does.Contain("Track"), "the first set is a track's");
-                Assert.That(Labels(s, 0).Length, Is.EqualTo(2), "nothing else while the pattern holds nothing");
+                Assert.That(Labels(s, 0).Length, Is.EqualTo(2), "nothing else while the clip holds nothing");
                 var cursor = s.Grid.Cursor;
                 Assert.That(((int)cursor.ColumnSet, (int)cursor.Column), Is.EqualTo((0, 0)), "the cursor starts on the Note column");
 
@@ -236,7 +236,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(two, Is.GreaterThan(0), "names with a space take two lines");
                 var colours = ((Avalonia.Media.Color Label, Avalonia.Media.Color Background, Avalonia.Media.Color BeatRule, Avalonia.Media.Color BarRule))ReBuzz.Studio.Tests.UxP3cTests.Colours(s);
                 Assert.That(StudioTokens.Contrast(colours.Label, colours.Background), Is.GreaterThanOrEqualTo(4.5), "header text");
-                Studio.Screenshot(s.Window, "pattern-editor-headers-p3c");
+                Studio.Screenshot(s.Window, "clip-editor-headers-p3c");
             }
             finally { Close(s); }
         }
@@ -288,7 +288,7 @@ namespace ReBuzz.Studio.Tests
                 var barBack = Rule(bar, 6, 0);
                 Assert.That(StudioTokens.Contrast(barRule, barBack), Is.GreaterThanOrEqualTo(3.0), "a bar rule");
                 Assert.That(StudioTokens.Contrast(barRule, barBack), Is.GreaterThan(StudioTokens.Contrast(beatRule, back)), "the bar's is the stronger");
-                Studio.Screenshot(s.Window, "pattern-editor-rules");
+                Studio.Screenshot(s.Window, "clip-editor-rules");
             }
             finally { Close(s); }
         }
@@ -304,7 +304,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.X);      // 38: the snare
                 Pump();
                 Assert.That(Texts(s, "Note"), Is.EqualTo(new[] { "BD", "SD" }), "the machine's names, three characters at most");
-                Assert.That(Events(s.Clip, "Note").Select(e => BuzzNote.ToMIDINote(e.Value)), Is.EqualTo(new[] { 36, 38 }), "the pattern holds the pitches");
+                Assert.That(Events(s.Clip, "Note").Select(e => BuzzNote.ToMIDINote(e.Value)), Is.EqualTo(new[] { 36, 38 }), "the clip holds the pitches");
             }
             finally { Close(s); }
 

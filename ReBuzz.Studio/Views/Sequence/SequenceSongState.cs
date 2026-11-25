@@ -1,10 +1,10 @@
 // Fork (docs/specs/studio-mvp.md S4): what the sequence editor keeps with the song, one per
-// engine: the bar list (time signatures), the pattern colours, the zoom, and the clipboard. On
+// engine: the bar list (time signatures), the clip colours, the zoom, and the clipboard. On
 // Windows the classic sequence editor keeps the first two (ViewSettings) and saves them in the
 // song's "SequenceEditor" subsection, the horizontal editor its zoom in
 // "ModernSequenceEditorHorizontal"; the studio reads and writes both in the same formats, so
-// songs go back and forth. It answers the engine's pattern colours (PatternColours.Source, as
-// ReBuzz/AppViews/SequenceEditorPatternColours.cs does on Windows), which the Session View shares.
+// songs go back and forth. It answers the engine's clip colours (ClipColours.Source, as
+// ReBuzz/AppViews/SequenceEditorClipColours.cs does on Windows), which the Session View shares.
 // The bar list is the engine's song meter (daw-modes.md S1), which reads it when a song opens;
 // this writes it in the subsection, as before.
 
@@ -58,9 +58,9 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Colours, bar list or zoom changed (a song opened, a colour set): views redraw.</summary>
         public event Action Changed;
 
-        // ------------------------------------------------------------------ pattern colours
+        // ------------------------------------------------------------------ clip colours
 
-        /// <summary>The colours a pattern can have: the Default theme's PatternColors (SequenceEditor.xaml), as the Session View's.</summary>
+        /// <summary>The colours a clip can have: the Default theme's ClipColors (SequenceEditor.xaml), as the Session View's.</summary>
         public static IReadOnlyList<(string Name, uint Argb)> Palette => ReBuzz.Core.Session.SessionColourChoices.Choices;
 
         public IEnumerable<IClip> Clips => colours.Keys;
@@ -93,8 +93,8 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>
-        /// The colour a pattern's blocks get (PatternElement): its own, else (PatternBoxColors =
-        /// Pattern, the default) one by its place among its machine's patterns; -1 for the theme's box colour.
+        /// The colour a clip's blocks get (ClipElement): its own, else (ClipBoxColors =
+        /// Clip, the default) one by its place among its machine's clips; -1 for the theme's box colour.
         /// </summary>
         public int ColourIndexOf(IClip clip)
         {
@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void OnSaveSong(ISaveSong save)
         {
-            // The classic editor's subsection: its zoom, the bar list and the colours of patterns still in the song.
+            // The classic editor's subsection: its zoom, the bar list and the colours of clips still in the song.
             var bw = new BinaryWriter(save.CreateSubSection(ClassicSection));
             bw.Write(ClassicVersion);
             bw.Write(classicZoom);

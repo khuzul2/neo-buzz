@@ -14,7 +14,7 @@ namespace BuzzGUI.Interfaces
 
         public ClipEvent(int time, int value, int duration = 0) { Time = time; Value = value; Duration = duration; }
 
-        public int Time;                            // 0 <= Time < Pattern.Length * TimeBase
+        public int Time;                            // 0 <= Time < Clip.Length * TimeBase
         public int Value;
         public int Duration;                        // duration for midi note on events (if negative, there will be no associated note off event)
     }

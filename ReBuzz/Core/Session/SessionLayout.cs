@@ -21,12 +21,12 @@ namespace ReBuzz.Core.Session
     /// without a SessionView subsection.
     ///
     /// Structural song changes are followed exactly, in the layout and in every undo snapshot
-    /// (0.6.1, SessionLayout.Identity.cs): sequences by index, renames, deleted patterns and
+    /// (0.6.1, SessionLayout.Identity.cs): sequences by index, renames, deleted clips and
     /// machines retired and brought back. A reconcile against the song stays as a safety net
     /// on the next read. <see cref="Changed"/> is raised once per batch, from the dispatcher.
     ///
     /// Grid edits (0.2) go through <see cref="UndoStack"/>, the session's own undo history:
-    /// layout changes as before/after snapshots, clip changes with BuzzGUI's pattern actions.
+    /// layout changes as before/after snapshots, clip changes with BuzzGUI's clip actions.
     /// </summary>
     internal sealed partial class SessionLayout
     {
@@ -179,14 +179,14 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// What one slot shows: its clip's state on the track, but only in the slot the clip plays
-        /// or waits in. A pattern can fill several slots of a track (the demo song's Chords is in
+        /// or waits in. A clip can fill several slots of a track (the demo song's Chords is in
         /// three scenes) while the track plays one clip at a time: the slot it was launched from
         /// is the one that plays (the first slot holding it when that isn't known, as for a launch
         /// from the agent); the others show stopped.
         /// </summary>
         public ClipState SlotState(int track, int scene) => SlotState(SequenceOf(track), ClipAt(track, scene), track, scene);
 
-        /// <summary><see cref="SlotState(int, int)"/> for a slot whose sequence and pattern the caller holds.</summary>
+        /// <summary><see cref="SlotState(int, int)"/> for a slot whose sequence and clip the caller holds.</summary>
         public ClipState SlotState(ISequence sequence, IClip clip, int track, int scene)
         {
             if (sequence == null || clip == null || Session == null) return ClipState.Stopped;
@@ -275,7 +275,7 @@ namespace ReBuzz.Core.Session
         /// <summary>Length of new clips: <see cref="SessionDocument.ClipBars"/> bars.</summary>
         public int NewClipLength => Math.Max(1, buzz.TPB * Session.BeatsPerBar * (Document?.ClipBars ?? 1));
 
-        /// <summary>Creates a pattern on the track's machine and puts it in the slot.</summary>
+        /// <summary>Creates a clip on the track's machine and puts it in the slot.</summary>
         public IClip CreateClip(int track, int scene)
         {
             var machine = SequenceOf(track)?.Machine;
@@ -300,7 +300,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// Copies the slot's pattern into a new pattern (Live-style independent copy) in the slot
+        /// Copies the slot's clip into a new clip (Live-style independent copy) in the slot
         /// below; inserts a scene there if that slot is taken. Returns the copy, or null.
         /// </summary>
         public IClip DuplicateClip(int track, int scene, out int targetScene)
@@ -337,7 +337,7 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        /// <summary>Renames a pattern. False if the name is empty or taken.</summary>
+        /// <summary>Renames a clip. False if the name is empty or taken.</summary>
         public bool RenameClip(IClip clip, string newName)
         {
             newName = newName?.Trim();
@@ -348,7 +348,7 @@ namespace ReBuzz.Core.Session
             return true;
         }
 
-        /// <summary>Deletes a pattern from its machine (and from every slot showing it).</summary>
+        /// <summary>Deletes a clip from its machine (and from every slot showing it).</summary>
         public void DeleteClip(IClip clip)
         {
             if (clip?.Machine == null) return;
@@ -358,7 +358,7 @@ namespace ReBuzz.Core.Session
             UndoStack.BeginActionGroup();
             try
             {
-                // Clear the slots first, so undo puts them back after the pattern is recreated.
+                // Clear the slots first, so undo puts them back after the clip is recreated.
                 Edit(doc =>
                 {
                     foreach (var t in doc.Tracks.Where(t => t.Machine == machine))
@@ -625,12 +625,12 @@ namespace ReBuzz.Core.Session
             Session.Release(track, clip, OptionsFor(clip));
         }
 
-        /// <summary>A pattern's clip settings (a copy; defaults without a layout).</summary>
+        /// <summary>A clip's clip settings (a copy; defaults without a layout).</summary>
         public SessionDocument.ClipSettings ClipOf(IClip clip) =>
             clip?.Machine == null || Document == null ? new SessionDocument.ClipSettings() : Document.GetClip(clip.Machine.Name, clip.Name);
 
         /// <summary>
-        /// Changes a pattern's clip settings (undoable). Markers apply at once to the clip if it
+        /// Changes a clip's clip settings (undoable). Markers apply at once to the clip if it
         /// plays or waits; the other settings from its next launch.
         /// </summary>
         public void SetClipSettings(IClip clip, SessionDocument.ClipSettings settings)
@@ -646,7 +646,7 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        /// <summary>Launch options of a pattern's clip settings, at a launch velocity (1..127), from a slot if known.</summary>
+        /// <summary>Launch options of a clip's clip settings, at a launch velocity (1..127), from a slot if known.</summary>
         public LaunchOptions OptionsFor(IClip clip, int velocity = 127, int slot = -1) =>
             ToOptions(ClipOf(clip), velocity, slot, Session.BeatsPerBar, buzz.TPB);
 

@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Shell.Commands
 
     internal static class StudioKeymap
     {
-        public const string SingleKeyViews = "Machines and Session (the Sequence and the Pattern editor type letters, and Song Notes types text: use the F-key or the button there)";
+        public const string SingleKeyViews = "Machines and Session (the Sequence and the Clip editor type letters, and Song Notes types text: use the F-key or the button there)";
 
         static CommandInfo C(string id, string menu, string title, string keys = null, string mac = null, bool native = true, string where = null, string help = null) =>
             new CommandInfo { Id = id, Menu = menu, Title = title, Keys = keys, MacKeys = mac, Native = native, Where = where, Help = help };
@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("edit.copy", "Edit", "_Copy", "Cmd+C"),
             C("edit.paste", "Edit", "_Paste", "Cmd+V"),
             C("edit.duplicate", "Edit", "_Duplicate", "Cmd+D", help: "Machines, arrangement blocks and clips, placed right after themselves"),
-            C("edit.delete", "Edit", "De_lete", "Delete|Back", "Back|Delete", native: false, help: "The selection; in the Session View the clip leaves its slot (with Shift its pattern goes)"),
+            C("edit.delete", "Edit", "De_lete", "Delete|Back", "Back|Delete", native: false, help: "The selection; in the Session View the clip leaves its slot (with Shift its clip goes)"),
             C("edit.selectall", "Edit", "Select _All", "Cmd+A"),
             C("edit.deselect", "Edit", "Deselect All", "Shift+Cmd+A|Esc"),
             C("edit.rename", "Edit", "Re_name…", "Cmd+R", help: "The selected machine, track or clip"),
@@ -112,10 +112,10 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.pattern", "View", "_Tracker", "Cmd+4", help: "The detail panel's Tracker, docked under the view"),
             C("view.maximise", "View", "_Maximise Tracker", "Shift+Cmd+F|F2", help: "The detail panel's page (the Tracker, or the Mixer: Compact becomes Full) over the whole window, and back (F2 renames a clip in the Session View)"),
             C("view.notes", "View", "Song _Notes", "Cmd+5|F10", help: "The inspector's Song tab"),
-            C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine, pattern or clip, and the song"),
-            C("view.browser", "View", "_Browser", "Ctrl+Alt+B", "Alt+Cmd+B", help: "Shows or hides the panel on the left: the machines to add, and the patterns of the selection"),
+            C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine, clip or clip, and the song"),
+            C("view.browser", "View", "_Browser", "Ctrl+Alt+B", "Alt+Cmd+B", help: "Shows or hides the panel on the left: the machines to add, and the clips of the selection"),
             C("view.detail", "View", "_Detail", "Ctrl+Alt+D", "Alt+Cmd+D", help: "Shows or hides the panel under the view: the Tracker and the piano roll"),
-            C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same pattern"),
+            C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same clip"),
             C("view.device", "View", "D_evice", "Ctrl+Alt+5", "Alt+Cmd+5", help: "The detail panel's Device page: the selected machine's parameters, grouped and searchable, its editor, and the piano keyboard under it"),
             C("view.detailmixer", "View", "Mi_xer", "Ctrl+Alt+6", "Alt+Cmd+6", help: "The detail panel's Mixer page: every track, group and return and the Master, Compact; the maximise key makes it Full"),
             C("device.find", "View", "_Find Parameter", "Cmd+F", help: "Searches the parameters of the Device page"),
@@ -152,7 +152,7 @@ namespace ReBuzz.Studio.Shell.Commands
         {
             bool mac = onMac ?? KeyText.IsMac;
             string K(string keys) => KeyText.Of(keys, mac);
-            yield return new ViewKey("Transport", K("Shift+Space"), "play the pattern from the cursor, or stop it (Pattern)");
+            yield return new ViewKey("Transport", K("Shift+Space"), "play the clip from the cursor, or stop it (Clip)");
 
             const string M = "Machines";
             yield return new ViewKey(M, "Shift+drag", "from one machine to another: connect them");
@@ -183,9 +183,9 @@ namespace ReBuzz.Studio.Shell.Commands
 
             const string A = "Sequence (the arrangement)";
             yield return new ViewKey(A, "Arrows, Page Up/Down, Home, End", "move the cursor (Shift: select)");
-            yield return new ViewKey(A, "0–9, a–z", "place the pattern with that key (the pattern list shows the keys)");
+            yield return new ViewKey(A, "0–9, a–z", "place the clip with that key (the clip list shows the keys)");
             yield return new ViewKey(A, ", (comma)  - (minus)  _  .", "break, mute, thru, clear the step");
-            yield return new ViewKey(A, K("Enter"), "edit the pattern under the cursor (Pattern)");
+            yield return new ViewKey(A, K("Enter"), "edit the clip under the cursor (Clip)");
             yield return new ViewKey(A, K("Insert") + " / " + K("Delete"), "insert / delete a bar on the track");
             yield return new ViewKey(A, K("Back"), "clear the step before the cursor (with a selection: clear it)");
             yield return new ViewKey(A, K("Cmd+D"), "duplicate the selection (or the block under the cursor) after itself");
@@ -205,8 +205,8 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(S, "Arrows", "move the selection");
             yield return new ViewKey(S, K("Enter"), "launch the selected slot (an empty one stops its track)");
             yield return new ViewKey(S, "1–9", "launch scene 1–9");
-            yield return new ViewKey(S, K(mac ? "Back|Delete" : "Delete|Back"), "remove the clip from its slot (its pattern stays)");
-            yield return new ViewKey(S, K(mac ? "Shift+Back|Shift+Delete" : "Shift+Delete|Shift+Back"), "delete the clip's pattern (asks first)");
+            yield return new ViewKey(S, K(mac ? "Back|Delete" : "Delete|Back"), "remove the clip from its slot (its clip stays)");
+            yield return new ViewKey(S, K(mac ? "Shift+Back|Shift+Delete" : "Shift+Delete|Shift+Back"), "delete the clip's clip (asks first)");
             yield return new ViewKey(S, K("Cmd+D"), "duplicate the clip into the slot below");
             yield return new ViewKey(S, K("Cmd+R") + " or F2", "rename the clip");
             yield return new ViewKey(S, K("Shift+Cmd+M"), "create a clip in the selected slot");
@@ -262,11 +262,11 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(W, K("Left") + " / " + K("Right"), "the keyboard an octave down / up (with its keys focused)");
         }
 
-        /// <summary>The Pattern editor's own keys (its help panel's, from the editor's view), or a pointer to them.</summary>
+        /// <summary>The Clip editor's own keys (its help panel's, from the editor's view), or a pointer to them.</summary>
         public static IEnumerable<ViewKey> ClipKeys(IEnumerable<string[]> editorRows, bool? onMac = null)
         {
             bool mac = onMac ?? KeyText.IsMac;
-            const string P = "Pattern";
+            const string P = "Clip";
             var rows = editorRows?.ToList();
             if (rows == null || rows.Count == 0)
             {

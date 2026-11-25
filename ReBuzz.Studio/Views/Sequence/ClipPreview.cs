@@ -1,7 +1,7 @@
-// Fork (docs/specs/studio-mvp.md S4): what a pattern block shows of its pattern, as
-// PatternElement.DrawPatternEvents does: small marks for its notes and parameter changes. Its
-// default mode (PatternBoxEventHint = Midi) draws the pattern editor's MIDI events in note lanes;
-// Detail draws each editor column as a lane. Patterns without an editor machine (studio-mvp.md
+// Fork (docs/specs/studio-mvp.md S4): what a clip block shows of its clip, as
+// ClipElement.DrawClipEvents does: small marks for its notes and parameter changes. Its
+// default mode (ClipBoxEventHint = Midi) draws the clip editor's MIDI events in note lanes;
+// Detail draws each editor column as a lane. Clips without an editor machine (studio-mvp.md
 // §3.6) show their engine columns: MIDI notes as a small piano roll (a lane per pitch, as long as
 // the note), parameter columns in detail.
 
@@ -17,16 +17,16 @@ namespace ReBuzz.Studio.Views.Sequence
     internal enum PreviewKind : byte { Note, Off, Parameter }
 
     /// <summary>
-    /// One mark: where in the pattern (0..1 of its length), its lane of how many, and its kind.
+    /// One mark: where in the clip (0..1 of its length), its lane of how many, and its kind.
     /// <see cref="FixedHeight"/> marks (Detail) are 4 px high; the others fill 90% of their lane.
-    /// A <see cref="Length"/> (0..1 of the pattern) makes it as long as its note; 0 is the
+    /// A <see cref="Length"/> (0..1 of the clip) makes it as long as its note; 0 is the
     /// editor's event width.
     /// </summary>
     internal readonly record struct PreviewMark(double X, int Lane, int Lanes, PreviewKind Kind, bool FixedHeight, double Length = 0);
 
     internal static class ClipPreview
     {
-        const int MidiTimeBase = 960;       // PatternEditorMachineMIDIEvents' ticks per Buzz tick
+        const int MidiTimeBase = 960;       // ClipEditorMachineMIDIEvents' ticks per Buzz tick
 
         public static PreviewMark[] Of(IClip clip)
         {
@@ -58,7 +58,7 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>
-        /// PatternBoxEventHintType.Midi: note-ons take the leftmost free lane of <paramref name="lanes"/>,
+        /// ClipBoxEventHintType.Midi: note-ons take the leftmost free lane of <paramref name="lanes"/>,
         /// note-offs end their note's lane (and are drawn there), other messages show where they fall.
         /// </summary>
         static PreviewMark[] Midi(List<(int Time, int Message)> events, int length, int lanes)
@@ -104,7 +104,7 @@ namespace ReBuzz.Studio.Views.Sequence
             return marks.ToArray();
         }
 
-        /// <summary>PatternBoxEventHintType.Detail: a lane per column; notes, note-offs and other values.</summary>
+        /// <summary>ClipBoxEventHintType.Detail: a lane per column; notes, note-offs and other values.</summary>
         static PreviewMark[] Detail(List<(IParameter Parameter, IEnumerable<ClipEvent> Events)> columns, int length)
         {
             var marks = new List<PreviewMark>();

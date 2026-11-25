@@ -337,7 +337,7 @@ namespace ReBuzz.Studio.Tests
             var comped = Render(3 * Bar);
             Assert.That(comped.Max(Math.Abs), Is.GreaterThan(0.01f), "the comp makes sound");
 
-            // The same notes written plain: one three-bar pattern, no takes, no comp.
+            // The same notes written plain: one three-bar clip, no takes, no comp.
             foreach (var t in main.Events.Keys.ToList()) main.SetEvent(t, null);
             machine.CreateClip("Plain", 3 * Bar);
             var plain = machine.Clips.First(p => p.Name == "Plain");
@@ -416,12 +416,12 @@ namespace ReBuzz.Studio.Tests
 
             rig.Undo();
             Assert.That(lead.Events, Is.Empty, "undo takes the clip");
-            Assert.That(machine.Clips.Count, Is.EqualTo(0), "and its pattern");
+            Assert.That(machine.Clips.Count, Is.EqualTo(0), "and its clip");
             rig.Redo();
             Assert.That(lead.Events.Single().Key, Is.EqualTo(8));
             Assert.That(Notes(lead.Events.Single().Value.Clip).Single().Note, Is.EqualTo(60), "redo brings it back with its notes");
 
-            // Overdub: recording over the clip adds to its pattern, at pattern time.
+            // Overdub: recording over the clip adds to its clip, at clip time.
             clip = lead.Events.Single().Value.Clip;
             Core.SongCore.PlayPosition = 8;
             rig.Press("Overdub");
@@ -434,9 +434,9 @@ namespace ReBuzz.Studio.Tests
             Core.SendMIDIInput(Off(64));
             rig.PlayTo(20);
             rig.Press("Record arrangement");
-            Assert.That(machine.Clips.Count, Is.EqualTo(1), "no new pattern");
+            Assert.That(machine.Clips.Count, Is.EqualTo(1), "no new clip");
             Assert.That(lead.Events.Count, Is.EqualTo(1), "and no new clip");
-            Assert.That(Notes(clip).OrderBy(n => n.Time).ToArray(), Is.EqualTo(new[] { new ClipNote(2 * TB, 3 * TB, 60, 99), new ClipNote(4 * TB, 2 * TB, 64, 99) }), "the new note at pattern time (tick 12 of the song is tick 4 of the clip)");
+            Assert.That(Notes(clip).OrderBy(n => n.Time).ToArray(), Is.EqualTo(new[] { new ClipNote(2 * TB, 3 * TB, 60, 99), new ClipNote(4 * TB, 2 * TB, 64, 99) }), "the new note at clip time (tick 12 of the song is tick 4 of the clip)");
             rig.Undo();
             Assert.That(Notes(clip).Single().Note, Is.EqualTo(60), "an overdub is one undo step");
         }
@@ -480,7 +480,7 @@ namespace ReBuzz.Studio.Tests
             var clip = lead.Machine.Clips.Single();
             Fill(clip, 16);
             var editor = new ClipEditor(Core);
-            Assert.That(editor.Place(lead, clip, 32), Is.Null, "the same pattern again later: shared");
+            Assert.That(editor.Place(lead, clip, 32), Is.Null, "the same clip again later: shared");
             var before = Render(48);
             Assert.That(before.Max(Math.Abs), Is.GreaterThan(0.01f));
             Assert.That(Core.Arrangement.ToXml(), Is.Null);
@@ -497,7 +497,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Core.Arrangement.ToXml(), Is.Null, "an old song still saves without an arrangement subsection");
             Assert.That(Render(48), Is.EqualTo(before), "and renders as it did");
 
-            // Overdub over the shared pattern: it is written, and the status line says whose it is.
+            // Overdub over the shared clip: it is written, and the status line says whose it is.
             Core.SongCore.PlayPosition = 0;
             rig.Press("Overdub");
             rig.Press("Record arrangement");
@@ -507,7 +507,7 @@ namespace ReBuzz.Studio.Tests
             Core.SendMIDIInput(Off(72));
             rig.PlayTo(10);
             rig.Press("Record arrangement");
-            Assert.That(Notes(clip).Any(n => n.Note == 72 && n.Time == 4 * TB), Is.True, string.Join(" ", Notes(clip)) + " / " + Core.Arrangement.Takes.Status + " / patterns " + lead.Machine.Clips.Count + " clips " + string.Join(",", lead.Events.Keys));
+            Assert.That(Notes(clip).Any(n => n.Note == 72 && n.Time == 4 * TB), Is.True, string.Join(" ", Notes(clip)) + " / " + Core.Arrangement.Takes.Status + " / clips " + lead.Machine.Clips.Count + " clips " + string.Join(",", lead.Events.Keys));
             Assert.That(Core.Arrangement.Takes.Status, Does.Contain("2 places"), "the warning: " + Core.Arrangement.Takes.Status);
         }
 
@@ -530,9 +530,9 @@ namespace ReBuzz.Studio.Tests
             rig.Drag(rig.At(two, 21, 1), rig.At(two, 33, 1), RawInputModifiers.Shift);
             var events = lead.Events;
             Assert.That(events.Count, Is.EqualTo(1));
-            Assert.That((events.Keys.Single(), events.Values.Single().Offset, events.Values.Single().End), Is.EqualTo((20, 20, 32)), "the range, trimmed: the take's pattern is not copied");
+            Assert.That((events.Keys.Single(), events.Values.Single().Offset, events.Values.Single().End), Is.EqualTo((20, 20, 32)), "the range, trimmed: the take's clip is not copied");
             Assert.That(events.Values.Single().Clip.Name, Is.EqualTo("Take B"));
-            Assert.That(machine.Clips.Count, Is.EqualTo(2), "no notes or patterns were made");
+            Assert.That(machine.Clips.Count, Is.EqualTo(2), "no notes or clips were made");
 
             // The menu comps the bar at the cursor of the selected take over what the main lane holds there.
             rig.Click(rig.At(one, 26), MouseButton.Left);
@@ -578,7 +578,7 @@ namespace ReBuzz.Studio.Tests
             var arranged = Render(48);
             Assert.That(arranged.Max(Math.Abs), Is.GreaterThan(0.01f));
 
-            // Trim the left edge so the clip starts partway into its pattern: that region is what the session plays.
+            // Trim the left edge so the clip starts partway into its clip: that region is what the session plays.
             rig.Drag(rig.At(lead, 0, 2), rig.At(lead, 4, 0));
             var item = rig.Canvas.ItemsOf(lead).First();
             Assert.That(item.Spec.Start, Is.EqualTo(4));
@@ -590,10 +590,10 @@ namespace ReBuzz.Studio.Tests
             rig.PlayTo(Bar);
             rig.RunTicks(2);
             var session = Core.SessionCore;
-            Assert.That(session.GetPlaying(lead), Is.SameAs(riff), "the clip's pattern plays on its lane's track");
+            Assert.That(session.GetPlaying(lead), Is.SameAs(riff), "the clip's clip plays on its lane's track");
             Assert.That(session.IsArrangementOverridden(lead), Is.True, "the track is the session's now");
             Assert.That(session.IsArrangementOverridden(bass), Is.False, "other tracks play the arrangement");
-            Assert.That(session.GetClipPosition(lead), Is.GreaterThanOrEqualTo(4), "from the clip's region, not the pattern's start");
+            Assert.That(session.GetClipPosition(lead), Is.GreaterThanOrEqualTo(4), "from the clip's region, not the clip's start");
             Assert.That(Core.Arrangement.Links.AnyLaunched, Is.True);
             Settle();
             Studio.Screenshot(rig.Window, "ar5-launched");
@@ -633,7 +633,7 @@ namespace ReBuzz.Studio.Tests
             layout.SetSlot(0, 0, riff);
             layout.SetClipSettings(riff, new SessionDocument.ClipSettings { Loop = true, Start = 2, LoopStart = 4, LoopEnd = 12 });
 
-            // Session -> arrangement: the slot's menu. The clip is the same pattern, with the slot's region, and an id of its own.
+            // Session -> arrangement: the slot's menu. The clip is the same clip, with the slot's region, and an id of its own.
             var tab = rig.Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Session");
             tab.IsSelected = true;
             Settle();
@@ -644,7 +644,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(sessionView.ClickMenuItem("Send to Arrangement"), Is.True);
             var editor = new ClipEditor(Core);
             var first = editor.Read(lead).Single();
-            Assert.That(first.Clip, Is.SameAs(riff), "the same pattern: a place, not a copy of the notes");
+            Assert.That(first.Clip, Is.SameAs(riff), "the same clip: a place, not a copy of the notes");
             Assert.That(first.Time, Is.EqualTo(0));
             Assert.That(first.Spec.Id, Is.GreaterThan(0));
             Assert.That((first.Spec.Start, first.Spec.LoopStart, first.Spec.LoopEnd, first.Spec.Loop), Is.EqualTo((2, 4, 12, true)), "its region from the slot's clip settings");
@@ -653,7 +653,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Core.Clips.TryGetLoop(first.Spec.Id, out var loop), Is.True);
             Assert.That(loop, Is.EqualTo(new ClipLoop(4, 12, true)), "the loop is the clip's, kept as §8.1 keeps it");
 
-            // Arrangement -> session: the clip's menu gives the pattern to the first empty slot of its track.
+            // Arrangement -> session: the clip's menu gives the clip to the first empty slot of its track.
             tab = rig.Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Arrangement");
             tab.IsSelected = true;
             Settle();

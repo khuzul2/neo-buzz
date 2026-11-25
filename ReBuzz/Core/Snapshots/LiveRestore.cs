@@ -6,11 +6,11 @@
 // and the audio thread, at that tick and holding AudioLock as it always does, only swaps references and sets values:
 //   * parameters glide over one beat (a switch or a selector steps at the boundary),
 //   * mute and bypass flags, wire amps and pans (the engine's own ramps, about four blocks),
-//   * pattern and sequence events: the prebuilt lists are swapped in,
+//   * clip and sequence events: the prebuilt lists are swapped in,
 //   * a replaced or added machine fades in on its output wires while the old one fades out on its own (a crossfade of those four blocks),
 //     both having been fed and sequenced the same, so the new one is in step.
 // The UI thread finishes afterwards: events and names reported, the old machines deleted, the new ones shown and renamed, tempo set, one history step.
-// Nothing the audio thread does here allocates; a plan that can't be built safely (a native machine whose state differs, a pattern editor's
+// Nothing the audio thread does here allocates; a plan that can't be built safely (a native machine whose state differs, a clip editor's
 // data, waves...) is deferred: the restore waits until the transport stops and says why.
 
 using System;
@@ -216,14 +216,14 @@ namespace ReBuzz.Core.SongHistory
                 {
                     if (t.IsMaster) return Defer(o, "the snapshot has no master machine to match");
                     if (!core.MachineDLLs.ContainsKey(t.Gear)) return Defer(o, $"the machine \"{t.Name}\" ({t.Gear}) isn't installed");
-                    if (t.EditorGear != null) return Defer(o, $"the machine \"{t.Name}\" has a pattern editor, which can't be created while playing");
+                    if (t.EditorGear != null) return Defer(o, $"the machine \"{t.Name}\" has a clip editor, which can't be created while playing");
                     add.Add(t);
                 }
                 else if (n.IsMaster || n.Fingerprint == t.Fingerprint) inPlace.Add((n, t));
                 else
                 {
                     if (n.IsMissing || t.IsMissing || !core.MachineDLLs.ContainsKey(t.Gear)) return Defer(o, $"\"{t.Name}\" ({t.Gear}) isn't installed");
-                    if (n.EditorGear != null || t.EditorGear != null) return Defer(o, $"\"{t.Name}\" has a pattern editor whose data differs: it can't be swapped while playing");
+                    if (n.EditorGear != null || t.EditorGear != null) return Defer(o, $"\"{t.Name}\" has a clip editor whose data differs: it can't be swapped while playing");
                     replace.Add((n, t));
                 }
             }
@@ -282,7 +282,7 @@ namespace ReBuzz.Core.SongHistory
             var parts = new List<string>();
             if (p.Params.Length > 0) parts.Add(p.Params.Length + " parameter" + (p.Params.Length == 1 ? "" : "s"));
             int cols = p.Columns.Count(c => c.Old == null || true);
-            if (p.Columns.Length > 0) parts.Add(p.Columns.Length + " pattern column" + (p.Columns.Length == 1 ? "" : "s"));
+            if (p.Columns.Length > 0) parts.Add(p.Columns.Length + " clip column" + (p.Columns.Length == 1 ? "" : "s"));
             if (p.Sequences.Length > 0) parts.Add(p.Sequences.Length + " track" + (p.Sequences.Length == 1 ? "" : "s"));
             if (p.Wires.Length > 0) parts.Add(p.Wires.Length + " wire" + (p.Wires.Length == 1 ? "" : "s"));
             if (p.Flags.Length > 0) parts.Add(p.Flags.Length + " mute/bypass");
@@ -337,7 +337,7 @@ namespace ReBuzz.Core.SongHistory
             foreach (var n in remove) plan.Removed.Add(Live(n.Name));
             core.MIDIFocusMachine = savedFocus;
 
-            // the new machines' contents: values, patterns, then wires and tracks
+            // the new machines' contents: values, clips, then wires and tracks
             foreach (var t in replace.Select(x => x.Then).Concat(add))
             {
                 var m = instance[t.Name];

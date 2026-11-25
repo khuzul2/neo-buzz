@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md P3b, first step: decisions 40-44; clips.md §8, CU4): the detail panel's Tracker | Piano roll switch, and
 // the piano roll on the clip's notes (SongNotes, the one layer over the store): draw, move, resize, delete and velocity, one undo step
-// a gesture on the song's history, the grid with Alt to bypass it, the keys, and a large pattern drawn by its visible part only.
+// a gesture on the song's history, the grid with Alt to bypass it, the keys, and a large clip drawn by its visible part only.
 
 using System;
 using System.Collections.Generic;
@@ -173,21 +173,21 @@ namespace ReBuzz.Studio.Tests
             Assert.That(r.Detail.IsPianoRoll && r.Detail.IsOpen, Is.True);
             Assert.That(grid.IsEffectivelyVisible, Is.False, "the Tracker's grid gives way");
             Assert.That(r.Roll.IsVisible && r.Notes != null, Is.True);
-            Assert.That(r.Roll.Clip, Is.EqualTo(r.Clip), "the same pattern");
+            Assert.That(r.Roll.Clip, Is.EqualTo(r.Clip), "the same clip");
             Assert.That(r.Page.Clip, Is.EqualTo(r.Clip));
 
             r.ShowTracker();
             Assert.That(grid.IsEffectivelyVisible && !r.Roll.IsVisible, Is.True, "and back");
-            Assert.That(r.Page.Clip, Is.EqualTo(r.Clip), "still the same pattern");
+            Assert.That(r.Page.Clip, Is.EqualTo(r.Clip), "still the same clip");
 
             // The menu's command and the page remembered in the settings.
             r.Window.ShowPianoRoll();
             Pump();
             Assert.That(r.Detail.IsPianoRoll && r.Page.IsRollMode, Is.True);
             Assert.That(Studio.Host.Registry.Read("DetailPianoRoll", false, "Studio"), Is.True, "remembered");
-            r.Window.ShowView("Pattern");
+            r.Window.ShowView("Clip");
             Pump();
-            Assert.That(r.Detail.IsPianoRoll, Is.False, "the Pattern command is the Tracker");
+            Assert.That(r.Detail.IsPianoRoll, Is.False, "the Clip command is the Tracker");
             Assert.That(Studio.Host.Registry.Read("DetailPianoRoll", true, "Studio"), Is.False);
 
             // Clicking the page that is shown hides the panel; the other page's button shows that page.
@@ -514,7 +514,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        // ------------------------------------------------------------------ large patterns, names, contrast
+        // ------------------------------------------------------------------ large clips, names, contrast
 
         [AvaloniaTest]
         public void OnlyTheVisiblePartOfALargeClipIsDrawn()

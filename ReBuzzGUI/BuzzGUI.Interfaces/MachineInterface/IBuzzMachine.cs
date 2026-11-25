@@ -43,15 +43,15 @@
         // {A} public bool Work(IList<Sample[]> output, int n, WorkModes mode);
         // {A} public bool Work(IList<Sample[]> output, IList<Sample[]> input, int n, WorkModes mode);
 
-        // Pattern Editor
-        // {U} public UserControl PatternEditorControl();
-        // {U} public void SetEditorPattern(IPattern pattern);
+        // Clip Editor
+        // {U} public UserControl ClipEditorControl();
+        // {U} public void SetEditorClip(IClip clip);
         // {M} void RecordControlChange(IParameter parameter, int track, int value);
-        // {U} public void CreatePatternCopy(IPattern pnew, IPattern p);
-        // {U} void SetPatternEditorData(byte[] data);
-        // {U} public void byte[] GetPatternEditorData();
+        // {U} public void CreateClipCopy(IClip pnew, IClip p);
+        // {U} void SetClipEditorData(byte[] data);
+        // {U} public void byte[] GetClipEditorData();
         // {U} public bool CanExecuteCommand(BuzzCommand cmd);
         // {U} public void ExecuteCommand(BuzzCommand cmd);
-        // {U} public void UpdateWaveReferences(IPattern pattern, Dictionary<int, int> remap)
+        // {U} public void UpdateWaveReferences(IClip clip, Dictionary<int, int> remap)
     }
 }

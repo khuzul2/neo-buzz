@@ -47,7 +47,7 @@ namespace ReBuzz.Core.Session
 
     internal sealed partial class SessionLayout
     {
-        /// <summary>The source of an audio clip; null and a reason when the pattern isn't an audio clip.</summary>
+        /// <summary>The source of an audio clip; null and a reason when the clip isn't an audio clip.</summary>
         public StemSource StemSourceOfClip(IClip clip, out string error)
         {
             error = null;

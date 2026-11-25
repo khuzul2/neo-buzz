@@ -15,7 +15,7 @@ namespace ReBuzz.Core.Session
         public static readonly LaunchMap Empty = new LaunchMap(
             Array.Empty<ISequence>(), Array.Empty<SlotEntry[]>(), Array.Empty<SceneEntry>());
 
-        /// <summary>A filled slot: its pattern, settings, and launch options at full velocity.</summary>
+        /// <summary>A filled slot: its clip, settings, and launch options at full velocity.</summary>
         internal sealed class SlotEntry
         {
             public SlotEntry(IClip clip, SessionDocument.ClipSettings settings, LaunchOptions options)

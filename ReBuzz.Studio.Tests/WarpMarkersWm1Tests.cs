@@ -633,7 +633,7 @@ namespace ReBuzz.Studio.Tests
         {
             var a = args ?? new JsonObject();
             a["machine"] = clip.Machine.Name;
-            a["pattern"] = clip.Name;
+            a["clip"] = clip.Name;
             a["action"] = action;
             return Tool("audio_warp_markers", a);
         }
@@ -787,7 +787,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Warp(clip, "set_bar_one")["isError"]!.GetValue<bool>(), Is.True, "no position");
             Assert.That(State("B", clip.Name), Is.EqualTo(before), "nothing changed");
             // Warp off: the markers don't apply.
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = clip.Name, ["warp"] = "Off" }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = clip.Name, ["warp"] = "Off" }));
             Assert.That(Warp(clip, "insert_every_bar")["isError"]!.GetValue<bool>(), Is.True, "warp is off");
         }
 

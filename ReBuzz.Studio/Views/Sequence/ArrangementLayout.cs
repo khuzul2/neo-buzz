@@ -89,7 +89,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public static double TotalHeight(IReadOnlyList<ArrangementRow> rows) => rows.Count == 0 ? 0 : rows[^1].Bottom;
     }
 
-    /// <summary>The tempo changes the Master's patterns make, for the tempo row: where (song ticks) and the BPM from there on.</summary>
+    /// <summary>The tempo changes the Master's clips make, for the tempo row: where (song ticks) and the BPM from there on.</summary>
     internal static class TempoLane
     {
         public static List<(int Tick, int Bpm)> Changes(ISong song)
@@ -108,7 +108,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException || ex is NullReferenceException || ex is KeyNotFoundException)
             {
-                // A pattern that can't be read has no tempo to show.
+                // A clip that can't be read has no tempo to show.
             }
             return list.OrderBy(x => x.Item1).ToList();
         }

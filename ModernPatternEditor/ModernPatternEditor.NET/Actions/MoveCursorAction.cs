@@ -8,7 +8,7 @@
         public MoveCursorAction(ClipVM pvm, Digit p)
             : base(pvm)
         {
-            // store PatternVM-independent digits
+            // store ClipVM-independent digits
             oldPosition = pvm.CursorPosition.SetClipVM(null);
             newPosition = p.SetClipVM(null);
         }

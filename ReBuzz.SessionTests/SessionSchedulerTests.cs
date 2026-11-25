@@ -112,7 +112,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void PositionCountsFromLaunchNotFromSongPosition()
         {
-            // Upstream computed songPosition % patternLength, so a 12-tick pattern launched
+            // Upstream computed songPosition % clipLength, so a 12-tick clip launched
             // on tick 16 started at row 4. It must start at 0 and loop every 12 ticks.
             s.Start(0);
             s.Launch(drums, odd, Bar, loop: true);
@@ -524,7 +524,7 @@ namespace ReBuzz.SessionTests
             s.Start(0);
             s.Launch(drums, loopA, 0, loop: true);
             s.Advance();
-            s.Launch(bass, loopA, Bar, loop: true);       // same pattern on another track
+            s.Launch(bass, loopA, Bar, loop: true);       // same clip on another track
 
             Assert.That(s.GetState(drums, loopA), Is.EqualTo(Playing), "plays on until it starts there");
             s.Launch(drums, loopB, 2 * Bar, loop: true);  // a later request on that track doesn't keep it there

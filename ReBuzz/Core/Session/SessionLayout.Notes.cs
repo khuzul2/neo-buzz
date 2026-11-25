@@ -43,7 +43,7 @@ namespace ReBuzz.Core.Session
             EditNotes(clip, before, after);
         }
 
-        /// <summary>The clip's length in pattern time (1/240 tick).</summary>
+        /// <summary>The clip's length in clip time (1/240 tick).</summary>
         public static int ClipLengthOf(IClip clip) => Math.Max(1, clip?.Length ?? 1) * ClipNotes.TimeBase;
 
         /// <summary>Plays (or ends) a note on the clip's machine, as the piano roll is clicked.</summary>

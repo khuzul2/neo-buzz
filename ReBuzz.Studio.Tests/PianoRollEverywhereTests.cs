@@ -1,5 +1,5 @@
 // Fork (docs/specs/daw-modes.md AR2): the piano roll everywhere, headless. A clip opened in the Arrangement mode shows its notes in a
-// roll under the timeline, drawn with the mouse; the Pattern tab's roll shows and edits the same notes; the edits are steps of the
+// roll under the timeline, drawn with the mouse; the Clip tab's roll shows and edits the same notes; the edits are steps of the
 // song's history; velocity and controller lanes, key and scale, fold, step input and the ghosts of other clips; and the exit test:
 // a bass line drawn in the arrangement's roll plays in its session clip, as the same notes written to a clip by the session do.
 
@@ -131,7 +131,7 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
 
-            /// <summary>A clip drawn on a lane at a tick (a double click on empty space), then opened (a double click on it): the roll shows its pattern.</summary>
+            /// <summary>A clip drawn on a lane at a tick (a double click on empty space), then opened (a double click on it): the roll shows its clip.</summary>
             public IClip DrawAndOpen(ISequence lane, int tick)
             {
                 DoubleClick(At(lane, tick, 2));
@@ -198,7 +198,7 @@ namespace ReBuzz.Studio.Tests
             ReBuzzCore.masterInfo.PosInTick = 0;
         }
 
-        /// <summary>Plays a pattern as a session clip from the start and returns the audio.</summary>
+        /// <summary>Plays a clip as a session clip from the start and returns the audio.</summary>
         static float[] RenderClip(ISequence lane, IClip clip, int ticks)
         {
             Core.SessionCore.Stop(lane, immediate: true);
@@ -244,7 +244,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Notes.Notes.Select(n => (n.Time / TB, n.Note)), Is.EqualTo(line), "four notes");
             Assert.That(Undos, Is.EqualTo(undos + 4), "each on the song's history");
 
-            // They are the pattern's MIDI column: what the session clip (and the sequence) plays.
+            // They are the clip's MIDI column: what the session clip (and the sequence) plays.
             var session = Core.SessionLayout.NotesOf(clip);
             Assert.That(session, Is.EqualTo(rig.Notes.Notes.ToList()), "the Session View's clip has the notes");
             Assert.That(new MidiColumnNotes(Core, clip).Notes(), Is.EqualTo(session));
@@ -286,7 +286,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Peak(audio), Is.GreaterThan(0.001f), "and it sounds");
         }
 
-        // ------------------------------------------------------------------ the Pattern tab
+        // ------------------------------------------------------------------ the Clip tab
 
         [AvaloniaTest]
         public void TheClipTabsRollEditsTheSameNotesAndUndoIsTheSongs()
@@ -298,7 +298,7 @@ namespace ReBuzz.Studio.Tests
             rig.DrawNote(2, 64);
             Assert.That(rig.Notes.Notes.Count, Is.EqualTo(2));
 
-            // The Pattern tab's toggle between the Tracker and the roll: it shows the notes the arrangement's roll drew.
+            // The Clip tab's toggle between the Tracker and the roll: it shows the notes the arrangement's roll drew.
             Core.SetClipEditorClip(clip);
             rig.Window.ShowPianoRoll();
             Settle();
@@ -600,7 +600,7 @@ namespace ReBuzz.Studio.Tests
             rig.Click(rig.At(lane, 4));
             Assert.That(rig.Panel.Clip, Is.SameAs(first), "the open roll follows the selected clip");
 
-            // The Pattern tab button of the panel asks for the pattern editor.
+            // The Clip tab button of the panel asks for the clip editor.
             IClip asked = null;
             Action<IClip> handler = p => asked = p;
             SequenceTab.ClipChosen += handler;
@@ -653,7 +653,7 @@ namespace ReBuzz.Studio.Tests
                 if (c is ComboBox box && string.IsNullOrEmpty(Avalonia.Automation.AutomationProperties.GetName(box))) problems.Add("a combo box without a name");
             }
             Assert.That(problems, Is.Empty);
-            foreach (var name in new[] { "Close piano roll", "Edit in the Pattern tab", "Step input", "Snap to scale", "Key", "Scale", "Fold", "Ghosts", "Lane under the roll" })
+            foreach (var name in new[] { "Close piano roll", "Edit in the Clip tab", "Step input", "Snap to scale", "Key", "Scale", "Fold", "Ghosts", "Lane under the roll" })
                 Assert.That(all.Any(c => Avalonia.Automation.AutomationProperties.GetName(c) == name), Is.True, name);
         }
 
@@ -703,11 +703,11 @@ namespace ReBuzz.Studio.Tests
             Settle();
             rig.Roll.StepBox.IsChecked = true;
             rig.Roll.StepBox.IsChecked = false;
-            rig.Window.ShowPianoRoll();                    // and the Pattern tab's
+            rig.Window.ShowPianoRoll();                    // and the Clip tab's
             ClipView.Page!.Edit(clip);
             Settle();
             rig.Click(rig.Of(rig.Panel.CloseButton));
-            Assert.That(Snapshot(clip), Is.EqualTo(before), "looking at the notes changes nothing of the pattern");
+            Assert.That(Snapshot(clip), Is.EqualTo(before), "looking at the notes changes nothing of the clip");
             var second = RenderClip(lane, clip, 48);
             Assert.That(second, Is.EqualTo(first), "and the render is the same bits");
         }

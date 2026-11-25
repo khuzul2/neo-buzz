@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class UxP3aTests
     {
-        static readonly string[] Views = { "Machines", "Arrangement", "Session", "Pattern" };
+        static readonly string[] Views = { "Machines", "Arrangement", "Session", "Clip" };
 
         sealed class Rig : IDisposable
         {
@@ -52,9 +52,9 @@ namespace ReBuzz.Studio.Tests
 
             public Avalonia.Controls.Control Show(string tab)
             {
-                if (tab == "Pattern")
+                if (tab == "Clip")
                 {
-                    Window.ShowView("Pattern");         // the Tracker: the detail panel's page (P3a)
+                    Window.ShowView("Clip");         // the Tracker: the detail panel's page (P3a)
                     Settle();
                     return Window.Detail.Page;
                 }
@@ -114,8 +114,8 @@ namespace ReBuzz.Studio.Tests
                 rig.Selection.Set(rig.Bass, null, this);
                 Settle();
                 Assert.That(rig.Inspector.HeadingText, Is.EqualTo("Bass"), $"{view}: the selected machine");
-                Assert.That(rig.Inspector.Facts.Select(f => f.Label), Does.Contain("Type").And.Contain("Patterns").And.Contain("Wires"));
-                Assert.That(rig.Inspector.Facts.Single(f => f.Label == "Patterns").Value, Is.EqualTo("1"));
+                Assert.That(rig.Inspector.Facts.Select(f => f.Label), Does.Contain("Type").And.Contain("Clips").And.Contain("Wires"));
+                Assert.That(rig.Inspector.Facts.Single(f => f.Label == "Clips").Value, Is.EqualTo("1"));
                 rig.Selection.Clear(this);
                 Settle();
                 Assert.That(rig.Inspector.HeadingText, Is.EqualTo("Song"), $"{view}: nothing selected is the song again");
@@ -130,7 +130,7 @@ namespace ReBuzz.Studio.Tests
             rig.Selection.Set(rig.Drums, rig.Beat, this);
             Settle();
             var panel = rig.Inspector;
-            Assert.That(panel.Facts.Single(f => f.Label == "Pattern").Value, Is.EqualTo("Beat"));
+            Assert.That(panel.Facts.Single(f => f.Label == "Clip").Value, Is.EqualTo("Beat"));
             Assert.That(panel.Facts.Single(f => f.Label == "Length").Value, Does.StartWith("16 ticks"));
             Assert.That(panel.ClipButton.IsVisible, Is.True);
             rig.Click(panel.ClipButton);

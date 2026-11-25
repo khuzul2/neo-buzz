@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(tab.Content, Is.InstanceOf<SessionView>());
                 var view = (SessionView)tab.Content;
                 Assert.That(view.Slots.Where(s => s.Clip != null).Select(s => s.Clip.Name), Is.EquivalentTo(new[] { "Beat", "Line" }),
-                    "a song without a layout fills the grid from its patterns");
+                    "a song without a layout fills the grid from its clips");
                 Assert.That(view.Headers.Select(h => h.Machine?.Name), Is.EqualTo(new[] { "Drums", "Bass" }));
                 Studio.Screenshot(window, "session-tab");
             }
@@ -131,7 +131,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void OnlyTheSlotAClipPlaysFromShowsItPlaying()
         {
-            // The demo song's case (gallery mac-042): one pattern in several slots of a track. A
+            // The demo song's case (gallery mac-042): one clip in several slots of a track. A
             // track plays one clip at a time, so only the slot it was launched from may light up.
             using var rig = new SessionRig("Drums", "Pad");
             var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
@@ -146,7 +146,7 @@ namespace ReBuzz.Studio.Tests
 
             rig.Click(view.Scenes[2]);
             Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Queued));
-            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Stopped), "the same pattern in another scene doesn't wait");
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Stopped), "the same clip in another scene doesn't wait");
             rig.RunTicks(6);
             view.RefreshState();
             Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Playing));
@@ -154,10 +154,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(new[] { layout.SlotState(1, 0), layout.SlotState(1, 1), layout.SlotState(0, 1) }, Is.All.EqualTo(ClipState.Stopped));
             Assert.That(LitAsPlaying(view.SlotAt(1, 2)) && LitAsPlaying(view.SlotAt(0, 2)), Is.True, "the scene launched plays");
             Assert.That(new[] { view.SlotAt(1, 0), view.SlotAt(1, 1), view.SlotAt(0, 1) }.Where(LitAsPlaying).Select(c => $"{c.Track},{c.Scene}"), Is.Empty,
-                "slots sharing the playing pattern stay unlit");
+                "slots sharing the playing clip stay unlit");
             rig.Screenshot("session-one-slot-plays");
 
-            // Launching the same pattern from another slot: that slot waits, the playing one plays on.
+            // Launching the same clip from another slot: that slot waits, the playing one plays on.
             rig.Click(view.SlotAt(1, 0).LaunchArea);
             Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Queued));
             Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Playing), "until the bar line");
@@ -172,7 +172,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(layout.SlotState(0, 1), Is.EqualTo(ClipState.Playing));
             Assert.That(layout.SlotState(0, 2), Is.EqualTo(ClipState.Stopped));
 
-            // The clip panel of a slot sharing the playing pattern says it's stopped.
+            // The clip panel of a slot sharing the playing clip says it's stopped.
             rig.Click(view.SlotAt(1, 2), fx: 0.8);
             view.RefreshState();
             Assert.That(view.Selected, Is.EqualTo((1, 2)));
@@ -880,7 +880,7 @@ namespace ReBuzz.Studio.Tests
             rig.Menu("Colour/Lilac");                                   // fork (ux-overhaul.md §3.1): Red is the record state's, no longer offered
             Assert.That(ClipColors.Get(beat), Is.EqualTo(8));
             rig.Click(view.SlotAt(0, 2), MouseButton.Right, fx: 0.6);
-            rig.Menu("Assign pattern/Fill");
+            rig.Menu("Assign clip/Fill");
             Assert.That(layout.ClipAt(0, 2), Is.SameAs(fill));
 
             Dialogs.TextResponder = (title, current) => title == "Scene tempo" ? "128" : "Chorus";

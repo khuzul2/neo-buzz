@@ -53,7 +53,7 @@ namespace WDE.ModernPatternEditor.Actions
 
         protected override void UndoAction()
         {
-            //var col = Pattern.Columns[columnIndex];
+            //var col = Clip.Columns[columnIndex];
             var mpeColumn = mpeClip.MPEClipColumns[columnIndex];
 
             if (set)

@@ -172,7 +172,7 @@ namespace ReBuzz.Agent
                 Title = "List the song's machines",
                 Description =
                     "Every machine in the song with its gear, kind, connections in and out (gain in dB, pan −1…+1), mute/solo/bypass, " +
-                    "tracks and pattern count. Use it to see the signal flow before changing it. Example: machine_list().",
+                    "tracks and clip count. Use it to see the signal flow before changing it. Example: machine_list().",
                 Input = Object(null),
                 Output = Object(null, Req("machines", Array(Object("A machine", Req("name", String("Its name")), Req("gear", String("Its gear")), Req("kind", String("master, generator or effect"))), "The machines, Master first"))),
                 Annotations = ToolAnnotations.Read,
@@ -327,7 +327,7 @@ namespace ReBuzz.Agent
                 Name = "machine_remove",
                 Title = "Remove machines",
                 Description =
-                    "Deletes machines with their patterns and arrangement lanes. For an effect in a chain, keep_chain (default true) connects " +
+                    "Deletes machines with their clips and arrangement lanes. For an effect in a chain, keep_chain (default true) connects " +
                     "what fed it to what it fed, so the sound still reaches Master. One undo step (undo brings everything back). " +
                     "Example: machine_remove(machines=[\"Old reverb\"]).",
                 Input = Object(null,

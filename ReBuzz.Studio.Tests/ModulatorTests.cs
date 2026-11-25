@@ -50,7 +50,7 @@ namespace ReBuzz.Studio.Tests
 
         static IModulator Mod(IMachine m) => ModulationBoard.Of(m) ?? throw new AssertionException(m.Name + " is not a modulator");
 
-        /// <summary>A Neo Poly playing a pattern (so the song has sound and the transport runs), a Neo Filter after it.</summary>
+        /// <summary>A Neo Poly playing a clip (so the song has sound and the transport runs), a Neo Filter after it.</summary>
         static (MachineCore Poly, MachineCore Filter) PlayingFilter()
         {
             var poly = AddPoly("Mod Poly");

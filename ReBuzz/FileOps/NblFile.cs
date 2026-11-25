@@ -254,7 +254,7 @@ namespace ReBuzz.FileOps
             try
             {
                 List<(uint Magic, byte[] Data)> parts;
-                // Fork (clips.md §7.2, CU3): a native song holds its clips as lanes in the pattern columns, so its pattern editors' data holds no events.
+                // Fork (clips.md §7.2, CU3): a native song holds its clips as lanes in the clip columns, so its clip editors' data holds no events.
                 using (NblCoreSections.Utf8Strings())
                     parts = inner.BuildSections(true);
                 var blobs = new NblBlobSet();

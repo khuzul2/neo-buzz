@@ -1,5 +1,5 @@
 // Fork (docs/specs/studio-mvp.md S4): the sequence editor, headless, in the main window's
-// Sequence tab: tracks and patterns arranged with the mouse and keys, moved, resized, deleted,
+// Sequence tab: tracks and clips arranged with the mouse and keys, moved, resized, deleted,
 // copied and pasted, loop markers, playback and its cursor, save and reopen, undo. Each step is
 // checked against the engine's sequences, and the stages are saved as screenshots.
 
@@ -69,7 +69,7 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
 
-            /// <summary>A Neo Poly wired to the master, with patterns (name, length, notes at ticks).</summary>
+            /// <summary>A Neo Poly wired to the master, with clips (name, length, notes at ticks).</summary>
             public static MachineCore Machine(string name, params (string Name, int Length, int[] Notes)[] clips)
             {
                 var song = Core.SongCore;
@@ -222,17 +222,17 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Tracks, Is.EqualTo("Lead, Bass"));
             rig.Screenshot("sequence-1-tracks");
 
-            // Keys: on Lead at the start, a pattern's key places it and the cursor moves past it.
+            // Keys: on Lead at the start, a clip's key places it and the cursor moves past it.
             rig.Click(rig.At(0, 0));
             Assert.That((canvas.CursorTime, canvas.CursorRow), Is.EqualTo((0, 0)));
-            Assert.That(rig.View.Clips.Select(p => $"{p.Char}. {p.Clip.Name}"), Is.EqualTo(new[] { "0. Hook", "1. Riff" }), "the pattern list");
+            Assert.That(rig.View.Clips.Select(p => $"{p.Char}. {p.Clip.Name}"), Is.EqualTo(new[] { "0. Hook", "1. Riff" }), "the clip list");
             rig.Type("0");
-            Assert.That(canvas.CursorTime, Is.EqualTo(16), "past the pattern");
+            Assert.That(canvas.CursorTime, Is.EqualTo(16), "past the clip");
             rig.Type("1");
             Assert.That(Events(0), Is.EqualTo("0:Hook 16:Riff"));
             Assert.That(canvas.CursorTime, Is.EqualTo(48));
 
-            // The mouse: Bass's second bar, then the pattern list's Line with a double click.
+            // The mouse: Bass's second bar, then the clip list's Line with a double click.
             rig.Click(rig.At(16, 1));
             Assert.That((canvas.CursorTime, canvas.CursorRow), Is.EqualTo((16, 1)));
             var list = rig.View.ClipList;
@@ -242,10 +242,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(1), Is.EqualTo("16:Line"));
             Assert.That(canvas.CursorTime, Is.EqualTo(48), "past Line");
 
-            // A double click on an empty cell makes a new pattern there.
+            // A double click on an empty cell makes a new clip there.
             rig.DoubleClick(rig.At(64, 1));
             var made = Song.Sequences[1].Machine.Clips.Single(p => p.Name == "00");
-            Assert.That(made.Length, Is.EqualTo(16), "the default pattern length");
+            Assert.That(made.Length, Is.EqualTo(16), "the default clip length");
             Assert.That(Events(1), Is.EqualTo("16:Line 64:00"));
             rig.Screenshot("sequence-2-arranged");
 
@@ -259,7 +259,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(0), Is.EqualTo("16:Riff 64:Hook 96:Riff"));
             rig.Screenshot("sequence-3-moved");
 
-            // Resize: Line's right edge to bar 4 (its pattern gets 48 ticks); Hook's left edge back a bar (32 ticks, from 48).
+            // Resize: Line's right edge to bar 4 (its clip gets 48 ticks); Hook's left edge back a bar (32 ticks, from 48).
             var geo = canvas.Geometry;
             rig.Drag(rig.At(48, 1, dx: -2), rig.At(62, 1, dx: 0));
             Assert.That(Rig.Clip("Bass", "Line").Length, Is.EqualTo(48));
@@ -373,9 +373,9 @@ namespace ReBuzz.Studio.Tests
             Song.Sequences[0].Machine.IsSoloed = false;
             Song.Sequences[1].Machine.IsMuted = false;
 
-            // The menu: Quick Create Patterns (two new patterns from the cursor), Rename Machine... (asked through the engine).
+            // The menu: Quick Create Clips (two new clips from the cursor), Rename Machine... (asked through the engine).
             rig.Click(rig.At(128, 1), MouseButton.Right);
-            rig.Menu("Quick Create Patterns", "2");
+            rig.Menu("Quick Create Clips", "2");
             Assert.That(Events(1), Is.EqualTo("128:00 144:01"));
             Dialogs.TextResponder = (title, current) => current + " 2";
             rig.Click(rig.At(128, 1), MouseButton.Right);
@@ -400,13 +400,13 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 rig.DoubleClick(rig.At(16, 0, dx: 12));
-                Assert.That(chosen?.Name, Is.EqualTo("Riff"), "the double-clicked block's pattern");
-                Assert.That(Core.ClipEditorClip, Is.SameAs(chosen), "the engine's pattern editor has it");
+                Assert.That(chosen?.Name, Is.EqualTo("Riff"), "the double-clicked block's clip");
+                Assert.That(Core.ClipEditorClip, Is.SameAs(chosen), "the engine's clip editor has it");
                 rig.Key(PhysicalKey.ArrowLeft);
-                Assert.That(Core.ClipEditorClip.Name, Is.EqualTo("Hook"), "the cursor's pattern goes to the editor (AutoSelectPattern)");
+                Assert.That(Core.ClipEditorClip.Name, Is.EqualTo("Hook"), "the cursor's clip goes to the editor (AutoSelectClip)");
                 chosen = null;
                 rig.Key(PhysicalKey.Enter);
-                Assert.That(chosen?.Name, Is.EqualTo("Hook"), "Return chooses the cursor's pattern");
+                Assert.That(chosen?.Name, Is.EqualTo("Hook"), "Return chooses the cursor's clip");
             }
             finally
             {
@@ -483,7 +483,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"), "the arrangement is untouched");
         }
 
-        // ------------------------------------------------------------------ the pattern list's colours
+        // ------------------------------------------------------------------ the clip list's colours
 
         static double Luminance(Color c)
         {
@@ -532,7 +532,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
             Assert.That(arp.IsPointerOver, Is.True);
             Assert.That(ItemContrast(arp), Is.GreaterThanOrEqualTo(4.5), "the item under the pointer");
-            rig.Screenshot("sequence-pattern-list-hover");
+            rig.Screenshot("sequence-clip-list-hover");
 
             rig.Window.MouseMove(hook.TranslatePoint(new Point(20, hook.Bounds.Height / 2), rig.Window)!.Value);
             Settle();
@@ -619,7 +619,7 @@ namespace ReBuzz.Studio.Tests
             rig.Click(rig.At(16, 0));
             rig.Key(PhysicalKey.B, Cmd);
             Assert.That(Song.LoopStart, Is.EqualTo(16));
-            Assert.That((Song.LoopEnd, Song.SongEnd), Is.EqualTo((64, 64)), "placing patterns moved the ends");
+            Assert.That((Song.LoopEnd, Song.SongEnd), Is.EqualTo((64, 64)), "placing clips moved the ends");
             rig.Click(rig.At(112, 0));
             rig.Key(PhysicalKey.E, Cmd);
             Assert.That((Song.LoopEnd, Song.SongEnd), Is.EqualTo((128, 128)));

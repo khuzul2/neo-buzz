@@ -1,5 +1,5 @@
 // Fork (docs/specs/history-snapshots.md HS3): what a live restore needs from a snapshot, kept beside its song-file sections as
-// one more section (LIVE): each machine's saved data, parameter values, patterns' events, the wires and the sequences, in a
+// one more section (LIVE): each machine's saved data, parameter values, clips' events, the wires and the sequences, in a
 // small binary form the plan can compare with the song as it is now, and the executor can build machines and event lists from.
 // Taken on the UI thread from live objects (the machine saves a save does; nothing on the audio thread). Song files never see it:
 // the section is not part of the assembled file.
@@ -28,7 +28,7 @@ namespace ReBuzz.Core.SongHistory
 
         public sealed class Column
         {
-            public int Type;             // PatternColumnType
+            public int Type;             // ClipColumnType
             public int Group = -1;       // the parameter's group type, -1 for a MIDI column
             public int Index = -1;
             public int Track;
@@ -55,7 +55,7 @@ namespace ReBuzz.Core.SongHistory
             public List<Param> Params = new();
             public List<Clip> Clips = new();
 
-            /// <summary>What can't change in place: the gear, its tracks, saved data, the pattern editor's data and the patterns' shape (names, lengths, data, column layout).</summary>
+            /// <summary>What can't change in place: the gear, its tracks, saved data, the clip editor's data and the clips' shape (names, lengths, data, column layout).</summary>
             public string Fingerprint { get; private set; }
 
             public void Seal()
@@ -103,7 +103,7 @@ namespace ReBuzz.Core.SongHistory
 
         // ------------------------------------------------------------------ taking
 
-        /// <summary>UI thread. The song as it is now (hidden machines, the pattern editors, are part of their machine's data).</summary>
+        /// <summary>UI thread. The song as it is now (hidden machines, the clip editors, are part of their machine's data).</summary>
         public static LiveSong Take(ReBuzzCore core)
         {
             var s = new LiveSong { Bpm = core.BPM, Tpb = core.TPB };
@@ -130,7 +130,7 @@ namespace ReBuzz.Core.SongHistory
                     lm.EditorGear = m.ClipEditorDLL?.Name;
                     if (m.EditorMachine != null)
                     {
-                        try { lm.EditorData = m.ClipsAttached ? null : m.ClipEditorData; } catch (Exception) { lm.EditorData = null; }       // clips CU3: where the editor views the store its data is derived from the lanes, which the columns of the patterns carry
+                        try { lm.EditorData = m.ClipsAttached ? null : m.ClipEditorData; } catch (Exception) { lm.EditorData = null; }       // clips CU3: where the editor views the store its data is derived from the lanes, which the columns of the clips carry
                     }
                 }
                 for (int g = 1; g <= 2 && g < m.ParameterGroups.Count; g++)

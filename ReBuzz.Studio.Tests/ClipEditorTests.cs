@@ -1,6 +1,6 @@
-// Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor in the studio's Pattern tab, headless:
+// Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor in the studio's Clip tab, headless:
 // keyboard entry of notes and automation, the editor's data in the engine, edit commands (transpose,
-// interpolate, copy and paste), undo, playing the pattern through the engine, and screenshots.
+// interpolate, copy and paste), undo, playing the clip through the engine, and screenshots.
 
 using System;
 using System.Linq;
@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        /// <summary>A Neo Poly with an empty 4-beat pattern, shown in the Pattern tab with the keyboard on its grid.</summary>
+        /// <summary>A Neo Poly with an empty 4-beat clip, shown in the Clip tab with the keyboard on its grid.</summary>
         static Setup Open(string name)
         {
             // Keyboard entry of values is checked in hex, Buzz's (the decimal entry is UxP3cTests'); the studio's default is decimal.
@@ -63,8 +63,8 @@ namespace ReBuzz.Studio.Tests
             ClipView.Edit(clip);
             Pump();
             var page = ClipView.Page;
-            Assert.That(page, Is.Not.Null, "the Pattern tab is there");
-            Assert.That(page.Clip, Is.EqualTo(clip), "it shows the pattern");
+            Assert.That(page, Is.Not.Null, "the Clip tab is there");
+            Assert.That(page.Clip, Is.EqualTo(clip), "it shows the clip");
             var view = page.EditorControl;
             Assert.That(view, Is.Not.Null, "the Modern Pattern Editor's view is in the tab");
             dynamic dview = view;
@@ -132,11 +132,11 @@ namespace ReBuzz.Studio.Tests
             var s = Open("PE Keys");
             try
             {
-                Studio.Screenshot(s.Window, "pattern-editor-empty");
+                Studio.Screenshot(s.Window, "clip-editor-empty");
 
                 // Tab: from the globals to track 0, its Note column. Z, C, B: C, E, G at the base octave.
                 TypeChord(s);
-                Studio.Screenshot(s.Window, "pattern-editor-notes");
+                Studio.Screenshot(s.Window, "clip-editor-notes");
                 var notes = Events(s.Clip, "Note");
                 Assert.That(notes, Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (Row, BuzzNote.Parse("E-4")), (2 * Row, BuzzNote.Parse("G-4")), (3 * Row, BuzzNote.Off) }),
                     "notes at the base octave (4), then 1 for a note off, a row each");
@@ -152,7 +152,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.ArrowRight);
                 Key(s, PhysicalKey.Digit3);
                 Assert.That(Events(s.Clip, "Uni detune"), Is.EqualTo(new[] { (0, 0x300) }), "a word's second digit");
-                Studio.Screenshot(s.Window, "pattern-editor-typed");
+                Studio.Screenshot(s.Window, "clip-editor-typed");
 
                 // The editor's data (what songs save) has them too.
                 var data = s.Machine.EditorMachine != null ? Studio.Host.Core.MachineManager.GetMachineData(s.Machine.EditorMachine) : null;
@@ -177,7 +177,7 @@ namespace ReBuzz.Studio.Tests
         public void NotesShowAndTypeAsPreferencesNameThem()
         {
             // Fork (ux-overhaul.md §3.5): Preferences ▸ General ▸ Note names names the tracker's notes (three characters in each
-            // naming) and its base octaves; an octave typed is the octave shown. The pattern's values are Buzz's, unchanged.
+            // naming) and its base octaves; an octave typed is the octave shown. The clip's values are Buzz's, unchanged.
             var naming = NoteNames.Naming;
             var s = Open("PE Names");
             try
@@ -203,8 +203,8 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(FirstOctave(), Is.EqualTo(lowest), $"{n}: the base octaves");
                 }
                 var values = new[] { BuzzNote.Parse("C-4"), BuzzNote.Parse("E-4"), BuzzNote.Parse("G-4"), BuzzNote.Off };
-                Assert.That(Events(s.Clip, "Note").Select(e => e.Value), Is.EqualTo(values), "the pattern's values don't change");
-                Studio.Screenshot(s.Window, "pattern-editor-note-names");
+                Assert.That(Events(s.Clip, "Note").Select(e => e.Value), Is.EqualTo(values), "the clip's values don't change");
+                Studio.Screenshot(s.Window, "clip-editor-note-names");
 
                 // 5 typed on the first note's octave digit (C3 naming): C-5 as shown, Buzz's C-7.
                 Key(s, PhysicalKey.PageUp);
@@ -248,7 +248,7 @@ namespace ReBuzz.Studio.Tests
                 Keys(s, PhysicalKey.ArrowUp, PhysicalKey.ArrowUp);
                 for (int i = 0; i < 8; i++) Key(s, PhysicalKey.ArrowDown);
                 Key(s, PhysicalKey.V, RawInputModifiers.Control);
-                Studio.Screenshot(s.Window, "pattern-editor-pasted");
+                Studio.Screenshot(s.Window, "clip-editor-pasted");
                 Assert.That(Events(s.Clip, "Note").Select(e => (e.Time, BuzzNote.TryToString(e.Value))),
                     Is.EqualTo(new[] { (0, "C#5"), (Row, "F-5"), (2 * Row, "G#5"), (3 * Row, "off"), (8 * Row, "C#5"), (9 * Row, "F-5"), (10 * Row, "G#5") }), "pasted at row 8");
 
@@ -266,7 +266,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(ramp.Select(e => e.Time), Is.EqualTo(Enumerable.Range(0, 9).Select(i => i * Row)), "a value on every row between");
                 Assert.That(ramp.Select(e => e.Value), Is.Ordered.Ascending);
                 Assert.That(ramp[4].Value, Is.EqualTo((int)(769 * 0.5)), "linear, as the WPF editor computes it");
-                Studio.Screenshot(s.Window, "pattern-editor-interpolated");
+                Studio.Screenshot(s.Window, "clip-editor-interpolated");
 
                 // Undo (the editor's own stack, as on Windows) takes the interpolation back, then the second digit.
                 Key(s, PhysicalKey.Z, RawInputModifiers.Control);
@@ -315,10 +315,10 @@ namespace ReBuzz.Studio.Tests
 
                 var (peak, played) = Render(core, untilTick: 8);
                 Assert.That(played, Is.GreaterThanOrEqualTo(8));
-                // The play cursor: the pattern plays at tick 8 now (row 8).
+                // The play cursor: the clip plays at tick 8 now (row 8).
                 Grid(s).TimerUpdate();
                 Pump();
-                Studio.Screenshot(s.Window, "pattern-editor-playing");
+                Studio.Screenshot(s.Window, "clip-editor-playing");
                 var (peak2, _) = Render(core, untilTick: 16, continuing: true);
                 Assert.That(Math.Max(peak, peak2), Is.GreaterThan(0.01f), "the notes sound (Neo Poly through the Master)");
                 Assert.That(voiceMode.GetValue(0), Is.EqualTo(1), "the automation reached the machine");
@@ -383,13 +383,13 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var page = ClipView.Page;
-                // A second pattern, made by the editor's Ctrl+Return (as on Windows), is shown.
+                // A second clip, made by the editor's Ctrl+Return (as on Windows), is shown.
                 Key(s, PhysicalKey.Enter, RawInputModifiers.Control);
                 var second = s.Machine.Clips.FirstOrDefault(p => p.Name == "01");
-                Assert.That(second, Is.Not.Null, "Ctrl+Return made pattern 01");
+                Assert.That(second, Is.Not.Null, "Ctrl+Return made clip 01");
                 Assert.That(page.Clip, Is.EqualTo(second), "and the tab shows it");
 
-                // The API other views use: another tab in front, then Edit(pattern) brings the Pattern tab back.
+                // The API other views use: another tab in front, then Edit(clip) brings the Clip tab back.
                 var detail = s.Window.Detail;
                 detail.Close();
                 Pump();
@@ -398,32 +398,32 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(page.Clip, Is.EqualTo(s.Clip));
                 Assert.That(detail.IsOpen, Is.True, "the Tracker is open");
 
-                // As the Session View opens a double-clicked clip: the engine's pattern editor pattern,
+                // As the Session View opens a double-clicked clip: the engine's clip editor clip,
                 // then ActiveView. The tab follows both.
                 detail.Close();
                 Pump();
                 core.SetClipEditorClip(second);
                 core.ActiveView = BuzzView.ClipView;
                 Pump();
-                Assert.That(page.Clip, Is.EqualTo(second), "SetPatternEditorPattern picks the pattern");
-                Assert.That(detail.IsOpen, Is.True, "ActiveView = PatternView opens the Tracker");
+                Assert.That(page.Clip, Is.EqualTo(second), "SetClipEditorClip picks the clip");
+                Assert.That(detail.IsOpen, Is.True, "ActiveView = ClipView opens the Tracker");
                 ClipView.Edit(s.Clip);
                 Pump();
-                Assert.That(core.ClipEditorClip, Is.EqualTo(s.Clip), "the engine's pattern editor pattern");
+                Assert.That(core.ClipEditorClip, Is.EqualTo(s.Clip), "the engine's clip editor clip");
 
-                // Another machine, without patterns: the tab says so and offers New pattern.
+                // Another machine, without clips: the tab says so and offers New clip.
                 core.SongCore.CreateMachine("Neo Wave", null, "PE Empty", null, null, null, -1, 0.5f, 0.5f);
                 var other = core.SongCore.MachinesList.First(m => m.Name == "PE Empty");
                 ClipView.Edit(other);
                 Pump();
                 Assert.That(page.Machine, Is.EqualTo(other));
-                Assert.That(page.EditorControl, Is.Null, "no editor yet: the machine has no patterns");
-                Studio.Screenshot(s.Window, "pattern-editor-no-patterns");
-                var button = page.GetLogicalDescendants().OfType<Button>().First(b => b.Content as string == "New pattern");
+                Assert.That(page.EditorControl, Is.Null, "no editor yet: the machine has no clips");
+                Studio.Screenshot(s.Window, "clip-editor-no-clips");
+                var button = page.GetLogicalDescendants().OfType<Button>().First(b => b.Content as string == "New clip");
                 button.Command?.Execute(null);
                 button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Pump();
-                Assert.That(other.Clips.Count, Is.EqualTo(1), "New pattern made one");
+                Assert.That(other.Clips.Count, Is.EqualTo(1), "New clip made one");
                 Assert.That(page.EditorControl, Is.Not.Null, "and its editor is shown");
                 Assert.That(page.Clip, Is.EqualTo(other.Clips[0]));
                 // The shell's Edit menu: the new editor has nothing to undo, so the song's history takes Undo.
@@ -481,7 +481,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(name.Left, Is.GreaterThanOrEqualTo(cx - 0.01), "its name starts inside its column");
                 Assert.That(name.Right, Is.LessThanOrEqualTo(cx + cw + 0.01), "and ends inside it");
                 Assert.That(name.Height, Is.LessThanOrEqualTo(2 * 11 * 1.5), "on two lines of 11 pt at most");
-                Studio.Screenshot(s.Window, "pattern-editor-headers-scrolled");
+                Studio.Screenshot(s.Window, "clip-editor-headers-scrolled");
             }
             finally
             {
@@ -518,7 +518,7 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 var selection = ((dynamic)s.EditorView).Editor.Control.CurrentClip.Selection;
                 Assert.That((bool)selection.Active, Is.True, "dragging selects");
-                Studio.Screenshot(s.Window, "pattern-editor-selection");
+                Studio.Screenshot(s.Window, "clip-editor-selection");
             }
             finally
             {
@@ -550,7 +550,7 @@ namespace ReBuzz.Studio.Tests
                 var columns = s.Clip.ClipEditorMachineEvents.Select(c => c.Parameter.Name).ToList();
                 Assert.That(columns, Does.Contain("MIDI Note").And.Contain("MIDI Velocity").And.Contain("Note"), "the MIDI lanes beside the track's own columns");
                 Assert.That(columns, Does.Not.Contain("MIDI Pitch Wheel"), "only the lanes chosen");
-                Studio.Screenshot(s.Window, "pattern-editor-midi-lanes");
+                Studio.Screenshot(s.Window, "clip-editor-midi-lanes");
             }
             finally
             {
@@ -587,7 +587,7 @@ namespace ReBuzz.Studio.Tests
                 }
                 ClipView.Edit(s.Clip);
                 Pump();
-                Studio.Screenshot(s.Window, "pattern-editor-reopened");
+                Studio.Screenshot(s.Window, "clip-editor-reopened");
             }
             finally
             {
@@ -627,7 +627,7 @@ namespace ReBuzz.Studio.Tests
         public void TheToolbarsNumberBoxesShowTheirLargestValueWhole()
         {
             // Fork (ui-gallery.md, bug 6): Beats was a fixed 96-point box whose spinner left room for one digit and a half,
-            // so a 32-beat pattern showed "3:" (mac-053). Each box is as wide as its largest value in its own font.
+            // so a 32-beat clip showed "3:" (mac-053). Each box is as wide as its largest value in its own font.
             var s = Open("PE Boxes");
             try
             {
@@ -644,9 +644,9 @@ namespace ReBuzz.Studio.Tests
                         $"{ToolTip.GetTip(box)}: room for \"{largest}\" ({needed:F1} pt) in its text ({presenter.Bounds.Width:F1} pt)");
                 }
                 var beats = boxes.First(b => ToolTip.GetTip(b) as string == "Beats");
-                beats.Value = 32;               // a 32-beat pattern, as the gallery's Arp
+                beats.Value = 32;               // a 32-beat clip, as the gallery's Arp
                 Pump();
-                Studio.Screenshot(s.Window, "pattern-editor-beats-32");
+                Studio.Screenshot(s.Window, "clip-editor-beats-32");
             }
             finally
             {
@@ -657,8 +657,8 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ClipPropertiesListsAndDrawsTheColumns()
         {
-            // Fork (ui-gallery.md, bug 6): the gallery's Pattern Properties (mac-056) showed an empty column list, and so
-            // does the app: skipping the hidden pattern editors' names (U+0001 first) by the culture's StartsWith, which
+            // Fork (ui-gallery.md, bug 6): the gallery's Clip Properties (mac-056) showed an empty column list, and so
+            // does the app: skipping the hidden clip editors' names (U+0001 first) by the culture's StartsWith, which
             // ignores control characters, skipped every machine on macOS and Linux.
             var s = Open("PE Props List");
             Window dialog = null;
@@ -677,7 +677,7 @@ namespace ReBuzz.Studio.Tests
                         boxes = checks.Count;
                         drawn = checks.Count(c => c.IsEffectivelyVisible && c.Bounds.Height > 0 && c.TranslatePoint(new Point(0, 0), w) is { } at && at.Y >= 0 && at.Y < w.Bounds.Height);
                         notes = string.Join(", ", checks.Take(6).Select(c => $"{c.Content} {c.Bounds}"));
-                        Studio.Screenshot(w, "pattern-properties-dialog");
+                        Studio.Screenshot(w, "clip-properties-dialog");
                     }
                     finally
                     {
@@ -689,9 +689,9 @@ namespace ReBuzz.Studio.Tests
             {
                 Key(s, PhysicalKey.Backspace, RawInputModifiers.Control);
                 for (int i = 0; i < 20 && dialog == null; i++) Pump();
-                Assert.That(dialog, Is.Not.Null, "Ctrl+Backspace opened Pattern Properties");
+                Assert.That(dialog, Is.Not.Null, "Ctrl+Backspace opened Clip Properties");
                 TestContext.Out.WriteLine($"{boxes} boxes, {drawn} in view: {notes}");
-                Assert.That(boxes, Is.GreaterThan(10), "a box per column the pattern can have");
+                Assert.That(boxes, Is.GreaterThan(10), "a box per column the clip can have");
                 Assert.That(drawn, Is.GreaterThan(3), "the first of them in view, laid out");
             }
             finally
@@ -701,7 +701,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>
-        /// The labels of the shown pattern's columns and, for each, the values its beats show (the grid's model), as
+        /// The labels of the shown clip's columns and, for each, the values its beats show (the grid's model), as
         /// "label: values" with empty rows left out.
         /// </summary>
         static System.Collections.Generic.Dictionary<string, string[]> Shown(dynamic clipVM)
@@ -734,10 +734,10 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void NotesMovedOntoTheLanesOfAClipNeverShownShowWhenItIs()
         {
-            // Fork (ui-gallery.md, bug 5; clips.md, CU4): the editor makes a view of each pattern as it's created (and shows the newest),
-            // with the columns the pattern had then. Notes written into another pattern (the store's MIDI column), before it
-            // was ever shown, must show on its Notes lane when it is: the Pattern View showed no lanes and no
-            // notes until the song was saved and opened again. Both apps share this code (PatternEditor.Core.cs).
+            // Fork (ui-gallery.md, bug 5; clips.md, CU4): the editor makes a view of each clip as it's created (and shows the newest),
+            // with the columns the clip had then. Notes written into another clip (the store's MIDI column), before it
+            // was ever shown, must show on its Notes lane when it is: the Clip View showed no lanes and no
+            // notes until the song was saved and opened again. Both apps share this code (ClipEditor.Core.cs).
             var core = Studio.Host.Core;
             core.SongCore.CreateMachine("Neo Poly", null, "PE Unseen", null, null, null, 2, 0.3f, 0.3f);
             var machine = core.SongCore.MachinesList.First(m => m.Name == "PE Unseen");
@@ -762,7 +762,7 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 ClipView.Edit(a);
                 Pump();
-                Assert.That(ClipView.Page.Clip, Is.EqualTo(a), "the Pattern View shows A");
+                Assert.That(ClipView.Page.Clip, Is.EqualTo(a), "the Clip View shows A");
                 dynamic editor = ((dynamic)ClipView.Page.EditorControl).Editor;
                 dynamic vm = editor.SelectedMachine.SelectedClip;
                 Assert.That((IClip)vm.Clip, Is.EqualTo(a));
@@ -773,7 +773,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(voiceSets.SelectMany(s => shown[s + "/Note"]).Where(v => v != "off").OrderBy(v => v), Is.EqualTo(new[] { "C-3", "C-4", "E-3", "G-3" }),
                     "and the notes on it (MIDI 60 is C-3 as Preferences name notes by default), as the song opened again would show them");
                 Assert.That(shown.Keys.Any(k => k.EndsWith("/MIDI Note")), Is.False, "beside the Notes lane the editor's own empty MIDI Note column is not shown");
-                Studio.Screenshot(window, "pattern-editor-unseen-lanes");
+                Studio.Screenshot(window, "clip-editor-unseen-lanes");
             }
             finally
             {

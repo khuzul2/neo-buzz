@@ -28,7 +28,7 @@ namespace ReBuzz.Core
                 var mine = seqCore.EventsOfClip(this);        // fork (0.6.1): a copy taken safely (this runs on the IPC thread too)
                 if (mine.Count == 0) continue;
                 // Fork (0.5.1): spans are the part each event plays, cut at the next event
-                // (upstream set the whole length, so a pattern that grew ran over the next event).
+                // (upstream set the whole length, so a clip that grew ran over the next event).
                 seqCore.RefreshSpans();
                 foreach (var seqEventKeyValue in mine)
                     seqCore.SequenceEventChanged(seqEventKeyValue.Key, seqEventKeyValue.Value);
@@ -61,16 +61,16 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Fork (0.6.1): set (under AudioLock) when the pattern is deleted. Deleted patterns never
+        /// Fork (0.6.1): set (under AudioLock) when the clip is deleted. Deleted clips never
         /// come back (undo creates a new one), so the Session View rejects launches of one that a
         /// stale reference still holds.
         /// </summary>
         internal volatile bool IsDeleted;
 
         /// <summary>
-        /// Fork (mac-engine.md M2): the built-in pattern editor's contents of an old song's pattern,
-        /// kept when no pattern editor took them (a host without one), so the song saves back with
-        /// them. Null otherwise. See <see cref="FileOps.BuiltInPattern"/>.
+        /// Fork (mac-engine.md M2): the built-in clip editor's contents of an old song's clip,
+        /// kept when no clip editor took them (a host without one), so the song saves back with
+        /// them. Null otherwise. See <see cref="FileOps.BuiltInClip"/>.
         /// </summary>
         internal FileOps.BuiltInClip BuiltInData;
 
@@ -83,23 +83,23 @@ namespace ReBuzz.Core
         public ReadOnlyCollection<IClipColumn> Columns { get => columns.AsReadOnly(); }
 
         // Fork (0.4.1): starts "not playing". It was 0 until the engine's next block cleared every
-        // pattern; the engine now clears only the patterns it positioned (WorkManager).
+        // clip; the engine now clears only the clips it positioned (WorkManager).
         int playPosition = int.MinValue;
 
         /// <summary>
-        /// Fork (0.4.1): the track whose session clip gave this pattern its play position in the
-        /// current block, or null. Audio thread (WorkManager.UpdatePatternPositions).
+        /// Fork (0.4.1): the track whose session clip gave this clip its play position in the
+        /// current block, or null. Audio thread (WorkManager.UpdateClipPositions).
         /// </summary>
         internal SequenceCore SessionTrack;
 
         /// <summary>
-        /// Fork (Session View 1.0): the pattern's audio clip, for its machine if that is a Session
+        /// Fork (Session View 1.0): the clip's audio clip, for its machine if that is a Session
         /// Clip Player (the layout makes it once and keeps it in step; the audio thread plays it).
         /// </summary>
         internal volatile Clips.ClipPlayback SessionAudio;
 
         /// <summary>
-        /// Fork (neo-audio.md NA2), audio thread: while an arrangement event plays this pattern as an audio clip with fades, the ticks since
+        /// Fork (neo-audio.md NA2), audio thread: while an arrangement event plays this clip as an audio clip with fades, the ticks since
         /// its clip started and until it ends (a clip is the events of one clip id; Session clips and the rest: <see cref="int.MinValue"/>).
         /// </summary>
         internal int ArrangementSinceClipStart = int.MinValue, ArrangementUntilClipEnd = int.MinValue;
@@ -236,7 +236,7 @@ namespace ReBuzz.Core
             CClip = new IntPtr(clipHandleCounter++);
             columns = new List<IClipColumn>();
 
-            //Get list of sequences that use this pattern
+            //Get list of sequences that use this clip
             lock (_owningSequences)
             {
                 foreach (var seq in Global.Buzz.Song.Sequences)
@@ -261,7 +261,7 @@ namespace ReBuzz.Core
             /*
             foreach (var parTrackTuple in Machine.AllParametersAndTracks())
             {
-                PatternColumnCore pc = new PatternColumnCore(PatternColumnType.Parameter, this, Machine, parTrackTuple.Item1, parTrackTuple.Item2, null, null);
+                ClipColumnCore pc = new ClipColumnCore(ClipColumnType.Parameter, this, Machine, parTrackTuple.Item1, parTrackTuple.Item2, null, null);
                 columns.Add(pc);
             }
             */
@@ -285,7 +285,7 @@ namespace ReBuzz.Core
         {
             lock (_owningSequences)
             {   //If the added sequence refers to the same machine as the
-                //one associated with the pattern, then associate the sequence with this pattern.
+                //one associated with the clip, then associate the sequence with this clip.
                 if(seq.Machine == Machine)
                     _owningSequences.Add((ISequence)seq);
             }
@@ -296,7 +296,7 @@ namespace ReBuzz.Core
             lock (_owningSequences)
             {
                 //If the added sequence refers to the same machine as the
-                //one associated with the pattern, then associate the sequence with this pattern.
+                //one associated with the clip, then associate the sequence with this clip.
                 if (seq.Machine == Machine)
                     _owningSequences.Add((ISequence)seq);
             }
@@ -434,7 +434,7 @@ namespace ReBuzz.Core
         internal void ClearEvents()
         {
             // Fork (0.6.3): off the song's events. Upstream left that to the finalizer, which the
-            // song's own reference to this pattern kept from ever running: every deleted pattern
+            // song's own reference to this clip kept from ever running: every deleted clip
             // lived (and listened) as long as the song.
             var song = subscribedSong;
             subscribedSong = null;

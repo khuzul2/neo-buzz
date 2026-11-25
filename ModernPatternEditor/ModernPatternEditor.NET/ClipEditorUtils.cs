@@ -48,7 +48,7 @@ namespace WDE.ModernPatternEditor
                 return clips;
 
             int index = 0;
-            // Decode pattern editor data
+            // Decode clip editor data
             byte[] machineClipsData = data;
 
             byte version = machineClipsData[index++];
@@ -260,7 +260,7 @@ namespace WDE.ModernPatternEditor
         #region PatternXPData Write
         public static byte[] CreatePatternXPClipData(IEnumerable<MPEClip> clips)
         {
-            // Encode pattern editor data
+            // Encode clip editor data
             List<byte> data = new List<byte>();
 
             data.Add(PATTERNXP_DATA_VERSION);
@@ -371,7 +371,7 @@ namespace WDE.ModernPatternEditor
 
         public static byte[] CreateModernPatternEditorData(IEnumerable<MPEClip> clips)
         {
-            // Encode pattern editor data
+            // Encode clip editor data
             List<byte> data = new List<byte>();
 
             data.Add(NOT_PATTERNXP_DATA);
@@ -780,9 +780,9 @@ namespace WDE.ModernPatternEditor
 
         #region Clip notes (fork: neo-buzz Session View 0.7.1)
 
-        // A pattern's MIDI note lanes (the MIDI Note, Velocity, Note Delay and Note Cut columns
-        // of each track of the pattern's own machine) as notes, and back: the Session View moves
-        // a clip's recorded notes into the Pattern View and back with these. Notes are int
+        // A clip's MIDI note lanes (the MIDI Note, Velocity, Note Delay and Note Cut columns
+        // of each track of the clip's own machine) as notes, and back: the Session View moves
+        // a clip's recorded notes into the Clip View and back with these. Notes are int
         // triples (time in 1/240 tick, note-on message, duration); the layout on rows is
         // BuzzGUI.Common.TrackerNotes'. Notes the lanes can hold: MIDI 0-119 (BuzzNote's range).
 
@@ -806,7 +806,7 @@ namespace WDE.ModernPatternEditor
         static int BeatsOf(MPEClip clip) =>
             Math.Max(1, (clip.Clip.Length + MPEClipColumn.BUZZ_TICKS_PER_BEAT - 1) / MPEClipColumn.BUZZ_TICKS_PER_BEAT);
 
-        /// <summary>Rows in each beat of a lane (its own subdivisions, else the pattern's rows per beat).</summary>
+        /// <summary>Rows in each beat of a lane (its own subdivisions, else the clip's rows per beat).</summary>
         static List<int> BeatRows(MPEClip clip, MPEClipColumn lane)
         {
             int beats = BeatsOf(clip);

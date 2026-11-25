@@ -1,6 +1,6 @@
-// Fork (docs/specs/daw-modes.md S4): a pattern's notes in its engine MIDI column (where session
+// Fork (docs/specs/daw-modes.md S4): a clip's notes in its engine MIDI column (where session
 // takes, the agent and the piano roll put them; D2 B: the one note store), each edit one undo
-// step of the song's history, as the arrangement and the Pattern tab will edit them.
+// step of the song's history, as the arrangement and the Clip tab will edit them.
 
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ namespace ReBuzz.Core.Notes
         }
 
         public override string WhyNotEditable =>
-            !IsLive ? "The pattern was deleted."
+            !IsLive ? "The clip was deleted."
             : buzz.SessionLayout?.IsRecordingClip(clip) == true ? "Recording: edits wait until it stops."
             : null;
 
@@ -58,7 +58,7 @@ namespace ReBuzz.Core.Notes
 
     /// <summary>
     /// One undo step of the song's history: events go from and come to engine columns of a
-    /// pattern (a column is made when events come to it). The pattern is found by its machine's
+    /// clip (a column is made when events come to it). The clip is found by its machine's
     /// and its own name each time, as BuzzGUI's actions find theirs, so undo and redo work after
     /// the machine is deleted and made again.
     /// </summary>

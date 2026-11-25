@@ -1,6 +1,6 @@
 // Fork (docs/specs/daw-modes.md EV1, §8.8): the Envelopes control of the Detail panel: a header (the label, the parameter chooser, + Envelope, Ramp
 // and Step for the selection, the selection count) over a stack of lanes, one for each parameter of the clip's machine that holds data in the clip
-// or that was added. It is one control that knows only a time axis (IEnvelopeAxis) and the clip (a pattern): the piano roll page and the Audio
+// or that was added. It is one control that knows only a time axis (IEnvelopeAxis) and the clip (a clip): the piano roll page and the Audio
 // page host it under their own time axis, and the Tracker can host it later with its rows as the axis.
 //
 // The parameters that hold data in the clip show by default; a lane's × takes it away from the view (its points stay in the clip) and its ▾

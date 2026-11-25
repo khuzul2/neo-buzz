@@ -85,8 +85,8 @@ namespace WDE.ModernPatternEditor
                     for (int i = 0; i < values.Length; i++) values[i] = column.ClipColumn.Parameter.NoValue;
 
                     int t = index * BeatDuration;
-                    //foreach (var e in column.PatternColumn.GetEvents(t, t + BeatDuration).Where(e => t % PatternEvent.TimeBase == 0))
-                    //						values[(e.Time - t) / PatternEvent.TimeBase] = e.Value;
+                    //foreach (var e in column.ClipColumn.GetEvents(t, t + BeatDuration).Where(e => t % ClipEvent.TimeBase == 0))
+                    //						values[(e.Time - t) / ClipEvent.TimeBase] = e.Value;
 
                     // Get event data from our own structure
                     MPEClip mpeClip = column.Set.Clip.Editor.MPEClipsDB.GetMPEClip(column.Set.Clip.Clip);
@@ -127,7 +127,7 @@ namespace WDE.ModernPatternEditor
                     iParameter.SetValue(column.track, value);
                 }
                 /*
-				if (column.PatternColumn.Parameter.Type == ParameterType.Note && value != BuzzNote.Off)
+				if (column.ClipColumn.Parameter.Type == ParameterType.Note && value != BuzzNote.Off)
                 {
 					int o = value >> 4;
 					if ((value & 15) < 1 || (value & 15) > 12 || o < BuzzNote.MinOctave || o > BuzzNote.MaxOctave)
@@ -173,7 +173,7 @@ namespace WDE.ModernPatternEditor
                     var machine = column.ClipColumn.Machine;
                     int group = column.ClipColumn.Machine.ParameterGroups.IndexOf(this.column.ClipColumn.Parameter.Group) | 16; // Don't record
                     column.Set.Clip.Editor.cb.ControlChange(machine, group, this.column.track, this.column.ClipColumn.Parameter.IndexInGroup, Values[row]);
-                    //column.PatternColumn.Parameter.SetValue(column.track, Values[row]);
+                    //column.ClipColumn.Parameter.SetValue(column.track, Values[row]);
                 }
             }
 
@@ -185,7 +185,7 @@ namespace WDE.ModernPatternEditor
                 // Use our own structure
                 RowsPerBeat = column.mpeColumn.BeatRowsList.Count > index ? column.mpeColumn.BeatRowsList[index] : 4;
 
-                // if (!column.PatternColumn.BeatSubdivision.TryGetValue(index, out RowsPerBeat))
+                // if (!column.ClipColumn.BeatSubdivision.TryGetValue(index, out RowsPerBeat))
                 //	RowsPerBeat = rpb;
 
                 rowTimes = Enumerable.Range(0, RowsPerBeat).Select(t => ClipEvent.TimeBase * 4 * t / RowsPerBeat).ToArray();
@@ -295,7 +295,7 @@ namespace WDE.ModernPatternEditor
 
         public virtual void Release()
         {
-            // PatternColumn.EventsChanged -= pc_EventsChanged;
+            // ClipColumn.EventsChanged -= pc_EventsChanged;
             mpeColumn.EventsChanged -= pc_EventsChanged;
             ClipColumn.BeatSubdivisionChanged -= pc_BeatSubdivisionChanged;
         }

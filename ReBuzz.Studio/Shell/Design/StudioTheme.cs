@@ -90,7 +90,7 @@ namespace ReBuzz.Studio.Shell.Design
             if (now == effective) return;
             effective = now;
             NeoBuzz.Editor.Tokens.SetLight(now == AppearanceTheme.Light);       // the brushes and caches made from tokens follow
-            BuzzGUI.Common.StudioLook.Light = now == AppearanceTheme.Light;     // so does the pattern editor, which draws its own colours
+            BuzzGUI.Common.StudioLook.Light = now == AppearanceTheme.Light;     // so does the clip editor, which draws its own colours
             TellTheMachines();
             look = null;
             machineLook = null;
@@ -146,7 +146,7 @@ namespace ReBuzz.Studio.Shell.Design
         internal static IPen Pen(IBrush brush, double thickness = 1) => new ImmutablePen(brush.ToImmutable(), thickness);
     }
 
-    /// <summary>The Sequence view: the canvas, the pattern list and the corner's controls.</summary>
+    /// <summary>The Sequence view: the canvas, the clip list and the corner's controls.</summary>
     internal sealed class SequenceLook
     {
         public bool IsClassic;
@@ -157,7 +157,7 @@ namespace ReBuzz.Studio.Shell.Design
         public IPen Border, NameBackPen, EventBorder;
         public IBrush Note, Off, Param;
 
-        // blocks without a colour of their own: [pattern, break, mute, off]; null: the Buzz theme file's (Classic)
+        // blocks without a colour of their own: [clip, break, mute, off]; null: the Buzz theme file's (Classic)
         public Color[] BoxColours;
 
         // the header's buttons
@@ -172,7 +172,7 @@ namespace ReBuzz.Studio.Shell.Design
         public IBrush Record;
         public IPen RecordPen;
 
-        // the pattern list and the corner
+        // the clip list and the corner
         public Color ClipList;
         public IBrush ListText, ListHover, ListHoverText, ListPressed, ListSelected, ListSelectedHover, ListBorder;
         public IBrush ControlBack, ControlText, ControlBorder;
@@ -306,7 +306,7 @@ namespace ReBuzz.Studio.Shell.Design
             l.ControlBack = B(t.Control);
             l.ControlText = B(t.Primary);
             l.ControlBorder = B(t.Border);
-            // Blocks that name no pattern colour: a pattern with none, a break, a mute (or thru), a stop.
+            // Blocks that name no clip colour: a clip with none, a break, a mute (or thru), a stop.
             l.BoxColours = Tokens.IsLight
                 ? new[] { Color.Parse("#A9C4E8"), Color.Parse("#D5D5DE"), Color.Parse("#E3B4B4"), Color.Parse("#E4E4EA") }
                 : new[] { Color.Parse("#3B5878"), Color.Parse("#4A4A55"), Color.Parse("#6B3F3F"), Color.Parse("#3A3A44") };

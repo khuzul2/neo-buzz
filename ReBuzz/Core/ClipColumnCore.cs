@@ -33,7 +33,7 @@ namespace ReBuzz.Core
 
         /// <summary>
         /// Fork (0.7): metadata of a parameter column recorded by the Session View (automation).
-        /// The engine plays such columns itself; other parameter columns belong to pattern
+        /// The engine plays such columns itself; other parameter columns belong to clip
         /// editors, which play their own data.
         /// </summary>
         internal const string SessionAutomationKey = "SessionAutomation";
@@ -41,7 +41,7 @@ namespace ReBuzz.Core
         /// <summary>
         /// Fork (docs/specs/clips.md §5.6, CU3): the host plays every parameter lane of a clip from the engine, marked or not (one store,
         /// one engine). The Studio and rebuzz-headless set it when they start (EngineHost.PrepareProcess); Classic's WPF app does not, and
-        /// there the pattern editor still plays its own data and the engine only the marked columns, as before.
+        /// there the clip editor still plays its own data and the engine only the marked columns, as before.
         /// </summary>
         internal static volatile bool PlaysEveryLane;
 
@@ -84,7 +84,7 @@ namespace ReBuzz.Core
 
         ClipEvent[] emptyClipEventList = Array.Empty<ClipEvent>();
         Lock clipEventsLock = new Lock();
-        // Returns the events from PatternColumn object. Not from pattern editor machine.
+        // Returns the events from ClipColumn object. Not from clip editor machine.
         // Returns a fresh snapshot array (callers may enumerate it multiple times and
         // across threads - e.g. the BMX save path Count()s then foreach()es it). All
         // reads of the shared event list happen under the lock.
@@ -178,7 +178,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Fork (daw-modes.md S3): where a ramp is at <paramref name="time"/> (pattern time): when
+        /// Fork (daw-modes.md S3): where a ramp is at <paramref name="time"/> (clip time): when
         /// the last event before it has a Duration above 0 and another event follows, the value on
         /// the straight line between the two, rounded to the nearest whole value. False otherwise:
         /// no ramp there (steps), or an event exactly at <paramref name="time"/>, which plays itself.

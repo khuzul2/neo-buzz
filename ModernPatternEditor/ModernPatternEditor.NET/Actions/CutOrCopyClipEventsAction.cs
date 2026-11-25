@@ -19,7 +19,7 @@ namespace WDE.ModernPatternEditor.Actions
 
             this.cut = cut;
 
-            // Copy pattern data to shared clipboard
+            // Copy clip data to shared clipboard
             clipboard.Copy(mPEClip, r);
 
             oldClipboard.Clone(Clip, clipboard);

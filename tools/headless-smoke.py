@@ -77,10 +77,10 @@ check(ok and "Neo Poly" in names and "Neo Verb" in names and "Neo Sampler" in na
 ok, _, _ = call("song_set", tempo_bpm=120, song_end_beats=8)
 check(ok, "song_set")
 check(call("machine_add", gear="Neo Poly", name="Keys")[0], "machine_add Neo Poly")
-check(call("pattern_create", machine="Keys", name="A", length_beats=8)[0], "pattern_create (with the Modern Pattern Editor, as on Windows)")
-check(call("notes_write", machine="Keys", pattern="A",
+check(call("clip_create", machine="Keys", name="A", length_beats=8)[0], "clip_create (with the Modern Pattern Editor, as on Windows)")
+check(call("notes_write", machine="Keys", clip="A",
            notes=[{"pitch": "C4", "start": 0, "length": 2}, {"pitch": "E4", "start": 2, "length": 2}, {"pitch": "G4", "start": 4, "length": 4}])[0], "notes_write")
-check(call("arrangement_place", machine="Keys", pattern="A", at=[0])[0], "arrangement_place")
+check(call("arrangement_place", machine="Keys", clip="A", at=[0])[0], "arrangement_place")
 check(call("machine_add", gear="Neo Verb", name="Room", insert_after="Keys")[0], "machine_add Neo Verb after it")
 
 ok, _, r1 = call("render", **{"from": 0, "to": 8, "tail_seconds": 1})

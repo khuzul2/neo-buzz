@@ -12,14 +12,14 @@ namespace ReBuzz.Core.Session
 {
     /// <summary>
     /// Audio clips, layout side (docs/specs/session-view.md 1.0). An audio track is a track of a
-    /// Neo Audio machine (once the Session Clip Player); an audio clip is one of its patterns whose clip settings have
+    /// Neo Audio machine (once the Session Clip Player); an audio clip is one of its clips whose clip settings have
     /// audio (<see cref="SessionDocument.AudioSettings"/>): an asset of the song's audio store (docs/specs/neo-audio.md; clips an
     /// older song made name a wave of the wavetable and are migrated to assets, the wave kept), its
     /// tempo, warp mode and markers, gain and pitch. Dropping a file on a slot imports it as an asset
     /// and makes the clip (a new audio track for it when the slot's track isn't one).
     ///
-    /// After every edit (with the launch map), each audio clip's pattern gets how it plays now
-    /// (<see cref="PatternCore.SessionAudio"/>): its audio (the asset's), the warp map, Beats mode's slices
+    /// After every edit (with the launch map), each audio clip's clip gets how it plays now
+    /// (<see cref="ClipCore.SessionAudio"/>): its audio (the asset's), the warp map, Beats mode's slices
     /// (transients found once per asset). Neo Audio renders from that on the audio thread (<see cref="SessionClipEngine"/>).
     /// UI thread.
     /// </summary>
@@ -64,7 +64,7 @@ namespace ReBuzz.Core.Session
         /// <summary>Whether audio tracks can be made (Neo Audio is installed).</summary>
         public bool CanMakeAudioTracks => ClipPlayerDll != null;
 
-        /// <summary>A pattern's audio, or null when it is no audio clip.</summary>
+        /// <summary>A clip's audio, or null when it is no audio clip.</summary>
         public SessionDocument.AudioSettings AudioOf(IClip clip) => IsClipPlayer(clip?.Machine) ? ClipOf(clip).Audio : null;
 
         public bool IsAudioClip(IClip clip) => AudioOf(clip) != null;
@@ -136,7 +136,7 @@ namespace ReBuzz.Core.Session
             song.BeginActionGroup();
             try
             {
-                // The default pattern editor, as machines made from the menu get (none if it isn't there).
+                // The default clip editor, as machines made from the menu get (none if it isn't there).
                 string editor = buzz.DefaultClipEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultClipEditor) ? buzz.DefaultClipEditor : null;
                 song.CreateMachine(dll.Name, null, machineName, null, editor, null, -1, x, y);
                 machine = song.Machines.LastOrDefault(m => m.Name == machineName && IsClipPlayer(m));
@@ -233,7 +233,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Makes an audio clip of an asset (or of a wave, which is migrated to an asset first) in a slot (undoable); the slot's clip, if
-        /// any, makes way (its pattern stays).
+        /// any, makes way (its clip stays).
         /// </summary>
         internal IClip AddAudioClip(int track, int scene, IMachine machine, string name, SessionDocument.AudioSettings audio)
         {
@@ -261,7 +261,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// A pattern for an arrangement audio clip (NA2): the audio's length, its settings, in no slot. Part of the caller's undo group; null when
+        /// A clip for an arrangement audio clip (NA2): the audio's length, its settings, in no slot. Part of the caller's undo group; null when
         /// the audio is missing.
         /// </summary>
         internal IClip CreateAudioClip(IMachine machine, string name, SessionDocument.AudioSettings audio, SessionDocument.ClipSettings settings = null)
@@ -289,7 +289,7 @@ namespace ReBuzz.Core.Session
             return new AudioClipView(w.Asset, w.Source, map, map.BeatAt(w.Source.Length), audio);
         }
 
-        /// <summary>How the pattern plays now (null when it isn't an audio clip): offline renders play it with a voice of their own.</summary>
+        /// <summary>How the clip plays now (null when it isn't an audio clip): offline renders play it with a voice of their own.</summary>
         internal AudioClipParams ParamsOfClip(IClip clip) => (clip as ClipCore)?.SessionAudio?.Params;
 
         /// <summary>The song's sample rate (what an offline render makes).</summary>
@@ -379,7 +379,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Makes a change to an audio clip (NA3): the one place the agent's audio_clip_set and the studio's Audio page both go through, as one undo
-        /// step. Returns why it can't be made, or null. The pattern's own loop and region are the Session slot's; an arrangement clip's are the clip's
+        /// step. Returns why it can't be made, or null. The clip's own loop and region are the Session slot's; an arrangement clip's are the clip's
         /// (<see cref="ClipEditor"/>). <paramref name="label"/> names the history step.
         /// </summary>
         internal string EditAudio(IClip clip, AudioClipEdit edit, ClipEditor editor, string label = null)
@@ -481,7 +481,7 @@ namespace ReBuzz.Core.Session
             /// <summary>The id the clip names until the take is done (the store aliases it to the finished asset).</summary>
             public string PendingId;
             public string Name;
-            /// <summary>What the slot shows while it records: "Voice take 1" (not the pattern's number).</summary>
+            /// <summary>What the slot shows while it records: "Voice take 1" (not the clip's number).</summary>
             public string DisplayName;
             public double Bpm;
             public int TicksPerBeat;
@@ -861,7 +861,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// Gives every audio clip's pattern how it plays now, and takes it from patterns that are
+        /// Gives every audio clip's clip how it plays now, and takes it from clips that are
         /// audio clips no more. Only what changed is made again. After every edit, and when a wave changes.
         /// </summary>
         internal void RefreshAudio()
@@ -951,8 +951,8 @@ namespace ReBuzz.Core.Session
     }
 
     /// <summary>
-    /// A pattern's length (an audio clip's following its tempo), as a session undo step that
-    /// holds the pattern itself, not its name: renames and undone deletions don't lose it.
+    /// A clip's length (an audio clip's following its tempo), as a session undo step that
+    /// holds the clip itself, not its name: renames and undone deletions don't lose it.
     /// </summary>
     [HistoryName("Set clip length")]
     internal sealed class SessionClipLengthAction : IAction

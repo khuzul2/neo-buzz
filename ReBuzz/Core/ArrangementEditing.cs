@@ -1,7 +1,7 @@
 // Fork (docs/specs/daw-modes.md AR1): arrangement clips as the views and the agent edit them. A
-// clip is a run of PlayPattern events of one pattern on one sequence, joined by a clip id
+// clip is a run of PlayClip events of one clip on one sequence, joined by a clip id
 // (ArrangementClips); here it is read as a ClipSpec (where it starts and how long it plays, the
-// part of its pattern it starts with, its loop region, whether it loops) and written back as
+// part of its clip it starts with, its loop region, whether it loops) and written back as
 // events: the first plays from the start, the next ones the loop region, the last is cut at the
 // clip's end (Offset, End), so upstream ReBuzz plays the same events. Every edit is planned on
 // copies of the touched sequences' events and applied as one ClipEditAction on the song's
@@ -17,12 +17,12 @@ using BuzzGUI.Interfaces;
 
 namespace ReBuzz.Core
 {
-    /// <summary>A part of a clip's play: where it starts (song ticks), where in the pattern it starts, how long it plays.</summary>
+    /// <summary>A part of a clip's play: where it starts (song ticks), where in the clip it starts, how long it plays.</summary>
     internal readonly record struct ClipSegment(int Time, int Offset, int Length);
 
     /// <summary>
     /// What a clip is, apart from its events: where it starts and how long it is (ticks), where in
-    /// its pattern it starts, its loop region (LoopEnd 0 for the pattern's end, which is also where
+    /// its clip it starts, its loop region (LoopEnd 0 for the clip's end, which is also where
     /// a clip without a loop ends), whether it loops, its volume. A clip that doesn't loop plays
     /// its region once; a looping one repeats the region (from LoopStart) up to Length.
     /// </summary>
@@ -57,7 +57,7 @@ namespace ReBuzz.Core
             return list;
         }
 
-        /// <summary>Where in the pattern the clip is at a song tick (null if it isn't playing then).</summary>
+        /// <summary>Where in the clip the clip is at a song tick (null if it isn't playing then).</summary>
         public int? ClipPositionAt(int tick)
         {
             foreach (var s in Segments())
@@ -93,7 +93,7 @@ namespace ReBuzz.Core
         public ISequence Sequence { get; init; }
         public ClipSpec Spec { get; init; }
         public List<int> EventTimes { get; init; }
-        /// <summary>What the events play now (their start, their part of the pattern, their span).</summary>
+        /// <summary>What the events play now (their start, their part of the clip, their span).</summary>
         public List<ClipSegment> Actual { get; init; }
         /// <summary>True for an event taken out of a run that isn't a clean loop: it is a clip of its own, as an event without an id is.</summary>
         public bool Single { get; init; }
@@ -205,7 +205,7 @@ namespace ReBuzz.Core
             return gains.All(g => g == spec.Gain);
         }
 
-        /// <summary>Every place a pattern is used: its clips on the song's sequences and its slots in the session.</summary>
+        /// <summary>Every place a clip is used: its clips on the song's sequences and its slots in the session.</summary>
         public int Uses(IClip clip)
         {
             if (clip?.Machine == null) return 0;
@@ -306,7 +306,7 @@ namespace ReBuzz.Core
                     if (item.End > to)
                     {
                         var rest = item.Spec.CutLeft(to);
-                        // Cut in the middle (a clip dropped inside it): the two parts are two clips, each with its own pattern.
+                        // Cut in the middle (a clip dropped inside it): the two parts are two clips, each with its own clip.
                         if (item.Time < from && audio && editor.CloneAudioClip(item.Clip, item.Clip.Machine) is { } own) rest = rest with { Clip = own };
                         Write(seq, rest, newId: item.Time < from);
                         if (fade) Cuts.Add((rest.Clip, false, to - Math.Max(item.Time, from)));
@@ -375,9 +375,9 @@ namespace ReBuzz.Core
             finally { stack.EndActionGroup(); }
         }
 
-        // ------------------------------------------------------------------ pattern copies
+        // ------------------------------------------------------------------ clip copies
 
-        /// <summary>An independent copy of a pattern (Make unique): a new pattern named after it, on the song's history. Null if it can't be made.</summary>
+        /// <summary>An independent copy of a clip (Make unique): a new clip named after it, on the song's history. Null if it can't be made.</summary>
         IClip CloneClip(IClip source)
         {
             var layout = core.SessionLayout;
@@ -398,7 +398,7 @@ namespace ReBuzz.Core
 
         // ------------------------------------------------------------------ the edits
 
-        /// <summary>The clip a pattern first becomes in the arrangement: its loop from the session clip's settings (the pattern's markers and whether it loops).</summary>
+        /// <summary>The clip a clip first becomes in the arrangement: its loop from the session clip's settings (the clip's markers and whether it loops).</summary>
         ClipSpec NewSpec(IClip clip, int time, int length)
         {
             var loop = core.SessionLayout?.Document != null ? Session.SceneToArrangement.LoopOf(core.SessionLayout, clip) : new ClipLoop(0, 0, true);
@@ -408,7 +408,7 @@ namespace ReBuzz.Core
             return new ClipSpec(0, clip, time, Math.Max(1, length), shape.Item1, loop.Start, loop.End, loop.On && !IsAudio(clip), 1.0);
         }
 
-        /// <summary>Draws a clip: a new pattern of the clip's length on the machine, and the clip over it. Returns the clip's start.</summary>
+        /// <summary>Draws a clip: a new clip of the clip's length on the machine, and the clip over it. Returns the clip's start.</summary>
         public string Draw(ISequence lane, int time, int length, out IClip made)
         {
             made = null;
@@ -423,7 +423,7 @@ namespace ReBuzz.Core
                 clip = lane.Machine.Clips.FirstOrDefault(p => p.Name == name);
                 if (clip == null) return;
                 var plan = new Plan(this);
-                // The clip ends where the next one starts, if that's sooner than the pattern's length.
+                // The clip ends where the next one starts, if that's sooner than the clip's length.
                 var next = Read(lane).Where(i => i.Time >= time).OrderBy(i => i.Time).FirstOrDefault();
                 var spec = NewSpec(clip, time, length);
                 if (next != null && next.Time < time + length) spec = spec with { Length = Math.Max(1, next.Time - time) };
@@ -432,21 +432,21 @@ namespace ReBuzz.Core
                 Commit(plan);
             });
             made = clip;
-            return clip == null ? "The pattern couldn't be made." : null;
+            return clip == null ? "The clip couldn't be made." : null;
         }
 
-        /// <summary>Places an existing pattern as a clip (shared with its other places). It plays once over its length, or <paramref name="length"/>.</summary>
+        /// <summary>Places an existing clip as a clip (shared with its other places). It plays once over its length, or <paramref name="length"/>.</summary>
         public string Place(ISequence lane, IClip clip, int time, int length = 0)
         {
             if (Lane(lane, clip) is { } why) return why;
             string result = null;
             Group(() =>
             {
-                // An audio clip is never shared: each place has a pattern of its own (the audio asset is what they share).
+                // An audio clip is never shared: each place has a clip of its own (the audio asset is what they share).
                 if (IsAudio(clip) && Uses(clip) > 0)
                 {
                     clip = CloneAudioClip(clip, lane.Machine);
-                    if (clip == null) { result = "The pattern couldn't be copied."; return; }
+                    if (clip == null) { result = "The clip couldn't be copied."; return; }
                 }
                 var spec = NewSpec(clip, Math.Max(0, time), length > 0 ? length : Math.Max(1, clip.Length));
                 var plan = new Plan(this) { Writer = IsAudio(clip) ? clip : null };
@@ -459,7 +459,7 @@ namespace ReBuzz.Core
 
         public enum CopyMode { Move, Independent, Linked }
 
-        /// <summary>Moves a clip (to another lane of its machine, or in time), or puts a copy there: independent (a new pattern, "Bass 2") or linked (the same pattern).</summary>
+        /// <summary>Moves a clip (to another lane of its machine, or in time), or puts a copy there: independent (a new clip, "Bass 2") or linked (the same clip).</summary>
         public string Move(ClipItem item, ISequence lane, int time, CopyMode mode)
         {
             if (Lane(lane, item.Clip) is { } why) return why;
@@ -473,13 +473,13 @@ namespace ReBuzz.Core
                 var how = audio && mode == CopyMode.Linked ? CopyMode.Independent : mode;      // audio clips are always independent copies
                 if (audio && lane.Machine != clip.Machine)
                 {
-                    clip = CloneAudioClip(clip, lane.Machine);                          // to another Neo Audio track: a pattern there
-                    if (clip == null) { result = "The pattern couldn't be copied."; return; }
+                    clip = CloneAudioClip(clip, lane.Machine);                          // to another Neo Audio track: a clip there
+                    if (clip == null) { result = "The clip couldn't be copied."; return; }
                 }
                 else if (how == CopyMode.Independent)
                 {
                     clip = CloneClip(item.Clip);
-                    if (clip == null) { result = "The pattern couldn't be copied."; return; }
+                    if (clip == null) { result = "The clip couldn't be copied."; return; }
                 }
                 var plan = new Plan(this) { Writer = audio ? clip : null };
                 var moved = item.Spec with { Clip = clip, Time = time };
@@ -488,7 +488,7 @@ namespace ReBuzz.Core
                 plan.Overwrite(lane, time, time + span);
                 plan.Write(lane, moved, newId: how != CopyMode.Move || item.Single || !ReferenceEquals(clip, item.Clip));
                 Commit(plan);
-                // Moved to another track: the pattern left behind is empty of clips, so it goes.
+                // Moved to another track: the clip left behind is empty of clips, so it goes.
                 if (audio && how == CopyMode.Move && !ReferenceEquals(clip, item.Clip) && Uses(item.Clip) == 0)
                     core.SessionLayout.DeleteClip(item.Clip);
             });
@@ -500,7 +500,7 @@ namespace ReBuzz.Core
         {
             var s = item.Spec;
             time = Math.Min(time, s.End - 1);
-            if (time < s.Time) time = Math.Max(time, s.Time - s.Start);        // not before the pattern's start
+            if (time < s.Time) time = Math.Max(time, s.Time - s.Start);        // not before the clip's start
             time = Math.Max(0, time);
             if (time == s.Time) return null;
             Group(() =>
@@ -549,7 +549,7 @@ namespace ReBuzz.Core
         /// <summary>Joins a clip with the one that starts where it ends, if that plays on from it.</summary>
         public string Join(ClipItem a, ClipItem b)
         {
-            if (a.Sequence != b.Sequence || a.End != b.Time || !ReferenceEquals(a.Clip, b.Clip)) return "Join clips of one pattern that touch.";
+            if (a.Sequence != b.Sequence || a.End != b.Time || !ReferenceEquals(a.Clip, b.Clip)) return "Join clips of one clip that touch.";
             var merged = a.Spec with { Length = a.Spec.Length + b.Spec.Length };
             if (a.Spec.Loop != b.Spec.Loop || a.Spec.LoopStart != b.Spec.LoopStart || a.Spec.LoopEnd != b.Spec.LoopEnd || a.Spec.Gain != b.Spec.Gain) return "These clips don't loop the same way.";
             // The same play, whichever way it is cut into events: a split in the middle of a repeat leaves two events where the whole has one.
@@ -590,8 +590,8 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// NA3: the clip's region as the Audio page sets it: where in the pattern it starts playing (<paramref name="start"/>), and the loop's start and end
-        /// (<paramref name="loopEnd"/> 0 or the pattern's length is its end), in pattern ticks; null leaves one as it is. Without a loop the clip can't
+        /// NA3: the clip's region as the Audio page sets it: where in the clip it starts playing (<paramref name="start"/>), and the loop's start and end
+        /// (<paramref name="loopEnd"/> 0 or the clip's length is its end), in clip ticks; null leaves one as it is. Without a loop the clip can't
         /// play past the new region, so it is cut to it. One undo step.
         /// </summary>
         public string SetRegion(ClipItem item, int? start, int? loopStart, int? loopEnd)
@@ -616,14 +616,14 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>Gives the clip a pattern of its own (a copy of the one it shares).</summary>
+        /// <summary>Gives the clip a clip of its own (a copy of the one it shares).</summary>
         public string MakeUnique(ClipItem item)
         {
             string result = null;
             Group(() =>
             {
                 var copy = CloneClip(item.Clip);
-                if (copy == null) { result = "The pattern couldn't be copied."; return; }
+                if (copy == null) { result = "The clip couldn't be copied."; return; }
                 var plan = new Plan(this);
                 plan.Remove(item);
                 plan.Write(item.Sequence, item.Spec with { Clip = copy });
@@ -641,7 +641,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Comping (daw-modes.md §4.4, AR5): the range of a take lane's clip goes on a main lane as an event of the take's pattern,
+        /// Comping (daw-modes.md §4.4, AR5): the range of a take lane's clip goes on a main lane as an event of the take's clip,
         /// trimmed to the range (<c>Offset</c>/<c>End</c>): no notes are copied. What the main lane held there is cut away.
         /// </summary>
         public string Comp(ISequence take, int from, int to, ISequence main)
@@ -661,19 +661,19 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>A copy of a clip right after it, with a pattern of its own.</summary>
+        /// <summary>A copy of a clip right after it, with a clip of its own.</summary>
         public string Duplicate(ClipItem item) => Move(item, item.Sequence, item.End, CopyMode.Independent);
 
-        /// <summary>Pastes a copied clip as an independent copy (a new pattern) on a lane of its machine at a time.</summary>
+        /// <summary>Pastes a copied clip as an independent copy (a new clip) on a lane of its machine at a time.</summary>
         public string Paste(ClipCopy copy, ISequence lane, int time)
         {
             if (Lane(lane, copy.Clip) is { } why) return why;
-            if (copy.Clip.Machine == null || !copy.Clip.Machine.Clips.Contains(copy.Clip)) return "The pattern is gone.";
+            if (copy.Clip.Machine == null || !copy.Clip.Machine.Clips.Contains(copy.Clip)) return "The clip is gone.";
             string result = null;
             Group(() =>
             {
                 var clip = IsAudio(copy.Clip) && lane.Machine != copy.Clip.Machine ? CloneAudioClip(copy.Clip, lane.Machine) : CloneClip(copy.Clip);
-                if (clip == null) { result = "The pattern couldn't be copied."; return; }
+                if (clip == null) { result = "The clip couldn't be copied."; return; }
                 var spec = new ClipSpec(0, clip, Math.Max(0, time), copy.Length, copy.Start, copy.LoopStart, copy.LoopEnd, copy.Loop, copy.Gain);
                 var plan = new Plan(this) { Writer = IsAudio(clip) ? clip : null };
                 plan.Overwrite(lane, spec.Time, spec.Time + spec.Segments().Sum(s => s.Length));

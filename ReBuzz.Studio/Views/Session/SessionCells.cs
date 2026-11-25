@@ -24,7 +24,7 @@ namespace ReBuzz.Studio.Views.Session
         static bool IsLeft(PointerPressedEventArgs e, Visual relativeTo) => e.GetCurrentPoint(relativeTo).Properties.IsLeftButtonPressed;
 
         /// <summary>
-        /// One slot of the grid. A clip shows its pattern name on its colour; its ▶ area launches
+        /// One slot of the grid. A clip shows its clip name on its colour; its ▶ area launches
         /// on press (and releases on release, for Gate and Repeat clips), the rest selects
         /// (double-click edits, drag moves within the track). Clips with launch settings show
         /// them in short on the right (0.5). An empty slot has a small stop button for its

@@ -1,5 +1,5 @@
 // Fork: Space plays and stops the song in every view of the main window (Shell/TransportKeys.cs,
-// ReBuzz/Core/TransportCommands.cs), F5 and F8 still do; Shift+Space plays the pattern editor's pattern
+// ReBuzz/Core/TransportCommands.cs), F5 and F8 still do; Shift+Space plays the clip editor's clip
 // from its cursor. Not while typing in a box, and a focused button doesn't also click. Headless, with
 // the keys simulated.
 
@@ -66,7 +66,7 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
         }
 
-        /// <summary>A Neo Poly with a pattern, shown in the Pattern tab.</summary>
+        /// <summary>A Neo Poly with a clip, shown in the Clip tab.</summary>
         static IClip ClipShown(string name)
         {
             Core.SongCore.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
@@ -98,12 +98,12 @@ namespace ReBuzz.Studio.Tests
                         "Machines" => ((MachineView)content).Canvas,
                         "Sequence" => (SequenceView)content,
                         "Session" => (SessionView)content,
-                        "Pattern" => ClipGridView(),
+                        "Clip" => ClipGridView(),
                         _ => throw new ArgumentException(title),
                     };
                 }
 
-                foreach (var title in new[] { "Machines", "Pattern", "Sequence", "Session" })
+                foreach (var title in new[] { "Machines", "Clip", "Sequence", "Session" })
                 {
                     var target = Target(title);
                     Focus(target);
@@ -227,7 +227,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(ToolTip.GetTip(play) as string, Does.Contain("Shift+Space"));
 
                 Space(window, RawInputModifiers.Shift);
-                Assert.That(clip.IsPlayingSolo, Is.True, "Shift+Space plays the pattern on its own");
+                Assert.That(clip.IsPlayingSolo, Is.True, "Shift+Space plays the clip on its own");
                 Assert.That(Core.PlayRequested, Is.True);
                 Assert.That(play.IsChecked, Is.True, "the editor's ▶ is on");
                 Space(window, RawInputModifiers.Shift);
@@ -235,7 +235,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.PlayRequested, Is.False);
                 Assert.That(play.IsChecked, Is.False);
 
-                // Space stops the pattern too, and its ▶ goes out (so the next Shift+Space plays again).
+                // Space stops the clip too, and its ▶ goes out (so the next Shift+Space plays again).
                 Space(window, RawInputModifiers.Shift);
                 Assert.That(clip.IsPlayingSolo, Is.True);
                 Space(window);
@@ -294,7 +294,7 @@ namespace ReBuzz.Studio.Tests
                 entry.Run();
                 Assert.That(Core.PlayRequested, Is.False, "and stops");
 
-                Assert.That(MainWindow.ShortcutsText(mac: false), Does.Contain("Space\tPlay or Stop").And.Contain("Shift+Space\tplay the pattern"));
+                Assert.That(MainWindow.ShortcutsText(mac: false), Does.Contain("Space\tPlay or Stop").And.Contain("Shift+Space\tplay the clip"));
                 Assert.That(MainWindow.ShortcutsText(mac: true), Does.Contain("⇧Space"));
                 // Fork (ux-overhaul.md §4): the tooltips from the keymap: the button's keys, and Space.
                 var buttons = window.Transport.GetVisualDescendants().OfType<Button>().ToList();

@@ -1,6 +1,6 @@
 // Fork (docs/specs/neo-audio.md "Takes and comping"): takes and comps of a track, as the Arrange view's take lanes and the agent's `takes` tool use them.
 // A take is a clip on a take lane (a lane the engine never plays); a comp is the main lane's clips made from ranges of takes. Nothing is copied or
-// destroyed: an audio comp piece is a clip of its own pattern over the same asset, trimmed to its range, with a crossfade of a few milliseconds at
+// destroyed: an audio comp piece is a clip of its own clip over the same asset, trimmed to its range, with a crossfade of a few milliseconds at
 // each cut. Every edit here is one undo step.
 
 using System;
@@ -75,7 +75,7 @@ namespace ReBuzz.Core
             return result;
         }
 
-        /// <summary>A take is used while the main lane plays it (its pattern, or an audio comp piece of its asset) anywhere over it.</summary>
+        /// <summary>A take is used while the main lane plays it (its clip, or an audio comp piece of its asset) anywhere over it.</summary>
         bool IsUsed(ClipItem take, List<ClipItem> main)
         {
             string asset = IsAudio(take.Clip) ? AudioOf(take.Clip)?.Asset : null;
@@ -97,7 +97,7 @@ namespace ReBuzz.Core
             {
                 var copy = CloneAudioClip(item.Clip, main.Machine);
                 if (copy == null) { result = "The take couldn't be copied."; return; }
-                // The piece plays the take's audio over the same song time: its start in the pattern is where the range starts in the take.
+                // The piece plays the take's audio over the same song time: its start in the clip is where the range starts in the take.
                 var spec = new ClipSpec(0, copy, from, to - from, item.Spec.ClipPositionAt(from) ?? 0, 0, 0, false, item.Spec.Gain);
                 var plan = new Plan(this) { NoCrossfade = true };
                 plan.Overwrite(main, from, to);
@@ -178,7 +178,7 @@ namespace ReBuzz.Core
             return Consolidate(main, from ?? audio.Min(i => i.Time), to ?? audio.Max(i => i.End), out made);
         }
 
-        /// <summary>Deletes the takes the main lane doesn't play (their clips, their patterns, and take lanes left empty). Returns how many.</summary>
+        /// <summary>Deletes the takes the main lane doesn't play (their clips, their clips, and take lanes left empty). Returns how many.</summary>
         public int DeleteUnusedTakes(IMachine machine)
         {
             var unused = TakesOf(machine).Where(t => !t.Used).ToList();

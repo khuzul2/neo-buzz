@@ -110,7 +110,7 @@ namespace ReBuzz.AgentTests
 
             public void ShowClip(string machine, string clip, bool pianoRoll)
             {
-                Calls.Add($"pattern {machine}/{clip} {(pianoRoll ? "roll" : "tracker")}");
+                Calls.Add($"clip {machine}/{clip} {(pianoRoll ? "roll" : "tracker")}");
                 S = S with { DetailOpen = true, DetailPage = pianoRoll ? "piano_roll" : "tracker", Machine = machine, Clip = clip };
             }
 
@@ -136,7 +136,7 @@ namespace ReBuzz.AgentTests
         sealed class FakeApp : IAppServices
         {
             public string Folder = TestTemp.Path("app-control-" + Guid.NewGuid().ToString("N"));
-            public Dictionary<string, string> Values = new() { ["general.PatternLength"] = "16", ["general.AutomaticBackups"] = "True", ["general.SequenceView"] = "ModernVertical",
+            public Dictionary<string, string> Values = new() { ["general.ClipLength"] = "16", ["general.AutomaticBackups"] = "True", ["general.SequenceView"] = "ModernVertical",
                 ["advanced.Multithreading"] = "True", ["advanced.AudioBufferFillThread"] = "False", ["agent.AllowAgents"] = "True", ["agent.Port"] = "7481",
                 ["safety.SafetyLimiter"] = "True", ["audio.BufferSize"] = "256", ["sync.Link"] = "False", ["sync.MidiClockOut"] = "" };
             public List<(string What, bool Changes)> Calls = new();
@@ -168,7 +168,7 @@ namespace ReBuzz.AgentTests
 
             public IReadOnlyList<SettingEntry> Settings() => new[]
             {
-                E("general.PatternLength", SettingKind.Int, "16", "Default pattern length.", min: 1, max: 512),
+                E("general.ClipLength", SettingKind.Int, "16", "Default clip length.", min: 1, max: 512),
                 E("general.AutomaticBackups", SettingKind.Bool, "True", "Rename the previous version when saving."),
                 E("general.SequenceView", SettingKind.Choice, "ModernVertical", "Sequence view type.", options: new[] { "ModernVertical", "ModernHorizontal" }),
                 E("advanced.Multithreading", SettingKind.Bool, "True", "Use several threads to render audio.", cls: SettingClass.Engine),
@@ -268,19 +268,19 @@ namespace ReBuzz.AgentTests
             var (s, _) = Make();
             var all = Call(s, "settings_get");
             Assert.That(all.Data["total"]!.GetValue<int>(), Is.EqualTo(11));
-            var one = Call(s, "settings_get", Args(("key", "general.PatternLength")));
+            var one = Call(s, "settings_get", Args(("key", "general.ClipLength")));
             var row = one.Data["settings"]![0]!;
             Assert.That(row["value"]!.GetValue<string>(), Is.EqualTo("16"));
             Assert.That(row["type"]!.GetValue<string>(), Is.EqualTo("int"));
             Assert.That(row["min"]!.GetValue<double>(), Is.EqualTo(1));
-            Assert.That(Call(s, "settings_get", Args(("key", "PatternLength"))).Data["count"]!.GetValue<int>(), Is.EqualTo(1), "a bare name works when unique");
+            Assert.That(Call(s, "settings_get", Args(("key", "ClipLength"))).Data["count"]!.GetValue<int>(), Is.EqualTo(1), "a bare name works when unique");
             Assert.That(Call(s, "settings_get", Args(("section", "advanced"))).Data["settings"]!.AsArray().Select(x => x!["class"]!.GetValue<string>()), Is.All.EqualTo("engine"));
             Assert.That(Call(s, "settings_get", Args(("section", "safety"))).Data["settings"]![0]!["class"]!.GetValue<string>(), Is.EqualTo("safety"));
             Assert.That(Call(s, "settings_get", Args(("search", "background thread"))).Data["settings"]![0]!["restart_required"]!.GetValue<bool>(), Is.True);
             Assert.That(Call(s, "settings_get", Args(("changed_only", true))).Data["count"]!.GetValue<int>(), Is.EqualTo(1).Or.GreaterThanOrEqualTo(1), "agents on is a change from the default");
-            var err = Call(s, "settings_get", Args(("key", "general.PatternLenght")));
+            var err = Call(s, "settings_get", Args(("key", "general.ClipLenght")));
             Assert.That(err.Error, Is.True);
-            Assert.That(err.Text, Does.Contain("Did you mean \"general.PatternLength\""));
+            Assert.That(err.Text, Does.Contain("Did you mean \"general.ClipLength\""));
         }
 
         [Test]
@@ -310,16 +310,16 @@ namespace ReBuzz.AgentTests
         public void SettingsSetValidatesWritesLogsAndSaysWhenARestartIsNeeded()
         {
             var (s, app) = Make();
-            var r = Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
+            var r = Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 32)));
             Assert.That(r.Error, Is.False, r.Text);
             Assert.That(r.Data["previous"]!.GetValue<string>(), Is.EqualTo("16"));
             Assert.That(r.Data["value"]!.GetValue<long>(), Is.EqualTo(32));
             Assert.That(r.Data["restart_required"]!.GetValue<bool>(), Is.False);
-            Assert.That(app.Values["general.PatternLength"], Is.EqualTo("32"));
+            Assert.That(app.Values["general.ClipLength"], Is.EqualTo("32"));
 
-            Assert.That(Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32))).Data["changed"]!.GetValue<bool>(), Is.False, "same value: no change, nothing logged");
-            Assert.That(Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 9999))).Text, Does.Contain("1 to 512"));
-            Assert.That(Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 3.5))).Text, Does.Contain("whole number"));
+            Assert.That(Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 32))).Data["changed"]!.GetValue<bool>(), Is.False, "same value: no change, nothing logged");
+            Assert.That(Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 9999))).Text, Does.Contain("1 to 512"));
+            Assert.That(Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 3.5))).Text, Does.Contain("whole number"));
             Assert.That(Call(s, "settings_set", Args(("key", "general.AutomaticBackups"), ("value", "off"))).Data["value"]!.GetValue<bool>(), Is.False);
             Assert.That(app.Values["general.AutomaticBackups"], Is.EqualTo("False"));
             Assert.That(Call(s, "settings_set", Args(("key", "general.SequenceView"), ("value", "modernhorizontal"))).Data["value"]!.GetValue<string>(), Is.EqualTo("ModernHorizontal"));
@@ -340,17 +340,17 @@ namespace ReBuzz.AgentTests
         public void TheAuditLogKeepsEveryChangeNewestFirstWithTheValueItReplaced()
         {
             var (s, _) = Make();
-            Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
+            Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 32)));
             Call(s, "settings_set", Args(("key", "advanced.Multithreading"), ("value", false)));
-            Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 64)));
+            Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 64)));
             var h = Call(s, "settings_history");
             Assert.That(h.Data["count"]!.GetValue<int>(), Is.EqualTo(3));
             var first = h.Data["entries"]![0]!;
-            Assert.That(first["key"]!.GetValue<string>(), Is.EqualTo("general.PatternLength"));
+            Assert.That(first["key"]!.GetValue<string>(), Is.EqualTo("general.ClipLength"));
             Assert.That(first["from"]!.GetValue<string>(), Is.EqualTo("32"));
             Assert.That(first["to"]!.GetValue<string>(), Is.EqualTo("64"));
             Assert.That(h.Data["entries"]![1]!["class"]!.GetValue<string>(), Is.EqualTo("engine"));
-            Assert.That(Call(s, "settings_history", Args(("key", "general.PatternLength"))).Data["count"]!.GetValue<int>(), Is.EqualTo(2));
+            Assert.That(Call(s, "settings_history", Args(("key", "general.ClipLength"))).Data["count"]!.GetValue<int>(), Is.EqualTo(2));
             Assert.That(Call(s, "settings_history", Args(("limit", 1))).Data["count"]!.GetValue<int>(), Is.EqualTo(1));
         }
 
@@ -364,8 +364,8 @@ namespace ReBuzz.AgentTests
             SettingsService.Changed += On;
             try
             {
-                Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
-                var entry = app.Settings().Single(e => e.Key == "general.PatternLength");
+                Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 32)));
+                var entry = app.Settings().Single(e => e.Key == "general.ClipLength");
                 Assert.That(SettingsService.Apply(app, entry, SettingsService.Normalize(entry, "48")), Is.EqualTo("48"));
                 Assert.That(SettingsService.Apply(app, entry, "48"), Is.EqualTo("48"), "no change, nothing logged");
                 var restart = app.Settings().Single(e => e.Key == "advanced.AudioBufferFillThread");
@@ -380,7 +380,7 @@ namespace ReBuzz.AgentTests
                 Assert.That(h[2]!["source"]!.GetValue<string>(), Is.EqualTo("Agent"));
                 Assert.That(seen.Select(c => (c.Key, c.Source, c.RestartRequired)), Is.EqualTo(new[]
                 {
-                    ("general.PatternLength", "Agent", false), ("general.PatternLength", "Manual", false), ("advanced.AudioBufferFillThread", "Manual", true),
+                    ("general.ClipLength", "Agent", false), ("general.ClipLength", "Manual", false), ("advanced.AudioBufferFillThread", "Manual", true),
                 }));
 
                 // The window's checks are the tools': a value out of range is refused with what the setting takes.
@@ -390,8 +390,8 @@ namespace ReBuzz.AgentTests
 
                 // Restore Defaults is settings_reset: a section, logged as Manual, leaving the agent connection's keys.
                 var reset = SettingsService.Reset(app, null, "general");
-                Assert.That(reset, Is.EqualTo(new[] { "general.PatternLength" }));
-                Assert.That(app.Values["general.PatternLength"], Is.EqualTo("16"));
+                Assert.That(reset, Is.EqualTo(new[] { "general.ClipLength" }));
+                Assert.That(app.Values["general.ClipLength"], Is.EqualTo("16"));
                 Assert.That(SettingsService.Reset(app, null, "agent"), Is.Empty, "the switch and the port are left alone");
                 Assert.That(Call(s, "settings_history", Args(("limit", 1))).Data["entries"]![0]!["source"]!.GetValue<string>(), Is.EqualTo("Manual"));
             }
@@ -405,13 +405,13 @@ namespace ReBuzz.AgentTests
         public void SettingsResetPutsBackOneKeyASectionOrEverythingExceptTheConnection()
         {
             var (s, app) = Make();
-            Call(s, "settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
+            Call(s, "settings_set", Args(("key", "general.ClipLength"), ("value", 32)));
             Call(s, "settings_set", Args(("key", "advanced.Multithreading"), ("value", false)));
             Call(s, "settings_set", Args(("key", "advanced.AudioBufferFillThread"), ("value", true)));
             Assert.That(Call(s, "settings_reset", new JsonObject()).Error, Is.True, "one of key, section, all");
-            var one = Call(s, "settings_reset", Args(("key", "general.PatternLength")));
+            var one = Call(s, "settings_reset", Args(("key", "general.ClipLength")));
             Assert.That(one.Data["reset"]!.AsArray().Count, Is.EqualTo(1));
-            Assert.That(app.Values["general.PatternLength"], Is.EqualTo("16"));
+            Assert.That(app.Values["general.ClipLength"], Is.EqualTo("16"));
             var section = Call(s, "settings_reset", Args(("section", "advanced")));
             Assert.That(section.Data["reset"]!.AsArray().Count, Is.EqualTo(2));
             Assert.That(section.Data["restart_required"]!.AsArray().Select(x => x!.GetValue<string>()), Is.EqualTo(new[] { "advanced.AudioBufferFillThread" }));
@@ -794,11 +794,11 @@ namespace ReBuzz.AgentTests
             Assert.That(Call(s, "view_show", Args(("view", "session"))).Data["view"]!.GetValue<string>(), Is.EqualTo("Session"));
             Assert.That(Call(s, "view_show", Args(("view", "Sequence"))).Data["view"]!.GetValue<string>(), Is.EqualTo("Arrangement"), "the old name works");
             Assert.That(Call(s, "view_show", Args(("view", "Mixer"))).Error, Is.True);
-            var roll = Call(s, "view_show", Args(("machine", "Bass"), ("pattern", "Verse"), ("editor", "piano_roll")));
+            var roll = Call(s, "view_show", Args(("machine", "Bass"), ("clip", "Verse"), ("editor", "piano_roll")));
             Assert.That(roll.Data["detail"]!["page"]!.GetValue<string>(), Is.EqualTo("piano_roll"));
-            Assert.That(roll.Data["selection"]!["pattern"]!.GetValue<string>(), Is.EqualTo("Verse"));
-            Assert.That(Call(s, "view_show", Args(("machine", "Bass"))).Error, Is.True, "machine goes with pattern");
-            Assert.That(Call(s, "view_show", Args(("view", "Session"), ("machine", "Bass"), ("pattern", "Verse"))).Error, Is.True);
+            Assert.That(roll.Data["selection"]!["clip"]!.GetValue<string>(), Is.EqualTo("Verse"));
+            Assert.That(Call(s, "view_show", Args(("machine", "Bass"))).Error, Is.True, "machine goes with clip");
+            Assert.That(Call(s, "view_show", Args(("view", "Session"), ("machine", "Bass"), ("clip", "Verse"))).Error, Is.True);
 
             Assert.That(Call(s, "machine_open_editor", Args(("machine", "Bass"), ("window", "parameters"))).Error, Is.False);
             Assert.That(Call(s, "machine_open_editor", Args(("machine", "Bass"), ("window", "editor"))).Text, Does.Contain("no editor window"));
@@ -827,7 +827,7 @@ namespace ReBuzz.AgentTests
         {
             var (s, app) = Make();
             var v = app.ViewFake = new FakeView { Recording = true };
-            var clip = Call(s, "view_show", Args(("machine", "Bass"), ("pattern", "Verse")));
+            var clip = Call(s, "view_show", Args(("machine", "Bass"), ("clip", "Verse")));
             Assert.That(clip.Error, Is.True);
             Assert.That(clip.Text, Does.Contain("recording"));
             var window = Call(s, "machine_open_editor", Args(("machine", "Bass")));

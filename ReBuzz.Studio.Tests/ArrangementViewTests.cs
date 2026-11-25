@@ -128,7 +128,7 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
 
-            /// <summary>The clips of a lane as text: "0-16 Name 0 +0" (start-end, pattern, the part it starts with).</summary>
+            /// <summary>The clips of a lane as text: "0-16 Name 0 +0" (start-end, clip, the part it starts with).</summary>
             public string Clips(ISequence lane) => string.Join(" | ", Canvas.ItemsOf(lane).Select(i => $"{i.Time}-{i.End} {i.Clip.Name} from {i.Spec.Start}{(i.Spec.Loop ? " loop" : "")}"));
 
             public void Dispose()
@@ -211,7 +211,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig("Lead");
             var lane = rig.Lane("Lead");
             rig.DoubleClick(rig.At(lane, 0, 2));
-            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0 loop"), "a clip of the session's clip length with a pattern of its own");
+            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0 loop"), "a clip of the session's clip length with a clip of its own");
             var clip = Core.Song.Machines.First(m => m.Name == "Lead").Clips.Single();
             Assert.That(clip.Length, Is.EqualTo(16));
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 48));
@@ -243,7 +243,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(original, Is.Positive);
 
             rig.Drag(rig.At(lane, 4), rig.At(lane, 36), Cmd);
-            Assert.That(machine.Clips.Count, Is.EqualTo(2), "a copy-drag makes a new pattern");
+            Assert.That(machine.Clips.Count, Is.EqualTo(2), "a copy-drag makes a new clip");
             var copy = lane.Events[32].Clip;
             Assert.That(copy.Name, Is.Not.EqualTo(machine.Clips.First(p => p.Name == "00").Name));
             Assert.That(lane.Events[32].PlacementId, Is.Not.EqualTo(original), "and a clip id of its own");
@@ -251,19 +251,19 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(lane), Is.EqualTo($"0:00[0,0] 32:{copy.Name}[0,0]"));
 
             rig.Drag(rig.At(lane, 4), rig.At(lane, 68), RawInputModifiers.Alt);
-            Assert.That(machine.Clips.Count, Is.EqualTo(2), "an Alt-drag makes no pattern");
-            Assert.That(lane.Events[64].Clip.Name, Is.EqualTo("00"), "it is another place of the same pattern");
+            Assert.That(machine.Clips.Count, Is.EqualTo(2), "an Alt-drag makes no clip");
+            Assert.That(lane.Events[64].Clip.Name, Is.EqualTo("00"), "it is another place of the same clip");
             Assert.That(lane.Events[64].PlacementId, Is.Not.EqualTo(original).And.Not.EqualTo(lane.Events[32].PlacementId), "with its own id");
             Assert.That(rig.Canvas.UsesOf(machine.Clips.First(p => p.Name == "00")), Is.EqualTo(2), "the shared badge counts the places");
 
-            // Make unique: the clip gets a pattern of its own.
+            // Make unique: the clip gets a clip of its own.
             rig.Click(rig.At(lane, 68));
             rig.Key(PhysicalKey.U);
             Assert.That(machine.Clips.Count, Is.EqualTo(3));
             Assert.That(lane.Events[64].Clip.Name, Is.Not.EqualTo("00"));
             Assert.That(rig.Canvas.UsesOf(machine.Clips.First(p => p.Name == "00")), Is.EqualTo(1));
             rig.Key(PhysicalKey.Z, Cmd);
-            Assert.That(lane.Events[64].Clip.Name, Is.EqualTo("00"), "undo gives the shared pattern back");
+            Assert.That(lane.Events[64].Clip.Name, Is.EqualTo("00"), "undo gives the shared clip back");
         }
 
         [AvaloniaTest]
@@ -276,7 +276,7 @@ namespace ReBuzz.Studio.Tests
             string before = Events(lane);
             rig.Click(rig.At(lane, 24));           // the click puts the cursor on the beat
             rig.Key(PhysicalKey.S);
-            Assert.That(rig.Clips(lane), Is.EqualTo("0-24 00 from 0 loop | 24-48 00 from 8 loop"), "two clips, the second starting partway into the pattern");
+            Assert.That(rig.Clips(lane), Is.EqualTo("0-24 00 from 0 loop | 24-48 00 from 8 loop"), "two clips, the second starting partway into the clip");
             Assert.That(lane.Events[0].PlacementId, Is.Not.EqualTo(lane.Events[24].PlacementId));
             rig.Click(rig.At(lane, 4));
             rig.Key(PhysicalKey.J);
@@ -292,10 +292,10 @@ namespace ReBuzz.Studio.Tests
             rig.DoubleClick(rig.At(lane, 0, 2));
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 64));
             rig.Click(rig.At(lane, 8));
-            rig.Key(PhysicalKey.L);                  // loop off: it plays its pattern once
+            rig.Key(PhysicalKey.L);                  // loop off: it plays its clip once
             Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0"));
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 48));
-            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0"), "without a loop the right edge can't make it longer than its pattern");
+            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0"), "without a loop the right edge can't make it longer than its clip");
             rig.Click(rig.At(lane, 8));
             rig.Key(PhysicalKey.L);
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 48));
@@ -428,7 +428,7 @@ namespace ReBuzz.Studio.Tests
             rig.Drag(rig.At(bass, 96, -2), rig.At(bass, 88));
 
             string leadName = lead.Events[0].Clip.Name, copyName = lead.Events[64].Clip.Name, bassName = bass.Events.OrderBy(e => e.Key).First().Value.Clip.Name;
-            Assert.That(copyName, Is.Not.EqualTo(leadName), "the copy-drag made its own pattern");
+            Assert.That(copyName, Is.Not.EqualTo(leadName), "the copy-drag made its own clip");
             Assert.That(Events(lead), Is.EqualTo($"0:{leadName}[0,0] 16:{leadName}[0,0] 32:{leadName}[0,0] 48:{leadName}[0,0] 64:{copyName}[0,0] 80:{copyName}[0,0] 96:{copyName}[0,0] 112:{copyName}[0,0]"),
                 "Lead: two looped clips, as the mouse made them");
             Assert.That(Events(bass), Is.EqualTo($"4:{bassName}[4,0] 16:{bassName}[0,0] 32:{bassName}[0,8] 80:{second.Name}[0,8]"),

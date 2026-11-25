@@ -1,5 +1,5 @@
 // Fork (docs/specs/history-snapshots.md HS2): full-song snapshots. A snapshot is the song's own file sections
-// (every machine's saved state, patterns, sequences, wires, parameters, waves, the Session View layout) cut
+// (every machine's saved state, clips, sequences, wires, parameters, waves, the Session View layout) cut
 // into content-defined chunks in <song>.history/ plus a small JSON manifest.
 //
 // Live safety: capture builds the sections on the UI thread (the work a save does before it touches the

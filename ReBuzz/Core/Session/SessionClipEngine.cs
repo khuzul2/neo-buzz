@@ -10,7 +10,7 @@ namespace ReBuzz.Core.Session
 {
     /// <summary>
     /// Audio tracks, engine side (docs/specs/session-view.md 1.0): the Session Clip Player
-    /// machine's work. Each block, the machine's patterns that play (session clips, and the
+    /// machine's work. Each block, the machine's clips that play (session clips, and the
     /// arrangement's) render their audio clips at the beat they are at, a take records its input,
     /// and its input is heard when it should be (Monitor). After the mix (<see cref="AfterMix"/>),
     /// takes resampling the master record it. Audio thread; no allocation.
@@ -54,7 +54,7 @@ namespace ReBuzz.Core.Session
         internal static PlayerState PlayerOf(IMachine machine) => machine != null && players.TryGetValue(machine, out var p) ? p : null;
 
         /// <summary>
-        /// A take recording while its pattern plays: the master output (resampling) or its
+        /// A take recording while its clip plays: the master output (resampling) or its
         /// track's input (which the player writes in its Work).
         /// </summary>
         internal sealed class TakeCapture
@@ -71,7 +71,7 @@ namespace ReBuzz.Core.Session
             public bool Master { get; }
         }
 
-        /// <summary>The beat of a pattern playing in this block, at its first sample.</summary>
+        /// <summary>The beat of a clip playing in this block, at its first sample.</summary>
         static double BeatOf(ClipCore clip, MasterInfo mi)
         {
             int samplesPerTick = mi.SamplesPerTick > 0 ? mi.SamplesPerTick : 1;
@@ -173,7 +173,7 @@ namespace ReBuzz.Core.Session
                         Record(player, capture, audio, n, hasInput);
                         capture.LastBlock = ReBuzzCore.GlobalState.AudioFrame;
                     }
-                    // An arrangement clip with fades knows where it is in its clip (WorkManager.UpdatePatternPositions).
+                    // An arrangement clip with fades knows where it is in its clip (WorkManager.UpdateClipPositions).
                     double clipPos = double.NaN, clipLeft = double.NaN;
                     if (clip.ArrangementSinceClipStart != int.MinValue)
                     {

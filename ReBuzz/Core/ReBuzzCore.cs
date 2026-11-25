@@ -309,7 +309,7 @@ namespace ReBuzz.Core
 
         /// <summary>
         /// Fork (session-view.md 0.5): a scene's tempo, set from the audio thread on its launch
-        /// tick. Not recorded into the master's pattern, which would talk to the pattern editor
+        /// tick. Not recorded into the master's clip, which would talk to the clip editor
         /// from the audio thread.
         /// </summary>
         internal void SetBPMFromEngine(int value) => SetBPM(value, record: false);
@@ -1713,7 +1713,7 @@ namespace ReBuzz.Core
                 }
 
                 // Fork (docs/specs/clips.md §7.1, CU3): after the machines and the engine columns, the clips of every machine move into the
-                // store, in memory (the file is never written), and each pattern editor is told to view it. Where the engine plays every lane.
+                // store, in memory (the file is never written), and each clip editor is told to view it. Where the engine plays every lane.
                 if (ClipColumnCore.PlaysEveryLane)
                     ClipOpen.Run(this, OpenedNativeVersion >= 3 || NblCoreSections.IsSnapshot(filename));       // a snapshot is cut from the live song: its lanes are in the store's columns
 
@@ -2084,7 +2084,7 @@ namespace ReBuzz.Core
             MidiInOutEngine.SendMidiOut(device, data);
         }
 
-        /// <summary>The pattern editor's control (a WPF UserControl in the app), or null.</summary>
+        /// <summary>The clip editor's control (a WPF UserControl in the app), or null.</summary>
         public event Action<object> SetClipEditorControl;
         public event Action<IClip> SetClipEditorClipChanged;
         public event Action<IMachine> SelectedMachineChanged;
@@ -2120,9 +2120,9 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Fork (docs/specs/studio-mvp.md S6): a machine whose patterns a song loader is making, and
-        /// whose built-in contents go to an editor it makes next (BuiltInPattern.ToPXP). Making a
-        /// pattern doesn't give it an editor of its own meanwhile, which would stay in the song unused
+        /// Fork (docs/specs/studio-mvp.md S6): a machine whose clips a song loader is making, and
+        /// whose built-in contents go to an editor it makes next (BuiltInClip.ToPXP). Making a
+        /// clip doesn't give it an editor of its own meanwhile, which would stay in the song unused
         /// (a machine that is ready while it loads got one: a managed machine, or a placeholder).
         /// </summary>
         internal MachineCore ClipsAwaitingEditor;
@@ -2144,7 +2144,7 @@ namespace ReBuzz.Core
                     CreateEditor(mc, null, null);
                     em = mc.EditorMachine;
                 }
-                // Fork (mac-engine.md M2): no pattern editor machine in this host: nothing to link.
+                // Fork (mac-engine.md M2): no clip editor machine in this host: nothing to link.
                 if (em == null)
                 {
                     SetClipEditorClipChanged?.Invoke(p);
@@ -2153,7 +2153,7 @@ namespace ReBuzz.Core
 
                 object clipEditorControl = MachineManager.GetClipEditorControl(em);
 
-                // Calling this first time will link editor machine to machine owning pattern p.
+                // Calling this first time will link editor machine to machine owning clip p.
                 // Make "AssingEditorToMachineMethod"?
                 MachineManager.SetClipEditorClip(em, p);
                 if (SetClipEditorControl != null && clipEditorControl != null)
@@ -2368,13 +2368,13 @@ namespace ReBuzz.Core
 
         internal void CreateEditor(MachineCore machineToUseEditor, string clipEditor, byte[] clipeditordata, string editorName = null)
         {
-            // Create pattern editor but keep it hidden
+            // Create clip editor but keep it hidden
             MachineCore peMachine = null;
             IMachineDLL editorMachineDll = null;
 
-            // Fork (docs/specs/mac-engine.md M2): a host without the pattern editor machine (the Modern
-            // Pattern Editor is WPF; rebuzz-headless off Windows has none) gives machines no editor.
-            // Their patterns keep the engine-played note and automation columns, which play without one.
+            // Fork (docs/specs/mac-engine.md M2): a host without the clip editor machine (the Modern
+            // Clip Editor is WPF; rebuzz-headless off Windows has none) gives machines no editor.
+            // Their clips keep the engine-played note and automation columns, which play without one.
             if (!(clipEditor != null && MachineDLLs.ContainsKey(clipEditor)) && !MachineDLLs.ContainsKey(DefaultClipEditor))
                 return;
 
@@ -2388,7 +2388,7 @@ namespace ReBuzz.Core
                 {
                     if (!Gear.HasSameDataFormat(clipEditor, DefaultClipEditor))
                     {
-                        // Clear pattern editor data if not compatible with MPE
+                        // Clear clip editor data if not compatible with MPE
                         clipeditordata = null;
                     }
                     editorMachineDll = MachineDLLs[DefaultClipEditor];
@@ -2630,7 +2630,7 @@ namespace ReBuzz.Core
 
             RemoveAndDeleteMachine(machine);
 
-            // If this is a pattern editor machine, then make sure the current pattern editor
+            // If this is a clip editor machine, then make sure the current clip editor
             // isn't the machine being removed.
             if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
             {
@@ -2645,7 +2645,7 @@ namespace ReBuzz.Core
 
             RemoveAndDeleteMachine(patEdMach);
 
-            // If this is a pattern editor machine, then make sure the current pattern editor
+            // If this is a clip editor machine, then make sure the current clip editor
             // isn't the machine being removed.
             if (patEdMach.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
             {
@@ -2792,7 +2792,7 @@ namespace ReBuzz.Core
                 }
             }
 
-            // Clear pattern and sequece
+            // Clear clip and sequece
             master.ClipsList.Clear();
             SetClipEditorClip(null);
 
@@ -2957,7 +2957,7 @@ namespace ReBuzz.Core
                             new DisconnectMachinesAction(this, output, dispatcher, engineSettings).Do();
                         }
 
-                        //Remove and delete old pattern editor, and replace it with the new one
+                        //Remove and delete old clip editor, and replace it with the new one
                         RemoveClipEditorMachine(currentEditorMachine, machine);
                     }
                     catch (Exception)

@@ -1,5 +1,5 @@
 // Fork (docs/specs/neo-audio.md, AW1): the test signals of auto-warp, synthesised, with the exact beats and downbeats of each: a drum
-// pattern, a bass and drums mix, and a pad (weak onsets), over a steady tempo, a slow drift, a step and a ritardando; with silence at the
+// clip, a bass and drums mix, and a pad (weak onsets), over a steady tempo, a slow drift, a step and a ritardando; with silence at the
 // start and a pickup before bar 1 when asked. Shared by the unit tests and the evaluation tool (tools/AutoWarpEval).
 
 namespace ReBuzz.SessionTests.AutoWarp;

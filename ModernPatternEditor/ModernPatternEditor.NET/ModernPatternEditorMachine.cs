@@ -55,7 +55,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        // Add this if Pattern Editor Machine
+        // Add this if Clip Editor Machine
         // Fork (docs/specs/studio-mvp.md S6): off Windows the control is an object, so the machine
         // loads without a UI toolkit: the Avalonia view in the studio's build, null in rebuzz-headless's.
         public object ClipEditorControl()
@@ -98,7 +98,7 @@ namespace WDE.ModernPatternEditor
 
         public int GetTicksPerBeatDelegate(IClip clip, int playPosition)
         {
-            // We need column to get the specific RPB. Return the defaul for the pattern
+            // We need column to get the specific RPB. Return the defaul for the clip
             var p = ModernPatternEditor.MPEClipsDB.GetMPEClip(clip);
             if (p != null)
             {

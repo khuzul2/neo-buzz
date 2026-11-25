@@ -1,6 +1,6 @@
 #nullable disable
 // Fork addition (neo-buzz, docs/specs/ux-overhaul.md §3.5): how notes are named on screen. One setting (Preferences ▸
-// General ▸ Note names, GeneralSettings.NoteNames) that every note display reads: the pattern editor (three characters
+// General ▸ Note names, GeneralSettings.NoteNames) that every note display reads: the clip editor (three characters
 // in every naming: "C-3"), the piano roll, the keyboards under machine windows, MIDI mappings, the messages that name
 // notes. Display only: songs don't change; BuzzNote's names ("C-5" is MIDI 60, which Parse reads and chord files hold)
 // and the agent server's (scientific, "C4" is 60: docs/specs/mcp-server.md) stay as they are. Pure: no dependency on
@@ -62,7 +62,7 @@ namespace BuzzGUI.Common
 
         public static int Octave(int buzzOctave, NoteNaming n) => buzzOctave + Offset(n);
 
-        /// <summary>The Buzz octave of an octave as shown (typed into the pattern editor's octave digit).</summary>
+        /// <summary>The Buzz octave of an octave as shown (typed into the clip editor's octave digit).</summary>
         public static int BuzzOctave(int shownOctave) => shownOctave - Offset(naming);
 
         static int Offset(NoteNaming n) => n switch { NoteNaming.C3 => -2, NoteNaming.Scientific => -1, _ => 0 };

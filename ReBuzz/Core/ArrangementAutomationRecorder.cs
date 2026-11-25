@@ -19,7 +19,7 @@ namespace ReBuzz.Core
     {
         sealed class Pass
         {
-            public int Last = AutomationSweep.None;     // pattern time of the last point written
+            public int Last = AutomationSweep.None;     // clip time of the last point written
             public IClip Clip;
         }
 

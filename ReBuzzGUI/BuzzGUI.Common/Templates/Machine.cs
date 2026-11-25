@@ -37,7 +37,7 @@ namespace BuzzGUI.Common.Templates
 
         public byte[] CompressedData;
 
-        // The names a saved template stores (the file format keeps Pattern: docs/specs/clips.md section 9).
+        // The names a saved template stores (the file format keeps Clip: docs/specs/clips.md section 9).
         [XmlArray("Patterns")]
         public List<Clip> Clips;
         [XmlElement("CompressedPatternEditorData")]

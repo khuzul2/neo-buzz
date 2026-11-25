@@ -1,7 +1,7 @@
 // Fork (docs/specs/studio-mvp.md S4): the Sequence tab, the horizontal sequence editor
 // (ReBuzzGUI/ModernSequenceEditorHorizontal, studio-mvp.md §3.5) on Avalonia. The layout of
 // SequenceEditor.xaml: the code-drawn timeline (SequenceCanvas) with the add-track button and the
-// bar length in its corner, scroll bars, the zoom slider and the pattern list on the right. The
+// bar length in its corner, scroll bars, the zoom slider and the clip list on the right. The
 // keys, the context menu and the edit commands of SequenceEditor.xaml.cs are here; the edits go
 // through SequenceEditing onto the song's undo history.
 
@@ -37,8 +37,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public Control Create(StudioHost host) => new SequenceView(host.Core);
 
         /// <summary>
-        /// A pattern was chosen for editing in the sequence editor (a double click on its block, or
-        /// Return): the pattern editor (S6) shows it. The engine's pattern editor pattern is set too.
+        /// A clip was chosen for editing in the sequence editor (a double click on its block, or
+        /// Return): the clip editor (S6) shows it. The engine's clip editor clip is set too.
         /// </summary>
         public static event Action<IClip> ClipChosen;
 
@@ -70,7 +70,7 @@ namespace ReBuzz.Studio.Views.Sequence
         };
         /// <summary>The right panel's width: the mode switch's two buttons share it.</summary>
         internal const double RightPanelWidth = 160;
-        // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the pattern's length; arrangement: tracks with lanes and clips).
+        // Fork (daw-modes.md AR1): the mode switch (tracker: one row a sequence, edges set the clip's length; arrangement: tracks with lanes and clips).
         readonly ToggleButton trackerMode = new ToggleButton { Content = "Tracker", IsChecked = true, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center };
         readonly ToggleButton arrangementMode = new ToggleButton { Content = "Arrange", HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center };
         // Fork (daw-modes.md AR6): the tracker's vertical orientation (Buzz's default sequence view: time down, tracks as columns), remembered per user.
@@ -95,7 +95,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly List<Style> listStates = new List<Style>();
 
         /// <summary>
-        /// Fork (ux-overhaul.md §3.3): the theme's colours for the view's own controls (the canvas draws itself): the pattern
+        /// Fork (ux-overhaul.md §3.3): the theme's colours for the view's own controls (the canvas draws itself): the clip
         /// list and the corner's buttons. The dark theme's are the tokens'; Classic Buzz's are the editor's light ones.
         /// </summary>
         void ApplyLook()
@@ -118,7 +118,7 @@ namespace ReBuzz.Studio.Views.Sequence
             ListStates(clipList, look, listStates);
         }
 
-        /// <summary>Fork (ux-overhaul.md P2c): the cursor's track (and pattern) is the studio's selection; a track another view selected is the cursor's.</summary>
+        /// <summary>Fork (ux-overhaul.md P2c): the cursor's track (and clip) is the studio's selection; a track another view selected is the cursor's.</summary>
         void OnCursorChanged()
         {
             RefreshClipList();
@@ -135,7 +135,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 Arrangement.MoveCursor(Arrangement.CursorTime, lane);
         }
 
-        /// <summary>The arrangement's selected clip or lane is the studio's selection (its machine, and its pattern).</summary>
+        /// <summary>The arrangement's selected clip or lane is the studio's selection (its machine, and its clip).</summary>
         void OnArrangementSelection()
         {
             RefreshClipList();
@@ -311,7 +311,7 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 (record, "Record arrangement", "Record: the armed tracks (R in a track's header) write what you play at the play position into a new clip; stop to finish"),
                 (loopRecord, "Loop recording", "Loop recording: each pass of the song's loop is a take on a take lane; Shift-drag or C on a take comps it onto the main lane"),
-                (overdub, "Overdub", "Overdub: recording over a clip adds the notes to its pattern instead of making a new clip"),
+                (overdub, "Overdub", "Overdub: recording over a clip adds the notes to its clip instead of making a new clip"),
                 (envelopes, "Envelopes on clips", "Envelopes: every clip draws the curve of the parameter its track's header chose (the ∿ button), read only; a double click on a curve opens the clip's lane in the Detail panel (E)"),
                 (backToArrangement, "Back to arrangement", "Back to Arrangement: the tracks the Session View took over play the arrangement again"),
             })
@@ -335,7 +335,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Avalonia.Automation.AutomationProperties.SetName(arrangementMode, "Arrangement mode");
             Avalonia.Automation.AutomationProperties.SetName(verticalMode, "Vertical tracks");
             ToolTip.SetTip(verticalMode, "Vertical: time runs down the page and the tracks are columns, as in Buzz. Remembered");
-            ToolTip.SetTip(trackerMode, "Tracker: a row for each sequence; a block's edges set its pattern's length");
+            ToolTip.SetTip(trackerMode, "Tracker: a row for each sequence; a block's edges set its clip's length");
             ToolTip.SetTip(arrangementMode, "Arrangement: a track for each machine with lanes; clips you draw, move, copy, trim, loop, split and join");
             right.Children.Add(clipList);
 
@@ -425,7 +425,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The menu a right click (or the add-track button) opened last (tests click through it).</summary>
         public ContextMenu OpenMenu { get; private set; }
 
-        /// <summary>A pattern was chosen for editing here (as <see cref="SequenceTab.PatternChosen"/>).</summary>
+        /// <summary>A clip was chosen for editing here (as <see cref="SequenceTab.ClipChosen"/>).</summary>
         public event Action<IClip> ClipChosen;
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -480,13 +480,13 @@ namespace ReBuzz.Studio.Views.Sequence
             if (isArrangement)
             {
                 emptyState.Update(!arranged, "arrange", "Nothing is arranged yet",
-                    "Double-click a lane to draw a clip, or double-click a pattern in the list on the right to place it. Or launch clips in the Session View.",
+                    "Double-click a lane to draw a clip, or double-click a clip in the list on the right to place it. Or launch clips in the Session View.",
                     new (string, Action)[] { ("New clip here", () => { if (Arrangement.CursorLane != null) Arrangement.DrawAt(Arrangement.CursorLane, 0); Arrangement.Focus(); }) }, false);
                 return;
             }
             emptyState.Update(!arranged, "arrange", "Nothing is arranged yet",
-                "Put a pattern on a track: pick a row and press the pattern's key, or double-click it in the list on the right. Or launch clips in the Session View.",
-                new (string, Action)[] { ("New pattern here", () => { Canvas.Edits.CreateClips(Math.Max(0, Canvas.CursorRow), Math.Max(0, Canvas.CursorTime), 1, SequenceCanvas.NewClipLength, false); Canvas.Focus(); }) }, false);
+                "Put a clip on a track: pick a row and press the clip's key, or double-click it in the list on the right. Or launch clips in the Session View.",
+                new (string, Action)[] { ("New clip here", () => { Canvas.Edits.CreateClips(Math.Max(0, Canvas.CursorRow), Math.Max(0, Canvas.CursorTime), 1, SequenceCanvas.NewClipLength, false); Canvas.Focus(); }) }, false);
         }
 
         void OnStateChanged()
@@ -527,7 +527,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
         }
 
-        // ------------------------------------------------------------------ the pattern list
+        // ------------------------------------------------------------------ the clip list
 
         /// <summary>Every state of the list's items readable in the theme (4.5:1 and more): text on the list, on the pointer's tint, on the selection.</summary>
         internal static void ListStates(ListBox list, SequenceLook look, List<Style> added = null)
@@ -555,10 +555,10 @@ namespace ReBuzz.Studio.Views.Sequence
             State(x => x.Class(":selected").Class(":pressed"), look.ListSelectedHover, white);
         }
 
-        /// <summary>The n-th pattern's key: 0–9, then a–z, then A–Z (TrackHeaderControl.UpdatePatternList).</summary>
+        /// <summary>The n-th clip's key: 0–9, then a–z, then A–Z (TrackHeaderControl.UpdateClipList).</summary>
         static char KeyOf(int i) => i < 10 ? (char)('0' + i) : i < 36 ? (char)('a' + i - 10) : (char)('A' + i - 36);
 
-        /// <summary>The cursor track's patterns by name, each with the key that places it.</summary>
+        /// <summary>The cursor track's clips by name, each with the key that places it.</summary>
         public IReadOnlyList<(char Char, IClip Clip)> Clips => clips;
 
         void RefreshClipList()
@@ -575,7 +575,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (clipList.SelectedIndex != index) clipList.SelectedIndex = index;
         }
 
-        /// <summary>A double click in the list places that pattern at the cursor (patternListBox).</summary>
+        /// <summary>A double click in the list places that clip at the cursor (clipListBox).</summary>
         void PlaceListedClip()
         {
             int i = clipList.SelectedIndex;
@@ -584,7 +584,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Canvas.Focus();
         }
 
-        /// <summary>Places a pattern at the cursor and moves past it (typing its key).</summary>
+        /// <summary>Places a clip at the cursor and moves past it (typing its key).</summary>
         public void Place(IClip p)
         {
             if (isArrangement)
@@ -693,8 +693,8 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>
-        /// A pattern for editing (SelectPatternCommand): the engine's pattern editor gets it, and
-        /// <see cref="SequenceTab.PatternChosen"/> tells the pattern editor's tab.
+        /// A clip for editing (SelectClipCommand): the engine's clip editor gets it, and
+        /// <see cref="SequenceTab.ClipChosen"/> tells the clip editor's tab.
         /// </summary>
         public void ChooseClip(IClip p, bool activate)
         {
@@ -714,7 +714,7 @@ namespace ReBuzz.Studio.Views.Sequence
             SequenceTab.RaiseClipChosen(p);
         }
 
-        /// <summary>Opens the piano roll under the arrangement on a clip's pattern (a double click on the clip, P): its notes as the machine plays them.</summary>
+        /// <summary>Opens the piano roll under the arrangement on a clip's clip (a double click on the clip, P): its notes as the machine plays them.</summary>
         public void OpenPianoRoll(IClip p)
         {
             if (p == null) return;
@@ -985,7 +985,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 Items =
                 {
                     Item("Piano Roll", () => OpenPianoRoll(a.Selected?.Clip), new KeyGesture(Key.P), clip),
-                    Item("Edit Pattern", () => ChooseClip(a.Selected?.Clip, true), new KeyGesture(Key.Return), clip),
+                    Item("Edit Clip", () => ChooseClip(a.Selected?.Clip, true), new KeyGesture(Key.Return), clip),
                     new Separator(),
                     Item("Split at Cursor", () => a.SplitAtCursor(), new KeyGesture(Key.S), inside),
                     Item("Join with Next", () => a.JoinWithNext(), new KeyGesture(Key.J), clip),
@@ -1030,7 +1030,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (HandleChar(e.Text[0])) e.Handled = true;
         }
 
-        /// <summary>Typing (PreviewTextInput): a pattern's key places it; , break; - mute; _ thru; . clears.</summary>
+        /// <summary>Typing (PreviewTextInput): a clip's key places it; , break; - mute; _ thru; . clears.</summary>
         public bool HandleChar(char ch)
         {
             var c = Canvas;
@@ -1103,7 +1103,7 @@ namespace ReBuzz.Studio.Views.Sequence
             colour.Items.Add(new Separator());
             colour.Items.Add(Item("Default", () => SetColour(-1)));
 
-            var quick = new MenuItem { Header = "Quick Create Patterns", IsEnabled = hasTrack };
+            var quick = new MenuItem { Header = "Quick Create Clips", IsEnabled = hasTrack };
             for (int n = 1; n <= 8; n++)
             {
                 int count = n;

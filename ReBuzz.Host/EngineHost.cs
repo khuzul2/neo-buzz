@@ -94,7 +94,7 @@ namespace ReBuzz.Host
         public static void PrepareProcess(Action<string> log)
         {
             // docs/specs/clips.md §5.6 (CU3): one store, one engine. The Studio and rebuzz-headless play every lane of a clip from the engine
-            // and keep a song's clips in the pattern columns; Classic's WPF app does not come here, and keeps its editor's playing.
+            // and keep a song's clips in the clip columns; Classic's WPF app does not come here, and keeps its editor's playing.
             ClipStore.UseDirectEngine();
             NativeLibraries.Register();
             NativeLibraries.Register(typeof(Global).Assembly);  // BuzzGUI.Common: libsndfile

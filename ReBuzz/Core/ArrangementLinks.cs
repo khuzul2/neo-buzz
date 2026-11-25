@@ -1,7 +1,7 @@
 // Fork (docs/specs/daw-modes.md AR5, §6): the links between the arrangement and the Session View. An arrangement clip
 // launches in the session (its region as the launch options) and the arrangement takes the track back
 // (ISession.BackToArrangement); a clip is given to a slot, and a slot is dragged onto a lane. A clip in both modes is
-// the same pattern (one play position, the session clip keeps it), so a slot given a clip shares its pattern; a clip
+// the same clip (one play position, the session clip keeps it), so a slot given a clip shares its clip; a clip
 // made from a slot takes its region from the slot's clip settings, as scene insert does (SceneToArrangement.LoopOf).
 // Every clip made on a lane gets a clip id of its own (ids are never reused, §8.1). UI thread.
 
@@ -24,7 +24,7 @@ namespace ReBuzz.Core
         static SessionDocument.ClipSettings SettingsOf(ClipSpec spec) =>
             new SessionDocument.ClipSettings { Loop = spec.Loop, Start = spec.Start, LoopStart = spec.LoopStart, LoopEnd = spec.LoopEnd };
 
-        /// <summary>Launches an arrangement clip in the Session View, on its lane's sequence: that track plays it (looped as the clip is, from where it starts in its pattern) until the arrangement takes it back.</summary>
+        /// <summary>Launches an arrangement clip in the Session View, on its lane's sequence: that track plays it (looped as the clip is, from where it starts in its clip) until the arrangement takes it back.</summary>
         public string Launch(ClipItem item)
         {
             if (item?.Sequence == null || item.Clip == null) return "Select a clip first.";
@@ -42,8 +42,8 @@ namespace ReBuzz.Core
         public void BackToArrangement() => buzz.SessionCore?.BackToArrangement();
 
         /// <summary>
-        /// Gives a slot an arrangement clip's pattern (shared: a copy of the place, not of the notes). With no slot named, the first empty one of the machine's
-        /// session track (a scene is added if there is none). A pattern whose clip settings are the defaults takes the clip's region as its settings.
+        /// Gives a slot an arrangement clip's clip (shared: a copy of the place, not of the notes). With no slot named, the first empty one of the machine's
+        /// session track (a scene is added if there is none). A clip whose clip settings are the defaults takes the clip's region as its settings.
         /// </summary>
         public string ToSlot(ClipItem item, out int track, out int scene, int toTrack = -1, int toScene = -1)
         {
@@ -84,7 +84,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Makes a clip of a slot's pattern on a lane of its machine (the first main lane when none is given) at a song tick (after the lane's last clip, on a bar line, when none is given): shared with the slot,
+        /// Makes a clip of a slot's clip on a lane of its machine (the first main lane when none is given) at a song tick (after the lane's last clip, on a bar line, when none is given): shared with the slot,
         /// its region from the slot's clip settings, a clip id of its own.
         /// </summary>
         public string SlotToLane(int track, int scene, int time = -1, ISequence lane = null)

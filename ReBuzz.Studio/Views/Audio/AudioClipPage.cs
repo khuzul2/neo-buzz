@@ -30,7 +30,7 @@ namespace ReBuzz.Studio.Views.Audio
 
     internal sealed class AudioClipPage : Border, IStudioEditTarget
     {
-        /// <summary>Where the selected clip is edited from: a slot of the Session, a clip of the Arrangement, or just its pattern.</summary>
+        /// <summary>Where the selected clip is edited from: a slot of the Session, a clip of the Arrangement, or just its clip.</summary>
         internal enum Where { None, Session, Arrangement, Clip }
 
         /// <summary>
@@ -407,7 +407,7 @@ namespace ReBuzz.Studio.Views.Audio
             Load();
         }
 
-        /// <summary>The slot of the Session that holds the pattern, or null.</summary>
+        /// <summary>The slot of the Session that holds the clip, or null.</summary>
         (int Track, int Scene)? SlotOf(IClip clip)
         {
             var doc = Layout.Document;
@@ -453,7 +453,7 @@ namespace ReBuzz.Studio.Views.Audio
                 {
                     Where.Session when slot is { } s => $"Session · scene {s.Scene + 1}",
                     Where.Arrangement when item != null => $"Arrangement · {Place(item.Time)}",
-                    _ => "pattern",
+                    _ => "clip",
                 };
                 info.Text = $"{shown.Machine?.Name} · {place}" + (details is { } d ? $" · {d.Seconds:0.##} s · {d.Rate} Hz · {(d.Channels > 1 ? "stereo" : "mono")}" : " · the audio is missing");
 

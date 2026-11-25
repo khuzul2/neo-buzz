@@ -1,4 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P4b): the studio's light or dark look, for code the studio does not compile itself: the pattern
+// Fork (docs/specs/ux-overhaul.md P4b): the studio's light or dark look, for code the studio does not compile itself: the clip
 // editor is a machine assembly loaded from Gear that draws its own colours, and it learns of the theme here (this assembly is the
 // one both share). The classic WPF app never sets it, and keeps its look (§1).
 

@@ -1,6 +1,6 @@
-// Fork (docs/specs/studio-mvp.md S6, decision 3.3): the WPF PatternControl's logic without WPF: the
-// cursor, the selection, keyboard entry and the edit commands, ported from PatternControl.xaml.cs and
-// the key handling of PatternEditor.xaml.cs (the WPF files keep their own code until P4). A view (the
+// Fork (docs/specs/studio-mvp.md S6, decision 3.3): the WPF ClipControl's logic without WPF: the
+// cursor, the selection, keyboard entry and the edit commands, ported from ClipControl.xaml.cs and
+// the key handling of ClipEditor.xaml.cs (the WPF files keep their own code until P4). A view (the
 // Avalonia one in the studio) draws what this says and gives it keys as EditorKey; the shared sources
 // call it as they call the WPF control (InvalidateVisual, MoveCursorDelta, the commands).
 
@@ -34,7 +34,7 @@ namespace WDE.ModernPatternEditor
         const int CursorStep = 1;
         public static readonly int BUZZ_TICKS_PER_BEAT = 4;
 
-        /// <summary>The view's zoom (WPF: the editor's "Pattern Zoom" slider).</summary>
+        /// <summary>The view's zoom (WPF: the editor's "Clip Zoom" slider).</summary>
         public static double Scale { get; set; } = 1.0;
 
         static readonly EditorKey[] HexKeys = { EditorKey.D0, EditorKey.D1, EditorKey.D2, EditorKey.D3, EditorKey.D4, EditorKey.D5, EditorKey.D6, EditorKey.D7, EditorKey.D8, EditorKey.D9, EditorKey.A, EditorKey.B, EditorKey.C, EditorKey.D, EditorKey.E, EditorKey.F };
@@ -45,7 +45,7 @@ namespace WDE.ModernPatternEditor
         /// <summary>The view has the keyboard focus (MIDI edit writes only then, as in WPF).</summary>
         public bool IsKeyboardFocused { get; set; }
 
-        /// <summary>A pattern is shown (or none), or its columns changed: the view lays out again.</summary>
+        /// <summary>A clip is shown (or none), or its columns changed: the view lays out again.</summary>
         public event Action ClipShown;
 
         /// <summary>The cursor moved: the view redraws it and brings it into view.</summary>
@@ -53,10 +53,10 @@ namespace WDE.ModernPatternEditor
 
         public event Action SelectionChanged;
 
-        /// <summary>The pattern's values changed: the view redraws.</summary>
+        /// <summary>The clip's values changed: the view redraws.</summary>
         public event Action Invalidated;
 
-        /// <summary>The editor asked for the pattern properties (Ctrl+Backspace, the context menu).</summary>
+        /// <summary>The editor asked for the clip properties (Ctrl+Backspace, the context menu).</summary>
         public event Action PropertiesRequested;
 
         /// <summary>The editor asked to toggle its help (F1), or to open a toolbar list (Alt+B, R, Y).</summary>
@@ -82,7 +82,7 @@ namespace WDE.ModernPatternEditor
         ClipVM clip;
         MachineVM machineVM;
 
-        /// <summary>The pattern shown (null: none).</summary>
+        /// <summary>The clip shown (null: none).</summary>
         public ClipVM CurrentClip => clip;
 
         internal ClipVM Clip
@@ -108,7 +108,7 @@ namespace WDE.ModernPatternEditor
         public ClipControl(ClipEditor editor)
         {
             Editor = editor;
-            // WPF binds the control's DataContext to SelectedMachine.SelectedPattern; this follows it.
+            // WPF binds the control's DataContext to SelectedMachine.SelectedClip; this follows it.
             Editor.PropertyChanged += Editor_PropertyChanged;
             CreateCommands();
         }
@@ -124,7 +124,7 @@ namespace WDE.ModernPatternEditor
 
         void MachineVM_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "SelectedPattern" && machineVM.SelectedClip != clip)
+            if (e.PropertyName == "SelectedClip" && machineVM.SelectedClip != clip)
                 Clip = machineVM.SelectedClip;
         }
 
@@ -522,7 +522,7 @@ namespace WDE.ModernPatternEditor
             return false;
         }
 
-        /// <summary>The editor's keys (PatternEditor.xaml.cs: its KeyDown handler and its input bindings).</summary>
+        /// <summary>The editor's keys (ClipEditor.xaml.cs: its KeyDown handler and its input bindings).</summary>
         bool EditorKeyDown(EditorKey key, EditorModifiers modifiers)
         {
             var machine = Editor.SelectedMachine;
@@ -1008,7 +1008,7 @@ namespace WDE.ModernPatternEditor
             clip.Selection = Selection.AllColumnsOfBeat(d);
         }
 
-        /// <summary>A mouse press on the pattern (WPF: the pattern grid's Dragger): clicks 1, 2 and 3.</summary>
+        /// <summary>A mouse press on the clip (WPF: the clip grid's Dragger): clicks 1, 2 and 3.</summary>
         public void PressAt(Digit d, int clickCount, out bool dragSelects)
         {
             dragSelects = true;

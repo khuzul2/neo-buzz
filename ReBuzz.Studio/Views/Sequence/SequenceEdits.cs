@@ -1,10 +1,10 @@
 // Fork (docs/specs/studio-mvp.md S4): the sequence editor's edits, as undo steps on the song's
 // history. The portable BuzzGUI.Common has SetEventAction, ClearAction, SetMarkerAction,
-// CreatePatternAction and AddSequenceAction; the others the WPF editor uses are ported here,
+// CreateClipAction and AddSequenceAction; the others the WPF editor uses are ported here,
 // since their BuzzGUI.Common copies are in its Windows build only (System.Windows.Rect):
 // InsertOrDelete, SwapSequences, DeleteSequence, SetLength, the clipboard and its cut, copy and
 // paste, and the horizontal editor's time signature actions. SequenceEditing holds the commands
-// the view runs (SequenceEditor.xaml.cs, HoldDragHelper, PatternResizeHelper), pure of UI.
+// the view runs (SequenceEditor.xaml.cs, HoldDragHelper, ClipResizeHelper), pure of UI.
 
 using System;
 using System.Collections.Generic;
@@ -73,7 +73,7 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void UndoAction() => DoAction();
     }
 
-    /// <summary>Sets a pattern's length (BuzzGUI.Common SetLengthAction).</summary>
+    /// <summary>Sets a clip's length (BuzzGUI.Common SetLengthAction).</summary>
     internal sealed class SetLengthAction : MachineAction
     {
         readonly string clipName;
@@ -95,7 +95,7 @@ namespace ReBuzz.Studio.Views.Sequence
     }
 
     /// <summary>
-    /// Events cut or copied from a block of tracks, kept by pattern name (BuzzGUI.Common
+    /// Events cut or copied from a block of tracks, kept by clip name (BuzzGUI.Common
     /// SequenceClipboard, with ints for the rectangle).
     /// </summary>
     internal sealed class SequenceClipboard
@@ -305,7 +305,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
         }
 
-        /// <summary>Puts an event (a pattern, or a break, mute, thru or stop) on a track.</summary>
+        /// <summary>Puts an event (a clip, or a break, mute, thru or stop) on a track.</summary>
         public void SetEvent(int row, int time, SequenceEvent e)
         {
             var seq = Track(row);
@@ -315,7 +315,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public void PlaceClip(int row, int time, IClip clip) =>
             SetEvent(row, time, new SequenceEvent(SequenceEventType.PlayClip, clip));
 
-        /// <summary>A new pattern of <paramref name="length"/> ticks, placed (a double click on an empty cell).</summary>
+        /// <summary>A new clip of <paramref name="length"/> ticks, placed (a double click on an empty cell).</summary>
         public IClip NewClipAt(int row, int time, int length)
         {
             var seq = Track(row);
@@ -331,7 +331,7 @@ namespace ReBuzz.Studio.Views.Sequence
             return made;
         }
 
-        /// <summary>Quick Create Patterns: <paramref name="count"/> new patterns in a row from the cursor, over what was there (or inserted).</summary>
+        /// <summary>Quick Create Clips: <paramref name="count"/> new clips in a row from the cursor, over what was there (or inserted).</summary>
         public void CreateClips(int row, int time, int count, int length, bool insert)
         {
             var seq = Track(row);
@@ -365,14 +365,14 @@ namespace ReBuzz.Studio.Views.Sequence
             return true;
         }
 
-        /// <summary>A right-edge resize: the pattern's new length (all its blocks change).</summary>
+        /// <summary>A right-edge resize: the clip's new length (all its blocks change).</summary>
         public void SetClipLength(IClip clip, int length)
         {
             if (clip == null || length <= 0 || length == clip.Length) return;
             Do(new SetLengthAction(clip, length));
         }
 
-        /// <summary>A left-edge resize: the event starts at <paramref name="newTime"/> and its pattern ends where the block did.</summary>
+        /// <summary>A left-edge resize: the event starts at <paramref name="newTime"/> and its clip ends where the block did.</summary>
         public void ResizeLeft(int row, int time, int newTime, int newLength)
         {
             var seq = Track(row);

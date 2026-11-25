@@ -1,8 +1,8 @@
-// Fork (docs/specs/studio-mvp.md S6): the Pattern tab. As ReBuzz's WPF EditorView does, it shows the
-// pattern editor machine's control for the machine and pattern chosen: the Modern Pattern Editor's
-// Avalonia view, which the engine gets from the editor machine (PatternEditorControl). A machine
-// chooser and a pattern chooser sit above it. Other views pick what it shows with Edit(pattern) or
-// Edit(machine); the engine tells it when the pattern changes (SetPatternEditorPattern).
+// Fork (docs/specs/studio-mvp.md S6): the Clip tab. As ReBuzz's WPF EditorView does, it shows the
+// clip editor machine's control for the machine and clip chosen: the Modern Pattern Editor's
+// Avalonia view, which the engine gets from the editor machine (ClipEditorControl). A machine
+// chooser and a clip chooser sit above it. Other views pick what it shows with Edit(clip) or
+// Edit(machine); the engine tells it when the clip changes (SetClipEditorClip).
 
 using ReBuzz.Studio.Shell.Design;
 using System;
@@ -24,30 +24,30 @@ namespace ReBuzz.Studio.Views
 
     internal sealed class ClipView : IStudioView
     {
-        public string Title => "Pattern";
+        public string Title => "Clip";
 
         public Control Create(StudioHost host) => new ClipPage(host);
 
         /// <summary>The page shown (the last one made), or null.</summary>
         public static ClipPage Page { get; internal set; }
 
-        /// <summary>Shows a pattern in its machine's editor, on the Pattern tab (for the machine and sequence views).</summary>
+        /// <summary>Shows a clip in its machine's editor, on the Clip tab (for the machine and sequence views).</summary>
         public static void Edit(IClip clip) => Page?.Edit(clip);
 
-        /// <summary>Shows a machine's patterns (the one its editor shows, else its first), on the Pattern tab.</summary>
+        /// <summary>Shows a machine's clips (the one its editor shows, else its first), on the Clip tab.</summary>
         public static void Edit(IMachine machine) => Page?.Edit(machine);
 
-        /// <summary>Brings the Pattern tab to the front, with the keyboard on the editor, showing what it showed.</summary>
+        /// <summary>Brings the Clip tab to the front, with the keyboard on the editor, showing what it showed.</summary>
         public static void Show() => Page?.Activate();
 
-        /// <summary>The pattern shown changed (null: none).</summary>
+        /// <summary>The clip shown changed (null: none).</summary>
         public static event Action<IClip> ClipShown;
 
         internal static void RaiseClipShown(IClip p) => ClipShown?.Invoke(p);
     }
 
     /// <summary>
-    /// The Pattern tab's content: the choosers, and the editor's control below them. The shell's Edit
+    /// The Clip tab's content: the choosers, and the editor's control below them. The shell's Edit
     /// menu and its Undo and Redo keys reach the editor's own undo stack and clipboard through it.
     /// </summary>
     internal sealed class ClipPage : DockPanel, IStudioEditTarget
@@ -55,7 +55,7 @@ namespace ReBuzz.Studio.Views
         readonly ReBuzzCore core;
         readonly ComboBox machineBox = new ComboBox { Width = 180, Margin = new Thickness(4, 4, 12, 4) };
         readonly ComboBox clipBox = new ComboBox { Width = 120, Margin = new Thickness(4) };
-        readonly Button newClip = new Button { Content = "New pattern", Margin = new Thickness(4) };
+        readonly Button newClip = new Button { Content = "New clip", Margin = new Thickness(4) };
         readonly ContentControl editorHost = new ContentControl();
         readonly Detail.TrackerRoll rollView;
         readonly Shell.EmptyState empty;
@@ -72,7 +72,7 @@ namespace ReBuzz.Studio.Views
             var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };      // wraps in a narrow window (decision 37)
             bar.Children.Add(Label("Machine:"));
             bar.Children.Add(machineBox);
-            bar.Children.Add(Label("Pattern:"));
+            bar.Children.Add(Label("Clip:"));
             bar.Children.Add(clipBox);
             bar.Children.Add(newClip);
             SetDock(bar, Dock.Top);
@@ -132,7 +132,7 @@ namespace ReBuzz.Studio.Views
         // Fork (ux-overhaul.md P2c): what the user chooses here is the studio's selection; the page shows what the others select.
         bool followingSelection;
 
-        /// <summary>The machine and the pattern the page shows (for tests).</summary>
+        /// <summary>The machine and the clip the page shows (for tests).</summary>
         internal IMachine ShownMachine => machine;
         internal IClip ShownClip => clip;
 
@@ -185,7 +185,7 @@ namespace ReBuzz.Studio.Views
         /// <summary>The editor control the page shows now (the Modern Pattern Editor's view), or null.</summary>
         public Control EditorControl => editorHost.Content as Control;
 
-        // Fork (ux-overhaul.md P3b): the Tracker and the piano roll are two views of the pattern the choosers name.
+        // Fork (ux-overhaul.md P3b): the Tracker and the piano roll are two views of the clip the choosers name.
         bool rollMode;
 
         /// <summary>Whether the piano roll is shown instead of the Tracker's grid.</summary>
@@ -194,7 +194,7 @@ namespace ReBuzz.Studio.Views
         /// <summary>The piano roll (tests, the window).</summary>
         internal Detail.TrackerRoll Roll => rollView;
 
-        /// <summary>Shows the piano roll (true) or the Tracker (false) for the same pattern.</summary>
+        /// <summary>Shows the piano roll (true) or the Tracker (false) for the same clip.</summary>
         public void SetRollMode(bool roll)
         {
             if (rollMode == roll) return;
@@ -292,7 +292,7 @@ namespace ReBuzz.Studio.Views
             return true;
         }
 
-        /// <summary>Brings the Pattern tab to the front and gives the editor the keyboard (ReBuzz: ActivatePatternEditor).</summary>
+        /// <summary>Brings the Clip tab to the front and gives the editor the keyboard (ReBuzz: ActivateClipEditor).</summary>
         /// <summary>Shows the page: the window sets it to open the detail panel (P3a); without it the page is a tab's.</summary>
         internal Action Reveal { get; set; }
 
@@ -336,7 +336,7 @@ namespace ReBuzz.Studio.Views
         }
 
         /// <summary>
-        /// The Tracker's bar rules follow the song's time signature where the pattern lies (ux-overhaul.md P3c, decision 55). The
+        /// The Tracker's bar rules follow the song's time signature where the clip lies (ux-overhaul.md P3c, decision 55). The
         /// studio doesn't reference the editor, so its grid is found by name (as EditContext is).
         /// </summary>
         void HookBars(Control editor)
@@ -348,7 +348,7 @@ namespace ReBuzz.Studio.Views
         void OnClipChanged(IClip p)
         {
             if (p == null) return;
-            // The engine's pattern when this runs (S9): a song's loader sets several in a row, and the
+            // The engine's clip when this runs (S9): a song's loader sets several in a row, and the
             // page shows the last, not each in turn.
             Dispatcher.UIThread.Post(() =>
             {
@@ -364,8 +364,8 @@ namespace ReBuzz.Studio.Views
                 Dispatcher.UIThread.Post(() => Show(m, m.Clips.Contains(clip) ? clip : null));
         }
 
-        // Another view asks for the pattern editor (ReBuzz: ActiveView = PatternView, after
-        // SetPatternEditorPattern, as the Session View does for a double-clicked clip): to the front.
+        // Another view asks for the clip editor (ReBuzz: ActiveView = ClipView, after
+        // SetClipEditorClip, as the Session View does for a double-clicked clip): to the front.
         void OnCorePropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ReBuzzCore.ActiveView) && core.ActiveView == BuzzView.ClipView)
@@ -401,7 +401,7 @@ namespace ReBuzz.Studio.Views
             machines.AddRange(core.Song.Machines.Where(m => !(m is MachineCore mc && mc.Hidden)).OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase));
         }
 
-        /// <summary>The choosers show a machine and one of its patterns (or none).</summary>
+        /// <summary>The choosers show a machine and one of its clips (or none).</summary>
         void Show(IMachine m, IClip p)
         {
             if (m != machine) Follow(m);
@@ -432,11 +432,11 @@ namespace ReBuzz.Studio.Views
         bool requesting;
 
         /// <summary>
-        /// The pattern the choosers name is the one whose editor shows (S9). The engine can hand the page
-        /// another machine's editor, or none, after the pattern was chosen: a song's loader does, setting
-        /// several patterns and machines as it opens. Then the tab named a pattern above an empty page
-        /// until another pattern was picked. Only for the
-        /// engine's pattern editor pattern, which the page follows (OnPatternChanged), and only by the
+        /// The clip the choosers name is the one whose editor shows (S9). The engine can hand the page
+        /// another machine's editor, or none, after the clip was chosen: a song's loader does, setting
+        /// several clips and machines as it opens. Then the tab named a clip above an empty page
+        /// until another clip was picked. Only for the
+        /// engine's clip editor clip, which the page follows (OnClipChanged), and only by the
         /// newest page (two windows' pages would take the control from each other forever): it settles.
         /// </summary>
         void ShowClipsEditor()
@@ -473,12 +473,12 @@ namespace ReBuzz.Studio.Views
 
         void OnClipsChanged(IClip p) => Dispatcher.UIThread.Post(() => Show(machine, machine != null && machine.Clips.Contains(clip) ? clip : machine?.Clips.LastOrDefault()));
 
-        /// <summary>The empty state of the Tracker and the piano roll (P3i): no machine, no pattern.</summary>
+        /// <summary>The empty state of the Tracker and the piano roll (P3i): no machine, no clip.</summary>
         internal Shell.EmptyState EmptyState => empty;
 
         void UpdateEmpty()
         {
-            // The same for both views of a pattern: nothing to show until a machine has a pattern chosen.
+            // The same for both views of a clip: nothing to show until a machine has a clip chosen.
             bool none = clip == null || (!rollMode && editorHost.Content == null);
             rollView.IsVisible = rollMode && clip != null;
             editorHost.IsVisible = !rollMode && clip != null;       // an editor left from another machine stays out of sight while none is chosen
@@ -487,18 +487,18 @@ namespace ReBuzz.Studio.Views
             {
                 bool bare = Shell.EmptyState.SongIsEmpty(core);
                 empty.Update(none, bare ? "nomachine:bare" : "nomachine", "No machine to edit",
-                    bare ? $"The {what} edits a machine's patterns. Start with a sound, or search every machine."
-                         : $"The {what} edits a machine's patterns. Choose a machine above, or select one in the Machine View.",
+                    bare ? $"The {what} edits a machine's clips. Start with a sound, or search every machine."
+                         : $"The {what} edits a machine's clips. Choose a machine above, or select one in the Machine View.",
                     Shell.EmptyState.AddMachineStep(), bare);
             }
             else if (machine.Clips.Count == 0)
-                empty.Update(none, "nopattern:" + machine.Name, $"{machine.Name} has no patterns",
-                    $"A pattern holds the notes {machine.Name} plays. Make one and the {what} opens on it.",
-                    new (string, Action)[] { ("New pattern", NewClip) }, false);
+                empty.Update(none, "noclip:" + machine.Name, $"{machine.Name} has no clips",
+                    $"A clip holds the notes {machine.Name} plays. Make one and the {what} opens on it.",
+                    new (string, Action)[] { ("New clip", NewClip) }, false);
             else
-                empty.Update(none, "choose:" + machine.Name, "Choose a pattern",
-                    $"Pick one of {machine.Name}'s {machine.Clips.Count} patterns in the list above, or make another.",
-                    new (string, Action)[] { ("New pattern", NewClip) }, false);
+                empty.Update(none, "choose:" + machine.Name, "Choose a clip",
+                    $"Pick one of {machine.Name}'s {machine.Clips.Count} clips in the list above, or make another.",
+                    new (string, Action)[] { ("New clip", NewClip) }, false);
         }
 
         static TextBlock Label(string text) => new TextBlock { Text = text, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = StudioTokens.TextSecondaryBrush };

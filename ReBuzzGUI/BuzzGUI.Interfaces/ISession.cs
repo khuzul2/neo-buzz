@@ -5,7 +5,7 @@ namespace BuzzGUI.Interfaces
     // Session View engine (fork addition). See docs/specs/session-view.md.
     //
     // A track is a sequence (ISequence), a clip is one of that sequence's machine's
-    // patterns (IPattern). Each track plays at most one clip. Launches and stops are
+    // clips (IClip). Each track plays at most one clip. Launches and stops are
     // quantized to a session clock that starts at 0 when the transport starts and,
     // unlike the song position, never wraps at the loop end.
 

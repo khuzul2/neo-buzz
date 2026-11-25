@@ -1,11 +1,11 @@
 // Fork: Space plays and stops the song in every view of the main window, as in most DAWs (F5 and F8
-// still do, as in Buzz; on a Mac keyboard they need fn). Shift+Space on the Pattern tab plays the
-// pattern editor's pattern on its own from the editor's cursor, and stops it. One command for both
+// still do, as in Buzz; on a Mac keyboard they need fn). Shift+Space on the Clip tab plays the
+// clip editor's clip on its own from the editor's cursor, and stops it. One command for both
 // apps (ReBuzz/Core/TransportCommands.cs); ReBuzz.exe's main window has the same keys.
 //
 // The window takes Space before the focused control does (a tunnel handler), so a focused button or
 // check box doesn't also click, except where Space is typed or chooses: a text box (the Song Notes
-// editor, the transport's BPM box, the pattern editor's number boxes, the Session View's clip boxes,
+// editor, the transport's BPM box, the clip editor's number boxes, the Session View's clip boxes,
 // an editable drop-down) and an open drop-down or menu. Space isn't a key equivalent in the macOS
 // menu bar: there it would reach the menu before any text box.
 
@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Shell
         bool taken;     // the Space held now was the transport's: its repeats and its release are too
 
         /// <param name="core">The engine, or null while the window has no views yet.</param>
-        /// <param name="patternShown">Whether the Pattern tab is the one shown (Shift+Space).</param>
+        /// <param name="clipShown">Whether the Clip tab is the one shown (Shift+Space).</param>
         public TransportKeys(Window window, Func<ReBuzzCore> core, Func<bool> clipShown)
         {
             this.core = core;

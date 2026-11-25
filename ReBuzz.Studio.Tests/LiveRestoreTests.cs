@@ -94,7 +94,7 @@ namespace ReBuzz.Studio.Tests
             var pad = rig.Machine("Pad");
             var snap = core.Snapshots.Capture("a");
             core.Snapshots.Flush();
-            // Everything an in-place restore touches: a gliding parameter, a stepping one, a mute, a wire level, pattern events, track events.
+            // Everything an in-place restore touches: a gliding parameter, a stepping one, a mute, a wire level, clip events, track events.
             var cont = Continuous(lead);
             var stepper = lead.ParameterGroupsList[1].ParametersList.OfType<ParameterCore>().First(p => p.Flags.HasFlag(ParameterFlags.State) && p.Type == ParameterType.Byte && p.MaxValue - p.MinValue <= 32 && p != cont);
             cont.SetValue(0, cont.MaxValue - 5);
@@ -162,7 +162,7 @@ namespace ReBuzz.Studio.Tests
             var lead = rig.Machine("Lead");
             var snap = core.Snapshots.Capture("a");
             core.Snapshots.Flush();
-            // Edit a pattern's notes and the arrangement after the snapshot.
+            // Edit a clip's notes and the arrangement after the snapshot.
             var clip = lead.ClipsList.Single(x => x.Name == "P0");
             rig.Layout.EditNotes(clip, null, new[] { new ClipNote(1 * SessionRig.TB, SessionRig.TB, 70, 100) });
             var seq = core.SongCore.SequencesList.First(s => s.Machine == lead);
@@ -174,13 +174,13 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => SnapshotTests.Silence(core));
             var r = core.Snapshots.Restore(snap);
             Assert.That(r.Mode, Is.EqualTo("live"));
-            Assert.That(Notes(), Is.EqualTo(notesNow), "the pattern isn't touched before the boundary");
+            Assert.That(Notes(), Is.EqualTo(notesNow), "the clip isn't touched before the boundary");
             Assert.That(seq.EventsList.Count, Is.EqualTo(eventsNow));
             long at = core.ActiveRestore!.At;
             while (core.Session.Clock < at - 1) rig.RunTicks(1);
             Assert.That(Notes(), Is.EqualTo(notesNow), "still before the boundary tick");
             rig.RunTicks(1);
-            Assert.That(Notes(), Is.Not.EqualTo(notesNow), "the pattern changed at the boundary");
+            Assert.That(Notes(), Is.Not.EqualTo(notesNow), "the clip changed at the boundary");
             Assert.That(seq.EventsList.Count, Is.EqualTo(eventsNow - 1), "and the track with it");
             Finish(rig);
             Assert.That(core.Snapshots.Diff(snap, null), Is.Empty);
@@ -191,7 +191,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = SnapshotTests.Song("Lead");
-            rig.Add("Neo Poly", "Pad", track: false);                            // machines without patterns have no pattern editor: they can be rebuilt live
+            rig.Add("Neo Poly", "Pad", track: false);                            // machines without clips have no clip editor: they can be rebuilt live
             rig.Add("Neo Poly", "Aux", track: false);
             var core = rig.Core;
             core.Snapshots.Bind(null);
@@ -244,7 +244,7 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => SnapshotTests.Silence(core));
             var r = core.Snapshots.Restore(snap);
             Assert.That(r.Mode, Is.EqualTo("deferred"));
-            Assert.That(r.Reason, Does.Contain("pattern editor"));
+            Assert.That(r.Reason, Does.Contain("clip editor"));
             Assert.That(r.Text, Does.StartWith("The restore waits until the transport stops"));
             Assert.That(rig.Machine("Lead").ClipsList.Single(x => x.Name == "P0").Length, Is.EqualTo(32), "unchanged while it plays");
             SnapshotTests.Silence(core);

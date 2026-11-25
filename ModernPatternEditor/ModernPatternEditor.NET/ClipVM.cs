@@ -41,7 +41,7 @@ namespace WDE.ModernPatternEditor
                     CreateColumnSets();
                 }
 
-                PropertyChanged.Raise(this, "Pattern");
+                PropertyChanged.Raise(this, "Clip");
             }
         }
 
@@ -101,7 +101,7 @@ namespace WDE.ModernPatternEditor
             columnSets = new List<ParameterColumnSet>();
 
             // Don't show anythign if machine has 0 parameters
-            //if (pattern.Machine.ParameterGroups[1].Parameters.Count + pattern.Machine.ParameterGroups[2].Parameters.Count == 0)
+            //if (clip.Machine.ParameterGroups[1].Parameters.Count + clip.Machine.ParameterGroups[2].Parameters.Count == 0)
             //    return;
 
             var parameterSets = Editor.MPEClipsDB.GetMPEClip(clip).GetParameterSets();
@@ -318,7 +318,7 @@ namespace WDE.ModernPatternEditor
             noteSetCount = 0;
         }
 
-        /// <summary>The voices of the Notes lanes go first: the pattern's notes are what the song plays.</summary>
+        /// <summary>The voices of the Notes lanes go first: the clip's notes are what the song plays.</summary>
         void AddNoteLaneSets()
         {
             noteSetCount = 0;
@@ -355,7 +355,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        /// <summary>Whether the pattern's MIDI column holds notes (so the lanes show by themselves).</summary>
+        /// <summary>Whether the clip's MIDI column holds notes (so the lanes show by themselves).</summary>
         public bool HasMidiNotes => noteLanes != null && noteLanes.Lanes.NoteCount > 0;
 
         public int BeatCount
@@ -381,8 +381,8 @@ namespace WDE.ModernPatternEditor
                     using (new ActionGroup(Editor.EditContext.ActionStack))
                     {
                         MachineVM.Editor.DoAction(new MPESetClipLengthAction(Editor.MPEClipsDB.GetMPEClip(Clip), BeatCount, value));
-                        // Editor.MPEPatternsDB.GetMPEPattern(Pattern).SetBeatCount(value); // Undoable set length?
-                        //MachineVM.Editor.DoAction(new SetLengthAction(pattern, value * Global.Buzz.TPB));
+                        // Editor.MPEClipsDB.GetMPEClip(Clip).SetBeatCount(value); // Undoable set length?
+                        //MachineVM.Editor.DoAction(new SetLengthAction(clip, value * Global.Buzz.TPB));
 
                     }
                     PropertyChanged.Raise(this, "UndoableBeatCount");

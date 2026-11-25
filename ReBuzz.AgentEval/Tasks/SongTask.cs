@@ -40,13 +40,13 @@ namespace ReBuzz.AgentEval
 
             // Harmony from the theory tool: i–VI–III–VII in A minor, a bar each.
             var prog = s.C.Ok("theory", new JsonObject { ["op"] = "progression", ["key"] = "A minor", ["progression"] = "i VI III VII", ["octave"] = 3, ["beats_per_chord"] = 4 });
-            s.C.Ok("pattern_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Prog", ["length_beats"] = 16 });
-            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["pattern"] = "Prog", ["notes"] = prog["notes"]!.DeepClone() });
+            s.C.Ok("clip_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Prog", ["length_beats"] = 16 });
+            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["clip"] = "Prog", ["notes"] = prog["notes"]!.DeepClone() });
             // The same chords played softly, for the intro and the outro.
             var soft = prog["notes"]!.DeepClone().AsArray();
             foreach (var n in soft.OfType<JsonObject>()) n["velocity"] = 50;
-            s.C.Ok("pattern_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Soft", ["length_beats"] = 16 });
-            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["pattern"] = "Soft", ["notes"] = soft });
+            s.C.Ok("clip_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Soft", ["length_beats"] = 16 });
+            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["clip"] = "Soft", ["notes"] = soft });
             var roots = J.Objects(prog["chords"]).Select(c => J.Str(c["root"])).ToList();
             var bass = new List<JsonObject>();
             for (int bar = 0; bar < roots.Count; bar++)

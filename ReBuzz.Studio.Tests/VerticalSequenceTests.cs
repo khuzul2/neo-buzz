@@ -90,7 +90,7 @@ namespace ReBuzz.Studio.Tests
                 return machine;
             }
 
-            /// <summary>Two tracks, Lead and Bass, each with patterns.</summary>
+            /// <summary>Two tracks, Lead and Bass, each with clips.</summary>
             public static void TwoTracks()
             {
                 Machine("Lead", ("Hook", 16, new[] { 0, 4, 8, 12 }), ("Riff", 32, new[] { 0, 2, 6, 10, 16, 20, 26 }));
@@ -235,7 +235,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(block.X, Is.EqualTo(SequenceGeometry.VerticalRulerWidth), "the first column starts at the ruler's edge");
                 Assert.That(block.Y, Is.EqualTo(SequenceGeometry.VerticalHeaderHeight), "time 0 is under the headers");
                 Assert.That(block.Width, Is.EqualTo(geo.TrackWidth));
-                Assert.That(block.Height, Is.EqualTo(16 * geo.PxPerTick), "a 16-tick pattern is 16 ticks tall");
+                Assert.That(block.Height, Is.EqualTo(16 * geo.PxPerTick), "a 16-tick clip is 16 ticks tall");
                 var riff = Song.Sequences[0].Events.Last();
                 Assert.That(geo.BlockRect(riff.Key, 0, riff.Value).Y, Is.EqualTo(block.Bottom), "the next bar is below");
                 Assert.That(geo.BlockRect(0, 1, Song.Sequences[1].Events.First().Value).X, Is.EqualTo(block.Right), "the next track is to the right");
@@ -290,16 +290,16 @@ namespace ReBuzz.Studio.Tests
             Rig.TwoTracks();
             var canvas = rig.Canvas;
 
-            // Keys: a pattern's key places it and the cursor moves down past it.
+            // Keys: a clip's key places it and the cursor moves down past it.
             rig.Click(rig.At(0, 0));
             Assert.That((canvas.CursorTime, canvas.CursorRow), Is.EqualTo((0, 0)));
             rig.Type("0");
-            Assert.That(canvas.CursorTime, Is.EqualTo(16), "past the pattern");
+            Assert.That(canvas.CursorTime, Is.EqualTo(16), "past the clip");
             rig.Type("1");
             Assert.That(Events(0), Is.EqualTo("0:Hook 16:Riff"));
             Assert.That(canvas.CursorTime, Is.EqualTo(48));
 
-            // The mouse: Bass's second bar, then the pattern list's Line with a double click.
+            // The mouse: Bass's second bar, then the clip list's Line with a double click.
             rig.Click(rig.At(16, 1));
             Assert.That((canvas.CursorTime, canvas.CursorRow), Is.EqualTo((16, 1)));
             var item = rig.View.ClipList.ContainerFromIndex(0)!;
@@ -307,9 +307,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(1), Is.EqualTo("16:Line"));
             Assert.That(canvas.CursorTime, Is.EqualTo(48), "past Line");
 
-            // A double click on an empty cell makes a new pattern there; on a block it chooses the pattern for editing.
+            // A double click on an empty cell makes a new clip there; on a block it chooses the clip for editing.
             rig.DoubleClick(rig.At(64, 1));
-            Assert.That(Rig.Clip("Bass", "00").Length, Is.EqualTo(16), "the default pattern length");
+            Assert.That(Rig.Clip("Bass", "00").Length, Is.EqualTo(16), "the default clip length");
             Assert.That(Events(1), Is.EqualTo("16:Line 64:00"));
             IClip chosen = null;
             Action<IClip> handler = p => chosen = p;
@@ -317,8 +317,8 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 rig.DoubleClick(rig.At(16, 0, along: 12));
-                Assert.That(chosen?.Name, Is.EqualTo("Riff"), "the double-clicked block's pattern");
-                Assert.That(Core.ClipEditorClip, Is.SameAs(chosen), "the engine's pattern editor has it");
+                Assert.That(chosen?.Name, Is.EqualTo("Riff"), "the double-clicked block's clip");
+                Assert.That(Core.ClipEditorClip, Is.SameAs(chosen), "the engine's clip editor has it");
             }
             finally
             {
@@ -335,7 +335,7 @@ namespace ReBuzz.Studio.Tests
             rig.Drag(rig.At(16, 0, along: 20), rig.At(96, 0, along: 20), RawInputModifiers.Alt);
             Assert.That(Events(0), Is.EqualTo("16:Riff 64:Hook 96:Riff"));
 
-            // Resize: Line's bottom edge to bar 4 (its pattern gets 48 ticks); Hook's top edge back a bar (32 ticks, from 48).
+            // Resize: Line's bottom edge to bar 4 (its clip gets 48 ticks); Hook's top edge back a bar (32 ticks, from 48).
             rig.Drag(rig.At(48, 1, along: -2), rig.At(62, 1, along: 0));
             Assert.That(Rig.Clip("Bass", "Line").Length, Is.EqualTo(48));
             rig.Drag(rig.At(64, 0, along: 2), rig.At(48, 0, along: 2));
@@ -468,9 +468,9 @@ namespace ReBuzz.Studio.Tests
             rig.View.OpenMenu!.Close();
             Settle();
 
-            // Quick Create Patterns: two new patterns from the cursor, down the column.
+            // Quick Create Clips: two new clips from the cursor, down the column.
             rig.Click(rig.At(128, 1), MouseButton.Right);
-            var quick = rig.View.OpenMenu!.Items.OfType<MenuItem>().First(x => x.Header as string == "Quick Create Patterns");
+            var quick = rig.View.OpenMenu!.Items.OfType<MenuItem>().First(x => x.Header as string == "Quick Create Clips");
             var two = quick.Items.OfType<MenuItem>().First(x => x.Header as string == "2");
             two.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
             Settle();

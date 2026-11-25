@@ -1,6 +1,6 @@
 ﻿// Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor's core, shared by the WPF editor
 // and its portable builds (ModernPatternEditor/Portable, ModernPatternEditor/Avalonia). Moved as it
-// was from PatternEditor.xaml.cs; each build adds its own part (the WPF control, or the portable one).
+// was from ClipEditor.xaml.cs; each build adds its own part (the WPF control, or the portable one).
 using BuzzGUI.Common;
 using BuzzGUI.Common.Actions;
 using BuzzGUI.Common.InterfaceExtensions;
@@ -284,8 +284,8 @@ namespace WDE.ModernPatternEditor
             set
             {
                 isSelectClipEditorVisible = value;
-                PropertyChanged.Raise(this, "IsSelectPatternEditorVisible");
-                PropertyChanged.Raise(this, "SelectPatternEditorVisibility");
+                PropertyChanged.Raise(this, "IsSelectClipEditorVisible");
+                PropertyChanged.Raise(this, "SelectClipEditorVisibility");
             }
         }
         public bool isImportExportClipVisible;
@@ -295,8 +295,8 @@ namespace WDE.ModernPatternEditor
             set
             {
                 isImportExportClipVisible = value;
-                PropertyChanged.Raise(this, "IsImportExportPatternVisible");
-                PropertyChanged.Raise(this, "SelectImportExportPatternVisibility");
+                PropertyChanged.Raise(this, "IsImportExportClipVisible");
+                PropertyChanged.Raise(this, "SelectImportExportClipVisibility");
             }
         }
         string statusBarItem1;
@@ -356,8 +356,8 @@ namespace WDE.ModernPatternEditor
 
             SelectedMachine.SelectedClip = SelectedMachine.clips.FirstOrDefault(pvm => pvm.Clip == p);
 
-            //var sel = patternBox.Items.Cast<PatternVM>().Where(vm => vm.Pattern == p).FirstOrDefault();
-            //if (sel != null) patternBox.SelectedItem = sel;
+            //var sel = clipBox.Items.Cast<ClipVM>().Where(vm => vm.Clip == p).FirstOrDefault();
+            //if (sel != null) clipBox.SelectedItem = sel;
         }
 
         public void SelectMachine(IMachine m)
@@ -394,7 +394,7 @@ namespace WDE.ModernPatternEditor
         {
         }
 
-        // This is called always when pattern is added
+        // This is called always when clip is added
         public void SetTargetMachine(IMachine machine)
         {
             lock (syncLock)
@@ -445,7 +445,7 @@ namespace WDE.ModernPatternEditor
                 MPEClipsDB.RemoveClip(clip);
             }
         }
-        // ---- Fork (docs/specs/clips.md §6, CU3): the tracker views the store. After the song's tracker data is migrated into the pattern's
+        // ---- Fork (docs/specs/clips.md §6, CU3): the tracker views the store. After the song's tracker data is migrated into the clip's
         // columns, the editor lets go of what it held and its columns read and write the lanes. The engine plays every lane, so the editor's
         // own player is not built for the Studio, and its note columns are the engine's Notes lane (shown by the note host).
         public bool StoreAttached { get; private set; }
@@ -481,10 +481,10 @@ namespace WDE.ModernPatternEditor
             // Process later when all machines are loaded
             clipEditorData = data;
             /*
-            List<MPEPattern> patterns = PatternEditorUtils.ProcessEditorData(this, data);
-            if (patterns.Count != 0)
+            List<MPEClip> clips = ClipEditorUtils.ProcessEditorData(this, data);
+            if (clips.Count != 0)
             {
-                MPEPatternsDB.SetPatterns(patterns);
+                MPEClipsDB.SetClips(clips);
             }
             */
         }
@@ -634,7 +634,7 @@ namespace WDE.ModernPatternEditor
             {
                 if (SelectedMachine != null)
                 {
-                    //IPattern pat = SelectedMachine.Machine.Patterns.FirstOrDefault(x => x.Name == pattern);
+                    //IClip pat = SelectedMachine.Machine.Clips.FirstOrDefault(x => x.Name == clip);
                     if (pat != null)
                     {
                         MPEClip mpeClip = MPEClipsDB.GetMPEClip(pat);
@@ -785,11 +785,11 @@ namespace WDE.ModernPatternEditor
                     }
                 }
 
-                // Notify patterns changed so seq editor can update the pattern block UI.
+                // Notify clips changed so seq editor can update the clip block UI.
                 // This limits the amount of messages.
                 // Fork (neo-buzz audio hygiene): Keys made a list and its collection on every call
                 // (this runs on the audio thread on every buffer), and IsEmpty takes every lock of an
-                // empty dictionary: only when a pattern changed since, as a flag says.
+                // empty dictionary: only when a clip changed since, as a flag says.
                 if (songTime.PosInTick == 0 && clipsChanged)
                 {
                     clipsChanged = false;
@@ -827,7 +827,7 @@ namespace WDE.ModernPatternEditor
         internal void ClipChanged(IClip clip)
         {
             changedClipsSinceLastTick.TryAdd(clip, true);
-            clipsChanged = true;                     // after: Work's drain sees the pattern
+            clipsChanged = true;                     // after: Work's drain sees the clip
         }
 
         private static MPEClipColumn? GetNoteVelocityColumn(MPEClip mpeClip, int track)

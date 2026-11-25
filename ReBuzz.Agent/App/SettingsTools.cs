@@ -74,7 +74,7 @@ namespace ReBuzz.Agent.App
                     "Writes one preference and saves it. The value is checked against the setting's type, choices and range. Every change goes to the audit log (settings_history) with the value it replaced, " +
                     "so settings_set can put it back. Annotated destructive because it reaches the engine's flags and the safety settings: a client asks the person first. " +
                     "The result says when the setting needs a restart. agent.AllowAgents and agent.Port end this connection when they change; the audio device, buffer and rate " +
-                    "are set with audio_set (it reverts a choice that gives no sound). Example: settings_set(key=\"general.PatternLength\", value=32).",
+                    "are set with audio_set (it reverts a choice that gives no sound). Example: settings_set(key=\"general.ClipLength\", value=32).",
                 Input = Object(null,
                     Req("key", String("\"section.Name\" as settings_get lists it")),
                     Req("value", AnyOf("The new value: true/false, a number, or one of the choices", Boolean("A switch"), Number("A number"), String("A choice or text")))),

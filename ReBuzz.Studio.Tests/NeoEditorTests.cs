@@ -1857,7 +1857,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(agent.Name, Is.EqualTo("Drive"));
                 Assert.That(agent.Badge, Is.EqualTo("Agent"));
 
-                // The same control written by anything else (a pattern, a peer machine) is automation.
+                // The same control written by anything else (a clip, a peer machine) is automation.
                 var attack = Global(m, "Attack");
                 window.MouseMove(new Point(2, 2));
                 Thread.Sleep((int)ExplainState.AutomationHoldMs + 100);

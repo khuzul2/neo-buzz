@@ -286,7 +286,7 @@ namespace ReBuzz.Agent
                 Name = "snapshot_save",
                 Title = "Save a snapshot",
                 Description =
-                    "Remembers the whole song under a name: every machine's parameters, state (samples, wavetables, banks), patterns, arrangement, wires and Session layout, " +
+                    "Remembers the whole song under a name: every machine's parameters, state (samples, wavetables, banks), clips, arrangement, wires and Session layout, " +
                     "stored in a history folder beside the song (<song>.history) so it outlives this session. Save \"before\", change things, render both, and snapshot_restore the better one. " +
                     "kind=\"parameters\" keeps the old light snapshot instead (parameters, mutes and connection gains only, this session only). " +
                     "Snapshots are also taken automatically on save, every few minutes of editing and before big operations, labelled auto. Example: snapshot_save(name=\"mix A\").",
@@ -352,9 +352,9 @@ namespace ReBuzz.Agent
                 Title = "Restore a snapshot",
                 Description =
                     "Puts the whole song back as a full snapshot had it (name or id from snapshot_list). One undo step: undo returns the song to how it was (it also keeps an \"Auto: before restoring …\" snapshot). " +
-                    "Transport stopped: the song is replaced as opening a file does (mode \"applied\"). While the song plays it is glitch-free: parameters glide and patterns, tracks, mutes and wire levels change together at the next boundary " +
+                    "Transport stopped: the song is replaced as opening a file does (mode \"applied\"). While the song plays it is glitch-free: parameters glide and clips, tracks, mutes and wire levels change together at the next boundary " +
                     "(quantize: now, beat or bar, default bar), and machines that differ are built beside the playing ones and crossfaded in, so nothing clicks (mode \"live\": the result says it is waiting for the boundary, applies_in_ms estimates it). " +
-                    "A restore that can't be prepared safely while playing (a native machine whose state differs, a pattern editor's data, different waves, a different tick rate) waits until the transport stops (mode \"deferred\", with the reason); " +
+                    "A restore that can't be prepared safely while playing (a native machine whose state differs, a clip editor's data, different waves, a different tick rate) waits until the transport stops (mode \"deferred\", with the reason); " +
                     "the song is unchanged until then, and it applies on its own at the stop. The Session View's clip grid is not part of a live restore. " +
                     "kind=\"parameters\" instead puts every machine's parameters, mutes and connection gains back at once (machines added since are left alone; removed ones are reported; one undo step). " +
                     "Example: snapshot_restore(name=\"mix A\", quantize=\"bar\").",
@@ -438,11 +438,11 @@ namespace ReBuzz.Agent
                 Title = "Compare snapshots",
                 Description =
                     "What differs between two snapshots, or between a snapshot and the song now. Full snapshots: machines added, removed or replaced, wires and gains, parameters (as the machines show them), " +
-                    "patterns edited, arrangement and waves, tempo. Parameter snapshots: parameters, mutes and connection gains per machine. " +
+                    "clips edited, arrangement and waves, tempo. Parameter snapshots: parameters, mutes and connection gains per machine. " +
                     "Example: snapshot_diff(a=\"mix A\") compares with now; snapshot_diff(a=\"mix A\", b=\"mix B\").",
                 Input = Object(null, Req("a", String("A snapshot (name or id)")), Opt("b", String("Another snapshot (default: the song now)")), Opt("kind", String("full or parameters (default: the full snapshot of that name, else the parameter one)", "full", "parameters"))),
                 Output = Object(null, Req("machines", Array(Object(null, Req("machine", String("Name")), Req("changes", Array(String("A change"), "Changes"))), "Machines that differ")),
-                    Opt("changes", Array(Object(null, Req("area", String("machines, wires, parameters, patterns, sequence, waves or song")), Req("subject", String("What it is about")), Req("text", String("What changed"))), "Full snapshots: every change, going from a to b"))),
+                    Opt("changes", Array(Object(null, Req("area", String("machines, wires, parameters, clips, sequence, waves or song")), Req("subject", String("What it is about")), Req("text", String("What changed"))), "Full snapshots: every change, going from a to b"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {

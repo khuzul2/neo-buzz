@@ -153,7 +153,7 @@ namespace ReBuzz.Studio.Views.Session
                     HorizontalAlignment = HorizontalAlignment.Left
                 };
 
-                // The piano roll: until the pattern editor comes (S6), where the studio writes notes.
+                // The piano roll: until the clip editor comes (S6), where the studio writes notes.
                 notesButton = new FlatButton("Notes…", () => { if (shownClip != null) view.EditNotes(shownSequence, shownClip); },
                     $"Edit the clip's notes in the piano roll ({ModName}+double-click the slot)")
                 {
@@ -311,7 +311,7 @@ namespace ReBuzz.Studio.Views.Session
                     start.Text = Place(c.Start);
                     loopStart.Text = Place(c.LoopStart);
                     // The end it plays to, the clip's own end when the setting is 0 (as the text below says);
-                    // committed unchanged, the clip's end stays 0 and follows the pattern's length.
+                    // committed unchanged, the clip's end stays 0 and follows the clip's length.
                     var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
                     loopEnd.Text = Place(end);
                     loopStartLabel.Opacity = c.Loop ? 1 : 0.4;

@@ -1,4 +1,4 @@
-// Fork (docs/specs/daw-modes.md AR2): the controllers of a pattern's engine MIDI column, the CC lanes under the piano roll. Pitch
+// Fork (docs/specs/daw-modes.md AR2): the controllers of a clip's engine MIDI column, the CC lanes under the piano roll. Pitch
 // bend and control changes sit in the column beside the notes (session takes and the agent keep them; until now no view showed them).
 // A controller point is one event; an edit is one undo step of the song's history (the notes' way, MidiColumnNotes).
 
@@ -65,7 +65,7 @@ namespace ReBuzz.Core.Notes
         public static readonly int[] Usual = { 1, 7, 10, 11, 64, PitchBend };
     }
 
-    /// <summary>The controllers of one pattern's MIDI column, read and edited on the song's history.</summary>
+    /// <summary>The controllers of one clip's MIDI column, read and edited on the song's history.</summary>
     internal sealed class MidiControllers
     {
         readonly ReBuzzCore buzz;
@@ -80,7 +80,7 @@ namespace ReBuzz.Core.Notes
 
         public IClip Clip { get; }
 
-        /// <summary>The pattern's length in pattern time (1/240 tick).</summary>
+        /// <summary>The clip's length in clip time (1/240 tick).</summary>
         public int Length => notes.Length;
 
         /// <summary>Null when the points can be edited now, else why not.</summary>

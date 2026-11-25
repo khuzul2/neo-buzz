@@ -61,13 +61,13 @@ namespace ReBuzz.Audio
         readonly bool SpeedAdjustLinear = false;
 
         float[] playWaveBuffer = new float[256 * 2];
-        // Audio-thread-owned reusable buffer for PlayPatternColumnEvents (zero-alloc
+        // Audio-thread-owned reusable buffer for PlayClipColumnEvents (zero-alloc
         // GetEventsInto). Single audio thread, fully consumed each column iteration.
         // Fork (follow-ups): sized ahead, so the transport's first play doesn't grow them on the audio thread.
         readonly List<ClipEvent> playColumnEvents = new List<ClipEvent>(256);
 
-        // Fork (Session View): patterns given a play position by the last UpdatePatternPositions
-        // call, each once - session clips and arranged patterns. Audio thread only.
+        // Fork (Session View): clips given a play position by the last UpdateClipPositions
+        // call, each once - session clips and arranged clips. Audio thread only.
         readonly List<ClipCore> activeClips = new List<ClipCore>(256);
         readonly HashSet<ClipCore> activeClipSet = new HashSet<ClipCore>(256);
 
@@ -257,9 +257,9 @@ namespace ReBuzz.Audio
                         restore.OnBlock(framesToProcess, masterInfo.PosInTick == 0 || (engineSettings.SubTickTiming && subTickInfo.PosInSubTick == 0));
 
                     Mark("tick setup");
-                    // Call Pattern Column Events
+                    // Call Clip Column Events
                     UpdateClipColumnEvents(framesToProcess);
-                    Mark("pattern column events");
+                    Mark("clip column events");
 
                     // Update Managed Machine host info
                     buzzCore.MachineManager.UpdateMasterAndSubTickInfoToHost();
@@ -361,9 +361,9 @@ namespace ReBuzz.Audio
                     }
 
                     Mark("tick end (position, session OnTick)");
-                    // Update position info in patterns
+                    // Update position info in clips
                     UpdateClipPositions(framesToProcess);
-                    Mark("pattern positions");
+                    Mark("clip positions");
 
                     // Update frame count
                     unchecked { ReBuzzCore.GlobalState.AudioFrame += framesToProcess; }
@@ -518,9 +518,9 @@ namespace ReBuzz.Audio
             activeClips.Clear();
             activeClipSet.Clear();
 
-            // Clear the play positions set last time. Fork (0.4.1): only those patterns, not every
-            // pattern of every machine (that was O(song size) per 256-sample block; the result is
-            // the same, since only this method and solo playback give patterns a position, and
+            // Clear the play positions set last time. Fork (0.4.1): only those clips, not every
+            // clip of every machine (that was O(song size) per 256-sample block; the result is
+            // the same, since only this method and solo playback give clips a position, and
             // both add them to the list).
             var positioned = buzzCore.SongCore.PositionedClips;
             for (int i = 0; i < positioned.Count; i++)
@@ -552,8 +552,8 @@ namespace ReBuzz.Audio
                 var sequences = buzzCore.SongCore.SequencesList;
 
                 // Session View (fork): a launched clip plays from where it was launched (not
-                // songPosition % length). Session clips go first: a pattern has one play position,
-                // and when the arrangement of another track holds the same pattern, the session
+                // songPosition % length). Session clips go first: a clip has one play position,
+                // and when the arrangement of another track holds the same clip, the session
                 // clip keeps it (0.4.1; before, whichever track came last won).
                 for (int s = 0; s < sequences.Count; s++)
                 {
@@ -598,10 +598,10 @@ namespace ReBuzz.Audio
                             {
                                 int timeBase = ClipEvent.TimeBase;
                                 int newClipPos = int.MinValue;
-                                // Fork (0.5.1): an event can start partway into its pattern.
+                                // Fork (0.5.1): an event can start partway into its clip.
                                 int startTick = songPlayPosition - eventTime + seqEvent.PlayedOffset;
 
-                                // Hack. Pattern editor needs to get adjusted position if play position moved by user or control machine
+                                // Hack. Clip editor needs to get adjusted position if play position moved by user or control machine
                                 if (song.AdjustPositionOnTick && masterInfo.PosInTick == 0)
                                 {
                                     newClipPos = startTick * timeBase +
@@ -712,7 +712,7 @@ namespace ReBuzz.Audio
                 var pe = pes.Pe;
                 var machine = pes.Machine;
 
-                // Fork: also release notes whose pattern stopped (clip stopped or switched, span
+                // Fork: also release notes whose clip stopped (clip stopped or switched, span
                 // ended) or jumped back before the note started (loop wrap, relaunch). Upstream
                 // only released notes the play position had passed, so those hung.
                 int pos = pes.Clip.PlayPosition;
@@ -729,8 +729,8 @@ namespace ReBuzz.Audio
             }
             else
             {
-                // Fork: play each pattern that has a position once - session clips included (G5).
-                // Upstream called this for every arranged event, so a pattern arranged N times
+                // Fork: play each clip that has a position once - session clips included (G5).
+                // Upstream called this for every arranged event, so a clip arranged N times
                 // in one sequence sent its MIDI column events N times.
                 for (int i = 0; i < activeClips.Count; i++)
                 {
@@ -740,8 +740,8 @@ namespace ReBuzz.Audio
         }
 
         /// <summary>
-        /// Fork (0.6.3): length of the block starting at PosInTick, in pattern time (1/240 tick),
-        /// as the difference of the positions UpdatePatternPositions gives its start and end.
+        /// Fork (0.6.3): length of the block starting at PosInTick, in clip time (1/240 tick),
+        /// as the difference of the positions UpdateClipPositions gives its start and end.
         /// </summary>
         static int BlockLength(MasterInfoExtended masterInfo, int sampleCount)
         {
@@ -759,7 +759,7 @@ namespace ReBuzz.Audio
                 // Fork (0.6.3): the window is this block, [PlayPosition, PlayPosition + its length).
                 // PlayPosition already includes the part of the tick before the block; adding
                 // PosInTick again made windows overlap, so events late in a tick were sent up to
-                // a dozen times. Ends are computed as UpdatePatternPositions computes starts, so
+                // a dozen times. Ends are computed as UpdateClipPositions computes starts, so
                 // one block's end is the next block's start: every position is sent exactly once.
                 int from = clip.PlayPosition;
                 int to = from + BlockLength(masterInfo, sampleCount);
@@ -769,8 +769,8 @@ namespace ReBuzz.Audio
                 // (every song before them) skip this, so they play exactly as before.
                 bool rampPoint = masterInfo.PosInTick == 0 || (engineSettings.SubTickTiming && ReBuzzCore.subTickInfo.PosInSubTick == 0);
 
-                // Fork (0.4.1): the list itself; pattern.Columns wraps it in a new read-only
-                // collection on every call (per pattern per block, on the audio thread).
+                // Fork (0.4.1): the list itself; clip.Columns wraps it in a new read-only
+                // collection on every call (per clip per block, on the audio thread).
                 IList<IClipColumn> columns = clip is ClipCore core ? core.ColumnsList : clip.Columns;
 
                 for (int i = 0; i < columns.Count; i++)
@@ -780,7 +780,7 @@ namespace ReBuzz.Audio
                         continue;
 
                     // Fork (0.7): session automation, recorded into a parameter column the engine plays
-                    // (pattern editors play their own parameter data). Never recorded again.
+                    // (clip editors play their own parameter data). Never recorded again.
                     if (column.Type == ClipColumnType.Parameter)
                     {
                         if (column is not ClipColumnCore automation || !automation.EnginePlays || column.Parameter == null)

@@ -203,7 +203,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
         }
     }
 
-    // Temporary until cleaned up. Merge with MPEPatternColumn?
+    // Temporary until cleaned up. Merge with MPEClipColumn?
     public class MPEClipColumnBuzz : IClipColumn
     {
         public MPEClipColumnBuzz(ClipColumnType Type, IClip Clip, IMachine Machine, IParameter Parameter, int Track)

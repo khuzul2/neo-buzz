@@ -1,6 +1,6 @@
-// Fork (docs/specs/studio-mvp.md S6): the pattern editor's colours and font on Avalonia: the WPF
+// Fork (docs/specs/studio-mvp.md S6): the clip editor's colours and font on Avalonia: the WPF
 // editor's default theme (RunTime/Themes/Default/ModernPatternEditor/ModernPatternEditor.xaml, and the
-// note colours of PatternEditor.xaml's HSPAColorProvider) as data, and its font metrics
+// note colours of ClipEditor.xaml's HSPAColorProvider) as data, and its font metrics
 // (ColumnRenderer/Font.cs) measured with Avalonia's text.
 
 using Avalonia;
@@ -60,7 +60,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         // Fork (ux-overhaul.md P3c): the beat and bar rules, 3.4:1 and 7.4:1 against the lighter of the two beat shades (#373737).
         public static readonly SolidColorBrush BeatRule = B(0xFF888888, 0xFF8A8A97);
         public static readonly SolidColorBrush BarRule = B(0xFFCCCCCC, 0xFF3A3A44);
-        public static readonly SolidColorBrush LabelHover = B(0x28000000, 0x1E000000);            // PatternControl's highlight
+        public static readonly SolidColorBrush LabelHover = B(0x28000000, 0x1E000000);            // ClipControl's highlight
         public static readonly SolidColorBrush PlayPosition = B(0x40000000, 0x1E000000);          // playPosRectangle
         // Fork (ux-overhaul.md §3.1, UX review mac-052): the block selection in the studio's accent at 35 % with an accent
         // outline. WPF's SelectionRectangleStyle (#20400000, a 1.06:1 tint) couldn't be seen on the dark grid.
@@ -68,7 +68,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public static readonly IPen SelectionStroke = new Pen(B(0xFF4C8DF6, 0xFF0064C7), 1.5);
         public static readonly SolidColorBrush StatusText = B(0xFFF0F0F0, 0xFF1B1B20);
 
-        /// <summary>The note colours (PatternNoteColors: 12 colours, hue 0 → 0.916667, saturation 0.7, perceived brightness 0.6; 0.4 on the light theme).</summary>
+        /// <summary>The note colours (ClipNoteColors: 12 colours, hue 0 → 0.916667, saturation 0.7, perceived brightness 0.6; 0.4 on the light theme).</summary>
         public static readonly IBrush[] NoteBrushes = Enumerable.Range(0, 12)
             .Select(i => (IBrush)new SolidColorBrush(Hspa(0.916667 * i / 11.0, 0.7, BuzzGUI.Common.StudioLook.Light ? 0.40 : 0.6))).ToArray();
 
@@ -101,7 +101,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
     }
 
     /// <summary>
-    /// The pattern font (ColumnRenderer/Font.cs): the settings' family (Consolas by default) with
+    /// The clip font (ColumnRenderer/Font.cs): the settings' family (Consolas by default) with
     /// monospaced fallbacks for macOS and Linux, its line height, and the width of a character. Text
     /// is cached by string and brush, as the WPF editor cached whole beats.
     /// </summary>

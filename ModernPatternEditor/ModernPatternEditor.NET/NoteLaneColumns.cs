@@ -1,6 +1,6 @@
 // Fork (docs/specs/daw-modes.md AR3, seam S7): the tracker sees the notes.
 //
-// The engine's MIDI column is where a pattern's notes live for a machine that takes MIDI (the Session View's takes, the agent
+// The engine's MIDI column is where a clip's notes live for a machine that takes MIDI (the Session View's takes, the agent
 // and both piano rolls write it). The studio's editor draws it as lanes of its own, a voice at a time ("Notes / Voice 1":
 // Note, Velocity, Delay, Cut), computed with BuzzGUI.Common.NoteLanes. They are display only: nothing of them is saved with
 // the editor's data, MPE doesn't play them (the engine plays the column), and an edit in a lane is turned into the notes it
@@ -20,8 +20,8 @@ namespace WDE.ModernPatternEditor
     internal enum NoteLaneKind { Note, Velocity, Delay, Cut }
 
     /// <summary>
-    /// The pattern's engine MIDI column seen as tracker lanes: finds the column, follows its changes (a take, the piano rolls,
-    /// the agent, an undo) and lays its notes out when asked. One for each pattern the editor shows.
+    /// The clip's engine MIDI column seen as tracker lanes: finds the column, follows its changes (a take, the piano rolls,
+    /// the agent, an undo) and lays its notes out when asked. One for each clip the editor shows.
     /// </summary>
     internal sealed class NoteLaneHost : IDisposable
     {
@@ -54,11 +54,11 @@ namespace WDE.ModernPatternEditor
             Attach(null);
         }
 
-        /// <summary>The pattern's MIDI column for its own machine, as the Session View finds it (a parameter column of a track isn't).</summary>
+        /// <summary>The clip's MIDI column for its own machine, as the Session View finds it (a parameter column of a track isn't).</summary>
         internal static IClipColumn FindColumn(IClip clip) =>
             clip?.Columns.FirstOrDefault(c => c.Type == ClipColumnType.MIDI && (c.Parameter == null || c.Parameter.IndexInGroup < 0) && ReferenceEquals(c.Machine, clip.Machine));
 
-        /// <summary>The MIDI column, made if the pattern has none.</summary>
+        /// <summary>The MIDI column, made if the clip has none.</summary>
         internal static IClipColumn EnsureColumn(IClip clip)
         {
             var c = FindColumn(clip);
@@ -104,7 +104,7 @@ namespace WDE.ModernPatternEditor
             });
         }
 
-        /// <summary>The notes of the column on rows: the pattern's rows per beat, a voice for each overlapping note.</summary>
+        /// <summary>The notes of the column on rows: the clip's rows per beat, a voice for each overlapping note.</summary>
         public NoteLanes Lanes
         {
             get
@@ -138,7 +138,7 @@ namespace WDE.ModernPatternEditor
     }
 
     /// <summary>
-    /// Events leave and come to a pattern's engine MIDI column, one step of the song's history. The pattern is found by its
+    /// Events leave and come to a clip's engine MIDI column, one step of the song's history. The clip is found by its
     /// machine's and its own name each time, so undo and redo work after the machine is deleted and made again.
     /// </summary>
     [HistoryName("Edit notes")]

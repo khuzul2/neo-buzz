@@ -128,14 +128,14 @@ def generated(name, features):
 def _(b, path):
     b.call("song_set", tempo_bpm=TEMPO)
     b.call("machine_add", gear="Neo Poly", name="Lead")
-    b.call("pattern_create", machine="Lead", name="Loop", length_beats=4)
-    b.call("notes_write", machine="Lead", pattern="Loop", notes=[nt.n("C3", 0, 1), nt.n("G3", 1, 0.5), nt.n("E4", 2, 1), nt.n("A3", 3, 0.75, 70)])
-    b.call("automation_write", machine="Lead", pattern="Loop", param="F1 cutoff", shape="step",
+    b.call("clip_create", machine="Lead", name="Loop", length_beats=4)
+    b.call("notes_write", machine="Lead", clip="Loop", notes=[nt.n("C3", 0, 1), nt.n("G3", 1, 0.5), nt.n("E4", 2, 1), nt.n("A3", 3, 0.75, 70)])
+    b.call("automation_write", machine="Lead", clip="Loop", param="F1 cutoff", shape="step",
            points=[{"at": 0, "value": "raw:20"}, {"at": 2, "value": "raw:60"}])
-    b.call("automation_write", machine="Lead", pattern="Loop", param="Uni detune", shape="linear",
+    b.call("automation_write", machine="Lead", clip="Loop", param="Uni detune", shape="linear",
            points=[{"at": 0, "value": "raw:0"}, {"at": 4, "value": "raw:80"}])
-    b.call("session_clip_set", machine="Lead", scene=1, pattern="Loop", mode="Toggle", quantization="Bar", loop=True)
-    b.call("arrangement_place", machine="Lead", pattern="Loop", at=[0])
+    b.call("session_clip_set", machine="Lead", scene=1, clip="Loop", mode="Toggle", quantization="Bar", loop=True)
+    b.call("arrangement_place", machine="Lead", clip="Loop", at=[0])
     b.call("song_set", song_end_beats=16)
     b.call("arrangement_clip", op="loop", machine="Lead", at=0, on=True)
     b.call("arrangement_clip", op="trim", machine="Lead", at=0, end=16)

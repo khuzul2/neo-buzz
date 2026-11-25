@@ -53,7 +53,7 @@ namespace ReBuzz.Agent.Guides
             {
                 Name = "design-sound",
                 Title = "Design a sound",
-                Description = "Makes a sound from a description on a Neo synth (or a given machine): preset, parameters, an audition pattern, renders and measurements. Includes the sound-design guides (with the synth and FM recipes) and the machine's page.",
+                Description = "Makes a sound from a description on a Neo synth (or a given machine): preset, parameters, an audition clip, renders and measurements. Includes the sound-design guides (with the synth and FM recipes) and the machine's page.",
                 Arguments = new[]
                 {
                     new PromptArgument { Name = "machine", Description = "A machine in the song (\"Bass\") or a gear to add (\"Neo Poly\", \"Neo Wave\", \"Neo FM6\"); default: the agent picks" },
@@ -99,7 +99,7 @@ namespace ReBuzz.Agent.Guides
             {
                 Name = "arrange",
                 Title = "Arrange the song",
-                Description = "Turns the song's patterns into a form: named sections, patterns placed per section with energy changes, builds and transitions, each section rendered and its loudness read as a curve. Includes the composition and genres guides and the recipes.",
+                Description = "Turns the song's clips into a form: named sections, clips placed per section with energy changes, builds and transitions, each section rendered and its loudness read as a curve. Includes the composition and genres guides and the recipes.",
                 Arguments = new[]
                 {
                     new PromptArgument { Name = "form", Description = "The sections, e.g. \"intro, verse, chorus, verse, chorus, outro\", or a genre whose template to follow (default: the song's own genre template)" },
@@ -181,10 +181,10 @@ Plan. Say each step in a sentence before doing it; render and measure before you
 1. Orient: `studio_status`, then `machine_list`. If the song isn't empty, build on it or ask; never `song_new` over unsaved work without saving.
 2. Song: `song_set(tempo_bpm=…)`, then `arrangement_markers(set=[…])` with every section of the form at its bar (""9.1"" is bar 9).
 3. Instruments: one machine per role (Kick, Snare, Hats, Bass, Chords, Lead, Pad, FX): `machine_add(gear=…, name=…)`, `preset_load` from the synth-recipes and fm-recipes guides' recipes, `param_set` for the rest.
-4. Harmony: `theory(op=""progression"", key=…, progression=…, octave=3)`; write its notes with `notes_write` into a Chords pattern (`pattern_create` with the section's length in beats).
+4. Harmony: `theory(op=""progression"", key=…, progression=…, octave=3)`; write its notes with `notes_write` into a Chords clip (`clip_create` with the section's length in beats).
 5. Drums: the genre's grid from the composition guide → `notes_write`; then `notes_transform` with quantize swing and humanize as the template says.
 6. Bass and melody: roots and approach notes for the bass; a 1–2 bar motif developed with `notes_transform` (sequence, invert, stretch) for the lead. Check them with `theory(op=""fit"", key=…, notes=[…])`.
-7. Arrangement: patterns per section, placed with `arrangement_place(machine=…, pattern=…, at=…, repeat_every_beats=…, times=…)`, following the energy table (add or remove layers every 8 bars); builds and fills with `automation_write`.
+7. Arrangement: clips per section, placed with `arrangement_place(machine=…, clip=…, at=…, repeat_every_beats=…, times=…)`, following the energy table (add or remove layers every 8 bars); builds and fills with `automation_write`.
 8. Listen: `render(section=…)` for each section as you go, then the whole song with `render()`; `analyze(source=…, metrics=[""loudness"", ""peaks"", ""key"", ""tempo"", ""spectrum""])`. The key and tempo must read back as written; the drop or chorus 2–6 LU louder than the breakdown or verse.
 9. Quick balance: probe every part (`render(probes=[…])`), set levels with `connection_set` so no part clips and the master peaks at or below -6 dBTP (the mixing guide has the numbers).
 10. Save: `song_save(path=…)` as .nbl.
@@ -214,7 +214,7 @@ Report the form (sections and bars), key, tempo, the sounds, and the measured lo
             else sb.Append("pick the gear from the recipes (Neo Poly: analog pads, basses, leads, drums; Neo Wave: evolving and digital; Neo FM6: electric pianos, bells, metallic) and `machine_add` it. ");
             sb.Append(@"Read it with `machine_describe(machine=…)`.
 3. Start close: `preset_list(machine=…, search=…)`, `preset_load` the nearest preset, or start from the guide's recipe.
-4. Audition pattern: `pattern_create(machine=…, name=""Audition"", length_beats=8)`, notes in the role's register (bass A1–A2, pad chord A3–E4, lead A4, bell C5), placed with `arrangement_place` at 0 in an empty song or after the song's end (that moves the end: note the length from `studio_status` and restore it with `song_set(song_end_beats=…)` when done).
+4. Audition clip: `clip_create(machine=…, name=""Audition"", length_beats=8)`, notes in the role's register (bass A1–A2, pad chord A3–E4, lead A4, bell C5), placed with `arrangement_place` at 0 in an empty song or after the song's end (that moves the end: note the length from `studio_status` and restore it with `song_set(song_end_beats=…)` when done).
 5. Loop, at most six times: `param_set` (one idea per change) → `render(from=…, to=…, solo=[…])` → `analyze(source=…, metrics=[""spectrum"", ""dynamics"", ""pitch"", ""stereo""])` → compare with the targets. `snapshot_save` versions worth keeping; `undo` changes that measure worse.
 6. Effects that are part of the sound (Neo Drive, Neo Comp, Neo Verb) go right after it with `machine_add(gear=…, insert_after=…)`; measure with and without (`render(mute=[…])` doesn't bypass, so use `machine_set(machine=…, bypass=true)` and back).
 7. Keep it: `preset_save(machine=…, name=…, comment=…)` when the user wants it reusable.
@@ -313,11 +313,11 @@ Report each change with its before and after numbers, and anything you couldn't 
             sb.Append($"Critique the current song in {Product.Name}").Append(s == "all" ? "" : named ? $", focusing on \"{scope}\" (a section or a machine)" : $", scope: {scope}").Append(".\n\n");
             sb.Append(@"Rules: read-only. Change nothing in the song (render and analyze change nothing). Every finding needs evidence: a number from a tool, a note, a bar.
 Plan.
-1. Read: `studio_status`, `machine_list`, `arrangement_get`, `arrangement_markers`, `pattern_list`.
+1. Read: `studio_status`, `machine_list`, `arrangement_get`, `arrangement_markers`, `clip_list`.
 2. Listen: `analyze_mix()` of the whole song (per-track levels, masking pairs, headroom, the worst problems first), and `render()` of it");
             sb.Append(named ? $" (or `render(section=\"{scope}\")` if it is a section; probe it with `render(probes=[\"{scope}\"])` if it is a machine)" : "");
             sb.Append(@"; `analyze` the master (loudness, peaks, dynamics, spectrum, stereo, key, tempo) and the probes of the main parts (spectrum, dynamics); `plot(kind=""loudness"", sources=[…])` for the energy curve. With a reference track, `compare(a=…, b=""<reference.wav>"")`.
-3. Notes: `notes_read` the main patterns; `theory(op=""fit"", key=…, notes=[…])` for wrong notes; compare the form with the genre template.
+3. Notes: `notes_read` the main clips; `theory(op=""fit"", key=…, notes=[…])` for wrong notes; compare the form with the genre template.
 4. Go through the checklists below; for each item that fails, note the evidence.
 5. Report the five biggest problems first, ranked by how much they hurt the track, each as: problem, evidence (numbers), fix (the tool calls that would make it, with values), and how to check the fix. Then smaller notes, then what already works.
 ");
@@ -348,12 +348,12 @@ Plan.
                 form != null ? "Form: the sections as given; use the genres guide's nearest template for their lengths and energy.\n" :
                 "Form: the song's own genre template in the genres guide below; if the genre isn't clear, ask which.\n");
             sb.Append(@"
-Plan. Arrange with what exists: write new patterns only where a section has nothing to play. Render each section before moving on.
-1. Inventory: `studio_status`, `machine_list`, `pattern_list(machine=…)` for each source, `arrangement_get` and `session_get` (what is already placed or launched). Keep what the person placed; ask before clearing.
+Plan. Arrange with what exists: write new clips only where a section has nothing to play. Render each section before moving on.
+1. Inventory: `studio_status`, `machine_list`, `clip_list(machine=…)` for each source, `arrangement_get` and `session_get` (what is already placed or launched). Keep what the person placed; ask before clearing.
 2. Back-up: `snapshot_save(name=""arrange 0"")`.
 3. Sections: `arrangement_markers(set=[…])`, each section at its bar (""9.1"" is bar 9), lengths in 4- and 8-bar phrases, from the form.
-4. Layers per section from the genre's energy table: which machine plays where. `arrangement_place(machine=…, pattern=…, at=[…])` for each; add or remove a layer every 8 bars; keep the drums and bass present through the high-energy sections, and strip them for breakdowns.
-5. Transitions: a build before each drop (a filter or reverb-send rise with `automation_write`, or one Neo Macro moving several parameters: `modulate`), a fill in the last bar before a change (`notes_write` into a fill pattern), a break (a bar of silence or a reverse tail) before the biggest hit.
+4. Layers per section from the genre's energy table: which machine plays where. `arrangement_place(machine=…, clip=…, at=[…])` for each; add or remove a layer every 8 bars; keep the drums and bass present through the high-energy sections, and strip them for breakdowns.
+5. Transitions: a build before each drop (a filter or reverb-send rise with `automation_write`, or one Neo Macro moving several parameters: `modulate`), a fill in the last bar before a change (`notes_write` into a fill clip), a break (a bar of silence or a reverse tail) before the biggest hit.
 6. Check every section as you go: `render(section=…)` then `analyze(source=…, metrics=[""loudness"", ""peaks""])`. At the end `render()` the whole song and `plot(kind=""loudness"", sources=[…])`: the energy curve should rise and fall as the form says, the loudest part where the form puts its peak.
 7. Fix what the curve shows: a section that is too loud (remove a layer, lower a connection gain with `connection_set`) or too flat (add a layer or an automation lift).
 8. `song_save`. Report the form (sections and bars), the layers per section, and the measured loudness per section.
@@ -379,7 +379,7 @@ Plan. Say each move before you make it; read every answer; never surprise the pe
 2. Back-up: `snapshot_save(name=""start of set"")`.
 3. Grid: ");
             sb.Append(set != null ? $"one scene per part of the set (\"{set}\"): " : "one scene per section of the song: ");
-            sb.Append(@"`session_scene_set(scene=…, name=…, tempo_bpm=…)` and `session_clip_set(machine=…, scene=…, pattern=…, quantization=""Bar"")`, a bar-long pattern or longer in every slot that should play, `legato` for variations that should continue a phrase.
+            sb.Append(@"`session_scene_set(scene=…, name=…, tempo_bpm=…)` and `session_clip_set(machine=…, scene=…, clip=…, quantization=""Bar"")`, a bar-long clip or longer in every slot that should play, `legato` for variations that should continue a phrase.
 4. Hands: ");
             sb.Append(controller != null ? "`midi_learn(machine=…, parameter=…, timeout_seconds=20)` for each control (tell the person to move the knob, then call it), and read the result back with `midi_bindings_list`. For one knob that moves several things, a Neo Macro (`modulate`) with the controller bound to its `Value`." :
                 "ask whether a controller is connected; if so, bind it with `midi_learn` and read it back with `midi_bindings_list`; a Neo Macro (`modulate`) can put several parameters on one knob.");
@@ -415,10 +415,10 @@ Plan.
             else sb.Append("choose the Neo Learn machine for the idea (the teaching guide's table; `machine_find(intent=…)` if none fits) and `machine_add(gear=…, name=\"Teacher\")`. ");
             sb.Append(@"Add it apart from the person's song or leave the song as you found it: remove it at the end.
 3. Read the controls: `machine_describe(machine=""Teacher"")`: the `how`, `sound`, `unit` and range of the controls the idea needs. Pick one to three.
-4. A sound to hear: `preset_load` a plain preset, a held note or a short phrase (`midi_play` in studio mode; otherwise a pattern with `notes_write`, placed with `arrangement_place`).
+4. A sound to hear: `preset_load` a plain preset, a held note or a short phrase (`midi_play` in studio mode; otherwise a clip with `notes_write`, placed with `arrangement_place`).
 5. The lesson loop, for each control: say what will happen (from `how` and `sound`), change it in steps with `param_set` while the person listens (studio: `select` and `machine_open_editor` show the Explain strip), ask what they heard, then show a number (`render` two settings, `compare`, or `plot(kind=""spectrum"", …)`).
 6. Put it back (`undo` or `preset_load`), name the idea in one sentence, and offer the next step: a neighbouring control, a second machine (`guide(topic=""build-a-synth"")`), or the idea in a mix.
-7. Clean up: remove the Teacher machine and any audition pattern (`machine_remove`, `arrangement_clear`) unless the person wants to keep them.
+7. Clean up: remove the Teacher machine and any audition clip (`machine_remove`, `arrangement_clear`) unless the person wants to keep them.
 At beginner level use plain words and no numbers beyond the ones you play; at intermediate add units and ranges; at advanced add the curve and why the range is spread as it is. Report what you taught and what they heard.
 ");
             AppendGuides(sb, "teaching");

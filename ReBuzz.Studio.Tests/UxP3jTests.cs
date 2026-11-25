@@ -168,11 +168,11 @@ namespace ReBuzz.Studio.Tests
             window.Show();
             Settle();
             Call("machine_add", Args(("gear", gear), ("name", "Exported")));
-            Call("pattern_create", Args(("machine", "Exported"), ("name", "P"), ("length_beats", beats)));
+            Call("clip_create", Args(("machine", "Exported"), ("name", "P"), ("length_beats", beats)));
             var notes = new JsonArray();
             for (int b = 0; b < beats; b += 2) notes.Add(new JsonObject { ["pitch"] = 36 + (b / 2) % 4, ["start"] = (double)b, ["length"] = 1.0, ["velocity"] = 100 });
-            Call("notes_write", Args(("machine", "Exported"), ("pattern", "P"), ("notes", notes)));
-            Call("arrangement_place", Args(("machine", "Exported"), ("pattern", "P"), ("at", 0)));
+            Call("notes_write", Args(("machine", "Exported"), ("clip", "P"), ("notes", notes)));
+            Call("arrangement_place", Args(("machine", "Exported"), ("clip", "P"), ("at", 0)));
             Settle();
             return window;
         }

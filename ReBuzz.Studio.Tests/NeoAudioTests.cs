@@ -199,15 +199,15 @@ namespace ReBuzz.Studio.Tests
             var imported = Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = 2 });
             Assert.That(imported["isError"]?.GetValue<bool>() ?? false, Is.False, imported.ToJsonString());
             var s = imported["structuredContent"]!.AsObject();
-            string machine = (string)s["machine"], clip = (string)s["pattern"];
+            string machine = (string)s["machine"], clip = (string)s["clip"];
             Assert.That((int)s["slot"], Is.EqualTo(2));
             Assert.That((string)s["clip"]["warp"], Is.EqualTo("Pro"), "a new clip starts in Pro");
             Assert.That((double)s["clip"]["audio"]["seconds"], Is.EqualTo(2).Within(0.05));
             Assert.That(core.AudioAssets.Count, Is.EqualTo(1));
 
-            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["warp"] = "Complex", ["transpose"] = -3, ["detune"] = 20, ["gain_db"] = -6, ["loop"] = false, ["tempo_bpm"] = 90 });
+            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["warp"] = "Complex", ["transpose"] = -3, ["detune"] = 20, ["gain_db"] = -6, ["loop"] = false, ["tempo_bpm"] = 90 });
             Assert.That(set["isError"]?.GetValue<bool>() ?? false, Is.False, set.ToJsonString());
-            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clip })["structuredContent"]!.AsObject();
+            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["clip"] = clip })["structuredContent"]!.AsObject();
             Assert.That((string)get["warp"], Is.EqualTo("Complex"));
             Assert.That((int)get["transpose"], Is.EqualTo(-3));
             Assert.That((int)get["detune"], Is.EqualTo(20));
@@ -215,7 +215,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That((double)get["tempo_bpm"], Is.EqualTo(90).Within(0.01));
             Assert.That((bool)get["loop"], Is.False);
 
-            var bad = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["warp"] = "Sideways" });
+            var bad = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["warp"] = "Sideways" });
             Assert.That(bad["isError"]?.GetValue<bool>(), Is.True, "an unknown warp mode is refused");
             var missing = Tool("audio_import", new JsonObject { ["path"] = Work("nothing.wav") });
             Assert.That(missing["isError"]?.GetValue<bool>(), Is.True, "no such file");
@@ -230,11 +230,11 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             string file = Tones("pro.wav", 440, 660);
             var imported = Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = 1 })["structuredContent"]!.AsObject();
-            string machine = (string)imported["machine"], clip = (string)imported["pattern"];
+            string machine = (string)imported["machine"], clip = (string)imported["clip"];
 
-            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["warp"] = "pro", ["transpose"] = 4 });
+            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["warp"] = "pro", ["transpose"] = 4 });
             Assert.That(set["isError"]?.GetValue<bool>() ?? false, Is.False, set.ToJsonString());
-            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clip })["structuredContent"]!.AsObject();
+            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["clip"] = clip })["structuredContent"]!.AsObject();
             Assert.That((string)get["warp"], Is.EqualTo("Pro"));
             // Where the native library is not beside the app the clip plays as Complex and says so; where it is, there is nothing to say.
             Assert.That((string)get["warp_playing"] ?? "Complex", Is.EqualTo("Complex"));
@@ -244,7 +244,7 @@ namespace ReBuzz.Studio.Tests
             core.SaveSongCopy(path);
             core.NewSong();
             Reopen(core, path);
-            var back = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clip })["structuredContent"]!.AsObject();
+            var back = Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["clip"] = clip })["structuredContent"]!.AsObject();
             Assert.That((string)back["warp"], Is.EqualTo("Pro"), "saved as Complex with a marker, read as Pro");
             Assert.That((int)back["transpose"], Is.EqualTo(4));
         }
@@ -260,15 +260,15 @@ namespace ReBuzz.Studio.Tests
             (string Machine, string Clip) Import(int slot)
             {
                 var r = Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = slot })["structuredContent"]!.AsObject();
-                return ((string)r["machine"], (string)r["pattern"]);
+                return ((string)r["machine"], (string)r["clip"]);
             }
-            string Warp((string Machine, string Clip) c) => (string)Tool("audio_clip_get", new JsonObject { ["machine"] = c.Machine, ["pattern"] = c.Clip })["structuredContent"]!["warp"];
+            string Warp((string Machine, string Clip) c) => (string)Tool("audio_clip_get", new JsonObject { ["machine"] = c.Machine, ["clip"] = c.Clip })["structuredContent"]!["warp"];
 
             var oldClip = Import(1);                       // a clip of an old song: Beats, which that song saved as no attribute at all
-            Tool("audio_clip_set", new JsonObject { ["machine"] = oldClip.Machine, ["pattern"] = oldClip.Clip, ["warp"] = "Beats" });
+            Tool("audio_clip_set", new JsonObject { ["machine"] = oldClip.Machine, ["clip"] = oldClip.Clip, ["warp"] = "Beats" });
             var newClip = Import(2);                       // a clip made now
             var unwarped = Import(3);                      // a file with no tempo is left as it is until a tempo is set: warp Off
-            Tool("audio_clip_set", new JsonObject { ["machine"] = unwarped.Machine, ["pattern"] = unwarped.Clip, ["warp"] = "Off" });
+            Tool("audio_clip_set", new JsonObject { ["machine"] = unwarped.Machine, ["clip"] = unwarped.Clip, ["warp"] = "Off" });
             Assert.That((Warp(oldClip), Warp(newClip), Warp(unwarped)), Is.EqualTo(("Beats", "Pro", "Off")));
 
             string path = Work("modes.nbl");
@@ -278,7 +278,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That((Warp(oldClip), Warp(newClip), Warp(unwarped)), Is.EqualTo(("Beats", "Pro", "Off")), "after a save and a reopen");
 
             // A tempo set on the unwarped clip is what it was waiting for: it follows the song now, in the mode a new clip starts in.
-            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = unwarped.Machine, ["pattern"] = unwarped.Clip, ["tempo_bpm"] = 100 });
+            var set = Tool("audio_clip_set", new JsonObject { ["machine"] = unwarped.Machine, ["clip"] = unwarped.Clip, ["tempo_bpm"] = 100 });
             Assert.That(set["isError"]?.GetValue<bool>() ?? false, Is.False, set.ToJsonString());
             Assert.That(Warp(unwarped), Is.EqualTo("Pro"));
         }

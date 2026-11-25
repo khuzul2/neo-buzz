@@ -2,7 +2,7 @@ namespace ReBuzz.Core.Session
 {
     /// <summary>
     /// Clip, track and scene colours as ARGB (engine-split.md S7): an index into the theme's
-    /// PatternColors, the same list the Sequence View uses. The Session View's palette
+    /// ClipColors, the same list the Sequence View uses. The Session View's palette
     /// (SessionPalette.ColorChoices, WPF colours) keeps this table current; controller pads read it.
     /// </summary>
     internal static class SessionColourChoices

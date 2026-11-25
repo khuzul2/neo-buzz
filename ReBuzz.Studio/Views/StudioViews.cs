@@ -19,7 +19,7 @@ namespace ReBuzz.Studio.Views
     }
 
     /// <summary>
-    /// A view with edit commands of its own (the Session View's grid history, a pattern editor's
+    /// A view with edit commands of its own (the Session View's grid history, a clip editor's
     /// selection…). The rule (studio-mvp.md §3.10): the shell's Edit menu and its shortcuts go to the
     /// selected view first; a view returns false to let the song's undo history (or nothing) have
     /// the command. Avalonia's window key bindings see Ctrl/Command shortcuts before views do, so
@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Views
 
         /// <summary>
         /// The views in tab order, which is ⌘1–⌘5's: the three main views first (ux-overhaul.md §2: the arrangement, the
-        /// Session View, the machines), then Pattern. Song Notes (machine-safety.md §3.5) are the inspector's Song tab (P3a), not a tab.
+        /// Session View, the machines), then Clip. Song Notes (machine-safety.md §3.5) are the inspector's Song tab (P3a), not a tab.
         /// </summary>
         public static IReadOnlyList<IStudioView> All { get; } = new IStudioView[]
         {

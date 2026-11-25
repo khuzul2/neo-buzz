@@ -1,6 +1,6 @@
 // Fork (docs/specs/daw-modes.md S1): the song's bar list in the engine. Buzz keeps it in the
 // sequence editor (BuzzGUI.SequenceEditor's TimeSignatureList, saved in the song's
-// "SequenceEditor" subsection), so only that editor knew where bars fall. As PatternColours gives
+// "SequenceEditor" subsection), so only that editor knew where bars fall. As ClipColours gives
 // the engine the editor's colours (ViewState.cs), this gives the engine the bars, but here the
 // engine owns them: the studio's sequence editor uses this list, the WPF editors' list mirrors it
 // (ReBuzz/AppViews/SequenceEditorMeter.cs), and the Session View and the agent read it. The
@@ -226,7 +226,7 @@ namespace ReBuzz.Core
     /// and writes that subsection when the song is saved. A sequence editor that saves its own
     /// (the WPF editor, the studio's) subscribed later, so its subsection replaces this one; this
     /// one stays where none does (rebuzz-headless), keeping the bars, the editor's zoom and the
-    /// pattern colours the song had.
+    /// clip colours the song had.
     /// </summary>
     internal sealed class SongMeterStore
     {
@@ -285,7 +285,7 @@ namespace ReBuzz.Core
             bw.Write(ClassicVersion);
             bw.Write(zoom);
             buzz.SongMeter.Write(bw);
-            // The colours: the sequence editor's when one is up, else those the song had, of patterns still in it.
+            // The colours: the sequence editor's when one is up, else those the song had, of clips still in it.
             var live = new List<(string, string, int)>();
             var view = ClipColours.Current;
             if (view != null)

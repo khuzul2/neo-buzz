@@ -543,7 +543,7 @@ namespace ReBuzz.MachineManagement
             return ret;
         }
 
-        /// <summary>The pattern editor machine's control (a WPF UserControl in the app), or null.</summary>
+        /// <summary>The clip editor machine's control (a WPF UserControl in the app), or null.</summary>
         internal object GetClipEditorControl(MachineCore machine)
         {
             object ret = null;
@@ -862,7 +862,7 @@ namespace ReBuzz.MachineManagement
             return new List<IClipEditorColumn>();
         }
 
-        /// <summary>Fork (clips.md §6, CU3): tells the machine's pattern editor that the song's clips are in the store: it drops what it held and views the store. False when it has no such editor.</summary>
+        /// <summary>Fork (clips.md §6, CU3): tells the machine's clip editor that the song's clips are in the store: it drops what it held and views the store. False when it has no such editor.</summary>
         internal bool AttachClipStore(MachineCore machine)
         {
             var em = machine?.EditorMachine;

@@ -18,7 +18,7 @@ namespace ReBuzz.Studio.Parameters
 {
     internal static class ParameterEdits
     {
-        /// <summary>SetValue's flag: not recorded into patterns while recording (undo and redo aren't playing).</summary>
+        /// <summary>SetValue's flag: not recorded into clips while recording (undo and redo aren't playing).</summary>
         const int DoNotRecord = 1 << 16;
 
         static IMachine Find(ReBuzzCore core, string name) => core.SongCore.MachinesList.FirstOrDefault(m => m.Name == name);

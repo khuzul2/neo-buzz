@@ -11,11 +11,11 @@ namespace ReBuzz.Core.Session
     /// Session recording, layout side (docs/specs/session-view.md 0.7). Arms tracks, starts
     /// takes and overdubs, drains the engine's stamped input into clips, finishes them.
     ///
-    /// Recorded notes go to the clip's engine MIDI column (<see cref="PatternColumnType.MIDI"/>),
+    /// Recorded notes go to the clip's engine MIDI column (<see cref="ClipColumnType.MIDI"/>),
     /// which the engine plays itself for any machine that takes MIDI, and which songs save. The
-    /// pattern editors keep their own data and don't show it; the clip panel shows the count.
+    /// clip editors keep their own data and don't show it; the clip panel shows the count.
     ///
-    /// Undo: a new take is one step (its pattern, made with the column, and its slot; undo
+    /// Undo: a new take is one step (its clip, made with the column, and its slot; undo
     /// keeps what was recorded for a redo). Each overdub pass is one step per clip it recorded
     /// into, holding the clip itself.
     /// </summary>
@@ -216,7 +216,7 @@ namespace ReBuzz.Core.Session
         public const int MaxTakeBars = 4096;
 
         /// <summary>
-        /// Records a new take into an empty slot of an armed track: a new pattern there (the
+        /// Records a new take into an empty slot of an armed track: a new clip there (the
         /// record length, or the longest take while recording until stopped), launched on the
         /// grid, recording its first pass. From a stopped transport the metronome counts in.
         /// Returns the take, or null.

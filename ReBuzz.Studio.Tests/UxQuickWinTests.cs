@@ -187,7 +187,7 @@ namespace ReBuzz.Studio.Tests
                 var rows = shortcuts.Shown;
                 foreach (var c in StudioKeymap.Commands.Where(c => c.Menu is not "App" && c.Id is not "help.about" and not "file.exit" and not "edit.preferences" and not "window.front" && c.KeyLabel().Length > 0))
                     Assert.That(rows.Any(r => r.Keys == c.KeyLabel() && r.What.StartsWith(c.Text.TrimEnd('…'))), Is.True, $"{c.Id} is listed with its keys");
-                Assert.That(rows.Select(r => r.Section).Distinct(), Is.SupersetOf(new[] { "File", "Edit", "Transport", "View", "Machines", "Session", "Piano roll", "Pattern" }));
+                Assert.That(rows.Select(r => r.Section).Distinct(), Is.SupersetOf(new[] { "File", "Edit", "Transport", "View", "Machines", "Session", "Piano roll", "Clip" }));
 
                 shortcuts.Search = "delete";
                 Settle();
@@ -212,7 +212,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheTrackerKeepsItsOwnCommandKeys()
         {
-            // The tracker's ⌘R randomizes, ⌘W rotates, ⌘1–⌘9 set the beat's subdivision (PatternEditorView.KeyRows): while it
+            // The tracker's ⌘R randomizes, ⌘W rotates, ⌘1–⌘9 set the beat's subdivision (ClipEditorView.KeyRows): while it
             // has the focus, the window's Rename, Close and view keys leave them to it.
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
@@ -220,7 +220,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var cmd = MainWindow.CommandModifiers;
-                window.ShowView("Pattern");
+                window.ShowView("Clip");
                 Settle();
                 var page = window.Detail.Page;
                 var inside = page.GetVisualDescendants().OfType<InputElement>().First(c => c.Focusable && c.IsEffectivelyVisible);
@@ -319,7 +319,7 @@ namespace ReBuzz.Studio.Tests
                 window.KeyPressQwerty(PhysicalKey.Home, RawInputModifiers.None);
                 Assert.That(Core.SongCore.PlayPosition, Is.EqualTo(looping ? Core.SongCore.LoopStart : 0), "Home: go to start");
 
-                // The arrangement types pattern letters: R isn't record there.
+                // The arrangement types clip letters: R isn't record there.
                 window.ShowView("Sequence");
                 Settle();
                 window.KeyPressQwerty(PhysicalKey.R, RawInputModifiers.None);
@@ -416,16 +416,16 @@ namespace ReBuzz.Studio.Tests
             Assert.That(view.Selected, Is.EqualTo((0, 0)));
             rig.Key(PhysicalKey.Backspace);
             Assert.That(layout.ClipAt(0, 0), Is.Null, "⌫ removes the clip from its slot (it stopped the track)");
-            Assert.That(rig.Machine("Bass").Clips, Does.Contain(line), "its pattern stays");
+            Assert.That(rig.Machine("Bass").Clips, Does.Contain(line), "its clip stays");
 
             rig.Key(PhysicalKey.ArrowDown);
             Assert.That(view.Selected, Is.EqualTo((0, 1)));
-            Dialogs.Responder = (m, c, b) => UserAnswer.Yes;          // it asks when the arrangement uses the pattern
+            Dialogs.Responder = (m, c, b) => UserAnswer.Yes;          // it asks when the arrangement uses the clip
             try
             {
                 rig.Key(PhysicalKey.Backspace, RawInputModifiers.Shift);
                 rig.Settle();
-                Assert.That(rig.Machine("Bass").Clips, Does.Not.Contain(line), "⇧⌫ deletes the pattern");
+                Assert.That(rig.Machine("Bass").Clips, Does.Not.Contain(line), "⇧⌫ deletes the clip");
             }
             finally
             {
@@ -640,15 +640,15 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        // ------------------------------------------------------------------ the pattern editor's block selection
+        // ------------------------------------------------------------------ the clip editor's block selection
 
         [AvaloniaTest]
         public void TheClipEditorsBlockSelectionIsTheAccent()
         {
             // UX review mac-052: the block selection was a 1.06:1 tint. The editor's view is in the editor machine's
             // assembly (Gear), so its theme is read by name.
-            var type = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("WDE.ModernPatternEditor.AvaloniaView.PatternTheme", false)).FirstOrDefault(t => t != null);
-            if (type == null) Assert.Ignore("the pattern editor's view isn't loaded in this run");
+            var type = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("WDE.ModernPatternEditor.AvaloniaView.ClipTheme", false)).FirstOrDefault(t => t != null);
+            if (type == null) Assert.Ignore("the clip editor's view isn't loaded in this run");
             var fill = (ISolidColorBrush)type.GetField("SelectionFill")!.GetValue(null)!;
             Assert.That(fill.Color, Is.EqualTo(Color.FromArgb(0x59, StudioTokens.Accent.R, StudioTokens.Accent.G, StudioTokens.Accent.B)));
             var stroke = (IPen)type.GetField("SelectionStroke")!.GetValue(null)!;

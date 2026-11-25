@@ -1,7 +1,7 @@
-// Fork (docs/specs/studio-mvp.md S6): the portable editor's own part of PatternEditor, where the WPF
-// build has its UserControl (PatternEditor.xaml.cs). The shared core (PatternEditor.Core.cs) holds the
-// patterns, their data and playback; this adds what the WPF control gave it: construction, a
-// dispatcher, the toolkit-free PatternControl, the pattern commands and properties, and the view, which
+// Fork (docs/specs/studio-mvp.md S6): the portable editor's own part of ClipEditor, where the WPF
+// build has its UserControl (ClipEditor.xaml.cs). The shared core (ClipEditor.Core.cs) holds the
+// clips, their data and playback; this adds what the WPF control gave it: construction, a
+// dispatcher, the toolkit-free ClipControl, the clip commands and properties, and the view, which
 // a build with a UI makes (ViewFactory: the studio's Avalonia view). rebuzz-headless's build has none.
 
 using BuzzGUI.Common;
@@ -33,7 +33,7 @@ namespace WDE.ModernPatternEditor
         /// <summary>The editor's view, made on first use (on the UI thread); null without a UI.</summary>
         public object View => view ??= ViewFactory?.Invoke(this);
 
-        /// <summary>The shown pattern's length in beats (WPF: the toolbar's Beats box).</summary>
+        /// <summary>The shown clip's length in beats (WPF: the toolbar's Beats box).</summary>
         internal int ShownBeatCount => SelectedMachine?.SelectedClip?.Clip != null ? SelectedMachine.SelectedClip.BeatCount : 1;
 
         /// <summary>The view should take the keyboard (the engine's Activate).</summary>
@@ -147,7 +147,7 @@ namespace WDE.ModernPatternEditor
         }
 
         /// <summary>
-        /// The view's timer (WPF: every 20 ms while the editor is visible): follows the playing pattern
+        /// The view's timer (WPF: every 20 ms while the editor is visible): follows the playing clip
         /// when the setting says so.
         /// </summary>
         public void TimerUpdate()
@@ -161,7 +161,7 @@ namespace WDE.ModernPatternEditor
         }
 
         /// <summary>
-        /// The pattern properties, as WPF's dialog applies them (one undo step): length in beats, rows
+        /// The clip properties, as WPF's dialog applies them (one undo step): length in beats, rows
         /// per beat, name, and the columns: the parameters given (null: as they are), the editor's MIDI
         /// lanes included.
         /// </summary>
@@ -193,11 +193,11 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        /// <summary>The parameters the pattern properties offer for a machine: the editor's MIDI lanes, then the machine's own.</summary>
+        /// <summary>The parameters the clip properties offer for a machine: the editor's MIDI lanes, then the machine's own.</summary>
         public IEnumerable<IParameter> ColumnChoices(IMachine machine) =>
             ClipEditorUtils.GetInternalParameters(machine).Concat(machine.ParameterGroups[1].Parameters).Concat(machine.ParameterGroups[2].Parameters);
 
-        /// <summary>Whether the shown pattern has a column for the parameter.</summary>
+        /// <summary>Whether the shown clip has a column for the parameter.</summary>
         public bool HasColumn(IParameter parameter) => SelectedMachine?.SelectedClip != null && MPEClipsDB.IsParameterEnabled(parameter);
     }
 }

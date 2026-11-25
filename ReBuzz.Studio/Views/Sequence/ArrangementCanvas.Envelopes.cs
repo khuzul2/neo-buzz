@@ -56,7 +56,7 @@ namespace ReBuzz.Studio.Views.Sequence
             return key;
         }
 
-        /// <summary>What a clip's pattern draws now (null when its track chose nothing or the clip holds none).</summary>
+        /// <summary>What a clip's clip draws now (null when its track chose nothing or the clip holds none).</summary>
         internal (ColumnKey Key, AutoParam Param, IReadOnlyList<AutoPoint> Points, bool FromTracker)? CurveOfClip(IClip clip)
         {
             if (clip?.Machine == null) return null;
@@ -130,7 +130,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 double sx = r.X + (s.Time - item.Time) * geo.TickWidth, sw = s.Length * geo.TickWidth;
                 if (p.X < sx || p.X > sx + sw) continue;
                 var area = new Rect(sx + 1, r.Y + CurveTop, Math.Max(0, sw - 2), Math.Max(0, h - CurveTop - 3));
-                double t = (p.X - sx) / geo.TickWidth + s.Offset;                 // ticks into the pattern
+                double t = (p.X - sx) / geo.TickWidth + s.Offset;                 // ticks into the clip
                 var pts = curve.Points;
                 int time = (int)Math.Round(t * Unit);
                 int? v = null;

@@ -5,11 +5,11 @@ using System.Linq;
 namespace ReBuzz.Core
 {
     /// <summary>
-    /// Fork addition (0.6.3): a copy of a pattern's engine columns (<see cref="PatternCore.Columns"/>:
+    /// Fork addition (0.6.3): a copy of a clip's engine columns (<see cref="ClipCore.Columns"/>:
     /// the MIDI columns the engine plays itself, and parameter columns), events and metadata
-    /// included, to put into a pattern made again. Pattern editors keep their own data and copy
-    /// it themselves; these columns were lost whenever an undo made a pattern again (upstream's
-    /// PatternClip only fills columns that already exist, and a new pattern has none).
+    /// included, to put into a clip made again. Clip editors keep their own data and copy
+    /// it themselves; these columns were lost whenever an undo made a clip again (upstream's
+    /// ClipClip only fills columns that already exist, and a new clip has none).
     /// Session takes (0.7) are recorded into a MIDI column.
     /// </summary>
     internal sealed class EngineColumns
@@ -17,7 +17,7 @@ namespace ReBuzz.Core
         sealed class Column
         {
             public ClipColumnType Type;
-            public IMachine Target;          // null: the pattern's own machine
+            public IMachine Target;          // null: the clip's own machine
             public int Group;                // parameter group index, -1 for MIDI
             public int Index;                // parameter index in its group, -1 for MIDI
             public int Track;
@@ -31,7 +31,7 @@ namespace ReBuzz.Core
 
         public bool IsEmpty => columns.Count == 0;
 
-        /// <summary>The engine columns of <paramref name="pattern"/> (empty if it has none).</summary>
+        /// <summary>The engine columns of <paramref name="clip"/> (empty if it has none).</summary>
         public static EngineColumns Capture(IClip clip)
         {
             var list = new List<Column>();
@@ -58,8 +58,8 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Puts the columns into <paramref name="pattern"/> (made again, without columns), after
-        /// any it has. Columns of the pattern's own machine go to its machine now; columns of
+        /// Puts the columns into <paramref name="clip"/> (made again, without columns), after
+        /// any it has. Columns of the clip's own machine go to its machine now; columns of
         /// other machines only while those are in <paramref name="songMachines"/>.
         /// </summary>
         public void RestoreInto(IClip clip, ICollection<IMachine> songMachines)

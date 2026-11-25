@@ -44,7 +44,7 @@ namespace WDE.ModernPatternEditor
 
         // Fork (docs/specs/ux-overhaul.md P3c, decision 54): the studio's editor keeps the cursor row (the play row while it plays)
         // in the middle of the view; the Windows build keeps its own CursorScrollMode.
-        [BuzzSetting(true, Description = "Keep the cursor row in the middle of the view as it moves, and the play row while the pattern plays; the first and last rows can reach the middle. Off: scroll as Cursor scroll mode says.")]
+        [BuzzSetting(true, Description = "Keep the cursor row in the middle of the view as it moves, and the play row while the clip plays; the first and last rows can reach the middle. Off: scroll as Cursor scroll mode says.")]
         public bool CenteredScrolling { get; set; }
 
         [BuzzSetting(false)]
@@ -98,7 +98,7 @@ namespace WDE.ModernPatternEditor
         [BuzzSetting(BeatHighlightMode.Block, Description = "Beat highlight mode.")]
         public BeatHighlightMode BeatHighlight { get; set; }
 
-        [BuzzSetting(AutoMoveCursorToTopMode.None, Description = "Auto-move cursor to top of the pattern.")]
+        [BuzzSetting(AutoMoveCursorToTopMode.None, Description = "Auto-move cursor to top of the clip.")]
         public AutoMoveCursorToTopMode AutoMoveCursorToTop { get; set; }
 
         //[BuzzSetting(true, Description = "Use default tracker base octave.")]

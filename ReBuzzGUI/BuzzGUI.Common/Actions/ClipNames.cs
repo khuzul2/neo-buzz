@@ -6,13 +6,13 @@ using System.Text.RegularExpressions;
 namespace BuzzGUI.Common.Actions
 {
     /// <summary>
-    /// Fork addition (0.6.3): pattern names for patterns an action makes (again). A machine
-    /// doesn't refuse a name that is taken, and pattern editors keep their data by name, so an
-    /// undo that brings a pattern back while another took its name makes it under a free one.
+    /// Fork addition (0.6.3): clip names for clips an action makes (again). A machine
+    /// doesn't refuse a name that is taken, and clip editors keep their data by name, so an
+    /// undo that brings a clip back while another took its name makes it under a free one.
     /// </summary>
     public static class ClipNames
     {
-        /// <summary><paramref name="name"/> if no pattern of the machine has it, else <see cref="Copy"/>.</summary>
+        /// <summary><paramref name="name"/> if no clip of the machine has it, else <see cref="Copy"/>.</summary>
         public static string Free(IMachine machine, string name) =>
             machine.Clips.Any(p => p.Name == name) ? Copy(machine, name) : name;
 
@@ -35,7 +35,7 @@ namespace BuzzGUI.Common.Actions
             return candidate;
         }
 
-        /// <summary>The pattern of <paramref name="machine"/> that isn't in <paramref name="before"/> (the one just made), or null.</summary>
+        /// <summary>The clip of <paramref name="machine"/> that isn't in <paramref name="before"/> (the one just made), or null.</summary>
         public static IClip Added(IMachine machine, ICollection<IClip> before) =>
             machine.Clips.LastOrDefault(p => !before.Contains(p));
     }

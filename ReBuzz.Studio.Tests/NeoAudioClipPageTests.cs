@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Tests
                 file ??= NeoAudioArrangementTests.Tones("page-tones.wav");
                 SessionClip = Layout.ImportAudio(Layout.FirstTrackOf(A), 0, file, out string error);
                 Assert.That(SessionClip, Is.Not.Null, error);
-                // The Arrangement's clip is in no slot: its pattern is made in a slot and the slot emptied (as audio_import with at_beats does).
+                // The Arrangement's clip is in no slot: its clip is made in a slot and the slot emptied (as audio_import with at_beats does).
                 ArrangedClip = Layout.ImportAudio(Layout.FirstTrackOf(B), 0, file, out error);
                 Assert.That(ArrangedClip, Is.Not.Null, error);
                 Layout.SetSlot(Layout.FirstTrackOf(B), 0, null);
@@ -480,7 +480,7 @@ namespace ReBuzz.Studio.Tests
 
             // The loop switch is the arranged clip's, as the L key on the canvas.
             Steps(rig, clip, () => rig.Click(rig.Of(page.LoopBox)), save: false, check: _ => Assert.That(rig.Editor.ClipsOf(clip).Single().Spec.Loop, Is.Not.EqualTo(arrangedLoop)));
-            Assert.That(Layout.ClipOf(clip).Loop, Is.EqualTo(slotLoop), "and the pattern's own loop stays as it was");
+            Assert.That(Layout.ClipOf(clip).Loop, Is.EqualTo(slotLoop), "and the clip's own loop stays as it was");
             // Its region: where in the audio the clip starts.
             Steps(rig, clip, () => page.Type(page.StartBox, "1.2.1"), save: true, check: _ =>
             {
@@ -673,7 +673,7 @@ namespace ReBuzz.Studio.Tests
             // The agent, on the other clip, the same four changes.
             Ok(Tool("audio_clip_set", new JsonObject
             {
-                ["machine"] = "B", ["pattern"] = rig.ArrangedClip.Name, ["warp"] = "Complex", ["tempo_bpm"] = 100, ["transpose"] = 3, ["gain_db"] = -4,
+                ["machine"] = "B", ["clip"] = rig.ArrangedClip.Name, ["warp"] = "Complex", ["tempo_bpm"] = 100, ["transpose"] = 3, ["gain_db"] = -4,
             }));
             var a = Audio(clip);
             var b = Audio(rig.ArrangedClip);

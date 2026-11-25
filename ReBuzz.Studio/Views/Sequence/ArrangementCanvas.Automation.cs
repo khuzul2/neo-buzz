@@ -1,5 +1,5 @@
 // Fork (docs/specs/daw-modes.md AR4, §3.4, §4.3): the arrangement's parameter lanes. A lane shows what writes
-// one state parameter along the timeline, stitched from the clips: automation clips (patterns on the machine's
+// one state parameter along the timeline, stitched from the clips: automation clips (clips on the machine's
 // automation lanes), the engine automation columns of the clips on its other lanes (each repeat of a looped
 // clip shows), and the tracker's parameter columns as steps. Curves are points with ramps (a straight line to
 // the next point) or steps. Overlaps, where two writers set the parameter in the same place, are marked.
@@ -92,7 +92,7 @@ namespace ReBuzz.Studio.Views.Sequence
             lanes.Clear();
             var paramRows = rows.Where(r => r.Kind == ArrangementRowKind.Parameter).ToList();
             if (paramRows.Count == 0 && !envelopesOn) return;
-            // The patterns of the clips are watched whether or not they hold a curve yet: a curve put in later (a redo) redraws the lane.
+            // The clips of the clips are watched whether or not they hold a curve yet: a curve put in later (a redo) redraws the lane.
             foreach (var item in items.Values.SelectMany(l => l))
             {
                 Watch(item.Clip);
@@ -110,7 +110,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         readonly HashSet<ClipColumnCore> watchedColumns = new();
 
-        /// <summary>A parameter column's events are listened to while the view shows its pattern: a point put in or taken out (by an undo, the recorder, the agent) redraws the lanes.</summary>
+        /// <summary>A parameter column's events are listened to while the view shows its clip: a point put in or taken out (by an undo, the recorder, the agent) redraws the lanes.</summary>
         void WatchColumn(IClipColumn column)
         {
             if (column is ClipColumnCore { Type: ClipColumnType.Parameter } core && watchedColumns.Add(core)) core.EventsChanged += OnColumnEvents;
@@ -286,7 +286,7 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 var pt = hit.Seg.Points[hit.Index];
                 string text = $"{param.Name} {param.Describe(pt.Value)} · {BarBeat(hit.Seg.ToSong(pt.Time) / Unit)} · {(pt.Ramp ? "ramp" : "step")}\n{hit.Seg.Describe}";
-                return hit.Seg.Editable ? text + "\nDrag: move · Double click or Delete: remove · R: ramp or step" : text + "\nTracker steps: edit them in the Pattern tab";
+                return hit.Seg.Editable ? text + "\nDrag: move · Double click or Delete: remove · R: ramp or step" : text + "\nTracker steps: edit them in the Clip tab";
             }
             string tip = $"{param.Name} · {BarBeat(units / Unit)}";
             foreach (var o in lane.Overlaps.Where(o => units >= o.From && units < o.To).Take(1))
@@ -314,7 +314,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 }
                 if (!h.Seg.Editable)
                 {
-                    SetStatus(h.Seg.Source == AutoSource.Tracker ? "These steps are the tracker's: edit them in the Pattern tab." : "This curve can't be edited from here.");
+                    SetStatus(h.Seg.Source == AutoSource.Tracker ? "These steps are the tracker's: edit them in the Clip tab." : "This curve can't be edited from here.");
                     InvalidateVisual();
                     return true;
                 }

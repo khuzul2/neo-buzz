@@ -1042,7 +1042,7 @@ namespace ReBuzz.Studio.Views.Device
             InvalidateVisual();
         }
 
-        /// <summary>Redraws if any value in view changed (the machine, an agent, a pattern, undo).</summary>
+        /// <summary>Redraws if any value in view changed (the machine, an agent, a clip, undo).</summary>
         public void Poll()
         {
             bool changed = false;

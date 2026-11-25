@@ -556,7 +556,7 @@ namespace ReBuzz.Core.AudioLibrary
         }
     }
 
-    /// <summary>The one low-priority thread that reads pages for every streamed asset (the pattern of the Pro worker, neo-audio.md section 11).</summary>
+    /// <summary>The one low-priority thread that reads pages for every streamed asset (the clip of the Pro worker, neo-audio.md section 11).</summary>
     internal static class StreamPrefetcher
     {
         static readonly object gate = new object();

@@ -120,7 +120,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             }
             ClipToMPEClip.Add(clip.Name, mpeClip);
 
-            // If user imported patterns
+            // If user imported clips
             if (ImportedClips.Count > 0)
             {
                 var xClip = ImportedClips[0];
@@ -181,7 +181,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal bool IsParameterEnabled(IParameter tPar)
         {
-            // Need to check only the first one because all patterns have same columns
+            // Need to check only the first one because all clips have same columns
             var clip = GetMPEClip(Editor.SelectedMachine.SelectedClip.Clip);
             foreach (var column in clip.MPEClipColumns)
             {

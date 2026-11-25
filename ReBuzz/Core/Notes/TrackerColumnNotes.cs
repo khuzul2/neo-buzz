@@ -64,7 +64,7 @@ namespace ReBuzz.Core.Notes
         /// <summary>The Tune parameter's value for the note's own pitch (cents are the value less this).</summary>
         public const int TuneCentre = 2400;
 
-        /// <summary>The pattern's tracker notes, or null when its machine has no Note track parameter.</summary>
+        /// <summary>The clip's tracker notes, or null when its machine has no Note track parameter.</summary>
         public static TrackerColumnNotes For(ReBuzzCore buzz, IClip clip)
         {
             var (note, velocity) = Parameters(clip);
@@ -118,7 +118,7 @@ namespace ReBuzz.Core.Notes
             return this;
         }
 
-        /// <summary>The length of a row in pattern time (1/240 tick), from the lane's Grid; a tick when it has none.</summary>
+        /// <summary>The length of a row in clip time (1/240 tick), from the lane's Grid; a tick when it has none.</summary>
         public override int RowTime
         {
             get
@@ -192,7 +192,7 @@ namespace ReBuzz.Core.Notes
         public override List<ClipNote> Notes() => IsLive ? Read().Select(n => n.Note).ToList() : new List<ClipNote>();
 
         public override string WhyNotEditable =>
-            !IsLive ? "The pattern was deleted."
+            !IsLive ? "The clip was deleted."
             : buzz.SessionLayout?.IsRecordingClip(clip) == true ? "Recording: edits wait until it stops."
             : null;
 

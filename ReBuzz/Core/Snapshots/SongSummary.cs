@@ -1,5 +1,5 @@
 // Fork (docs/specs/history-snapshots.md HS2): what a snapshot lists about the song, kept in its manifest so a
-// diff needs no loading: machines, wires, parameters, patterns (by content hash), sequences (by hash), waves.
+// diff needs no loading: machines, wires, parameters, clips (by content hash), sequences (by hash), waves.
 // Taken on the UI thread from live objects (small values only; no audio data is walked).
 
 using System;
@@ -153,9 +153,9 @@ namespace ReBuzz.Core.SongHistory
                 {
                     xpat.TryGetValue(pn, out var p1);
                     ypat.TryGetValue(pn, out var p2);
-                    if (p1 == null) list.Add(new Change("patterns", name, $"pattern {pn} added"));
-                    else if (p2 == null) list.Add(new Change("patterns", name, $"pattern {pn} removed"));
-                    else if (p1.Hash != p2.Hash || p1.Length != p2.Length) list.Add(new Change("patterns", name, $"pattern {pn} edited"));
+                    if (p1 == null) list.Add(new Change("clips", name, $"clip {pn} added"));
+                    else if (p2 == null) list.Add(new Change("clips", name, $"clip {pn} removed"));
+                    else if (p1.Hash != p2.Hash || p1.Length != p2.Length) list.Add(new Change("clips", name, $"clip {pn} edited"));
                 }
             }
             foreach (var w in a.Wires.Except(b.Wires).Concat(b.Wires.Except(a.Wires)).Select(Wire).Distinct().OrderBy(k => k, StringComparer.Ordinal))

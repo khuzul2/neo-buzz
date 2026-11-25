@@ -1,4 +1,4 @@
-// Test support (clips.md §7, clean-break.md CB1): writes the pattern editors' data blobs as the editors did, so the tests can make what a .nbl of
+// Test support (clips.md §7, clean-break.md CB1): writes the clip editors' data blobs as the editors did, so the tests can make what a .nbl of
 // format 1 or 2 holds and open-time migration (ClipMigration, ClipBlob.Parse) reads. The product has only the reader.
 
 using System;
@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Tests
             d.Add(0);
         }
 
-        /// <summary>The Modern Pattern Editor's data (PatternEditorUtils.CreateModernPatternEditorData): exact times, the rows of each beat.</summary>
+        /// <summary>The Modern Pattern Editor's data (ClipEditorUtils.CreateModernPatternEditorData): exact times, the rows of each beat.</summary>
         public static byte[] WriteMpe(IEnumerable<BlobClip> clips)
         {
             var data = new List<byte> { NotPxp, MpeVersion };
@@ -82,7 +82,7 @@ namespace ReBuzz.Studio.Tests
             return data.ToArray();
         }
 
-        /// <summary>The start of the row a time is in, a row being an integer number of pattern time.</summary>
+        /// <summary>The start of the row a time is in, a row being an integer number of clip time.</summary>
         static int Quantized(int time, int rpb)
         {
             int beat = time / ClipBlob.PxpTime;

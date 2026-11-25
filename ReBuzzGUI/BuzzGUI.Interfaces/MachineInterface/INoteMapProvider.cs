@@ -24,7 +24,7 @@ namespace Buzz.MachineInterface
             Color = color;
         }
 
-        /// <summary>The MIDI key, in the pitch a pattern's Note column and the piano roll use (a Neo machine: MIDI, A4 = 440 Hz).</summary>
+        /// <summary>The MIDI key, in the pitch a clip's Note column and the piano roll use (a Neo machine: MIDI, A4 = 440 Hz).</summary>
         public int Key { get; }
 
         /// <summary>A short name ("Kick", "Closed hat"); null or empty: the key plays but has no name of its own.</summary>

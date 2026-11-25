@@ -1,6 +1,6 @@
 // Fork (docs/specs/browser.md, BR1): the machine browser's model grows past machines. It stays the one model (the panel on the left and the
 // popup on the canvas read it), and now also knows the other kinds a result can be: plug-ins (Neo Plug's scan, by vendor), presets, the
-// song's patterns, sample and MIDI files of the user's places (BrowserLibrary), the song's own waves; the sources the panel lists
+// song's clips, sample and MIDI files of the user's places (BrowserLibrary), the song's own waves; the sources the panel lists
 // (Collections, Categories, Places); one search over all of them; and hot-swap (a machine put in another's place).
 
 using System;
@@ -18,7 +18,7 @@ using ReBuzz.Studio.Views.Machines;
 
 namespace ReBuzz.Studio.Views.Browser
 {
-    /// <summary>One result of any kind. <see cref="Tag"/> is the list row's tag: "gear:Name", "preset:Gear/Name", "pattern:Machine/Name", "audio:path", "midi:path", "wave:N".</summary>
+    /// <summary>One result of any kind. <see cref="Tag"/> is the list row's tag: "gear:Name", "preset:Gear/Name", "clip:Machine/Name", "audio:path", "midi:path", "wave:N".</summary>
     internal sealed record BrowserItem(BrowserKind Kind, string Id, string Name, string Group, string Detail, string Tag,
         MachineEntry Machine = null, SampleEntry File = null, IClip Clip = null, string Preset = null)
     {
@@ -183,7 +183,7 @@ namespace ReBuzz.Studio.Views.Browser
         {
             foreach (var m in core.Song.Machines.Where(m => m.DLL.Info.Type != MachineType.Master))
                 foreach (var p in m.Clips)
-                    yield return new BrowserItem(BrowserKind.Clip, m.Name + "/" + p.Name, p.Name, m.Name, p.Length + " rows", "pattern:" + m.Name + "/" + p.Name, Clip: p);
+                    yield return new BrowserItem(BrowserKind.Clip, m.Name + "/" + p.Name, p.Name, m.Name, p.Length + " rows", "clip:" + m.Name + "/" + p.Name, Clip: p);
         }
 
         public IEnumerable<BrowserItem> SongAudioItems()
@@ -303,7 +303,7 @@ namespace ReBuzz.Studio.Views.Browser
         IEnumerable<BrowserItem> MachineFavouriteItems() => FavouriteEntries.Select(MachineItem);
 
         /// <summary>
-        /// One search over everything: machines, plug-ins, presets, the song's patterns, sample and MIDI files and the song's waves, best first
+        /// One search over everything: machines, plug-ins, presets, the song's clips, sample and MIDI files and the song's waves, best first
         /// within each kind. <paramref name="kind"/> narrows it to one kind.
         /// </summary>
         public List<BrowserItem> SearchAll(string query, BrowserKind? kind = null, int perKind = 50)
@@ -359,7 +359,7 @@ namespace ReBuzz.Studio.Views.Browser
             {
                 BrowserKind.Audio => "Audio goes on a track: drop it on the Arrangement or the Session.",
                 BrowserKind.Midi => "A MIDI file goes on a track: drop it on the Arrangement or the Session.",
-                _ => "A pattern goes on its machine's track: drop it on the Arrangement or the Session.",
+                _ => "A clip goes on its machine's track: drop it on the Arrangement or the Session.",
             };
             var e = Find(data.Id);
             if (e == null) return $"“{data.Id}” isn't installed.";
@@ -372,7 +372,7 @@ namespace ReBuzz.Studio.Views.Browser
         }
 
         /// <summary>
-        /// The machine replaced by the dropped item (the Machine View's "Replace with…" path: connections, position, patterns kept where they
+        /// The machine replaced by the dropped item (the Machine View's "Replace with…" path: connections, position, clips kept where they
         /// fit, one undo step). A preset of the machine's own type loads instead; a preset of another machine replaces it and loads the preset.
         /// Returns the machine now in its place, or null with <paramref name="why"/>.
         /// </summary>
@@ -418,7 +418,7 @@ namespace ReBuzz.Studio.Views.Browser
             why = null;
             if (!(data.IsGear || data.Kind == BrowserKind.Preset))
             {
-                why = "Drop audio, MIDI and patterns on the Arrangement or the Session.";
+                why = "Drop audio, MIDI and clips on the Arrangement or the Session.";
                 return null;
             }
             var e = Find(data.Id);

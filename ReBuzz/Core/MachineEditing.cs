@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P6b/P6c, agent-knowledge.md K3b): what the studio's machine view does to machines that is not
-// drawing: clone (with or without patterns) and machine groups. The studio's MachineEdits calls these, and so do the agent's
+// drawing: clone (with or without clips) and machine groups. The studio's MachineEdits calls these, and so do the agent's
 // machine_clone and machine_group tools, so a person and an agent get the same steps. Each is one undo step.
 
 using System;
@@ -50,8 +50,8 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Clone with patterns (BuzzGUI.MachineView's CloneSelectedMachines(true)): each machine again with its settings (as Duplicate does),
-        /// its patterns and its rows in the sequence (the same events, on the copy's patterns), and the wires between the machines
+        /// Clone with clips (BuzzGUI.MachineView's CloneSelectedMachines(true)): each machine again with its settings (as Duplicate does),
+        /// its clips and its rows in the sequence (the same events, on the copy's clips), and the wires between the machines
         /// cloned together; one undo step. The copies, in the order given. (The WPF app builds a template for this; the template code
         /// is WPF-only, so this does the same steps with the engine's own operations.)
         /// </summary>
@@ -182,7 +182,7 @@ namespace ReBuzz.Core
 
         // ---- hot-swap (docs/specs/browser.md, BR1)
 
-        /// <summary>Makes sure the machine has patterns of these names and lengths (an undo step of its own, inside a group: the machine is made again by the replace's redo, then this runs).</summary>
+        /// <summary>Makes sure the machine has clips of these names and lengths (an undo step of its own, inside a group: the machine is made again by the replace's redo, then this runs).</summary>
         sealed class EnsureClips : IAction
         {
             readonly ReBuzzCore core;
@@ -204,13 +204,13 @@ namespace ReBuzz.Core
                     if (!m.Clips.Any(p => p.Name == name)) m.CreateClip(name, length);
             }
 
-            public void Undo() { /* the replace's undo removes the machine, and its patterns with it */ }
+            public void Undo() { /* the replace's undo removes the machine, and its clips with it */ }
         }
 
         /// <summary>
         /// Other gear in a machine's place, as one undo step: the song's Replace (the connections with their gains, the position; the same
-        /// machine with another plug-in swaps the plug-in in place), then the old name back and the old patterns' names and lengths made on the new
-        /// machine (empty: a pattern's notes and values belong to the old machine's columns). The arrangement's tracks are made again, not their clips.
+        /// machine with another plug-in swaps the plug-in in place), then the old name back and the old clips' names and lengths made on the new
+        /// machine (empty: a clip's notes and values belong to the old machine's columns). The arrangement's tracks are made again, not their clips.
         /// Returns the machine now in its place.
         /// </summary>
         public static IMachine HotSwap(ReBuzzCore core, IMachine machine, string dll, string instrument)

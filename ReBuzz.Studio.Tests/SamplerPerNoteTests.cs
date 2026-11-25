@@ -184,7 +184,7 @@ namespace ReBuzz.Studio.Tests
             rig.Clip(machine, "Jungle", 16);
             var written = Tool("notes_write", new JsonObject
             {
-                ["machine"] = "Breaks", ["pattern"] = "Jungle",
+                ["machine"] = "Breaks", ["clip"] = "Jungle",
                 ["notes"] = new JsonArray
                 {
                     new JsonObject { ["pitch"] = 48, ["start"] = 0, ["length"] = 0.25, ["velocity"] = 90, ["sample"] = 2 },
@@ -193,7 +193,7 @@ namespace ReBuzz.Studio.Tests
                 },
             });
             Assert.That(written["isError"]?.GetValue<bool>() == true, Is.False, written.ToJsonString());
-            var read = Tool("notes_read", new JsonObject { ["machine"] = "Breaks", ["pattern"] = "Jungle" });
+            var read = Tool("notes_read", new JsonObject { ["machine"] = "Breaks", ["clip"] = "Jungle" });
             var notes = read["structuredContent"]!["notes"]!.AsArray().Select(n => n!.AsObject()).OrderBy(n => (double)n["start"]!).ToList();
             Assert.That(read["structuredContent"]!["input"]!.GetValue<string>(), Is.EqualTo("tracks"));
             Assert.That(notes.Select(n => (int?)n["sample"]), Is.EqualTo(new int?[] { 2, 7, null }));
@@ -206,7 +206,7 @@ namespace ReBuzz.Studio.Tests
             Set(machine, "Mode", 0);
             var refused = Tool("notes_write", new JsonObject
             {
-                ["machine"] = "Breaks", ["pattern"] = "Jungle", ["mode"] = "replace",
+                ["machine"] = "Breaks", ["clip"] = "Jungle", ["mode"] = "replace",
                 ["notes"] = new JsonArray { new JsonObject { ["pitch"] = 48, ["start"] = 0, ["length"] = 1, ["sample"] = 2 } },
             });
             Assert.That(refused["isError"]?.GetValue<bool>(), Is.True);

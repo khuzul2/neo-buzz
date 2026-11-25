@@ -299,8 +299,8 @@ namespace WDE.ModernPatternEditor
                 {
                     PlayingNotesList.Remove(pti);
 
-                    // Recording for the "main" pattern machine for now. ToDo: When start recording, save the target machine to Editor and reference to it here
-                    // IMachine selectedColumnMachine = Editor.patternControl.Pattern.CursorPosition.ParameterColumn.PatternColumn.Pattern.Machine;
+                    // Recording for the "main" clip machine for now. ToDo: When start recording, save the target machine to Editor and reference to it here
+                    // IMachine selectedColumnMachine = Editor.clipControl.Clip.CursorPosition.ParameterColumn.ClipColumn.Clip.Machine;
 
                     selectedColumnMachine = clip.Machine;
                     machineClipColumnData = GetMidiDataParameterIndexes(clip, selectedColumnMachine, pti.track);

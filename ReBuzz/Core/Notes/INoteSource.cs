@@ -1,8 +1,8 @@
 // Fork (docs/specs/daw-modes.md S4): where a piano roll's notes come from. The Session View's
-// rolls (WPF and the studio) had SessionLayout's calls built in; the arrangement and the Pattern
-// tab will show the same control on other stores. A source is one pattern's notes in one store:
+// rolls (WPF and the studio) had SessionLayout's calls built in; the arrangement and the Clip
+// tab will show the same control on other stores. A source is one clip's notes in one store:
 //  - SessionClipNotes: a session clip's MIDI column, on the Session View's own undo history;
-//  - MidiColumnNotes: a pattern's engine MIDI column, on the song's undo history;
+//  - MidiColumnNotes: a clip's engine MIDI column, on the song's undo history;
 //  - TrackerColumnNotes: the Note and velocity lanes of a machine that takes notes in its tracks, edited with tracker rules (D3 A:
 //    a note per track, so no more notes at once than the machine has tracks).
 // SongNotes.For chooses; every reader and writer of notes (the rolls, the Session, the Arrangement, the agent, drops) goes through it (CU4).
@@ -16,19 +16,19 @@ namespace ReBuzz.Core.Notes
 {
     internal interface INoteSource
     {
-        /// <summary>The pattern, as it stands now (an undo may have made it again); null if there is none.</summary>
+        /// <summary>The clip, as it stands now (an undo may have made it again); null if there is none.</summary>
         IClip Clip { get; }
 
-        /// <summary>Whether the pattern is in the song (not deleted). Without it there are no notes.</summary>
+        /// <summary>Whether the clip is in the song (not deleted). Without it there are no notes.</summary>
         bool IsLive { get; }
 
-        /// <summary>The notes, in time order (empty when the pattern isn't live).</summary>
+        /// <summary>The notes, in time order (empty when the clip isn't live).</summary>
         List<ClipNote> Notes();
 
-        /// <summary>The pattern's length in pattern time (1/240 tick).</summary>
+        /// <summary>The clip's length in clip time (1/240 tick).</summary>
         int Length { get; }
 
-        /// <summary>The length of a row of the tracker's grid in pattern time, for the roll's grid (a tick when the store has no rows).</summary>
+        /// <summary>The length of a row of the tracker's grid in clip time, for the roll's grid (a tick when the store has no rows).</summary>
         int RowTime { get; }
 
         /// <summary>Null when the notes can be edited now, else why not, in words for the user.</summary>
@@ -41,7 +41,7 @@ namespace ReBuzz.Core.Notes
         /// </summary>
         string Edit(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added);
 
-        /// <summary>Plays (or ends) a note on the pattern's machine, as the keys or a note are clicked.</summary>
+        /// <summary>Plays (or ends) a note on the clip's machine, as the keys or a note are clicked.</summary>
         void Preview(int note, int velocity, bool on);
 
         /// <summary>Undo and redo in the history the edits go to.</summary>

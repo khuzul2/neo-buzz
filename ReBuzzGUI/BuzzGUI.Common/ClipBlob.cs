@@ -1,10 +1,10 @@
 #nullable disable
-// Fork addition (neo-buzz, docs/specs/clips.md §7, wave CU2): the pattern editor's data blob as bytes, read and written with no
+// Fork addition (neo-buzz, docs/specs/clips.md §7, wave CU2): the clip editor's data blob as bytes, read and written with no
 // editor and no machines: PatternXP's format (versions 1 to 3, rows) and the Modern Pattern Editor's own (0xFF, version 1, exact
-// times and the rows of each beat). The layouts are those of PatternEditorUtils (ProcessEditorData and the two Create...Data
+// times and the rows of each beat). The layouts are those of ClipEditorUtils (ProcessEditorData and the two Create...Data
 // writers); this is the same code without the editor's objects, so a converter can read what a song holds and a test can compare.
 //
-// A blob may carry a stamp after its patterns (clips.md §7.2): the editors stop reading at the end of the last pattern.
+// A blob may carry a stamp after its clips (clips.md §7.2): the editors stop reading at the end of the last clip.
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace BuzzGUI.Common
 {
     public enum BlobFormat { None, Pxp1, Pxp2, Pxp3, Mpe1 }
 
-    /// <summary>A column of the blob: a machine's parameter (by its index, negative for the editor's own), a track, and events in pattern time.</summary>
+    /// <summary>A column of the blob: a machine's parameter (by its index, negative for the editor's own), a track, and events in clip time.</summary>
     public sealed class BlobColumn
     {
         public string Machine;
@@ -39,9 +39,9 @@ namespace BuzzGUI.Common
     {
         public BlobFormat Format;
         public List<BlobClip> Clips = new List<BlobClip>();
-        /// <summary>Why the blob could not be read whole (nothing after that point is in <see cref="Patterns"/>), or null.</summary>
+        /// <summary>Why the blob could not be read whole (nothing after that point is in <see cref="Clips"/>), or null.</summary>
         public string Problem;
-        /// <summary>The number of events in every column of every pattern.</summary>
+        /// <summary>The number of events in every column of every clip.</summary>
         public int EventCount => Clips.Sum(p => p.Columns.Sum(c => c.Events.Count));
     }
 
@@ -50,7 +50,7 @@ namespace BuzzGUI.Common
         public const byte PxpVersion = 3;
         const byte NotPxp = 255;
         const byte MpeVersion = 1;
-        public const int PxpTime = ClipEvent.TimeBase * 4;       // the pattern time of a beat: a PXP row is this over the rows per beat
+        public const int PxpTime = ClipEvent.TimeBase * 4;       // the clip time of a beat: a PXP row is this over the rows per beat
 
         sealed class Reader
         {
@@ -87,7 +87,7 @@ namespace BuzzGUI.Common
             }
         }
 
-        /// <summary>Reads a blob; never throws. An empty or unknown blob has no patterns (and says why in <see cref="BlobData.Problem"/> if unknown).</summary>
+        /// <summary>Reads a blob; never throws. An empty or unknown blob has no clips (and says why in <see cref="BlobData.Problem"/> if unknown).</summary>
         public static BlobData Parse(byte[] data)
         {
             var result = new BlobData();
@@ -100,7 +100,7 @@ namespace BuzzGUI.Common
             {
                 result.Format = (BlobFormat)((int)BlobFormat.Pxp1 + version - 1);
                 int count = r.Int();
-                if (count < 0 || count > 1 << 20) r.Problem ??= "a pattern count out of range";
+                if (count < 0 || count > 1 << 20) r.Problem ??= "a clip count out of range";
                 for (int i = 0; i < count && r.Ok; i++)
                     result.Clips.Add(ReadPxpClip(r, version));
             }
@@ -116,7 +116,7 @@ namespace BuzzGUI.Common
                 }
                 result.Format = BlobFormat.Mpe1;
                 int count = r.Int();
-                if (count < 0 || count > 1 << 20) r.Problem ??= "a pattern count out of range";
+                if (count < 0 || count > 1 << 20) r.Problem ??= "a clip count out of range";
                 for (int i = 0; i < count && r.Ok; i++)
                     result.Clips.Add(ReadMpeClip(r));
             }

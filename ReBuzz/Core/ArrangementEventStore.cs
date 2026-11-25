@@ -12,7 +12,7 @@ namespace ReBuzz.Core
 {
     /// <summary>
     /// Fork (docs/specs/session-view.md 0.5.1): keeps what a Buzz sequence event can't hold in
-    /// the song file: the part of its pattern it plays (<see cref="SequenceEvent.Offset"/>,
+    /// the song file: the part of its clip it plays (<see cref="SequenceEvent.Offset"/>,
     /// <see cref="SequenceEvent.End"/>) and its volume (<see cref="SequenceEvent.Gain"/>), as
     /// the Session View played and recorded them. Stored in an "ArrangementEvents" subsection,
     /// in .bmx and .bmxml alike; upstream ReBuzz skips it and plays those events whole at full

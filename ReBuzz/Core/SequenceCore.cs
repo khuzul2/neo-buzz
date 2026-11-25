@@ -60,7 +60,7 @@ namespace ReBuzz.Core
         public ReadOnlyDictionary<int, SequenceEvent> Events { get => new ReadOnlyDictionary<int, SequenceEvent>(EventsList); }
 
         /// <summary>
-        /// Fork (0.4.1): the events as sorted arrays, for the audio thread and PlayingPattern
+        /// Fork (0.4.1): the events as sorted arrays, for the audio thread and PlayingClip
         /// (no tree walk, no allocation). Replaced whenever events are added or removed, which
         /// happens under AudioLock; events' spans are shared with <see cref="EventsList"/>.
         /// </summary>
@@ -78,7 +78,7 @@ namespace ReBuzz.Core
             public SequenceEvent[] Events { get; }
 
             /// <summary>
-            /// Where the clip of the event at <paramref name="index"/> starts and ends (song ticks): the run of touching events of its pattern
+            /// Where the clip of the event at <paramref name="index"/> starts and ends (song ticks): the run of touching events of its clip
             /// with its clip id (an event with none is a clip of its own). No allocation: the audio thread asks.
             /// </summary>
             public void ClipBounds(int index, out int start, out int end)
@@ -158,9 +158,9 @@ namespace ReBuzz.Core
                 if (session.IsArrangementOverridden(this))
                     return null;
 
-                // Fork (0.4.1): the pattern of this track's event at the song position, if it plays
-                // here. Upstream returned the first event (in time) whose pattern had a position,
-                // which could be a pattern another track of the same machine was playing.
+                // Fork (0.4.1): the clip of this track's event at the song position, if it plays
+                // here. Upstream returned the first event (in time) whose clip had a position,
+                // which could be a clip another track of the same machine was playing.
                 var events = arranged;
                 int songPosition = buzz.SongCore.PlayPosition;
                 int index = events.IndexAtOrBefore(songPosition);
@@ -315,7 +315,7 @@ namespace ReBuzz.Core
         /// </summary>
         readonly object eventsLock = new object();
 
-        /// <summary>Fork (0.6.1): a copy of the events of a pattern (any thread).</summary>
+        /// <summary>Fork (0.6.1): a copy of the events of a clip (any thread).</summary>
         internal System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<int, SequenceEvent>> EventsOfClip(IClip clip)
         {
             lock (eventsLock)
@@ -341,7 +341,7 @@ namespace ReBuzz.Core
                 else
                 {
                     if (e.Type == SequenceEventType.PlayClip && e.Clip != null)
-                        e.Span = e.PlayedLength;    // fork (0.5.1): the part of the pattern the event plays
+                        e.Span = e.PlayedLength;    // fork (0.5.1): the part of the clip the event plays
 
                     this.EventsList[time] = e;
                     UpdateSpans(EventsList);
@@ -357,7 +357,7 @@ namespace ReBuzz.Core
             (Global.Buzz as ReBuzzCore).SetModifiedFlag();
         }
 
-        /// <summary>Fork: removes every event of a pattern (it was deleted); call under AudioLock. Returns whether any was removed.</summary>
+        /// <summary>Fork: removes every event of a clip (it was deleted); call under AudioLock. Returns whether any was removed.</summary>
         internal bool RemoveEventsOf(IClip clip)
         {
             var times = new System.Collections.Generic.List<int>();
@@ -375,9 +375,9 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Fork (0.5.1): recomputes spans after a pattern's length or an event's offset or end
+        /// Fork (0.5.1): recomputes spans after a clip's length or an event's offset or end
         /// changed, and tells the sequence editors. Only the spans (ints the audio thread reads)
-        /// change, so no AudioLock: native pattern editors change lengths from the IPC thread.
+        /// change, so no AudioLock: native clip editors change lengths from the IPC thread.
         /// </summary>
         internal void RefreshSpans()
         {
@@ -405,7 +405,7 @@ namespace ReBuzz.Core
         }
 
         // Fork: live triggering goes through the Session View engine, which quantizes it, keeps
-        // the pattern's phase, and overrides the arrangement (ReBuzz.Core.Session.SessionCore).
+        // the clip's phase, and overrides the arrangement (ReBuzz.Core.Session.SessionCore).
         public void TriggerEvent(int time, SequenceEvent e, bool loop)
         {
             (MachineCore.Graph.Buzz as ReBuzzCore)?.SessionCore.TriggerFromSequence(this, time, e, loop);

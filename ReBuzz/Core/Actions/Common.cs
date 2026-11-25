@@ -60,7 +60,7 @@ namespace ReBuzz.Core.Actions
                 parameterGroups.Add(pg);
             }
 
-            // Save Patterns
+            // Save Clips
             foreach (var clip in machine.ClipsList)
             {
                 clips.Add(new ClipInfoRef(clip.Name, clip.Length));
@@ -132,7 +132,7 @@ namespace ReBuzz.Core.Actions
 
         public int Span { get; set; }
 
-        // Fork (0.5.1): the part of the pattern the event plays, and its volume.
+        // Fork (0.5.1): the part of the clip the event plays, and its volume.
         public int Offset { get; private set; }
         public int End { get; private set; }
         public double Gain { get; private set; } = 1.0;
@@ -154,7 +154,7 @@ namespace ReBuzz.Core.Actions
             PlacementId = e.PlacementId;
         }
 
-        /// <summary>The event for a pattern (found by name by the caller).</summary>
+        /// <summary>The event for a clip (found by name by the caller).</summary>
         public SequenceEvent ToEvent(IClip clip) =>
             new SequenceEvent(Type, clip, Span) { Offset = Offset, End = End, Gain = Gain, PlacementId = PlacementId };
     }

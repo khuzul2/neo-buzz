@@ -1,4 +1,4 @@
-// Fork (docs/specs/daw-modes.md AR3, seam S7): the tracker sees the notes, headless. The Modern Pattern Editor draws the pattern's
+// Fork (docs/specs/daw-modes.md AR3, seam S7): the tracker sees the notes, headless. The Modern Pattern Editor draws the clip's
 // engine MIDI column as lanes of its own ("Notes / Voice n": Note, Vel, Dly, Cut): a take written to the column shows at once,
 // a typed row changes only that note (a step of the song's history), and the editor's own data and the song's bytes are as they were.
 
@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Tests
             Pump();
         }
 
-        /// <summary>Writes events to the pattern's MIDI column as a session take does when it ends.</summary>
+        /// <summary>Writes events to the clip's MIDI column as a session take does when it ends.</summary>
         static void Take(IClip clip, params LaneEvent[] events) =>
             SessionLayout.EnsureMidiColumn(clip).SetEvents(events.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
 
@@ -233,7 +233,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.Z);
                 var column = Column(s.Clip);
                 Assert.That(column.Count, Is.EqualTo(1));
-                Assert.That((column[0].Time, column[0].Duration), Is.EqualTo((2 * Row, 16 * TB - 2 * Row)), "from the row to the end of the pattern");
+                Assert.That((column[0].Time, column[0].Duration), Is.EqualTo((2 * Row, 16 * TB - 2 * Row)), "from the row to the end of the clip");
                 // An off two rows on ends it.
                 At(s, 0, 5);
                 Key(s, PhysicalKey.Digit1);
@@ -327,7 +327,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AThousandNotesThroughKeyboardEditsKeepTheUntouchedOnesExact()
         {
-            // 1,000 notes in a 64-beat pattern (the pattern's own length), seeded, off the grid and overlapping, with controllers beside.
+            // 1,000 notes in a 64-beat clip (the clip's own length), seeded, off the grid and overlapping, with controllers beside.
             var s = Open("AR3 Random", ticks: 256);
             try
             {
@@ -411,7 +411,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void LeavingAClipLetsGoOfItsColumn()
         {
-            // The lanes follow the pattern's MIDI column; a pattern the editor no longer shows has no handler left on it.
+            // The lanes follow the clip's MIDI column; a clip the editor no longer shows has no handler left on it.
             var s = Open("AR3 Leak");
             try
             {

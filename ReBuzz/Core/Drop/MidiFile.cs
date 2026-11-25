@@ -1,5 +1,5 @@
 // Fork (docs/specs/drag-drop.md, DD1): a small Standard MIDI File reader (our own code, no dependency). A dropped .mid file becomes the notes of a
-// pattern: every track and channel merged, note-on to note-off in beats of the file's quarter note. The tempo and the meter are read but
+// clip: every track and channel merged, note-on to note-off in beats of the file's quarter note. The tempo and the meter are read but
 // informative only: the song's own stay as they are.
 
 using System;

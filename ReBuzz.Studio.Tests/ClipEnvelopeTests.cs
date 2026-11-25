@@ -1,5 +1,5 @@
 // Fork (docs/specs/daw-modes.md EV1): clip envelopes. The Detail panel's lane edits the engine automation column of the clip shown there,
-// for a Session clip and an Arrangement clip alike (they are one pattern); the clips of the Arrangement and the Session slots draw a
+// for a Session clip and an Arrangement clip alike (they are one clip); the clips of the Arrangement and the Session slots draw a
 // read-only curve of the parameter their track chose. Headless, against the real studio: each gesture's value, undo and redo, the file
 // formats, the overlap marking, the per-track choice, and the exit test: the lane's curve renders bit for bit as AR4's.
 
@@ -187,7 +187,7 @@ namespace ReBuzz.Studio.Tests
             clip.Step("double click", () => rig.DoubleClick(clip.PointP(12 * TB)));
             Assert.That(clip.Points(), Does.Not.Contain("12:"));
 
-            // The clip is a clip in both places: the same pattern and the same events, whichever view holds it.
+            // The clip is a clip in both places: the same clip and the same events, whichever view holds it.
             var column = clip.Clip.Columns.OfType<ClipColumnCore>().Single(c => c.EnginePlays);
             Assert.That(column.GetEvents(int.MinValue, int.MaxValue).Count(), Is.EqualTo(ClipEnvelopes.Read(clip.Clip, clip.Key).Points.Count));
         }
@@ -293,7 +293,7 @@ namespace ReBuzz.Studio.Tests
             var envClip = new EnvelopeClip { Rig = rig, Machine = machine, Clip = clip, Key = key, Param = AutomationParams.Find(machine, key) };
             envClip.Show();
             var env = envClip.Lane.Envelope;
-            Assert.That(env.Tracker, Is.Not.Null, "the pattern editor's column is read");
+            Assert.That(env.Tracker, Is.Not.Null, "the clip editor's column is read");
             Assert.That(env.Tracker.Points.Select(p => (p.Time / TB, p.Value)), Is.EqualTo(new[] { (4, 2), (8, 1) }));
             Assert.That(env.Tracker.Editable, Is.False, "read only: the Tracker's to edit");
             Assert.That(env.Overlaps, Is.Empty, "one writer");
@@ -491,7 +491,7 @@ namespace ReBuzz.Studio.Tests
             rig.Click(clip.P(4, 0.5));
             var stack = clip.Stack;
             Assert.That(stack.AddButton.Content?.ToString(), Does.Contain("Envelope"));
-            Assert.That(stack.HintText, Does.Not.Contain("pattern"), "the word is clip");
+            Assert.That(stack.HintText, Does.Not.Contain("clip"), "the word is clip");
             Assert.That(stack.Lanes.Count, Is.EqualTo(1), "the parameter that holds data shows by default");
             var second = KeyOf(clip.Machine, "Voice mode");
             stack.AddLane(second);

@@ -1,6 +1,6 @@
 #nullable disable
 // Fork addition (neo-buzz, docs/specs/clips.md §7.1, wave CU2): the converter that turns what a song keeps of a clip outside the
-// engine's columns into lanes: a built-in pattern's rows (PATT), PatternXP's data (versions 1 to 3) and the Modern Pattern Editor's
+// engine's columns into lanes: a built-in clip's rows (PATT), PatternXP's data (versions 1 to 3) and the Modern Pattern Editor's
 // (version 1). It is pure: bytes and rows in, lanes and a log out, nothing is written anywhere and the original file is never
 // touched. CU2 builds it and nothing calls it on open (CU3 does).
 //
@@ -12,7 +12,7 @@
 //  - a Pitch Wheel or CC lane on a track with a note lane is dropped (the editor throws on them there), on a track without one it becomes
 //    controller events of the Notes lane;
 //  - PatternXP's own columns (trigger, effect, effect data), a machine or parameter the song lacks, a track the machine no longer has,
-//    a built-in pattern's input columns and data in a format we cannot read are dropped.
+//    a built-in clip's input columns and data in a format we cannot read are dropped.
 // Every step writes a log entry with a cause tag (ClipTags) and the number of events it covers. The events of the source are counted
 // in, kept, merged (into notes) or dropped, so none goes missing without a line.
 
@@ -23,7 +23,7 @@ using BuzzGUI.Interfaces;
 
 namespace BuzzGUI.Common
 {
-    /// <summary>A built-in pattern's contents (Buzz's own pattern editor): rows of parameter values, for one machine (clips.md §2.1, S6).</summary>
+    /// <summary>A built-in clip's contents (Buzz's own clip editor): rows of parameter values, for one machine (clips.md §2.1, S6).</summary>
     public sealed class BuiltInRows
     {
         public string Name;
@@ -47,7 +47,7 @@ namespace BuzzGUI.Common
             public bool Conserved => EventsIn == EventsKept + EventsMerged + EventsDropped;
         }
 
-        /// <summary>The editor's internal parameters (PatternEditorUtils.InternalParameter).</summary>
+        /// <summary>The editor's internal parameters (ClipEditorUtils.InternalParameter).</summary>
         public const int MidiNote = -128, MidiVelocity = -129, MidiNoteDelay = -130, MidiNoteCut = -131, MidiPitchWheel = -132, MidiCC = -133;
 
         static bool IsSp(int index) => index == -10 || index == -11 || index == -12 || index == -110 || index == -111 || index == -112;
@@ -58,7 +58,7 @@ namespace BuzzGUI.Common
         public const int DefaultVelocity = 100;
 
         /// <summary>
-        /// A Note value as the editor keeps it (MPEPatternColumn.SetEvents): one it cannot read is taken as a MIDI note number.
+        /// A Note value as the editor keeps it (MPEClipColumn.SetEvents): one it cannot read is taken as a MIDI note number.
         /// </summary>
         public static int FixNote(int value)
         {
@@ -72,11 +72,11 @@ namespace BuzzGUI.Common
             return value;
         }
 
-        // ------------------------------------------------------------------ built-in patterns (PATT)
+        // ------------------------------------------------------------------ built-in clips (PATT)
 
         /// <summary>
-        /// A built-in pattern's rows as lanes: a lane for each parameter with a value, an event for each row that has one at row × 240
-        /// (4 rows a beat), as BuiltInPattern.ToPXP and the editor read them. The connections' amp and pan are dropped (one log line each source).
+        /// A built-in clip's rows as lanes: a lane for each parameter with a value, an event for each row that has one at row × 240
+        /// (4 rows a beat), as BuiltInClip.ToPXP and the editor read them. The connections' amp and pan are dropped (one log line each source).
         /// </summary>
         public static ClipContent FromBuiltIn(BuiltInRows builtIn, ClipMachine machine, int lengthTicks, ClipLog log, Result result = null)
         {
@@ -134,8 +134,8 @@ namespace BuzzGUI.Common
         // ------------------------------------------------------------------ the editor's data (PXP v1-3, MPE v1)
 
         /// <summary>
-        /// The patterns of an editor's data blob as clips. <paramref name="lengthOf"/> gives a pattern's length in ticks (0 or less: not in the song).
-        /// The note that rings at the end of a pattern on each voice is carried to the next pattern of the blob (in the order it holds them),
+        /// The clips of an editor's data blob as clips. <paramref name="lengthOf"/> gives a clip's length in ticks (0 or less: not in the song).
+        /// The note that rings at the end of a clip on each voice is carried to the next clip of the blob (in the order it holds them),
         /// so that an off at the start of the next one names it.
         /// </summary>
         public static Result FromBlob(byte[] blob, IClipMachines machines, Func<string, int> lengthOf, ClipLog log, string owner = null)
@@ -182,14 +182,14 @@ namespace BuzzGUI.Common
                 result.EventsIn += n;
                 if (inSong)
                 {
-                    // The editor drops the events past the end of the pattern as it loads them (MPEPatternColumn.SetEvents).
+                    // The editor drops the events past the end of the clip as it loads them (MPEClipColumn.SetEvents).
                     int limit = length * ClipEvent.TimeBase;
                     int past = col.Events.Count(e => e.Time >= limit);
                     if (past > 0)
                     {
                         col.Events = col.Events.Where(e => e.Time < limit).ToList();
                         result.EventsDropped += past;
-                        log.Loss(ClipTags.EventPastEnd, col.Machine, p.Name, $"{col.ParamIndex}.{col.Track}", past, "after the end of the pattern");
+                        log.Loss(ClipTags.EventPastEnd, col.Machine, p.Name, $"{col.ParamIndex}.{col.Track}", past, "after the end of the clip");
                         n -= past;
                     }
                 }
@@ -220,7 +220,7 @@ namespace BuzzGUI.Common
                 }
                 if (col.ParamIndex < 0) { Drop(ClipTags.ForeignDropped, "an internal parameter of an editor we do not know"); continue; }
 
-                // A machine's parameter: globals first (on track 0), then the track parameters (PatternEditorUtils.GetParameter).
+                // A machine's parameter: globals first (on track 0), then the track parameters (ClipEditorUtils.GetParameter).
                 int group, index;
                 if (col.ParamIndex < machine.GlobalCount && col.Track == 0) { group = 1; index = col.ParamIndex; }
                 else
@@ -361,7 +361,7 @@ namespace BuzzGUI.Common
             {
                 result.EventsMerged -= skipped;
                 result.EventsDropped += skipped;
-                log.Loss(ClipTags.EventPastEnd, machine, p.Name, "notes", skipped, "a note delayed past the end of the pattern");
+                log.Loss(ClipTags.EventPastEnd, machine, p.Name, "notes", skipped, "a note delayed past the end of the clip");
             }
             var events = new List<ClipEvent>();
             foreach (var n in notes)

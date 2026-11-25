@@ -1,5 +1,5 @@
 // Fork (docs/specs/daw-modes.md S2): arrangement clips over Buzz's sequence events. A clip is a
-// run of PlayPattern events of one pattern on one sequence, joined by a clip id
+// run of PlayClip events of one clip on one sequence, joined by a clip id
 // (SequenceEvent.Clip): the first plays from the clip's start (its Offset), the next ones play
 // the loop, the last one is cut at the clip's end. Loops are repeated events, so upstream ReBuzz
 // plays them; it doesn't know the id and plays each event, cut at the next.
@@ -12,15 +12,15 @@ using BuzzGUI.Interfaces;
 namespace ReBuzz.Core
 {
     /// <summary>
-    /// A clip's loop: where its repeats start and end in its pattern (ticks; End 0 for the
-    /// pattern's end), and whether it loops. Kept while it doesn't loop, for when it does again.
+    /// A clip's loop: where its repeats start and end in its clip (ticks; End 0 for the
+    /// clip's end), and whether it loops. Kept while it doesn't loop, for when it does again.
     /// </summary>
     internal readonly record struct ClipLoop(int Start, int End, bool On);
 
     /// <summary>
     /// One clip of a sequence, read from its events: its id (0: an event without one), its
-    /// pattern, where it starts and how long it plays (ticks, cut at the next event), where its
-    /// first event starts in the pattern, how many events it has, and its loop if it has one.
+    /// clip, where it starts and how long it plays (ticks, cut at the next event), where its
+    /// first event starts in the clip, how many events it has, and its loop if it has one.
     /// </summary>
     internal readonly record struct ArrangementClip(int Id, IClip Clip, int Time, int Length, int Offset, int Events, ClipLoop? Loop)
     {
@@ -69,7 +69,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// The clips of a sequence, in time order. Consecutive PlayPattern events of one pattern
+        /// The clips of a sequence, in time order. Consecutive PlayClip events of one clip
         /// with the same id, each playing on to where the next starts, are one clip; any other
         /// event, or a gap, ends it. An event without an id is a clip of its own.
         /// </summary>

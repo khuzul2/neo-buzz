@@ -1,12 +1,12 @@
 // Fork (docs/specs/daw-modes.md AR5, §4.4, S6): MIDI recorded into the arrangement. An armed track records at the play
-// position: a new pattern placed as a clip from where recording began and ending where it stops; over a clip with overdub
-// on, into that clip's pattern at pattern time. With loop recording, each pass of the song's loop is a take: its own pattern
+// position: a new clip placed as a clip from where recording began and ending where it stops; over a clip with overdub
+// on, into that clip's clip at clip time. With loop recording, each pass of the song's loop is a take: its own clip
 // on a take lane (a sequence with the take role, which the engine never plays), to be comped onto the main lane.
 //
 // Timing is the MIDI thread's: SessionCore stamps each message with when it was heard and where the song was then (the same
-// stamps and record-window rule as a session take, with a take target - a pattern to be and the song tick its time zero is -
+// stamps and record-window rule as a session take, with a take target - a clip to be and the song tick its time zero is -
 // instead of a slot); this class, on the UI thread, drains them into TakeWriters and, when recording ends, writes the
-// patterns and clips as one step of the song's history. The UI clock is never read for a note's time.
+// clips and clips as one step of the song's history. The UI clock is never read for a note's time.
 
 using System;
 using System.Collections.Generic;
@@ -119,7 +119,7 @@ namespace ReBuzz.Core
 
         public bool IsLoopRecording => IsRecording && loop;
 
-        /// <summary>Over a clip, record into its pattern (at pattern time) instead of a new one.</summary>
+        /// <summary>Over a clip, record into its clip (at clip time) instead of a new one.</summary>
         public bool Overdub { get; set; }
 
         /// <summary>What happened last, in words (null when nothing needs saying).</summary>
@@ -318,7 +318,7 @@ namespace ReBuzz.Core
         static ClipEvent[] Batch(IEnumerable<TakeEvent> events) =>
             events.OrderBy(e => e.Time).Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray();
 
-        /// <summary>One pass, or a single recording: a new pattern with the events, and the clip over it. Returns 1 if written.</summary>
+        /// <summary>One pass, or a single recording: a new clip with the events, and the clip over it. Returns 1 if written.</summary>
         int WriteClip(TrackTake t, long endSong)
         {
             var events = t.Passes.Values.SelectMany(l => l).ToList();
@@ -348,7 +348,7 @@ namespace ReBuzz.Core
             return clip;
         }
 
-        /// <summary>Over a clip at the start, with overdub on: the notes go into that clip's pattern at pattern time. False when no clip is there.</summary>
+        /// <summary>Over a clip at the start, with overdub on: the notes go into that clip's clip at clip time. False when no clip is there.</summary>
         bool OverdubInto(TrackTake t, ClipEditor editor, List<TakeEvent> events, int origin)
         {
             var item = editor.Read(t.Lane).FirstOrDefault(i => i.Time <= origin && origin < i.End);

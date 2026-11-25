@@ -9,7 +9,7 @@ Forms, harmony, melody, groove and arrangement, with the calls that write them. 
 - Note values in beats: whole 4, half 2, quarter 1, 8th 0.5, 16th 0.25, 32nd 0.125, dotted 8th 0.75, dotted quarter 1.5, 8th triplet 1/3 (0.3333), 16th triplet 1/6 (0.1667).
 - 16-step grids below: step s starts at beat (s − 1) × 0.25 of its bar.
 - Milliseconds to beats: beats = ms × BPM ÷ 60000. 10 ms is 0.02 beats at 120 BPM, 0.029 at 174.
-- Ticks per beat (default 4) is only the Pattern View's grid. Notes can start between ticks, so swing and triplets need no change.
+- Ticks per beat (default 4) is only the Clip View's grid. Notes can start between ticks, so swing and triplets need no change.
 
 | BPM | 70 | 80 | 90 | 100 | 110 | 124 | 130 | 140 | 174 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -20,16 +20,16 @@ Forms, harmony, melody, groove and arrangement, with the calls that write them. 
 
 1. Tempo: `song_set(tempo_bpm=124)`.
 2. Sections: `arrangement_markers(set=[{"name": "Intro", "at": "1.1"}, {"name": "Drop", "at": "41.1"}])`. A section runs to the next marker; `render(section="Drop")` renders one.
-3. Patterns: one per part and section role, length in beats. `pattern_create(machine="Bass", name="Drop", length_beats=16)`. Duplicate for variations: `pattern_duplicate(machine="Drums", pattern="Beat", new_name="Beat fill")`.
+3. Clips: one per part and section role, length in beats. `clip_create(machine="Bass", name="Drop", length_beats=16)`. Duplicate for variations: `clip_duplicate(machine="Drums", clip="Beat", new_name="Beat fill")`.
 4. Pitches without arithmetic slips:
    - `theory(op="chord", chord="Am9", octave=3)`: a chord's pitches, spelled.
    - `theory(op="progression", key="A minor", progression="i VI III VII", octave=3, beats_per_chord=4)`: chords voice-led, plus notes ready for `notes_write`.
    - `theory(op="scale", key="D dorian")`, `theory(op="key", key="F minor")` (signature, diatonic triads and sevenths).
    - `theory(op="degree", key="A minor", pitches=["C4", "E4"], steps=2)`: moves notes along the scale.
-5. Notes: `notes_write(machine="Chords", pattern="Drop", notes=[{"pitch": "A3", "start": 0, "length": 4, "velocity": 90}], mode="replace")`. Pitches are MIDI numbers or names (60 = C4). Chords are notes with the same start.
-6. Edits: `notes_transform(machine="Lead", pattern="Hook", transforms=[{"op": "quantize", "grid": 0.25, "strength": 0.8, "swing": 0.48}])` (transpose, quantize, humanize, velocity, shift, stretch, reverse, invert, legato, staccato; on a selection by range or pitch; one undo step).
-7. Timeline: `arrangement_place(machine="Bass", pattern="Drop", at="41.1", repeat_every_beats=16, times=8)`. A placed pattern plays until it ends or the lane's next pattern starts.
-8. Movement: `automation_write(machine="Chords", pattern="Build", param="F1 cutoff", points=[{"at": 0, "value": "400 Hz"}, {"at": 32, "value": "8 kHz"}])`. Automation lives in a pattern and plays only where that pattern is placed.
+5. Notes: `notes_write(machine="Chords", clip="Drop", notes=[{"pitch": "A3", "start": 0, "length": 4, "velocity": 90}], mode="replace")`. Pitches are MIDI numbers or names (60 = C4). Chords are notes with the same start.
+6. Edits: `notes_transform(machine="Lead", clip="Hook", transforms=[{"op": "quantize", "grid": 0.25, "strength": 0.8, "swing": 0.48}])` (transpose, quantize, humanize, velocity, shift, stretch, reverse, invert, legato, staccato; on a selection by range or pitch; one undo step).
+7. Timeline: `arrangement_place(machine="Bass", clip="Drop", at="41.1", repeat_every_beats=16, times=8)`. A placed clip plays until it ends or the lane's next clip starts.
+8. Movement: `automation_write(machine="Chords", clip="Build", param="F1 cutoff", points=[{"at": 0, "value": "400 Hz"}, {"at": 32, "value": "8 kHz"}])`. Automation lives in a clip and plays only where that clip is placed.
 9. Check: `notes_read`, `theory(op="fit", key="A minor", notes=[…])`, `render(section="Drop")`, `analyze(source="r3", metrics=["key", "tempo", "loudness"])`.
 
 The Session View grid (`session_clip_set`, `session_scene_set`, `session_get`) is good for sketching loops as scenes. Audio files come in with `audio_import` (a Neo Audio track; WAV, AIFF, FLAC, OGG, MP3) and are shaped with `audio_clip_get` and `audio_clip_set` (warp, tempo, transpose, gain, loop, fades, reverse); in the arrangement `arrangement_clip` trims, stretches (`op="stretch"`), splits, crossfades and consolidates audio clips; `audio_separate` splits a clip or a file into vocals, drums, bass and other on new tracks. `audio_convert_to_midi` turns a clip's melody, harmony or drums into a MIDI clip on a new track (`apply=false` to look first). Renders play the arrangement, so the finished song lives there.
@@ -81,7 +81,7 @@ Get the pitches from `theory(op="progression", key="C major", progression="I V v
 - Pedal point: hold the tonic or dominant in the bass while the chords move; release by moving the bass.
 - Extensions: 7ths and 9ths soften (house, lo-fi, liquid DnB); 11 over minor chords; 13 over dominants. Avoid a natural 11 over a major chord (it clashes with the third).
 - Harmonic rhythm: one chord per bar (pop, house), per 2 bars (synthwave, EDM verses), per 4–8 bars or a drone (techno, ambient). Doubling it in the last bars of a build adds tension.
-- Last-chorus lift (pop): up 1 or 2 semitones with `notes_transform(machine=…, pattern=…, transforms=[{"op": "transpose", "semitones": 2}])`.
+- Last-chorus lift (pop): up 1 or 2 semitones with `notes_transform(machine=…, clip=…, transforms=[{"op": "transpose", "semitones": 2}])`.
 
 ## Melody
 
@@ -93,7 +93,7 @@ Get the pitches from `theory(op="progression", key="C major", progression="I V v
 - Rhythm: leads rest 25–50 % of the time. Repeat rhythms more than pitches. Anticipate a beat by a 16th for push.
 - Hooks: a 1–2 bar motif of 3–6 notes, heard at least 3 times per section, changed on the 4th (AAAB or AABA).
 
-**Developing a motif** with `notes_transform(machine="Lead", pattern="Hook", transforms=[…], range_start=4, range_end=8)`:
+**Developing a motif** with `notes_transform(machine="Lead", clip="Hook", transforms=[…], range_start=4, range_end=8)`:
 
 | Technique | Transform |
 |---|---|
@@ -106,11 +106,11 @@ Get the pitches from `theory(op="progression", key="C major", progression="I V v
 | Legato or staccato | `{"op": "legato", "gap": 0}`, `{"op": "staccato", "factor": 0.5}` |
 | Crescendo | `{"op": "velocity", "ramp": [70, 115]}` |
 
-Copy before you vary: `pattern_duplicate`, then transform the copy. Check the result: `theory(op="fit", key="A minor", notes=[…])` with the notes from `notes_read`; at least 90 % of the time in key unless the chromatic notes are deliberate.
+Copy before you vary: `clip_duplicate`, then transform the copy. Check the result: `theory(op="fit", key="A minor", notes=[…])` with the notes from `notes_read`; at least 90 % of the time in key unless the chromatic notes are deliberate.
 
 ## Rhythm and groove
 
-**Pitches for drums.** Drum machines that follow General MIDI: kick 36 (C2), rim 37, snare 38, clap 39, closed hat 42, open hat 46, crash 49, ride 51. Synth drums built on Neo Poly (synth-recipes guide) play the pitch written: the kick at A1 (33) or in key, snare G3, hats any pitch. Give each drum voice its own machine and pattern when it needs its own sound or level.
+**Pitches for drums.** Drum machines that follow General MIDI: kick 36 (C2), rim 37, snare 38, clap 39, closed hat 42, open hat 46, crash 49, ride 51. Synth drums built on Neo Poly (synth-recipes guide) play the pitch written: the kick at A1 (33) or in key, snare G3, hats any pitch. Give each drum voice its own machine and clip when it needs its own sound or level.
 
 **Which keys play.** A drum kit, sampler or plug-in with named keys shows a `note_map` in `machine_describe`: write drum notes on those keys; others are silent.
 
@@ -152,7 +152,7 @@ Ambient: no drums, or a soft kick on step 1 and shakers.
 
 - Trap hat rolls: on the last beat of every 2nd or 4th bar, 16ths (0.25), 16th triplets (1/6) or 32nds (0.125), velocity ramping up.
 - Fills: the last bar of each 8-bar phrase. Snare 16ths on beat 4 with `{"op": "velocity", "ramp": [70, 120]}`, or drop the kick for the last beat.
-- Write one bar or a 4-bar pattern with its fill, then repeat it: `arrangement_place(machine="Kick", pattern="Beat", at="1.1", repeat_every_beats=16, times=8)`.
+- Write one bar or a 4-bar clip with its fill, then repeat it: `arrangement_place(machine="Kick", clip="Beat", at="1.1", repeat_every_beats=16, times=8)`.
 
 **Swing.** `notes_transform` quantize with `swing` delays every second grid line: 0 is straight, 1 a full triplet. From the MPC's percentages: swing = (percent − 50) × 6 ÷ 100.
 
@@ -197,23 +197,23 @@ Plan an energy curve (1–10) per section, then decide the layers. Neighbouring 
 | Bridge | 4–6 | new chord, half the drums |
 
 Moves, with tools:
-- Filter build over 8 bars (a 32-beat pattern): `automation_write(machine="Chords", pattern="Build", param="F1 cutoff", points=[{"at": 0, "value": "400 Hz"}, {"at": 32, "value": "8 kHz"}])`.
+- Filter build over 8 bars (a 32-beat clip): `automation_write(machine="Chords", clip="Build", param="F1 cutoff", points=[{"at": 0, "value": "400 Hz"}, {"at": 32, "value": "8 kHz"}])`.
 - Snare roll: quarters, then 8ths, then 16ths over 8 bars, velocity ramp 70 → 120.
 - Riser: a noise sweep (preset "FX — Noise Sweep" on Neo Poly) over the build.
-- Reverb throw: freeze the send reverb for the last beat, `automation_write(machine="Hall", pattern="Build", param="Freeze", shape="step", points=[{"at": 28, "value": "On"}, {"at": 31.75, "value": "Off"}])`.
-- Fade: `automation_write(machine="Pad", pattern="Outro", param="Volume", points=[{"at": 0, "value": "-6 dB"}, {"at": 64, "value": "-40 dB"}])`.
-- A beat of silence before the drop: clear the last beat of each part's build pattern with `notes_write(machine=…, pattern="Build", notes=[], mode="replace_range", range_start=28, range_end=32)`.
+- Reverb throw: freeze the send reverb for the last beat, `automation_write(machine="Hall", clip="Build", param="Freeze", shape="step", points=[{"at": 28, "value": "On"}, {"at": 31.75, "value": "Off"}])`.
+- Fade: `automation_write(machine="Pad", clip="Outro", param="Volume", points=[{"at": 0, "value": "-6 dB"}, {"at": 64, "value": "-40 dB"}])`.
+- A beat of silence before the drop: clear the last beat of each part's build clip with `notes_write(machine=…, clip="Build", notes=[], mode="replace_range", range_start=28, range_end=32)`.
 
 Measure the contrast: render each section and compare integrated loudness. The drop or chorus should read 2–6 LU above the breakdown or verse; under 1 LU, it doesn't lift. `plot(kind="loudness", sources=["r7"])` of the whole song shows the energy curve.
 
 ## Checklist
 
 - [ ] Tempo and form match the brief: `studio_status` and `arrangement_markers()` list every section, each a multiple of 4 bars.
-- [ ] Every part plays where it should: `arrangement_get` and `pattern_list` show the placements and note counts.
+- [ ] Every part plays where it should: `arrangement_get` and `clip_list` show the placements and note counts.
 - [ ] Melodic parts are in key: `theory(op="fit", key=…, notes=[…])` reads at least 0.9 of the time in key for each.
 - [ ] Registers are right: `notes_read` shows the bass below C3 and no stacked thirds below C3.
 - [ ] The render agrees: `analyze(source=…, metrics=["key", "tempo"])` finds the key and tempo you wrote.
 - [ ] Sections contrast: `render(section=…)` of the drop or chorus and the breakdown or verse, measured with `analyze(source=…, metrics=["loudness"])`, differ by 2–6 LU.
 - [ ] No unintended silence: `analyze(source=…, metrics=["dynamics"])` shows no gap in `rms_over_time` except planned breaks.
-- [ ] Automation plays: `automation_read(machine=…, pattern=…)` lists it and `arrangement_get` shows the pattern placed.
+- [ ] Automation plays: `automation_read(machine=…, clip=…)` lists it and `arrangement_get` shows the clip placed.
 - [ ] Saved: `song_save(path=…)`.

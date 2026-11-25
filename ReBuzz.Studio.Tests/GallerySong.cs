@@ -1,6 +1,6 @@
 // Fork (docs/specs/ui-gallery.md): the demo song both UI galleries capture, built through the engine alone so the
 // Mac studio's headless gallery (ReBuzz.Studio.Tests, GalleryTests) and ReBuzz.exe's (--ui-shots, UiShots) show the
-// same song: Neo generators and effects wired up, patterns with notes (most moved onto the Pattern View's note lanes,
+// same song: Neo generators and effects wired up, clips with notes (most moved onto the Clip View's note lanes,
 // one left in its clip for the piano roll), an arrangement, Session View clips, scenes, colours and a return, song
 // notes. Native machines join it where Gear has them (ReBuzz.exe); elsewhere they are left out. Compiled into
 // ReBuzz.exe and linked into ReBuzz.Studio.Tests; engine APIs only.
@@ -100,7 +100,7 @@ namespace ReBuzz.Gallery
             foreach (var g in s.Generators)
                 if (!song.SequencesList.Any(q => q.Machine == g)) song.AddSequence(g, song.SequencesList.Count);
 
-            // Patterns and notes (beats of 4 ticks; a tick is a row of the pattern editor).
+            // Clips and notes (beats of 4 ticks; a tick is a row of the clip editor).
             var layout = core.SessionLayout;
             IClip Clip(MachineCore m, string name, int ticks, params (double At, double Length, int Note, int Velocity)[] notes)
             {
@@ -144,7 +144,7 @@ namespace ReBuzz.Gallery
                 foreach (int n in chords[c].Take(3)) pad.Add((c * Bar, Bar, n, 80));
             s.Chords = Clip(s.Pad, "Chords", 4 * Bar, pad.ToArray());
 
-            // (The notes are in the clips' store already: the Pattern View's Notes lanes and the piano roll show the same ones.)
+            // (The notes are in the clips' store already: the Clip View's Notes lanes and the piano roll show the same ones.)
 
             // The arrangement: 16 bars.
             void Place(IClip p, params int[] bars)

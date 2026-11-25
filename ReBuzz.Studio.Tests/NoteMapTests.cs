@@ -304,7 +304,7 @@ namespace ReBuzz.Studio.Tests
             r.Notes.AddNote(2 * TB, 60);
             r.ShowTracker();
             UxP3bTests.Pump();
-            var body = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(r.Window).First(v => v.GetType().Name == "PatternBody");
+            var body = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(r.Window).First(v => v.GetType().Name == "ClipBody");
             var tipAt = body.GetType().GetMethod("NoteTipAt", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             Assert.That(tipAt, Is.Not.Null);
             var b = ((Avalonia.Controls.Control)body).Bounds;

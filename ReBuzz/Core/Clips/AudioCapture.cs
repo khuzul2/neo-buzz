@@ -91,8 +91,8 @@ namespace ReBuzz.Core.Clips
 
         /// <summary>
         /// Audio thread, before the first frames: the take's beat then. A take whose launch came
-        /// late starts into its pattern; the frames before stay silent, so the audio keeps the
-        /// pattern's time.
+        /// late starts into its clip; the frames before stay silent, so the audio keeps the
+        /// clip's time.
         /// </summary>
         public void StartAt(double beat)
         {

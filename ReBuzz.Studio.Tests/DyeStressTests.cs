@@ -1,6 +1,6 @@
 // Fork (docs/specs/dye-essence.md §5.2): Dye Essence's G0 stress test in the studio, headless. A
 // machine with 704 parameters and megabytes of state (Dye Stress, TestMachines/DyeStress, its table
-// generated as Dye Essence's will be) through the parameter window, the pattern editor, a pattern
+// generated as Dye Essence's will be) through the parameter window, the clip editor, a clip
 // playing every parameter, .nbl, MIDI learn on every parameter, a preset with its data,
 // the manifest and machine_describe. Each test prints its figures ("Dye Stress: …") to the log.
 
@@ -182,7 +182,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        // ------------------------------------------------------------------ the pattern editor
+        // ------------------------------------------------------------------ the clip editor
 
         [AvaloniaTest]
         public void TheClipEditorShowsEveryColumnAndTypesIntoTheLast()
@@ -235,8 +235,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(column, Is.Not.Null, "the last global parameter has a column");
                 Assert.That(column!.Events.Count(), Is.EqualTo(1), "a digit typed at its end is its automation");
                 double last = Draw();
-                Report($"pattern editor: opened in {openMs:F0} ms; the grid draws in {first:F1} ms at the first columns, {last:F1} ms at the last (median of 7); a value typed into column {Globals} ('Arp scale')");
-                Studio.Screenshot(window, "dye-stress-pattern-editor");
+                Report($"clip editor: opened in {openMs:F0} ms; the grid draws in {first:F1} ms at the first columns, {last:F1} ms at the last (median of 7); a value typed into column {Globals} ('Arp scale')");
+                Studio.Screenshot(window, "dye-stress-clip-editor");
                 Assert.That(Math.Max(first, last), Is.LessThan(250), "a frame of the grid draws in a quarter of a second at most");
             }
             finally
@@ -249,7 +249,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        // ------------------------------------------------------------------ a pattern playing every parameter
+        // ------------------------------------------------------------------ a clip playing every parameter
 
         /// <summary>An engine automation column for every global parameter: one value from tick 0, another from tick 8.</summary>
         static void AutomateEveryGlobal(MachineCore machine, IClip clip)
@@ -264,7 +264,7 @@ namespace ReBuzz.Studio.Tests
 
         /// <summary>
         /// Renders the song (the agent's offline render: a WorkManager on this thread, under the audio
-        /// lock, as PatternEditorTests renders) from tick 0, or on from where it is, until it reaches a
+        /// lock, as ClipEditorTests renders) from tick 0, or on from where it is, until it reaches a
         /// tick: the seconds it took.
         /// </summary>
         static double RenderUntil(int untilTick, bool fromStart)
@@ -344,7 +344,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Raw(machine), Is.EqualTo(Enumerable.Range(0, Globals).Select(i => ValueFor(globals[i], i, 2)).ToArray()), "tick 8's values too");
 
                 // The cost: a song of 64 ticks with every parameter changing every tick, against the same
-                // pattern with no events (its columns still there); after a warm-up, each rendered four
+                // clip with no events (its columns still there); after a warm-up, each rendered four
                 // times in turn, the fastest kept (a shared runner is noisy).
                 var every = new ClipEvent[globals.Count][];
                 for (int i = 0; i < globals.Count; i++)
@@ -360,7 +360,7 @@ namespace ReBuzz.Studio.Tests
                     plain = Math.Min(plain, RenderUntil(64, fromStart: true));
                 }
                 double tickMs = (automated - plain) * 1000 / 64;
-                Report($"a pattern of {Globals} automation columns written in {writeMs:F0} ms; rendering 64 ticks with every parameter changing every tick {automated * 1000:F0} ms against {plain * 1000:F0} ms without (best of 4, after a warm-up): {tickMs:F2} ms a tick for {Globals} changes, {tickMs * 1000 / Globals:F1} µs a change");
+                Report($"a clip of {Globals} automation columns written in {writeMs:F0} ms; rendering 64 ticks with every parameter changing every tick {automated * 1000:F0} ms against {plain * 1000:F0} ms without (best of 4, after a warm-up): {tickMs:F2} ms a tick for {Globals} changes, {tickMs * 1000 / Globals:F1} µs a change");
                 // A bound, not the target (dye-essence.md §5.2: well under an audio buffer, 5.3 ms at 256
                 // samples): every parameter changing on every tick is the worst case, and runners vary.
                 Assert.That(tickMs, Is.LessThan(15), "704 changes in a tick stay within a few buffers");

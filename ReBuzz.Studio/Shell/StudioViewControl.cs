@@ -69,7 +69,7 @@ namespace ReBuzz.Studio.Shell
             var p = machine.Clips.FirstOrDefault(x => x.Name == name) ?? machine.Clips.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
             if (p != null) return p;
             var near = Text.Closest(name, machine.Clips.Select(x => x.Name));
-            throw new ToolError($"{machine.Name} has no pattern \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") + $" pattern_list(machine=\"{machine.Name}\") lists them.");
+            throw new ToolError($"{machine.Name} has no clip \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") + $" clip_list(machine=\"{machine.Name}\") lists them.");
         }
 
         public void ShowClip(string machine, string clip, bool pianoRoll)
@@ -78,7 +78,7 @@ namespace ReBuzz.Studio.Shell
             var w = Main;
             ClipView.Edit(p);
             if (pianoRoll) w.ShowPianoRoll();
-            else w.ShowView("Pattern");
+            else w.ShowView("Clip");
         }
 
         public bool OpenMachineWindow(string machine, string window)

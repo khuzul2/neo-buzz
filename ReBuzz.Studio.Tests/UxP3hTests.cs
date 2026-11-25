@@ -339,7 +339,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(session.EmptyState.IsVisible, Is.True);
                 Assert.That(Labels(session.EmptyState), Is.EqualTo(starters.Concat(new[] { "Add machine…" }).ToList()));
 
-                // Tracker and piano roll: the same state, in both views of a pattern.
+                // Tracker and piano roll: the same state, in both views of a clip.
                 window.Detail.ShowPage(false, false);
                 Settle(window);
                 var page = ClipView.Page;
@@ -388,22 +388,22 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.SongCore.ActionStack.Steps.Count, Is.EqualTo(steps + 1), "one undo step");
                 var made = StudioSelection.For(Core).Machine;
                 Assert.That(made, Is.Not.Null, "the new machine is selected");
-                Assert.That(made!.Clips.Count, Is.EqualTo(1), "a starter comes with its first pattern");
+                Assert.That(made!.Clips.Count, Is.EqualTo(1), "a starter comes with its first clip");
                 Assert.That(page.EmptyState.IsVisible, Is.False, "so the Tracker opens on it");
                 seq.RefreshEmpty();
-                Assert.That(seq.EmptyState.IsVisible, Is.False, "the Arrangement has its track, and the starter's pattern is on it");
+                Assert.That(seq.EmptyState.IsVisible, Is.False, "the Arrangement has its track, and the starter's clip is on it");
                 history.Rebuild();
                 Assert.That(history.EmptyState.IsVisible, Is.False, "the History has its first step");
                 window.ShowView("Machines");
                 Settle(window);
                 Assert.That(machines.Starters.IsVisible, Is.False);
 
-                // Without its pattern the Tracker says to make one; "New pattern" makes it (undoable) and the empty state goes.
+                // Without its clip the Tracker says to make one; "New clip" makes it (undoable) and the empty state goes.
                 made.DeleteClip(made.Clips[0]);
                 Settle(window);
-                Assert.That(page.EmptyState.Title, Is.EqualTo($"{made.Name} has no patterns"));
-                Assert.That(Labels(page.EmptyState), Is.EqualTo(new[] { "New pattern" }));
-                page.EmptyState.Step("New pattern")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.That(page.EmptyState.Title, Is.EqualTo($"{made.Name} has no clips"));
+                Assert.That(Labels(page.EmptyState), Is.EqualTo(new[] { "New clip" }));
+                page.EmptyState.Step("New clip")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Settle(window);
                 Assert.That(made.Clips.Count, Is.EqualTo(1));
                 Assert.That(page.Clip, Is.Not.Null, "the Tracker has it");

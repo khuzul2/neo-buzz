@@ -1,9 +1,9 @@
-// Fork (docs/specs/studio-mvp.md S6): the pattern grid on Avalonia, a port of the WPF editor's
-// PatternControl.xaml and its code-drawn ColumnRenderer (BeatVisual): column set headers, row
+// Fork (docs/specs/studio-mvp.md S6): the clip grid on Avalonia, a port of the WPF editor's
+// ClipControl.xaml and its code-drawn ColumnRenderer (BeatVisual): column set headers, row
 // numbers, the beats of each column set side by side, and on top of them the cursor row, the
 // selection, the cursor and the play position. Drawn in layers, as WPF does: the beats redraw when
 // values change or the view scrolls, the overlay when the cursor moves or the song plays. Only the
-// beats and column sets in view are drawn. Input goes to the toolkit-free PatternControl.
+// beats and column sets in view are drawn. Input goes to the toolkit-free ClipControl.
 
 using Avalonia;
 using Avalonia.Controls;
@@ -42,11 +42,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) };
         readonly HashSet<ParameterColumnSet> watched = new();
 
-        /// <summary>The pattern position the play cursor shows (pattern time; int.MinValue: none).</summary>
+        /// <summary>The clip position the play cursor shows (clip time; int.MinValue: none).</summary>
         internal int PlayPosition { get; private set; } = int.MinValue;
 
         /// <summary>
-        /// Fork (ux-overhaul.md P3c): the pattern ticks in a bar of the song at this pattern's place, for the bar rules (the studio
+        /// Fork (ux-overhaul.md P3c): the clip ticks in a bar of the song at this clip's place, for the bar rules (the studio
         /// sets it from the song's time signatures); null: four beats.
         /// </summary>
         public Func<int> BarTicksSource { get; set; }
@@ -177,7 +177,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             watched.Clear();
         }
 
-        /// <summary>A pattern is shown, or its columns or length changed: lay out again (PatternControl.CreateAllElements).</summary>
+        /// <summary>A clip is shown, or its columns or length changed: lay out again (ClipControl.CreateAllElements).</summary>
         internal void Relayout()
         {
             Unwatch();
@@ -229,7 +229,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Dispatcher.UIThread.Post(() =>
             {
                 Scroller.UpdateLayout();        // the new padding is in the extent before the offset is set
-                // Centred: the cursor row goes to the middle (a pattern just opened, a window resized); else the beats stay where they were.
+                // Centred: the cursor row goes to the middle (a clip just opened, a window resized); else the beats stay where they were.
                 if (Centered && Layout != null && Controller.Clip != null && PlayPosition == int.MinValue)
                     CenterOn(Layout.GetFieldRect(Controller.Clip.CursorPosition));
                 else
@@ -277,13 +277,13 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 MakeVisible(r);
         }
 
-        /// <summary>Scrolls so that the middle of a rectangle of the pattern is the middle of the view.</summary>
+        /// <summary>Scrolls so that the middle of a rectangle of the clip is the middle of the view.</summary>
         internal void CenterOn(Rect r) => ScrollTo(Offset.X, Math.Round(r.Center.Y - Scroller.Viewport.Height / 2));
 
         /// <summary>The middle of the view as a y of the beats (what the centred row is).</summary>
         public double CenterY => Offset.Y + Scroller.Viewport.Height / 2;
 
-        /// <summary>The pattern's tick at the middle of the view (for tests).</summary>
+        /// <summary>The clip's tick at the middle of the view (for tests).</summary>
         public double CenterRow => Layout == null ? 0 : CenterY / Layout.LineHeight;
 
         /// <summary>The cursor's row, as its y in the beats (for tests).</summary>
@@ -309,7 +309,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         /// <summary>The view's height (for tests).</summary>
         public double ViewHeight => Scroller.Viewport.Height;
 
-        /// <summary>Scrolls so a rectangle of the pattern is in view (WPF: BringIntoView).</summary>
+        /// <summary>Scrolls so a rectangle of the clip is in view (WPF: BringIntoView).</summary>
         public void MakeVisible(Rect r)
         {
             var o = Offset;
@@ -324,7 +324,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 ScrollTo(x, y);
         }
 
-        /// <summary>The 20 ms timer (PatternEditor.SetTimer, PatternControl.TimerUpdate): the playing pattern and the play cursor.</summary>
+        /// <summary>The 20 ms timer (ClipEditor.SetTimer, ClipControl.TimerUpdate): the playing clip and the play cursor.</summary>
         public void TimerUpdate()
         {
             Editor.TimerUpdate();
@@ -343,7 +343,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             }
         }
 
-        /// <summary>Where a pattern time is drawn (y of the play cursor).</summary>
+        /// <summary>Where a clip time is drawn (y of the play cursor).</summary>
         internal double PlayY(int time) => time / (double)ClipEvent.TimeBase * Layout.RPB / ClipControl.BUZZ_TICKS_PER_BEAT * Font.LineHeight * ClipControl.Scale;
 
         internal Vector Offset => new Vector(Scroller.Offset.X, Scroller.Offset.Y - pad);
@@ -388,7 +388,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         /// <summary>
         /// Fork (ux-overhaul.md P3c): the beat and bar rules over the beats <paramref name="first"/> to <paramref name="last"/>,
         /// <paramref name="width"/> wide: a 1 px line at each beat's start, a 2 px brighter one at each bar's (the song's bar
-        /// at this pattern's place), both at least 3:1 against the grid behind them (a test measures it).
+        /// at this clip's place), both at least 3:1 against the grid behind them (a test measures it).
         /// </summary>
         internal void DrawRules(DrawingContext dc, double width, int first, int last)
         {
@@ -676,7 +676,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 PlayRow(dc, grid, layout, width);
         }
 
-        /// <summary>The play cursor (playPosRectangle): a row's height, cut at the pattern's end.</summary>
+        /// <summary>The play cursor (playPosRectangle): a row's height, cut at the clip's end.</summary>
         internal static void PlayRow(DrawingContext dc, ClipGridView grid, GridLayout layout, double width)
         {
             double line = grid.Font.LineHeight;
@@ -763,7 +763,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
     }
 
     /// <summary>
-    /// The column set headers (PatternControl.CreateHeaders): each set's label (a click mutes the set
+    /// The column set headers (ClipControl.CreateHeaders): each set's label (a click mutes the set
     /// while playing), and each column's name, turned upright (clicks: go to the column, select it,
     /// select the set). Scrolled sideways with the beats. The WPF header's parameter knobs aren't here.
     /// </summary>

@@ -311,13 +311,13 @@ namespace ReBuzz.AgentTests
         [Test]
         public void TrackNotesRoundTrip()
         {
-            const int tick = 240, clip = 16 * tick;   // a 16-tick pattern
+            const int tick = 240, clip = 16 * tick;   // a 16-tick clip
             var notes = new[]
             {
                 new NoteEvent(0, 4 * tick, 69, 100),
                 new NoteEvent(0, 2 * tick, 72, 64),
                 new NoteEvent(4 * tick, 4 * tick, 71, 127),            // straight after the first: no note-off between
-                new NoteEvent(12 * tick, 4 * tick, 60, 100),           // to the pattern's end: let go on its last tick
+                new NoteEvent(12 * tick, 4 * tick, 60, 100),           // to the clip's end: let go on its last tick
             };
             var (tracks, needed) = TrackNotes.Allocate(notes);
             var events = TrackNotes.Events(notes, tracks, clip, tick, (0, 127));

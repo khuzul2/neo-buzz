@@ -1,6 +1,6 @@
 // Fork (docs/specs/studio-mvp.md S5): the Session View's piano roll, ported from the WPF view's
 // PianoRoll.cs (session-view.md 0.7.1): a clip's notes, the note-ons of its engine MIDI column,
-// drawn and edited Live's way. Until the pattern editor comes (S6), this is where the studio
+// drawn and edited Live's way. Until the clip editor comes (S6), this is where the studio
 // writes notes. Double-click adds or deletes a note; drag moves, drag a note's end resizes it,
 // Alt+drag changes velocity, drag on empty space selects. Arrows move the selection (Shift: an
 // octave), Q quantizes, Del deletes, Ctrl+A selects all (Command on macOS). Every edit is one undo
@@ -63,7 +63,7 @@ namespace ReBuzz.Studio.Views.Session
         {
         }
 
-        /// <summary>A piano roll on any note source; the play position shows while <paramref name="track"/> plays the pattern in the session.</summary>
+        /// <summary>A piano roll on any note source; the play position shows while <paramref name="track"/> plays the clip in the session.</summary>
         public PianoRoll(ReBuzzCore buzz, INoteSource source, ISequence track)
         {
             this.buzz = buzz;
@@ -177,7 +177,7 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>Whether the clip can't be edited now though it is in the song: it records (edits wait until it stops).</summary>
         public bool IsRecording => Source.IsLive && Source.WhyNotEditable != null;
 
-        /// <summary>Snap grid in pattern time (1/240 tick); 1 for none.</summary>
+        /// <summary>Snap grid in clip time (1/240 tick); 1 for none.</summary>
         public int Grid { get; set; } = ClipNotes.TimeBase;
 
         /// <summary>Horizontal zoom: pixels per tick.</summary>
@@ -215,7 +215,7 @@ namespace ReBuzz.Studio.Views.Session
 
         /// <summary>
         /// Fork (ux-overhaul.md P3b2): the bar's length in ticks when the host knows the song's (the docked roll takes the
-        /// bar of the song's list where its pattern lies); 0: the Session View's beats a bar.
+        /// bar of the song's list where its clip lies); 0: the Session View's beats a bar.
         /// </summary>
         public int BarTicks { get; set; }
 
@@ -420,7 +420,7 @@ namespace ReBuzz.Studio.Views.Session
 
         List<ClipNote> ghosts = new List<ClipNote>();
 
-        /// <summary>Other clips' notes in this pattern's time, drawn faintly behind the notes (the host sets them).</summary>
+        /// <summary>Other clips' notes in this clip's time, drawn faintly behind the notes (the host sets them).</summary>
         internal IReadOnlyList<ClipNote> Ghosts
         {
             get => ghosts;
@@ -449,7 +449,7 @@ namespace ReBuzz.Studio.Views.Session
         int stepChordTime = -1;
         readonly Dictionary<PhysicalKey, int> stepKeys = new Dictionary<PhysicalKey, int>();
 
-        /// <summary>Where the next step-input note goes (pattern time).</summary>
+        /// <summary>Where the next step-input note goes (clip time).</summary>
         public int StepTime
         {
             get => stepTime;
@@ -567,7 +567,7 @@ namespace ReBuzz.Studio.Views.Session
             if (copies.Count > 0) Commit(Array.Empty<ClipNote>(), copies);
         }
 
-        // ---- Fork (P3b2): the clipboard of notes. One per app, so a copy can be pasted in another pattern; the notes keep their pitch
+        // ---- Fork (P3b2): the clipboard of notes. One per app, so a copy can be pasted in another clip; the notes keep their pitch
         // and their distances in time (the first one at the paste time).
 
         static List<ClipNote> clipboard = new List<ClipNote>();
@@ -580,10 +580,10 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>Where the keyboard's paste goes when the pointer is elsewhere: the last click on the roll or its ruler.</summary>
         public int InsertTime { get; set; }
 
-        /// <summary>Where the pointer is over the grid (pattern time), or -1.</summary>
+        /// <summary>Where the pointer is over the grid (clip time), or -1.</summary>
         int hoverTime = -1;
 
-        /// <summary>The pattern time the roll plays now (the host sets it), or -1: pasting goes there while it plays.</summary>
+        /// <summary>The clip time the roll plays now (the host sets it), or -1: pasting goes there while it plays.</summary>
         public int PlayheadTime { get; set; } = -1;
 
         /// <summary>Copies the selected notes to the clipboard; false when none is selected.</summary>
@@ -605,7 +605,7 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>
-        /// Where a paste lands: under the pointer when it is over the grid, else at the playhead while the pattern plays, else at the
+        /// Where a paste lands: under the pointer when it is over the grid, else at the playhead while the clip plays, else at the
         /// last click; on the grid.
         /// </summary>
         internal int PasteTime()

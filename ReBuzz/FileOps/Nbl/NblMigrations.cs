@@ -52,7 +52,7 @@ namespace ReBuzz.FileOps.Nbl
         {
             var m = new NblMigrations();
             m.Register(1, (manifest, ctx) => { });
-            // 2 to 3 (clips.md §7.4, CU3): a song saved before has its tracker data in the pattern editors' blobs, which the open-time migration moves into
+            // 2 to 3 (clips.md §7.4, CU3): a song saved before has its tracker data in the clip editors' blobs, which the open-time migration moves into
             // the store; the manifest itself has nothing to change. (A song of format 3 has its lanes in the store, and its editors' data holds no events.)
             m.Register(2, (manifest, ctx) => { });
             return m;

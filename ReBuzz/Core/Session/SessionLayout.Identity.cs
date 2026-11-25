@@ -14,25 +14,25 @@ namespace ReBuzz.Core.Session
     ///  - sequences added, removed or swapped move tracks by their exact index (a song may have
     ///    several sequences of one machine);
     ///  - renames rename;
-    ///  - a deleted pattern's or machine's name is retired (<see cref="SessionDocument.Retire"/>):
-    ///    a new pattern or machine reusing the name inherits nothing.
-    /// An undo that brings a deleted pattern, sequence or machine back, in the session or in any
+    ///  - a deleted clip's or machine's name is retired (<see cref="SessionDocument.Retire"/>):
+    ///    a new clip or machine reusing the name inherits nothing.
+    /// An undo that brings a deleted clip, sequence or machine back, in the session or in any
     /// other view, reports which new object stands for the old one
     /// (<see cref="BuzzGUI.Common.Actions.Restorations"/>, 0.6.2): its slots, settings, track
     /// (in every undo snapshot that had it) and machine name come back exactly. Nothing is
     /// matched by name or contents, which can't tell an object brought back from a new one that
-    /// merely looks the same. The session's pattern actions hold objects, not names
+    /// merely looks the same. The session's clip actions hold objects, not names
     /// (<see cref="Current{T}"/> follows an object brought back), so they never touch another
-    /// editor's pattern of the same name.
+    /// editor's clip of the same name.
     ///
-    /// Song changes made under AudioLock (deleting a machine deletes its sequences and patterns
+    /// Song changes made under AudioLock (deleting a machine deletes its sequences and clips
     /// under it) only touch the current layout there; undo snapshots and the launch map follow
     /// once the lock is released (the liveness flags cover the gap).
     /// </summary>
     internal sealed partial class SessionLayout
     {
         /// <summary>
-        /// A deleted pattern, until an undo brings it back. Its slots and clip settings stay in
+        /// A deleted clip, until an undo brings it back. Its slots and clip settings stay in
         /// the layout and every snapshot under its retired name, so they keep their places
         /// through every edit and transform since (0.6.2).
         /// </summary>
@@ -40,12 +40,12 @@ namespace ReBuzz.Core.Session
         {
             public IClip Original;
             public string MachineName = "";      // as the layout knows it now (retired while the machine is gone)
-            public string Retired = "";          // the pattern's name in the layout meanwhile
+            public string Retired = "";          // the clip's name in the layout meanwhile
         }
 
         /// <summary>
         /// A removed sequence's track, as the layout and each undo snapshot had it (0.6.2). The
-        /// copies sit in holder documents, so renames, deletions and restorations of patterns
+        /// copies sit in holder documents, so renames, deletions and restorations of clips
         /// and machines meanwhile reach them as they reach the layout (0.6.3): the live copy
         /// with the layout, the snapshots' copies with the snapshots.
         /// </summary>
@@ -220,7 +220,7 @@ namespace ReBuzz.Core.Session
             OnStructureChanged();
         }
 
-        // ------------------------------------------------------------------ patterns
+        // ------------------------------------------------------------------ clips
 
         void OnClipRemovedFromSong(IClip clip)
         {
@@ -274,7 +274,7 @@ namespace ReBuzz.Core.Session
             {
                 retiredMachines[machine] = (name, retired);
                 retiredOrder.Enqueue(machine);
-                while (retiredOrder.Count > MaxGraves)          // 0.6.3: bounded, as the pattern graves
+                while (retiredOrder.Count > MaxGraves)          // 0.6.3: bounded, as the clip graves
                     retiredMachines.Remove(retiredOrder.Dequeue());
             }
         }
@@ -340,11 +340,11 @@ namespace ReBuzz.Core.Session
         }
     }
 
-    // ------------------------------------------------------------------ the session's pattern actions (0.6.1)
+    // ------------------------------------------------------------------ the session's clip actions (0.6.1)
 
     /// <summary>
-    /// Creates a pattern: empty, or a copy of another. Holds the pattern it made, not its name:
-    /// undo deletes that pattern only (never another editor's pattern of the same name), and
+    /// Creates a clip: empty, or a copy of another. Holds the clip it made, not its name:
+    /// undo deletes that clip only (never another editor's clip of the same name), and
     /// redo makes it again (under another name if its own was taken meanwhile), putting its
     /// slots back.
     /// </summary>
@@ -371,7 +371,7 @@ namespace ReBuzz.Core.Session
             this.midiColumn = midiColumn;
         }
 
-        /// <summary>The pattern made (the latest, after a redo).</summary>
+        /// <summary>The clip made (the latest, after a redo).</summary>
         public IClip Created => created == null ? null : layout.Current(created);
 
         public void Do()
@@ -415,7 +415,7 @@ namespace ReBuzz.Core.Session
     }
 
     /// <summary>
-    /// Deletes a pattern; undo makes it again with its contents (under another name if its own
+    /// Deletes a clip; undo makes it again with its contents (under another name if its own
     /// was taken meanwhile) and puts its slots and settings back. Holds the object, not its name.
     /// </summary>
     [BuzzGUI.Common.HistoryName("Delete clip")]
@@ -450,7 +450,7 @@ namespace ReBuzz.Core.Session
         public void Undo()
         {
             var m = layout.Current(machine);
-            if (!layout.IsInSong(m) || data == null) return;   // its machine was deleted since: no ghost pattern
+            if (!layout.IsInSong(m) || data == null) return;   // its machine was deleted since: no ghost clip
             string free = m.Clips.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
             m.CreateClip(free, length);
             var again = m.Clips.FirstOrDefault(p => p.Name == free);

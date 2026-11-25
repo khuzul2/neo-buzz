@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3b2, decisions 45-48): what the docked piano roll has around its grid: the bar and beat ruler
-// above it (the song's bar length at the pattern, the song's ticks a beat), the loop brace on that ruler (the song's own loop,
+// above it (the song's bar length at the clip, the song's ticks a beat), the loop brace on that ruler (the song's own loop,
 // dragged), the playhead's line, and the velocity lane below. All three follow the roll's horizontal scroll and zoom: they ask the
 // roll where a time is (PianoRoll.X) and are given the scroll offset.
 
@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Views.Detail
 
     internal enum RulerMark { Bar, Beat }
 
-    /// <summary>One line of the ruler: a tick of the pattern, a bar's start or a beat, and the text on it ("" when there is no room).</summary>
+    /// <summary>One line of the ruler: a tick of the clip, a bar's start or a beat, and the text on it ("" when there is no room).</summary>
     internal readonly record struct RulerLine(int Tick, RulerMark Kind, string Label);
 
     /// <summary>The bar and beat ruler over the roll, with the loop brace on its lower half.</summary>
@@ -52,15 +52,15 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>The horizontal scroll of the roll's viewer.</summary>
         public double OffsetX { get; set; }
 
-        /// <summary>The bar's length in ticks (the song's list at the pattern).</summary>
+        /// <summary>The bar's length in ticks (the song's list at the clip).</summary>
         public int BarTicks { get; set; } = 16;
 
         public int Tpb { get; set; } = 4;
 
-        /// <summary>The pattern's length in ticks.</summary>
+        /// <summary>The clip's length in ticks.</summary>
         public int LengthTicks { get; set; }
 
-        /// <summary>The song's loop in this pattern's ticks, or -1 when the pattern lies outside it / isn't in the song.</summary>
+        /// <summary>The song's loop in this clip's ticks, or -1 when the clip lies outside it / isn't in the song.</summary>
         public int LoopStartTick { get; set; } = -1;
 
         public int LoopEndTick { get; set; } = -1;
@@ -68,13 +68,13 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Whether the transport loops (the brace is lit then).</summary>
         public bool LoopOn { get; set; }
 
-        /// <summary>Whether the pattern is in the song: only then can the ruler set a loop.</summary>
+        /// <summary>Whether the clip is in the song: only then can the ruler set a loop.</summary>
         public bool CanSetLoop { get; set; }
 
-        /// <summary>The playhead in pattern time (1/240 tick), or -1.</summary>
+        /// <summary>The playhead in clip time (1/240 tick), or -1.</summary>
         public int Playhead { get; set; } = -1;
 
-        /// <summary>A drag on the ruler ended: the loop is these ticks of the pattern.</summary>
+        /// <summary>A drag on the ruler ended: the loop is these ticks of the clip.</summary>
         public event Action<int, int> LoopSet;
 
         // ------------------------------------------------------------------ marks (pure: tests call it)
@@ -132,7 +132,7 @@ namespace ReBuzz.Studio.Views.Detail
                 }
             }
 
-            // The loop brace: the song's loop where it crosses this pattern (or the one being dragged).
+            // The loop brace: the song's loop where it crosses this clip (or the one being dragged).
             int s = gesture != Gesture.None ? previewStart : LoopStartTick, e = gesture != Gesture.None ? previewEnd : LoopEndTick;
             if (s >= 0 && e > s)
             {

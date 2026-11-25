@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>
         /// The installed machines by kind, as the machine list's Generator / Effect / Control
-        /// filters show them, sorted by name. Not Master, nor pattern editors.
+        /// filters show them, sorted by name. Not Master, nor clip editors.
         /// </summary>
         public static IReadOnlyList<(string Kind, IReadOnlyList<GearItem> Items)> GearByKind(ReBuzzCore core)
         {
@@ -63,9 +63,9 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         /// <summary>
-        /// A new machine at a song position (MachineView.CreateInstrument): a pattern if it has
+        /// A new machine at a song position (MachineView.CreateInstrument): a clip if it has
         /// parameters; a generator gets a sequence track, is wired to Master while the song has no
-        /// effects, and plays its pattern at the start of an empty song. One undo step.
+        /// effects, and plays its clip at the start of an empty song. One undo step.
         /// </summary>
         public static IMachine Create(ReBuzzCore core, IInstrument instrument, float x, float y)
         {
@@ -233,7 +233,7 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>Duplicate (⌘D): each machine cloned with its settings, one undo step (ReBuzz.Core.MachineEditing, as the agent's machine_clone).</summary>
         public static List<IMachine> Duplicate(ReBuzzCore core, IReadOnlyList<IMachine> machines) => MachineEditing.Duplicate(core, machines);
 
-        /// <summary>Clone with patterns (BuzzGUI.MachineView's CloneSelectedMachines(true)): see <see cref="MachineEditing.CloneWithPatterns"/>.</summary>
+        /// <summary>Clone with clips (BuzzGUI.MachineView's CloneSelectedMachines(true)): see <see cref="MachineEditing.CloneWithClips"/>.</summary>
         public static List<IMachine> CloneWithClips(ReBuzzCore core, IReadOnlyList<IMachine> machines) => MachineEditing.CloneWithClips(core, machines);
 
         // ---- machine groups (BuzzGUI.MachineView's Group menu): the steps are ReBuzz.Core.MachineEditing's, which the agent's machine_group also calls.

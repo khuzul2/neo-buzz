@@ -1,8 +1,8 @@
 // Fork (docs/specs/daw-modes.md AR1, §4): the Sequence tab's Arrangement mode. The same timeline as
 // the tracker mode's canvas (ruler, bars, zoom, play position) with a track for each machine and a
 // lane for each of its sequences, and clips on the lanes (ReBuzz.Core.ClipEditor): draw (double
-// click), move, copy (Ctrl/Cmd: an independent copy with a pattern of its own; Alt/Option: linked,
-// the same pattern), trim by the edges, repeat by the right edge when the clip loops, split, join,
+// click), move, copy (Ctrl/Cmd: an independent copy with a clip of its own; Alt/Option: linked,
+// the same clip), trim by the edges, repeat by the right edge when the clip loops, split, join,
 // make unique, the shared badge. The Master's tempo and markers are on top; lanes the Session
 // View has taken over are greyed. Edits are steps of the song's history (ClipEditAction).
 
@@ -114,7 +114,7 @@ namespace ReBuzz.Studio.Views.Sequence
             return new Rect(x, YOf(row) + ClipInset, w, row.Height - 2 * ClipInset);
         }
 
-        /// <summary>The number of places a pattern is used in (clips on the lanes and slots of the session), for the shared badge.</summary>
+        /// <summary>The number of places a clip is used in (clips on the lanes and slots of the session), for the shared badge.</summary>
         public int UsesOf(IClip clip) => clip != null && uses.TryGetValue(clip, out int n) ? n : 0;
 
         (ClipItem Item, BlockPart Part) ClipAt(Point p)
@@ -128,7 +128,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     var r = ClipRect(item);
                     var part = SequenceGeometry.PartAt(r, p, true);
                     if (part == BlockPart.None) continue;
-                    // The edges are narrower on a short clip, and a clip that doesn't loop can't be made longer by its right edge past its pattern.
+                    // The edges are narrower on a short clip, and a clip that doesn't loop can't be made longer by its right edge past its clip.
                     double edge = Math.Min(EdgeWidth, r.Width / 4);
                     part = p.X < r.X + edge ? BlockPart.LeftEdge : p.X >= r.Right - edge ? BlockPart.RightEdge : BlockPart.Body;
                     return (item, part);
@@ -479,7 +479,7 @@ namespace ReBuzz.Studio.Views.Sequence
         static Color Blend(Color a, Color b, double f) => Color.FromArgb(
             (byte)(a.A + (b.A - a.A) * f), (byte)(a.R + (b.R - a.R) * f), (byte)(a.G + (b.G - a.G) * f), (byte)(a.B + (b.B - a.B) * f));
 
-        /// <summary>A clip's fill: its pattern's colour, as the tracker mode's blocks (SequenceCanvas.BlockColour).</summary>
+        /// <summary>A clip's fill: its clip's colour, as the tracker mode's blocks (SequenceCanvas.BlockColour).</summary>
         internal Color ColourOf(IClip clip)
         {
             var palette = SequenceSongState.Palette;
@@ -844,7 +844,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (IsAudioItem(item)) return AudioTip(item, part, p);
             var s = item.Spec;
             string text = $"{s.Clip.Name} · {BarBeat(item.Time)} · {item.End - item.Time} ticks";
-            if (UsesOf(s.Clip) > 1) text += $"\nShared by {UsesOf(s.Clip)} places: Make unique gives this clip a pattern of its own";
+            if (UsesOf(s.Clip) > 1) text += $"\nShared by {UsesOf(s.Clip)} places: Make unique gives this clip a clip of its own";
             text += part switch
             {
                 BlockPart.LeftEdge => "\nDrag: trim the start",
@@ -995,7 +995,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     goto case Drag.Move;
                 case Drag.Move:
                     ghostTime = Snap(geo.TimeAt(p.X) - grabOffset, fine);
-                    // An audio clip may go to the lane of another Neo Audio track too (it gets a pattern there); Alt copies it, as Ctrl/Cmd does.
+                    // An audio clip may go to the lane of another Neo Audio track too (it gets a clip there); Alt copies it, as Ctrl/Cmd does.
                     bool audioClip = IsAudioItem(dragItem);
                     if (LaneRowAt(p.Y)?.Lane is { } lane && (lane.Machine == dragItem.Sequence.Machine ||
                         (audioClip && lane.Machine != null && ReBuzz.Core.Session.SessionLayout.IsClipPlayer(lane.Machine) && core.Arrangement?.RoleOf(lane) != LaneRole.Automation))) ghostLane = lane;
@@ -1112,7 +1112,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Changed();
         }
 
-        /// <summary>A double click on an empty place: a pattern and its clip (the session's clip length, shorter where the next clip starts).</summary>
+        /// <summary>A double click on an empty place: a clip and its clip (the session's clip length, shorter where the next clip starts).</summary>
         public void DrawAt(ISequence lane, int time)
         {
             int length = core.SessionLayout?.NewClipLength ?? TicksPerBeat * 4;
@@ -1259,11 +1259,11 @@ namespace ReBuzz.Studio.Views.Sequence
             return ok;
         }
 
-        /// <summary>Puts an existing pattern at the cursor as a clip (shared with its other places).</summary>
+        /// <summary>Puts an existing clip at the cursor as a clip (shared with its other places).</summary>
         public bool PlaceAtCursor(IClip clip)
         {
             var lane = cursorLane?.Machine == clip?.Machine ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == clip?.Machine);
-            if (lane == null) { SetStatus("That pattern's machine has no lane."); return false; }
+            if (lane == null) { SetStatus("That clip's machine has no lane."); return false; }
             int at = Snap(cursorTime, false);
             bool ok = Run(editor.Place(lane, clip, at));
             if (ok) Reselect(lane, at);
@@ -1294,7 +1294,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Launches the selected clip in the Session View, on its lane's track.</summary>
         public bool LaunchSelected() => selected != null && Run(core.Arrangement.Links.Launch(selected));
 
-        /// <summary>Gives the selected clip's pattern to a slot of its machine's session track.</summary>
+        /// <summary>Gives the selected clip's clip to a slot of its machine's session track.</summary>
         public bool SendSelectedToSession()
         {
             if (selected == null) return false;

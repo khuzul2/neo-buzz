@@ -124,7 +124,7 @@ namespace ReBuzz.Studio.Shell
             AddHandler(KeyDownEvent, (s, e) => StudioKeyboard.Held = e.KeyModifiers, handledEventsToo: true);
             AddHandler(KeyUpEvent, (s, e) => StudioKeyboard.Held = e.KeyModifiers, handledEventsToo: true);
             AddHandler(PointerMovedEvent, (s, e) => StudioKeyboard.Held = e.KeyModifiers, handledEventsToo: true);
-            // View keys after the views: F2 renames in the Session View, and picks the Pattern tab elsewhere.
+            // View keys after the views: F2 renames in the Session View, and picks the Clip tab elsewhere.
             // Ctrl+Tab before focus navigation takes it (as ReBuzz.exe's PreviewKeyDown).
             AddHandler(KeyDownEvent, OnViewKey, RoutingStrategies.Bubble);
             AddHandler(KeyDownEvent, OnSingleKey, RoutingStrategies.Bubble);
@@ -150,7 +150,7 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>
         /// The selected view, when it has edit commands of its own and this is the key window: on a Mac every window has the
-        /// menus (ui-gallery.md), and ⌘Z in a machine window undoes in the song, not in the Pattern View behind it.
+        /// menus (ui-gallery.md), and ⌘Z in a machine window undoes in the song, not in the Clip View behind it.
         /// </summary>
         IStudioEditTarget Target
         {
@@ -233,8 +233,8 @@ namespace ReBuzz.Studio.Shell
                     host.Log($"The {view.Title} view failed: {e}");
                     content = new TextBlock { Text = $"{view.Title}: {e.Message}", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) };
                 }
-                // Fork (ux-overhaul.md P3a): the Pattern editor is the detail panel's Tracker, not a tab.
-                if (view.Title == "Pattern")
+                // Fork (ux-overhaul.md P3a): the Clip editor is the detail panel's Tracker, not a tab.
+                if (view.Title == "Clip")
                 {
                     tracker = content;
                     continue;
@@ -543,13 +543,13 @@ namespace ReBuzz.Studio.Shell
             "Arrangement" => "view.sequence",
             "Session" => "view.session",
             "Machines" => "view.machines",
-            "Pattern" => "view.pattern",
+            "Clip" => "view.pattern",
             _ => null,
         };
 
         /// <summary>
         /// The views' tabs, ⌘1–⌘5 in tab order (ux-overhaul.md §4) as the menu bar's key equivalents; ReBuzz.exe's keys
-        /// (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes) stay the window's, so F2 still renames a
+        /// (F2 Clip, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes) stay the window's, so F2 still renames a
         /// clip in the Session View and Ctrl+Tab still goes back from it.
         /// </summary>
         IEnumerable<MenuEntry> ViewItems(bool mac)
@@ -558,7 +558,7 @@ namespace ReBuzz.Studio.Shell
             {
                 string title = view.Title;
                 string id = ViewCommand(title);
-                bool tracker = title == "Pattern";
+                bool tracker = title == "Clip";
                 var entry = Command(id, mac, () => UnlessEditorKeeps(id, () => ShowView(title)), () => tabs.ItemCount > 0,
                     () => tracker ? detail?.IsOpen == true : SelectedTitle == title);
                 yield return entry;
@@ -667,7 +667,7 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>
         /// Whether the tracker, focused, has this key itself (its ⌘R randomizes, ⌘W rotates, ⌘1–⌘9 set the beat's
-        /// subdivision, ⌘I interpolates, ⌘T writes the machine's state; PatternEditorView.KeyRows): there the window leaves
+        /// subdivision, ⌘I interpolates, ⌘T writes the machine's state; ClipEditorView.KeyRows): there the window leaves
         /// it to the editor, and the views are on their F-keys.
         /// </summary>
         internal bool EditorKeepsKey(KeyGesture key)
@@ -840,7 +840,7 @@ namespace ReBuzz.Studio.Shell
 
         (string Id, Action Run)[] singleKeys;
 
-        /// <summary>Whether the selected view leaves single letters to the transport: not the arrangement (pattern keys) or the tracker (notes).</summary>
+        /// <summary>Whether the selected view leaves single letters to the transport: not the arrangement (clip keys) or the tracker (notes).</summary>
         bool SingleKeysWork => SelectedTitle is "Machines" or "Session" && !InDetail(FocusManager?.GetFocusedElement());
 
         void OnViewKey(object sender, KeyEventArgs e)
@@ -895,7 +895,7 @@ namespace ReBuzz.Studio.Shell
                 ShowSongNotes();
                 return;
             }
-            if (title == "Pattern")
+            if (title == "Clip")
             {
                 // The Tracker in the detail panel, docked (maximised stays so), with the keyboard in the editor.
                 if (detail == null) return;
@@ -1026,7 +1026,7 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>
         /// Selecting an audio clip with the detail panel open shows its Audio page (the Tracker has nothing to show for it); selecting another
-        /// pattern puts the Tracker or the piano roll back.
+        /// clip puts the Tracker or the piano roll back.
         /// </summary>
         void FollowAudioSelection(object source)
         {
@@ -1127,7 +1127,7 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>
         /// The song's machines as the user sees them in the Machine View: not the Master, not the
-        /// hidden pattern-editor machines (the demo song said "15 machines" for 10, gallery mac-020),
+        /// hidden clip-editor machines (the demo song said "15 machines" for 10, gallery mac-020),
         /// in the singular for one ("1 machines", mac-010).
         /// </summary>
         internal static string MachineCountText(ReBuzzCore core)

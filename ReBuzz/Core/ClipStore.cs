@@ -8,9 +8,9 @@ using System.Linq;
 namespace ReBuzz.Core
 {
     /// <summary>
-    /// Fork addition (docs/specs/clips.md §5 and §10, wave CU2): the engine's side of the one store. A clip's content is its pattern's
+    /// Fork addition (docs/specs/clips.md §5 and §10, wave CU2): the engine's side of the one store. A clip's content is its clip's
     /// columns (the store); this reads them as lanes and writes lanes into them, and runs the converter (BuzzGUI.Common's ClipMigration)
-    /// on a machine's data (a .nbl of format 1 or 2 holds its tracker data in the pattern editors' blobs, which open-time migration moves here).
+    /// on a machine's data (a .nbl of format 1 or 2 holds its tracker data in the clip editors' blobs, which open-time migration moves here).
     ///
     /// Columns the converter writes carry no <c>SessionAutomation</c> mark, so the engine does not play them (the editor still plays its own
     /// data): the parameter lanes change nothing that is heard. A Notes lane is the machine's MIDI column, which the engine plays whatever
@@ -86,7 +86,7 @@ namespace ReBuzz.Core
 
         // ------------------------------------------------------------------ the store as lanes
 
-        /// <summary>The lanes of a pattern's columns, with their metadata.</summary>
+        /// <summary>The lanes of a clip's columns, with their metadata.</summary>
         public static ClipContent Read(ClipCore clip)
         {
             var content = new ClipContent { Name = clip.Name, Length = clip.Length };
@@ -116,7 +116,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Puts a clip's lanes into the pattern's columns: a lane whose key has a column replaces that column's events, any other makes a column
+        /// Puts a clip's lanes into the clip's columns: a lane whose key has a column replaces that column's events, any other makes a column
         /// (metadata first, as the engine reads the session mark while it plays). A lane that cannot be put (a machine or parameter the song
         /// lacks, a track past the machine's) is a log line. Returns the number of lanes written.
         /// </summary>
@@ -131,7 +131,7 @@ namespace ReBuzz.Core
                 string where = lane.Kind == ClipLaneKind.Notes ? "notes" : $"{lane.Group}.{lane.Index}.{lane.Track}";
                 if (machine == null)
                 {
-                    log.Loss(ClipTags.MachineMissing, lane.Machine, content.Name, where, lane.Events.Count, "writing the lane into the pattern");
+                    log.Loss(ClipTags.MachineMissing, lane.Machine, content.Name, where, lane.Events.Count, "writing the lane into the clip");
                     continue;
                 }
                 IClipColumn column = null;
@@ -144,7 +144,7 @@ namespace ReBuzz.Core
                     column = Insert(clip, machine, lane, out string problem);
                     if (column == null)
                     {
-                        log.Loss(problem == "track" ? ClipTags.TrackDropped : ClipTags.ParamMissing, lane.Machine, content.Name, where, lane.Events.Count, "writing the lane into the pattern");
+                        log.Loss(problem == "track" ? ClipTags.TrackDropped : ClipTags.ParamMissing, lane.Machine, content.Name, where, lane.Events.Count, "writing the lane into the clip");
                         continue;
                     }
                 }
@@ -204,7 +204,7 @@ namespace ReBuzz.Core
 
         // ------------------------------------------------------------------ migration and export
 
-        /// <summary>The bytes of a machine's pattern editor data: its editor's, or the opaque data of a placeholder editor (PatternXP's format).</summary>
+        /// <summary>The bytes of a machine's clip editor data: its editor's, or the opaque data of a placeholder editor (PatternXP's format).</summary>
         public static byte[] EditorData(MachineCore machine)
         {
             // CU3: what the song file gave the editor (its stamp is the store's, a derived blob), else what the editor holds now.
@@ -213,8 +213,8 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// The clips of a machine as lanes, from what the song keeps outside the engine's columns: the built-in rows of its patterns, and its
-        /// pattern editor's data (<paramref name="editorData"/> instead of the editor's own, for a test). Reads and writes nothing in the song. Every
+        /// The clips of a machine as lanes, from what the song keeps outside the engine's columns: the built-in rows of its clips, and its
+        /// clip editor's data (<paramref name="editorData"/> instead of the editor's own, for a test). Reads and writes nothing in the song. Every
         /// step is in <paramref name="log"/>.
         /// </summary>
         public static ClipMigration.Result Migrate(MachineCore machine, SongCore song, ClipLog log, byte[] editorData = null)
@@ -242,8 +242,8 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// The clips of a machine as lanes at open (clips.md §7.1): the built-in rows of its patterns (PATT, which the loaders also hand to the
-        /// default editor as PatternXP data: the rows are the source, not the editor's copy of them) and, for a pattern with none, the editor's
+        /// The clips of a machine as lanes at open (clips.md §7.1): the built-in rows of its clips (PATT, which the loaders also hand to the
+        /// default editor as PatternXP data: the rows are the source, not the editor's copy of them) and, for a clip with none, the editor's
         /// data. What the loaders dropped (the connections' amp and pan) is counted and logged. Reads and writes nothing in the song.
         /// </summary>
         public static ClipMigration.Result MigrateForOpen(MachineCore machine, SongCore song, ClipLog log, byte[] editorData = null)
@@ -273,7 +273,7 @@ namespace ReBuzz.Core
             return result;
         }
 
-        /// <summary>A built-in pattern as the converter reads it: its rows, and how many cells of each connection's amp and pan hold a value.</summary>
+        /// <summary>A built-in clip as the converter reads it: its rows, and how many cells of each connection's amp and pan hold a value.</summary>
         internal static BuiltInRows ToRows(ClipCore clip, MachineCore machine)
         {
             var data = clip.BuiltInData;

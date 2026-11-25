@@ -45,7 +45,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             }
             catch (Exception e)
             {
-                Global.Buzz.DCWriteLine("[PE] Pattern load error: " + e.Message);
+                Global.Buzz.DCWriteLine("[PE] Clip load error: " + e.Message);
             }
             r.Close();
             input.Close();
@@ -80,7 +80,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
     }
 
 
-    // The exported file keeps its old element and attribute names (XMLPatterns, Patterns, Pattern): the name of a file that people keep.
+    // The exported file keeps its old element and attribute names (XMLClips, Clips, Clip): the name of a file that people keep.
     [XmlRoot("XMLPatterns")]
     [XmlType("XMLPatterns")]
     public class XMLClips

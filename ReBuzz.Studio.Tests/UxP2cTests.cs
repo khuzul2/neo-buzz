@@ -1,4 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P2c): one selection across the Machines, Sequence, Session and Pattern views, and the
+// Fork (docs/specs/ux-overhaul.md P2c): one selection across the Machines, Sequence, Session and Clip views, and the
 // windows on the base surface. A view publishes what the user selects here and follows what the others select; a view
 // whose tab isn't shown catches up when it is.
 
@@ -50,9 +50,9 @@ namespace ReBuzz.Studio.Tests
 
             public Avalonia.Controls.Control Show(string tab)
             {
-                if (tab == "Pattern")
+                if (tab == "Clip")
                 {
-                    Window.ShowView("Pattern");         // the Tracker: the detail panel's page (P3a)
+                    Window.ShowView("Clip");         // the Tracker: the detail panel's page (P3a)
                     Settle();
                     return Window.Detail.Page;
                 }
@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Tests
             public MachineCanvas Machines => ((MachineView)Show("Machines")).Canvas;
             public SequenceCanvas Sequence => ((SequenceView)Show("Arrangement")).Canvas;
             public SessionView Session => (SessionView)Show("Session");
-            public ClipPage Clip => (ClipPage)Show("Pattern");
+            public ClipPage Clip => (ClipPage)Show("Clip");
 
             public void Dispose()
             {
@@ -86,10 +86,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That((s.Machine, s.Clip, s.Scene), Is.EqualTo(((IMachine)rig.Bass, (IClip)rig.Line, (int?)2)));
             Assert.That(s.Set(rig.Bass, rig.Line, this, 2), Is.False, "the same selection raises nothing");
             Assert.That(s.Set(rig.Drums, rig.Line, this), Is.True);
-            Assert.That(s.Clip, Is.Null, "another machine's pattern isn't the selection's");
+            Assert.That(s.Clip, Is.Null, "another machine's clip isn't the selection's");
             Assert.That(s.SelectMachine(rig.Drums, this), Is.False);
             s.Set(rig.Drums, rig.Beat, this);
-            Assert.That(s.SelectMachine(rig.Drums, this), Is.False, "selecting the machine again keeps its pattern");
+            Assert.That(s.SelectMachine(rig.Drums, this), Is.False, "selecting the machine again keeps its clip");
             Assert.That(s.Clip, Is.SameAs(rig.Beat));
         }
 
@@ -101,7 +101,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig();
             rig.Machines.Select(new IMachine[] { rig.Bass });
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Bass));
-            Assert.That(rig.Clip.ShownMachine, Is.SameAs(rig.Bass), "the Pattern view shows its pattern (it follows while its tab is hidden)");
+            Assert.That(rig.Clip.ShownMachine, Is.SameAs(rig.Bass), "the Clip view shows its clip (it follows while its tab is hidden)");
             Assert.That(rig.Clip.ShownClip, Is.SameAs(rig.Line));
             Assert.That(rig.Sequence.CursorSequence.Machine, Is.SameAs(rig.Bass), "the Sequence's cursor is on its track");
             Assert.That(rig.Session.Selected?.Track, Is.EqualTo(1), "the Session's column");
@@ -131,7 +131,7 @@ namespace ReBuzz.Studio.Tests
             var session = rig.Session;
             session.Select(1, 0);
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Bass));
-            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Line), "the clip's pattern");
+            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Line), "the clip's clip");
             Assert.That(rig.Selection.Scene, Is.EqualTo(0));
             Assert.That(rig.Clip.ShownClip, Is.SameAs(rig.Line));
             Assert.That(rig.Machines.Selection, Is.EqualTo(new IMachine[] { rig.Bass }));
@@ -142,7 +142,7 @@ namespace ReBuzz.Studio.Tests
         public void ChoosingAClipInTheClipViewSelectsItsMachineEverywhere()
         {
             using var rig = new Rig();
-            rig.Show("Pattern");
+            rig.Show("Clip");
             ClipView.Edit(rig.Beat);
             Settle();
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Drums));
@@ -166,14 +166,14 @@ namespace ReBuzz.Studio.Tests
         public void AFollowingViewDoesNotEchoTheSelectionBack()
         {
             using var rig = new Rig();
-            rig.Show("Pattern");                    // the Pattern page follows from the first
+            rig.Show("Clip");                    // the Clip page follows from the first
             int raised = 0;
             void Count(object source) => raised++;
             rig.Selection.Changed += Count;
             try
             {
                 rig.Machines.Select(new IMachine[] { rig.Bass });
-                Assert.That(raised, Is.EqualTo(1), "one change: the Pattern view follows without publishing its own");
+                Assert.That(raised, Is.EqualTo(1), "one change: the Clip view follows without publishing its own");
                 rig.Machines.Select(new IMachine[] { rig.Bass });
                 Assert.That(raised, Is.EqualTo(1), "the same selection again changes nothing");
             }

@@ -94,7 +94,7 @@ namespace ReBuzz.Studio.Views.Browser
         /// <summary>The seven tag colours.</summary>
         public static IBrush ColourBrush(int colour) => ReBuzz.Studio.Views.Session.SessionPalette.Tags[Math.Clamp(colour, 1, 7) - 1];
 
-        /// <summary>A list item for any other result (preset, pattern, sample, MIDI file, the song's wave): name, what it is, a star, a colour dot, a menu, and it can be dragged.</summary>
+        /// <summary>A list item for any other result (preset, clip, sample, MIDI file, the song's wave): name, what it is, a star, a colour dot, a menu, and it can be dragged.</summary>
         public static ListBoxItem ItemRow(BrowserItem it, MachineBrowserModel model, bool grouped = false)
         {
             var stack = new StackPanel { Spacing = 1 };

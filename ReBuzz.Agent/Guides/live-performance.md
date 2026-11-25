@@ -6,18 +6,18 @@ A performance is a set of choices made before the audience hears it. Build the g
 
 ## The grid
 
-The Session View is one track per machine, one scene (row) per section, and a pattern in each slot. Scenes count from 1.
+The Session View is one track per machine, one scene (row) per section, and a clip in each slot. Scenes count from 1.
 
 - `session_get` reads it: tracks, slots, scene names and tempos, and the clips' launch settings when they are not the defaults.
 - `session_scene_set(scene=3, name="Drop", tempo_bpm=128)` names a scene and can give it a tempo (0: none) and beats per bar (0: none). `insert=true` puts a new empty scene before it.
-- `session_clip_set(machine="Bass", scene=2, pattern="Chorus", quantization="Bar")` puts a pattern in a slot; `pattern=null` empties it. A machine with no track gets one. One undo step.
+- `session_clip_set(machine="Bass", scene=2, clip="Chorus", quantization="Bar")` puts a clip in a slot; `clip=null` empties it. A machine with no track gets one. One undo step.
 - Launch settings on a clip: `mode` Trigger (plays on launch), Gate (plays while held), Toggle (launch starts it, launch again stops it) or Repeat; `quantization` Global (the session's), None, Beat, Bar, TwoBars, FourBars, EightBars, HalfNote, Eighth or Sixteenth; `loop` (default on); `legato` (start where the previous clip of the track was, so a variation continues the phrase instead of restarting it).
 
-Build every scene as a whole: the same patterns, lengths in whole bars, and a level you checked with `render` (the arrangement and the grid use the same patterns, so `arrangement_place` plus `render(section=…)` is the offline check of what a scene will sound like).
+Build every scene as a whole: the same clips, lengths in whole bars, and a level you checked with `render` (the arrangement and the grid use the same clips, so `arrangement_place` plus `render(section=…)` is the offline check of what a scene will sound like).
 
 ## Playing it
 
-- `session_launch(scene=2)` launches a row on the next bar (or each clip's own quantization). `session_launch(machine="Bass", scene=2)` one slot; `session_launch(machine="Bass", pattern="Fill")` any pattern of that machine, in the grid or not. It starts the transport if it is stopped.
+- `session_launch(scene=2)` launches a row on the next bar (or each clip's own quantization). `session_launch(machine="Bass", scene=2)` one slot; `session_launch(machine="Bass", clip="Fill")` any clip of that machine, in the grid or not. It starts the transport if it is stopped.
 - `session_launch(stop=true)` stops everything at the quantization; `immediate=true` stops now. With `machine`, only that track. `back_to_arrangement=true` hands every track back to the arrangement.
 - `transport(action="status")` says what plays now and what waits for its boundary; `transport(action="play", at="9.1")` and `stop` move the whole song.
 - Tempo follows the scene that carries one. A scene with no tempo keeps the current one.
@@ -28,7 +28,7 @@ Build every scene as a whole: the same patterns, lengths in whole bars, and a le
 - `midi_play(machine="Keys", notes=[{"pitch": "C4", "start": 0, "length": 1}])` plays a phrase on the next bar (`start` can be "now" or "beat"); `stop=true` lets go of everything.
 - `session_record(action="start", machine="Keys", scene=1, bars=4)` records what is played (the person's keyboard, or `midi_play`) into the first empty slot from that scene. `stop` ends the take on a whole bar; `capture` keeps what armed tracks just played; `arm`, `disarm` and `status` do what they say, for audio tracks too. Several tracks can be armed at once; an armed track hears only its own source, which `track_input` sets: `track_input(action="set", machine="Keys", midi_from="device:Pads", channel=3)` (`all`, `device:Name` or `keyboard`), and on a Neo Audio audio_from and monitor. With nothing armed, the keyboard and MIDI play the selected machine as before. Arm is not saved with the song; the inputs are. Takes are on the Session View's own history, not `undo`'s.
 - `master_record(op="start", path="C:/Music/set.wav")` records the Master as it plays (the whole set, or `loop=true` for one pass of the song loop) and `op="stop"` closes the file. For the arrangement's own takes: `arrangement_takes(op="arm", machine="Keys")`, `op="start"` (or `loop=true`, a take per loop pass), `op="stop"`, then `takes(op="list", machine=…)` shows the takes and `takes(op="comp", machine=…, ranges=[{take:1, from:"1.1", to:"3.1"}, {take:3, from:"3.1", to:"5.1"}])` puts the best parts on the main lane (audio tracks record too, from their Audio From, to a temp file until the take is committed). Latency of a machine that lags: `machine_latency`.
-- A Note envelope on a modulator hears notes written by patterns and by `midi_play`, not notes played from a MIDI keyboard.
+- A Note envelope on a modulator hears notes written by clips and by `midi_play`, not notes played from a MIDI keyboard.
 
 ## Controllers and knobs
 
@@ -40,7 +40,7 @@ Build every scene as a whole: the same patterns, lengths in whole bars, and a le
 ## Changing the sound while it plays
 
 - `param_set` moves a parameter at once: move it in steps, not from one end to the other, and keep the ranges the tools give you (the safe ranges stay in force).
-- `snapshot_save(name="set-A")` before the show and after each section you may want back. `snapshot_restore(name="set-A")` while the transport plays is glitch-free: parameters glide, and patterns, tracks, mutes and wire levels change together at the next boundary (`quantize` now, beat or bar; default bar). The result's `mode` says `live` (with `waiting` and `applies_in_ms`) or `deferred` (applied when the transport stops: read the `reason`). The Session View's clip grid is not part of it.
+- `snapshot_save(name="set-A")` before the show and after each section you may want back. `snapshot_restore(name="set-A")` while the transport plays is glitch-free: parameters glide, and clips, tracks, mutes and wire levels change together at the next boundary (`quantize` now, beat or bar; default bar). The result's `mode` says `live` (with `waiting` and `applies_in_ms`) or `deferred` (applied when the transport stops: read the `reason`). The Session View's clip grid is not part of it.
 - `machine_set(machine="Pad", mute=true)` and `bypass` are the quick cuts; `connect` gains with `connection_set` are the quick fades.
 - Do not use `render`, `analyze_mix` or `export_audio` while the person is listening: a render pauses their output for its length. Do not call `audio_set`, `settings_set` on engine keys, `song_open` or `song_new` mid-show: each one interrupts or replaces what plays.
 
@@ -60,7 +60,7 @@ Build every scene as a whole: the same patterns, lengths in whole bars, and a le
 
 ## Checklist
 
-- [ ] The grid is what you think it is: `session_get` shows each scene's patterns and names.
+- [ ] The grid is what you think it is: `session_get` shows each scene's clips and names.
 - [ ] Every scene was rehearsed and its level measured: `meters_read(machines=[…], window_seconds=2)` shows true peak below -1 dBTP and no clipped samples.
 - [ ] A way back exists: `snapshot_save(name=…)` before the set and `snapshot_list` shows it.
 - [ ] No new dropouts while playing: `audio_status` before and after, `dropouts` unchanged.

@@ -38,7 +38,7 @@ Neo Patch and `guide(topic="build-a-synth")` are the next step: the same ideas, 
 
 One idea per lesson. Never more than one control moving at a time.
 
-1. **Set the scene.** `machine_add(gear="Neo Learn Subtractive", name="Teacher")`, `preset_load(machine="Teacher", preset="Bass — Fat Saw")`. A held note to hear: write a two-bar pattern with one long note (`pattern_create`, `notes_write`, `arrangement_place`) and loop it (`song_set(looping=true)`), or in studio mode play a phrase on demand with `midi_play(machine="Teacher", notes=[…])`.
+1. **Set the scene.** `machine_add(gear="Neo Learn Subtractive", name="Teacher")`, `preset_load(machine="Teacher", preset="Bass — Fat Saw")`. A held note to hear: write a two-bar clip with one long note (`clip_create`, `notes_write`, `arrangement_place`) and loop it (`song_set(looping=true)`), or in studio mode play a phrase on demand with `midi_play(machine="Teacher", notes=[…])`.
 2. **Show them where to look.** In the studio, `select(machine="Teacher")` and `machine_open_editor(machine="Teacher", window="gui")` bring the machine up; its Explain strip shows the text of the control you change, badged as the agent's.
 3. **Say what will happen.** Read the control's `how` and `sound` in your own flow: "Cutoff sets the corner frequency of the filter. Lowering it should make the sound darker and warmer."
 4. **Change it, once, in steps.** `param_set(machine="Teacher", changes=[{"param": "Cutoff", "value": "400 Hz"}])`, let them hear, then another step. Large jumps teach less than a sweep in three or four steps.

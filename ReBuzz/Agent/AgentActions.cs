@@ -1,6 +1,6 @@
 // Agent server (docs/specs/mcp-server.md §3.2): undoable steps for what ReBuzz doesn't already
-// make undoable (parameter sets, connection gains, mute/solo/bypass, notes, pattern renames,
-// tempo). Each finds its machine and pattern by name when it runs, as BuzzGUI's own actions do,
+// make undoable (parameter sets, connection gains, mute/solo/bypass, notes, clip renames,
+// tempo). Each finds its machine and clip by name when it runs, as BuzzGUI's own actions do,
 // so undo and redo work after machines are deleted and made again.
 
 using System;
@@ -56,7 +56,7 @@ namespace ReBuzz.Agent
                 var machine = Find(core, name);
                 if (machine == null || group >= machine.ParameterGroups.Count) return;
                 var ps = machine.ParameterGroups[group].Parameters;
-                // Not recorded into patterns or session automation while the user records.
+                // Not recorded into clips or session automation while the user records.
                 if (index >= ps.Count) return;
                 // Explain (neo-learn.md §5.3): the editor shows an agent's write with the Agent badge.
                 if (byAgent) ParamSource.MarkAgent(ps[index], track);
@@ -100,7 +100,7 @@ namespace ReBuzz.Agent
             Do(core, new DelegateAction(() => Set(on), () => Set(old)));
         }
 
-        /// <summary>Replaces events in one of a pattern's engine columns (automation): <paramref name="removed"/> go, <paramref name="added"/> come.</summary>
+        /// <summary>Replaces events in one of a clip's engine columns (automation): <paramref name="removed"/> go, <paramref name="added"/> come.</summary>
         public static void ReplaceColumnEvents(ReBuzzCore core, IClip clip, ColumnKey key, IReadOnlyList<ClipEvent> removed, IReadOnlyList<ClipEvent> added)
         {
             string machine = clip.Machine.Name, name = clip.Name;
@@ -118,7 +118,7 @@ namespace ReBuzz.Agent
             Do(core, new DelegateAction(() => Apply(take, put), () => Apply(put, take)));
         }
 
-        /// <summary>Deletes a pattern; undo makes it again with its engine columns (notes, automation).</summary>
+        /// <summary>Deletes a clip; undo makes it again with its engine columns (notes, automation).</summary>
         public static void DeleteClip(ReBuzzCore core, IClip clip)
         {
             string machine = clip.Machine.Name, name = clip.Name;
@@ -147,7 +147,7 @@ namespace ReBuzz.Agent
             Do(core, new DelegateAction(Delete, Restore));
         }
 
-        /// <summary>Copies a pattern: the pattern editor's data (when it has an editor) and the engine columns.</summary>
+        /// <summary>Copies a clip: the clip editor's data (when it has an editor) and the engine columns.</summary>
         public static void DuplicateClip(ReBuzzCore core, IClip source, string copyName)
         {
             string machine = source.Machine.Name, from = source.Name;
@@ -159,7 +159,7 @@ namespace ReBuzz.Agent
                 if (m.EditorMachine != null) m.CloneClip(copyName, src);
                 else m.CreateClip(copyName, src.Length);
                 var copy = m.Clips.FirstOrDefault(x => x.Name == copyName);
-                if (copy != null && copy.Columns.Count == 0) EngineColumns.Copy(src, copy, core.SongCore.Machines);      // (ClonePattern copies them when the machine has an editor)
+                if (copy != null && copy.Columns.Count == 0) EngineColumns.Copy(src, copy, core.SongCore.Machines);      // (CloneClip copies them when the machine has an editor)
             }
             void Remove()
             {

@@ -157,10 +157,10 @@ namespace ReBuzz.AgentTests
             // 4 bars of 4 beats at 4 ticks per beat: 64 ticks.
             var list = NoteList.Parse(notes, 4, 4, 64, warnings);
             Assert.That(list.Select(n => n.Pitch), Is.EqualTo(new[] { 60, 64, 67, 57 }));
-            Assert.That(list[2].Time, Is.EqualTo(2 * 4 * 240), "\"1.3\" is beat 2 of the pattern");
+            Assert.That(list[2].Time, Is.EqualTo(2 * 4 * 240), "\"1.3\" is beat 2 of the clip");
             Assert.That(list[1].Velocity, Is.EqualTo(100), "velocity defaults to 100");
-            Assert.That(list[3].Duration, Is.EqualTo(240 * 2), "shortened at the pattern's end (beat 16)");
-            Assert.That(warnings.Single(), Does.Contain("ran past the pattern's end"));
+            Assert.That(list[3].Duration, Is.EqualTo(240 * 2), "shortened at the clip's end (beat 16)");
+            Assert.That(warnings.Single(), Does.Contain("ran past the clip's end"));
 
             var back = list.Select(n => NoteList.ToJson(n, 4)).ToList();
             Assert.That(back[2]["start"]!.GetValue<double>(), Is.EqualTo(2));
@@ -174,7 +174,7 @@ namespace ReBuzz.AgentTests
 
             var late = (JsonArray)JsonNode.Parse("""[{"pitch": 60, "start": 16, "length": 1}]""")!;
             var e = Assert.Throws<ToolError>(() => NoteList.Parse(late, 4, 4, 64, warnings));
-            Assert.That(e!.Message, Does.Contain("the pattern is 16 beats long"));
+            Assert.That(e!.Message, Does.Contain("the clip is 16 beats long"));
             var missing = (JsonArray)JsonNode.Parse("""[{"pitch": 60, "length": 1}]""")!;
             Assert.That(Assert.Throws<ToolError>(() => NoteList.Parse(missing, 4, 4, 64, warnings))!.Message, Does.StartWith("notes[0].start: missing"));
             var buzzName = (JsonArray)JsonNode.Parse("""[{"pitch": "C-5", "start": 0, "length": 1}]""")!;

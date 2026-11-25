@@ -2,7 +2,7 @@
 // The same toggle ("Keyboard Sends MIDI Notes") and the same setting ("KeyboardMIDI" in the "Parameter Window" section, off by default).
 // Z S X D C V G B H N J M, then Q 2 W 3 E R 5 T 6 Y 7 U I 9 O 0 P send MIDI note on and off to the machine at its base octave; * and /
 // move the octave. A window of its own listens window-wide; the docked panel only while it holds the keyboard focus (the piano roll
-// and the pattern editor use the same keys).
+// and the clip editor use the same keys).
 
 using System;
 using System.Collections.Generic;

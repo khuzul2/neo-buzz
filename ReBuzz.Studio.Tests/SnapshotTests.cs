@@ -157,7 +157,7 @@ namespace ReBuzz.Studio.Tests
             var before = Render(core, 300);
             Assert.That(before.Any(x => x != 0), "the song makes sound");
 
-            // Change it every way: a parameter, a machine, a pattern.
+            // Change it every way: a parameter, a machine, a clip.
             var lead = rig.Machine("Lead").ParameterGroupsList[1].ParametersList.First(p => p.Flags.HasFlag(ParameterFlags.State) && p.MaxValue - p.MinValue > 10);
             lead.SetValue(0, lead.MaxValue);
             rig.Add("Neo Poly", "Extra");
@@ -462,7 +462,7 @@ namespace ReBuzz.Studio.Tests
             core.Snapshots.Flush();
             var changes = core.Snapshots.Diff(a, b);
             Assert.That(changes.Any(c => c.Area == "machines" && c.Subject == "Extra" && c.Text.StartsWith("added")));
-            Assert.That(changes.Any(c => c.Area == "patterns" && c.Subject == "Pad" && c.Text.Contains("Q")));
+            Assert.That(changes.Any(c => c.Area == "clips" && c.Subject == "Pad" && c.Text.Contains("Q")));
             Assert.That(changes.Any(c => c.Area == "wires"), "the changed gain");
             Assert.That(core.Snapshots.Diff(a, a), Is.Empty);
             Assert.That(core.Snapshots.Rename(a.Id, "renamed"), Is.True);

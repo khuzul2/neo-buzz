@@ -13,7 +13,7 @@ namespace ReBuzz.Core.Actions.GraphActions
     {
         readonly List<MachineInfoRef> deleteMachineDatas = new List<MachineInfoRef>();
         // Fork (0.6.2): what was deleted, so the undo can report what stands for it now.
-        // 0.6.3: with each pattern's engine columns (MIDI columns, session takes), which the undo puts back.
+        // 0.6.3: with each clip's engine columns (MIDI columns, session takes), which the undo puts back.
         // Fork (fix/long-session-slowdown): held weakly. The undo history keeps this action for as long as its cap allows,
         // and it counts an action as 256 bytes: held strongly, every deleted machine (its buffers, its machine object, a
         // Pedal machine's delay lines) stayed in memory with it, hundreds of MB over a long session. The undo makes the
@@ -62,15 +62,15 @@ namespace ReBuzz.Core.Actions.GraphActions
                     machineData.AddSequence(index, events);
                 }
 
-                // Save pattern colors
-                // Fork (0.6.2): no sequence editor (headless, tests): no pattern colours to keep.
-                // Fork (engine-split.md S7): through PatternColours.
+                // Save clip colors
+                // Fork (0.6.2): no sequence editor (headless, tests): no clip colours to keep.
+                // Fork (engine-split.md S7): through ClipColours.
                 var associations = ClipColours.Current;
                 foreach (var clip in associations?.Clips.Where(pa => pa.Machine == machine) ?? Enumerable.Empty<IClip>())
                 {
                     if (associations.TryGet(clip, out var colorIndex))
                     {
-                        // Save pattern color
+                        // Save clip color
                         machineData.clipAssociations.Add(clip.Name, colorIndex);
                     }
                 }
@@ -161,7 +161,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                     if (machine != null)
                     {
 
-                        // Remove pattern colors
+                        // Remove clip colors
                         var associations = ClipColours.Current;
                         foreach (var clip in associations?.Clips.Where(pa => pa.Machine == machine).ToList() ?? new List<IClip>())
                         {
@@ -172,9 +172,9 @@ namespace ReBuzz.Core.Actions.GraphActions
                             }
                         }
 
-                        // Delete all pattern Columns that are linked to deleted machine
+                        // Delete all clip Columns that are linked to deleted machine
                         // Fork (0.6.3): linked to the deleted machine. Upstream compared with the
-                        // loop's machine, deleting every pattern's columns of its own machine.
+                        // loop's machine, deleting every clip's columns of its own machine.
                         foreach (var m in buzz.SongCore.MachinesList)
                         {
                             foreach (var p in m.Clips)
@@ -233,7 +233,7 @@ namespace ReBuzz.Core.Actions.GraphActions
 
                 madeAgain[machineData] = machine;
 
-                // Create Patterns
+                // Create Clips
                 foreach (var clip in machineData.clips)
                 {
                     machine.CreateClip(clip.Name, clip.Lenght);
@@ -251,7 +251,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                     }
                 }
 
-                // add patterncolors
+                // add clipcolors
                 foreach (var pa in machineData.clipAssociations)
                 {
                     var clip = machine.ClipsList.FirstOrDefault(p => p.Name == pa.Key);
@@ -274,7 +274,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                         foreach (var eventItem in seq.Value)
                         {
                             var seqEvent = eventItem.Value;
-                            // Get pattern
+                            // Get clip
                             var clip = machine.ClipsList.FirstOrDefault(p => p.Name == seqEvent.ClipName);
                             // Create new seqence event
                             SequenceEvent sequenceEvent = seqEvent.ToEvent(clip);
@@ -295,7 +295,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                 }
             }
 
-            // Fork (0.6.2): report what stands for the deleted objects now (machine, then its patterns and sequences).
+            // Fork (0.6.2): report what stands for the deleted objects now (machine, then its clips and sequences).
             foreach (var machineData in deleteMachineDatas)
             {
                 if (!deleted.TryGetValue(machineData, out var old)) continue;

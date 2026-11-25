@@ -150,7 +150,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(byPage.Count, Is.GreaterThan(5));
 
             string before = State("B", agentClip.Name);
-            var r = Ok(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["pattern"] = agentClip.Name, ["action"] = "warp_follow", ["sample"] = at }));
+            var r = Ok(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["clip"] = agentClip.Name, ["action"] = "warp_follow", ["sample"] = at }));
             Assert.That(r["count"]!.GetValue<int>(), Is.GreaterThan(5), "it says how many markers it made");
             var byAgent = AudioOf(agentClip).Markers.OrderBy(m => m.Beat).ToList();
             Assert.That(byAgent.Count, Is.EqualTo(byPage.Count));
@@ -163,12 +163,12 @@ namespace ReBuzz.Studio.Tests
 
             // audio_clip_set(auto_warp, from_seconds) is the same edit.
             rig.Undo();
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = viaSet.Name, ["auto_warp"] = true, ["from_seconds"] = at / rate }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = viaSet.Name, ["auto_warp"] = true, ["from_seconds"] = at / rate }));
             Assert.That(State("B", agentClip.Name), Is.EqualTo(after), "audio_clip_set with from_seconds gives the same clip");
 
             // A call with no position is refused and changes nothing.
             string state = State("B", agentClip.Name);
-            Assert.That(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["pattern"] = agentClip.Name, ["action"] = "warp_follow" })["isError"]?.GetValue<bool>() ?? false, Is.True);
+            Assert.That(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["clip"] = agentClip.Name, ["action"] = "warp_follow" })["isError"]?.GetValue<bool>() ?? false, Is.True);
             Assert.That(State("B", agentClip.Name), Is.EqualTo(state));
         }
     }

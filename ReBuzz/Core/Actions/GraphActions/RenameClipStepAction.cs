@@ -1,4 +1,4 @@
-// Fork (docs/specs/history-snapshots.md HS1): a pattern rename from an editor as a step of the song's history.
+// Fork (docs/specs/history-snapshots.md HS1): a clip rename from an editor as a step of the song's history.
 
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
@@ -7,10 +7,10 @@ using System.Linq;
 namespace ReBuzz.Core.Actions.GraphActions
 {
     /// <summary>
-    /// A pattern's rename, already made when it is recorded. It finds the pattern when it runs (the same object while it
-    /// is on the machine, else the one of the name it had), as BuzzGUI's pattern actions do.
+    /// A clip's rename, already made when it is recorded. It finds the clip when it runs (the same object while it
+    /// is on the machine, else the one of the name it had), as BuzzGUI's clip actions do.
     /// </summary>
-    [HistoryName("Rename pattern")]
+    [HistoryName("Rename clip")]
     internal sealed class RenameClipStepAction : IAction
     {
         readonly MachineCore machine;

@@ -185,7 +185,7 @@ namespace ReBuzz.Studio.Tests
             var bassClips = rig.Core.Clips.Of(bass);
             Assert.That(bassClips.Count, Is.EqualTo(1));
             Assert.That(bassClips[0].Id, Is.Not.EqualTo(leadClips[0].Id), "a clip id per track");
-            Assert.That(bassClips[0].Loop, Is.EqualTo(new ClipLoop(0, 0, true)), "the whole pattern loops");
+            Assert.That(bassClips[0].Loop, Is.EqualTo(new ClipLoop(0, 0, true)), "the whole clip loops");
 
             layout.Undo();
             Assert.That(lead.Events, Is.Empty);

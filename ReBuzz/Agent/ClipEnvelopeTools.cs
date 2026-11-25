@@ -1,5 +1,5 @@
 // Agent server (daw-modes.md EV1, agent-knowledge.md §11): clip_envelope, the envelopes of one clip as the Detail panel's lane shows them.
-// A clip is a pattern, in a Session slot or placed in the arrangement: its envelope of a parameter is the points of the pattern's engine
+// A clip is a clip, in a Session slot or placed in the arrangement: its envelope of a parameter is the points of the clip's engine
 // automation column (ramps and steps), which the Session View and every placement play. The tool calls the model code the lane uses
 // (ClipEnvelopes, ClipEnvelopeEditor over AR4's AutomationEditor and ColumnEventsAction), so a point the agent writes is a point a person
 // draws, with the same limits, and each call is one undo step (host.Engine groups it).
@@ -29,21 +29,21 @@ namespace ReBuzz.Agent
                 Title = "Envelopes of a clip",
                 Description =
                     "A clip's envelopes: one parameter's movement inside the clip, as the Detail panel's envelope lane draws it (points joined by ramps, or held as steps). " +
-                    "A clip is a pattern of the machine, in a Session slot or placed in the arrangement (the same pattern is the same envelope in both; each repeat of a looped " +
-                    "clip plays it again). Say which: pattern=<its name>, or scene=<Session scene, from 1>, or lane and at/clip as arrangement_clip does. " +
+                    "A clip belongs to the machine, in a Session slot or placed in the arrangement (the same clip is the same envelope in both; each repeat of a looped " +
+                    "placement plays it again). Say which: clip=<its name>, or scene=<Session scene, from 1>, or lane and at/placement as arrangement_clip does. " +
                     "op: read (every parameter with points in the clip, or only param; the Tracker's own columns come back as read-only `tracker` steps), " +
                     "write (points at beats from the clip's start, value as automation_write takes it; each point's ramp, or shape; replaces the clip's points between the first and last " +
                     "point, or all of them with replace=true), clear (all of param's points, or those from `from` to `to`). Values outside a parameter's safe range are refused " +
                     "unless allow_unsafe=true. Only state parameters of the clip's machine (machine_describe). One undo step. Example: " +
-                    "clip_envelope(op=\"write\", machine=\"Pad\", pattern=\"Build\", param=\"F1 cutoff\", points=[{\"at\": 0, \"value\": \"300 Hz\"}, {\"at\": 8, \"value\": \"4 kHz\"}, {\"at\": 16, \"value\": \"300 Hz\", \"ramp\": false}]).",
+                    "clip_envelope(op=\"write\", machine=\"Pad\", clip=\"Build\", param=\"F1 cutoff\", points=[{\"at\": 0, \"value\": \"300 Hz\"}, {\"at\": 8, \"value\": \"4 kHz\"}, {\"at\": 16, \"value\": \"300 Hz\", \"ramp\": false}]).",
                 Input = Object(null,
                     Req("op", String("What to do", "read", "write", "clear")),
                     Req("machine", String("The machine")),
-                    Opt("pattern", String("The clip's pattern")),
+                    Opt("clip", String("The clip's name")),
                     Opt("scene", Integer("A Session slot: the scene, from 1 (the clip in this machine's track)", 1, 999)),
-                    Opt("lane", Integer("An arrangement clip: the machine's lane number (arrangement_get; default its first main lane)", 0)),
-                    Opt("clip", Integer("An arrangement clip: its id")),
-                    Opt("at", Position("An arrangement clip: a position inside it. write/clear don't use it for the points: see points")),
+                    Opt("lane", Integer("An arrangement placement: the machine's lane number (arrangement_get; default its first main lane)", 0)),
+                    Opt("placement", Integer("An arrangement placement: its id")),
+                    Opt("at", Position("An arrangement placement: a position inside it. write/clear don't use it for the points: see points")),
                     Opt("param", String("Parameter name (required for write and clear)")),
                     Opt("track", Integer("Track, for track parameters", 0)),
                     Opt("points", Array(Object("A point",
@@ -56,7 +56,7 @@ namespace ReBuzz.Agent
                     Opt("to", Position("clear: the end (exclusive)")),
                     Opt("allow_unsafe", Boolean("Write values outside the parameter's safe range anyway"))),
                 Output = Object(null,
-                    Req("machine", String("Machine")), Req("pattern", String("The clip's pattern")), Req("length_beats", Number("The clip's length")),
+                    Req("machine", String("Machine")), Req("clip", String("The clip's name")), Req("length_beats", Number("The clip's length")),
                     Req("envelopes", Array(Object(null,
                         Req("param", String("Parameter")), Opt("track", Integer("Track")),
                         Req("points", Array(Object(null, Req("at", Number("Beats from the clip's start")), Req("value", String("Shown value")), Req("ramp", Boolean("Ramps to the next point"))), "Its points")),
@@ -85,10 +85,10 @@ namespace ReBuzz.Agent
         static JsonObject Position(string description) =>
             AnyOf(description, Number("Beats (0 = the start)", 0), String("\"bar.beat\": \"1.3\" is the third beat of the first bar"));
 
-        /// <summary>The clip the call names: a pattern by name, a Session slot, or an arrangement clip.</summary>
+        /// <summary>The clip the call names: a clip by name, a Session slot, or an arrangement clip.</summary>
         internal static IClip ClipOf(ReBuzzCore core, MachineCore m, ToolContext c)
         {
-            if (c.String("pattern") is string name) return SongModel.Clip(m, name);
+            if (c.String("clip") is string name) return SongModel.Clip(m, name);
             if (c.Int("scene") is int scene)
             {
                 var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
@@ -102,22 +102,22 @@ namespace ReBuzz.Agent
                 if (string.IsNullOrEmpty(slot)) throw new ToolError($"Scene {scene} of {m.Name}'s track is empty (session_get shows the slots).");
                 return SongModel.Clip(m, slot);
             }
-            if (c.Int("clip") != null || c.Arguments["at"] != null)
+            if (c.Int("placement") != null || c.Arguments["at"] != null)
             {
                 var lanes = core.SongCore.Sequences.Where(s => s.Machine == m).ToList();
                 int index = c.Int("lane") ?? Math.Max(0, lanes.FindIndex(s => (core.Arrangement?.RoleOf(s) ?? LaneRole.Main) == LaneRole.Main));
                 if (index < 0 || index >= lanes.Count) throw new ToolError($"{m.Name} has {lanes.Count} lane(s), numbered 0 to {Math.Max(0, lanes.Count - 1)}; arrangement_get lists them.");
                 var items = new ClipEditor(core).Read(lanes[index]);
                 ClipItem found = null;
-                if (c.Int("clip") is int id) found = items.FirstOrDefault(i => i.Spec.Id == id);
+                if (c.Int("placement") is int id) found = items.FirstOrDefault(i => i.Spec.Id == id);
                 else
                 {
                     int t = SongModel.ParseTicks(core, c.Arguments["at"], "at");
                     found = items.FirstOrDefault(i => i.Time <= t && t < i.End);
                 }
-                return found?.Clip ?? throw new ToolError($"No such clip on {m.Name}'s lane {index}. arrangement_get lists the clips.");
+                return found?.Clip ?? throw new ToolError($"No such placement on {m.Name}'s lane {index}. arrangement_get lists the placements.");
             }
-            throw new ToolError("Say which clip: pattern=<its name>, scene=<Session scene>, or lane with clip=<id> or at=<a position inside it>.");
+            throw new ToolError("Say which clip: clip=<its name>, scene=<Session scene>, or lane with placement=<id> or at=<a position inside it>.");
         }
 
         static JsonObject Run(ReBuzzCore core, ToolContext c, string op)
@@ -220,7 +220,7 @@ namespace ReBuzz.Agent
         static JsonObject Result(MachineCore m, IClip clip, int tpb, JsonArray envelopes, JsonArray problems) => new JsonObject
         {
             ["machine"] = m.Name,
-            ["pattern"] = clip.Name,
+            ["clip"] = clip.Name,
             ["length_beats"] = NoteList.Beats(clip.Length * NoteList.TimeBase, tpb),
             ["envelopes"] = envelopes,
             ["problems"] = problems,

@@ -56,7 +56,7 @@ namespace ReBuzz.Agent
             var o = new JsonObject
             {
                 ["machine"] = m.Name,
-                ["pattern"] = p.Name,
+                ["clip"] = p.Name,
                 ["warp"] = a.Warp,
                 ["preserve"] = a.Preserve,
                 ["tempo_bpm"] = Math.Round(a.Bpm, 3),
@@ -139,9 +139,9 @@ namespace ReBuzz.Agent
                     Opt("slot", Integer("Session scene, from 1 (new scenes are added up to it)", 1, 999)),
                     Opt("at_beats", Number("Arrangement position, beats from the start", 0))),
                 Output = Object(null,
-                    Req("machine", String("The Neo Audio machine")), Req("pattern", String("The clip's pattern")),
+                    Req("machine", String("The Neo Audio machine")), Req("clip", String("The clip's name")),
                     Opt("slot", Integer("Its Session scene, from 1")), Opt("at_beats", Number("Its arrangement position")),
-                    Req("clip", Object(null))),
+                    Req("settings", Object(null))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -183,7 +183,7 @@ namespace ReBuzz.Agent
                         }
                         else
                         {
-                            // Arrangement only: the clip is made in a scratch scene's slot, then the slot is emptied (the pattern stays, on its lane).
+                            // Arrangement only: the clip is made in a scratch scene's slot, then the slot is emptied (the clip stays, on its lane).
                             int last = layout.SceneCount;
                             layout.InsertScene(last);
                             clip = layout.ImportAudio(track, last, path, out string error) ?? throw new ToolError(error ?? "Couldn't import it.");
@@ -207,19 +207,19 @@ namespace ReBuzz.Agent
                         }
                         var after = layout.Document.CloneLayout();
                         AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
-                        var o = new JsonObject { ["machine"] = m.Name, ["pattern"] = clip.Name, ["clip"] = ClipJson(core, layout, m, clip) };
+                        var o = new JsonObject { ["machine"] = m.Name, ["clip"] = clip.Name, ["settings"] = ClipJson(core, layout, m, clip) };
                         if (scene >= 0 && placedTrack >= 0) o["slot"] = scene + 1;
                         if (placed != null) o["at_beats"] = placed;
                         return o;
                     }, c.Cancellation);
-                    var clipJson = (JsonObject)r["clip"]!;
+                    var clipJson = (JsonObject)r["settings"]!;
                     return ToolResult.Ok($"Imported {Path.GetFileName(path)} as \"{r["pattern"]}\" on {r["machine"]}" +
                         (r["slot"] != null ? $", scene {r["slot"]}" : "") + (r["at_beats"] != null ? $", arrangement beat {r["at_beats"]}" : "") +
                         $": {clipJson["audio"]?["seconds"]} s, {clipJson["tempo_bpm"]} BPM, {clipJson["length_beats"]} beats, {clipJson["warp"]}.", r);
                 },
             });
 
-            static (string Name, System.Text.Json.Nodes.JsonObject Schema, bool Required)[] ClipTarget() => new[] { Req("machine", String("The Neo Audio machine (its track)")), Req("pattern", String("The audio clip's pattern")) };
+            static (string Name, System.Text.Json.Nodes.JsonObject Schema, bool Required)[] ClipTarget() => new[] { Req("machine", String("The Neo Audio machine (its track)")), Req("clip", String("The audio clip's clip")) };
 
             tools.Add(new ToolDef
             {
@@ -229,16 +229,16 @@ namespace ReBuzz.Agent
                     "An audio clip's settings: warp mode (Off, Repitch, Beats, Complex, Pro), what Beats preserves, tempo, transposition (semitones) and detune (cents), gain (dB), " +
                     "loop and region (beats), warp markers, its length, and its audio (id, name, seconds, rate, channels, beats; storage: memory, filling, streaming, repairing or failed, streams, cache_progress, " +
                     "underruns and missed_samples of a streamed asset, resident_mb: long audio is read from a decoded cache file, and an underrun is a block that played silence for audio the disk had not delivered in time). " +
-                    "Example: audio_clip_get(machine=\"Drums audio\", pattern=\"loop\").",
+                    "Example: audio_clip_get(machine=\"Drums audio\", clip=\"loop\").",
                 Input = Object(null, ClipTarget()),
-                Output = Object(null, Req("machine", String("Machine")), Req("pattern", String("Pattern")), Req("warp", String("Warp mode"))),
+                Output = Object(null, Req("machine", String("Machine")), Req("clip", String("Clip")), Req("warp", String("Warp mode"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
                     var r = await host.Engine("audio_clip_get", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         return ClipJson(core, Layout(core), m, p);
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, " +
@@ -262,7 +262,7 @@ namespace ReBuzz.Agent
                     "(at least 2; [] clears them). Arrangement audio clips (NA2): fade_in_beats and fade_out_beats (the fades in the arrangement; 0 none), reverse " +
                     "(true or false: the audio plays backwards, the same part of it), stretch_to_beats (the clip's length in the arrangement: the audio is warped to fill it; " +
                     "the clip must be placed there, warp not Off, loop off). Setting tempo_bpm, or detect_tempo, on a clip whose warp is Off (a file with no tempo found) turns warp to Pro (the default) " +
-                    "unless warp is given. Example: audio_clip_set(machine=\"Drums audio\", pattern=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
+                    "unless warp is given. Example: audio_clip_set(machine=\"Drums audio\", clip=\"loop\", warp=\"Complex\", transpose=-2, gain_db=-3).",
                 Input = Object(null, ClipTarget().Concat(new[]
                 {
                     Opt("warp", WarpSchema()),
@@ -289,7 +289,7 @@ namespace ReBuzz.Agent
                     Opt("reverse", Boolean("Play the audio backwards (the part the clip plays stays the same)")),
                     Opt("stretch_to_beats", Number("The clip's length in the arrangement, beats: the audio is warped to fill it", 0.0001)),
                 }).ToArray()),
-                Output = Object(null, Req("machine", String("Machine")), Req("pattern", String("Pattern")), Req("warp", String("Warp mode"))),
+                Output = Object(null, Req("machine", String("Machine")), Req("clip", String("Clip")), Req("warp", String("Warp mode"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {
@@ -297,7 +297,7 @@ namespace ReBuzz.Agent
                     {
                         var layout = Layout(core);
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         if (layout.ClipOf(p)?.Audio == null) throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
                         var doc = layout.Ensure();
                         var before = doc.CloneLayout();
@@ -360,16 +360,16 @@ namespace ReBuzz.Agent
                 Name = "audio_separate",
                 Title = "Separate stems",
                 Description =
-                    "Splits an audio clip of the song (machine + pattern) or an audio file (path) into stems with a local model, and puts each stem on a new Neo Audio track named after it " +
+                    "Splits an audio clip of the song (machine + clip) or an audio file (path) into stems with a local model, and puts each stem on a new Neo Audio track named after it " +
                     "(\"Bass - <source>\"): one clip per stem, in the source clip's Session scene and at its arrangement positions, with its warp, tempo, gain and region (a file: scene slot " +
                     "from 1, default 1, and/or at_beats). The stems' audio goes into the song's audio store; one undo step. quality: Fast = Demucs htdemucs, Balanced = htdemucs_ft " +
                     "(four times the work), Best = BS-RoFormer (the slowest). A model must be installed (Gear/Models/Stems, or the folder in Preferences; Install models... takes the " +
                     "\"NeoBuzz Live Stem Models\" zip). stems: any of vocals, drums, bass, other, or all (default). Results are cached per audio and model, so a repeat is instant. " +
                     "It takes a while: about a minute per minute of audio on a fast CPU for Fast, several for Best; progress is reported, and cancelling stops it. " +
-                    "Example: audio_separate(machine=\"Drums audio\", pattern=\"loop\", quality=\"Fast\", stems=[\"drums\", \"bass\"]).",
+                    "Example: audio_separate(machine=\"Drums audio\", clip=\"loop\", quality=\"Fast\", stems=[\"drums\", \"bass\"]).",
                 Input = Object(null,
                     Opt("machine", String("The Neo Audio machine of the clip to separate")),
-                    Opt("pattern", String("The audio clip's pattern")),
+                    Opt("clip", String("The audio clip's clip")),
                     Opt("path", String("An audio file to separate instead of a clip (WAV, AIFF, FLAC, OGG, MP3)")),
                     Opt("quality", String("Fast, Balanced or Best (default Fast)", "Fast", "Balanced", "Best")),
                     Opt("stems", Array(String("A stem", "vocals", "drums", "bass", "other", "all"), "Which stems (default all four)")),
@@ -377,14 +377,14 @@ namespace ReBuzz.Agent
                     Opt("at_beats", Number("A file: also place the new clips in the arrangement at this position, in beats", 0))),
                 Output = Object(null,
                     Req("model", String("The model that ran")), Req("from_cache", Boolean("The result was cached")), Req("seconds", Number("Seconds it took")),
-                    Req("tracks", Array(Object(null, Req("stem", String("The stem")), Req("machine", String("The new Neo Audio machine")), Req("pattern", String("Its clip"))), "The new tracks"))),
+                    Req("tracks", Array(Object(null, Req("stem", String("The stem")), Req("machine", String("The new Neo Audio machine")), Req("clip", String("Its clip"))), "The new tracks"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    string machineName = c.String("machine"), clipName = c.String("pattern"), path = c.String("path");
+                    string machineName = c.String("machine"), clipName = c.String("clip"), path = c.String("path");
                     if ((clipName != null) == (path != null))
-                        throw new ToolError("Give a clip (machine and pattern) or a path to a file, one of the two.");
-                    if (clipName != null && machineName == null) throw new ToolError("A clip needs its machine as well as its pattern.");
+                        throw new ToolError("Give a clip (machine and clip) or a path to a file, one of the two.");
+                    if (clipName != null && machineName == null) throw new ToolError("A clip needs its machine as well as its clip.");
                     string qname = c.String("quality") ?? "Fast";
                     if (!Enum.TryParse<StemQuality>(qname, true, out var quality)) throw new ToolError("quality: Fast, Balanced or Best.");
                     string[] stems;
@@ -432,7 +432,7 @@ namespace ReBuzz.Agent
                         {
                             var t = new JsonObject
                             {
-                                ["stem"] = o.Stem, ["machine"] = o.Machine.Name, ["pattern"] = o.Clip.Name, ["asset"] = o.Asset.Id,
+                                ["stem"] = o.Stem, ["machine"] = o.Machine.Name, ["clip"] = o.Clip.Name, ["asset"] = o.Asset.Id,
                                 ["length_beats"] = SongModel.Beats(core, o.Clip.Length),
                             };
                             if (o.Scene >= 0) t["slot"] = o.Scene + 1;
@@ -457,7 +457,7 @@ namespace ReBuzz.Agent
                 Name = "audio_convert_to_midi",
                 Title = "Convert audio to MIDI",
                 Description =
-                    "Finds the notes in an audio clip of the song (machine + pattern) and puts them on a new MIDI track: a clip of the same length, in the source clip's Session scene " +
+                    "Finds the notes in an audio clip of the song (machine + clip) and puts them on a new MIDI track: a clip of the same length, in the source clip's Session scene " +
                     "and at its arrangement positions, with an instrument on the track (Neo Poly for melody and harmony, Neo Drums for drums); one undo step. It runs on this computer and " +
                     "takes seconds (cancelling stops it). mode: melody = one note at a time (a voice, a lead, a bass line; tracked as pitch, with range any/voice/guitar/bass, min_note_ms, " +
                     "smooth_ms and pitch_bends: a slide or vibrato stays one note and its movement becomes pitch-bend events, the instrument's bend range being two semitones); " +
@@ -467,10 +467,10 @@ namespace ReBuzz.Agent
                     "its detune rounded, its warp markers place the notes in beats, a reversed clip puts them backwards; its gain and fades don't matter. Accuracy: melody finds most notes of " +
                     "a clean single line (see docs/specs/pitch.md section 9 for the measured numbers); drums are good at kick, snare, closed hat, toms and cymbals on an electronic kit and weaker at open hats, and less sure on an acoustic kit; " +
                     "harmony is Basic Pitch's own accuracy. apply=false only reports the notes (up to 200, in beats) and changes nothing. " +
-                    "Example: audio_convert_to_midi(machine=\"Bass audio\", pattern=\"line\", mode=\"melody\", quantize=\"1/16\", strength=0.8).",
+                    "Example: audio_convert_to_midi(machine=\"Bass audio\", clip=\"line\", mode=\"melody\", quantize=\"1/16\", strength=0.8).",
                 Input = Object(null,
                     Req("machine", String("The Neo Audio machine of the clip")),
-                    Req("pattern", String("The audio clip's pattern")),
+                    Req("clip", String("The audio clip's clip")),
                     Req("mode", String("What to find", "melody", "harmony", "drums")),
                     Opt("range", String("Melody: what the tracker listens for (default any)", "any", "voice", "guitar", "bass")),
                     Opt("min_note_ms", Number("Melody: shortest note in milliseconds (default 60)", 10, 2000)),
@@ -485,14 +485,14 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Req("mode", String("The mode that ran")), Req("notes", Integer("How many notes (hits) were found")), Req("seconds", Number("Seconds it took")),
                     Req("summary", String("What was found, in a line")),
-                    Opt("machine", String("The new MIDI machine")), Opt("pattern", String("Its clip")), Opt("instrument", String("The instrument on the track")),
+                    Opt("machine", String("The new MIDI machine")), Opt("clip", String("Its clip")), Opt("instrument", String("The instrument on the track")),
                     Opt("slot", Integer("The Session scene of the new clip, from 1")), Opt("at_beats", Array(Number("A position"), "Positions of the clip in the arrangement, in beats")),
                     Opt("pitch_bends", Integer("Pitch-bend events written")),
                     Opt("found", Array(Object(null, Req("start_beats", Number("Where it starts")), Req("length_beats", Number("How long")), Req("note", Integer("MIDI note")), Req("velocity", Integer("1 to 127"))), "With apply=false: the notes"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    string machineName = c.String("machine"), clipName = c.String("pattern");
+                    string machineName = c.String("machine"), clipName = c.String("clip");
                     if (!Enum.TryParse<ConvertMode>(c.String("mode") ?? "", true, out var mode)) throw new ToolError("mode: melody, harmony or drums.");
                     var options = new ConvertOptions { Mode = mode };
                     string range = (c.String("range") ?? "any").ToLowerInvariant();
@@ -562,7 +562,7 @@ namespace ReBuzz.Agent
                         return outcome;
                     }, c.Cancellation);
                     output["machine"] = r.Machine.Name;
-                    output["pattern"] = r.Clip.Name;
+                    output["clip"] = r.Clip.Name;
                     output["instrument"] = r.Instrument;
                     output["pitch_bends"] = r.Bends;
                     output["notes"] = r.Notes;
@@ -576,17 +576,17 @@ namespace ReBuzz.Agent
                 Name = "audio_slice_to_midi",
                 Title = "Slice audio to a MIDI track",
                 Description =
-                    "Cuts an audio clip of the song (machine + pattern, or machine + slot: its Session scene, from 1) into at most 16 slices and plays them from a new MIDI track: each slice " +
+                    "Cuts an audio clip of the song (machine + clip, or machine + slot: its Session scene, from 1) into at most 16 slices and plays them from a new MIDI track: each slice " +
                     "becomes a wave of the wavetable (the first free slots, named \"<clip> 01\"…, cut from the audio as the clip plays it: its gain, reversed if it is, not warped, with a 1 ms fade in " +
                     "unless it starts on a zero crossing and a 2 ms fade out), the track holds a Neo Sampler in Kit mode (zone n plays slice n on key 36 + n - 1, all in choke group 1 so " +
                     "it is monophonic like the loop; the clip's transpose and detune retune the zones), and a MIDI clip of one note per slice (velocity 100, as long as the slice as the clip is warped) sits " +
                     "where the source is (its Session scene, arrangement positions, region and loop). The source clip stays as it is. One undo step. by: transients (default: the 16 strongest " +
                     "attacks, the weaker merged into the slice before them), warp_markers, bar, 1/4, 1/8 or 1/16 (a beat is a quarter; refused when it would make more than 16 slices). " +
                     "Only the part the clip plays is cut: its loop, else its region. apply=false only reports the slices and changes nothing. " +
-                    "Example: audio_slice_to_midi(machine=\"Drums audio\", pattern=\"loop\", by=\"transients\").",
+                    "Example: audio_slice_to_midi(machine=\"Drums audio\", clip=\"loop\", by=\"transients\").",
                 Input = Object(null,
                     Req("machine", String("The Neo Audio machine of the clip (its track)")),
-                    Opt("pattern", String("The audio clip's pattern")),
+                    Opt("clip", String("The audio clip's clip")),
                     Opt("slot", Integer("Or the clip in this Session scene of the track, from 1", 1, 999)),
                     Opt("by", String("Where to cut (default transients)", "transients", "warp_markers", "bar", "1/4", "1/8", "1/16")),
                     Opt("apply", Boolean("false: only report the slices (default true)"))),
@@ -595,14 +595,14 @@ namespace ReBuzz.Agent
                     Req("capped", Boolean("Weaker transients were merged into the slice before them")), Req("summary", String("What was cut, in a line")),
                     Req("slices", Array(Object(null, Req("slot", Integer("The wavetable slot, from 1")), Req("start", Integer("Samples into the audio as the clip plays it")), Req("length", Integer("Samples")),
                         Req("key", Integer("MIDI note that plays it")), Req("beat", Number("Where its note is, beats of the clip"))), "The slices")),
-                    Opt("machine", String("The new MIDI machine (Neo Sampler)")), Opt("pattern", String("Its clip")),
+                    Opt("machine", String("The new MIDI machine (Neo Sampler)")), Opt("clip", String("Its clip")),
                     Opt("slot", Integer("The Session scene of the new clip, from 1")), Opt("at_beats", Array(Number("A position"), "Positions of the clip in the arrangement, in beats"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    string machineName = c.RequiredString("machine"), clipName = c.String("pattern");
+                    string machineName = c.RequiredString("machine"), clipName = c.String("clip");
                     int? sceneArg = c.Int("slot");
-                    if ((clipName != null) == (sceneArg != null)) throw new ToolError("Give the clip as pattern or as slot (its Session scene, from 1), one of the two.");
+                    if ((clipName != null) == (sceneArg != null)) throw new ToolError("Give the clip as clip or as slot (its Session scene, from 1), one of the two.");
                     if (!SliceMath.TryParse(c.String("by") ?? "transients", out var by)) throw new ToolError("by: transients, warp_markers, bar, 1/4, 1/8 or 1/16.");
                     bool write = c.Bool("apply") ?? true;
                     var source = await host.Engine("audio_slice_to_midi", false, _ =>
@@ -666,7 +666,7 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var output = Common(r.Slices);
                     output["machine"] = r.Machine.Name;
-                    output["pattern"] = r.Clip.Name;
+                    output["clip"] = r.Clip.Name;
                     if (r.Scene >= 0) output["slot"] = r.Scene + 1;
                     if (r.Ticks.Count > 0) output["at_beats"] = new JsonArray(r.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
                     string summary = $"{Line(r.Slices.Count)} {r.Instrument} plays them on the new track \"{r.Machine.Name}\" (clip \"{r.Clip.Name}\"; waves {r.Slices[0].Slot}–{r.Slices[^1].Slot}, keys {r.Slices[0].Key}–{r.Slices[^1].Key}).";

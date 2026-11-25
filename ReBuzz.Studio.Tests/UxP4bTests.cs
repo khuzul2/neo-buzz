@@ -138,9 +138,9 @@ namespace ReBuzz.Studio.Tests
             var look = StudioTheme.Sequence;
             AtLeast(C(look.RulerText), C(look.Ruler), 4.5, "bar numbers on the ruler");
             AtLeast(C(look.HeaderText), C(look.Header), 4.5, "machine names on the headers");
-            AtLeast(C(look.ListText), look.ClipList, 4.5, "the pattern list");
+            AtLeast(C(look.ListText), look.ClipList, 4.5, "the clip list");
             AtLeast(C(look.ControlText), C(look.ControlBack), 4.5, "the corner's controls");
-            AtLeast(Colors.White, C(look.ListSelected), 4.5, "the selected pattern");
+            AtLeast(Colors.White, C(look.ListSelected), 4.5, "the selected clip");
             AtLeast(C(look.ButtonBorder.Brush!), C(look.Header), 3.0, "a button's edge is a UI part");
             AtLeast(StudioTokens.TextOn(C(look.MuteOn)), C(look.MuteOn), 4.5, "the lit mute button's glyph");
             AtLeast(StudioTokens.TextOn(C(look.SoloOn)), C(look.SoloOn), 4.5, "the lit solo button's glyph");

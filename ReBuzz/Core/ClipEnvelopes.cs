@@ -1,10 +1,10 @@
 // Fork (docs/specs/daw-modes.md EV1, §3.4, §8.5): the envelopes of one clip. A clip's envelope is one state parameter of the clip's
-// machine, kept as an engine automation column of the clip's pattern: the store the arrangement lanes (AR4), the Session View's
+// machine, kept as an engine automation column of the clip's clip: the store the arrangement lanes (AR4), the Session View's
 // recording and the agent use. Here it is read and edited in the clip's own time (the Detail panel's lane, the curves drawn on the
 // clips, the agent's clip_envelope), with AR4's reader and edit actions: a clip shown in the Session and the same clip placed in the
 // arrangement hold the same points, play the same sound, and a point edited in either place is a step of the song's history.
 //
-// The clip's pattern editor columns (the Tracker's) show read only, as AR4 shows them, and are marked where they overlap the clip's
+// The clip's clip editor columns (the Tracker's) show read only, as AR4 shows them, and are marked where they overlap the clip's
 // own points (AutomationReader.OverlapsOf). Nothing here runs on the audio thread.
 
 using System;
@@ -25,7 +25,7 @@ namespace ReBuzz.Core
         /// <summary>The clip's engine column, as one placement from its start to its end; its points are in the clip's time (1/240 tick).</summary>
         public AutoSegment Engine { get; init; }
 
-        /// <summary>The pattern editor's parameter column as steps (read only), or null when it holds none.</summary>
+        /// <summary>The clip editor's parameter column as steps (read only), or null when it holds none.</summary>
         public AutoSegment Tracker { get; init; }
 
         /// <summary>Where the engine column and the Tracker's column set the parameter in one place (clip time).</summary>
@@ -74,7 +74,7 @@ namespace ReBuzz.Core
             return new ClipEnvelope { Clip = clip, Param = param, Key = key, Engine = engine, Tracker = tracker, Overlaps = overlaps };
         }
 
-        /// <summary>The parameters that hold data in a clip: its engine columns first, then the pattern editor's, each in the machine's parameter order.</summary>
+        /// <summary>The parameters that hold data in a clip: its engine columns first, then the clip editor's, each in the machine's parameter order.</summary>
         public static List<ColumnKey> KeysWithData(IClip clip)
         {
             var found = new List<ColumnKey>();

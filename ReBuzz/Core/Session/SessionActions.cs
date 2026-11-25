@@ -8,16 +8,16 @@ using System.Runtime.CompilerServices;
 namespace ReBuzz.Core.Session
 {
     /// <summary>
-    /// Pattern colours shared with the Sequence View (fork addition, docs/specs/session-view.md
-    /// 0.2): an index into the theme's PatternColors, stored by the sequence editor's
-    /// ViewSettings.PatternAssociations and saved in the song by it. Without a sequence editor
+    /// Clip colours shared with the Sequence View (fork addition, docs/specs/session-view.md
+    /// 0.2): an index into the theme's ClipColors, stored by the sequence editor's
+    /// ViewSettings.ClipAssociations and saved in the song by it. Without a sequence editor
     /// (tests, headless use) colours are kept here instead. UI thread only.
     /// </summary>
     internal static class ClipColors
     {
         static readonly ConditionalWeakTable<IClip, StrongBox<int>> fallback = new ConditionalWeakTable<IClip, StrongBox<int>>();
 
-        /// <summary>A pattern's colour changed (from the session; the Sequence View should redraw).</summary>
+        /// <summary>A clip's colour changed (from the session; the Sequence View should redraw).</summary>
         public static event Action<IClip> Changed;
 
         public static int Get(IClip clip)
@@ -49,7 +49,7 @@ namespace ReBuzz.Core.Session
     }
 
     /// <summary>
-    /// Renames a pattern (0.6.1: holds the pattern, not its old name, and follows it if an undo
+    /// Renames a clip (0.6.1: holds the clip, not its old name, and follows it if an undo
     /// brought it back as another object). Does nothing if the name it would take is taken.
     /// </summary>
     [BuzzGUI.Common.HistoryName("Rename clip")]
@@ -81,7 +81,7 @@ namespace ReBuzz.Core.Session
         }
     }
 
-    /// <summary>A pattern's colour (0.6.1: holds the pattern, not its name).</summary>
+    /// <summary>A clip's colour (0.6.1: holds the clip, not its name).</summary>
     [BuzzGUI.Common.HistoryName("Clip colour")]
     internal sealed class ClipColorAction : IAction
     {

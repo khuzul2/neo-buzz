@@ -258,7 +258,7 @@ namespace ReBuzz.Studio.Tests
             {
                 Assert.That(rig.Editor.Read(rig.LaneA), Is.Empty, "it left the first track");
                 var moved = rig.First(rig.LaneB);
-                Assert.That(moved.Clip.Machine, Is.SameAs(rig.LaneB.Machine), "its pattern belongs to the machine it plays on");
+                Assert.That(moved.Clip.Machine, Is.SameAs(rig.LaneB.Machine), "its clip belongs to the machine it plays on");
                 Assert.That(Core.SessionLayout.IsAudioClip(moved.Clip), Is.True);
             });
         }
@@ -276,7 +276,7 @@ namespace ReBuzz.Studio.Tests
                 // Independent: the copy's gain doesn't touch the original.
                 var original = rig.First(rig.LaneA);
                 var copy = rig.First(rig.LaneB);
-                Assert.That(copy.Clip, Is.Not.SameAs(original.Clip), "each has its own pattern");
+                Assert.That(copy.Clip, Is.Not.SameAs(original.Clip), "each has its own clip");
                 Assert.That(Core.SessionLayout.AudioOf(copy.Clip).Asset, Is.EqualTo(Core.SessionLayout.AudioOf(original.Clip).Asset), "they share the audio");
                 Assert.That(rig.Editor.SetGain(copy, -9), Is.Null);
                 Assert.That(Core.SessionLayout.AudioOf(original.Clip).GainDb, Is.EqualTo(0), "the original is as it was");
@@ -380,7 +380,7 @@ namespace ReBuzz.Studio.Tests
             {
                 var clips = rig.Editor.Read(rig.LaneA);
                 Assert.That(clips.Count, Is.EqualTo(2), "two clips");
-                Assert.That(clips[0].Clip, Is.Not.SameAs(clips[1].Clip), "each with a pattern of its own");
+                Assert.That(clips[0].Clip, Is.Not.SameAs(clips[1].Clip), "each with a clip of its own");
             }, save: false);
             rig.Click(rig.In(rig.Item(rig.LaneA), 0.3, 0.8));
             int assets = Core.AudioAssets.Count;
@@ -465,16 +465,16 @@ namespace ReBuzz.Studio.Tests
             var item = rig.Clip(rig.LaneA, 0);
             string machine = rig.LaneA.Machine.Name, clip = item.Clip.Name;
             double beats = SongModel.Beats(Core, item.End - item.Time);
-            var set = Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["fade_in_beats"] = 0.5, ["fade_out_beats"] = 1.5, ["reverse"] = true }));
+            var set = Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["fade_in_beats"] = 0.5, ["fade_out_beats"] = 1.5, ["reverse"] = true }));
             var a = Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip);
             Assert.That(a.FadeIn, Is.EqualTo(0.5).Within(1e-9));
             Assert.That(a.FadeOut, Is.EqualTo(1.5).Within(1e-9));
             Assert.That(a.Reverse, Is.True);
-            var get = Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clip }));
+            var get = Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["clip"] = clip }));
             Assert.That(get.ToJsonString(), Does.Contain("fade_in_beats"));
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["stretch_to_beats"] = beats / 2 }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["stretch_to_beats"] = beats / 2 }));
             Assert.That(SongModel.Beats(Core, rig.First(rig.LaneA).End), Is.EqualTo(beats / 2).Within(0.05));
-            var bad = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["fade_in_beats"] = -1.0 });
+            var bad = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["fade_in_beats"] = -1.0 });
             Assert.That(bad["isError"]?.GetValue<bool>() ?? false, Is.True, "a negative fade is refused");
         }
     }

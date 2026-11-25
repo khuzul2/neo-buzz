@@ -266,7 +266,7 @@ Check each hit: `analyze(metrics=["pitch", "spectrum", "dynamics"])` on a solo r
 
 ### Riser
 
-Start from "FX — Noise Sweep" (band-passed noise). For a build, replace its LFO with automation: `automation_write(machine="Riser", pattern="Build", param="F1 cutoff", points=[{"at": 0, "value": "300 Hz"}, {"at": 32, "value": "10 kHz"}])` and set `M1 dest` Off.
+Start from "FX — Noise Sweep" (band-passed noise). For a build, replace its LFO with automation: `automation_write(machine="Riser", clip="Build", param="F1 cutoff", points=[{"at": 0, "value": "300 Hz"}, {"at": 32, "value": "10 kHz"}])` and set `M1 dest` Off.
 
 ## Neo Wave
 

@@ -216,7 +216,7 @@ namespace NeoBuzz.PlugSpike
         /// One automatable slot, 0..65534 over the plugin parameter's range. On song load ReBuzz
         /// sends every global parameter its saved value, stateless ones too (their default or
         /// minimum), which would override the plugin's restored state. So the spike takes slot
-        /// values only while the song plays (patterns). H1: slots must mirror the plugin's current
+        /// values only while the song plays (clips). H1: slots must mirror the plugin's current
         /// value, so that re-sending them is harmless.
         /// </summary>
         [ParameterDecl(Name = "Slot 1", IsStateless = true, MinValue = 0, MaxValue = 65534, Description = "The plugin's first automatable parameter, 0..65534 over its range")]

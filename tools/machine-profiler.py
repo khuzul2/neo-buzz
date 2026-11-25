@@ -442,15 +442,15 @@ def probe_file(r, machine):
 
 
 def set_notes(c, machine, notes, mode, length=16):
-    """A fresh pattern "P" of the machine with these notes (sent as written, through mode), placed at 0."""
+    """A fresh clip "P" of the machine with these notes (sent as written, through mode), placed at 0."""
     try:
-        c.call("pattern_delete", machine=machine, pattern="P")
+        c.call("clip_delete", machine=machine, clip="P")
     except ToolFailed:
         pass
-    c.call("pattern_create", machine=machine, name="P", length_beats=length)
+    c.call("clip_create", machine=machine, name="P", length_beats=length)
     if notes:
-        c.call("notes_write", machine=machine, pattern="P", notes=notes, input=mode, apply_pitch_offset=False)
-    c.call("arrangement_place", machine=machine, pattern="P", at=0)
+        c.call("notes_write", machine=machine, clip="P", notes=notes, input=mode, apply_pitch_offset=False)
+    c.call("arrangement_place", machine=machine, clip="P", at=0)
 
 
 def note(pitch, start=0, length=1.5, velocity=100):
@@ -1185,7 +1185,7 @@ class TestBench:
             r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
             for ch, got in zip(changes, r.get("changed", [])):
                 self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
-            # past the patterns: smoothed parameters arrive with nothing played into a loop before the click
+            # past the clips: smoothed parameters arrive with nothing played into a loop before the click
             render(c, self.length, self.length + WARM_BEATS, 0.0)
         probes = ["Sw", "Ck", "M"] + (["St"] if self.with_steps else [])
         try:
@@ -1563,21 +1563,21 @@ class NoteBench:
 
 
 def play(c, machine, mode, trigger, notes, length=16):
-    """A fresh pattern "P" playing these notes: as notes (MIDI or tracks), or each as the generator's trigger."""
+    """A fresh clip "P" playing these notes: as notes (MIDI or tracks), or each as the generator's trigger."""
     if not trigger:
         set_notes(c, machine, notes, mode, length=length)
         return
     try:
-        c.call("pattern_delete", machine=machine, pattern="P")
+        c.call("clip_delete", machine=machine, clip="P")
     except ToolFailed:
         pass
-    c.call("pattern_create", machine=machine, name="P", length_beats=length)
-    args = {"machine": machine, "pattern": "P", "param": trigger["param"], "shape": "step",
+    c.call("clip_create", machine=machine, name="P", length_beats=length)
+    args = {"machine": machine, "clip": "P", "param": trigger["param"], "shape": "step",
             "points": [{"at": n["start"], "value": f"raw:{trigger['value']}"} for n in notes]}
     if trigger.get("track") is not None:
         args["track"] = trigger["track"]
     c.call("automation_write", **args)
-    c.call("arrangement_place", machine=machine, pattern="P", at=0)
+    c.call("arrangement_place", machine=machine, clip="P", at=0)
 
 
 def find_trigger(c, prof, globals_):

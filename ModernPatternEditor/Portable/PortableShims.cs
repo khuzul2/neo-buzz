@@ -1,6 +1,6 @@
 // Fork (docs/specs/studio-mvp.md S6): what the shared editor sources use from BuzzGUI.Common's
 // Windows build that its portable build (the engine's machine API, engine-split.md §4) leaves out.
-// Copies of the originals (ActionGroup, PatternAction, ParameterExtensions), under the names the
+// Copies of the originals (ActionGroup, ClipAction, ParameterExtensions), under the names the
 // sources use, and toolkit-free stand-ins for the WPF types they name (Color, TextFormattingMode).
 
 using BuzzGUI.Interfaces;
@@ -27,7 +27,7 @@ namespace BuzzGUI.Common
 
 namespace BuzzGUI.Common.Actions
 {
-    /// <summary>BuzzGUI.Common's PatternAction: an action on a pattern, found again by name.</summary>
+    /// <summary>BuzzGUI.Common's ClipAction: an action on a clip, found again by name.</summary>
     public abstract class ClipAction : MachineAction
     {
         readonly string clipName;
@@ -53,9 +53,9 @@ namespace BuzzGUI.Common.Actions
 namespace BuzzGUI.Common.Actions.MachineActions
 {
     /// <summary>
-    /// BuzzGUI.Common's DeletePatternAction without its copy of the engine's own columns (PatternClip
-    /// isn't portable): undo makes the pattern again, empty, as the editor's data comes back empty
-    /// on Windows too (the editor drops a deleted pattern's data).
+    /// BuzzGUI.Common's DeleteClipAction without its copy of the engine's own columns (ClipClip
+    /// isn't portable): undo makes the clip again, empty, as the editor's data comes back empty
+    /// on Windows too (the editor drops a deleted clip's data).
     /// </summary>
     public class DeleteClipAction : MachineAction
     {

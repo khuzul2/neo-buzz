@@ -1,5 +1,5 @@
-// Fork (docs/specs/studio-mvp.md S6): the pattern grid's geometry, ported from the WPF editor's
-// ColumnSetElement (GetFieldRect, GetDigitRect, GetDigitAtPoint) and PatternControl (column sets side
+// Fork (docs/specs/studio-mvp.md S6): the clip grid's geometry, ported from the WPF editor's
+// ColumnSetElement (GetFieldRect, GetDigitRect, GetDigitAtPoint) and ClipControl (column sets side
 // by side, ColumnSetGap apart): where a beat, a field and a digit are, and which digit is at a point.
 
 using Avalonia;
@@ -17,7 +17,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public ClipVM Clip { get; }
         public ClipFont Font { get; }
 
-        /// <summary>Rows per beat the grid is drawn with (the pattern's default; other beats squeeze into it).</summary>
+        /// <summary>Rows per beat the grid is drawn with (the clip's default; other beats squeeze into it).</summary>
         public int RPB { get; }
 
         public double LineHeight => Font.LineHeight * ClipControl.Scale;
@@ -92,7 +92,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return new Rect(x, r.Y, index >= 0 ? widths[index] : r.Width, r.Height);
         }
 
-        /// <summary>The cursor's rectangle (PatternControl.UpdateCursor): a digit, or a note's whole field.</summary>
+        /// <summary>The cursor's rectangle (ClipControl.UpdateCursor): a digit, or a note's whole field.</summary>
         public Rect GetCursorRect(Digit p)
         {
             var col = Clip.GetColumn(p);

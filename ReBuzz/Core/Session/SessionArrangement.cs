@@ -12,7 +12,7 @@ namespace ReBuzz.Core.Session
     /// session clip starts (launches and loop restarts) and stops are written into the
     /// sequences at the song position where they happened, replacing what the arrangement had
     /// on those tracks in between. One recording pass is one undo step in the Session View.
-    /// Since 0.5.1 a start carries the part of the pattern played (from a start or loop marker,
+    /// Since 0.5.1 a start carries the part of the clip played (from a start or loop marker,
     /// or where legato picked it up, to the clip's end marker) and its launch velocity, so the
     /// arrangement plays back what was heard (<see cref="SequenceEvent.Offset"/>, End, Gain).
     /// Since daw-modes.md S2 a launch and the loop wraps after it are one arrangement clip
@@ -68,7 +68,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// A clip started (launch, loop restart, Repeat restart) at a song position, playing its
-        /// pattern from <paramref name="offset"/> to <paramref name="end"/> (0: the pattern's end)
+        /// clip from <paramref name="offset"/> to <paramref name="end"/> (0: the clip's end)
         /// at <paramref name="gain"/>. <paramref name="wrap"/>: a loop restart of the clip that
         /// started last on the track, written as the same arrangement clip (daw-modes.md S2).
         /// </summary>
@@ -79,7 +79,7 @@ namespace ReBuzz.Core.Session
         internal void ClipStopped(SequenceCore seq, int position) => Post(new Entry(Kind.Stop, seq, null, position));
 
         /// <summary>
-        /// A clip's pattern moved to another track of the same machine (0.4.1): the pattern ends
+        /// A clip's clip moved to another track of the same machine (0.4.1): the clip ends
         /// here with a Break, not an Off, which would stop the machine that now plays it there.
         /// </summary>
         internal void ClipCut(SequenceCore seq, int position) => Post(new Entry(Kind.Cut, seq, null, position));
@@ -159,8 +159,8 @@ namespace ReBuzz.Core.Session
             }
 
             ClearBetween(seq, track, track.LastWrite, e.Position);
-            // 0.6.1: never a deleted pattern (posted just before the delete, or from stale state):
-            // the song would save it as an invalid pattern index.
+            // 0.6.1: never a deleted clip (posted just before the delete, or from stale state):
+            // the song would save it as an invalid clip index.
             if (e.Kind == Kind.Start && e.Clip != null && e.Clip.Machine == seq.Machine && !e.Clip.IsDeleted)
                 Write(seq, track, e.Position, new SequenceEvent(SequenceEventType.PlayClip, e.Clip)
                 {
@@ -353,7 +353,7 @@ namespace ReBuzz.Core.Session
     internal static class SceneToArrangement
     {
         /// <summary>
-        /// daw-modes.md S2: the loop an arrangement clip of the pattern gets from its session
+        /// daw-modes.md S2: the loop an arrangement clip of the clip gets from its session
         /// clip settings (its loop region, whether it loops).
         /// </summary>
         internal static ClipLoop LoopOf(SessionLayout layout, IClip clip)

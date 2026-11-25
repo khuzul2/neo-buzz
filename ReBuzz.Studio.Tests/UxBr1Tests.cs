@@ -156,7 +156,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(panel.Rows.Any(r => r.StartsWith("#")), Is.False, "a list: no headers");
                 Assert.That(panel.Rows, Does.Contain(kick));
                 panel.TreeToggle.IsChecked = true;
-                // One search over everything: machines, presets, patterns of the selection and files, whatever source is chosen.
+                // One search over everything: machines, presets, clips of the selection and files, whatever source is chosen.
                 panel.Search.Text = "kick";
                 Settle();
                 Assert.That(panel.Rows, Does.Contain(kick), "the file is found from the search box");
@@ -320,7 +320,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(now.DLL.Name, Is.EqualTo("Neo Comp"), "the box now holds the dropped machine");
                 Assert.That(Graph(), Is.EqualTo("Master; Trim; Trim→Master"), "connections kept");
                 Assert.That(Wire("Trim", "Master").Amp, Is.EqualTo(0x2000), "with their gain");
-                Assert.That(now.Clips.Select(p => p.Name), Does.Contain("P1"), "patterns kept where they fit");
+                Assert.That(now.Clips.Select(p => p.Name), Does.Contain("P1"), "clips kept where they fit");
                 Assert.That(view.Canvas.Selection, Does.Contain(made), "and selected");
                 Core.SongCore.ActionStack.Undo();
                 Settle();

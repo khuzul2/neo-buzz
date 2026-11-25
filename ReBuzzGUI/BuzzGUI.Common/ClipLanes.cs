@@ -1,10 +1,10 @@
 #nullable disable
 // Fork addition (neo-buzz, docs/specs/clips.md §5 and §10, wave CU2): what a clip holds, as data a converter can read and write
-// without an engine: lanes (the engine's pattern columns, §5.1) with their metadata (§5.2), a migration log with a cause tag per
+// without an engine: lanes (the engine's clip columns, §5.1) with their metadata (§5.2), a migration log with a cause tag per
 // step (§5.6), and the little helpers that go with them (the Grid text, note-on and note-off events).
 //
-// Pure (BuzzGUI.Interfaces' PatternEvent and BuzzNote are all it uses), so the converter, the export and their tests run on every
-// platform; the engine side (ClipStore) puts lanes into pattern columns and reads them back.
+// Pure (BuzzGUI.Interfaces' ClipEvent and BuzzNote are all it uses), so the converter, the export and their tests run on every
+// platform; the engine side (ClipStore) puts lanes into clip columns and reads them back.
 
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace BuzzGUI.Common
     /// <summary>The metadata keys of a lane (clips.md §5.2). Absent means what it means today.</summary>
     public static class ClipMeta
     {
-        /// <summary>The engine's own mark (PatternColumnCore.SessionAutomationKey): the engine plays this parameter column.</summary>
+        /// <summary>The engine's own mark (ClipColumnCore.SessionAutomationKey): the engine plays this parameter column.</summary>
         public const string SessionAutomation = "SessionAutomation";
         /// <summary>Rows per beat of the lane and the beats whose rows differ, "rpb=4;sub=3:6,7:3". View only: never changes a time.</summary>
         public const string Grid = "Grid";
@@ -39,8 +39,8 @@ namespace BuzzGUI.Common
         public const string NoteFixed = "note-fixed";               // a Note value the editor could not read, read as a MIDI note as the editor did
         public const string CcLaneConverted = "cc-lane-converted";  // a Pitch Wheel or CC lane on a track with no note lane: now controller events
         // Dropped (clips.md §7.1, D2 B).
-        public const string PxpSpDropped = "pxp-sp-dropped";        // PatternXP's own columns: trigger, effect, effect data (sub-pattern triggers)
-        public const string InputColumn = "input-column";           // a built-in pattern's connection amp and pan
+        public const string PxpSpDropped = "pxp-sp-dropped";        // PatternXP's own columns: trigger, effect, effect data (sub-clip triggers)
+        public const string InputColumn = "input-column";           // a built-in clip's connection amp and pan
         public const string CcLaneDropped = "cc-lane-dropped";      // a Pitch Wheel or CC lane on a track with a note lane (it throws in the editor's render)
         public const string ForeignDropped = "foreign-dropped";     // an editor's data that is not in a format we read
         public const string MachineMissing = "machine-missing";     // a column of a machine the song does not have
@@ -48,8 +48,8 @@ namespace BuzzGUI.Common
         public const string TrackDropped = "track-dropped";         // a column of a track the machine no longer has
         public const string MidiLaneOrphan = "midi-lane-orphan";    // a velocity, delay or cut lane with no note lane on its track
         public const string NoteInvalid = "note-invalid";           // a MIDI lane Note the editor could not turn into a MIDI note
-        public const string ClipMissing = "pattern-missing";     // data of a pattern the machine does not have
-        public const string EventPastEnd = "event-past-end";        // an event after the end of its pattern (the editor drops these as it loads them)
+        public const string ClipMissing = "pattern-missing";     // data of a clip the machine does not have
+        public const string EventPastEnd = "event-past-end";        // an event after the end of its clip (the editor drops these as it loads them)
         // The note-off events (clips.md §5.4).
         public const string OffExplicit = "off-explicit";           // an off with no note before it in the clip: an explicit note-off event on the Notes lane
         public const string OffNoteUnknown = "off-note-unknown";    // ... and the note it ends is not known (no ringing note before the clip): note 0
@@ -148,7 +148,7 @@ namespace BuzzGUI.Common
     public sealed class ClipContent
     {
         public string Name;
-        public int Length;                      // in ticks (the pattern's Length)
+        public int Length;                      // in ticks (the clip's Length)
         public int RowsPerBeat = 4;
         public List<ClipLane> Lanes = new List<ClipLane>();
 

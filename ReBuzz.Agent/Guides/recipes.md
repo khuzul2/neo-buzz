@@ -2,7 +2,7 @@
 
 Short step lists made of real tool calls, each one run headless in a test (`RecipeTests`) and checked for its result, so the calls below are known to work as written. Read the result of every step before the next; an error names the fix. Where a step says `r1`, use the render id the first `render` of the recipe returned.
 
-A recipe that says "Needs" starts from the machines and patterns an earlier recipe makes: run that one first, or have the same names in the song. Names (Bass, Line, Drums) are the recipes' own; use yours.
+A recipe that says "Needs" starts from the machines and clips an earlier recipe makes: run that one first, or have the same names in the song. Names (Bass, Line, Drums) are the recipes' own; use yours.
 
 ## Recipes
 
@@ -13,9 +13,9 @@ A sound you can measure: a synth, a preset, two notes, rendered and checked.
 1. `song_set(tempo_bpm=120)`
 2. `machine_add(gear="Neo Poly", name="Bass")`
 3. `preset_load(machine="Bass", preset="Bass — Classic Sub")`
-4. `pattern_create(machine="Bass", name="Line", length_beats=4)`
-5. `notes_write(machine="Bass", pattern="Line", notes=[{"pitch": "C2", "start": 0, "length": 1}, {"pitch": "G2", "start": 2, "length": 1}])`
-6. `arrangement_place(machine="Bass", pattern="Line", at=0)`
+4. `clip_create(machine="Bass", name="Line", length_beats=4)`
+5. `notes_write(machine="Bass", clip="Line", notes=[{"pitch": "C2", "start": 0, "length": 1}, {"pitch": "G2", "start": 2, "length": 1}])`
+6. `arrangement_place(machine="Bass", clip="Line", at=0)`
 7. `render(from=0, to=4)`
 8. `analyze(source="r1", metrics=["loudness", "peaks"])`
 
@@ -47,11 +47,11 @@ Result: the diff names `F1 cutoff`; after the restore the cutoff is back to the 
 
 ### arrange-a-section
 
-Needs: hear-a-bass. Name the sections, repeat the pattern, move the sound across the second one, hear it.
+Needs: hear-a-bass. Name the sections, repeat the clip, move the sound across the second one, hear it.
 
 1. `arrangement_markers(set=[{"name": "Intro", "at": 0}, {"name": "Main", "at": "3.1"}])`
-2. `arrangement_place(machine="Bass", pattern="Line", at=[4, 8])`
-3. `automation_write(machine="Bass", pattern="Line", param="F1 cutoff", points=[{"at": 0, "value": "300 Hz"}, {"at": 4, "value": "3 kHz"}])`
+2. `arrangement_place(machine="Bass", clip="Line", at=[4, 8])`
+3. `automation_write(machine="Bass", clip="Line", param="F1 cutoff", points=[{"at": 0, "value": "300 Hz"}, {"at": 4, "value": "3 kHz"}])`
 4. `arrangement_get()`
 5. `render(section="Main")`
 
@@ -62,12 +62,12 @@ Result: `arrangement_markers` answers with both markers, `arrangement_get` lists
 Needs: hear-a-bass. A Session View with an intro scene and a groove scene, launched live.
 
 1. `machine_add(gear="Neo Drums", name="Drums")`
-2. `pattern_create(machine="Drums", name="Beat", length_beats=4)`
-3. `notes_write(machine="Drums", pattern="Beat", notes=[{"pitch": "C2", "start": 0, "length": 0.25}, {"pitch": "C2", "start": 2, "length": 0.25}])`
+2. `clip_create(machine="Drums", name="Beat", length_beats=4)`
+3. `notes_write(machine="Drums", clip="Beat", notes=[{"pitch": "C2", "start": 0, "length": 0.25}, {"pitch": "C2", "start": 2, "length": 0.25}])`
 4. `session_scene_set(scene=1, name="Intro")`
 5. `session_scene_set(scene=2, name="Groove")`
-6. `session_clip_set(machine="Bass", scene=1, pattern="Line", quantization="Bar")`
-7. `session_clip_set(machine="Drums", scene=2, pattern="Beat", quantization="Bar")`
+6. `session_clip_set(machine="Bass", scene=1, clip="Line", quantization="Bar")`
+7. `session_clip_set(machine="Drums", scene=2, clip="Beat", quantization="Bar")`
 8. `session_get()`
 9. `session_launch(scene=2)`
 10. `session_launch(stop=true, immediate=true)`
@@ -103,9 +103,9 @@ One Dye Essence slot changed from the default engine to a struck bar, heard and 
 
 1. `machine_add(gear="Dye Essence", name="Dye")`
 2. `param_set(machine="Dye", changes=[{"param": "A engine", "value": "Modal"}, {"param": "A geometry", "value": "Bar"}, {"param": "A exciter", "value": "Struck"}, {"param": "A force", "value": "60%"}])`
-3. `pattern_create(machine="Dye", name="Hit", length_beats=4)`
-4. `notes_write(machine="Dye", pattern="Hit", notes=[{"pitch": "A3", "start": 0, "length": 2}])`
-5. `arrangement_place(machine="Dye", pattern="Hit", at=0)`
+3. `clip_create(machine="Dye", name="Hit", length_beats=4)`
+4. `notes_write(machine="Dye", clip="Hit", notes=[{"pitch": "A3", "start": 0, "length": 2}])`
+5. `arrangement_place(machine="Dye", clip="Hit", at=0)`
 6. `render(from=0, to=4, solo=["Dye"])`
 7. `analyze(source="r1", metrics=["peaks", "dynamics"])`
 8. `param_get(machine="Dye", params=["A engine", "A geometry"])`

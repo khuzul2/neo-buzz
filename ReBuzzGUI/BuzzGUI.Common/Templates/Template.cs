@@ -360,7 +360,7 @@ namespace BuzzGUI.Common.Templates
                     {
                         foreach (var s in Sequences)
                         {
-                            if (s.Machine == "Master") continue;    // TODO: paste master patterns and sequences if the song doesn't currently have them
+                            if (s.Machine == "Master") continue;    // TODO: paste master clips and sequences if the song doesn't currently have them
                             if (machineToReplace != null && s.Machine == sourceMachine.Name) continue;
 
                             var m = machinesbyoldname[s.Machine];

@@ -37,7 +37,7 @@ namespace WDE.ModernPatternEditor.Actions
 
         private Selection CreatePasteSelection()
         {
-            //int rpb = r.Bounds.Item1.PatternVM.DefaultRPB;
+            //int rpb = r.Bounds.Item1.ClipVM.DefaultRPB;
             Digit rangeStart = r.Bounds.Item1.Offset(0, 0);
             Digit rangeEnd = rangeStart;//.SetColumn(rangeStart.Column + clipboard.NumColumns);
             for (int i = 0; i < oldClipboard.NumColumns; i++)
@@ -45,7 +45,7 @@ namespace WDE.ModernPatternEditor.Actions
                 rangeEnd = rangeEnd.RightColumn;
             }
 
-            int startTime = rangeStart.ParameterColumn.GetDigitTime(rangeStart);// rangeStart.Beat * (rpb * PatternEvent.TimeBase) + rangeStart.TimeInBeat;
+            int startTime = rangeStart.ParameterColumn.GetDigitTime(rangeStart);// rangeStart.Beat * (rpb * ClipEvent.TimeBase) + rangeStart.TimeInBeat;
             int endTime = startTime + oldClipboard.RegionLenght;
             int targetBeat = (endTime - 1) / (ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase);
             int timeInBeat = (endTime - 1) % (ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase);

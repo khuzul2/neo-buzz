@@ -29,19 +29,19 @@ namespace ReBuzz.Agent
                 Description =
                     "Does what dragging a browser item or a file onto the Arrangement, the Session or the Machine View does, as one undo step. kind: machine or plugin (id = " +
                     "the gear's name, browser_search shows it), preset (id = the gear, preset = its name), audio (path or paths; or id \"wave:N\", a wave of the song), " +
-                    "midi (path to a .mid file), pattern (id \"Machine/Pattern\"). target.track = the machine of the track dropped on, or leave it out for empty space. " +
+                    "midi (path to a .mid file), clip (id \"Machine/Clip\"). target.track = the machine of the track dropped on, or leave it out for empty space. " +
                     "The rules: a generator or instrument plug-in on empty space is a new machine and track wired to Master (in the arrangement with an empty clip at at_beats), " +
                     "on a track it replaces that track's generator (connections kept); an effect needs a track and goes between the track's last machine and what it fed " +
                     "(a track that branches needs target.branch: the machine to follow); audio on empty space is a new Neo Audio track, on an audio track clips from at_beats " +
-                    "(one after another) or the slot (down the scenes), on Neo Sampler it loads the samples, on any other track a new audio track; a pattern on its own " +
+                    "(one after another) or the slot (down the scenes), on Neo Sampler it loads the samples, on any other track a new audio track; a clip on its own " +
                     "machine's track is a clip; a MIDI file on empty space is a new track with the notes (target.instrument, default Neo Poly), on an instrument's track the notes " +
-                    "in a new pattern at at_beats or in slot (the file's tempo and meter are only reported); a preset on empty space is a new track with that machine and the " +
+                    "in a new clip at at_beats or in slot (the file's tempo and meter are only reported); a preset on empty space is a new track with that machine and the " +
                     "preset, on a track of that machine it loads. plan=true says what it would do and changes nothing. " +
                     "Example: drop_item(view=\"arrangement\", kind=\"audio\", path=\"/music/loop.wav\", target={at_beats: 16}).",
                 Input = Object(null,
                     Req("view", String("Where it is dropped", "arrangement", "session", "machine")),
-                    Req("kind", String("What is dropped", "machine", "plugin", "preset", "audio", "midi", "pattern")),
-                    Opt("id", String("Gear name (machine, plugin, preset), \"Machine/Pattern\" (pattern) or \"wave:N\" (audio)")),
+                    Req("kind", String("What is dropped", "machine", "plugin", "preset", "audio", "midi", "clip")),
+                    Opt("id", String("Gear name (machine, plugin, preset), \"Machine/Clip\" (clip) or \"wave:N\" (audio)")),
                     Opt("path", String("An audio or MIDI file")),
                     Opt("paths", Array(String("An audio file"), "Several audio files: one after another (arrangement) or down the scenes (session)")),
                     Opt("preset", String("A preset's name (kind preset)")),
@@ -58,7 +58,7 @@ namespace ReBuzz.Agent
                     Req("action", String("What was (or would be) done")),
                     Req("message", String("In words")),
                     Opt("machine", String("The machine made, changed or loaded")),
-                    Opt("patterns", Array(String("A pattern"), "The clips made or placed"))),
+                    Opt("clips", Array(String("A clip"), "The clips made or placed"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -70,7 +70,7 @@ namespace ReBuzz.Agent
                             "session" => DropView.Session,
                             _ => DropView.Machine,
                         };
-                        if (!BrowserDragData.TryKind(c.RequiredString("kind"), out var kind)) throw new ToolError("kind: machine, plugin, preset, audio, midi or pattern.");
+                        if (!BrowserDragData.TryKind(c.RequiredString("kind"), out var kind)) throw new ToolError("kind: machine, plugin, preset, audio, midi or clip.");
                         var ids = new List<string>();
                         if (c.List("paths") is { } many) ids.AddRange(many.Select(n => n?.GetValue<string>()).Where(x => !string.IsNullOrWhiteSpace(x))!);
                         if (c.String("path") is { Length: > 0 } one) ids.Insert(0, one);
@@ -116,7 +116,7 @@ namespace ReBuzz.Agent
                         }
                         var o = new JsonObject { ["action"] = result.Action.ToString(), ["message"] = result.Message };
                         if (result.Machine != null) o["machine"] = result.Machine.Name;
-                        o["patterns"] = new JsonArray(result.Clips.Select(p => (JsonNode)p.Name).ToArray());
+                        o["clips"] = new JsonArray(result.Clips.Select(p => (JsonNode)p.Name).ToArray());
                         return o;
                     }, c.Cancellation);
                     return ToolResult.Ok((string)r["message"]!, r);

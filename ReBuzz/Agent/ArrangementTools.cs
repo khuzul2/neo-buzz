@@ -53,7 +53,7 @@ namespace ReBuzz.Agent
             var s = it.Spec;
             var o = new JsonObject
             {
-                ["pattern"] = it.Clip.Name,
+                ["clip"] = it.Clip.Name,
                 ["at"] = SongModel.Beats(core, it.Time),
                 ["ends"] = SongModel.Beats(core, it.End),
                 ["start_beats"] = SongModel.Beats(core, s.Start),
@@ -64,11 +64,11 @@ namespace ReBuzz.Agent
                     ["on"] = s.Loop,
                 },
             };
-            if (s.Id != 0) o["clip"] = s.Id;
+            if (s.Id != 0) o["placement"] = s.Id;
             if (s.Gain != 1.0) o["gain"] = Math.Round(s.Gain, 4);
             if (core.SessionLayout?.AudioOf(it.Clip) is { } a)
             {
-                // neo-audio.md (NA2): an audio clip's own settings (its pattern is its own; copies share the audio asset only).
+                // neo-audio.md (NA2): an audio clip's own settings (its clip is its own; copies share the audio asset only).
                 var audio = new JsonObject { ["warp"] = a.Warp, ["gain_db"] = Math.Round(a.GainDb, 3) };
                 if (a.FadeIn > 0) audio["fade_in_beats"] = Math.Round(a.FadeIn, 4);
                 if (a.FadeOut > 0) audio["fade_out_beats"] = Math.Round(a.FadeOut, 4);
@@ -83,21 +83,21 @@ namespace ReBuzz.Agent
             new(editor.Read(seq).Take(64).Select(i => (JsonNode)ClipJson(core, i)).ToArray());
 
         static string ClipList(ReBuzzCore core, List<ClipItem> items) =>
-            items.Count == 0 ? "The lane has no clips." : "Clips there: " + string.Join(", ", items.Take(12).Select(i =>
+            items.Count == 0 ? "The lane has no placements." : "Placements there: " + string.Join(", ", items.Take(12).Select(i =>
                 $"\"{i.Clip.Name}\" {NoteList.Fmt(SongModel.Beats(core, i.Time))}-{NoteList.Fmt(SongModel.Beats(core, i.End))}")) + (items.Count > 12 ? ", …" : "") + ".";
 
         static ClipItem FindClip(ReBuzzCore core, ClipEditor editor, ISequence seq, ToolContext c, string name)
         {
             var items = editor.Read(seq);
-            if (c.Int("clip") is int id)
-                return items.FirstOrDefault(i => i.Spec.Id == id) ?? throw new ToolError($"No clip {id} on {name}. " + ClipList(core, items));
+            if (c.Int("placement") is int id)
+                return items.FirstOrDefault(i => i.Spec.Id == id) ?? throw new ToolError($"No placement {id} on {name}. " + ClipList(core, items));
             if (c.Arguments["at"] != null)
             {
                 int t = SongModel.ParseTicks(core, c.Arguments["at"], "at");
                 return items.FirstOrDefault(i => i.Time <= t && t < i.End)
-                    ?? throw new ToolError($"No clip at beat {NoteList.Fmt(SongModel.Beats(core, t))} on {name}. " + ClipList(core, items));
+                    ?? throw new ToolError($"No placement at beat {NoteList.Fmt(SongModel.Beats(core, t))} on {name}. " + ClipList(core, items));
             }
-            throw new ToolError("Say which clip: clip=<its id, from arrangement_get> or at=<a position inside it>.");
+            throw new ToolError("Say which placement: placement=<its id, from arrangement_get> or at=<a position inside it>.");
         }
 
         static bool AudioMachine(IMachine m) => ReBuzz.Core.Session.SessionLayout.IsClipPlayer(m);
@@ -111,42 +111,42 @@ namespace ReBuzz.Agent
         {
             var core = host.Core;
             var clipSchema = Object(null,
-                Opt("clip", Integer("The clip's id (arrangement_get), when it has one")),
-                Req("pattern", String("Its pattern")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
-                Req("start_beats", Number("Where its first play starts in the pattern, beats")),
-                Req("loop", Object(null, Req("start_beats", Number("Loop start in the pattern")), Req("end_beats", Number("Loop end in the pattern")), Req("on", Boolean("Whether it loops")))),
+                Opt("placement", Integer("The placement's id (arrangement_get), when it has one")),
+                Req("clip", String("Its clip")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
+                Req("start_beats", Number("Where its first play starts in the clip, beats")),
+                Req("loop", Object(null, Req("start_beats", Number("Loop start in the clip")), Req("end_beats", Number("Loop end in the clip")), Req("on", Boolean("Whether it loops")))),
                 Opt("gain", Number("Volume, 0-1 (1 is not shown)")),
                 Opt("audio", Object(null, Req("warp", String("Warp mode")), Req("gain_db", Number("Gain, dB")), Opt("fade_in_beats", Number("Fade in")), Opt("fade_out_beats", Number("Fade out")),
-                    Opt("crossfade_beats", Number("The clip's audio goes on this long under the clip that follows (a crossfade)")), Opt("reverse", Boolean("Plays backwards")))));
+                    Opt("crossfade_beats", Number("The placement's audio goes on this long under the placement that follows (a crossfade)")), Opt("reverse", Boolean("Plays backwards")))));
 
             tools.Add(new ToolDef
             {
                 Name = "arrangement_clip",
                 Title = "Edit arrangement clips",
                 Description =
-                    "Edits the clips of a machine's lane in the arrangement, as the Arrange view's mouse and keys do. A clip is a pattern played from a place, " +
-                    "trimmed, looped or repeated. op: add (an existing pattern as a clip at `at`, length_beats long, default the pattern's), draw (a new empty " +
-                    "pattern as a clip, length_beats), move (to `to`, on lane to_lane), copy (to `to`, default right after it; an independent pattern, or " +
-                    "link=true the same one), trim (start and/or end, beats), loop (on=true/false), split (at split_at), join (with the clip that starts " +
-                    "where it ends), make_unique (a pattern of its own). Audio clips (Neo Audio tracks; each has a pattern of its own, copies share the audio only) " +
-                    "also take: fade (fade_in_beats, fade_out_beats), gain (gain_db), crossfade (length_beats: with the clip that starts where it ends; 0 removes it), " +
-                    "reverse (toggles), stretch (end: warps the audio to fill the clip up to there; not with warp Off or loop on) and consolidate (renders the clip, " +
-                    "or the audio clips between start and end, into a new audio asset and one plain clip; one tempo, the song's now). move and copy may go to another " +
-                    "Neo Audio machine (to_machine); split makes two clips with a pattern each. A clip moved or trimmed over an audio clip crossfades with it. " +
-                    "The clip is clip=<id> or at=<a position inside it>; lane is the number " +
-                    "arrangement_get shows (default the main lane). To delete a clip use arrangement_clear. One undo step. Example: " +
+                    "Edits the placements of a machine's lane in the arrangement, as the Arrange view's mouse and keys do. A placement is a clip played from a place, " +
+                    "trimmed, looped or repeated. op: add (an existing clip as a placement at `at`, length_beats long, default the clip's), draw (a new empty " +
+                    "clip as a placement, length_beats), move (to `to`, on lane to_lane), copy (to `to`, default right after it; an independent clip, or " +
+                    "link=true the same one), trim (start and/or end, beats), loop (on=true/false), split (at split_at), join (with the placement that starts " +
+                    "where it ends), make_unique (a clip of its own). Audio clips (Neo Audio tracks; each placement has a clip of its own, copies share the audio only) " +
+                    "also take: fade (fade_in_beats, fade_out_beats), gain (gain_db), crossfade (length_beats: with the placement that starts where it ends; 0 removes it), " +
+                    "reverse (toggles), stretch (end: warps the audio to fill the placement up to there; not with warp Off or loop on) and consolidate (renders the placement, " +
+                    "or the audio placements between start and end, into a new audio asset and one plain placement; one tempo, the song's now). move and copy may go to another " +
+                    "Neo Audio machine (to_machine); split makes two placements with a clip each. A placement moved or trimmed over an audio placement crossfades with it. " +
+                    "The placement is placement=<id> or at=<a position inside it>; lane is the number " +
+                    "arrangement_get shows (default the main lane). To delete a placement use arrangement_clear. One undo step. Example: " +
                     "arrangement_clip(op=\"trim\", machine=\"Bass\", at=\"2.1\", end=\"3.1\").",
                 Input = Object(null,
                     Req("op", String("What to do", "add", "draw", "move", "copy", "trim", "loop", "split", "join", "make_unique", "fade", "gain", "crossfade", "reverse", "stretch", "consolidate")),
                     Req("machine", String("The machine")),
                     Opt("lane", Integer("The machine's lane number (arrangement_get; default its first main lane)", 0)),
-                    Opt("clip", Integer("The clip's id")),
-                    Opt("at", Position("add/draw: where it starts. Others: a position inside the clip")),
-                    Opt("pattern", String("add: the pattern")),
+                    Opt("placement", Integer("The placement's id")),
+                    Opt("at", Position("add/draw: where it starts. Others: a position inside the placement")),
+                    Opt("clip", String("add: the clip")),
                     Opt("length_beats", Number("add/draw: its length, beats", 0.0001)),
                     Opt("to", Position("move/copy: the new start")),
                     Opt("to_lane", Integer("move/copy: another lane of the machine", 0)),
-                    Opt("link", Boolean("copy: play the same pattern (edits show in both) instead of a pattern of its own")),
+                    Opt("link", Boolean("copy: play the same clip (edits show in both) instead of a clip of its own")),
                     Opt("start", Position("trim: the clip now starts here (what plays there goes on playing)")),
                     Opt("end", Position("trim: the clip now ends here (with a loop it repeats to there)")),
                     Opt("on", Boolean("loop: whether the clip loops")),
@@ -158,7 +158,7 @@ namespace ReBuzz.Agent
                     Opt("start_at", Position("consolidate: start of the range (default the clip's start)")),
                     Opt("end_at", Position("consolidate: end of the range (default the clip's end)"))),
                 Output = Object(null, Req("machine", String("Machine")), Req("lane", Integer("The lane edited")), Req("op", String("What was done")), Req("done", String("What happened, in words")),
-                    Req("clips", Array(clipSchema, "The lane's clips now (the first 64)"))),
+                    Req("placements", Array(clipSchema, "The lane's placements now (the first 64)"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -181,7 +181,7 @@ namespace ReBuzz.Agent
                         {
                             case "add":
                             {
-                                var p = SongModel.Clip(m, c.RequiredString("pattern"));
+                                var p = SongModel.Clip(m, c.RequiredString("clip"));
                                 int len = c.Number("length_beats") is double lb ? Math.Max(1, SongModel.Ticks(core, lb)) : 0;
                                 Check(editor.Place(seq, p, Pos("at"), len));
                                 done = $"placed \"{p.Name}\"";
@@ -191,7 +191,7 @@ namespace ReBuzz.Agent
                             {
                                 if (c.Number("length_beats") is not double lb) throw new ToolError("draw needs length_beats.");
                                 Check(editor.Draw(seq, Pos("at"), Math.Max(1, SongModel.Ticks(core, lb)), out var made));
-                                done = $"drew a new pattern \"{made?.Name}\"";
+                                done = $"drew a new clip \"{made?.Name}\"";
                                 break;
                             }
                             case "move":
@@ -209,7 +209,7 @@ namespace ReBuzz.Agent
                                 int to = c.Arguments["to"] != null ? Pos("to") : op == "copy" ? it.End : throw new ToolError("move needs to.");
                                 var mode = op == "move" ? ClipEditor.CopyMode.Move : c.Bool("link") == true ? ClipEditor.CopyMode.Linked : ClipEditor.CopyMode.Independent;
                                 Check(editor.Move(it, target, to, mode));
-                                done = op == "move" ? "moved" : mode == ClipEditor.CopyMode.Linked && !editor.IsAudio(it.Clip) ? "copied (same pattern)" : "copied (a pattern of its own)";
+                                done = op == "move" ? "moved" : mode == ClipEditor.CopyMode.Linked && !editor.IsAudio(it.Clip) ? "copied (same clip)" : "copied (a clip of its own)";
                                 if (target != seq) { seq = target; m = (MachineCore)target.Machine; }
                                 break;
                             }
@@ -257,7 +257,7 @@ namespace ReBuzz.Agent
                             {
                                 var it = FindClip(core, editor, seq, c, name);
                                 Check(editor.MakeUnique(it));
-                                done = $"gave the clip a pattern of its own (a copy of \"{it.Clip.Name}\")";
+                                done = $"gave the placement a clip of its own (a copy of \"{it.Clip.Name}\")";
                                 break;
                             }
                             case "fade":
@@ -311,10 +311,10 @@ namespace ReBuzz.Agent
                         return new JsonObject
                         {
                             ["machine"] = m.Name, ["lane"] = LanesOf(core, m).IndexOf(seq), ["op"] = op, ["done"] = done,
-                            ["clips"] = ClipsJson(core, editor, seq),
+                            ["placements"] = ClipsJson(core, editor, seq),
                         };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} lane {r["lane"]}: {r["done"]}. {r["clips"]!.AsArray().Count} clip(s) on the lane now.", r);
+                    return ToolResult.Ok($"{r["machine"]} lane {r["lane"]}: {r["done"]}. {r["placements"]!.AsArray().Count} placement(s) on the lane now.", r);
                 },
             });
 
@@ -323,7 +323,7 @@ namespace ReBuzz.Agent
                 Name = "arrangement_lane",
                 Title = "Add or remove an arrangement lane",
                 Description =
-                    "Adds a lane to a machine's track in the arrangement, or removes an empty one. role: main (the default: pattern clips), take (a lane " +
+                    "Adds a lane to a machine's track in the arrangement, or removes an empty one. role: main (the default: clip clips), take (a lane " +
                     "recorded takes go to, for comping) or automation (a lane of automation clips). arrangement_get lists each machine's lanes with " +
                     "their numbers and roles. remove refuses a lane that still has clips unless remove_clips=true. One undo step. " +
                     "Example: arrangement_lane(op=\"add\", machine=\"Lead\", role=\"take\").",
@@ -342,7 +342,7 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         string op = c.RequiredString("op");
-                        if (SongModel.IsMaster(m)) throw new ToolError("Master has no arrangement lanes of its own to add; it plays patterns on its own lane (arrangement_place).");
+                        if (SongModel.IsMaster(m)) throw new ToolError("Master has no arrangement lanes of its own to add; it plays clips on its own lane (arrangement_place).");
                         string done;
                         if (op == "add")
                         {
@@ -435,11 +435,11 @@ namespace ReBuzz.Agent
                 Title = "Automation lanes in the arrangement",
                 Description =
                     "A parameter's movement over the song, as the Arrange view's automation lanes show it: automation clips on an automation lane, " +
-                    "the pattern columns of placed patterns, and tracker rows, with their overlaps. op: list (machine and param optional), " +
+                    "the clip columns of placed clips, and tracker rows, with their overlaps. op: list (machine and param optional), " +
                     "add_lane (shows the parameter's lane under the track), write (an automation clip from `from` to `to` holding `points`: " +
                     "at = a position in the song, value as automation_write takes it; linear ramps between points, or shape=step; a clip already there " +
                     "is edited), clear (removes the points between from and to; a clip wholly inside goes). Values outside the parameter's safe range are " +
-                    "refused unless allow_unsafe=true. To write inside one pattern use automation_write. One undo step. " +
+                    "refused unless allow_unsafe=true. To write inside one clip use automation_write. One undo step. " +
                     "Example: arrangement_automation(op=\"write\", machine=\"Pad\", param=\"F1 cutoff\", from=0, to=16, points=[{\"at\": 0, \"value\": \"300 Hz\"}, {\"at\": 16, \"value\": \"4 kHz\"}]).",
                 Input = Object(null,
                     Req("op", String("What to do", "list", "add_lane", "write", "clear")),
@@ -459,11 +459,11 @@ namespace ReBuzz.Agent
                         Req("machine", String("Machine")), Req("param", String("Parameter")), Opt("track", Integer("Track")),
                         Req("shown", Boolean("Its lane is shown under the track")),
                         Req("segments", Array(Object(null,
-                            Req("source", String("clip: an automation clip; pattern: a placed pattern's column; tracker: the Pattern tab's rows", "clip", "pattern", "tracker")),
-                            Req("pattern", String("Its pattern")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
+                            Req("source", String("automation: an automation clip; clip: a placed clip's column; tracker: the Clip tab's rows", "automation", "clip", "tracker")),
+                            Req("clip", String("Its clip")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
                             Req("points", Array(Object(null, Req("at", Number("Beats")), Req("value", String("Shown value")), Req("ramp", Boolean("Ramps to the next point"))), "Points it plays"))), "Where it moves")),
                         Req("overlaps", Integer("Places two writers set it at once"))), "Per parameter")),
-                    Opt("clip", Object(null, Req("pattern", String("The clip's pattern")), Req("lane", Integer("Its automation lane")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
+                    Opt("written", Object(null, Req("clip", String("The automation clip's name")), Req("lane", Integer("Its automation lane")), Req("at", Number("Start, beats")), Req("ends", Number("End, beats")),
                         Req("points", Integer("Points in it")))),
                     Opt("removed", Integer("clear: points removed")),
                     Opt("problems", Array(String("A note"), "Things to know"))),
@@ -477,7 +477,7 @@ namespace ReBuzz.Agent
                         "list" => r["lanes"]!.AsArray().Count == 0 ? "No automation in the arrangement." :
                             string.Join("; ", r["lanes"]!.AsArray().Select(l => $"{l!["machine"]} {l["param"]}: " + l["segments"]!.AsArray().Count + " place(s)")),
                         "add_lane" => $"Showing the {r["lanes"]![0]!["param"]} lane under {r["lanes"]![0]!["machine"]}.",
-                        "write" => $"Automation clip \"{r["clip"]!["pattern"]}\" from beat {r["clip"]!["at"]} to {r["clip"]!["ends"]} on lane {r["clip"]!["lane"]}, {r["clip"]!["points"]} point(s)." +
+                        "write" => $"Automation clip \"{r["written"]!["clip"]}\" from beat {r["written"]!["at"]} to {r["written"]!["ends"]} on lane {r["written"]!["lane"]}, {r["written"]!["points"]} point(s)." +
                                    (r["problems"]!.AsArray().Count > 0 ? " " + string.Join(" ", r["problems"]!.AsArray().Select(x => x!.GetValue<string>())) : ""),
                         _ => $"Removed {r["removed"]} point(s).",
                     };
@@ -516,8 +516,8 @@ namespace ReBuzz.Agent
                             pts.Add(new JsonObject { ["at"] = NoteList.Beats(s.ToSong(p.Time), tpb), ["value"] = lane.Param.Describe(p.Value), ["ramp"] = p.Ramp });
                         segs.Add(new JsonObject
                         {
-                            ["source"] = s.Source switch { AutoSource.AutomationClip => "clip", AutoSource.ClipColumn => "pattern", _ => "tracker" },
-                            ["pattern"] = s.Clip.Name,
+                            ["source"] = s.Source switch { AutoSource.AutomationClip => "automation", AutoSource.ClipColumn => "clip", _ => "tracker" },
+                            ["clip"] = s.Clip.Name,
                             ["at"] = NoteList.Beats(s.Start, tpb), ["ends"] = NoteList.Beats(s.End, tpb),
                             ["points"] = pts,
                         });
@@ -563,7 +563,7 @@ namespace ReBuzz.Agent
                     if (count == 0) continue;
                     if (s.Start >= from && s.End <= to && !HoldsOthers(s.Clip, auto.Parameter))
                     {
-                        // A clip wholly inside the range goes (its pattern stays), unless it moves other parameters too.
+                        // A clip wholly inside the range goes (its clip stays), unless it moves other parameters too.
                         var item = editor.Read(s.Sequence).FirstOrDefault(i => i.Time * unit == s.Start && ReferenceEquals(i.Clip, s.Clip));
                         if (item != null) { Check(editor.Delete(item)); removed += count; continue; }
                     }
@@ -630,9 +630,9 @@ namespace ReBuzz.Agent
             if (SongModel.Placements(core, clip).Count == 0) problems.Add("The clip isn't placed (unexpected).");
             return new JsonObject
             {
-                ["clip"] = new JsonObject
+                ["written"] = new JsonObject
                 {
-                    ["pattern"] = clip.Name,
+                    ["clip"] = clip.Name,
                     ["lane"] = LanesOf(core, mach).IndexOf(seg.Sequence),
                     ["at"] = SongModel.Beats(core, seg.Start / unit), ["ends"] = SongModel.Beats(core, seg.End / unit),
                     ["points"] = after?.Points.Count ?? newPoints.Count,
@@ -641,7 +641,7 @@ namespace ReBuzz.Agent
             };
         }
 
-        /// <summary>Whether the pattern has automation of a parameter other than <paramref name="parameter"/>.</summary>
+        /// <summary>Whether the clip has automation of a parameter other than <paramref name="parameter"/>.</summary>
         static bool HoldsOthers(IClip clip, IParameter parameter) =>
             clip.Columns.Any(col => col.Type == ClipColumnType.Parameter && col.Parameter != null && !ReferenceEquals(col.Parameter, parameter) && col.GetEvents(int.MinValue, int.MaxValue).Any());
 
@@ -653,7 +653,7 @@ namespace ReBuzz.Agent
         {
             ["take"] = t.Number,
             ["lane"] = LanesOf(core, t.Clip.Clip.Machine).IndexOf(t.Lane),
-            ["pattern"] = t.Clip.Clip.Name,
+            ["clip"] = t.Clip.Clip.Name,
             ["from"] = Math.Round(SongModel.Beats(core, t.Clip.Time), 4),
             ["to"] = Math.Round(SongModel.Beats(core, t.Clip.End), 4),
             ["kind"] = editor.IsAudio(t.Clip.Clip) ? "audio" : "midi",
@@ -690,7 +690,7 @@ namespace ReBuzz.Agent
                     Req("takes", Array(Object(null,
                         Req("take", Integer("Number")),
                         Req("lane", Integer("Lane number (arrangement_get)")),
-                        Req("pattern", String("Its pattern")),
+                        Req("clip", String("Its clip")),
                         Req("from", Number("Start, beats")),
                         Req("to", Number("End, beats")),
                         Req("kind", String("audio or midi")),
@@ -698,7 +698,7 @@ namespace ReBuzz.Agent
                     Opt("main", Array(Object(null,
                         Req("from", Number("Start, beats")),
                         Req("to", Number("End, beats")),
-                        Req("pattern", String("Pattern"))), "The main lane's clips")),
+                        Req("clip", String("Clip"))), "The main lane's clips")),
                     Opt("deleted", Integer("delete_unused: takes deleted"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
@@ -751,7 +751,7 @@ namespace ReBuzz.Agent
                         if (editor.MainLaneOf(m) is { } main)
                             o2["main"] = new JsonArray(editor.Read(main).Select(i => (JsonNode)new JsonObject
                             {
-                                ["from"] = Math.Round(SongModel.Beats(core, i.Time), 4), ["to"] = Math.Round(SongModel.Beats(core, i.End), 4), ["pattern"] = i.Clip.Name,
+                                ["from"] = Math.Round(SongModel.Beats(core, i.Time), 4), ["to"] = Math.Round(SongModel.Beats(core, i.End), 4), ["clip"] = i.Clip.Name,
                             }).ToArray());
                         if (deleted != null) o2["deleted"] = deleted;
                         return o2;

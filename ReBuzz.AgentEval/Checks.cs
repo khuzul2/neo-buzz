@@ -104,7 +104,7 @@ namespace ReBuzz.AgentEval
             var c = s.C;
             s.New(120);
             Recipes.Add(s, Recipes.Synth, "Keys", 0);
-            c.Ok("pattern_create", new JsonObject { ["machine"] = "Keys", ["name"] = "A", ["length_beats"] = 8 });
+            c.Ok("clip_create", new JsonObject { ["machine"] = "Keys", ["name"] = "A", ["length_beats"] = 8 });
             // Names, sharps and flats, MIDI numbers, a chord, sixteenths, a triplet, the extremes of velocity, a note to the very end.
             var written = new (object Pitch, double Start, double Length, int Velocity, int Midi)[]
             {
@@ -114,31 +114,31 @@ namespace ReBuzz.AgentEval
             };
             c.Ok("notes_write", new JsonObject
             {
-                ["machine"] = "Keys", ["pattern"] = "A",
+                ["machine"] = "Keys", ["clip"] = "A",
                 ["notes"] = new JsonArray(written.Select(n => (JsonNode)J.Note(n.Pitch, Math.Round(n.Start, 6), Math.Round(n.Length, 6), n.Velocity)).ToArray()),
             });
-            var read = J.Objects(c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A" })["notes"]).ToList();
+            var read = J.Objects(c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["clip"] = "A" })["notes"]).ToList();
             var expected = written.Select(n => (n.Midi, Start: Math.Round(n.Start, 6), Length: Math.Round(n.Length, 6), n.Velocity)).OrderBy(n => n.Start).ThenBy(n => n.Midi).ToList();
             var got = read.Select(n => ((int)J.Num(n["pitch"]), Start: J.Num(n["start"]), Length: J.Num(n["length"]), (int)J.Num(n["velocity"]))).ToList();
             r.Expect(got.Count == expected.Count, $"wrote {expected.Count} notes, read {got.Count}");
             for (int i = 0; i < Math.Min(got.Count, expected.Count); i++)
                 r.Expect(got[i] == expected[i], $"note {i}: wrote {expected[i]}, read {got[i]}");
             // What notes_read gives, notes_write takes, and reads back the same (rule 8).
-            c.Ok("notes_write", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A", ["notes"] = new JsonArray(read.Select(n => (JsonNode)n.DeepClone()).ToArray()), ["mode"] = "replace" });
-            var again = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A" })["notes"];
+            c.Ok("notes_write", new JsonObject { ["machine"] = "Keys", ["clip"] = "A", ["notes"] = new JsonArray(read.Select(n => (JsonNode)n.DeepClone()).ToArray()), ["mode"] = "replace" });
+            var again = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["clip"] = "A" })["notes"];
             r.Expect(JsonNode.DeepEquals(again, new JsonArray(read.Select(n => (JsonNode)n.DeepClone()).ToArray())), "writing back what notes_read gave changes the notes: " + again?.ToJsonString());
             // A range reads the notes that start in it.
-            var range = J.Objects(c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A", ["range_start"] = 1, ["range_end"] = 2 })["notes"]).ToList();
+            var range = J.Objects(c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["clip"] = "A", ["range_start"] = 1, ["range_end"] = 2 })["notes"]).ToList();
             r.Expect(range.Count == 2, $"notes_read from beat 1 to 2 gave {range.Count} notes, not 2 (F#3 at 1.25, Bb2 at 1.5)");
-            // And a copy of the pattern carries them all.
-            c.Ok("pattern_duplicate", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A", ["new_name"] = "B" });
-            var copy = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "B" })["notes"];
-            r.Expect(JsonNode.DeepEquals(copy, again), "pattern_duplicate changed the notes");
+            // And a copy of the clip carries them all.
+            c.Ok("clip_duplicate", new JsonObject { ["machine"] = "Keys", ["clip"] = "A", ["new_name"] = "B" });
+            var copy = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["clip"] = "B" })["notes"];
+            r.Expect(JsonNode.DeepEquals(copy, again), "clip_duplicate changed the notes");
             // They survive saving and opening the song.
             string song = Path.Combine(env.Folder, "notes.nbl");
             s.Save(song);
             s.Open(song);
-            var reopened = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A" })["notes"];
+            var reopened = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["clip"] = "A" })["notes"];
             r.Expect(JsonNode.DeepEquals(reopened, again), "the notes changed through song_save and song_open: " + reopened?.ToJsonString());
         }
 
@@ -428,20 +428,20 @@ namespace ReBuzz.AgentEval
                 ps[name] = perTrack;
             }
             s["params"] = ps;
-            var clips = ByName(c.Ok("pattern_list")["machines"]!, "machine");
-            s["patterns"] = clips;
+            var clips = ByName(c.Ok("clip_list")["machines"]!, "machine");
+            s["clips"] = clips;
             var notes = new JsonObject();
             foreach (var m in J.Objects(clips))
-                foreach (var p in J.Objects(m["patterns"]))
+                foreach (var p in J.Objects(m["clips"]))
                 {
-                    var args = new JsonObject { ["machine"] = J.Str(m["machine"]), ["pattern"] = J.Str(p["name"]) };
+                    var args = new JsonObject { ["machine"] = J.Str(m["machine"]), ["clip"] = J.Str(p["name"]) };
                     notes[$"{m["machine"]}/{p["name"]}"] = new JsonObject
                     {
                         ["notes"] = c.Ok("notes_read", args)["notes"]!.DeepClone(),
                         ["automation"] = c.Ok("automation_read", (JsonObject)args.DeepClone())["automation"]!.DeepClone(),
                     };
                 }
-            s["pattern_data"] = notes;
+            s["clip_data"] = notes;
             var arrangement = c.Ok("arrangement_get");
             order["lanes"] = J.Strings(J.Objects(arrangement["lanes"]).Select(l => J.Str(l["machine"])));
             arrangement["lanes"] = ByName(arrangement["lanes"]!, "machine");
@@ -529,23 +529,23 @@ namespace ReBuzz.AgentEval
                 ("machine_add", new JsonObject { ["gear"] = "Neo Verb", ["name"] = "Hall", ["insert_after"] = "Lead" }),
                 ("param_set", new JsonObject { ["machine"] = "Hall", ["changes"] = J.Changes(("Mix", "40%")) }),
                 ("connection_set", new JsonObject { ["changes"] = J.A(new JsonObject { ["from"] = "Pad", ["to"] = "Master", ["gain_db"] = -4, ["pan"] = 0.3 }) }),
-                ("pattern_create", new JsonObject { ["machine"] = "Lead", ["name"] = "Hook", ["length_beats"] = 8 }),
-                ("notes_write", new JsonObject { ["machine"] = "Lead", ["pattern"] = "Hook", ["notes"] = J.A(J.Note("E5", 0, 1), J.Note("D5", 1, 1), J.Note("C5", 2, 2)) }),
-                ("arrangement_place", new JsonObject { ["machine"] = "Lead", ["pattern"] = "Hook", ["at"] = J.A(0, 8) }),
-                ("notes_transform", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Riff", ["transforms"] = J.A(new JsonObject { ["op"] = "transpose", ["semitones"] = 2 }) }),
-                ("automation_write", new JsonObject { ["machine"] = "Pad", ["pattern"] = "P", ["param"] = "F1 cutoff", ["points"] = J.A(new JsonObject { ["at"] = 0, ["value"] = "300 Hz" }, new JsonObject { ["at"] = 8, ["value"] = "5000 Hz" }) }),
+                ("clip_create", new JsonObject { ["machine"] = "Lead", ["name"] = "Hook", ["length_beats"] = 8 }),
+                ("notes_write", new JsonObject { ["machine"] = "Lead", ["clip"] = "Hook", ["notes"] = J.A(J.Note("E5", 0, 1), J.Note("D5", 1, 1), J.Note("C5", 2, 2)) }),
+                ("arrangement_place", new JsonObject { ["machine"] = "Lead", ["clip"] = "Hook", ["at"] = J.A(0, 8) }),
+                ("notes_transform", new JsonObject { ["machine"] = "Bass", ["clip"] = "Riff", ["transforms"] = J.A(new JsonObject { ["op"] = "transpose", ["semitones"] = 2 }) }),
+                ("automation_write", new JsonObject { ["machine"] = "Pad", ["clip"] = "P", ["param"] = "F1 cutoff", ["points"] = J.A(new JsonObject { ["at"] = 0, ["value"] = "300 Hz" }, new JsonObject { ["at"] = 8, ["value"] = "5000 Hz" }) }),
                 ("arrangement_markers", new JsonObject { ["set"] = J.A(new JsonObject { ["name"] = "Intro", ["at"] = 0 }, new JsonObject { ["name"] = "Drop", ["at"] = "3.1" }) }),
                 ("machine_set", new JsonObject { ["machine"] = "Pad", ["mute"] = true }),
-                ("pattern_duplicate", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Riff", ["new_name"] = "Riff 2" }),
-                ("pattern_rename", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Riff 2", ["new_name"] = "Fill" }),
+                ("clip_duplicate", new JsonObject { ["machine"] = "Bass", ["clip"] = "Riff", ["new_name"] = "Riff 2" }),
+                ("clip_rename", new JsonObject { ["machine"] = "Bass", ["clip"] = "Riff 2", ["new_name"] = "Fill" }),
                 ("preset_load", new JsonObject { ["machine"] = "Pad", ["preset"] = "Pad — Glass" }),
                 ("machine_remove", new JsonObject { ["machines"] = J.A("Drive") }),
                 ("connect", new JsonObject { ["from"] = "Bass", ["to"] = "Hall", ["gain_db"] = -12 }),
                 ("disconnect", new JsonObject { ["from"] = "Pad", ["to"] = "Master" }),
-                ("session_clip_set", new JsonObject { ["machine"] = "Lead", ["scene"] = 2, ["pattern"] = "Hook" }),
+                ("session_clip_set", new JsonObject { ["machine"] = "Lead", ["scene"] = 2, ["clip"] = "Hook" }),
                 ("wave_import", new JsonObject { ["path"] = tone, ["name"] = "Tone", ["root_note"] = "E4" }),
                 ("arrangement_clear", new JsonObject { ["machine"] = "Bass", ["from"] = 8, ["to"] = 16 }),
-                ("pattern_delete", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Fill" }),
+                ("clip_delete", new JsonObject { ["machine"] = "Bass", ["clip"] = "Fill" }),
                 ("snapshot_restore", new JsonObject { ["name"] = "start", ["kind"] = "parameters" }),
             };
             int done = 0;

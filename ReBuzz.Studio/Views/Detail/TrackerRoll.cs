@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md P3b, clips.md §8 CU4): the piano roll of the detail panel. The Tracker and the piano roll are two views
-// of one pattern: this one shows the pattern's notes through SongNotes, the one reader and writer of a clip's notes, and edits them on the
-// song's history, one undo step a gesture. The pattern is the Tracker's: the page that holds both (PatternPage) hands it over, and the
+// of one clip: this one shows the clip's notes through SongNotes, the one reader and writer of a clip's notes, and edits them on the
+// song's history, one undo step a gesture. The clip is the Tracker's: the page that holds both (ClipPage) hands it over, and the
 // studio's selection follows it. A machine that takes no notes gets a message.
 //
 // Fork (daw-modes.md AR2): the same control is the arrangement's piano roll panel (songOnly: the notes the song keeps for the
@@ -95,7 +95,7 @@ namespace ReBuzz.Studio.Views.Detail
             tools.Children.Add(Tool("Vel +", $"Louder ({mod}+Up)", () => roll?.ChangeVelocity(8)));
             tools.Children.Add(Tool("Delete", "Delete the selected notes (Delete)", () => roll?.DeleteSelected()));
             followBox = StudioButtons.KeepFocus(new ToggleButton { Content = "Follow", IsChecked = true, Margin = new Thickness(0, 0, 6, 0) });
-            ToolTip.SetTip(followBox, "Scroll with the playhead while the pattern plays");
+            ToolTip.SetTip(followBox, "Scroll with the playhead while the clip plays");
             Avalonia.Automation.AutomationProperties.SetName(followBox, "Follow playhead");
             tools.Children.Add(followBox);
             tools.Children.Add(Tool("−", $"Zoom out ({mod}+wheel)", () => Zoom(0.8)));
@@ -218,7 +218,7 @@ namespace ReBuzz.Studio.Views.Detail
             return b;
         }
 
-        /// <summary>The roll showing the pattern now, or null (no pattern, or its machine has no Note column).</summary>
+        /// <summary>The roll showing the clip now, or null (no clip, or its machine has no Note column).</summary>
         public PianoRoll Roll => roll;
 
         /// <summary>The notes the roll shows (tests); null when it shows a message.</summary>
@@ -230,12 +230,12 @@ namespace ReBuzz.Studio.Views.Detail
 
         public ComboBox GridBox => gridBox;
 
-        /// <summary>What the roll says instead of notes (no pattern, no Note column), or null.</summary>
+        /// <summary>What the roll says instead of notes (no clip, no Note column), or null.</summary>
         public string Message => message.IsVisible ? message.Text : null;
 
         public string SummaryText => summary.Text;
 
-        /// <summary>Shows a pattern's notes (the Tracker's pattern), or says why there are none.</summary>
+        /// <summary>Shows a clip's notes (the Tracker's clip), or says why there are none.</summary>
         public void Show(IClip p)
         {
             if (roll != null && ReferenceEquals(clip, p) && source?.IsLive == true)
@@ -247,7 +247,7 @@ namespace ReBuzz.Studio.Views.Detail
             DropRoll();
             if (p == null)
             {
-                Say("No pattern. Choose one above, or make one with New pattern.");
+                Say("No clip. Choose one above, or make one with New clip.");
                 ShowEnvelopes();
                 return;
             }
@@ -257,10 +257,10 @@ namespace ReBuzz.Studio.Views.Detail
                 ShowEnvelopes();
                 if (songOnly)
                 {
-                    Say($"{p.Machine?.Name} takes no notes, so there is no piano roll for its patterns.");
+                    Say($"{p.Machine?.Name} takes no notes, so there is no piano roll for its clips.");
                     return;
                 }
-                Say($"{p.Machine?.Name} has no Note column and takes no MIDI notes, so there are no notes to draw here. Its pattern still plays what the Tracker holds.");
+                Say($"{p.Machine?.Name} has no Note column and takes no MIDI notes, so there are no notes to draw here. Its clip still plays what the Tracker holds.");
                 return;
             }
             message.IsVisible = false;
@@ -522,7 +522,7 @@ namespace ReBuzz.Studio.Views.Detail
         internal void Poll()
         {
             if (envelopes != null && IsEffectivelyVisible) envelopes.Refresh();
-            if (roll == null || !IsEffectivelyVisible) return;       // a roll that isn't shown doesn't read the pattern
+            if (roll == null || !IsEffectivelyVisible) return;       // a roll that isn't shown doesn't read the clip
             if (!source.IsLive)
             {
                 Show(clip);
@@ -751,10 +751,10 @@ namespace ReBuzz.Studio.Views.Detail
         // An edit of the notes ends the song-loop undo the roll was holding (the notes' undo comes first again).
         void OnSourceEdited() { loopUndoable = false; loopRedoable = false; RefreshGhosts(force: true); }
 
-        /// <summary>The song's tick where this pattern's first tick lies: its event that plays now, else its first in the song; null if it isn't in the song.</summary>
+        /// <summary>The song's tick where this clip's first tick lies: its event that plays now, else its first in the song; null if it isn't in the song.</summary>
         internal int? Anchor() => AnchorOf(core, clip);
 
-        /// <summary>Anchor for any pattern (the Tracker's bar rules use it too).</summary>
+        /// <summary>Anchor for any clip (the Tracker's bar rules use it too).</summary>
         internal static int? AnchorOf(ReBuzzCore core, IClip clip)
         {
             var song = core.Song;
@@ -776,7 +776,7 @@ namespace ReBuzz.Studio.Views.Detail
             return first;
         }
 
-        /// <summary>The bar length in ticks the song's list has where the pattern lies (the first bar's when it isn't in the song).</summary>
+        /// <summary>The bar length in ticks the song's list has where the clip lies (the first bar's when it isn't in the song).</summary>
         internal int BarLength() => BarLengthOf(core, clip);
 
         internal static int BarLengthOf(ReBuzzCore core, IClip clip) => Math.Max(1, core.SongMeter.GetBarLengthAt(Math.Max(0, AnchorOf(core, clip) ?? 0)));
@@ -815,7 +815,7 @@ namespace ReBuzz.Studio.Views.Detail
             axis?.Raise();
         }
 
-        /// <summary>The loop brace was dragged: the song's loop is these ticks of the pattern, one step on the song's history.</summary>
+        /// <summary>The loop brace was dragged: the song's loop is these ticks of the clip, one step on the song's history.</summary>
         void SetLoop(int startTick, int endTick)
         {
             int? a = Anchor();
@@ -865,7 +865,7 @@ namespace ReBuzz.Studio.Views.Detail
         internal bool CanUndoLoop => loopUndoable && core.SongCore?.ActionStack?.CanUndo == true;
         internal bool CanRedoLoop => loopRedoable && core.SongCore?.ActionStack?.CanRedo == true;
 
-        /// <summary>Moves the playhead with the pattern's own play position (Tracker's row marker), and the viewer with it when Follow is on.</summary>
+        /// <summary>Moves the playhead with the clip's own play position (Tracker's row marker), and the viewer with it when Follow is on.</summary>
         internal void UpdatePlayhead()
         {
             if (clip == null) return;

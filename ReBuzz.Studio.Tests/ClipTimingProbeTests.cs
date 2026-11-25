@@ -3,7 +3,7 @@
 // data, from its Work, after CallTick). This measures, to the sample, whether they land together.
 //
 // The probe machine (TestMachines/ClipProbe) puts what it is told on its output, so the audio shows where a value
-// arrived: the first sample where it changes. Per case a pattern holds one event, on a tick boundary (a row, at 4 rows
+// arrived: the first sample where it changes. Per case a clip holds one event, on a tick boundary (a row, at 4 rows
 // a beat the editor's row is a tick), and the engine renders it as a device's thread does (a WorkManager, calls of the
 // block size given). For each of
 //   - a classic state parameter (Level, set at the tick),
@@ -74,7 +74,7 @@ namespace ReBuzz.Studio.Tests
             return starts;
         }
 
-        /// <summary>The probe's pattern with one event on tick <paramref name="tick"/>, played by <paramref name="who"/>, and the song rendered in calls of <paramref name="block"/> frames.</summary>
+        /// <summary>The probe's clip with one event on tick <paramref name="tick"/>, played by <paramref name="who"/>, and the song rendered in calls of <paramref name="block"/> frames.</summary>
         static Landing Play(What what, Who who, int bpm, int tpb, int tick, int block, int ticks)
         {
             AudioHygieneTests.NewSong();
@@ -104,7 +104,7 @@ namespace ReBuzz.Studio.Tests
             finally { core.SongLoading = outer; }
             var machine = song.MachinesList.First(m => m.Name == "Probe");
             song.ConnectMachines(machine, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
-            Assert.That(machine.EditorMachine, Is.Not.Null, "the probe has a pattern editor (the Modern Pattern Editor)");
+            Assert.That(machine.EditorMachine, Is.Not.Null, "the probe has a clip editor (the Modern Pattern Editor)");
             machine.CreateClip("P", ticks);
             var clip = machine.Clips.First(p => p.Name == "P");
             var level = machine.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Level");
@@ -129,7 +129,7 @@ namespace ReBuzz.Studio.Tests
             }
             else
             {
-                // Migration on open: the editor's data becomes lanes of the pattern, and nothing else plays it.
+                // Migration on open: the editor's data becomes lanes of the clip, and nothing else plays it.
                 ReBuzz.Core.ClipOpen.Run(core, false);
                 int held = clip.Columns.Sum(c => c.GetEvents(int.MinValue, int.MaxValue).Count());
                 Assert.That(held, Is.GreaterThan(0), $"the lanes hold the data ({what}): {string.Join(", ", clip.Columns.Select(c => c.Type + ":" + c.GetEvents(int.MinValue, int.MaxValue).Count()))}");
@@ -204,7 +204,7 @@ namespace ReBuzz.Studio.Tests
             return landing;
         }
 
-        /// <summary>The Modern Pattern Editor's data (PatternEditorUtils: 255, version 1, size, patterns) for one pattern at 4 rows a beat.</summary>
+        /// <summary>The Modern Pattern Editor's data (ClipEditorUtils: 255, version 1, size, clips) for one clip at 4 rows a beat.</summary>
         internal static byte[] EditorData(string clip, int beats, IEnumerable<(string Machine, int Index, int Track, (int Time, int Value)[] Events)> columns)
         {
             var body = new MemoryStream();

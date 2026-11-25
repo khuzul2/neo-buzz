@@ -1,11 +1,11 @@
 // Fork (docs/specs/daw-modes.md AR4, §3.4, §4.3): automation lanes of the arrangement, as the views and
 // the agent read and edit them. A lane is one state parameter of a machine (a global one, or one track of a
 // track parameter). What writes that parameter along the timeline is read as segments:
-//   - automation clips: patterns on an automation-role lane (a sequence of the machine) whose engine
+//   - automation clips: clips on an automation-role lane (a sequence of the machine) whose engine
 //     automation column holds the parameter;
-//   - clip automation: the same engine columns in the patterns of the machine's other lanes, stitched along
-//     the timeline wherever those patterns play (each repeat of a looped clip shows again);
-//   - tracker columns: the pattern editor's parameter columns, as steps; read only.
+//   - clip automation: the same engine columns in the clips of the machine's other lanes, stitched along
+//     the timeline wherever those clips play (each repeat of a looped clip shows again);
+//   - tracker columns: the clip editor's parameter columns, as steps; read only.
 // Points are the column's events: a point whose Duration is above 0 is a ramp (a straight line to the next
 // point, S3), any other is a step. Editing is a ColumnEventsAction on the song's history, so undo and redo are
 // the song's. Overlaps (two sources writing one parameter in one place) are found, never hidden.
@@ -75,13 +75,13 @@ namespace ReBuzz.Core
 
     internal enum AutoSource { AutomationClip, ClipColumn, Tracker }
 
-    /// <summary>One point of a curve: a time in pattern time (1/240 tick), a value, and whether the line goes on to the next point (a ramp) or holds (a step).</summary>
+    /// <summary>One point of a curve: a time in clip time (1/240 tick), a value, and whether the line goes on to the next point (a ramp) or holds (a step).</summary>
     internal readonly record struct AutoPoint(int Time, int Value, bool Ramp);
 
     /// <summary>
     /// One writer of a parameter along the timeline: a clip's column as one placement plays it. Times of the
-    /// points are the pattern's (1/240 tick); <see cref="Start"/> and <see cref="End"/> are the placement's
-    /// in song time (1/240 tick); <see cref="PatternFrom"/> is the pattern time that plays at Start.
+    /// points are the clip's (1/240 tick); <see cref="Start"/> and <see cref="End"/> are the placement's
+    /// in song time (1/240 tick); <see cref="ClipFrom"/> is the clip time that plays at Start.
     /// </summary>
     internal sealed class AutoSegment
     {
@@ -93,12 +93,12 @@ namespace ReBuzz.Core
         public int End { get; init; }
         public int ClipFrom { get; init; }
         public IReadOnlyList<AutoPoint> Points { get; init; } = Array.Empty<AutoPoint>();
-        /// <summary>Whether the points can be edited here: engine columns of the parameter's own machine (tracker columns are the pattern editor's).</summary>
+        /// <summary>Whether the points can be edited here: engine columns of the parameter's own machine (tracker columns are the clip editor's).</summary>
         public bool Editable { get; init; }
 
         public int ClipTo => ClipFrom + (End - Start);
 
-        /// <summary>A pattern time in song time.</summary>
+        /// <summary>A clip time in song time.</summary>
         public int ToSong(int clipTime) => Start + (clipTime - ClipFrom);
 
         public int ToClip(int songTime) => ClipFrom + (songTime - Start);
@@ -111,7 +111,7 @@ namespace ReBuzz.Core
         {
             AutoSource.AutomationClip => $"automation clip {Clip?.Name}",
             AutoSource.ClipColumn => $"clip {Clip?.Name}",
-            _ => $"tracker, pattern {Clip?.Name}",
+            _ => $"tracker, clip {Clip?.Name}",
         };
 
         /// <summary>The value this writer gives at a song time: the last point at or before it, a ramp followed along its line; null before the first point or outside the placement.</summary>
@@ -146,7 +146,7 @@ namespace ReBuzz.Core
 
     internal static class AutomationMath
     {
-        /// <summary>The value on the line from (t0, v0) to (t1, v1) at t, rounded to the nearest whole value, halves away from zero: as the engine rounds a ramp (PatternColumnCore.TryRampValue).</summary>
+        /// <summary>The value on the line from (t0, v0) to (t1, v1) at t, rounded to the nearest whole value, halves away from zero: as the engine rounds a ramp (ClipColumnCore.TryRampValue).</summary>
         public static int Ramp(int t0, int v0, int t1, int v1, int t)
         {
             long span = (long)t1 - t0;
@@ -154,7 +154,7 @@ namespace ReBuzz.Core
             return v0 + (int)(rise >= 0 ? (rise + span / 2) / span : -((-rise + span / 2) / span));
         }
 
-        /// <summary>The value of a curve at a pattern time, as the engine sets it: null before its first point.</summary>
+        /// <summary>The value of a curve at a clip time, as the engine sets it: null before its first point.</summary>
         public static int? ValueAt(IReadOnlyList<AutoPoint> points, int time)
         {
             int at = -1;
@@ -245,7 +245,7 @@ namespace ReBuzz.Core
         internal static bool Same(IMachine machine, (int Group, int Index, IParameter Parameter, int Order, ClipEvent[] Events) t, ColumnKey key) =>
             t.Group == key.Group && t.Index == key.Index && t.Order == key.Track;
 
-        /// <summary>The engine automation columns of a pattern that hold a parameter (and track): the ones the song plays (S3), not the pattern editor's.</summary>
+        /// <summary>The engine automation columns of a clip that hold a parameter (and track): the ones the song plays (S3), not the clip editor's.</summary>
         internal static IEnumerable<ClipColumnCore> EngineColumns(IClip clip, IParameter parameter, int track)
         {
             foreach (var column in clip.Columns)
@@ -255,13 +255,13 @@ namespace ReBuzz.Core
             }
         }
 
-        /// <summary>The pattern editor's parameter columns: which parameter (group, index) and, for a track parameter, which track (the columns of one parameter come in track order).</summary>
+        /// <summary>The clip editor's parameter columns: which parameter (group, index) and, for a track parameter, which track (the columns of one parameter come in track order).</summary>
         internal static List<(int Group, int Index, IParameter Parameter, int Order, ClipEvent[] Events)> TrackerColumns(
             Dictionary<IClip, List<(int, int, IParameter, int, ClipEvent[])>> cache, IClip clip)
         {
             if (cache.TryGetValue(clip, out var known)) return known;
             var list = new List<(int, int, IParameter, int, ClipEvent[])>();
-            // CU3 (one store, one engine): where the engine plays every lane, the tracker's data is the pattern's unmarked parameter lanes (the
+            // CU3 (one store, one engine): where the engine plays every lane, the tracker's data is the clip's unmarked parameter lanes (the
             // editor's columns are views of them), so they are the one source: the editor is not read as well, which would list everything twice.
             if (ClipColumnCore.PlaysEveryLane)
             {
@@ -302,7 +302,7 @@ namespace ReBuzz.Core
             }
             catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException || ex is NullReferenceException || ex is KeyNotFoundException)
             {
-                // A pattern editor that can't be read shows nothing.
+                // A clip editor that can't be read shows nothing.
             }
             cache[clip] = list;
             return list;
@@ -403,7 +403,7 @@ namespace ReBuzz.Core
         static string Check(AutoSegment seg)
         {
             if (seg == null) return "There is nothing to edit here.";
-            if (!seg.Editable) return seg.Source == AutoSource.Tracker ? "These steps are the tracker's: edit them in the Pattern tab." : "This curve can't be edited from here.";
+            if (!seg.Editable) return seg.Source == AutoSource.Tracker ? "These steps are the tracker's: edit them in the Clip tab." : "This curve can't be edited from here.";
             return null;
         }
 
@@ -421,7 +421,7 @@ namespace ReBuzz.Core
             var param = AutomationParams.Find(seg.Clip.Machine, key);
             if (param == null) return "That parameter can't be automated.";
             int t = Math.Clamp(seg.ToClip(songTime), seg.ClipFrom, Math.Min(seg.ClipTo, seg.Clip.Length * Unit) - 1);
-            if (t < 0 || t >= seg.Clip.Length * Unit) return "That is outside the pattern.";
+            if (t < 0 || t >= seg.Clip.Length * Unit) return "That is outside the clip.";
             value = Math.Clamp(value, param.Min, param.Max);
             var now = Current(seg.Clip, key);
             var points = AutomationMath.PointsOf(now, true).Where(p => p.Time != t).ToList();
@@ -472,7 +472,7 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>Changes a placement's points with <paramref name="change"/> (it gets the points in pattern time and returns the ones to keep): one history step.</summary>
+        /// <summary>Changes a placement's points with <paramref name="change"/> (it gets the points in clip time and returns the ones to keep): one history step.</summary>
         public string Edit(AutoSegment seg, ColumnKey key, Func<List<AutoPoint>, List<AutoPoint>> change)
         {
             if (Check(seg) is { } why) return why;
@@ -511,9 +511,9 @@ namespace ReBuzz.Core
         }
 
         /// <summary>
-        /// Draws an automation clip for a parameter: a pattern of <paramref name="length"/> ticks on an automation lane (one is added
+        /// Draws an automation clip for a parameter: a clip of <paramref name="length"/> ticks on an automation lane (one is added
         /// when none is free), with a point at its start, and another at its end if the value differs (a ramp between them).
-        /// One step of the history. <paramref name="made"/> is the clip's pattern.
+        /// One step of the history. <paramref name="made"/> is the clip's clip.
         /// </summary>
         public string DrawClip(IMachine machine, ColumnKey key, int start, int length, int startValue, int endValue, out IClip made, bool withPoints = true)
         {

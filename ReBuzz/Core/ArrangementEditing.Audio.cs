@@ -1,6 +1,6 @@
 // Fork (docs/specs/neo-audio.md, NA2): what the arrangement does with audio clips, as the studio's mouse and keys and the agent's tools edit them.
-// An audio clip is a clip of a Neo Audio track whose pattern is an audio clip (SessionLayout.IsAudioClip). Every arrangement audio clip has a pattern of its
-// own and its own settings (warp, gain, fades, reverse); copies share the audio asset only. Each edit is one undo step (the pattern copies, the settings and
+// An audio clip is a clip of a Neo Audio track whose clip is an audio clip (SessionLayout.IsAudioClip). Every arrangement audio clip has a clip of its
+// own and its own settings (warp, gain, fades, reverse); copies share the audio asset only. Each edit is one undo step (the clip copies, the settings and
 // the events go in one group). Nothing here runs on the audio thread.
 
 using System;
@@ -20,14 +20,14 @@ namespace ReBuzz.Core
 
         double BeatsOf(int ticks) => ticks / (double)Math.Max(1, core.TPB);
 
-        /// <summary>Whether the pattern is an audio clip (of a Neo Audio machine, with audio settings).</summary>
+        /// <summary>Whether the clip is an audio clip (of a Neo Audio machine, with audio settings).</summary>
         public bool IsAudio(IClip clip) => clip?.Machine != null && Layout?.IsAudioClip(clip) == true;
 
-        /// <summary>The audio settings of a clip's pattern (a copy), or null.</summary>
+        /// <summary>The audio settings of a clip's clip (a copy), or null.</summary>
         public SessionDocument.AudioSettings AudioOf(IClip clip) => IsAudio(clip) ? Layout.AudioOf(clip) : null;
 
         /// <summary>
-        /// A pattern of its own for an audio clip, on <paramref name="target"/> (the source's machine, or another Neo Audio machine): the
+        /// A clip of its own for an audio clip, on <paramref name="target"/> (the source's machine, or another Neo Audio machine): the
         /// settings are copied, the audio asset is the same one. Part of the caller's undo group. Null when it can't be made.
         /// </summary>
         internal IClip CloneAudioClip(IClip source, IMachine target)
@@ -152,13 +152,13 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>Every clip of the arrangement that plays a pattern (one, for an audio clip: each has a pattern of its own; an older song may share).</summary>
+        /// <summary>Every clip of the arrangement that plays a clip (one, for an audio clip: each has a clip of its own; an older song may share).</summary>
         public List<ClipItem> ClipsOf(IClip clip) =>
             clip?.Machine == null ? new List<ClipItem>()
                 : Song.Sequences.Where(q => q.Machine == clip.Machine).SelectMany(q => Read(q)).Where(i => ReferenceEquals(i.Clip, clip)).ToList();
 
         /// <summary>
-        /// Reverse: the audio plays backwards. The part of the audio the clip plays stays the same (mirrored in the pattern), so reversing
+        /// Reverse: the audio plays backwards. The part of the audio the clip plays stays the same (mirrored in the clip), so reversing
         /// a trimmed clip reverses what it plays.
         /// </summary>
         public string Reverse(ClipItem item)
@@ -187,7 +187,7 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>Reverse for a pattern by name (the agent's audio_clip_set): its clips in the arrangement are mirrored too; a pattern with none has its settings mirrored.</summary>
+        /// <summary>Reverse for a clip by name (the agent's audio_clip_set): its clips in the arrangement are mirrored too; a clip with none has its settings mirrored.</summary>
         public string ReverseClip(IClip clip)
         {
             if (!IsAudio(clip)) return "Only audio clips reverse.";
@@ -197,7 +197,7 @@ namespace ReBuzz.Core
             return null;
         }
 
-        /// <summary>Switches the pattern's reverse and mirrors its start and loop markers (ticks into the pattern) so the same audio is meant.</summary>
+        /// <summary>Switches the clip's reverse and mirrors its start and loop markers (ticks into the clip) so the same audio is meant.</summary>
         void MirrorSettings(IClip clip)
         {
             int p = Math.Max(1, clip.Length);
@@ -218,7 +218,7 @@ namespace ReBuzz.Core
 
         /// <summary>
         /// Alt + right edge: the audio is warped to fill the clip's new length (it ends at <paramref name="newEnd"/>): the whole audio's tempo,
-        /// markers and the pattern's length and regions scale by the same factor, so what the clip plays now plays over the new length and
+        /// markers and the clip's length and regions scale by the same factor, so what the clip plays now plays over the new length and
         /// stays in time with the song. Not for a clip with warp off (it plays at its own speed) or with its loop on (its edge repeats the loop).
         /// </summary>
         public string Stretch(ClipItem item, int newEnd)
@@ -237,7 +237,7 @@ namespace ReBuzz.Core
                 if (Uses(clip) > 1)
                 {
                     clip = CloneAudioClip(clip, clip.Machine);
-                    if (clip == null) { result = "The pattern couldn't be copied."; return; }
+                    if (clip == null) { result = "The clip couldn't be copied."; return; }
                 }
                 int oldClipLength = Math.Max(1, clip.Length);
                 double f = newLength / (double)Math.Max(1, s.Length);
@@ -262,7 +262,7 @@ namespace ReBuzz.Core
                     LoopEnd = s.LoopEnd > 0 ? Math.Max(1, (int)Math.Round(s.LoopEnd * g)) : 0,
                 };
                 newClipLength = Math.Max(newClipLength, spec.Start + newLength);
-                Layout.SetAudio(clip, a);                       // the audio's tempo, and so the pattern's length (set again below to the exact factor)
+                Layout.SetAudio(clip, a);                       // the audio's tempo, and so the clip's length (set again below to the exact factor)
                 Layout.SetClipSettings(clip, settings);
                 if (clip.Length != newClipLength)
                     core.SongCore.ActionStack.Do(new SessionClipLengthAction(Layout, clip, newClipLength));
@@ -284,7 +284,7 @@ namespace ReBuzz.Core
             {
                 var s = item.Spec;
                 var own = CloneAudioClip(item.Clip, item.Clip.Machine);
-                if (own == null) { result = "The pattern couldn't be copied."; return; }
+                if (own == null) { result = "The clip couldn't be copied."; return; }
                 var plan = new Plan(this);
                 plan.Remove(item);
                 plan.Write(item.Sequence, s.CutRight(at));
@@ -302,7 +302,7 @@ namespace ReBuzz.Core
         /// <summary>
         /// Renders what the audio clips of a lane play between two ticks (warp, loops, fades, crossfades, gain, reverse) into a new audio
         /// asset, and puts one clip of it there instead of them. It is rendered at the song's tempo as it is now (a tempo change inside the
-        /// range isn't followed). One undo step. <paramref name="made"/> is the new clip's pattern.
+        /// range isn't followed). One undo step. <paramref name="made"/> is the new clip's clip.
         /// </summary>
         public string Consolidate(ISequence lane, int from, int to, out IClip made)
         {

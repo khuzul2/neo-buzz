@@ -86,7 +86,7 @@ namespace ReBuzz.Core.Actions.GraphActions
             else
             {
                 string peName = m.ClipEditorDLL != null ? m.ClipEditorDLL.Name : null;
-                // Delete machine action saves patterns and editor data
+                // Delete machine action saves clips and editor data
                 deleteMachinesAction = new DeleteMachinesAction(buzz, new List<IMachine>() { m }, this.dispatcher, this.engineSettings);
                 createMachinesAction = new CreateMachineAction(buzz, machine, instrument, null, null, peName, null, m.TrackCount, m.Position.Item1, m.Position.Item2);
             }
@@ -142,7 +142,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                         float x = machine.Position.Item1;
                         float y = machine.Position.Item2;
 
-                        // Save pattern information, and the clips' lanes (the editor data holds no events: they are columns in the store)
+                        // Save clip information, and the clips' lanes (the editor data holds no events: they are columns in the store)
                         var clips = machine.Clips.ToArray();
                         var lanes = clips.ToDictionary(p => p.Name, p => EngineColumns.Capture(p));
 
@@ -173,10 +173,10 @@ namespace ReBuzz.Core.Actions.GraphActions
 
                         var nameAfterCreation = newMachine.Name; // Save name for undo
 
-                        // Pattern editor expects to have data linked to the old machine, so do some renaming before creating patterns
+                        // Clip editor expects to have data linked to the old machine, so do some renaming before creating clips
                         buzz.RenameMachine(newMachine as MachineCore, oldMachineName);
 
-                        // Create patterns
+                        // Create clips
                         var songMachines = buzz.SongCore.MachinesList.Cast<IMachine>().ToList();
                         foreach (var p in clips)
                         {
@@ -263,10 +263,10 @@ namespace ReBuzz.Core.Actions.GraphActions
                             //foreach (var eventItem in seq.Value)
                             //{
                             //    var seqEvent = eventItem.Value;
-                            //    // Get pattern
-                            //    var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == seqEvent.PatternName);
+                            //    // Get clip
+                            //    var clip = machine.ClipsList.FirstOrDefault(p => p.Name == seqEvent.ClipName);
                             //    // Create new seqence event
-                            //    SequenceEvent sequenceEvent = new SequenceEvent(seqEvent.Type, pattern, seqEvent.Span);
+                            //    SequenceEvent sequenceEvent = new SequenceEvent(seqEvent.Type, clip, seqEvent.Span);
                             //    seqAdded.SetEvent(eventItem.Key, sequenceEvent);
                             //}
                         }
