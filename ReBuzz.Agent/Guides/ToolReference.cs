@@ -23,7 +23,7 @@ namespace ReBuzz.Agent.Guides
             ("Machines and wiring", new[] { "gear_list", "machine_find", "machine_list", "machine_add", "machine_remove", "machine_swap", "machine_set", "machine_describe", "machine_data_import", "machine_clone", "machine_group", "machine_tracks", "machine_latency", "machine_attributes", "machine_command", "connect", "disconnect", "connection_set" }),
             ("Parameters, presets and snapshots", new[] { "param_*", "machine_pin", "preset_*", "snapshot_*", "modulate", "modulation_*" }),
             ("Neo Patch", new[] { "patch_*" }),
-            ("Patterns and notes", new[] { "pattern_*", "notes_*", "theory" }),
+            ("Patterns and notes", new[] { "pattern_*", "notes_*", "clip_get", "theory" }),
             ("Arrangement and automation", new[] { "arrangement_*", "automation_*", "clip_envelope", "takes" }),
             ("Session View and live play", new[] { "session_*", "transport", "midi_play", "track_input", "meters_read", "machine_readings" }),
             ("Render and analysis", new[] { "render", "analyze", "analyze_mix", "compare", "plot", "target_build", "eq_fit" }),

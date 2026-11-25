@@ -1,11 +1,12 @@
-// Fork (docs/specs/daw-modes.md S4, D3 A): the notes of a classic Buzz machine, one that takes
-// notes in its Note track parameter rather than as MIDI. They live in the pattern's Note
-// columns, a voice per track (here the engine-played columns the agent writes for such
-// machines, mcp-server.md §12.2; the Modern Pattern Editor's own Note columns come with S7), and
-// are edited with tracker rules: a note per track at a time, so a note that needs more tracks
-// than the machine has is refused, with the reason. A note keeps its track while it moves; a new
-// one takes the lowest free track. Velocity goes to the machine's velocity track parameter when
-// it has one. Each edit is one undo step of the song's history.
+// Fork (docs/specs/daw-modes.md S4, D3 A; clips.md §5.3, CU4): the notes of a machine that takes
+// notes in its Note track parameter rather than as MIDI. They live in the clip's Note and velocity
+// lanes, a voice per track (every lane of the parameter and track, whoever wrote it: the tracker's, a
+// take's, the agent's; StoreLanes), and are edited with tracker rules: a note per track at a time, so
+// a note that needs more tracks than the machine has is refused, with the reason. A note keeps its
+// track while it moves; a new one takes the lowest free track. Velocity goes to the machine's velocity
+// track parameter when it has one. Each edit is one undo step of the song's history. The agent asks
+// for more tracks when a chord needs them (AllowMoreTracks): the notes are then given tracks again
+// as a whole and the machine's track count is raised in the same step.
 
 using System;
 using System.Collections.Generic;
@@ -16,14 +17,15 @@ using ReBuzz.Core.Session;
 
 namespace ReBuzz.Core.Notes
 {
-    internal class TrackerColumnNotes : NoteSourceBase
+    internal sealed class TrackerColumnNotes : NoteSourceBase
     {
-        protected readonly ReBuzzCore buzz;
-        protected readonly IPattern pattern;
-        protected readonly IParameter noteParameter;
-        protected readonly IParameter velocityParameter;
+        readonly ReBuzzCore buzz;
+        readonly IPattern pattern;
+        readonly IParameter noteParameter;
+        readonly IParameter velocityParameter;
+        List<string> raised;
 
-        protected TrackerColumnNotes(ReBuzzCore buzz, IPattern pattern, IParameter note, IParameter velocity)
+        TrackerColumnNotes(ReBuzzCore buzz, IPattern pattern, IParameter note, IParameter velocity)
         {
             this.buzz = buzz;
             this.pattern = pattern;
@@ -39,7 +41,7 @@ namespace ReBuzz.Core.Notes
         }
 
         /// <summary>The Note track parameter and the velocity one (as the agent finds them), or nulls.</summary>
-        protected static (IParameter Note, IParameter Velocity) Parameters(IPattern pattern)
+        static (IParameter Note, IParameter Velocity) Parameters(IPattern pattern)
         {
             var groups = pattern?.Machine?.ParameterGroups;
             if (groups == null || groups.Count < 3) return (null, null);
@@ -54,21 +56,41 @@ namespace ReBuzz.Core.Notes
         public override IPattern Pattern => pattern;
 
         /// <summary>The tracks the machine has now.</summary>
-        protected int Tracks => Math.Max(1, pattern.Machine.TrackCount);
+        int Tracks => Math.Max(1, pattern.Machine.TrackCount);
 
-        protected int PatternTime => Math.Max(1, pattern.Length) * PatternEvent.TimeBase;
+        int PatternTime => Math.Max(1, pattern.Length) * PatternEvent.TimeBase;
 
         (int Min, int Max)? VelocityRange => velocityParameter is { } v ? (v.MinValue, v.MaxValue) : null;
 
-        protected ColumnKey NoteKey(int track) => new ColumnKey(2, noteParameter.IndexInGroup, track);
+        ColumnKey NoteKey(int track) => new ColumnKey(2, noteParameter.IndexInGroup, track);
 
         ColumnKey VelocityKey(int track) => new ColumnKey(2, velocityParameter.IndexInGroup, track);
 
-        protected virtual List<PatternEvent> Events(ColumnKey key) =>
-            SessionLayout.ColumnFor(pattern, key, create: false)?.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToList() ?? new List<PatternEvent>();
+        static List<PatternEvent> EventsOf(IPattern pattern, ColumnKey key) => StoreLanes.Events(pattern, key);
+
+        List<PatternEvent> Events(ColumnKey key) => EventsOf(pattern, key);
+
+        /// <summary>The agent's way: a chord that needs more tracks than the machine has raises its track count (up to what it can have), and the problems list says so.</summary>
+        public TrackerColumnNotes AllowMoreTracks(List<string> problems)
+        {
+            raised = problems;
+            return this;
+        }
+
+        /// <summary>The length of a row in pattern time (1/240 tick), from the lane's Grid; a tick when it has none.</summary>
+        public override int RowTime
+        {
+            get
+            {
+                foreach (var lane in StoreLanes.All(pattern, NoteKey(0)))
+                    if (lane.Metadata.TryGetValue(BuzzGUI.Common.ClipMeta.Grid, out var grid) && BuzzGUI.Common.ClipGrid.TryParse(grid, out int rpb, out _) && rpb > 0)
+                        return Math.Max(1, PatternEvent.TimeBase * 4 / rpb);
+                return ClipNotes.TimeBase;
+            }
+        }
 
         /// <summary>The tracks that have Note events: the machine's, and any beyond them still holding notes.</summary>
-        protected virtual int TracksWithColumns()
+        int TracksWithColumns()
         {
             int n = Tracks;
             foreach (var c in pattern.Columns)
@@ -76,11 +98,8 @@ namespace ReBuzz.Core.Notes
             return n;
         }
 
-        /// <summary>A note as this store can keep it (the tracker's rows are on a grid); the engine's columns keep any time.</summary>
-        protected virtual ClipNote Fit(ClipNote n) => n;
-
-        /// <summary>The changes made, as one undo step of this store's history; null when done, else why not.</summary>
-        protected virtual string Commit(List<ColumnEventsAction.Change> changes)
+        /// <summary>The changes made, as one undo step of the song's history; null when done, else why not.</summary>
+        string Commit(List<ColumnEventsAction.Change> changes)
         {
             buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, pattern, changes));
             buzz.SetModifiedFlag();
@@ -117,7 +136,6 @@ namespace ReBuzz.Core.Notes
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
             var notes = Read();
-            if (added.Count > 0) added = added.Select(Fit).ToList();
             // The removed notes' tracks: a note that moves (removed and added at the same place in the lists) keeps its track.
             var freed = new List<int>();
             foreach (var r in removed)
@@ -127,24 +145,48 @@ namespace ReBuzz.Core.Notes
                 if (i >= 0) notes.RemoveAt(i);
             }
             int tracks = Tracks;
-            bool Free(int track, ClipNote n) => !notes.Any(o => o.Track == track && o.Note.Time < n.End && n.Time < o.Note.End);
-            for (int k = 0; k < added.Count; k++)
-            {
-                var n = added[k];
+            foreach (var n in added)
                 if (TrackNotes.ToBuzz(n.Note) < 0)
                     return $"{ClipNotes.Name(n.Note)} is above what {pattern.Machine.Name} takes in its tracks ({BuzzGUI.Common.NoteNames.Name(119)} is the highest a Buzz track takes).";
-                int track = removed.Count == added.Count && freed[k] >= 0 && freed[k] < tracks && Free(freed[k], n) ? freed[k] : -1;
-                for (int t = 0; t < tracks && track < 0; t++)
-                    if (Free(t, n)) track = t;
-                if (track < 0)
-                    return $"{pattern.Machine.Name} plays a note per track and has {tracks} track{(tracks == 1 ? "" : "s")}: " +
-                           $"{ClipNotes.Name(n.Note)} at {n.Time / (double)PatternEvent.TimeBase:0.##} ticks needs one more at once.";
-                notes.Add((n, track));
+            if (raised != null)
+            {
+                // The agent's way: all the notes get tracks again, and the machine gets the tracks they need.
+                foreach (var n in added) notes.Add((n, -1));
+                var all = notes.Select(n => new NoteEvent(n.Note.Time, n.Note.Duration, n.Note.Note, n.Note.Velocity)).OrderBy(n => n, Comparer<NoteEvent>.Create(NoteList.Order)).ToList();
+                var (given, needed) = TrackNotes.Allocate(all);
+                var machine = (MachineCore)pattern.Machine;
+                int most = Math.Max(machine.DLL.Info.MinTracks, machine.DLL.Info.MaxTracks);
+                if (needed > most)
+                    return $"{machine.Name} ({machine.DLL.Name}) plays a note per track and has at most {most} tracks, but these notes need {needed} at once. " +
+                           "Write fewer notes at once (shorter notes, or a chord split across two machines).";
+                if (needed > machine.TrackCount)
+                {
+                    raised.Add($"{machine.Name} plays a note per track: raised its tracks from {machine.TrackCount} to {needed} for the chords.");
+                    buzz.SongCore.ActionStack.Do(new BuzzGUI.Common.Actions.MachineActions.SetTrackCountAction(machine, needed));
+                    tracks = machine.TrackCount;
+                }
+                notes = all.Select((n, i) => (new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity), given[i])).ToList();
+                tracks = Math.Max(tracks, needed);
+            }
+            else
+            {
+                bool Free(int track, ClipNote n) => !notes.Any(o => o.Track == track && o.Note.Time < n.End && n.Time < o.Note.End);
+                for (int k = 0; k < added.Count; k++)
+                {
+                    var n = added[k];
+                    int track = removed.Count == added.Count && freed[k] >= 0 && freed[k] < tracks && Free(freed[k], n) ? freed[k] : -1;
+                    for (int t = 0; t < tracks && track < 0; t++)
+                        if (Free(t, n)) track = t;
+                    if (track < 0)
+                        return $"{pattern.Machine.Name} plays a note per track and has {tracks} track{(tracks == 1 ? "" : "s")}: " +
+                               $"{ClipNotes.Name(n.Note)} at {n.Time / (double)PatternEvent.TimeBase:0.##} ticks needs one more at once.";
+                    notes.Add((n, track));
+                }
             }
 
             // Each track's Note events (and velocities) from its notes, changed where they differ.
-            var all = notes.Select(n => new NoteEvent(n.Note.Time, n.Note.Duration, n.Note.Note, n.Note.Velocity)).ToList();
-            var events = TrackNotes.Events(all, notes.Select(n => n.Track).ToArray(), PatternTime, PatternEvent.TimeBase, VelocityRange);
+            var list = notes.Select(n => new NoteEvent(n.Note.Time, n.Note.Duration, n.Note.Note, n.Note.Velocity)).ToList();
+            var events = TrackNotes.Events(list, notes.Select(n => n.Track).ToArray(), PatternTime, PatternEvent.TimeBase, VelocityRange);
             var changes = new List<ColumnEventsAction.Change>();
             for (int t = 0, n = Math.Max(tracks, TracksWithColumns()); t < n; t++)
             {

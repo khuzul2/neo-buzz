@@ -886,6 +886,10 @@ namespace ReBuzz.Core
                     var buzz = graph.Buzz as ReBuzzCore;
                     buzz.MachineManager.CreatePatternCopy(EditorMachine, newp, p);
                 }
+                // Fork (clips.md §8, CU4): the copy has the original's lanes: the clip's data is its columns in the store, whatever its editor copied.
+                // (The editor copies its view; a copy that already has columns, made by a caller, is left as it is.)
+                if (newp.Columns.Count == 0 && p.Columns.Count > 0)
+                    EngineColumns.Copy(p, newp, ((graph.Buzz as ReBuzzCore)?.SongCore?.MachinesList ?? new List<MachineCore>()).Cast<IMachine>().ToList());
                 // Fork (0.4.1): events and UI after releasing AudioLock.
                 PatternAdded?.Invoke(newp);
                 PropertyChanged.Raise(this, "Patterns");

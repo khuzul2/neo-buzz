@@ -308,7 +308,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
             Assert.That(page.IsRollMode, Is.True);
             var tabRoll = page.Roll;
-            Assert.That(tabRoll.Lane, Is.EqualTo(TrackerLane.SongNotes), "the Tracker holds no notes and the song does");
+            Assert.That(tabRoll.IsSongLane, Is.True, "the song's notes, the one store the Tracker shows");
             Assert.That(tabRoll.Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64 }), "the same notes");
 
             // An edit there is a step of the song's history and shows in the arrangement's roll.

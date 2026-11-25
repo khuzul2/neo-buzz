@@ -144,14 +144,7 @@ namespace ReBuzz.Gallery
                 foreach (int n in chords[c].Take(3)) pad.Add((c * Bar, Bar, n, 80));
             s.Chords = Pattern(s.Pad, "Chords", 4 * Bar, pad.ToArray());
 
-            // Onto the Pattern View's note lanes, where the pattern editor shows them; Hook stays in its clip (the piano roll's).
-            foreach (var p in new[] { s.Beat, s.Fill, s.Break, s.LineA, s.LineB, s.Answer, s.Arp, s.Chords })
-            {
-                if (p == null) continue;
-                var track = song.SequencesList.FirstOrDefault(q => q.Machine == p.Machine);
-                string problem = track == null ? "no track" : layout.MoveNotesToPatternView(track, p);
-                if (problem != null) s.Problems.Add($"{p.Machine.Name} {p.Name}: {problem}");
-            }
+            // (The notes are in the clips' store already: the Pattern View's Notes lanes and the piano roll show the same ones.)
 
             // The arrangement: 16 bars.
             void Place(IPattern p, params int[] bars)

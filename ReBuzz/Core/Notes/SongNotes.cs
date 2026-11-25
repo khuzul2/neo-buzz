@@ -1,5 +1,6 @@
-// Fork (docs/specs/daw-modes.md AR2): the song's notes of a pattern, in the store the machine plays. The arrangement's piano roll
-// and the Pattern tab's both open this source, so they edit the same notes the Session View's clip plays:
+// Fork (docs/specs/daw-modes.md AR2; clips.md §8, CU4): the song's notes of a pattern, in the store the machine plays: the one reader and
+// writer of a clip's notes. The tracker's roll, the Session View, the arrangement, the agent, drops and the import and export all use it,
+// so they read and edit the same notes the clip plays:
 //  - a machine that takes its notes in its tracks (a tracker, a native synth: its Note track parameter only, no MidiNote; the
 //    Pedal synths took notes that way until U6 gave them MIDI) has them in the pattern's engine-played Note columns
 //    (TrackerColumnNotes, D3 A);
@@ -18,16 +19,22 @@ namespace ReBuzz.Core.Notes
 {
     internal static class SongNotes
     {
-        /// <summary>The pattern's note source as the machine plays it, or null when the machine takes no notes (an effect, Master).</summary>
-        public static INoteSource For(ReBuzzCore buzz, IPattern pattern)
+        /// <summary>
+        /// The pattern's note source as the machine plays it, or null when the machine takes no notes (an effect, Master). The one reader
+        /// and writer of a clip's notes (clips.md §8): <paramref name="route"/> ("midi" or "tracks", the agent's input argument) overrides
+        /// what the machine's keyboard decides.
+        /// </summary>
+        public static INoteSource For(ReBuzzCore buzz, IPattern pattern, string route = null)
         {
             if (buzz == null || pattern?.Machine is not MachineCore machine || machine.DLL?.Info == null) return null;
             if (machine.DLL.Info.Type == MachineType.Master) return null;
+            if (route == "midi") return new MidiColumnNotes(buzz, pattern);
+            if (route == "tracks") return TrackerColumnNotes.For(buzz, pattern);
             // How the machine takes notes is what its keyboard decides (KeyboardRoute, the agent's rule): a managed machine with
             // MidiNote takes MIDI whatever an older manifest says; one that has a Note track parameter and no MIDI plays its tracks.
-            var route = KeyboardRoute.For(machine);
-            if (route.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, pattern) is { } tracker) return tracker;
-            if (route.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, pattern);
+            var kb = KeyboardRoute.For(machine);
+            if (kb.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, pattern) is { } tracker) return tracker;
+            if (kb.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, pattern);
             var manifest = SongModel.Manifest(machine);
             if (machine.DLL.Info.Type == MachineType.Generator || manifest?.Notes != null) return new MidiColumnNotes(buzz, pattern);
             return null;

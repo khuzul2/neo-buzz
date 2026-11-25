@@ -142,8 +142,9 @@ namespace ReBuzz.Core.Actions.GraphActions
                         float x = machine.Position.Item1;
                         float y = machine.Position.Item2;
 
-                        // Save pattern information
+                        // Save pattern information, and the clips' lanes (the editor data holds no events: they are columns in the store)
                         var patterns = machine.Patterns.ToArray();
+                        var lanes = patterns.ToDictionary(p => p.Name, p => EngineColumns.Capture(p));
 
                         // Save sequences and events
                         List<Tuple<int, List<Tuple<int, SequenceEvent>>>> oldSeqs = new List<Tuple<int, List<Tuple<int, SequenceEvent>>>>();
@@ -176,9 +177,12 @@ namespace ReBuzz.Core.Actions.GraphActions
                         buzz.RenameMachine(newMachine as MachineCore, oldMachineName);
 
                         // Create patterns
+                        var songMachines = buzz.SongCore.MachinesList.Cast<IMachine>().ToList();
                         foreach (var p in patterns)
                         {
                             newMachine.CreatePattern(p.Name, p.Length);
+                            var made = newMachine.Patterns.FirstOrDefault(q => q.Name == p.Name);
+                            if (made != null && made.Columns.Count == 0) lanes[p.Name].RestoreInto(made, songMachines);
                         }
 
                         foreach (var seq in oldSeqs)

@@ -3,9 +3,9 @@
 // tab will show the same control on other stores. A source is one pattern's notes in one store:
 //  - SessionClipNotes: a session clip's MIDI column, on the Session View's own undo history;
 //  - MidiColumnNotes: a pattern's engine MIDI column, on the song's undo history;
-//  - TrackerColumnNotes: a classic machine's Note columns, edited with tracker rules (D3 A:
-//    a note per track, so no more notes at once than the machine has tracks);
-//  - EditorPreviewNotes: what a pattern editor exports (PatternEditorMachineMIDIEvents), read only.
+//  - TrackerColumnNotes: the Note and velocity lanes of a machine that takes notes in its tracks, edited with tracker rules (D3 A:
+//    a note per track, so no more notes at once than the machine has tracks).
+// SongNotes.For chooses; every reader and writer of notes (the rolls, the Session, the Arrangement, the agent, drops) goes through it (CU4).
 
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,9 @@ namespace ReBuzz.Core.Notes
 
         /// <summary>The pattern's length in pattern time (1/240 tick).</summary>
         int Length { get; }
+
+        /// <summary>The length of a row of the tracker's grid in pattern time, for the roll's grid (a tick when the store has no rows).</summary>
+        int RowTime { get; }
 
         /// <summary>Null when the notes can be edited now, else why not, in words for the user.</summary>
         string WhyNotEditable { get; }
@@ -58,6 +61,8 @@ namespace ReBuzz.Core.Notes
         public virtual bool IsLive => Pattern is PatternCore p && !p.IsDeleted && p.Machine?.Graph?.Buzz?.Song?.Machines.Contains(p.Machine) == true;
 
         public abstract List<ClipNote> Notes();
+
+        public virtual int RowTime => ClipNotes.TimeBase;
 
         public virtual int Length => SessionLayout.ClipLengthOf(Pattern);
 

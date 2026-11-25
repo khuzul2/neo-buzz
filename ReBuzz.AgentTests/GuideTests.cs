@@ -180,6 +180,8 @@ namespace ReBuzz.AgentTests
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
             // EV1 (daw-modes.md §8.8: ReBuzz/Agent/ClipEnvelopeTools.cs)
+            // CU4 (clips.md §8: ReBuzz/Agent/ClipTools.cs)
+            ["clip_get"] = new[] { "machine", "pattern", "scene", "lane", "clip", "at" },
             ["clip_envelope"] = new[] { "op", "machine", "pattern", "scene", "lane", "clip", "at", "param", "track", "points", "shape", "replace", "from", "to", "allow_unsafe" },
             // NA4b (neo-audio.md "Takes and comping": ReBuzz/Agent/ArrangementTools.cs)
             ["takes"] = new[] { "op", "machine", "take", "from", "to", "ranges" },
