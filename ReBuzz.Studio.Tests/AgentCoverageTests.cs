@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Tests
 
         static int Steps => Call("history_list")["total"]!.GetValue<int>();
 
-        static JsonArray Clips(JsonObject r) => r["clips"]!.AsArray();
+        static JsonArray Clips(JsonObject r) => r["placements"]!.AsArray();
 
         static JsonObject Lane(string machine, int lane = 0)
         {
@@ -160,7 +160,7 @@ namespace ReBuzz.Studio.Tests
 
             // Refusals say where the clips are and what to do.
             Assert.That(Err("arrangement_clip", Args(("op", "split"), ("machine", "Bass"), ("at", 0), ("split_at", 500))), Does.Contain("Split inside the clip"));
-            Assert.That(Err("arrangement_clip", Args(("op", "loop"), ("machine", "Bass"), ("at", 90), ("on", true))), Does.Contain("No clip at beat 90").And.Contain("Verse"));
+            Assert.That(Err("arrangement_clip", Args(("op", "loop"), ("machine", "Bass"), ("at", 90), ("on", true))), Does.Contain("No placement at beat 90").And.Contain("Verse"));
             Assert.That(Err("arrangement_clip", Args(("op", "trim"), ("machine", "Bass"), ("at", 0))), Does.Contain("start and/or end"));
             Assert.That(Err("arrangement_clip", Args(("op", "move"), ("machine", "Bass"), ("at", 0), ("to", 4), ("to_lane", 7))), Does.Contain("lane"));
             Assert.That(Err("arrangement_clip", Args(("op", "join"), ("machine", "Bass"), ("at", 0))), Does.Contain("No clip starts where this one ends"));
@@ -205,13 +205,13 @@ namespace ReBuzz.Studio.Tests
             int steps = Steps;
             var written = Call("arrangement_automation", Args(("op", "write"), ("machine", "Bass"), ("param", param.Name), ("from", 0), ("to", 8), ("points", Points(lo, hi))));
             Assert.That(Steps, Is.EqualTo(steps + 1), "one undo step, the lane and the clip included");
-            Assert.That(written["clip"]!["points"]!.GetValue<int>(), Is.EqualTo(2));
+            Assert.That(written["written"]!["points"]!.GetValue<int>(), Is.EqualTo(2));
             Assert.That(Lane("Bass", 0)["role"]!.GetValue<string>(), Is.EqualTo("automation"), "the clip is on an automation lane");
 
             var list = Call("arrangement_automation", Args(("op", "list"), ("machine", "Bass")))["lanes"]!.AsArray();
             Assert.That(list, Has.Count.EqualTo(1));
             var seg = list[0]!["segments"]![0]!;
-            Assert.That(seg["source"]!.GetValue<string>(), Is.EqualTo("clip"));
+            Assert.That(seg["source"]!.GetValue<string>(), Is.EqualTo("automation"));
             Assert.That(seg["points"]!.AsArray(), Has.Count.EqualTo(2));
             Assert.That(seg["points"]![0]!["ramp"]!.GetValue<bool>(), Is.True, "linear: a ramp to the next point");
 
@@ -615,7 +615,7 @@ namespace ReBuzz.Studio.Tests
             var lanes = got["lanes"]!.AsArray();
             Assert.That(lanes.Any(l => l!["kind"]!.GetValue<string>() == "notes" && l["events"]!.GetValue<int>() == 1), Is.True, "the Notes lane");
             var noteLanes = lanes.Where(l => l!["param"]?.GetValue<string>() == noteParameter.Name).ToList();
-            Assert.That(noteLanes.Select(l => l!["source"]!.GetValue<string>()).OrderBy(x => x), Is.EqualTo(new[] { "automation", "clip" }), "the tracker's lane and the take's");
+            Assert.That(noteLanes.Select(l => l!["source"]!.GetValue<string>()).OrderBy(x => x), Is.EqualTo(new[] { "automation", "editor" }), "the tracker's lane and the take's");
             Assert.That(got["view"]!["placements"]!.GetValue<int>(), Is.EqualTo(0));
 
             // The view: a lane's rows and mute are kept with the lane.

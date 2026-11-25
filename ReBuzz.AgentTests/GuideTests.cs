@@ -419,6 +419,7 @@ namespace ReBuzz.AgentTests
             foreach (Match m in Regex.Matches(text, @"`([a-z][a-z0-9_]*)`"))
             {
                 string w = m.Groups[1].Value;
+                if (w == "clip_db") continue; // Neo Clipper's reading, not a clip tool
                 if (KnownTools.ContainsKey(w) || (w.Contains('_') && Areas.Contains(w.Split('_')[0]))) yield return w;
             }
         }

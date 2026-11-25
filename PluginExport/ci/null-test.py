@@ -154,7 +154,7 @@ CHORD = [{"pitch": "C3", "start": 0, "length": 4}, {"pitch": "G3", "start": 0, "
          {"pitch": "A#3", "start": 4, "length": 3}, {"pitch": "F4", "start": 4, "length": 3}]
 
 
-def pattern(machine):
+def make_clip(machine):
     call("clip_create", machine=machine, name="A", length_beats=8)
     check(call("notes_write", machine=machine, clip="A", notes=CHORD)[0], f"notes on {machine}")
     call("arrangement_place", machine=machine, clip="A", at=[0])
@@ -164,17 +164,17 @@ NATIVE = "Native"
 outs = [NATIVE]          # the machines whose output is probed
 if INSTR:
     check(call("machine_add", gear=spec.get("gear", args.plugin), name=NATIVE)[0], f"native {args.plugin}")
-    pattern(NATIVE)
+    make_clip(NATIVE)
     call("connect", **{"from": NATIVE, "to": "Master"})
     for nm, plugin in (("ClapP", clap), ("VstP", vst3)):
         if not plugin: continue
         ok, _, _ = call("machine_add", gear=host_gear, plugin=plugin, name=nm)
         check(ok, f"machine_add {nm} ({plugin})")
         if ok:
-            pattern(nm); call("connect", **{"from": nm, "to": "Master"}); outs.append(nm)
+            make_clip(nm); call("connect", **{"from": nm, "to": "Master"}); outs.append(nm)
 else:
     check(call("machine_add", gear="Neo Poly", name="Src")[0], "Neo Poly source")
-    pattern("Src")
+    make_clip("Src")
     check(call("machine_add", gear=spec.get("gear", args.plugin), name=NATIVE, insert_after="Src")[0], f"native {args.plugin} after the source")
     for nm, plugin in (("ClapF", clap), ("VstF", vst3)):
         if not plugin: continue

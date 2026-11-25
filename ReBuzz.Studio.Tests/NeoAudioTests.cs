@@ -201,8 +201,8 @@ namespace ReBuzz.Studio.Tests
             var s = imported["structuredContent"]!.AsObject();
             string machine = (string)s["machine"], clip = (string)s["clip"];
             Assert.That((int)s["slot"], Is.EqualTo(2));
-            Assert.That((string)s["clip"]["warp"], Is.EqualTo("Pro"), "a new clip starts in Pro");
-            Assert.That((double)s["clip"]["audio"]["seconds"], Is.EqualTo(2).Within(0.05));
+            Assert.That((string)s["settings"]["warp"], Is.EqualTo("Pro"), "a new clip starts in Pro");
+            Assert.That((double)s["settings"]["audio"]["seconds"], Is.EqualTo(2).Within(0.05));
             Assert.That(core.AudioAssets.Count, Is.EqualTo(1));
 
             var set = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["clip"] = clip, ["warp"] = "Complex", ["transpose"] = -3, ["detune"] = 20, ["gain_db"] = -6, ["loop"] = false, ["tempo_bpm"] = 90 });

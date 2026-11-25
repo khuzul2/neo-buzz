@@ -195,11 +195,11 @@ namespace ReBuzz.Studio.Views.Detail
         // ------------------------------------------------------------------ the clip
 
         /// <summary>Shows a clip's envelopes: the parameters that hold data in it, those added, and <paramref name="focus"/>. Null hides the stack.</summary>
-        public void Show(IClip clip, ColumnKey? focus = null)
+        public void Show(IClip shown, ColumnKey? focus = null)
         {
-            if (!ReferenceEquals(clip, clip))
+            if (!ReferenceEquals(shown, clip))
             {
-                clip = clip;
+                clip = shown;
                 if (chosen != null && !ReferenceEquals(chosen.Machine, clip?.Machine)) SetChosen(null);
             }
             if (clip?.Machine == null || AutomationParams.List(clip.Machine).Count == 0)

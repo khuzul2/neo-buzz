@@ -439,7 +439,7 @@ namespace ReBuzz.Studio.Tests
             }
             string before = Snap();
             var fade = Clip("fade", new JsonObject { ["fade_in_beats"] = 1.0, ["fade_out_beats"] = 2.0 });
-            Assert.That((double)fade["clips"]![0]!["audio"]!["fade_in_beats"]!, Is.EqualTo(1).Within(1e-6));
+            Assert.That((double)fade["placements"]![0]!["audio"]!["fade_in_beats"]!, Is.EqualTo(1).Within(1e-6));
             Clip("gain", new JsonObject { ["gain_db"] = -6.0 });
             Clip("reverse", new JsonObject());
             string done = Snap();

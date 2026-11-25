@@ -828,7 +828,7 @@ namespace ReBuzz.Agent
                                 var editor = new ClipEditor(core);
                                 var why = editor.Comp(take, from, to, main);
                                 if (why != null)
-                                    throw new ToolError(why + " " + ClipList(core, editor.Read(take)).Replace("Clips there", "The take lane's clips"));
+                                    throw new ToolError(why + " " + ClipList(core, editor.Read(take)).Replace("Placements there", "The take lane's placements"));
                                 written = LanesOf(core, m).IndexOf(main);
                                 break;
                             }
