@@ -275,10 +275,10 @@ namespace ReBuzz.Studio.Platform
             catch (Exception e) { Say("the short render threw: " + e.Message); }
         }
 
-        // The song saved as .nbl and as .bmx and loaded again: every slot value and the plug-in's own state come back equal.
+        // The song saved as .nbl and loaded again: every slot value and the plug-in's own state come back equal.
         static async Task LoadSongFormats(StudioHost host, PluginEditorController controller, PluginEditorMode want, string instrument)
         {
-            foreach (string ext in new[] { ".nbl", ".bmx" })
+            foreach (string ext in new[] { ".nbl" })
             {
                 string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "export-check-" + Environment.ProcessId + ext);
                 var finished = new System.Threading.ManualResetEventSlim();
@@ -327,7 +327,7 @@ namespace ReBuzz.Studio.Platform
         // needs the UI thread. The song is saved and loaded back on the UI thread, with a watchdog on another one.
         static async Task LoadSong(StudioHost host, IMachine machine, PluginEditorController controller, PluginEditorMode want)
         {
-            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gui-check-" + Environment.ProcessId + ".bmxml");
+            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "gui-check-" + Environment.ProcessId + ".nbl");
             var finished = new System.Threading.ManualResetEventSlim();
             var watchdog = new System.Threading.Thread(() =>
             {

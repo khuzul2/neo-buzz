@@ -263,6 +263,7 @@ namespace NeoBuzz.Plug
                     Refresh();
                     ReadOutputs();
                     Bind();
+                    ReadNoteNames();
                     Interlocked.Increment(ref Revision);
                     Log($"loaded {entry.Format} \"{entry.Name}\" at {rate} Hz ({PlugNative.np_param_count(plugin)} parameters, {CountBound()} bound, latency {latency}), {PlugPlacement.Label(place).ToLowerInvariant()}" +
                         (ServerPid > 0 ? $" (server {ServerPid})" : "") + $"; {why}");
@@ -302,6 +303,79 @@ namespace NeoBuzz.Plug
 
         public bool EditorOpen => editor != null;
 
+        // --- Note names (docs/specs/daw-modes.md §8.9, NM1) ---------------------------------------------------
+        // What the plug-in calls its keys (a drum plug-in's pads): CLAP's note-name extension, VST3's program pitch names. Read on the main
+        // thread (PlugMain) when it opens, loads state, or says they changed (np_poll's PollNoteNames), then kept as an immutable array the UI
+        // reads without a lock. The version moves only when the names do.
+
+        readonly struct NoteName
+        {
+            public readonly int Key, Channel;
+            public readonly string Name;
+            public NoteName(int key, int channel, string name) { Key = key; Channel = channel; Name = name; }
+        }
+
+        static readonly NoteName[] noNames = Array.Empty<NoteName>();
+        NoteName[] noteNames = noNames;
+        int noteNameVersion;
+        readonly byte[] noteNameBuf = new byte[PlugNative.NoteNameSize * 512];
+
+        /// <summary>Changes whenever the plug-in's note names do. Any thread.</summary>
+        public int NoteNameVersion => Volatile.Read(ref noteNameVersion);
+
+        /// <summary>Raised (on PlugMain) after the names changed.</summary>
+        public event Action NoteNamesChanged;
+
+        /// <summary>The plug-in's named keys for a MIDI channel (-1: all), as the studio's note map reads them. Any thread; null when it names none.</summary>
+        public IReadOnlyList<NoteMapEntry> ReadNoteMap(int channel)
+        {
+            var names = Volatile.Read(ref noteNames);
+            if (names.Length == 0) return null;
+            var list = new List<NoteMapEntry>(names.Length);
+            var seen = new HashSet<int>();
+            foreach (var n in names)
+            {
+                if (channel >= 0 && n.Channel >= 0 && n.Channel != channel) continue;
+                if (!seen.Add(n.Key)) continue;
+                list.Add(new NoteMapEntry(n.Key, n.Name));
+            }
+            return list;
+        }
+
+        /// <summary>Reads the names again (PlugMain, the plug-in open). Raises NoteNamesChanged when they differ.</summary>
+        void ReadNoteNames()
+        {
+            NoteName[] now = noNames;
+            if (plugin != IntPtr.Zero && !Missing && !Crashed)
+            {
+                try
+                {
+                    int n = Math.Min(PlugNative.np_note_names(plugin, noteNameBuf, 512), 512);
+                    if (n > 0)
+                    {
+                        now = new NoteName[n];
+                        for (int i = 0; i < n; i++)
+                        {
+                            int o = i * PlugNative.NoteNameSize;
+                            int key = BitConverter.ToInt32(noteNameBuf, o), ch = BitConverter.ToInt32(noteNameBuf, o + 4);
+                            int len = 0;
+                            while (len < 64 && noteNameBuf[o + 8 + len] != 0) len++;
+                            now[i] = new NoteName(key, ch, Encoding.UTF8.GetString(noteNameBuf, o + 8, len));
+                        }
+                    }
+                }
+                catch (Exception) { now = noNames; }       // (an older library without np_note_names: no names)
+            }
+            var was = noteNames;
+            bool same = was.Length == now.Length;
+            for (int i = 0; same && i < now.Length; i++)
+                same = was[i].Key == now[i].Key && was[i].Channel == now[i].Channel && was[i].Name == now[i].Name;
+            if (same) return;
+            Volatile.Write(ref noteNames, now);
+            Interlocked.Increment(ref noteNameVersion);
+            try { NoteNamesChanged?.Invoke(); } catch (Exception) { }
+        }
+
         void CloseLocked()
         {
             if (plugin == IntPtr.Zero) return;
@@ -315,6 +389,7 @@ namespace NeoBuzz.Plug
             try { PlugNative.np_deactivate(plugin); } catch (Exception) { }
             try { PlugNative.np_close(plugin); } catch (Exception) { }
             plugin = IntPtr.Zero;
+            ReadNoteNames();     // (none: the plug-in is gone)
         }
 
         /// <summary>Closes the plug-in at process exit or on dispose (PlugMain).</summary>
@@ -540,6 +615,7 @@ namespace NeoBuzz.Plug
                 if ((flags & PlugNative.PollDirty) != 0) Interlocked.Increment(ref changes);
                 if ((flags & PlugNative.PollLatency) != 0) Refresh();
                 if ((flags & PlugNative.PollRestart) != 0) Reactivate(offlineMode);
+                if ((flags & PlugNative.PollNoteNames) != 0) lock (Gate) ReadNoteNames();
                 long now = Environment.TickCount64;
                 bool any = false;
                 for (int i = 0; i < Slots; i++)
@@ -772,6 +848,7 @@ namespace NeoBuzz.Plug
                             PlugNative.np_activate(plugin, rate, Chunk, offlineMode ? 1 : 0, err, err.Length);
                             PlugNative.np_idle(plugin);
                             Refresh();
+                            ReadNoteNames();      // (a program or a kit loaded with the state names the keys its own way)
                             for (int i = 0; i < Slots; i++)
                                 if (bound[i]) Volatile.Write(ref mirror[i], ToRaw(i, PlugNative.np_param_get(plugin, slotId[i])));
                             Array.Fill(pending, -1);
@@ -873,6 +950,56 @@ namespace NeoBuzz.Plug
         }
 
         public int Latency => latency;
+
+        // --- Mix (effects only): the dry input against the plug-in's output, the dry delayed by the plug-in's latency ---------------
+        // 0 … 1000 (1000 = only the plug-in, which is exactly what the effect did before Mix existed). The dry goes through a ring on every
+        // block; the weight glides over 20 ms and lands exactly, so 0 gives the input delayed by the latency, bit for bit.
+        const int DryRing = 1 << 16;
+        Sample[] dry;
+        int dryPos;
+        float mixWeight = 1f;
+        volatile int mixRaw = 1000;
+
+        /// <summary>Mix, 0 … 1000 (an effect's dry/wet; 1000 is only the plug-in).</summary>
+        public int MixRaw
+        {
+            get => mixRaw;
+            set => mixRaw = Math.Clamp(value, 0, 1000);
+        }
+
+        void KeepDry(Sample[] input, int n)
+        {
+            dry ??= new Sample[DryRing];
+            int p = dryPos;
+            for (int i = 0; i < n; i++)
+            {
+                p = (p + 1) & (DryRing - 1);
+                dry[p] = input[i];
+            }
+        }
+
+        void MixDry(Sample[] output, int n)
+        {
+            float target = mixRaw / 1000f;
+            if (target == 1f && mixWeight == 1f) { dryPos = (dryPos + n) & (DryRing - 1); return; }
+            int lat = Math.Clamp(latency, 0, DryRing - n - 1);
+            float step = 1f / Math.Max(1, (int)(0.02 * rate));
+            for (int i = 0; i < n; i++)
+            {
+                if (mixWeight < target) mixWeight = Math.Min(target, mixWeight + step);
+                else if (mixWeight > target) mixWeight = Math.Max(target, mixWeight - step);
+                float w = mixWeight;
+                if (w >= 1f) continue;
+                var d = dry[(dryPos + 1 + i - lat) & (DryRing - 1)];
+                if (w <= 0f) output[i] = d;
+                else
+                {
+                    output[i].L = d.L * (1f - w) + output[i].L * w;
+                    output[i].R = d.R * (1f - w) + output[i].R * w;
+                }
+            }
+            dryPos = (dryPos + n) & (DryRing - 1);
+        }
 
         // --- MIDI out --------------------------------------------------------------------------------------
 
@@ -995,6 +1122,7 @@ namespace NeoBuzz.Plug
                     return effect && input != null;
                 }
                 Volatile.Write(ref lastRender, Environment.TickCount64);
+                if (effect && input != null) KeepDry(input, n);
                 var master = host.MasterInfo;
                 int ne = 0;
                 bool playing = false;
@@ -1135,6 +1263,7 @@ namespace NeoBuzz.Plug
                     }
                     if (playing) beatPos += c * bpm / (60.0 * rate);
                 }
+                if (effect && input != null) MixDry(output, n);
                 if (any) quiet = 0; else quiet += n;
                 return any || quiet <= limit;
             }

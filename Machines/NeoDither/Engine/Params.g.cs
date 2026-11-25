@@ -13,7 +13,9 @@ namespace NeoBuzz.Dither
         public const int Shaping = 2;
         public const int Blank = 3;
         public const int BlankAfter = 4;
-        public const int Count = 5;
+        public const int Amount = 5;
+        public const int Mix = 6;
+        public const int Count = 7;
     }
 
     internal static class Params
@@ -28,6 +30,8 @@ namespace NeoBuzz.Dither
             new ParamDef(P.Shaping, "Shaping", "Shaping", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Light", "Psychoacoustic" }, group: "Dither", description: "Noise shaping by error feedback. Light: 7 dB less noise below 4 kHz, more above 10 kHz (the total power rises 2 dB). Psychoacoustic: 16 dB less noise from 50 Hz to 3 kHz and 23 dB less at 4 kHz, much more above 8 kHz (the total power rises 12 dB)", how: "Pushes the rounding noise away from the most audible range with Off, Light or Psychoacoustic shaping.", sound: "Shaped noise is quieter where the ear is most sensitive and louder in the top octaves, so fades and quiet passages sound cleaner."),
             new ParamDef(P.Blank, "Blank", "Auto blank", 0, 1, 1, MapKind.Switch, group: "Dither", description: "After the time below of exact digital silence the output is silent (no dither hiss between tracks); it starts again with the first sample of sound", how: "Silences the output after a stretch of exact digital silence.", sound: "There is no hiss between tracks or in gaps; the dither starts again with the first sound."),
             new ParamDef(P.BlankAfter, "BlankAfter", "Blank after", 0, 50, 6, MapKind.Linear, a: 0.1, b: 5.1, unit: "s", digits: 1, group: "Dither", description: "How long the digital silence has to last before Auto blank silences the output (0.7 s by default)", how: "Sets how long digital silence must last, from 0.1 to 5.1 seconds, before Auto blank mutes the output.", sound: "Short times mute even tiny gaps; long times keep the dither running through brief pauses."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the dither noise level and the depth of the noise shaping. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it up to hear the dither and its shaping more clearly, down to let the word length show."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

@@ -1,7 +1,7 @@
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
 using NeoBuzz.Learn;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using SP = NeoBuzz.LearnString.P;
 using VP = NeoBuzz.LearnFormant.P;
 using XP = NeoBuzz.LearnFold.P;

@@ -27,6 +27,8 @@ Signal path: input 1 (the signal) and input 2 (the external trigger) go to the d
 | Makeup | 1 dB | about the reduction, or use Auto makeup |
 | Mix | 100% | 25-40 % with heavy settings for parallel compression |
 
+`Amount` (default 100 %) scales the ratio (1 - 1/R), makeup and character: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 Threshold from a measurement: the reduction at level L is (L - Threshold) x (1 - 1/Ratio). Measure the loud level with `analyze(source="Drums", metrics=["dynamics"])` (the p95 RMS) and set Threshold = p95 - reduction x Ratio / (Ratio - 1).
 
 ## Starting points
@@ -48,10 +50,6 @@ Threshold from a measurement: the reduction at level L is (L - Threshold) x (1 -
 
 - Neo EQ before it (cut the lows) and after it (tone); Neo Limiter after a bus compressor; Neo Multiband when one band misbehaves; Neo Transient to restore punch.
 - The whole chain: `guide(topic="mixing-dynamics")` and `guide(topic="mastering-chain")`.
-
-## Successor
-
-Neo Comp replaces Pedal Comp: `machine_replace(machine="Comp")` carries its settings over in their units.
 
 ## Checklist
 

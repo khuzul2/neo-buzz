@@ -31,10 +31,6 @@ One knob that moves up to 8 parameters of other machines at once, with no audio 
 
 - Neo LFO or Neo Envelope on the same target for movement on top (the second one takes the first's output as its base).
 
-## Successor
-
-Pedal Peer Control has no mapping to it: its Value is a per-track parameter (up to 64 tracks, each with its own target and mapping curve) and Neo Macro has one Value with up to 8 targets, so the tracks have no single counterpart. Make one Neo Macro per control and point it with `modulate`.
-
 ## Checklist
 
 - [ ] `modulation_list(machine="Macro")` shows each target `active`.

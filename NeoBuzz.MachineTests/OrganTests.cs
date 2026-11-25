@@ -2,7 +2,7 @@ using Buzz.MachineInterface;
 using System.Diagnostics;
 using NeoBuzz.Dsp;
 using NeoBuzz.Organ;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {

@@ -22,7 +22,9 @@ namespace NeoBuzz.Imager
         public const int Recover = 11;
         public const int Output = 12;
         public const int Delta = 13;
-        public const int Count = 14;
+        public const int Amount = 14;
+        public const int Mix = 15;
+        public const int Count = 16;
     }
 
     internal static class Params
@@ -46,6 +48,8 @@ namespace NeoBuzz.Imager
             new ParamDef(P.Recover, "Recover", "Recover sides", 0, 1, 0, MapKind.Switch, group: "Stereoize", description: "The side that narrowing takes away is returned to the mid, turned 90 degrees against it so it adds to the level without combing", how: "Returns the side signal removed by narrowing to the centre, turned 90 degrees so it does not comb.", sound: "The level stays fuller when a band is narrowed, instead of getting thinner."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the imager, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the imager.", sound: "It matches the loudness to the untreated sound so you judge the width fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the imager changes: the output minus the input (glides over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear only what the imager changes, which shows how much width has been added or taken away."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales each band's width away from 100 % and the stereoize amounts. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to bring the image back to normal, up to widen or narrow it further."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

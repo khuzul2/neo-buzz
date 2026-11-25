@@ -1,5 +1,5 @@
 #nullable disable
-// Neo Exciter (docs/specs/mastering-tools.md §5.8): the successor of Oomek Exciter.
+// Neo Exciter (docs/specs/mastering-tools.md §5.8): a harmonic exciter.
 //  - The input is split into four zero-latency Linkwitz–Riley bands (LrBands). Each band, per channel, goes through a
 //    4× oversampler (FastOversampler) and a first-order ADAA shaper; what it adds is the harmonic residual
 //    r = f(D·u) / D − u, the shaper's output (brought back by the drive D) minus the audio (the audio taken half a
@@ -36,6 +36,7 @@ namespace NeoBuzz.Exciter
         public static int Latency => FastOversampler.LatencyFor(Factor);
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         LrBands bands;
         readonly FastOversampler[] os = new FastOversampler[8];       // [channel * 4 + band]
@@ -72,9 +73,17 @@ namespace NeoBuzz.Exciter
         int stepPos, stepLeft, stepLength, stepsDone;
         double pubAdded = -100, pubMatch = double.NaN;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Drive, 0), AmountRule.Lin(P.ShelfGain, 0),
+            AmountRule.Lin(P.Amount1, 0), AmountRule.Lin(P.Amount2, 0), AmountRule.Lin(P.Amount3, 0), AmountRule.Lin(P.Amount4, 0),
+        };
+
         public ExciterEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             for (int k = 0; k < os.Length; k++)
             {
                 os[k] = new FastOversampler(MaxBlock);
@@ -86,6 +95,7 @@ namespace NeoBuzz.Exciter
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             for (int k = 0; k < 4; k++) amount[k].Setup(GlideSeconds, sr);
             output.Setup(GlideSeconds, sr);
@@ -108,6 +118,7 @@ namespace NeoBuzz.Exciter
 
         public void Reset()
         {
+            fx.Reset();
             bands.Reset();
             for (int k = 0; k < 8; k++)
             {
@@ -166,6 +177,13 @@ namespace NeoBuzz.Exciter
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

@@ -62,3 +62,7 @@ Mix       "Mix"             0 1000  1000  pct                           | Dry ag
 Output    "Output"          0 480   240   db -24 24                     | Output gain, −24 … +24 dB in 0.1 dB steps
     how Adds -24 to +24 dB of gain after the filter.
     sound It restores the level lost to filtering, or keeps resonant peaks in check.
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales how far the filter moves the sound: the cutoff in octaves from fully open, the band types' resonance, the drive, the envelope and the LFO depth. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to open the filter and calm its movement, up to close it further and sweep wider.

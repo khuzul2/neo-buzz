@@ -25,7 +25,7 @@ using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Audio;
 using ReBuzz.Studio.Views.Sequence;
 using ReBuzz.Studio.Views.Session;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

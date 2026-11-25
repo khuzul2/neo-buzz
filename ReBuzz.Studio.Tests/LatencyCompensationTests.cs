@@ -1,5 +1,5 @@
 // Fork (docs/specs/mastering-tools.md §4.1): machine delay compensation in the engine, with real Neo machines, on
-// Linux and macOS (ReBuzzTests has the Windows build's tests). Machine delay compensation is on by default; a path
+// Linux and macOS. Machine delay compensation is on by default; a path
 // around a latent machine cancels against an inverted parallel path; a latency that changes while playing moves the
 // other path's delay by a crossfade, applied on the audio thread before the block's work (no UI thread needed); a
 // bypassed machine keeps its latency (its dry input delayed by it), and switching the bypass keeps the null.

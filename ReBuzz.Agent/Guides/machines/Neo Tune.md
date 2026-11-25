@@ -23,9 +23,11 @@ A pitch corrector for one voice or one melodic line. It follows the pitch of the
 | Retune speed | 53 ms | quick but natural; 0 ms is the hard effect |
 | Humanize | 75 % | keeps the drift of long notes |
 | Keep vibrato | 100 % | leave the singer's vibrato; 0 % flattens it |
-| Amount | 100 % | lower it to hide the correction |
+| Correction | 100 % | lower it to hide the correction |
 | Formant preserve | On | the vowel stays put when the pitch moves |
 | Range | Quality | Low latency only for playing live |
+
+`Amount` (default 100 %) scales `Correction` (up to full) and the retune speed: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
 
 ## Starting points
 

@@ -25,7 +25,8 @@ namespace NeoBuzz.Verb
         public const int LowCut = 14;
         public const int HighCut = 15;
         public const int Mix = 16;
-        public const int Count = 17;
+        public const int Amount = 17;
+        public const int Count = 18;
     }
 
     internal static class Params
@@ -52,6 +53,7 @@ namespace NeoBuzz.Verb
             new ParamDef(P.LowCut, "LowCut", "Low cut", 0, 1000, 389, MapKind.Freq, a: 10, b: 1000, group: "Output", description: "High-pass on the reverb", how: "Removes low frequencies from the reverb, from 10 Hz to 1 kHz.", sound: "Raising it keeps the reverb from muddying the bass."),
             new ParamDef(P.HighCut, "HighCut", "High cut", 0, 1000, 804, MapKind.Freq, a: 1000, b: 22000, group: "Output", description: "Low-pass on the reverb", how: "Rolls off high frequencies of the reverb, from 1 to 22 kHz.", sound: "Lowering it softens the reverb so it sits behind the dry sound."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 300, MapKind.Percent, group: "Output", description: "Dry/wet (100 % for a send)", how: "Blends the dry sound with the reverb from 0 to 100 %.", sound: "Use a low value as an insert, or 100 % when the reverb sits on a send."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the reverb: the wet level (the Mix) and the decay time, in octaves from the shortest. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a smaller, drier space, up for a bigger and wetter one."),
         };
     }
 }

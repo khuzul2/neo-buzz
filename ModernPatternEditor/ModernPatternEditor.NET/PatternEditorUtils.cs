@@ -8,9 +8,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-#if WINDOWS
-using System.Windows;
-#endif
 using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor
@@ -906,29 +903,6 @@ namespace WDE.ModernPatternEditor
 
         #region Other
 
-#if WINDOWS
-        internal static ResourceDictionary GetBuzzThemeSettingsWindowResources()
-        {
-            ResourceDictionary skin = new ResourceDictionary();
-
-            try
-            {
-                string selectedTheme = Global.Buzz.SelectedTheme == "<default>" ? "Default" : Global.Buzz.SelectedTheme;
-                string skinPath = Global.BuzzPath + "\\Themes\\" + selectedTheme + "\\ModernPatternEditor\\PatternPropertiesWindow.xaml";
-                //string skinPath = "..\\..\\..\\Themes\\" + selectedTheme + "\\ModernPatternEditor\\ModernPatternEditor.xaml";
-
-                //skin.Source = new Uri(skinPath, UriKind.Absolute);
-                skin = (ResourceDictionary)XamlReaderEx.LoadHack(skinPath);
-            }
-            catch (Exception)
-            {
-                string skinPath = Global.BuzzPath + "\\Themes\\Default\\ModernPatternEditor\\PatternPropertiesWindow.xaml";
-                skin.Source = new Uri(skinPath, UriKind.Absolute);
-            }
-
-            return skin;
-        }
-#endif
 
         #endregion
 

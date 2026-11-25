@@ -10,8 +10,7 @@ namespace ReBuzz.Core
     /// <summary>
     /// Fork addition (docs/specs/clips.md §5 and §10, wave CU2): the engine's side of the one store. A clip's content is its pattern's
     /// columns (the store); this reads them as lanes and writes lanes into them, and runs the converter (BuzzGUI.Common's ClipMigration)
-    /// and the export (ClipExport) on a machine's data. Nothing calls it from the app yet: CU3 migrates on open. Writing lanes into a
-    /// pattern is for the converter's tests, and for CU3.
+    /// on a machine's data (a .nbl of format 1 or 2 holds its tracker data in the pattern editors' blobs, which open-time migration moves here).
     ///
     /// Columns the converter writes carry no <c>SessionAutomation</c> mark, so the engine does not play them (the editor still plays its own
     /// data): the parameter lanes change nothing that is heard. A Notes lane is the machine's MIDI column, which the engine plays whatever
@@ -20,23 +19,11 @@ namespace ReBuzz.Core
     internal static class ClipStore
     {
         /// <summary>
-        /// The host plays every lane from the engine (clips.md §5.6, CU3): the Studio and rebuzz-headless call this once, first. Classic's WPF app
-        /// does not, and keeps its editor's own playing and data.
+        /// The host plays every lane from the engine (clips.md §5.6, CU3): the Studio and rebuzz-headless call this once, first.
         /// </summary>
         public static void UseDirectEngine()
         {
             PatternColumnCore.PlaysEveryLane = true;
-            ClipDerived.Direct = true;
-            ClipDerived.Provider = DerivedFor;
-            ClipDerived.EditRefusal = m => ClipEditPolicy.CanEdit(m, out var why) ? null : why;
-        }
-
-        /// <summary>The blob a song file gets for a machine's pattern editor: the derived one (events from the store, with the stamp), or empty in a native song. Null: the editor's own.</summary>
-        static byte[] DerivedFor(IMachine machine)
-        {
-            if (machine is not MachineCore mc || !mc.ClipsAttached || mc.Graph?.Buzz is not ReBuzzCore buzz) return null;
-            if (ClipDerived.Native) return Array.Empty<byte>();
-            return Export(mc, buzz.SongCore, false, new ClipLog());
         }
 
         /// <summary>Whether the song holds anything an older build would not play from the lanes: tracker lanes or notes (a native song then needs a reader of format 3).</summary>
@@ -240,17 +227,6 @@ namespace ReBuzz.Core
                 if (pattern.BuiltInData == null) continue;
                 ClipMigration.FromBuiltIn(ToRows(pattern, machine), model, pattern.Length, log, result);
             }
-            foreach (var pattern in machine.PatternsList)
-            {
-                // What an editor's data dropped when the song loaded (PatternCore.LostInputCells).
-                if (pattern.BuiltInData != null || pattern.LostInputCells == null) continue;
-                foreach (var kv in pattern.LostInputCells)
-                {
-                    result.EventsIn += kv.Value;
-                    result.EventsDropped += kv.Value;
-                    log.Loss(ClipTags.InputColumn, machine.Name, pattern.Name, "input " + kv.Key, kv.Value, "a connection's amp and pan");
-                }
-            }
             var data = editorData ?? EditorData(machine);
             if (data != null && data.Length > 0)
             {
@@ -282,16 +258,6 @@ namespace ReBuzz.Core
                 builtIn.Add(pattern.Name);
                 ClipMigration.FromBuiltIn(ToRows(pattern, machine), model, pattern.Length, log, result);
             }
-            foreach (var pattern in machine.PatternsList)
-            {
-                if (pattern.BuiltInData != null || pattern.LostInputCells == null) continue;
-                foreach (var kv in pattern.LostInputCells)
-                {
-                    result.EventsIn += kv.Value;
-                    result.EventsDropped += kv.Value;
-                    log.Loss(ClipTags.InputColumn, machine.Name, pattern.Name, "input " + kv.Key, kv.Value, "a connection's amp and pan");
-                }
-            }
             bool allBuiltIn = machine.PatternsList.Count > 0 && builtIn.Count == machine.PatternsList.Select(p => p.Name).Distinct().Count();
             var data = editorData ?? EditorData(machine);
             if (!allBuiltIn && data != null && data.Length > 0)
@@ -305,15 +271,6 @@ namespace ReBuzz.Core
                 result.EventsDropped += fromBlob.EventsDropped;
             }
             return result;
-        }
-
-        /// <summary>Whether a machine's editor blob is the derived one of the store as it is now (its stamp is the hash of the store's lanes): then the store is the truth and nothing migrates.</summary>
-        public static bool BlobIsCurrent(MachineCore machine, byte[] blob)
-        {
-            var stamp = ClipBlob.StampOf(blob);
-            if (stamp == null) return false;
-            var expect = ClipContent.Hash(machine.PatternsList.Select(Read));
-            return stamp.SequenceEqual(expect);
         }
 
         /// <summary>A built-in pattern as the converter reads it: its rows, and how many cells of each connection's amp and pan hold a value.</summary>
@@ -334,13 +291,6 @@ namespace ReBuzz.Core
             if (cells != null)
                 foreach (var kv in cells) rows.InputCells[kv.Key] = kv.Value;
             return rows;
-        }
-
-        /// <summary>The derived blob of a machine's patterns, as the store holds them (clips.md §7.2): the lanes of each pattern, then ClipExport.</summary>
-        public static byte[] Export(MachineCore machine, SongCore song, bool pxp, ClipLog log)
-        {
-            var clips = machine.PatternsList.Select(Read).ToList();
-            return ClipExport.ToBlob(clips, MachinesOf(song), pxp, log);
         }
 
         /// <summary>The machines of the song as the converter sees them, by name.</summary>

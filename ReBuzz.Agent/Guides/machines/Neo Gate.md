@@ -23,6 +23,8 @@ A noise gate and downward expander. The gate opens when the key's level reaches 
 | Release | 120 ms | short chops tails, long fades them |
 | Lookahead | 2 ms | gate open before the transient (adds latency) |
 
+`Amount` (default 100 %) scales the ratio and range: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "Drums — Snare, Tight" (-28 dB, hold 60 ms, lookahead 2 ms, Key low cut 150 Hz to keep the kick's spill out).
@@ -39,10 +41,6 @@ A noise gate and downward expander. The gate opens when the key's level reaches 
 ## Pairs well with
 
 - Neo Comp after it to level what stays; Neo EQ before it to clean the key; Neo Transient to restore punch.
-
-## Successor
-
-Neo Gate replaces Pedal Gate: `machine_replace(machine="Gate")` carries every setting over in its units (Bypass becomes the machine's bypass); "Pedal Gate — Same Settings" is its defaults.
 
 ## Checklist
 

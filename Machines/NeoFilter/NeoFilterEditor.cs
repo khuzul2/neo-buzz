@@ -70,7 +70,7 @@ namespace NeoBuzz.Filter
                 Layout.Row(new ParamKnob(ctx, P.LfoRate, "Rate"), new ParamKnob(ctx, P.LfoDepth, "Depth"), new ParamKnob(ctx, P.LfoSpread, "Spread"), new ParamKnob(ctx, P.LfoPhase, "Phase")));
 
             var output = Layout.Row(
-                Layout.Column(new ParamKnob(ctx, P.Mix, diameter: 56), new ParamKnob(ctx, P.Output)),
+                Layout.Column(Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)), new ParamKnob(ctx, P.Output)),
                 Layout.Gap(6),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 196),
                 Layout.Gap(4),
@@ -99,8 +99,11 @@ namespace NeoBuzz.Filter
 
         static FilterSetting Setting(EditorContext ctx, double tempo)
         {
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
-            for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
+            values.AllowPhysical();
+            for (int i = 0; i < Params.Table.Length; i++) rawValues.Set(i, ctx.Raw(i));
+            FxStage.Fill(rawValues, values, P.Amount, FilterEngine.AmountRules);
             return FilterDesign.From(values, tempo);
         }
 

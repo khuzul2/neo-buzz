@@ -272,7 +272,7 @@ namespace ReBuzz.Studio.Tests
                 var notes = Column(s.Pattern);
                 SongFiles.Picker = save => null;
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                foreach (var ext in new[] { ".bmxml", ".bmx" })
+                foreach (var ext in new[] { ".nbl" })
                 {
                     string path = System.IO.Path.Combine(dir, "lanes" + ext);
                     SongFiles.Picker = save => path;

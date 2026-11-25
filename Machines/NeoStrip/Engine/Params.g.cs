@@ -46,7 +46,9 @@ namespace NeoBuzz.Strip
         public const int LimRelease = 35;
         public const int Output = 36;
         public const int Delta = 37;
-        public const int Count = 38;
+        public const int Amount = 38;
+        public const int Mix = 39;
+        public const int Count = 40;
     }
 
     internal static class Params
@@ -94,6 +96,8 @@ namespace NeoBuzz.Strip
             new ParamDef(P.LimRelease, "LimRelease", "Limiter release", 0, 1500, 1000, MapKind.Time, a: 0.001, b: 1, group: "Output", description: "Limiter release time", how: "Sets the limiter's recovery time, from 1 ms to 1 s.", sound: "Short releases sound loud and punchy but can distort; long ones sound smooth."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the strip, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the strip.", sound: "It matches the loudness to the untreated sound so you judge the processing fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the strip changes: the output minus the input, delayed to match (glides over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear only what the strip changes, such as the noise removed or the harmonics added."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the strip's effect: the gate range, the compressor's reduction and makeup, the drive, the EQ gains and the ceiling. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to ease the whole strip towards the input, up to push every stage further."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

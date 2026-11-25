@@ -63,7 +63,8 @@ namespace NeoBuzz.Multiband
         public const int B3Key = 52;
         public const int B4UpRatio = 53;
         public const int B4Key = 54;
-        public const int Count = 55;
+        public const int Amount = 55;
+        public const int Count = 56;
     }
 
     internal static class Params
@@ -128,6 +129,7 @@ namespace NeoBuzz.Multiband
             new ParamDef(P.B3Key, "B3Key", "B3 sidechain", 0, 1, 0, MapKind.Enum, names: new[] { "Internal", "External" }, group: "Band 3 upward and sidechain", description: "Band 3: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", how: "Chooses whether band 3's detector hears its own signal or the machine on the second input.", sound: "External lets another sound, such as a kick, duck or lift this band."),
             new ParamDef(P.B4UpRatio, "B4UpRatio", "B4 upward ratio", 0, 1000, 0, MapKind.Ratio, a: 1, b: 8, group: "Band 4 upward and sidechain", description: "Band 4: below the threshold the band is raised by (threshold - level) x (1 - 1/ratio), within Range, on the same knee and times (1:1 off; nothing is raised under -80 dBFS)", how: "Raises band 4 when it falls below its threshold, up to 8:1 (1:1 is off).", sound: "Quiet detail and tails in the band come up, giving a fuller, more even sound."),
             new ParamDef(P.B4Key, "B4Key", "B4 sidechain", 0, 1, 0, MapKind.Enum, names: new[] { "Internal", "External" }, group: "Band 4 upward and sidechain", description: "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", how: "Chooses whether band 4's detector hears its own signal or the machine on the second input.", sound: "External lets another sound, such as a kick, duck or lift this band."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the gain reduction in every band (the ratios, upward ratios and range) and each band's makeup. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for gentler dynamics in every band, up for tighter control."),
         };
     }
 }

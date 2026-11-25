@@ -60,3 +60,10 @@ Delta       "Delta"            0 1    0    switch           | Hear only what the
 reading gain_match_db       dB      | Short-term loudness out − in (K-weighted, 3 s): what Unity listen takes back
 reading gain_reduction_db   dB      | The most gain reduction in the last 3 s
 reading latency_samples     samples | The limiter's latency, reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales how hard it limits: the input gain, the ceiling's distance from 0 dB, the upward and transient stages and the slow stage. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for a lighter touch, up to push harder into the ceiling.
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)
+    how Blends the processed signal with the dry signal, which is delayed to match the effect's latency.
+    sound Lower values keep more of the original sound, so the effect works as a parallel layer.

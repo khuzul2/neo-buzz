@@ -38,10 +38,6 @@ An envelope with no audio of its own that moves up to 8 parameters of other mach
 
 - Neo Poly, Neo Filter and Neo Comp as targets; Neo LFO for cyclic movement alongside.
 
-## Successor
-
-Nothing replaces it: Pedal LFO's free-running wave is Neo LFO. Pedal Peer Control's per-track values are Neo Macro.
-
 ## Checklist
 
 - [ ] `modulation_list(machine="Env")` shows each target `active`.

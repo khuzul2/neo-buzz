@@ -1,13 +1,12 @@
 // Fork (docs/specs/ux-overhaul.md P6): the studio's Windows preview, the parts a test can reach without a sound card or a
-// MIDI device: the settings folder, the MIDI backend that lists devices without failing, and no native machine hosts
-// where a folder doesn't have them (the test output has no bin32 or bin64).
+// MIDI device: the settings folder, the MIDI backend that lists devices without failing,.
 
 using ReBuzz.Audio;
 using ReBuzz.Host;
 using ReBuzz.Platform;
 using ReBuzz.Midi;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -41,14 +40,6 @@ namespace ReBuzz.Studio.Tests
             Assert.That(backend.CreateMidi2Endpoint(), Is.False, "no Windows MIDI Services endpoint in the preview");
             backend.StartWatching(_ => { });
             backend.StopWatching();
-        }
-
-        [Test]
-        public void NoNativeMachineHostsStartWhereTheFolderHasNone()
-        {
-            if (!OperatingSystem.IsWindows()) Assert.Ignore("native machines are Windows DLLs");
-            bool installed = File.Exists(Path.Combine(AppContext.BaseDirectory, "bin64", "ReBuzzEngine64.exe")) || File.Exists(Path.Combine(AppContext.BaseDirectory, "bin32", "ReBuzzEngine32.exe"));
-            Assert.That(ReBuzz.NativeMachine.NativeMachineHost.Supported, Is.EqualTo(installed));
         }
 
         // ---- Windows audio (ux-overhaul.md P6, decision 3: the user's choice, 2026-11-13) ----------------------------------------

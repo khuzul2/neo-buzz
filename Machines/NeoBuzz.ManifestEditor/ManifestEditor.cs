@@ -43,7 +43,7 @@ namespace NeoBuzz.Editor
 
         /// <summary>Knobs per row in a section.</summary>
         const int KnobsPerRow = 6;
-        /// <summary>The sections wrap at this width, and scroll past this height (Pedal M1 has 54 parameters).</summary>
+        /// <summary>The sections wrap at this width, and scroll past this height (some machines have dozens of parameters).</summary>
         const double MaxBodyWidth = 1240, MaxBodyHeight = 760;
         /// <summary>About how wide the kit's 11 px text is per character, to size controls before they draw.</summary>
         const double CharWidth = 6.2;

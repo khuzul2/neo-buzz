@@ -9,7 +9,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="0" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -28,6 +28,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="150" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Natural 0 %: instant retune to the scale, no correction zone, the note flat and stepped; the singer's vibrato is erased</Comment>
@@ -42,7 +43,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="182" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="400" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -61,6 +62,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="400" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="490" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Natural 40 %: a quick, clearly corrected note that still lets some of the singer's movement through</Comment>
@@ -75,7 +77,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="364" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="750" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -94,6 +96,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="750" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="790" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Natural 75 %: corrects only the centre of each note, slowly and only once it has settled; the vibrato, drift and glides are the singer's own</Comment>
@@ -108,7 +111,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="500" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="1000" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -127,6 +130,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="1000" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="1000" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Natural 100 %: the gentlest correction: an in-tune voice comes out unchanged and only a clearly off note is moved</Comment>
@@ -141,7 +145,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="364" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="750" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -160,6 +164,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="750" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="790" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Natural 75 % with the short, 10 ms tracker for playing through the machine live</Comment>
@@ -174,7 +179,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="194" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="0" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -193,6 +198,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="200" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="300" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>The voice sings the notes held on the machine's MIDI input (the nearest held note, in the voice's own octave); the key and scale are ignored</Comment>
@@ -207,7 +213,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="0" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="17" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="0" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="17" />
@@ -226,6 +232,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="0" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="150" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Hard tune a fifth down with the vowel colour moved up: a small mechanical voice</Comment>
@@ -240,7 +247,7 @@
         <Parameter Name="Custom notes" Group="1" Index="3" Track="0" Value="2741" />
         <Parameter Name="Retune speed" Group="1" Index="4" Track="0" Value="224" />
         <Parameter Name="Humanize" Group="1" Index="5" Track="0" Value="200" />
-        <Parameter Name="Amount" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Correction" Group="1" Index="6" Track="0" Value="1000" />
         <Parameter Name="Transpose" Group="1" Index="7" Track="0" Value="24" />
         <Parameter Name="Formant preserve" Group="1" Index="8" Track="0" Value="1" />
         <Parameter Name="Formant shift" Group="1" Index="9" Track="0" Value="12" />
@@ -259,6 +266,7 @@
         <Parameter Name="Transition" Group="1" Index="22" Track="0" Value="600" />
         <Parameter Name="Note stickiness" Group="1" Index="23" Track="0" Value="600" />
         <Parameter Name="Method" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Amount" Group="1" Index="25" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment>Half dry, half hard-tuned with a slow vibrato added: a doubled, steadier voice</Comment>

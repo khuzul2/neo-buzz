@@ -5,7 +5,6 @@
 //                    | implicit:<path fragment>|<namespace>;<namespace>…
 //   out.tsv columns: severity, id, file, line, column, message
 // or:    CensusTool refs <out.tsv> <dll>...   (see MachineRefs.cs)
-// or:    CensusTool surface <out.txt> <dll>   (see Surface.cs)
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -22,7 +21,6 @@ static class Program
     static int Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "refs") return MachineRefs.Run(args);
-        if (args.Length > 0 && args[0] == "surface") return Surface.Run(args);
 
         var sources = new List<string>();
         var refs = new List<string>();

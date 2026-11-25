@@ -1,7 +1,7 @@
 // Fork (docs/specs/dye-essence.md §5.2): Dye Essence's G0 stress test in the studio, headless. A
 // machine with 704 parameters and megabytes of state (Dye Stress, TestMachines/DyeStress, its table
 // generated as Dye Essence's will be) through the parameter window, the pattern editor, a pattern
-// playing every parameter, .bmx and .bmxml, MIDI learn on every parameter, a preset with its data,
+// playing every parameter, .nbl, MIDI learn on every parameter, a preset with its data,
 // the manifest and machine_describe. Each test prints its figures ("Dye Stress: …") to the log.
 
 using System;
@@ -28,7 +28,7 @@ using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -405,10 +405,10 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        // ------------------------------------------------------------------ .bmx and .bmxml
+        // ------------------------------------------------------------------ .nbl
 
         [AvaloniaTest]
-        public void ASongWithItAllSavesAndOpens([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void ASongWithItAllSavesAndOpens([Values(".nbl")] string extension)
         {
             NewSong();
             var machine = Add("Stress Song");

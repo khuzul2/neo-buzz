@@ -6,9 +6,6 @@ namespace BuzzGUI.Common
     {
         public static IBuzz Buzz { get; set; }
         public static string RegistryRoot { get { return "Software\\ReBuzz\\"; } }
-#if WINDOWS
-        public static System.Windows.Interop.HwndSource MachineViewHwndSource { get; set; }
-#endif
 
         public static string BuzzPath
         {

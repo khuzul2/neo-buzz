@@ -241,7 +241,7 @@ namespace ReBuzz.Agent
         static bool IsSnakeId(string s) => s.Length > 0 && s[0] >= 'a' && s[0] <= 'z' && s.All(ch => (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_');
 
         /// <param name="track">Whether the caller named a track (param_set's track): a global and a track parameter
-        /// with the same name (Pedal M1's Volume) then resolve to the track one.</param>
+        /// with the same name then resolve to the track one.</param>
         public static AgentParam Param(MachineCore m, List<AgentParam> all, string name, bool track = false)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ToolError("param: give a parameter's name (machine_describe lists them).");

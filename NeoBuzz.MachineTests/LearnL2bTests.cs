@@ -1,7 +1,7 @@
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
 using NeoBuzz.Learn;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using YP = NeoBuzz.LearnPd.P;
 using ZP = NeoBuzz.LearnVector.P;
 using QP = NeoBuzz.LearnSampler.P;

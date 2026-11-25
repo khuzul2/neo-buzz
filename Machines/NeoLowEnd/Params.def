@@ -64,3 +64,10 @@ reading balance_db          dB    | The low band's level over the mid band's now
 reading balance_gain_db     dB    | The gain Balance is applying to the low band
 reading peak_clip_db        dB    | How far the low band went over Peak level (0 when it stayed under, or Peak control is off)
 reading latency_samples     samples | The latency (0 in minimum phase), reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the punch and sustain in dB, the contrast and the balance. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to relax the low end towards what it was, up to push the shaping further.
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)
+    how Blends the processed signal with the dry signal, which is delayed to match the effect's latency.
+    sound Lower values keep more of the original sound, so the effect works as a parallel layer.

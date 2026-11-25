@@ -3,7 +3,7 @@
 // editor's Explain strip and the studio inspector can explain any control. KnowledgePending lists the machines still to do:
 // they warn, everything else fails.
 using ReBuzz.Agent.Model;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {
@@ -57,28 +57,6 @@ namespace ReBuzz.AgentTests
                         else if (t.Length > 260) problems.Add($"{m.Gear}/{p.Id} {what}: {t.Length} characters (one sentence)");
                         else if (!(t.EndsWith('.') || t.EndsWith(')'))) problems.Add($"{m.Gear}/{p.Id} {what}: does not end in a full stop");
                     }
-            Assert.That(problems, Is.Empty, string.Join("\n", problems.Take(30)));
-        }
-
-        [Test]
-        public void EveryParameterOfAFinishedFamilyHasHowAndSound()
-        {
-            // K2: every packaged machine but the Neo ones and Dye Essence (KnowledgeFamilies), global and track parameters alike.
-            var problems = new List<string>();
-            int machines = 0;
-            foreach (var m in CuratedManifestTests.Profiled().Values.Where(m => KnowledgeFamilies.Covers(m.Gear)))
-            {
-                machines++;
-                foreach (var p in m.Parameters.Concat(m.TrackParameters))
-                    foreach (var (what, text) in new[] { ("how", p.How), ("sound", p.Sound) })
-                    {
-                        string t = text.Trim();
-                        if (t.Length < 12) problems.Add($"{m.Gear}/{p.Id} {what}: missing or too short");
-                        else if (t.Length > 260) problems.Add($"{m.Gear}/{p.Id} {what}: {t.Length} characters (one sentence)");
-                        else if (!(t.EndsWith('.') || t.EndsWith(')'))) problems.Add($"{m.Gear}/{p.Id} {what}: does not end in a full stop");
-                    }
-            }
-            Assert.That(machines, Is.GreaterThanOrEqualTo(97));
             Assert.That(problems, Is.Empty, string.Join("\n", problems.Take(30)));
         }
 

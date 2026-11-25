@@ -2,7 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoGate
 namespace NeoBuzz.Gate
 class NeoGateMachine
-summary Noise gate and downward expander, the successor of Pedal Gate: a threshold with a separate, lower close threshold (hysteresis), attack, hold and release (linear gain ramps, as Pedal Gate's), a Range floor, an expansion ratio (infinity is a hard gate, lower ratios expand downwards), Peak or RMS detection, a key filter (low and high cut), an external sidechain on input 2, lookahead and Listen to the key. Delta (hear only what the gate takes out) and a gain-match reading. Use it to clean spill from drum tracks, tighten a bass or cut the noise between phrases.
+summary Noise gate and downward expander, a threshold with a separate, lower close threshold (hysteresis), attack, hold and release (linear gain ramps), a Range floor, an expansion ratio (infinity is a hard gate, lower ratios expand downwards), Peak or RMS detection, a key filter (low and high cut), an external sidechain on input 2, lookahead and Listen to the key. Delta (hear only what the gate takes out) and a gain-match reading. Use it to clean spill from drum tracks, tighten a bass or cut the noise between phrases.
 
 group Gate
 Threshold  "Threshold"     0 1000 625   lin -80 0 dB 1                    | The level that opens the gate
@@ -59,3 +59,10 @@ reading gain_db           dB    | The gate's gain now, dB (0 open, down to Range
 reading open              flag  | 1 while the gate is open, 0 while it is closed or closing
 reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s)
 reading latency_samples   samples | The lookahead, reported to NeoBuzz Live
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales how much it closes: the range and the ratio's reduction. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for a gentler gate that leaves more of the tails, up for a deeper cut.
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)
+    how Blends the processed signal with the dry signal, which is delayed to match the effect's latency.
+    sound Lower values keep more of the original sound, so the effect works as a parallel layer.

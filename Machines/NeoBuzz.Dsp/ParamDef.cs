@@ -266,13 +266,43 @@ namespace NeoBuzz.Dsp
 
         public int this[int index] => raw[index];
 
-        public double Value(int index) => Table[index].Value(raw[index]);
+        public double Value(int index) => over != null && hasOver[index] ? over[index] : Table[index].Value(raw[index]);
 
-        public float F(int index) => (float)Table[index].Value(raw[index]);
+        public float F(int index) => (float)Value(index);
 
-        public int Choice(int index) => (int)Table[index].Value(raw[index]);
+        public int Choice(int index) => (int)Value(index);
 
-        public bool On(int index) => Table[index].Value(raw[index]) > 0;
+        public bool On(int index) => Value(index) > 0;
+
+        // A physical value that stands in for the raw one (FxStage's Amount: the effective settings are not on the raw grid).
+        double[] over;
+        bool[] hasOver;
+
+        /// <summary>Makes room for <see cref="SetPhysical"/> (once, before the audio runs).</summary>
+        public void AllowPhysical()
+        {
+            over ??= new double[Table.Length];
+            hasOver ??= new bool[Table.Length];
+        }
+
+        /// <summary>The parameter's physical value is <paramref name="value"/> whatever its raw value says, until <see cref="ClearPhysical"/> (needs <see cref="AllowPhysical"/>).</summary>
+        public void SetPhysical(int index, double value)
+        {
+            if (hasOver[index] && over[index] == value) return;
+            over[index] = value;
+            hasOver[index] = true;
+            dirty[index] = true;
+            anyDirty = true;
+        }
+
+        /// <summary>The raw value rules again.</summary>
+        public void ClearPhysical(int index)
+        {
+            if (over == null || !hasOver[index]) return;
+            hasOver[index] = false;
+            dirty[index] = true;
+            anyDirty = true;
+        }
 
         public void Set(int index, int value)
         {

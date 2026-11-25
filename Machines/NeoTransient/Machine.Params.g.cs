@@ -57,5 +57,8 @@ namespace NeoBuzz.Transient
 
         [ParameterDecl(Name = "Delta", Description = "Hear only what the shaper changes: the output minus the input, delayed to match (gliding over 10 ms)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Delta { get => Values[P.Delta]; set => Values.Set(P.Delta, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
     }
 }

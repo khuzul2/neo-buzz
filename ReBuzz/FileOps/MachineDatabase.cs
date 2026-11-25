@@ -31,8 +31,6 @@ namespace ReBuzz.FileOps
         public event Action<string> DatabaseEvent;
 
         private readonly ReBuzzCore buzz;
-        NativeMachine.NativeMachineHost nativeMachineHost;
-        NativeMachine.NativeMachineHost nativeMachineHost64;
         private string buzzPath;
         private readonly IUiDispatcher dispatcher;
         private readonly EngineSettings engineSettings;
@@ -58,22 +56,7 @@ namespace ReBuzz.FileOps
             string filepath = Path.Combine(buzzPath, "Gear", "index.txt");
             try
             {
-                // Fork (mac-engine.md M2): no native machine hosts off Windows.
-                if (NativeMachine.NativeMachineHost.Supported)
-                {
-                    if (OperatingSystem.IsWindows())    // fork (cross-platform.md R1): off Windows only the 64-bit host
-                    {
-                        nativeMachineHost = new NativeMachine.NativeMachineHost("Index", buzzPath, dispatcher, engineSettings);
-                        nativeMachineHost.InitHost(buzz, false); // 32 bit
-                    }
-
-                    nativeMachineHost64 = new NativeMachine.NativeMachineHost("Index64", buzzPath, dispatcher, engineSettings);
-                    nativeMachineHost64.InitHost(buzz, true); // 64 bit
-                }
-
                 IndexMenu = ParseMenu(filepath);
-                nativeMachineHost?.Dispose();
-                nativeMachineHost64?.Dispose();
             }
             catch (Exception ex)
             {
@@ -237,87 +220,6 @@ namespace ReBuzz.FileOps
                     // Fork (plugin-host.md §3.1): a managed machine lists its instruments itself (GetInstrumentList).
                     return AddManagedLoaderMenus(machineDll, loaderLib, loaderDisplayName, menuPos, paramID);
                 }
-                if (mInfo.Flags.HasFlag(MachineInfoFlags.USES_INSTRUMENTS))
-                {
-                    bool is64Bit = (machineDll as MachineDLL).Is64Bit;
-                    var uiMessage = is64Bit ? nativeMachineHost64.UIMessage : nativeMachineHost.UIMessage;
-                    var machine = new MachineCore(buzz.SongCore, buzzPath, dispatcher, engineSettings, is64Bit);
-                    if (!uiMessage.UILoadLibrarySync(buzz, machine, loaderLib, machineDll.Path))
-                    {
-                        buzz.DCWriteLine("Error loading machine: " + loaderLib, DCLogLevel.Error);
-                        return -1;
-                    }
-                    uiMessage.UINewMISync(machine, loaderLib);
-
-                    DatabaseEvent.Invoke("Building DB " + machineDll.Name);
-                    IntPtr dllPtr = uiMessage.UIGetDLLPtr(machine, loaderLib);
-                    var instruments = uiMessage.UIGetInstrumentList(machine, dllPtr);
-
-                    var rootMenu = new MenuItemCore() { Text = loaderDisplayName, IsEnabled = true };
-
-                    foreach (var instr in instruments)
-                    {
-                        MenuItemCore menuIterator = rootMenu;
-                        var splitted = instr.Split('/').Select(p => p.Trim()).ToList();
-
-                        for (int i = 0; i < splitted.Count; i++)
-                        {
-                            string menuPath = splitted[i];
-                            if (i == splitted.Count - 1) // Last
-                            {
-                                DatabaseEvent.Invoke("Building DB " + menuPath);
-                                string adapterInstrumentPath = uiMessage.UIGetInstrumentPath(machine, dllPtr, instr.Trim());
-                                InstrumentInfo instrumentInfo = new InstrumentInfo();
-
-                                if (adapterInstrumentPath != null)
-                                {
-                                    // Add the instrument
-                                    var newMenu = new MenuItemCore() { Text = menuPath, ID = paramID, IsEnabled = true };
-                                    menuIterator.ChildrenList.Add(newMenu);
-
-                                    instrumentInfo.IsLoaderInstrument = true;
-                                    instrumentInfo.libName = loaderLib;
-                                    instrumentInfo.InstrumentFullName = instr.Trim();
-                                    instrumentInfo.InstrumentName = menuPath;
-                                    instrumentInfo.InstrumentPath = adapterInstrumentPath.Trim();
-                                }
-                                else
-                                {
-                                    // Add the adapter instead
-                                    var newMenu = new MenuItemCore() { Text = menuPath, ID = paramID, IsEnabled = true };
-                                    menuIterator.ChildrenList.Add(newMenu);
-
-                                    instrumentInfo.IsLoaderInstrument = true;
-                                    instrumentInfo.libName = loaderLib;
-                                    instrumentInfo.InstrumentFullName = instr.Trim();
-                                    instrumentInfo.InstrumentName = menuPath;
-                                    instrumentInfo.InstrumentPath = Path.Combine(Path.GetDirectoryName(machine.DLL.Path), menuPath);
-                                }
-                                DictLibRef[paramID] = instrumentInfo;
-                                paramID++;
-                            }
-                            else if (menuIterator.Children.FirstOrDefault(m => m.Text == menuPath) == null)
-                            {
-                                // Create submenu
-                                var newMenu = new MenuItemCore() { Text = menuPath, IsEnabled = true };
-                                menuIterator.ChildrenList.Add(newMenu);
-                                menuIterator = newMenu;
-                            }
-                            else
-                            {
-                                // goto subment
-                                menuIterator = menuIterator.ChildrenList.FirstOrDefault(m => m.Text == menuPath);
-                            }
-                        }
-                    }
-
-                    if (rootMenu.ChildrenList != null)
-                    {
-                        rootMenu.ChildrenList = rootMenu.ChildrenList.OrderBy(m => m.Children.Count() == 0).ThenBy(m => m.Text).ToList();
-                    }
-                    menuPos.ChildrenList.Add(rootMenu);
-                }
-
             }
             return paramID;
         }

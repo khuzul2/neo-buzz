@@ -401,6 +401,55 @@ int cmdGui(const Args& a)
     return ok ? 0 : 1;
 }
 
+// The plug-in's note names (NM1): read them, and with --set ID=VALUE change a parameter and wait for the plug-in to say they changed.
+std::string namesJson(np_plugin* p)
+{
+    np_note_name names[256];
+    int n = np_note_names(p, names, 256);
+    std::string j = "[";
+    for (int i = 0; i < n && i < 256; i++)
+        j += std::string(i ? "," : "") + "{\"key\":" + std::to_string(names[i].key) + ",\"channel\":" + std::to_string(names[i].channel) +
+             ",\"name\":" + q(names[i].name) + "}";
+    return j + "]";
+}
+
+int cmdNames(const Args& a, int argc, char** argv)
+{
+    std::string err;
+    double ms = 0;
+    np_plugin* p = openPlugin(a, err, ms);
+    if (!p)
+    {
+        printf("{\"path\":%s,\"error\":%s}\n", q(a.path).c_str(), q(err).c_str());
+        return 1;
+    }
+    char ae[512] = {};
+    np_activate(p, 48000, 256, 0, ae, sizeof ae);
+    std::string before = namesJson(p), after = "null";
+    bool signalled = false;
+    std::string set = opt(argc, argv, "--set");
+    if (!set.empty())
+    {
+        auto eq = set.find('=');
+        np_param_set(p, (uint32_t)atoi(set.substr(0, eq).c_str()), atof(set.substr(eq + 1).c_str()));
+        auto until = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+        while (std::chrono::steady_clock::now() < until && !signalled)
+        {
+            // The audio thread takes the value in its next block, as a host's does.
+            float l[256], r[256];
+            float* out[2] = {l, r};
+            np_process(p, nullptr, 0, out, 2, 256, nullptr, 0, 120, 1);
+            np_idle(p);
+            if (np_poll(p) & NP_POLL_NOTE_NAMES) signalled = true;
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+        after = namesJson(p);
+    }
+    printf("{\"path\":%s,\"names\":%s,\"signalled\":%s,\"after\":%s}\n", q(a.path).c_str(), before.c_str(), signalled ? "true" : "false", after.c_str());
+    np_close(p);
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -423,6 +472,7 @@ int main(int argc, char** argv)
     if (a.cmd == "list") return cmdList(a);
     if (a.cmd == "test") return cmdTest(a);
     if (a.cmd == "gui") return cmdGui(a);
+    if (a.cmd == "names") return cmdNames(a, argc, argv);
     fprintf(stderr, "unknown command %s\n", a.cmd.c_str());
     return 2;
 }

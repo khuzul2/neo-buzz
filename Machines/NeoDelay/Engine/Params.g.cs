@@ -25,7 +25,8 @@ namespace NeoBuzz.Delay
         public const int Width = 14;
         public const int Mix = 15;
         public const int Output = 16;
-        public const int Count = 17;
+        public const int Amount = 17;
+        public const int Count = 18;
     }
 
     internal static class Params
@@ -52,6 +53,7 @@ namespace NeoBuzz.Delay
             new ParamDef(P.Width, "Width", "Width", 0, 200, 100, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 0, group: "Output", description: "The echoes' side signal × width: 0 % mono echoes, 100 % as they are, 200 % twice as wide", how: "Scales the stereo width of the echoes from 0 to 200 %.", sound: "At 0 % the echoes are mono and focused, and past 100 % they spread wider than the source."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 300, MapKind.Percent, group: "Output", description: "Dry against wet (a crossfade): 100 % for a send", how: "Blends the dry sound with the echoes from 0 to 100 %.", sound: "Use a low value as an insert for subtle depth, or 100 % when the delay sits on a send."),
             new ParamDef(P.Output, "Output", "Output", 0, 240, 120, MapKind.Db, a: -12, b: 12, group: "Output", description: "Output gain, −12 … +12 dB in 0.1 dB steps", how: "Sets the output gain, from minus 12 to plus 12 dB.", sound: "Use it to match the level of the delay to the track once the settings are right."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the echoes: the feedback (within its own limit) and the wet level. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for fewer, quieter repeats, up for more of them and a wetter sound."),
         };
     }
 }

@@ -273,13 +273,11 @@ namespace ReBuzz.Studio.Views.Notes
             banner.IsVisible = imported.Count > 0;
             bannerText.Text = imported.Count == 0 ? "" :
                 "Imported when the song opened: " + string.Join(", ", imported.Select(Describe)) +
-                ". " + (imported.Any(s => s.Kind == SongNotesStore.Source.InfoMachine)
-                    ? "The Info machine stays in the song as it was; the notes are kept here from now on."
-                    : "The song's info text stays as it was; the notes are kept here from now on.");
+                ". The song's info text stays as it was; the notes are kept here from now on.";
         }
 
         static string Describe(SongNotesStore.Source s) =>
-            s.Kind == SongNotesStore.Source.InfoMachine ? $"the text of the Info machine “{s.Machine}”" : "the song's info text";
+            "the song's info text";
 
         // ------------------------------------------------------------------ the page
 

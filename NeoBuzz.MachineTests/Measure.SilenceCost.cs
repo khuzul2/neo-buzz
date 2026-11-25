@@ -1,6 +1,6 @@
 namespace NeoBuzz.MachineTests
 {
-    // The silence-cost guard, apart from Measure.cs: NeoBuzz.PedalTests compiles Measure.cs too, without Throughput.cs.
+    // The silence-cost guard, apart from Measure.cs: other projects compile Measure.cs too, without Throughput.cs.
     internal static partial class Measure
     {
         /// <summary>

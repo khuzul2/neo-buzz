@@ -2,12 +2,13 @@
 // program for songs itself (Preferences ▸ General ▸ File types, Windows only). Per user, under HKCU\Software\Classes: no
 // administrator rights, nothing outside the user's own hive, and Remove puts back what Make found.
 //
-//   .nbl, .bmx, .bmw, .bmxml  ->  ProgID NeoBuzzLive.Song  ->  shell\open\command = "<exe>" "%1"
+//   .nbl  ->  ProgID NeoBuzzLive.Song  ->  shell\open\command = "<exe>" "%1"
 //
 // The extension's earlier default (another Buzz, say) is kept in the extension key's value "NeoBuzzLive.Previous" and restored by Remove.
 // The registry sits behind IAssocStore so the logic is tested on any platform with a dictionary.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -27,7 +28,9 @@ namespace ReBuzz.Studio.Platform
     {
         public const string ProgId = "NeoBuzzLive.Song";
         public const string PreviousValue = "NeoBuzzLive.Previous";
-        public static readonly string[] Extensions = { ".nbl", ".bmx", ".bmw", ".bmxml" };
+        public static readonly string[] Extensions = { ".nbl" };
+        /// <summary>Extensions an earlier build associated: Restore still frees them if they point at this program, so no stale entry is left.</summary>
+        static readonly string[] Retired = { ".bmx", ".bmw", ".bmxml" };
 
         readonly IAssocStore store;
         readonly string exePath;
@@ -86,7 +89,7 @@ namespace ReBuzz.Studio.Platform
 
         public void Remove()
         {
-            foreach (var ext in Extensions)
+            foreach (var ext in Extensions.Concat(Retired))
             {
                 if (store.Get(ext, "") == ProgId)
                 {

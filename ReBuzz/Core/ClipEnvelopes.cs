@@ -159,7 +159,6 @@ namespace ReBuzz.Core
 
         /// <summary>Changes the clip's points with <paramref name="change"/>; the points it returns are kept inside the clip.</summary>
         public string Edit(ClipEnvelope e, Func<List<AutoPoint>, List<AutoPoint>> change) =>
-            !ClipEditPolicy.CanEdit(e.Pattern?.Machine, out string refused) ? refused :
             editor.Edit(e.Engine, e.Key, old =>
             {
                 var result = change(old);

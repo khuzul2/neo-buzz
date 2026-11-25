@@ -102,8 +102,9 @@ def build(folder):
     by_name = {}
     for i, p in enumerate(params):
         p['index'] = i
-        by_name[p['id'].lower()] = p
         by_name[p['name'].lower()] = p
+    for p in params:   # an id wins over a name (Neo Tune: the id Amount is shown as "Correction", the id FxAmount as "Amount")
+        by_name[p['id'].lower()] = p
     machine = None
     state_class = None
     presets = []

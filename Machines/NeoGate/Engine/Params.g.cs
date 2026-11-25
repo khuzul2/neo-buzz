@@ -23,7 +23,9 @@ namespace NeoBuzz.Gate
         public const int Listen = 12;
         public const int Output = 13;
         public const int Delta = 14;
-        public const int Count = 15;
+        public const int Amount = 15;
+        public const int Mix = 16;
+        public const int Count = 17;
     }
 
     internal static class Params
@@ -48,6 +50,8 @@ namespace NeoBuzz.Gate
             new ParamDef(P.Listen, "Listen", "Listen", 0, 1, 0, MapKind.Switch, group: "Key", description: "Hear the key signal, filtered", how: "Switches the output to the filtered key signal that the gate hears.", sound: "You hear what the gate hears, which helps you set the key filters and threshold."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the gate, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the gate.", sound: "It makes the gated sound louder or quieter without changing how the gate works."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the gate takes out: the output minus the input, delayed to match (glides over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear exactly what the gate cuts out, so you can check it leaves the wanted sound alone."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales how much it closes: the range and the ratio's reduction. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a gentler gate that leaves more of the tails, up for a deeper cut."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

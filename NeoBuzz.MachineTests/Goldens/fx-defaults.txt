@@ -1,0 +1,306 @@
+# Neo effects at their defaults and every factory preset, SHA-256 (first 16 hex) of the float32 render of a drum loop and of a chord (FxGoldenTests).
+# effect<TAB>preset<TAB>drums<TAB>chord. Made on origin/main before Mix and Amount existed.
+Neo Clipper	(defaults)	6cea3608a464afdc	48721f0539ad83d7
+Neo Clipper	Mastering — Transparent (Before a Limiter)	f45de0af18154551	384236c5279adeef
+Neo Clipper	Mastering — Loud (Knee 6 dB)	dcbab4787eb99df0	9a92a3a9b398b3ec
+Neo Clipper	Mastering — Three Bands	a9e3c1fb13d93fe0	a625a4c827f1b74e
+Neo Clipper	Mastering — Clip the Mid (M/S)	cf7d89e82e19d73a	0808c29f911998d0
+Neo Clipper	Drums — Hard Snap	02cb0ebb80b712a6	8fae95a69da5132b
+Neo Clipper	Drums — Soft Weight	6fe2ec17e872e109	82ad1aefadbbd3aa
+Neo Clipper	Drums — Kick Only (Low Band)	e648cfaff1f9f1c7	77ab15f512573b05
+Neo Clipper	Bus — Tanh Glue	6361d40cd5d3cf2a	7003ca8d7b3b3344
+Neo Clipper	Character — 1× Grit	6d0e35a8703794c2	24dc79ea912abed6
+Neo Clipper	Mixing — Catch the Peaks	78bda419cdbd670d	6e271a7405d4f72a
+Neo Comp	(defaults)	51d014ecdfaac1c2	dc188bd007e9ae19
+Neo Comp	Clean — Gentle Leveler	93dcef403eb86487	c32fbca3e8565bf3
+Neo Comp	Clean — Vocal Control	064cf63f1c86fe7e	410fd35d22f7874c
+Neo Comp	Clean — Brickwall	2132e59d068b59bb	a623b9ded5c12292
+Neo Comp	Glue — Mix Bus	6e842489f549add1	99681240bda0cd6f
+Neo Comp	Glue — Drum Bus	be1368e5583d765c	2b354b04f744688b
+Neo Comp	FET — Vocal Grab	ca9f3a37207d0d6a	79f687b42a4d7422
+Neo Comp	FET — All Buttons	929d0f6c41513a3a	163235fe06e2918b
+Neo Comp	FET — Bass Tamer	fa20ef38dacbb6ee	25808dc7499bc4ae
+Neo Comp	Opto — Smooth Vocal	3eb8577eec869946	242fba58216b9c3a
+Neo Comp	Opto — Bass Leveler	2e67d1634b7f32f9	39d04ef16f3ba1a1
+Neo Comp	Parallel — New York Drums	cce9cc0ddd4f6c66	010d95218357d998
+Neo Comp	Sidechain — Kick Duck	f649f96ead527a25	bb58432187874b88
+Neo Comp	Sidechain — Pump	f649f96ead527a25	bb58432187874b88
+Neo Comp	Mastering — Transparent	4748d4f5448aa20f	da45eb00133ff702
+Neo De-esser	(defaults)	b84cbe74ade6451e	17da4d51907a72ab
+Neo De-esser	Vocal — Gentle De-ess	ba30c041c8af4c86	e9de0b597b1d7c06
+Neo De-esser	Vocal — Female, Strong	1bd56bf243c92d9b	ceef9c2872b6581a
+Neo De-esser	Vocal — Male, Warm Shelf	c8d51b6d313e2d8f	1cb060916f740bf8
+Neo De-esser	Vocal — Transparent (Linear Phase Split)	b6c97b60f9679439	792a5a7072693bc5
+Neo De-esser	Mastering — Tame a Bright Master	71e4db5c07dc72a3	eaf01759adf665cf
+Neo De-esser	Drums — Harsh Hats and Cymbals	377adfc9ced1a57a	eaf01759adf665cf
+Neo De-esser	Find the Sibilance (Listen)	91abaed6f9acda6e	30dac0c681da7141
+Neo Delay	(defaults)	94e6f8f4b925787f	ed767c832ec3d813
+Neo Delay	Mix — Dotted Eighth Throw	0e4117c29c59379f	f3688deeb810e1ba
+Neo Delay	Mix — Quarter Note Echo	e9b056923c14a2d6	84c12f0f50a30d42
+Neo Delay	Mix — Slapback	eadcbcb91bd94ffb	6621c9b155172e53
+Neo Delay	Mix — Vocal Echo (Ducked)	5dd88d019c79019d	249f3253612f73f2
+Neo Delay	Mix — Doubler (Wide)	3dd1a8a78ea777c5	f80fc97a986b6886
+Neo Delay	Mix — Mono Echo (Narrow)	dfa7c3a0b6fdab70	bbdc74a55938fbce
+Neo Delay	Send — Ping-Pong Eighths	7ec18eaf5738646f	7ebede9413c1662f
+Neo Delay	Send — Long Ambient Wash	80f721d34c4faef0	401064d237c30519
+Neo Delay	Ping-Pong — Wide Dotted Quarter	ff8ab0dcd1a1cfd4	0dd65d0b910ed712
+Neo Delay	Cross — Triplet Bounce	4a7361e231c54643	cb7364e43d4bea31
+Neo Delay	Dub — Tape Echo (Saturated)	76edb8349d481736	baadb0407afa3154
+Neo Delay	Dub — Runaway Feedback (Ducked)	4f5b2af3e9b9ebfc	1a9d09f808842135
+Neo Delay	Tape — Analog Wobble (Dark)	28ac1ee8d986af67	1aeb631796dff7c6
+Neo Delay	Rhythm — Sixteenth Stutter	262a4236aad0eb79	31842df2f92d835c
+Neo Delay	Texture — Comb Resonator	9b6f11cc10d82263	5e4625bcbc4a7b26
+Neo Delay	Texture — Lo-Fi Telephone Echo	63527f0a717a726f	fc6d6ebdc4972062
+Neo Dither	(defaults)	4c74c0a57c0faba2	f8c97084c5cf1c94
+Neo Dither	16 bit — TPDF (Standard)	4c74c0a57c0faba2	f8c97084c5cf1c94
+Neo Dither	16 bit — TPDF, Light Shaping	dc52b47115e03f51	d4853898b1f60a29
+Neo Dither	16 bit — TPDF, Psychoacoustic Shaping	f5f0deaa1b1ee894	a4b8690698dc5256
+Neo Dither	24 bit — TPDF	7a9d98af4a2aa717	b4bdefb1a8311d75
+Neo Dither	20 bit — TPDF	946da8ba21a25157	748ac75e11c744c7
+Neo Dither	16 bit — Rounding Only (No Dither)	45040896c4f249a5	592d8e8656918abd
+Neo Drive	(defaults)	ed3fc0dc80c0cfa7	6cc422fea5663a3f
+Neo Drive	Tape — Warm Bus	0f0b499a7504cbfd	5ce98d4aeccb630b
+Neo Drive	Tape — Hot Reels	6a1ee5f5e684ea69	4ecf674a078e8da5
+Neo Drive	Tape — Cassette	2c31d62b6a16f2e3	b72dfee9d8c511fd
+Neo Drive	Tube — Glow	2be3276ea1a1f86e	aecfa95ee53edb87
+Neo Drive	Tube — Preamp Push	7822ea53cff14fe9	0c7b0d6c2b91dd7b
+Neo Drive	Tube — Parallel Thickener	26600c207c29e4aa	c8a52ff4f62ebe5b
+Neo Drive	Transistor — Crunch	96e9d64ba3577237	a152f33cd8dbc3f2
+Neo Drive	Transistor — Fuzz Wall	f077205671eedb6d	148e61d8002ba51f
+Neo Drive	Transistor — Drum Smash	9937cdf65d93e724	3a42f1fcc1d025dd
+Neo Drive	Diode — Overdrive	2670c127f4803207	228fcce19820b42a
+Neo Drive	Diode — Edge	b3b465ce1dd6c497	fb7435253cc9b13e
+Neo Drive	Fold — West Coast	f819d2e38230bec1	5279fc308d287617
+Neo Drive	Fold — Harmonic Bloom	be76ee01621ba237	9458a088c2de7d34
+Neo Drive	Utility — Subtle Glue	db83f7deccc59833	7a8d4d248dcebd47
+Neo Drive	Utility — Bass Grit	c9ab6d14abc6e2b5	80c90a96f206d10b
+Neo EQ	(defaults)	f649f96ead527a25	bb58432187874b88
+Neo EQ	Mixing — Vocal Clarity	cdc5c8bf411b4512	2c9c2dfe98f0de9c
+Neo EQ	Mixing — Kick Punch	5a245ad14906aaf2	2c20f84801547516
+Neo EQ	Mixing — Bass Tighten	6ab3f3e537e8bea7	611364eeee22fd4c
+Neo EQ	Mixing — Snare Crack	48776ecae49853f6	b1029ce32f983d5d
+Neo EQ	Mixing — Acoustic Guitar	50907bcbe86dd282	9c1a9a714767e883
+Neo EQ	Mixing — De-mud	ffb6786d337924b3	34a78f4a430a6054
+Neo EQ	Mixing — Telephone	e2f1f67c94e76304	91943531657c4db7
+Neo EQ	Mastering — Gentle Smile	bd12bc47293c2e81	10b6b6e4db8edb03
+Neo EQ	Mastering — Air Shelf	b3e9e61a6d325d3e	a63ea2346dc457bd
+Neo EQ	Mastering — Tame Harshness	796fa73fc18a9dca	3ea19829f1385e6b
+Neo EQ	Mastering — Low Cut 25 Hz	1a7acd1510092f09	61afc362ec3cc8e8
+Neo EQ	Fix — Rumble Filter	03b616f5715db93c	8bdba317ec0c592f
+Neo EQ	Fix — Hum Notch 50 Hz	d040c7985a2c9f6a	5d0cb8afac830e96
+Neo EQ	Fix — Hum Notch 60 Hz	76dd82ae2e691545	1ae5dceba125f90c
+Neo EQ	Graphic — Flat	f649f96ead527a25	bb58432187874b88
+Neo EQ	Graphic — Loudness (Smile)	88624e9ae1b0196f	1c91f390224679db
+Neo EQ	Graphic — Telephone	03f14a64c2161736	0f0757762e0efc36
+Neo EQ	Graphic — Air	32b9f5bd93cadc0b	3267ddfbc093254a
+Neo EQ	Graphic — Low Cut	ac77950f87e1cf6e	995750e6dc8d2927
+Neo EQ	Graphic — Mid Scoop	160505d43f13dcb5	36718f8b451c5470
+Neo EQ	Graphic — Vocal Presence	2c8bcc650f5aa191	b7be62e5ed3699c4
+Neo EQ	Dynamic — De-ess	08e81eec6ffa57dc	bb58432187874b88
+Neo EQ	Dynamic — Tame Low Mids	3eee3763f6087723	f2463e1494203367
+Neo EQ	Dynamic — Resonance Control (Mid)	8debe5d225fba8a0	a16ef24a20d85f93
+Neo EQ	Dynamic — Bass Ducks the Kick (Sidechain)	f649f96ead527a25	bb58432187874b88
+Neo EQ	Dynamic — Click on Hits (Up)	1f1bf73275eb2697	7c26d1cae4bc0a81
+Neo EQ	Mastering — Mono Bass (Side Cut 100 Hz)	f649f96ead527a25	bb58432187874b88
+Neo EQ	Mastering — Side Air	f649f96ead527a25	bb58432187874b88
+Neo EQ	Character — Vintage Low Boost	7a12ab77de499cf9	edcb1fe4bdccb280
+Neo EQ	Character — Baxandall Tilt	5105d403bfd9775b	66bdcde103fee62b
+Neo EQ	Character — Proportional Presence	c555b79468bd9c7f	46cf6d800e832f2c
+Neo EQ	Fix — Phase Turn (All-pass 200 Hz)	057394c3de236520	af1e001e6383003c
+Neo EQ	Linear — Master Tilt (+1.5 dB low, -1.5 dB air)	834eda1dae945cfe	48aad769859df307
+Neo EQ	Linear — Bus Low Cut (28 Hz, 48 dB/oct)	7c10f6818ddced9c	06511fbcf34f10f8
+Neo EQ	Linear — Mud Dip and Presence	ae56c6e5f0b16335	6b105bba9dde2039
+Neo Ensemble	(defaults)	4902e34cf4584792	870692be1d7fc225
+Neo Ensemble	Chorus — Classic	4902e34cf4584792	870692be1d7fc225
+Neo Ensemble	Chorus — Wide Stereo	5585a1e52e810a3c	412c5c420fb7e161
+Neo Ensemble	Chorus — Subtle Doubling	6d49f6b1f18bdcab	8cc02196dc0fd606
+Neo Ensemble	Chorus — Poly Synth I	1b611b2f0d1cc8a3	38f01ec6388582dd
+Neo Ensemble	Ensemble — Strings	d9d569fd7987612a	05645760d29b06ad
+Neo Ensemble	Ensemble — Thick (3 Voices)	c21b60acdc4c9d8c	53f4a9c50a41a8ec
+Neo Ensemble	Flanger — Slow Jet	2d964b6712d15606	f08c18ce9630d04b
+Neo Ensemble	Flanger — Tape Style (Negative)	005d58df2d832b5c	56650368ed40b031
+Neo Ensemble	Flanger — Metallic	f13324afe7c95980	25584b6fdb2e6cfb
+Neo Ensemble	Phaser — 4-Stage Classic	4f68d47e68cd39e0	be554212acfa295a
+Neo Ensemble	Phaser — 8-Stage Deep	b6e3d69bdde70592	382150451ca834e0
+Neo Ensemble	Phaser — Slow Sweep (4 Bars)	bf31e6b8faee9f5f	42a4209216ddcea3
+Neo Ensemble	Rotary — Leslie-like Fast	edda4e2eeb85b8ed	bc267c630a2a77d1
+Neo Ensemble	Vibrato — Pitch Wobble	68834dbe199992f0	88928c9c26143a14
+Neo Exciter	(defaults)	6c79623bb00fbb14	66ead493a72eb0fa
+Neo Exciter	Mastering — Air	1ccf0c4160fbaaa5	3ee41e4d5d09575d
+Neo Exciter	Mastering — Presence and Air	164b11653281f9b1	42348093e03f0ce7
+Neo Exciter	Mastering — Subtle Warmth	bf69d6df066d2ea7	0f3fb19f4281dfe9
+Neo Exciter	Vocal — Bright and Present	9c09fcb6ee81cf0e	8ec9c11f9fcbf2da
+Neo Exciter	Drums — Crack and Sizzle	75de1a53cf3d33b8	1cb0618c66b6002c
+Neo Exciter	Bass — Add Harmonics to Be Heard on Small Speakers	0c0e05932ecd98b4	c860e1850c19d376
+Neo Exciter	Mid/Side — Air on the Sides	128e37c8c8776d31	4c2bc3ccebc42e33
+Neo Exciter	Tube Exciter (Warm)	239ea8eb43150437	d49828c020d12150
+Neo Filter	(defaults)	067b7bcfbd49291f	8fb7001253cdc9a4
+Neo Filter	Sweep — Ladder Low-Pass (1 Bar)	6d860f55eab4c331	1d5a1c8a85535048
+Neo Filter	Sweep — Slow Rise (4 Bars, Saw)	10caa1abb3b2110c	3c36f6871522d437
+Neo Filter	Sweep — High-Pass Build (8 Bars)	f5b7c6b4e66ec67c	403af2239e7dc913
+Neo Filter	Auto-Wah — Funky (Band-Pass)	14bc454055d5b122	3942ef451e8f86cb
+Neo Filter	Auto-Wah — Bass (Ladder 12)	0f0981f90658e595	e412455526f5c5bf
+Neo Filter	Auto-Wah — Closing (Low-Pass, Envelope Down)	1fcae61c31082347	efe03b6d1584ee69
+Neo Filter	Dub — High-Pass Throw	87953f4cb406d1f3	70a746bb6af4e1f2
+Neo Filter	Dub — Resonant Low-Pass Siren (1/4)	0e4a3f84b295e3bb	4d79d180b9738e3c
+Neo Filter	Resonant — Ladder Low-Pass	542cc80f81a50fb7	ef49d6582666f05a
+Neo Filter	Resonant — Acid (Ladder, Drive, Envelope)	08fe0c8f303f3110	86419c94ca6f9754
+Neo Filter	LFO — Stepped Filter (1/8, Square)	a8fa9354482b624b	c8d89b2babd933fa
+Neo Filter	LFO — Stereo Sweep (1/2, 90°)	56a9248ae094009a	30a12fdc1e17e6b9
+Neo Filter	LFO — Sample and Hold (1/16)	9497b9b868a69efa	133b5e79089a9ca5
+Neo Filter	Mix — Gentle Top Cut (12 kHz)	3d5e01945c74843f	d10f3257e2918827
+Neo Filter	Mix — Telephone Band	88a59b1505177fac	98dcc2bb0acbb8a5
+Neo Filter	Notch — Swept Notch (2 Bars)	f72c964466dadccc	cd15dd540c511a33
+Neo Filter	Peak — Resonant Peak Sweep (1 Bar)	f883a0b5380c2f1b	631f667f4952f8dd
+Neo Gate	(defaults)	b795c8ef5c74c6d8	01e01776521a4cf8
+Neo Gate	Drums — Snare, Tight	78ade679982132cf	8226b1781864cb3e
+Neo Gate	Drums — Kick, Clean the Spill	e25f5f04c9e3f41f	500115d71b5579e6
+Neo Gate	Drums — Toms, Gentle Expander	43ed4f8e22112717	faa35eb0c3ffd71f
+Neo Gate	Vocals — Soft Gate Between Phrases	7efaea5b6ca831e2	f8688b5a508e509d
+Neo Gate	Bass — Tighten the Tail	3da23e061efdfe26	16d37063751f98e1
+Neo Gate	Noise — Hiss Between Takes	7e954f1ad8d42d02	e688ccbdcbd614a1
+Neo Gate	Gate — Reference Settings	b795c8ef5c74c6d8	01e01776521a4cf8
+Neo Imager	(defaults)	f649f96ead527a25	bb58432187874b88
+Neo Imager	Mastering — Widen the Highs	3fd5045bc127cf65	146956581afc561d
+Neo Imager	Mastering — Focus the Lows (Mono Below 150 Hz)	b0ef5a4c987a83b1	be3358a360485e4a
+Neo Imager	Mastering — Air and Width	14bc6eaf820ae4ff	86f2d9a41018d384
+Neo Imager	Mastering — Stereoize the Top	3593f4f60ee837ab	11d7d14e52560f6d
+Neo Imager	Mixing — Narrow a Wide Mix, Keep the Level	3fd5045bc127cf65	146956581afc561d
+Neo Imager	Mixing — Mono Check (Everything at 0 %, Recovered)	3fd5045bc127cf65	146956581afc561d
+Neo Imager	Mixing — Wide Pad	eb7236ba07b2a68b	00fe3d51766697f9
+Neo Imager	Mono-Safe Widening (Stereoize Only)	9b8cfe4e32cf14bd	1d23cf413a640699
+Neo Imager	Lows Mono, Rest as It Is	3fd5045bc127cf65	146956581afc561d
+Neo Limiter	(defaults)	c64b81645d752ac4	197037264b6da7ad
+Neo Limiter	Mastering — Streaming (−1 dBTP)	37c330a2cd2551b1	d3e51304efdad62c
+Neo Limiter	Mastering — Transparent	ebedceef332bd119	6c5a5022f2bd202c
+Neo Limiter	Mastering — Loud	726e278c0b664036	d408c9721fa04627
+Neo Limiter	Mastering — Dense Electronic	b65c89b09adc329b	93120019db16fb33
+Neo Limiter	Mastering — CD (−0.3 dBTP)	96f63a89aee66069	d3e51304efdad62c
+Neo Limiter	Mastering — Broadcast (−2 dBTP)	b50ac7947bed60ae	3a5ed23546f9f9e8
+Neo Limiter	Bus — Mix Bus Safety	f969d2237633b31a	fdcc27c32c2319b6
+Neo Limiter	Bus — Drum Peak Catcher	e0c47092ad17f8d9	e477aef24101a524
+Neo Limiter	Track — Vocal Peaks	6c2e88304c8a3523	fbfe0d026b7bbbdf
+Neo Limiter	Track — Clean Bass	edc75ef68e846297	7f44ad6ba5efaade
+Neo Limiter	Safety — Brickwall (−0.1 dBTP)	cc89ffbd8eb6776d	dc99a7e96042307f
+Neo Limiter	Creative — Smash	ae398b76648fa8c9	2817aa403d9c1f68
+Neo Limiter	Style — Classic	91988fd0b90f65b4	f5145b45a0711a80
+Neo Limiter	Style — Transparent	841ae85b6e1dbb64	f2b54edf16d2c088
+Neo Limiter	Style — Punchy	4d9ceeac67087257	fa7b7fd4713659da
+Neo Limiter	Style — Dense (Soft Clip 9 dB, Upward)	b357dba4ee49b379	0de2bfedb5e7d10f
+Neo Limiter	Style — Loud (Soft Clip 3 dB)	dc177ddef9d9d1dc	5d4633a6a4411f04
+Neo Low End	(defaults)	ef3fc5136202745d	7ed5f8baff4fe492
+Neo Low End	Mastering — Tighten the Low End	578cd9460840da35	638a822605dec014
+Neo Low End	Mastering — Focus (Keep the Strongest)	9c315fc1d4add471	9ed7101773a3616c
+Neo Low End	Mastering — Mono Below 90 Hz	4d153fdc17e1748c	398f7e06a8f59535
+Neo Low End	Mastering — Balance to the Mids (+6 dB)	bd4f7d9c2536c450	6fb08c2f7ee26213
+Neo Low End	Mastering — Peak Control (−3 dBFS)	488ccba0e1b55605	96bc7ab5af6b09c0
+Neo Low End	Mastering — Linear Phase Split	67566784d356cdfc	5a1e944ebb5904aa
+Neo Low End	Drums — Kick Punch	36b066c5bdc8b5cb	71c1fe05c539b6e8
+Neo Low End	Drums — Kick Weight	778390347d841345	b943b19410665944
+Neo Low End	Bass — Even Out	aa5fa45eb8484a1c	e4d48f2f72da6049
+Neo Low End	Mixing — Clean Up the Sub	2e0c5a062297b4d2	582e6e8a0204e416
+Neo Multiband	(defaults)	b00fa99987bc3fac	363994a4fffde2dc
+Neo Multiband	Mastering — Gentle Glue (4 Bands)	4e9e6812e1989429	ab0cff987ce5ac1b
+Neo Multiband	Mastering — Tight Low End	de598bc68fcdde80	07866f47a0bef0b8
+Neo Multiband	Mastering — De-Harsh 2–6 kHz	7d4f9baad43cea8f	7d80bba740bbfb40
+Neo Multiband	Mastering — Air Lift (Upward Expansion)	6ce4a31761264e5e	7d80bba740bbfb40
+Neo Multiband	Mastering — Transient Restore (Upward Expansion)	0c3f1cbd303daac5	274dee96effd13e8
+Neo Multiband	Mastering — Loud and Dense	97ee295cf5d54479	6628546665155d25
+Neo Multiband	Mastering — Mid/Side Control (Unlinked)	c1b9c4b7893e1d47	3a1b96389853e4b4
+Neo Multiband	Mastering — Zero-Latency Glue (Minimum Phase)	08a241047e1bf859	dc21879ec92d26fa
+Neo Multiband	Bus — Drum Bus Punch (3 Bands)	cc560695aadd0029	582d68f15684955e
+Neo Multiband	Bus — Mix Bus Glue (3 Bands)	5189a81ea158bbb3	c60eee6ce09a2103
+Neo Multiband	Bus — Bass Leveler	eeff680255227820	003aefbe383493a1
+Neo Multiband	Vocal — De-Esser Above 5 kHz	e1179ec58fa43b7b	7d80bba740bbfb40
+Neo Multiband	Vocal — Smooth Mids 300 Hz–3 kHz	b5b41e486681686f	d723845f0cb0d9a3
+Neo Multiband	Fix — De-Mud 200–500 Hz	e2088b413e93c123	077f7aee67ffea91
+Neo Multiband	Fix — Boom Control Below 90 Hz	ccbe125e94ba0fd7	5c3aa47b3643d665
+Neo Multiband	Creative — Heavy Squash (Parallel 50 %)	fa02a56e50f998ad	f000fe3cbefd1654
+Neo Multiband	Utility — Linear-Phase Split (Transparent)	bd5f83c09aefe05f	7d80bba740bbfb40
+Neo Multiband	Mastering — Dynamic-Phase Glue (Zero Latency)	dabf99e38747dce4	65649a1518cb3c94
+Neo Multiband	Mastering — Quiet Detail Lift (Upward)	d48ca5cbc40ab306	ebdfc2d1c8299e95
+Neo Multiband	Bus — Kick Duck on the Lows (Sidechain)	0baaf5cc1b96de2c	286ff496d469633a
+Neo Spectral	(defaults)	54621ad929885592	cd3521b05329eb91
+Neo Spectral	Vocal — Gentle Resonance Control	7667faae5300aaf7	8af8ee21a042ab4d
+Neo Spectral	Vocal — Tame Harshness (2 - 8 kHz)	e42e56c70388c21c	52ccd5be732bce78
+Neo Spectral	Vocal — Even Tone (Fills Dips)	57f323bb7ada150a	92a8ac7b2ad3b0a3
+Neo Spectral	Guitar — Tame Boxiness	a27fe86e6ee90b07	c7f3fe87603b985f
+Neo Spectral	Drums — Ringing Toms and Snare	27f0b0b7c6a4707a	d64534042f23f8e5
+Neo Spectral	Mix Bus — Subtle Smoothing	6d1f155ba7794832	c9055916461a8009
+Neo Spectral	Master — Gentle Balance	8d6a87268a946c58	fb73892011c7f006
+Neo Spectral	Master — Brighter Balance	6fe676e1392760f0	4f1e0bfd7d5a11a2
+Neo Spectral	Master — Warmer Balance	23dd23ad99a664ee	c73eb3f665c16002
+Neo Spectral	Mix Bus — Stabilize the Tone	34c569964ef9b0d9	19b14a4b44ea32a0
+Neo Spectral	Hear What It Removes (Delta)	2a928c72ffa15e29	0fd25080d244e8c6
+Neo Strip	(defaults)	742b6464a518b671	62ca087b60883e22
+Neo Strip	Vocal — Up Front	f3226b03fd1ab086	40cabe026ffd7c2c
+Neo Strip	Vocal — Spoken Word (Gate and Tidy)	733cee7564ce3e14	aa5aebfb58485971
+Neo Strip	Drums — Punch Bus	d312f9b47da1c226	ca99b21025668a57
+Neo Strip	Bass — DI Solid	b5a73aa0dee380e0	9586e770dded28a1
+Neo Strip	Guitar — Crunch and Air	d353fc41b7e3a1e3	89def02043394e02
+Neo Strip	Master — Safety (Clip and Limit)	50228b4717963153	68732b314f75452f
+Neo Strip	Master — Gentle Glue and Ceiling	3954bf40e50fc079	eded8613e25a4524
+Neo Tape	(defaults)	b9b5b206abbef8d4	80b3b74160715de6
+Neo Tape	Mastering — Subtle Glue (15 ips)	c55d7404c30353f1	04c72f3fa3ff1fb0
+Neo Tape	Mastering — Warm and Rounded (7.5 ips)	28a0ed3e7b9387d2	7ced54efe8179d5e
+Neo Tape	Mastering — Open and Fast (30 ips)	6f0dc28c70a16d16	4be4c9bce6321399
+Neo Tape	Mix Bus — Tape Glue	ecc55189d4b0f098	80075200bfcc1850
+Neo Tape	Drums — Tape Crunch	5458710141778bc9	235ec1645b6e6751
+Neo Tape	Vocal — Gentle Tape Warmth	5a887306d3fe7b09	b1a8ddfc0a812c49
+Neo Tape	Lo-Fi — Worn Cassette Feel	fe943815149f8302	7b90405e62e839d2
+Neo Tape	Parallel — Tape Crush	ae290ab01262fb12	4dd0695e9beb5af6
+Neo Transient	(defaults)	ac7aea3c1d299995	af447cb0564e2d17
+Neo Transient	Drums — More Snap	2686bafa4279ee40	d7e1981264256bce
+Neo Transient	Drums — Tighter (Less Room)	e978bea6326e7943	2b5387834def8339
+Neo Transient	Drums — Bigger Tails	9a6e7c53880f40ca	849ed95e1892892c
+Neo Transient	Drums — Hit Harder, Keep the Tail	884a65cea5057950	2ea3354d341cb34a
+Neo Transient	Mastering — Gentle Punch	6b60d65ad3188ed1	ac6d665c7027dbdd
+Neo Transient	Mastering — Soften the Hits	4dcb32682a61097c	7e72543abf1d0293
+Neo Transient	Mastering — Impact (Lows Up, Highs Calm)	cb6674f4d145bc9c	476a628f60d9c852
+Neo Transient	Mastering — Impact (Tighten the Mids)	91868d4ec6f58685	7d6f37151c6d7ac6
+Neo Transient	Mastering — Impact (Flatten the Dynamics a Little)	57abe07c0830b90a	64d70f829f08e97b
+Neo Transient	Bus — Glue the Sustain	f552cb110ff356ee	52d5a0e4187f3547
+Neo Transient	Mid/Side — Punch the Mid	9cb284be139b1e02	f0e488039b626b5f
+Neo Transient	Live — No Latency	779137b25419f4d2	5be4795923547b6d
+Neo Tune	(defaults)	6fbf49cbf5d95c63	d6d185437036e100
+Neo Tune	Lead — Hard effect	44f2d06be0258550	d6d185437036e100
+Neo Tune	Lead — Pop polish	d65783d8c82f331b	d6d185437036e100
+Neo Tune	Lead — Natural	6fbf49cbf5d95c63	d6d185437036e100
+Neo Tune	Lead — Transparent	6fbf49cbf5d95c63	d6d185437036e100
+Neo Tune	Live — Low Latency Natural	98295ab3c744f5a8	b76011f762e2694c
+Neo Tune	Special — MIDI-led	88cb69a643b3b5f9	57dd692c5da8b62e
+Neo Tune	Special — Robot	c4dd8784a600332f	57dd692c5da8b62e
+Neo Tune	Special — Thick	ddf7abc7b6160785	9b10efb3c7a3fd16
+Neo Verb	(defaults)	ea04a233d67a941a	084e47b98368caf1
+Neo Verb	Hall — Concert	f06e1588470f51e5	79988473e7b43cc9
+Neo Verb	Hall — Cathedral	cd87ef76c356fc09	3fd9630d72804861
+Neo Verb	Hall — Dark Strings	15a80b97429c7203	88d1ae98bc72c958
+Neo Verb	Room — Small Studio	214c01e162ef3d38	fbc7360286bd4155
+Neo Verb	Room — Live Drums	d985c183237d6d9d	2c53361eaab32587
+Neo Verb	Chamber — Vocal	71af45f64ba4b281	fac3e66a95bcb885
+Neo Verb	Chamber — Echo Chamber	473c3da88481d07a	0f73506815e99508
+Neo Verb	Plate — Bright Vocal	ac0f59ccaafc9e9f	9ad90a20eed7b0e6
+Neo Verb	Plate — Snare	e8753bbaac8f12fb	8a95859ea07c1819
+Neo Verb	Ambient — Shimmer	20697ae46d49fd37	4412ae34ade26804
+Neo Verb	Ambient — Infinite Pad	b5251ef4c3b2eb92	40c1cc502c0ba29f
+Neo Verb	Ambient — Long Dark Hall	c04b78b2a5e7fb0c	12a36db17cde9a1e
+Neo Verb	Send — Hall (100% wet)	7ce3cc66ef435f0d	e05e479f364e70ff
+Neo Verb	Send — Plate (100% wet)	68e5cd6a82949721	f7009c477eba7752
+Neo Utility	(defaults)	f649f96ead527a25	bb58432187874b88
+Neo Utility	Gain — Trim −6 dB	fd029452130e11a7	1e850330baced665
+Neo Utility	Gain — Boost +6 dB	6c715bd2d19a8f8c	5bb5cb7166f1d2da
+Neo Utility	Gain — Stage to −18 dBFS (−12 dB)	0f6f19542196f56d	0b0b3a456a777276
+Neo Utility	Stereo — Mono	f649f96ead527a25	bb58432187874b88
+Neo Utility	Stereo — Narrow 50 %	f649f96ead527a25	bb58432187874b88
+Neo Utility	Stereo — Wide 140 %	f649f96ead527a25	bb58432187874b88
+Neo Utility	Mastering — Bass Mono 120 Hz	f649f96ead527a25	bb58432187874b88
+Neo Utility	Mastering — Clean Up (Bass Mono 80 Hz, DC)	a38dff443271cbb3	60725455457229e9
+Neo Utility	Mixing — Mono Pan Left 30 %	7464652d50b51d5a	4fc350ffad9db28d
+Neo Utility	Mixing — Mono Pan Right 30 %	28ea02896169560f	7643590c4af425dd
+Neo Utility	Mixing — Balance Left 20 %	f649f96ead527a25	bb58432187874b88
+Neo Utility	Fix — Flip Polarity	979e22d4444f7303	05767e3eaf6ca90c
+Neo Utility	Fix — Right Channel Out of Phase	f649f96ead527a25	bb58432187874b88
+Neo Utility	Fix — Swap Channels	f649f96ead527a25	bb58432187874b88
+Neo Utility	Fix — DC Offset	a38dff443271cbb3	60725455457229e9
+Neo Utility	Mid/Side — Encode (Before a Stereo Machine)	f649f96ead527a25	bb58432187874b88
+Neo Utility	Mid/Side — Decode (After It)	c45c1b1a42c501c9	b9e9de1cd302c6bd

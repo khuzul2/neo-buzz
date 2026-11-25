@@ -51,7 +51,7 @@ using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -141,7 +141,7 @@ namespace ReBuzz.Studio.Tests
 
             /// <summary>
             /// Reads <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, on that thread). With
-            /// <paramref name="describe"/>, each buffer is measured by ReBuzzTests' AllocationWindow too, and a buffer that
+            /// <paramref name="describe"/>, each buffer is measured by AllocationWindow too, and a buffer that
             /// allocated is described in the log: the types the runtime's allocation ticks name, JIT, type loads, GCs.
             /// </summary>
             public Cost Read(int buffers, Action perBuffer = null, bool describe = false)
@@ -149,7 +149,7 @@ namespace ReBuzz.Studio.Tests
                 var cost = new Cost();
                 On(() =>
                 {
-                    using var window = describe ? new ReBuzzTests.Automation.AllocationWindow(buffers) : null;
+                    using var window = describe ? new NeoBuzz.TestSupport.AllocationWindow(buffers) : null;
                     long workerMethods = Interlocked.Read(ref RenderJobs.WorkerMethods);
                     long methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: true);
                     for (int i = 0; i < buffers; i++)
@@ -215,7 +215,7 @@ namespace ReBuzz.Studio.Tests
         static Cost Measured(Func<Cost> read)
         {
             Cost cost = null;
-            for (int attempt = 0; attempt < ReBuzzTests.Automation.GuardPolicy.Attempts; attempt++)
+            for (int attempt = 0; attempt < NeoBuzz.TestSupport.GuardPolicy.Attempts; attempt++)
             {
                 var next = read();
                 if (cost != null && next.Bytes != 0) next.Log.Insert(0, $"(attempt {attempt + 1}; the one before allocated {cost.Bytes} bytes)");
@@ -1198,7 +1198,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ANeoTuneWithEveryControlAllocatesNothing()
         {
-            // neo-tune.md: Neo Tune (the scale, Retune speed, Amount, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
+            // neo-tune.md: Neo Tune (the scale, Retune speed, Correction, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
             NewSong();
             var m = AddPoly("Hygiene Tune Poly");
             m.CreatePattern("00", 16);
@@ -1209,7 +1209,7 @@ namespace ReBuzz.Studio.Tests
             var tg = tune.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             var scale = tg.First(p => p.Name == "Scale");
             var retune = tg.First(p => p.Name == "Retune speed");
-            var amount = tg.First(p => p.Name == "Amount");
+            var amount = tg.First(p => p.Name == "Correction");   // the correction strength (id Amount; FX1's Amount is the effect strength)
             var transpose = tg.First(p => p.Name == "Transpose");
             var formant = tg.First(p => p.Name == "Formant shift");
             var vib = tg.First(p => p.Name == "Add vibrato");

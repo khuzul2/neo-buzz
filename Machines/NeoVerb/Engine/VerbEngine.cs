@@ -37,6 +37,7 @@ namespace NeoBuzz.Verb
         static readonly double[] DiffuserMs = { 1.31, 2.07, 3.43, 5.51, 7.71, 9.13 };
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         VerbMode mode;
 
@@ -111,9 +112,16 @@ namespace NeoBuzz.Verb
         Smoother preDelay, early, late, width, mix, inputGain, shimmer;
         bool freeze;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Mix, 0), AmountRule.Log(P.Decay, 0.2),
+        };
+
         public VerbEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules);
+            this.values = fx.Effective;
             SetSampleRate(48000);
         }
 
@@ -135,6 +143,7 @@ namespace NeoBuzz.Verb
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             int maxLine = (int)Math.Ceiling((97 * MaxSize / 1000 + MaxModDepth) * sr) + 8;
             for (int i = 0; i < N; i++) lines[i] = new FracDelay(maxLine);
@@ -167,6 +176,7 @@ namespace NeoBuzz.Verb
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var l in lines) l.Reset();
             preL.Reset();
             preR.Reset();
@@ -417,6 +427,13 @@ namespace NeoBuzz.Verb
         // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, 0);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

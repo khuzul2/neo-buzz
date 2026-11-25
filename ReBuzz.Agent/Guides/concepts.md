@@ -8,8 +8,8 @@
 
 ## Parameters
 - **Global parameters** shape the whole machine (cutoff, decay, mix). **Track parameters** belong to each of the machine's tracks (Note and Velocity on Neo synths: one track per voice played from a pattern). Tools take `track` for those.
-- Values are written in the parameter's unit. Neo machines publish exact units; older machines are read through the text they show for each value. Neo and Dye Essence controls also carry a `how` and a `sound` sentence (`machine_describe`): how the control changes the sound and what you will hear.
-- Older machines have Neo successors for the common ones (`machine_replace`: `guide(topic="migrating-songs")`).
+- Values are written in the parameter's unit. Neo machines publish exact units. Neo and Dye Essence controls also carry a `how` and a `sound` sentence (`machine_describe`): how the control changes the sound and what you will hear.
+- Every Neo effect has **Amount** (0-200 %, default 100 %) and **Mix** (0-100 %, default 100 %), the last two parameters in its list. Amount is how far the effect moves the sound from neutral: 100 % is the settings as they are, 0 % is bit-exact dry (the input delayed by the machine's latency), 200 % exaggerates but stays stable; each machine's guide says what it scales. Mix blends the dry (delayed by the same latency, so no comb) against the wet. Use Amount to turn a preset up or down, Mix for parallel processing; neither changes a saved song at its defaults. Neo Tune's correction strength is `Correction`; Neo Plug FX has Mix only.
 
 ## Patterns, the arrangement and the session grid
 - A **pattern** belongs to one machine and holds its notes and automation (a parameter's movement, played whenever the pattern plays). Its length is in beats.

@@ -171,5 +171,8 @@ namespace NeoBuzz.Multiband
 
         [ParameterDecl(Name = "B4 sidechain", Description = "Band 4: its detector hears the band's own signal, or input 2 through the same crossovers (connect a machine to the second input; none connected: it hears silence)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int B4Key { get => Values[P.B4Key]; set => Values.Set(P.B4Key, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
     }
 }

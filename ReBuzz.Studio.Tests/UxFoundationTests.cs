@@ -87,8 +87,6 @@ namespace ReBuzz.Studio.Tests
                 ("Neo Sampler", MachineCategory.Sampler),
                 ("Neo Drive", MachineCategory.Distortion),
                 ("Neo Filter", MachineCategory.EqFilter),
-                ("Pedal SH101", MachineCategory.Synth),         // a manifest editor: "monosynth"
-                ("Pedal EQ", MachineCategory.EqFilter),         // a manifest editor: "EQ"
             };
             var added = new System.Collections.Generic.List<MachineCore>();
             try

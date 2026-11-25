@@ -1,7 +1,7 @@
 // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): the keyboard under the windows of machines that play notes,
 // headless. It shows under a generator's editor, parameter window and manifest editor, not an effect's or a controller's;
 // a click plays the written pitch, heard by YIN in a render, on a machine that takes MIDI (Neo Poly) and on ones that take
-// notes only in their Note track (the tests' Keys Test, and Pedal SH101 while it takes no MIDI); where the key is struck is
+// notes only in their Note track (the tests' Keys Test); where the key is struck is
 // the velocity; every note ends (released anywhere,
 // the pointer leaving the window, the window closing or losing focus, the keyboard hidden); the toggle hides and shows it
 // and persists per machine type, under the Preferences default; Space stays the transport's with the keys focused; keys
@@ -172,12 +172,12 @@ namespace ReBuzz.Studio.Tests
 
                 verb = Add("Neo Verb", "Kb Verb");
                 Assert.That(KeyboardOf(Gui(verb)), Is.Null, "an effect has none");
-                eq = Add("Pedal EQ", "Kb EQ");
+                eq = Add("Neo EQ", "Kb EQ");
                 Assert.That(KeyboardOf(Parameters(eq)), Is.Null, "an effect's parameter window has none");
-                lfo = Add("Pedal LFO", "Kb LFO", toMaster: false);
+                lfo = Add("Neo LFO", "Kb LFO", toMaster: false);
                 Assert.That(KeyboardOf(Parameters(lfo)), Is.Null, "a controller has none");
 
-                sh101 = Add("Pedal SH101", "Kb SH101");
+                sh101 = Add("Keys Test", "Kb SH101");
                 var parameters = Parameters(sh101);
                 var pk = KeyboardOf(parameters);
                 Assert.That(pk, Is.Not.Null, "a generic parameter window has it");
@@ -185,10 +185,6 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(pk.Keys.Layout.Octaves, Is.GreaterThanOrEqualTo(2), "the Device window (720 wide): at least two octaves");
                 Assert.That(parameters.ClientSize.Width, Is.GreaterThanOrEqualTo(KeyboardLayout.MinWidth));
                 Studio.Screenshot(parameters, "keyboard-parameter-window");
-                // Its manifest editor too (a double click opens it: curated).
-                Assert.That(Core.UiHost.OpenEditor(sh101), Is.True);
-                Settle();
-                Assert.That(KeyboardOf(StudioMachineUiHost.EditorWindowOf(sh101)!), Is.Not.Null, "its manifest editor has it");
 
                 juno = Add("Keys Test", "Kb Tracks");
                 var tw = Parameters(juno);
@@ -240,7 +236,6 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         [TestCase("Neo Poly", 69, "Midi")]          // A4, 440 Hz: MIDI
         [TestCase("Keys Test", 57, "Tracks")]       // A3, 220 Hz: its Note track
-        [TestCase("Pedal SH101", 57, "")]           // A3: its Note track today, MIDI once it takes it (machines/pedal-synths)
         public void AClickPlaysTheWrittenPitch(string gear, int note, string how)
         {
             var m = Add(gear, "Kb Pitch " + gear);
@@ -507,7 +502,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void SongsKeepTheGuisSizeWithoutTheKeyboard()
         {
-            var m = Add("Pedal SH101", "Kb Placement");
+            var m = Add("Keys Test", "Kb Placement");
             try
             {
                 Core.UiHost.OpenParameterWindow(m, new WindowPlacement(40, 40, 520, 300));

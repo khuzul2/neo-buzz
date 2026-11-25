@@ -135,6 +135,15 @@ else()
 endif()
 np_output(neoplug-sandbox-test)
 
+# --- neoplug-notenames-test: the VST3 adapter's note names against a fake IUnitInfo (the SDK's examples name no pitch) ---------------------
+add_executable(neoplug-notenames-test probe/neoplug-notenames-test.cpp)
+target_include_directories(neoplug-notenames-test PRIVATE neoplug ${NEOPLUG_VST3_SDK} ${NEOPLUG_CLAP}/include)
+target_link_libraries(neoplug-notenames-test PRIVATE sdk_hosting)
+if(WIN32)
+    target_compile_definitions(neoplug-notenames-test PRIVATE NOMINMAX UNICODE _UNICODE)
+endif()
+np_output(neoplug-notenames-test)
+
 # --- neoplug-test.clap: a CLAP module for the tests (synth + gain, with a native GUI panel) ----------
 add_library(neoplug-test MODULE testplug/neoplug-test.cpp)
 target_include_directories(neoplug-test PRIVATE ${NEOPLUG_CLAP}/include)

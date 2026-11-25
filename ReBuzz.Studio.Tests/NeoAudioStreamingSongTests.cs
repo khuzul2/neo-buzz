@@ -21,7 +21,7 @@ using ReBuzz.FileOps;
 using ReBuzz.FileOps.Nbl;
 using ReBuzz.MachineManagement;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

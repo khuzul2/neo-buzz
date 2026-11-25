@@ -8,7 +8,7 @@ Lo-fi in one effect, with no latency. The chain runs in this order: the pitch mo
 - `Wow` (rate in `Wow rate`), `Flutter` and `Drift` move the pitch by up to 50, 50 and 25 cents. They read a short delay line, so the wet signal runs a few ms behind the dry while they are on (a gentle chorus when `Mix` is below 100%); nothing is reported as latency.
 - `Tone` left of centre is a low-pass (20 kHz down to 600 Hz), right of centre a high-frequency lift of up to 9 dB.
 - `Amount` scales on a perceptual scale: the bits removed from 24 and the octaves of rate reduction, the hiss and crackle level in dB, the cents of wow, flutter and drift, the tone cut. 0% is clean, 200% exaggerated; `Mix` still blends the dry in.
-- With every stage off, or `Mix` or `Amount` at 0 and `Output` at 0 dB, the input passes bit for bit.
+- `Amount` at 0 passes the input bit for bit, whatever `Output` says; so does every stage off, or `Mix` at 0, with `Output` at 0 dB.
 
 ## Use it for
 

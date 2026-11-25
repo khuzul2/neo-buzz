@@ -239,7 +239,7 @@ namespace NeoBuzz.MachineTests
                                 v.Set(P.Mode, mode); v.Set(P.Size, size); v.Set(P.Decay, decay); v.Set(P.LowDecay, low); v.Set(P.Damping, damp);
                                 e.Process(none, none, 0);
                                 settings++;
-                                double slowest = v.Value(P.Decay) * Math.Max(1, v.Value(P.LowDecay));
+                                double slowest = Slowest(v);
                                 for (int i = 0; i < 16; i++)
                                 {
                                     double peak = 0;
@@ -253,6 +253,15 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Neo Verb loop gain over {settings} settings: peak {worstGain:F6}, slowest band at most {worstOvershoot:F3}× its set decay ({worstAt})");
             Assert.That(worstGain, Is.LessThan(1));
             Assert.That(worstOvershoot, Is.LessThanOrEqualTo(VerbEngine.MaxOvershoot * 1.0001), worstAt);
+        }
+
+        /// <summary>The slowest decay the engine runs, s: Decay times Low decay as Amount scales them (machines.md, "Mix and Amount"), not as the knobs say.</summary>
+        static double Slowest(ParamValues v)
+        {
+            var eff = new ParamValues(Params.Table);
+            eff.AllowPhysical();
+            FxStage.Fill(v, eff, P.Amount, VerbEngine.AmountRules);
+            return eff.Value(P.Decay) * Math.Max(1, eff.Value(P.LowDecay));
         }
 
         static IEnumerable<TestCaseData> Extremes()
@@ -297,7 +306,7 @@ namespace NeoBuzz.MachineTests
             double Level(int from, int seconds) => Measure.Db(Math.Max(Measure.Rms(l, from, seconds * rate), Measure.Rms(r, from, seconds * rate)));
             double grow = Level(25 * rate, 5) - Level(20 * rate, 5);
             double first = Level(noise + rate, 1), last = Level(noise + 8 * rate, 1);
-            double slowest = v.Value(P.Decay) * Math.Max(1, v.Value(P.LowDecay));
+            double slowest = Slowest(v);
             bool frozen = v.On(P.Freeze);
             bool held = e.ShimmerGuard.Limiting;
             double needDrop = frozen ? 0 : 0.5 * 60 * 7 / (VerbEngine.MaxOvershoot * slowest);
@@ -378,7 +387,7 @@ namespace NeoBuzz.MachineTests
             int m = 0;
             for (int s = 20; s <= end; s++) { double y = Level(s); sx += s; sy += y; sxx += s * (double)s; sxy += s * y; m++; }
             double slope = (m * sxy - sx * sy) / (m * sxx - sx * sx);
-            double slowest = v.Value(P.Decay) * Math.Max(1, v.Value(P.LowDecay));
+            double slowest = Slowest(v);
             var g = e.ShimmerGuard;
             Measure.Report($"Neo Verb shimmer {shimmer / 10} % ({(VerbMode)mode}, size {size}, {slowest:F1} s): tail {slope:F2} dB/s from 20 to {end} s, ringing {-60 / slope / slowest:F2}× longer than set{(g.Limiting ? $", shimmer held at {g.Scale:F2}×" : ", guard asleep")}");
             Assert.That(slope, Is.LessThan(g.Edge), $"rings at most {VerbEngine.MaxOvershoot}× longer than set");

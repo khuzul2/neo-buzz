@@ -18,7 +18,7 @@ using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

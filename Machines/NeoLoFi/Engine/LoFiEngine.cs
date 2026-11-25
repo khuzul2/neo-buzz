@@ -16,6 +16,10 @@
 // is skipped, and with every stage off, or Mix at 0, at Output 0 dB the buffer is not touched: the input passes bit for bit.
 // Every control glides (SmoothRamp); the motion's depth glides for 0.4 s, since any change of a delay bends the pitch.
 // Allocation-free after SetSampleRate; basic maths from PortableMath only.
+//
+// Mix and Amount (docs/specs/machines.md, "Mix and Amount"): the shared FxStage takes the output to the input exactly at Amount 0 %
+// and fades the wet path in up to 5 %, as on every Neo effect; above that it leaves the output alone, and Amount scales the stages
+// on Lo-Fi's own perceptual rules (Update), the sound LF2 tuned. Mix stays Lo-Fi's own: with no latency its dry is aligned already.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -46,6 +50,7 @@ namespace NeoBuzz.LoFi
         const double FollowRef = 0.1;             // the hiss is at its setting when the input is at -20 dBFS or above
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         float offLog2 = 15.55f;                   // log2 of the host's rate: Rate at or above it is off
 
@@ -102,6 +107,8 @@ namespace NeoBuzz.LoFi
         public LoFiEngine(ParamValues values)
         {
             this.values = values;
+            // No rules: Lo-Fi scales its stages itself (Update); the stage owns Amount's bypass only, and Mix stays Lo-Fi's.
+            fx = new FxStage(values, P.Amount, -1, Array.Empty<AmountRule>(), maxLatency: Latency, maxBlock: MaxBlock);
             ch[0].Dith = new Rng(0xD17E01); ch[1].Dith = new Rng(0xD17E02);
             ch[0].Hiss = new Rng(0x4155A1); ch[1].Hiss = new Rng(0x4155B2);
             ch[0].Crack = new Rng(0xC4AC01); ch[1].Crack = new Rng(0xC4AC02);
@@ -117,6 +124,7 @@ namespace NeoBuzz.LoFi
         public void SetSampleRate(float sr)
         {
             sampleRate = sr;
+            fx.SetSampleRate(sr);
             offLog2 = (float)(PortableMath.Log(sr) / Ln2);
             bitsR.Setup(GlideSeconds, sr); rateR.Setup(GlideSeconds, sr); aaR.Setup(0.03, sr); jitR.Setup(GlideSeconds, sr);
             hissR.Setup(GlideSeconds, sr); dens.Setup(GlideSeconds, sr); crackLev.Setup(GlideSeconds, sr);
@@ -134,6 +142,12 @@ namespace NeoBuzz.LoFi
         }
 
         public void Reset()
+        {
+            fx.Reset();
+            ResetStages();
+        }
+
+        void ResetStages()
         {
             for (int c = 0; c < 2; c++)
             {
@@ -234,6 +248,13 @@ namespace NeoBuzz.LoFi
         public void Process(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
+        {
             Update(false);
             InMeter.Feed(left, right, n);
             bool nothing = outR.At(1f) && (mixR.At(0f) || StagesOff);
@@ -245,8 +266,8 @@ namespace NeoBuzz.LoFi
             }
             if (idle)
             {
-                // Leaving rest: the stages start from silence, the way they were left.
-                Reset();
+                // Leaving rest: the stages start from silence, the way they were left (the Mix and Amount stage keeps its state).
+                ResetStages();
                 idle = false;
             }
             for (int pos = 0; pos < n; pos += Sub)

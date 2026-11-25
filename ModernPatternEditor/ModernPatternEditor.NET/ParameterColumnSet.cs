@@ -4,9 +4,6 @@ using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if WINDOWS
-using System.Windows.Media;
-#endif
 
 namespace WDE.ModernPatternEditor
 {
@@ -33,7 +30,6 @@ namespace WDE.ModernPatternEditor
         protected readonly int track;
         public IList<ColumnRenderer.IColumn> Columns { get { return columns; } }
 
-#if !WINDOWS
         /// <summary>Fork (daw-modes.md AR3): a set whose columns the subclass makes (the Notes lanes).</summary>
         protected ParameterColumnSet(PatternVM pattern, int track)
         {
@@ -41,7 +37,6 @@ namespace WDE.ModernPatternEditor
             this.track = track;
             columns = new ParameterColumn[0];
         }
-#endif
 
         public ParameterColumnSet(PatternVM pattern, IEnumerable<IPatternColumn> ic, int track)
         {

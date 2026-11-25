@@ -222,7 +222,6 @@ namespace ReBuzz.Core.SongHistory
                 else if (n.IsMaster || n.Fingerprint == t.Fingerprint) inPlace.Add((n, t));
                 else
                 {
-                    if (n.IsNative || t.IsNative) return Defer(o, $"\"{t.Name}\" is a native machine whose state differs: its state can't be swapped while playing");
                     if (n.IsMissing || t.IsMissing || !core.MachineDLLs.ContainsKey(t.Gear)) return Defer(o, $"\"{t.Name}\" ({t.Gear}) isn't installed");
                     if (n.EditorGear != null || t.EditorGear != null) return Defer(o, $"\"{t.Name}\" has a pattern editor whose data differs: it can't be swapped while playing");
                     replace.Add((n, t));
