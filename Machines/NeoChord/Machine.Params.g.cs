@@ -22,16 +22,16 @@ namespace NeoBuzz.Chord
         [ParameterDecl(Name = "Diatonic chord", Description = "Diatonic: three-note chords (1-3-5 of the scale) or four-note chords (1-3-5-7)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int DiaSize { get => Values[P.DiaSize]; set => Values.Set(P.DiaSize, value); }
 
-        [ParameterDecl(Name = "Custom 1", Description = "Custom chord, interval 1 in semitones above the root: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 29)]
+        [ParameterDecl(Name = "Custom 1", Description = "Custom chord, interval 1 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 29)]
         public int Custom1 { get => Values[P.Custom1]; set => Values.Set(P.Custom1, value); }
 
-        [ParameterDecl(Name = "Custom 2", Description = "Custom chord, interval 2 in semitones above the root: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 32)]
+        [ParameterDecl(Name = "Custom 2", Description = "Custom chord, interval 2 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 32)]
         public int Custom2 { get => Values[P.Custom2]; set => Values.Set(P.Custom2, value); }
 
-        [ParameterDecl(Name = "Custom 3", Description = "Custom chord, interval 3 in semitones above the root: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 0)]
+        [ParameterDecl(Name = "Custom 3", Description = "Custom chord, interval 3 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 0)]
         public int Custom3 { get => Values[P.Custom3]; set => Values.Set(P.Custom3, value); }
 
-        [ParameterDecl(Name = "Custom 4", Description = "Custom chord, interval 4 in semitones above the root: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 0)]
+        [ParameterDecl(Name = "Custom 4", Description = "Custom chord, interval 4 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom", MinValue = 0, MaxValue = 49, DefValue = 0)]
         public int Custom4 { get => Values[P.Custom4]; set => Values.Set(P.Custom4, value); }
 
         [ParameterDecl(Name = "Inversion", Description = "Moves the lowest notes of the chord up an octave, one at a time (3 on a triad is the root position an octave up)", MinValue = 0, MaxValue = 3, DefValue = 0)]
