@@ -618,6 +618,19 @@
    "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training.",
    "note_out": true
   },
+  "Neo Arp": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "rhythmic",
+    "sequencer",
+    "tempo-sync"
+   ],
+   "use_for": "Turn held notes or a chord into an arpeggio or a stepped line before any synth: twelve patterns, a rate from 1/1 to 1/64 or in milliseconds, swing, gate, octaves, a latch and a 16-step row with ties and accents.",
+   "note_in": true,
+   "note_out": true
+  },
   "Neo Tune": {
    "category": "Modulation",
    "tags": [
