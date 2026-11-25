@@ -125,17 +125,19 @@ namespace NeoBuzz.Editor
         readonly ToggleFace toggle;
         readonly AvaloniaCanvas canvas;
         readonly EditGesture gesture;
+        readonly int[] raws;
         int selected;
         int hover = -1;
 
-        public ParamChoice(EditorContext ctx, int index, string label = null, double cellWidth = 0, bool vertical = false)
+        public ParamChoice(EditorContext ctx, int index, string label = null, double cellWidth = 0, bool vertical = false, string[] names = null, int[] raws = null)
         {
             this.ctx = ctx;
+            this.raws = raws;   // for a parameter that is not an enum: names and the raw value each button sets; the button nearest the value is lit
             canvas = new AvaloniaCanvas(this);
             gesture = new EditGesture(this);
             var def = ctx.Table[index];
-            strip = new ChoiceStrip(label ?? def.Name, ParamMapping.ChoiceNames(def), cellWidth, vertical, canvas);
-            if (ParamMapping.IsToggle(def)) toggle = new ToggleFace(strip.Label, strip.Width, canvas);
+            strip = new ChoiceStrip(label ?? def.Name, names ?? ParamMapping.ChoiceNames(def), cellWidth, vertical, canvas);
+            if (names == null && ParamMapping.IsToggle(def)) toggle = new ToggleFace(strip.Label, strip.Width, canvas);
             Width = toggle?.Width ?? strip.Width;
             Height = toggle?.Height ?? strip.Height;
             Binding = ctx.Bind(index, Show);
@@ -165,6 +167,11 @@ namespace NeoBuzz.Editor
         void Show(int raw)
         {
             selected = raw - Binding.Def.Min;
+            if (raws != null)
+            {
+                selected = 0;
+                for (int k = 1; k < raws.Length; k++) if (System.Math.Abs(raws[k] - raw) < System.Math.Abs(raws[selected] - raw)) selected = k;
+            }
             InvalidateVisual();
         }
 
@@ -182,7 +189,7 @@ namespace NeoBuzz.Editor
             {
                 gesture.Begin();
                 // A toggle switches; a row picks the button.
-                Binding.Set(toggle != null ? (selected == 1 ? Binding.Def.Min : Binding.Def.Max) : Binding.Def.Min + i);
+                Binding.Set(raws != null ? raws[i] : toggle != null ? (selected == 1 ? Binding.Def.Min : Binding.Def.Max) : Binding.Def.Min + i);
                 gesture.End();
             }
             e.Handled = true;

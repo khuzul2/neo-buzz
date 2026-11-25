@@ -28,7 +28,7 @@ namespace ReBuzz.Core.Clips
         public static WarpResult Fail(string why) => new WarpResult { Error = why };
     }
 
-    internal static class WarpMath
+    internal static partial class WarpMath
     {
         /// <summary>The least two markers are apart in beats: "one tick" of the editor, a 64th of a beat. A marker stops this far before its neighbour.</summary>
         public const double MinGap = 1.0 / 64;

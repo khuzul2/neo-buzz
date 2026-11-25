@@ -15,7 +15,11 @@
  "tracks": 16,
  "track_parameters": [
   "Note",
-  "Velocity"
+  "Velocity",
+  "Sample",
+  "Offset",
+  "Offset hi",
+  "Tune"
  ],
  "parameters": [
   {
@@ -24,16 +28,17 @@
    "name": "Mode",
    "group": "Play",
    "min": 0,
-   "max": 1,
+   "max": 2,
    "default": 0,
    "kind": "enum",
    "choices": [
     "Instrument",
-    "Kit"
+    "Kit",
+    "Tracker"
    ],
-   "description": "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)",
-   "how": "Chooses Instrument (zones play by key and velocity range, tuned from their root) or Kit (each zone gets its own key, one-shot).",
-   "sound": "Instrument mode plays a sample as a melodic instrument, and Kit mode turns zones into a drum pad set."
+   "description": "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside); Tracker: a note with a Sample plays that wave (any of the song's 200 and the built-ins) from its Offset, tuned by its key (C-4 = the wave's own speed) and its Tune, and a note without one plays the zones as Instrument does",
+   "how": "Chooses Instrument (zones play by key and velocity range, tuned from their root), Kit (each zone gets its own key, one-shot) or Tracker (each note names its own sample).",
+   "sound": "Instrument mode plays a sample as a melodic instrument, Kit mode turns zones into a drum pad set, and Tracker mode lets every note pick its sample, as a tracker does."
   },
   {
    "index": 1,

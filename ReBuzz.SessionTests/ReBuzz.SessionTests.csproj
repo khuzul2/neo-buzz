@@ -53,7 +53,7 @@
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\SliceMath.cs" Link="Engine\SliceMath.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.AutoWarp.cs;..\ReBuzz\Core\Clips\BeatTracker.cs;..\ReBuzz\Core\Clips\AutoWarpPolicy.cs;..\ReBuzz\Core\Clips\BeatFront.cs;..\ReBuzz\Core\Clips\BeatModelNet.cs;..\ReBuzz\Core\Clips\BeatModelTracker.cs" Link="Engine\%(Filename)%(Extension)" />
-    <Compile Include="..\ReBuzz\Core\Clips\WarpEditing.cs" Link="Engine\WarpEditing.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\WarpEditing.cs;..\ReBuzz\Core\Clips\GridWarp.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioCapture.cs" Link="Engine\AudioCapture.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\TakeFile.cs" Link="Engine\TakeFile.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\ClipMixer.cs" Link="Engine\ClipMixer.cs" />

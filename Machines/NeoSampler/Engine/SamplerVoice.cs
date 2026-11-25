@@ -42,6 +42,13 @@ namespace NeoBuzz.Sampler
         float pendVelGain, pendVelocity;
         long pendSerial, pendClock;
         bool pendKit, pendRelease;
+        // A sample-per-note start (Tracker mode, TM1): the key the sample plays unchanged at (−1: the zone's root), where it starts (frames) and its tune (semitones).
+        int pendRoot = -1;
+        double pendOffset;
+        float pendTune;
+        int fixedRoot = -1;
+        double startOffset;
+        float noteTune;
 
         // Control values (every 16 samples).
         double step, scale;
@@ -90,8 +97,9 @@ namespace NeoBuzz.Sampler
         }
 
         /// <summary>A note on this voice: now, or (it is sounding) after a 3 ms fade.</summary>
-        public void Begin(int key, int n, int z, SampleLayer l, float gain, float vel, long serial, long clock, bool isKit)
+        public void Begin(int key, int n, int z, SampleLayer l, float gain, float vel, long serial, long clock, bool isKit, int root = -1, double offset = 0, float tune = 0f)
         {
+            pendRoot = root; pendOffset = offset; pendTune = tune;
             var zs = engine.S.Zones[z];
             bool shot = isKit || zs.OneShot;
             Key = key;
@@ -154,7 +162,10 @@ namespace NeoBuzz.Sampler
                 else if (zs.Loop == ZoneLoop.Forward) loop = VoiceLoop.Forward;
                 else if (zs.Loop == ZoneLoop.PingPong) loop = VoiceLoop.PingPong;
             }
-            pos = dir > 0 ? regionStart : regionEnd - 1;
+            fixedRoot = pendRoot;
+            startOffset = pendOffset;
+            noteTune = pendTune;
+            pos = dir > 0 ? Math.Min(regionStart + startOffset, regionEnd - 1) : regionEnd - 1;
             playing = true;
             Pending = false;
             ladderL.Reset(); ladderR.Reset();
@@ -231,8 +242,8 @@ namespace NeoBuzz.Sampler
             ref var zs = ref s.Zones[zone];
             ApplyEnvelopes(false);
 
-            int root = zs.Root == SamplerEngine.RootFromWave ? layer.Root : zs.Root;
-            double semis = (kit ? 0 : note - root) + zs.Tune + engine.BendSemis;
+            int root = fixedRoot >= 0 ? fixedRoot : zs.Root == SamplerEngine.RootFromWave ? layer.Root : zs.Root;
+            double semis = (kit ? 0 : note - root) + zs.Tune + noteTune + engine.BendSemis;
             double ratio = PortableMath.Pow(2.0, semis / 12.0) * layer.Rate / sr;
             int k = 0;
             double r = ratio;

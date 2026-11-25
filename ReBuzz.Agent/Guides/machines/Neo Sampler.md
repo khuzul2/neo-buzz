@@ -6,8 +6,11 @@ A sampler and drum machine that plays the song's waves (the slots `wave_import` 
 |---|---|---|
 | Instrument | every zone whose key and velocity ranges hold the note, tuned from its root | pianos, pads, basses, velocity layers |
 | Kit | zone n plays key `Kit base` + n - 1, one-shot | drum kits, one-shots, FX |
+| Tracker | each note names its own sample (1-254); C-4 plays it at its own speed | breaks, chopped loops, one note per slice |
 
 Built-in waves: 201-215 the drum and percussion hits (kick, snare, hats, toms, crash, ride, cowbell, shaker, clave); 216-218 sine, saw, square; 219-220 electric piano; 221 strings; 222-224 bass, bell, pluck; 225-226 vox and noise.
+
+In Tracker mode a note carries `sample`, `volume` (the note's velocity), `offset` (frames into the sample) and `tune` (cents, +-2400) in `notes_write` and `notes_read`: `{"time":0,"note":"C-4","sample":3,"offset":4410,"tune":-20}`. A note with no `sample` plays the zones as in Instrument mode. `notes_write` refuses `sample` in the other modes.
 
 ## Use it for
 

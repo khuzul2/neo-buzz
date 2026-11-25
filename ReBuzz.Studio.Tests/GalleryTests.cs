@@ -290,6 +290,51 @@ namespace ReBuzz.Studio.Tests
             return machine;
         }
 
+        /// <summary>TM1: a Neo Sampler in Tracker mode with nine named song waves and a break of notes, each on its sample; what: 0 roll, 1 picker, 2 mixed selection, 3 Sample lane, 4 zoomed out.</summary>
+        static void SampleRollShot(MainWindow window, string id, int what)
+        {
+            string dir = NeoBuzz.TestSupport.TestTemp.Path("gallery-samples-" + System.Environment.ProcessId);
+            System.IO.Directory.CreateDirectory(dir);
+            string[] names = { "Break · kick", "Break · snare", "Break · snare roll", "Break · hat", "Break · kick and hat", "Break · ride", "Break · crash tail", "Break · ghost snare", "Stab · A minor" };
+            int existing = Core.SongCore.Wavetable.Waves.Count(w => w != null);
+            if (existing == 0)
+                for (int i = 0; i < names.Length; i++)
+                    ReBuzz.Agent.WaveEdits.Load(Core, SamplerPickerTests.Wav(dir, "g" + i, 0.08 + 0.06 * (i % 5), i + 11), -1, names[i], false, out _);
+            string name = "Breaks" + what;
+            Core.SongCore.CreateMachine("Neo Sampler", null, name, null, null, null, -1, 0.3f, 0.3f);
+            var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
+            machine.ParameterGroups[1].Parameters.First(x => x.Name == "Mode").SetValue(0, 2);
+            machine.CreatePattern("Jungle", 16);
+            window.Detail.ShowPage(true, true);
+            PatternView.Edit(machine.PatternsList.First(p => p.Name == "Jungle"));
+            Wait(250);
+            var roll = PatternView.Page.Roll;
+            roll.Poll();
+            var busy = machine.ManagedMachine?.GetType().GetProperty("Busy");
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (busy?.GetValue(machine.ManagedMachine) is true && clock.ElapsedMilliseconds < 5000) Thread.Sleep(20);
+            const int TB = PatternEvent.TimeBase;
+            var line = new ClipNote[]
+            {
+                new(0, TB * 2, 48, 112, 0, 1), new(TB * 2, TB, 48, 100, 0, 4), new(TB * 3, TB, 48, 100, 0, 4), new(TB * 4, TB * 2, 50, 110, 0, 2),
+                new(TB * 6, TB, 48, 90, 0, 8), new(TB * 7, TB, 48, 100, 0, 3), new(TB * 8, TB * 2, 48, 112, 0, 5), new(TB * 10, TB, 53, 100, 0, 4),
+                new(TB * 11, TB, 53, 96, 0, 6), new(TB * 12, TB * 2, 55, 110, 0, 7), new(TB * 14, TB, 48, 100, 0, 9), new(TB * 15, TB, 48, 100, 0, 2),
+            };
+            ReBuzz.Core.Notes.SongNotes.For(Core, machine.PatternsList.First(p => p.Name == "Jungle")).Edit(null, line);
+            Wait(150);
+            roll.Poll();
+            roll.FoldBox.SelectedIndex = 1;
+            Wait(250);
+            string text = "Neo Sampler in Tracker mode, the Jungle pattern: a chip on every note names its sample, and the colour follows the sample.";
+            if (what == 0) { }
+            else if (what == 1) { roll.Roll.SelectOnly(new[] { 1 }); roll.Roll.RequestPicker(); text += " The picker is open on the snare."; }
+            else if (what == 2) { roll.Roll.SelectOnly(new[] { 0, 1, 2, 3 }); roll.Roll.RequestPicker(); text += " The picker over a mixed selection: it applies to four notes with different samples."; }
+            else if (what == 3) { roll.LowerBox.SelectedIndex = roll.LowerBox.Items.Cast<object>().ToList().FindIndex(o => o.ToString() == "Sample"); text += " The Sample lane under the roll."; }
+            else { roll.Roll.TickWidth = 3; text += " Zoomed out: the notes are too short for a chip and keep their colour."; }
+            Wait(300);
+            Shot(window, id, text, "Open a Neo Sampler's pattern in the Piano roll with the sampler's Mode set to Tracker; S opens the picker, the lane box picks the Sample lane.");
+        }
+
         static void Try(string id, System.Action shot)
         {
             // GALLERY_ONLY=059,061: only the shots whose id starts with one of these (a quick look at a new screen; unset in CI).
@@ -412,6 +457,19 @@ namespace ReBuzz.Studio.Tests
             foreach (var m in menus) m.Close();
             menus.Clear();
             foreach (var w in mains) foreach (var mi in w.GetVisualDescendants().OfType<MenuItem>().Where(i => i.IsSubMenuOpen)) mi.Close();
+        }
+
+        /// <summary>Closes every menu still open on the main windows, those of buttons too (their menus are not in <see cref="menus"/>).</summary>
+        static void CloseAllPopups()
+        {
+            CloseMenus();
+            foreach (var w in mains)
+            {
+                var layer = Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(w);
+                if (layer == null) continue;
+                foreach (var cm in layer.GetVisualDescendants().OfType<MenuItem>().Select(i => i.FindAncestorOfType<ContextMenu>()).Where(c => c != null).Distinct().ToList()) cm!.Close();
+            }
+            Settle();
         }
 
         static int failuresBefore;
@@ -1331,6 +1389,33 @@ namespace ReBuzz.Studio.Tests
                     window.Detail.SetPage(false);
                 });
 
+                // A sample per note (TM1): a Neo Sampler in Tracker mode, the roll with a chip on every note, the picker, the Sample lane.
+                Try("062-sample-roll", () =>
+                {
+                    SampleRollShot(window, "062-sample-roll", 0);
+                    window.Detail.SetPage(false);
+                });
+                Try("063-sample-picker", () =>
+                {
+                    SampleRollShot(window, "063-sample-picker", 1);
+                    window.Detail.SetPage(false);
+                });
+                Try("064-sample-picker-mixed", () =>
+                {
+                    SampleRollShot(window, "064-sample-picker-mixed", 2);
+                    window.Detail.SetPage(false);
+                });
+                Try("065-sample-lane", () =>
+                {
+                    SampleRollShot(window, "065-sample-lane", 3);
+                    window.Detail.SetPage(false);
+                });
+                Try("066-sample-roll-zoomed-out", () =>
+                {
+                    SampleRollShot(window, "066-sample-roll-zoomed-out", 4);
+                    window.Detail.SetPage(false);
+                });
+
                 Try("060-song-notes", () =>
                 {
                     window.Detail.Restore();
@@ -1642,6 +1727,19 @@ namespace ReBuzz.Studio.Tests
                         }
                     });
                 }
+                Try("304-prefs-autowarp", () =>
+                {
+                    prefs.ShowPage("Audio");
+                    Settle();
+                    var audio = prefs.Page<AudioPage>();
+                    if (prefs.Selected is ScrollViewer sv && sv.Content is Visual content)
+                    {
+                        var at = audio.AutoWarpButtons[0].TranslatePoint(new Point(0, 0), content);
+                        if (at != null) sv.Offset = new Vector(0, System.Math.Max(0, at.Value.Y - 260));
+                    }
+                    Settle();
+                    Shot(prefs, "304-prefs-autowarp", "Preferences ▸ Audio ▸ Warping (AW5): what a long file gets on import (Off, Follow the beat, To grid) and the defaults To grid starts from; any clip can be auto-warped later from its right-click menu.", $"{Product.Name} ▸ Preferences… (⌘,) ▸ Audio ▸ Warping.", notes: Devices);
+                });
                 Try("320-prefs-agent-on", () =>
                 {
                     prefs.ShowPage("Agent");
@@ -2092,9 +2190,15 @@ namespace ReBuzz.Studio.Tests
                 }
                 P5aShot("490-editor-neo-poly-modulation", "Neo Poly", (w, m) =>
                 {
-                    var tabs = EditorPart(w, "PageTabs", "Page tabs");
+                    // The editor has two rows of tabs now (Full | Acid above, Synth | Modulation inside the Full view): the inner ones.
+                    var tabs = w.GetVisualDescendants().OfType<Control>().Last(c => c.GetType().Name == "PageTabs" && Avalonia.Automation.AutomationProperties.GetName(c) == "Page tabs");
                     ClickIn(w, tabs, 120, 12);
-                }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Modulation tab (or Right on the tabs).");
+                }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Full view's Modulation tab (or Right on the tabs).");
+                P5aShot("496-editor-neo-poly-acid-view", "Neo Poly", (w, m) =>
+                {
+                    var outer = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "Pages");
+                    outer.GetType().GetProperty("Selected")!.SetValue(outer, 1);
+                }, "Neo Poly's Acid view (AC3): six big knobs (Tuning, Cutoff, Resonance, Env mod, Decay, Accent), the waveform switch (saw or square), Slide and Slide time, and below them the four limits (Filter range, Sweep limit, Soft start, Filter quality). A patch that uses the acid controls opens in it; Full is the other view.", "Double-click Neo Poly, then Acid in the tabs at the top.");
                 P5aShot("491-editor-neo-fm6-operator-4", "Neo FM6", (w, m) =>
                 {
                     var tiles = EditorPart(w, "InteractiveGraph", "Operator overview");
@@ -2645,7 +2749,7 @@ namespace ReBuzz.Studio.Tests
                         window.MouseUp(from + new Vector(wave.PixelsPerBeat, 0), MouseButton.Left);
                         Settle();
                     }
-                    Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the beat grid (Shift is free), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
+                    Shot(window, "461-warp-marker-editing", "Editing warp markers on the Audio page (NA3): double-click adds a marker pinned to a transient when one is near, a drag warps the audio between markers and snaps to the grid (" + (OperatingSystem.IsMacOS() ? "Option" : "Alt") + " moves it freely, Shift slides the audio under it), double-click or Del removes one.", "Double-click the waveform; drag a marker; Del.");
                 });
                 Try("462-warp-ghost-marker", () =>
                 {
@@ -2679,6 +2783,102 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Shot(window, "464-warp-context-menu", "Warp markers (WM1): the waveform's menu (Set bar 1 here, Warp from here (auto-warp from that moment: it follows the tempo changes, AW1), Warp from here, straight (one tempo), Warp as a loop of N bars, markers at the transients or on every bar, Delete, Remove all, Quantize), each one undo step with its key beside it.", "Right-click the waveform.");
                     CloseMenus();
+                });
+                // Fork (neo-audio.md, AW5): Auto-warp from the clip's menu in every view, its options, the page's controls and a range.
+                Try("465-autowarp-session-menu", () =>
+                {
+                    var session = Tab<SessionView>(window, "Session");
+                    window.ShowView("Session");
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
+                    Settle();
+                    Click(window, Centre(session.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5), MouseButton.Right);
+                    var menu = session.LastMenu;
+                    Assert.That(menu?.IsOpen, Is.True, "a right click on an audio clip opens its menu");
+                    menus.Add(menu!);
+                    Hover(ItemOf(menu!, "Auto-warp"));
+                    Shot(window, "465-autowarp-session-menu", "Session: an audio clip's menu with Auto-warp ▸ Follow the beat, To grid (with the clip's grid and the song's strength) and Options… (AW5). The Arrangement's clip menu and the Audio page's waveform menu offer the same; the Audio page behind it shows the toolbar hint at its right end.", "Right-click an audio clip ▸ Auto-warp.");
+                    CloseAllPopups();
+                });
+                Try("466-autowarp-arrangement-menu", () =>
+                {
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    window.ShowView("Sequence");
+                    seq.SetArrangementMode(true);
+                    Settle();
+                    var item = editor.Read(laneV).First();
+                    Point Clip() { var r = seq.Arrangement.ClipRect(item); return seq.Arrangement.TranslatePoint(new Point(r.X + r.Width * 0.3, r.Y + r.Height * 0.8), window)!.Value; }
+                    window.Detail.ShowAudio();
+                    Settle();
+                    // The clip's lane is further down: scroll it into view.
+                    var rect0 = seq.Arrangement.ClipRect(item);
+                    var geo0 = seq.Arrangement.Geometry;
+                    seq.Arrangement.ScrollTo(System.Math.Max(0, geo0.ScrollX + rect0.X - 120), System.Math.Max(0, geo0.ScrollY + rect0.Y - 40));
+                    Settle();
+                    Click(window, Clip());
+                    Click(window, Clip(), MouseButton.Right);
+                    Assert.That(seq.OpenMenu?.IsOpen, Is.True, "a right click on an arranged clip opens its menu");
+                    menus.Add(seq.OpenMenu!);
+                    Hover(ItemOf(seq.OpenMenu!, "Auto-warp"));
+                    Shot(window, "466-autowarp-arrangement-menu", "Arrangement: an audio clip's menu with Auto-warp ▸ Follow the beat, To grid and Options… (AW5); it works on the selected clip, in one undo step.", "Right-click an audio clip in the Arrangement ▸ Auto-warp.");
+                    CloseAllPopups();
+                    seq.SetArrangementMode(false);
+                });
+                Try("467-autowarp-options", () =>
+                {
+                    CloseAllPopups();
+                    var start = new ReBuzz.Studio.Shell.AutoWarpFlow.AutoWarpChoice { ToGrid = true, Grid = "1/16", Strength = 100, Sensitivity = 60, Reach = 40, LeaveSustained = true };
+                    var options = new ReBuzz.Studio.Shell.AutoWarpFlow.OptionsWindow(new[] { inSession }, null, start);
+                    options.Show();
+                    Settle();
+                    try
+                    {
+                        DialogShot(window, options, "467-autowarp-options", "Auto-warp ▸ Options… (AW5): Follow the beat or To grid; the grid (1/4, 1/8, 1/16, 1/32 and triplets), the strength (the song's Quantize strength), the sensitivity, the reach (a share of a step) and \"leave long notes and pauses alone\". The clip's saved options are shown; Auto-warp runs from here as one undo step.", "Right-click an audio clip ▸ Auto-warp ▸ Options….");
+                    }
+                    finally { options.Close(); Settle(); }
+                });
+                Try("468-autowarp-audio-page", () =>
+                {
+                    window.ShowView("Session");
+                    var sv = Tab<SessionView>(window, "Session");
+                    Click(window, Centre(sv.SlotAt(layout.FirstTrackOf(drums), 0), window, 0.6, 0.5));
+                    window.Detail.ShowAudio();
+                    Settle();
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    page.Refresh(force: true);
+                    Settle();
+                    ReBuzz.Studio.Shell.AutoWarpFlow.Run(new[] { inSession }, true);
+                    page.Refresh(force: true);
+                    var wave = page.Wave;
+                    wave.SetZoom(40);
+                    Settle();
+                    var kinds = Enumerable.Range(0, wave.Markers.Count).Where(k => wave.MarkerKind(k) == "attack").ToList();
+                    Point Mid(double x) => Centre(wave, window, 0, 0.5) + new Vector(x, 0);
+                    if (kinds.Count > 0) window.MouseMove(Mid(wave.MarkerX(kinds[kinds.Count / 2])));
+                    Settle();
+                    Shot(window, "468-autowarp-audio-page", "The Audio page after Auto-warp ▸ To grid (AW5): the split button \"Auto-warp: To grid ▾\", the chip of the clip's options (grid · strength · reach), amber diamonds for beats, blue circles for attacks snapped to the grid, hollow circles for attacks left alone beyond the reach, \"Long note: no markers\" over sustained sounds, and the live hint at the right end of the toolbar (here over a marker).", "Audio page ▸ Auto-warp ▸ To grid.");
+                });
+                Try("469-autowarp-range-menu", () =>
+                {
+                    CloseAllPopups();
+                    var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
+                    var wave = page.Wave;
+                    wave.SelectRange(1.6, 5.2);
+                    Settle();
+                    var busy = Enumerable.Range(0, wave.Markers.Count).Select(k => wave.MarkerX(k)).ToList();
+                    double rx = Enumerable.Range((int)wave.X(2.0), (int)(wave.X(5.0) - wave.X(2.0))).Select(x => (double)x).Where(x => busy.All(m => Math.Abs(m - x) > 8)).DefaultIfEmpty(wave.X(3.0)).First();
+                    Point Px(double x) => Centre(wave, window, 0, 0.6) + new Vector(x, 0);
+                    Assert.That(wave.Range, Is.Not.Null, "a range is selected");
+                    Click(window, Px(rx), MouseButton.Right);
+                    menus.Add(wave.LastMenu!);
+                    Hover(ItemOf(wave.LastMenu!, "Auto-warp selection"));
+                    Shot(window, "469-autowarp-range-menu", "A range selected on the waveform (AW5): the menu reads Auto-warp selection ▸ Follow the beat, To grid, Options…; only the markers inside the range change, its two ends are pinned, one undo step. The toolbar hint says what the selection offers.", "Drag on the waveform to select a range, then right-click it.");
+                    CloseAllPopups();
+                    wave.Focus();
+                    window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+                    window.KeyReleaseQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+                    Settle();
                 });
             }
             finally

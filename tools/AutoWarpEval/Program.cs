@@ -58,6 +58,7 @@ namespace NeoBuzz.AutoWarpEval
                     case "--pack": return Pack.Run(args, i + 1);
                     case "--pack2": return Pack2.Run(args, i + 1);
                     case "--pack3": return Pack3.Run(args, i + 1);
+                    case "--pack5": return Pack5.Run(args, i + 1);
                     case "--aw3": return Aw3Commands.Run(args, i + 1);
                     case "--dump":
                         {

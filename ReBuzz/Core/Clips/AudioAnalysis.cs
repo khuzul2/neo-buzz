@@ -25,8 +25,18 @@ namespace ReBuzz.Core.Clips
         /// running median, at least 50 ms apart, each placed on the steepest rise of the
         /// waveform's energy near it, a little early so its attack is kept whole.
         /// </summary>
-        public static List<double> Onsets(AudioSource source)
+        public static List<double> Onsets(AudioSource source) => Onsets(source, DefaultSensitivity);
+
+        /// <summary>The sensitivity (0 to 100) at which <see cref="Onsets(AudioSource)"/> detects, as it always has.</summary>
+        public const int DefaultSensitivity = 50;
+
+        /// <summary>
+        /// The same detector with its thresholds scaled by the sensitivity (AW5): 50 is the detector as it was, each 25 above halves the thresholds (more, softer
+        /// transients) and each 25 below doubles them.
+        /// </summary>
+        public static List<double> Onsets(AudioSource source, int sensitivity)
         {
+            double k = Math.Pow(2, (DefaultSensitivity - Math.Clamp(sensitivity, 0, 100)) / 25.0);
             source = source.ForAnalysis();           // exact reads, whether the audio is in memory or in the cache file (NA1b)
             var flux = SpectralFlux(source);
             var onsets = new List<double>();
@@ -35,7 +45,7 @@ namespace ReBuzz.Core.Clips
             double mean = flux.Average();
             // Steady sound changes by rounding only: a transient is at least this much flux, and
             // a tenth of the strongest (a loud bar's ghost notes still count, its hiss doesn't).
-            double floor = Math.Max(MinFlux, 0.1 * flux.Max());
+            double floor = Math.Max(MinFlux, 0.1 * flux.Max()) * k;
             int lastPeak = -minGap;
             for (int i = 1; i < flux.Length - 1; i++)
             {
@@ -44,7 +54,7 @@ namespace ReBuzz.Core.Clips
                 var around = new double[to - from + 1];
                 Array.Copy(flux, from, around, 0, around.Length);
                 Array.Sort(around);
-                double threshold = around[around.Length / 2] * 1.5 + mean * 0.5 + 1e-6;
+                double threshold = (around[around.Length / 2] * 1.5 + mean * 0.5) * k + 1e-6;
                 if (flux[i] <= threshold || flux[i] < floor || i - lastPeak < minGap) continue;
                 lastPeak = i;
                 onsets.Add(Refine(source, (long)i * FrameHop + FrameSize / 2));

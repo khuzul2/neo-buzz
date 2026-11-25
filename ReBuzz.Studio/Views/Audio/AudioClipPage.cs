@@ -63,7 +63,11 @@ namespace ReBuzz.Studio.Views.Audio
         readonly ComboBox warp, preserve;
         readonly Control preserveRow;
         readonly TextBox tempo, transpose, detune, gain, fadeIn, fadeOut, start, loopStart, loopEnd;
-        readonly Button halve, doubleIt, detect, clear, fit, convert, slice;
+        readonly Button halve, doubleIt, detect, detectMore, clear, fit, convert, slice;
+        // Fork (AW5): the split button's mode, the chip of the clip's options, the live hint of the toolbar and the legend of the markers.
+        readonly TextBlock chip = new TextBlock { FontSize = 12, FontFamily = new FontFamily("monospace"), Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center };
+        readonly TextBlock hintLabel = new TextBlock { FontSize = 11, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 0, 0, 1) };
+        bool lastToGrid;
         // Fork (WM1): segment tempo, quantize and follow.
         readonly TextBox segBefore, segAfter, strength;
         readonly Button segHalve, segDouble, quantize;
@@ -110,7 +114,10 @@ namespace ReBuzz.Studio.Views.Audio
             tempo = Box("The audio's own tempo. Without warp markers the clip's length follows it: 4 beats at 120 BPM are 8 at 60.", CommitTempo, "Tempo");
             halve = Btn("÷2", "Half the tempo (the clip twice as long)", () => ScaleTempo(0.5), "Halve tempo");
             doubleIt = Btn("×2", "Double the tempo (the clip half as long)", () => ScaleTempo(2), "Double tempo");
-            detect = Btn("Auto-warp", "Find the beats in the audio and follow its tempo where it moves: the warp markers and the tempo are replaced (one undo step). A steady tempo gives one tempo and the first downbeat; a tempo that drifts gives a marker on every bar.", () => Apply(new AudioClipEdit { AutoWarp = true }, "Auto-warp"), "Auto-warp");
+            detect = Btn("Auto-warp: Follow the beat", "Find the beats in the audio and follow its tempo where it moves: the warp markers and the tempo are replaced (one undo step). A steady tempo gives one tempo and the first downbeat; a tempo that drifts gives a marker on every bar. To grid (the ▾ menu) also puts a marker on every attack and snaps it to the grid. With a range selected on the waveform it changes that range only.", () => RunAutoWarp(lastToGrid), "Auto-warp");
+            detectMore = Btn("▾", "Auto-warp: Follow the beat, To grid or Options…", OpenAutoWarpMenu, "Auto-warp mode and options");
+            detectMore.MinWidth = 24;
+            AutoWarpFlow.Ran += OnAutoWarpRan;
             // Fork (docs/specs/pitch.md section 9): the clip's notes as MIDI on a new track; the page's right-click menu offers the same.
             var convertMenu = ConvertFlow.ButtonMenu(() => shown);
             convert = Btn("Convert to MIDI ▾", "Find the melody, the harmony or the drums in the audio and put them on a new MIDI track, in a clip where this one is", () => convertMenu.Open(convert), "Convert to MIDI");
@@ -134,6 +141,7 @@ namespace ReBuzz.Studio.Views.Audio
             wave.RegionCommitted += (s, ls, le) => CommitRegionTicks(s, ls, le);
             wave.ActionRequested += (request, label) => ApplyWarp(request, label);
             wave.SelectionChanged += UpdateSegments;
+            wave.AutoWarpMenu = () => AutoWarpFlow.Menu(() => shown == null ? Array.Empty<IPattern>() : new[] { shown }, RangeNow);
             fit = Btn("Fit", "Zoom to show the whole clip", () => wave.Fit(), "Fit");
             follow = Check("Follow", "Scroll the waveform to keep the playing position in view", () => wave.Follow = follow.IsChecked == true);
             follow.Margin = new Thickness(4, 0, 4, 0);
@@ -146,9 +154,10 @@ namespace ReBuzz.Studio.Views.Audio
             segBefore.Width = segAfter.Width = 62;
             segHalve = Btn("÷2", "Halve the tempo of the segment after the selected marker (before it, for the last marker)", () => ScaleSegment(0.5), "Halve segment tempo");
             segDouble = Btn("×2", "Double the tempo of the segment after the selected marker (before it, for the last marker)", () => ScaleSegment(2), "Double segment tempo");
-            markerInfo = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-            hintText = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0), Text = wave.Hint };
-            wave.HintChanged += t => hintText.Text = t;
+            markerInfo = new TextBlock { MinWidth = 120, FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+            hintText = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, MaxLines = 2, Width = 320, Height = 30, VerticalAlignment = VerticalAlignment.Top, Text = wave.Hint };
+            hintLabel.Text = wave.HintLabel;
+            wave.HintChanged += t => { hintText.Text = t; hintLabel.Text = wave.HintLabel; };
 
             var clipColumn = new StackPanel
             {
@@ -172,7 +181,7 @@ namespace ReBuzz.Studio.Views.Audio
                 {
                     Section("Audio"),
                     Row("Warp", warp), preserveRow,
-                    Row("Tempo", new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Children = { new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt } }, detect } }),
+                    Row("Tempo", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt } }),
                     Row("Transpose", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { transpose, Unit("semitones") } }),
                     Row("Detune", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { detune, Unit("cents") } }),
                     Row("Gain", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { gain, Unit("dB") } }),
@@ -187,9 +196,12 @@ namespace ReBuzz.Studio.Views.Audio
                 Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { clipColumn, audioColumn } },
             };
             var tools = new WrapPanel { Orientation = Orientation.Horizontal };
+            var chipBox = new Border { Child = chip, Padding = new Thickness(8, 4), CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), BorderBrush = StudioTokens.SurfaceBorderBrush, Margin = new Thickness(0, 0, 8, 0) };
+            ToolTip.SetTip(chipBox, "The clip's Auto-warp to grid options: its grid, the strength (beside Quantize) and the reach. Change them in Options…");
+            var split = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 1, Children = { detect, detectMore } };
             foreach (var c in new Control[]
             {
-                fit, follow, clear, quantize, strength, Unit("%"), Label("  Segment", 62), segBefore, segAfter, segHalve, segDouble, markerInfo,
+                split, chipBox, fit, follow, clear, quantize, strength, Unit("%"), Label("  Segment", 62), segBefore, segAfter, segHalve, segDouble, markerInfo,
             })
             {
                 c.Margin = new Thickness(c.Margin.Left, c.Margin.Top, c.Margin.Right + 4, 2);
@@ -197,14 +209,20 @@ namespace ReBuzz.Studio.Views.Audio
                 tools.Children.Add(c);
             }
             var right = new DockPanel { LastChildFill = true };
-            DockPanel.SetDock(tools, Dock.Top);
-            DockPanel.SetDock(hintText, Dock.Bottom);
+            var hintBox = new StackPanel { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Top, Width = 320, Margin = new Thickness(8, 0, 0, 0), Children = { hintLabel, hintText } };
+            var toolbar = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(hintBox, Dock.Right);
+            toolbar.Children.Add(hintBox);
+            toolbar.Children.Add(tools);
+            DockPanel.SetDock(toolbar, Dock.Top);
+            var legend = Legend();
+            DockPanel.SetDock(legend, Dock.Bottom);
             // Fork (daw-modes.md EV1): the clip's envelopes under the waveform, on its beats.
             axis = new WaveAxis(this);
             envelopes = new Views.Detail.EnvelopeStack(core, axis);
             DockPanel.SetDock(envelopes, Dock.Bottom);
-            right.Children.Add(tools);
-            right.Children.Add(hintText);
+            right.Children.Add(toolbar);
+            right.Children.Add(legend);
             right.Children.Add(envelopes);
             right.Children.Add(wave);
             right.SizeChanged += (s, e) => envelopes.MaxLanesHeight = e.NewSize.Height * 0.45;
@@ -278,6 +296,9 @@ namespace ReBuzz.Studio.Views.Audio
         internal TextBox SegmentAfterBox => segAfter;
         internal Button SegmentHalveButton => segHalve;
         internal Button SegmentDoubleButton => segDouble;
+        internal Button DetectMoreButton => detectMore;
+        internal string ChipText => chip.Text;
+        internal string HintLabelText => hintLabel.Text;
         internal Button QuantizeButton => quantize;
         internal TextBox StrengthBox => strength;
         internal CheckBox FollowBox => follow;
@@ -328,6 +349,7 @@ namespace ReBuzz.Studio.Views.Audio
             if (disposed) return;
             disposed = true;
             playTimer.Stop();
+            AutoWarpFlow.Ran -= OnAutoWarpRan;
             selection.Changed -= OnSelectionChanged;
             if (core.SessionLayout != null) core.SessionLayout.Changed -= OnLayoutChanged;
         }
@@ -466,9 +488,12 @@ namespace ReBuzz.Studio.Views.Audio
 
                 int markers = audio.Markers?.Count ?? 0;
                 markerInfo.Text = markers >= 2 ? $"{markers} warp markers" : $"straight at {audio.Bpm:0.##} BPM";
+                wave.GridName = audio.AutoGrid;
+                UpdateAutoWarpLabels();
                 clear.IsEnabled = markers >= 2;
                 strength.Text = Layout.QuantizeStrength.ToString(CultureInfo.InvariantCulture);
                 wave.Load(view, Layout.TransientsOf(shown), TicksPerBeat, BeatsPerBar, length, (r.Start, r.LoopStart, r.LoopEnd, r.Loop));
+                wave.SetAttacks(markers >= 2 ? Layout.GridOnsetsOf(shown) : Array.Empty<double>(), audio.AutoGridBeats, audio.AutoReach / 100.0);
                 UpdateSegments();
                 envelopes.Show(shown);
             }
@@ -553,6 +578,64 @@ namespace ReBuzz.Studio.Views.Audio
                 seen = now;
                 Changed?.Invoke();
             }
+        }
+
+        // ------------------------------------------------------------------ Auto-warp (AW5)
+
+        /// <summary>The range selected on the waveform, as seconds of the audio.</summary>
+        AutoWarpFlow.Range? RangeNow() => wave.RangeSeconds is { } r ? new AutoWarpFlow.Range(r.From, r.To) : null;
+
+        void RunAutoWarp(bool toGrid)
+        {
+            if (loading || shown == null) return;
+            status.Text = "";
+            AutoWarpFlow.Run(new[] { shown }, toGrid, RangeNow());
+            if (AutoWarpFlow.LastWasError) status.Text = AutoWarpFlow.LastSummary;
+            Refresh(force: true);
+        }
+
+        void OpenAutoWarpMenu()
+        {
+            if (shown == null) return;
+            var root = AutoWarpFlow.Menu(() => new[] { shown }, RangeNow);
+            var menu = new ContextMenu();
+            foreach (var item in root.Items.OfType<object>().ToList()) { root.Items.Remove(item); menu.Items.Add(item); }
+            autoWarpMenu = menu;
+            menu.Open(detectMore);
+        }
+
+        ContextMenu autoWarpMenu;
+        internal ContextMenu AutoWarpMenuOpen => autoWarpMenu;
+
+        void OnAutoWarpRan(bool toGrid)
+        {
+            lastToGrid = toGrid;
+            UpdateAutoWarpLabels();
+        }
+
+        void UpdateAutoWarpLabels()
+        {
+            bool range = wave.RangeSeconds != null;
+            detect.Content = (range ? "Auto-warp selection: " : "Auto-warp: ") + (lastToGrid ? "To grid" : "Follow the beat");
+            if (shown != null && Layout.AudioOf(shown) is { } a)
+                chip.Text = $"{a.AutoGrid} · {Layout.QuantizeStrength} % · reach {a.AutoReach} %";
+        }
+
+        Control Legend()
+        {
+            Control Item(Control mark, string text) => new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { mark, new TextBlock { Text = text, FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center } } };
+            var amber = new Avalonia.Controls.Shapes.Rectangle { Width = 8, Height = 8, Fill = StudioTokens.WarningBrush, RenderTransform = new RotateTransform(45), VerticalAlignment = VerticalAlignment.Center };
+            var blue = new Avalonia.Controls.Shapes.Ellipse { Width = 10, Height = 10, Fill = StudioTokens.AccentBrush, VerticalAlignment = VerticalAlignment.Center };
+            var hollow = new Avalonia.Controls.Shapes.Ellipse { Width = 9, Height = 9, Stroke = StudioTokens.TextSecondaryBrush, StrokeThickness = 2, VerticalAlignment = VerticalAlignment.Center };
+            var dash = new Avalonia.Controls.Shapes.Rectangle { Width = 18, Height = 2, Fill = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center };
+            return new WrapPanel
+            {
+                Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), ItemSpacing = 16, LineSpacing = 2,
+                Children =
+                {
+                    Item(amber, "Beat or bar (Follow the beat)"), Item(blue, "Attack snapped to the grid"), Item(hollow, "Attack left alone (beyond reach)"), Item(dash, "Long note: no markers"),
+                },
+            };
         }
 
         // ------------------------------------------------------------------ edits

@@ -1543,3 +1543,49 @@ jobs:
         name: aw3-pack
         path: aw3-pack/
         retention-days: 14
+
+  # ---------------------------------------------------------------------------------------- AW5
+  # Auto-warp to grid (docs/specs/neo-audio.md, AW5 as built): the eight clips of round 4 (15 s), plain auto-warp against auto-warp to grid at 1/16 and 100 %: the grid fit, the click
+  # detector, the transients left alone, the renders and the blind pack (tools/aw2/aw5shuffle.py). Dispatch with the aw3 input "aw5" (the other jobs off).
+  aw5:
+    if: ${{ contains(github.event.inputs.aw3, 'aw5') }}
+    needs: aw3-items
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - uses: actions/download-artifact@v7
+      with:
+        pattern: aw3-items-*
+        path: items
+    - name: Build the tools
+      run: |
+        dotnet build tools/AutoWarpEval -c Release -o aw5-tool 2>&1 | tail -3
+        g++ -O2 -std=c++17 -I NeoStretch/third_party tools/aw2/warp.cpp -o aw5-tool/aw2warp
+    - name: The round-5 renders, the measurements and the blind pack
+      run: |
+        set -euo pipefail
+        pip install --quiet numpy scipy soundfile
+        mkdir -p all; for d in items/*; do cp $d/* all/; done
+        python3 tools/aw2/aw5packlist.py all pack-list.txt pack-readme.txt
+        AW4_SECONDS=15 dotnet aw5-tool/AutoWarpEval.dll --pack5 aw5-renders aw5-tool/aw2warp pack-list.txt | tee pack-log.txt
+        python3 tools/aw2/aw5shuffle.py aw5-renders aw5-pack --list pack-list.txt | tee shuffle-log.txt
+        cp pack-readme.txt pack-list.txt pack-log.txt aw5-renders/
+        cp pack-readme.txt aw5-pack/SOURCES.txt
+        { echo "## AW5"; cat aw5-renders/aw5-summary.txt; } >> "$GITHUB_STEP_SUMMARY"
+    - uses: actions/upload-artifact@v6
+      if: always()
+      with:
+        name: aw5-pack
+        path: |
+          aw5-pack/
+          aw5-renders/aw5-summary.txt
+          aw5-renders/aw5-measure.tsv
+          aw5-renders/pack-log.txt
+        retention-days: 14

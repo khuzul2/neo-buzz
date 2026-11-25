@@ -12,8 +12,11 @@ using ReBuzz.Agent.Mcp;
 
 namespace ReBuzz.Agent.Model
 {
-    /// <summary>A note in pattern time (1/240 tick).</summary>
-    public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity, int Channel = 0)
+    /// <summary>
+    /// A note in pattern time (1/240 tick). A machine that plays a sample per note (Neo Sampler's Tracker mode) has three more: the sample's number
+    /// (0: none), where in it the note starts (frames of the sample) and its tune (cents).
+    /// </summary>
+    public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0)
     {
         public int End => Time + Duration;
 
@@ -71,6 +74,27 @@ namespace ReBuzz.Agent.Model
                         throw new ToolError($"{at}.velocity: a whole number from 1 to 127.");
                     velocity = (int)v;
                 }
+                int sample = 0, offset = 0, tune = 0;
+                if (n["sample"] != null)
+                {
+                    if (!Schema.TryNumber(n["sample"], out double sn) || sn < 1 || sn > 254 || sn != Math.Floor(sn))
+                        throw new ToolError($"{at}.sample: a whole number from 1 to 254 (the song's waves are 1–200, the built-in samples 201 and up).");
+                    sample = (int)sn;
+                }
+                if (n["offset"] != null)
+                {
+                    if (!Schema.TryNumber(n["offset"], out double on) || on < 0 || on > 8_000_000 || on != Math.Floor(on))
+                        throw new ToolError($"{at}.offset: a whole number of frames of the sample, 0 to 8,000,000.");
+                    offset = (int)on;
+                }
+                if (n["tune"] != null)
+                {
+                    if (!Schema.TryNumber(n["tune"], out double tn) || tn < -2400 || tn > 2400 || tn != Math.Floor(tn))
+                        throw new ToolError($"{at}.tune: a whole number of cents, -2400 to 2400 (100 is a semitone).");
+                    tune = (int)tn;
+                }
+                if (sample == 0 && (offset != 0 || tune != 0))
+                    throw new ToolError($"{at}: offset and tune belong to a sample; give the note a sample too.");
                 int time = Time(start, ticksPerBeat);
                 if (time >= patternTime)
                     throw new ToolError($"{at}: starts at beat {Fmt(start)}, but the pattern is {Fmt(patternBeats)} beats long. " +
@@ -81,7 +105,7 @@ namespace ReBuzz.Agent.Model
                     duration = patternTime - time;
                     warnings.Add($"{at} ({Pitch.Name(pitch)} at beat {Fmt(start)}) ran past the pattern's end; shortened to {Fmt(Beats(duration, ticksPerBeat))} beats.");
                 }
-                list.Add(new NoteEvent(time, duration, pitch, velocity));
+                list.Add(new NoteEvent(time, duration, pitch, velocity, 0, sample, offset, tune));
             }
             list.Sort(Order);
             return list;
@@ -126,6 +150,12 @@ namespace ReBuzz.Agent.Model
                 ["velocity"] = n.Velocity,
             };
             if (n.Channel != 0) o["midi_channel"] = n.Channel + 1;   // recorded on another channel
+            if (n.Sample > 0)
+            {
+                o["sample"] = n.Sample;
+                if (n.Offset != 0) o["offset"] = n.Offset;
+                if (n.Tune != 0) o["tune"] = n.Tune;
+            }
             return o;
         }
 
