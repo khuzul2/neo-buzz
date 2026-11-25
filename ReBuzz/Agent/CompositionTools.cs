@@ -67,7 +67,7 @@ namespace ReBuzz.Agent
                 var r = await host.Engine("notes_transform", true, _ =>
                 {
                     var m = SongModel.Machine(core, c.RequiredString("machine"));
-                    var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                    var p = SongModel.Clip(m, c.RequiredString("pattern"));
                     int tpb = SongModel.Tpb(core);
                     var input = MachineNotes.For(m);
                     var before = MachineNotes.Read(p, input);
@@ -76,9 +76,9 @@ namespace ReBuzz.Agent
                     var added = outcome.Notes.Except(before).ToList();
                     if (removed.Count > 0 || added.Count > 0) MachineNotes.Replace(core, p, input, removed, added, outcome.Problems);
                     outcome.Problems.AddRange(NoteList.Clashes(outcome.Notes.OrderBy(n => n.Time).ToList(), tpb));
-                    return (Machine: m.Name, Pattern: p.Name, Outcome: outcome, Tpb: tpb);
+                    return (Machine: m.Name, Clip: p.Name, Outcome: outcome, Tpb: tpb);
                 }, c.Cancellation);
-                return NotesTransform.Result(r.Machine, r.Pattern, r.Outcome, r.Tpb);
+                return NotesTransform.Result(r.Machine, r.Clip, r.Outcome, r.Tpb);
             });
 
             tools.Add(new ToolDef
@@ -164,7 +164,7 @@ namespace ReBuzz.Agent
                     var r = await host.Engine("automation_write", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
                         // U2 in depth (mcp-server.md §12.12): a track parameter that holds no value (a drum's trigger) takes events too,
                         // where no parameter that holds one has the name.
                         AgentParam param;
@@ -198,22 +198,22 @@ namespace ReBuzz.Agent
                         bool clear = c.Bool("clear") == true;
                         if (points.Count == 0 && !clear) throw new ToolError("Give points (at least one), or clear=true to remove the automation.");
                         var existing = Events(p, key);
-                        var removed = clear ? existing : points.Count == 0 ? new List<PatternEvent>()
+                        var removed = clear ? existing : points.Count == 0 ? new List<ClipEvent>()
                             : existing.Where(e => e.Time >= points[0].Time && e.Time <= points[^1].Time).ToList();
-                        var added = new List<PatternEvent>();
+                        var added = new List<ClipEvent>();
                         // A played parameter's values are events, each heard once: no ramps between them.
                         bool linear = (c.String("shape") ?? "linear") == "linear" && !param.Played;
                         int step = Math.Max(1, NoteList.TimeBase / 4);
                         for (int i = 0; i < points.Count; i++)
                         {
-                            added.Add(new PatternEvent(points[i].Time, points[i].Raw));
+                            added.Add(new ClipEvent(points[i].Time, points[i].Raw));
                             if (!linear || i + 1 >= points.Count) continue;
                             var (t0, v0) = points[i];
                             var (t1, v1) = points[i + 1];
                             for (int t = t0 + step; t < t1; t += step)
                             {
                                 int v = (int)Math.Round(v0 + (v1 - v0) * (t - t0) / (double)(t1 - t0));
-                                if (v != added[^1].Value) added.Add(new PatternEvent(t, v));
+                                if (v != added[^1].Value) added.Add(new ClipEvent(t, v));
                             }
                         }
                         // One value per time (the last point wins).
@@ -255,13 +255,13 @@ namespace ReBuzz.Agent
                     var r = await host.Engine("automation_read", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
                         string only = c.String("param");
                         int tpb = SongModel.Tpb(core);
                         var list = new JsonArray();
                         // Every lane of a parameter and track counts, whoever wrote it (the tracker's, a take's, the agent's): one entry per
                         // parameter and track, its events together. Track note columns are notes, read with notes_read.
-                        var lanes = p.Columns.Where(x => x.Type == PatternColumnType.Parameter && x.Parameter != null && !MachineNotes.IsNoteColumn(x))
+                        var lanes = p.Columns.Where(x => x.Type == ClipColumnType.Parameter && x.Parameter != null && !MachineNotes.IsNoteColumn(x))
                             .GroupBy(x => (x.Parameter, x.Track, x.Machine)).ToList();
                         foreach (var lane in lanes)
                         {
@@ -273,7 +273,7 @@ namespace ReBuzz.Agent
                             if (col.Machine != null && !ReferenceEquals(col.Machine, p.Machine)) o["machine"] = col.Machine.Name;
                             if (col.Parameter.Group.Type == ParameterGroupType.Track) o["track"] = col.Track;
                             o["events"] = events.Count;
-                            bool marked = lane.Any(x => x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey)), unmarked = lane.Any(x => !x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey));
+                            bool marked = lane.Any(x => x.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey)), unmarked = lane.Any(x => !x.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey));
                             o["source"] = marked && unmarked ? "both" : unmarked ? "pattern" : "automation";
                             // Ramps are many events; show the corners (where the direction changes) as points.
                             var corners = new JsonArray();
@@ -391,8 +391,8 @@ namespace ReBuzz.Agent
             });
         }
 
-        static List<PatternEvent> Events(IPattern p, ColumnKey key) =>
-            SessionLayout.ColumnFor(p, key, create: false)?.GetEvents(int.MinValue, int.MaxValue).ToList() ?? new List<PatternEvent>();
+        static List<ClipEvent> Events(IClip p, ColumnKey key) =>
+            SessionLayout.ColumnFor(p, key, create: false)?.GetEvents(int.MinValue, int.MaxValue).ToList() ?? new List<ClipEvent>();
 
         // ------------------------------------------------------------------ the Session View's grid
 
@@ -447,7 +447,7 @@ namespace ReBuzz.Agent
                         var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         if (SongModel.IsMaster(m)) throw new ToolError("Master has no session track.");
-                        IPattern pattern = c.Arguments["pattern"] is JsonValue v && v.TryGetValue(out string pn) ? SongModel.Pattern(m, pn) : null;
+                        IClip clip = c.Arguments["pattern"] is JsonValue v && v.TryGetValue(out string pn) ? SongModel.Clip(m, pn) : null;
                         if (c.Arguments["pattern"] == null && !c.Arguments.ContainsKey("pattern")) throw new ToolError("pattern: give a pattern name, or null to empty the slot.");
                         if (!core.SongCore.Sequences.Any(s => s.Machine == m))
                             AgentActions.Do(core, new BuzzGUI.Common.Actions.MachineActions.AddSequenceAction(m));
@@ -457,15 +457,15 @@ namespace ReBuzz.Agent
                         if (track < 0) throw new ToolError($"{m.Name} has no session track (its lane wasn't picked up).");
                         int scene = c.Int("scene")!.Value - 1;
                         while (layout.SceneCount <= scene) layout.InsertScene(layout.SceneCount);
-                        layout.SetSlot(track, scene, pattern);
-                        if (pattern != null && (c.String("mode") != null || c.String("quantization") != null || c.Bool("loop") != null || c.Bool("legato") != null))
+                        layout.SetSlot(track, scene, clip);
+                        if (clip != null && (c.String("mode") != null || c.String("quantization") != null || c.Bool("loop") != null || c.Bool("legato") != null))
                         {
-                            var s = layout.ClipOf(pattern)?.Clone() ?? new SessionDocument.ClipSettings();
+                            var s = layout.ClipOf(clip)?.Clone() ?? new SessionDocument.ClipSettings();
                             if (c.String("mode") is string mode) s.Mode = mode;
                             if (c.String("quantization") is string q) s.Quantization = q;
                             if (c.Bool("loop") is bool loop) s.Loop = loop;
                             if (c.Bool("legato") is bool legato) s.Legato = legato;
-                            layout.SetClipSettings(pattern, s);
+                            layout.SetClipSettings(clip, s);
                         }
                         var after = layout.Document.CloneLayout();
                         AgentActions.Do(core, new DelegateAction(() => layout.Restore(after), () => layout.Restore(before)));
@@ -549,7 +549,7 @@ namespace ReBuzz.Agent
                     var clips = new JsonArray();
                     for (int s = 0; s < doc.Scenes.Count; s++)
                     {
-                        var p = layout.PatternAt(t, s);
+                        var p = layout.ClipAt(t, s);
                         slots.Add(p?.Name);
                         if (p != null && layout.ClipOf(p) is { IsDefault: false } cs)
                             clips.Add(new JsonObject { ["scene"] = s + 1, ["pattern"] = p.Name, ["mode"] = cs.Mode, ["quantization"] = cs.Quantization, ["loop"] = cs.Loop, ["legato"] = cs.Legato });

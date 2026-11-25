@@ -23,16 +23,16 @@ namespace ReBuzz.Core
         /// </summary>
         public static void UseDirectEngine()
         {
-            PatternColumnCore.PlaysEveryLane = true;
+            ClipColumnCore.PlaysEveryLane = true;
         }
 
         /// <summary>Whether the song holds anything an older build would not play from the lanes: tracker lanes or notes (a native song then needs a reader of format 3).</summary>
         public static bool HoldsTrackerLanes(SongCore song)
         {
             foreach (var m in song.MachinesList)
-                foreach (var p in m.PatternsList)
-                    foreach (var c in p.ColumnsList.OfType<PatternColumnCore>())
-                        if (c.Type == PatternColumnType.Parameter && !c.IsMarkedAutomation && c.GetEvents(int.MinValue, int.MaxValue).Any())
+                foreach (var p in m.ClipsList)
+                    foreach (var c in p.ColumnsList.OfType<ClipColumnCore>())
+                        if (c.Type == ClipColumnType.Parameter && !c.IsMarkedAutomation && c.GetEvents(int.MinValue, int.MaxValue).Any())
                             return true;
             return false;
         }
@@ -87,14 +87,14 @@ namespace ReBuzz.Core
         // ------------------------------------------------------------------ the store as lanes
 
         /// <summary>The lanes of a pattern's columns, with their metadata.</summary>
-        public static ClipContent Read(PatternCore pattern)
+        public static ClipContent Read(ClipCore clip)
         {
-            var clip = new ClipContent { Name = pattern.Name, Length = pattern.Length };
-            foreach (var c in pattern.ColumnsList)
+            var content = new ClipContent { Name = clip.Name, Length = clip.Length };
+            foreach (var c in clip.ColumnsList)
             {
-                var machine = c.Machine ?? pattern.Machine;
+                var machine = c.Machine ?? clip.Machine;
                 var parameter = c.Parameter;
-                bool midi = c.Type == PatternColumnType.MIDI || parameter == null || parameter.IndexInGroup < 0;
+                bool midi = c.Type == ClipColumnType.MIDI || parameter == null || parameter.IndexInGroup < 0;
                 var lane = new ClipLane
                 {
                     Kind = midi ? ClipLaneKind.Notes : ClipLaneKind.Parameter,
@@ -108,11 +108,11 @@ namespace ReBuzz.Core
                     lane.Group = machine.ParameterGroups.IndexOf(parameter.Group);
                     lane.Index = parameter.IndexInGroup;
                 }
-                clip.Lanes.Add(lane);
+                content.Lanes.Add(lane);
             }
-            var grid = clip.Lanes.Select(l => l.Grid).FirstOrDefault(g => g != null);
-            if (grid != null && ClipGrid.TryParse(grid, out int rpb, out _)) clip.RowsPerBeat = rpb;
-            return clip;
+            var grid = content.Lanes.Select(l => l.Grid).FirstOrDefault(g => g != null);
+            if (grid != null && ClipGrid.TryParse(grid, out int rpb, out _)) content.RowsPerBeat = rpb;
+            return content;
         }
 
         /// <summary>
@@ -120,31 +120,31 @@ namespace ReBuzz.Core
         /// (metadata first, as the engine reads the session mark while it plays). A lane that cannot be put (a machine or parameter the song
         /// lacks, a track past the machine's) is a log line. Returns the number of lanes written.
         /// </summary>
-        public static int Write(PatternCore pattern, ClipContent clip, SongCore song, ClipLog log, bool mergeNotes = false)
+        public static int Write(ClipCore clip, ClipContent content, SongCore song, ClipLog log, bool mergeNotes = false)
         {
             var machines = MachinesOf(song);
-            var existing = Read(pattern);
+            var existing = Read(clip);
             int written = 0;
-            foreach (var lane in clip.Lanes)
+            foreach (var lane in content.Lanes)
             {
                 var machine = machines.Machine(lane.Machine);
                 string where = lane.Kind == ClipLaneKind.Notes ? "notes" : $"{lane.Group}.{lane.Index}.{lane.Track}";
                 if (machine == null)
                 {
-                    log.Loss(ClipTags.MachineMissing, lane.Machine, clip.Name, where, lane.Events.Count, "writing the lane into the pattern");
+                    log.Loss(ClipTags.MachineMissing, lane.Machine, content.Name, where, lane.Events.Count, "writing the lane into the pattern");
                     continue;
                 }
-                IPatternColumn column = null;
+                IClipColumn column = null;
                 var key = lane.Key;
                 for (int i = 0; i < existing.Lanes.Count && column == null; i++)
                     if (existing.Lanes[i].Key == key)
-                        column = pattern.ColumnsList[i];
+                        column = clip.ColumnsList[i];
                 if (column == null)
                 {
-                    column = Insert(pattern, machine, lane, out string problem);
+                    column = Insert(clip, machine, lane, out string problem);
                     if (column == null)
                     {
-                        log.Loss(problem == "track" ? ClipTags.TrackDropped : ClipTags.ParamMissing, lane.Machine, clip.Name, where, lane.Events.Count, "writing the lane into the pattern");
+                        log.Loss(problem == "track" ? ClipTags.TrackDropped : ClipTags.ParamMissing, lane.Machine, content.Name, where, lane.Events.Count, "writing the lane into the pattern");
                         continue;
                     }
                 }
@@ -170,18 +170,18 @@ namespace ReBuzz.Core
             return written;
         }
 
-        static IPatternColumn Insert(PatternCore pattern, MachineCore machine, ClipLane lane, out string problem)
+        static IClipColumn Insert(ClipCore clip, MachineCore machine, ClipLane lane, out string problem)
         {
             problem = null;
             var metadata = new Dictionary<string, string>(lane.Meta);
             if (lane.Kind == ClipLaneKind.Notes)
             {
-                int at = pattern.ColumnsList.Count;
-                if (ReferenceEquals(machine, pattern.Machine))
-                    pattern.InsertColumn(at, (IMachine)null);
+                int at = clip.ColumnsList.Count;
+                if (ReferenceEquals(machine, clip.Machine))
+                    clip.InsertColumn(at, (IMachine)null);
                 else
-                    pattern.InsertColumn(at, ParameterCore.GetMidiParameter(machine, pattern.Dispatcher), 0, metadata);
-                var made = pattern.ColumnsList[at];
+                    clip.InsertColumn(at, ParameterCore.GetMidiParameter(machine, clip.Dispatcher), 0, metadata);
+                var made = clip.ColumnsList[at];
                 foreach (var kv in metadata) made.Metadata[kv.Key] = kv.Value;
                 return made;
             }
@@ -197,9 +197,9 @@ namespace ReBuzz.Core
                 return null;
             }
             var parameter = groups[lane.Group].ParametersList[lane.Index];
-            int index = pattern.ColumnsList.Count;
-            pattern.InsertColumn(index, parameter, lane.Track, metadata);
-            return pattern.ColumnsList[index];
+            int index = clip.ColumnsList.Count;
+            clip.InsertColumn(index, parameter, lane.Track, metadata);
+            return clip.ColumnsList[index];
         }
 
         // ------------------------------------------------------------------ migration and export
@@ -208,7 +208,7 @@ namespace ReBuzz.Core
         public static byte[] EditorData(MachineCore machine)
         {
             // CU3: what the song file gave the editor (its stamp is the store's, a derived blob), else what the editor holds now.
-            if (machine.EditorMachine != null) return machine.EditorMachine.LoadedEditorData ?? machine.PatternEditorData;
+            if (machine.EditorMachine != null) return machine.EditorMachine.LoadedEditorData ?? machine.ClipEditorData;
             return machine.PlaceholderEditor?.Data;
         }
 
@@ -222,15 +222,15 @@ namespace ReBuzz.Core
             var machines = MachinesOf(song);
             var result = new ClipMigration.Result();
             var model = machines.Find(machine.Name);
-            foreach (var pattern in machine.PatternsList)
+            foreach (var clip in machine.ClipsList)
             {
-                if (pattern.BuiltInData == null) continue;
-                ClipMigration.FromBuiltIn(ToRows(pattern, machine), model, pattern.Length, log, result);
+                if (clip.BuiltInData == null) continue;
+                ClipMigration.FromBuiltIn(ToRows(clip, machine), model, clip.Length, log, result);
             }
             var data = editorData ?? EditorData(machine);
             if (data != null && data.Length > 0)
             {
-                var lengths = machine.PatternsList.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Length);
+                var lengths = machine.ClipsList.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Length);
                 var fromBlob = ClipMigration.FromBlob(data, machines, name => lengths.TryGetValue(name, out int l) ? l : 0, log, machine.Name);
                 result.Clips.AddRange(fromBlob.Clips);
                 result.EventsIn += fromBlob.EventsIn;
@@ -252,17 +252,17 @@ namespace ReBuzz.Core
             var result = new ClipMigration.Result();
             var model = machines.Find(machine.Name);
             var builtIn = new HashSet<string>();
-            foreach (var pattern in machine.PatternsList)
+            foreach (var clip in machine.ClipsList)
             {
-                if (pattern.BuiltInData == null) continue;
-                builtIn.Add(pattern.Name);
-                ClipMigration.FromBuiltIn(ToRows(pattern, machine), model, pattern.Length, log, result);
+                if (clip.BuiltInData == null) continue;
+                builtIn.Add(clip.Name);
+                ClipMigration.FromBuiltIn(ToRows(clip, machine), model, clip.Length, log, result);
             }
-            bool allBuiltIn = machine.PatternsList.Count > 0 && builtIn.Count == machine.PatternsList.Select(p => p.Name).Distinct().Count();
+            bool allBuiltIn = machine.ClipsList.Count > 0 && builtIn.Count == machine.ClipsList.Select(p => p.Name).Distinct().Count();
             var data = editorData ?? EditorData(machine);
             if (!allBuiltIn && data != null && data.Length > 0)
             {
-                var lengths = machine.PatternsList.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Length);
+                var lengths = machine.ClipsList.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Length);
                 var fromBlob = ClipMigration.FromBlob(data, machines, name => lengths.TryGetValue(name, out int l) ? l : 0, log, machine.Name);
                 result.Clips.AddRange(fromBlob.Clips.Where(c => !builtIn.Contains(c.Name)));
                 result.EventsIn += fromBlob.EventsIn;
@@ -274,14 +274,14 @@ namespace ReBuzz.Core
         }
 
         /// <summary>A built-in pattern as the converter reads it: its rows, and how many cells of each connection's amp and pan hold a value.</summary>
-        internal static BuiltInRows ToRows(PatternCore pattern, MachineCore machine)
+        internal static BuiltInRows ToRows(ClipCore clip, MachineCore machine)
         {
-            var data = pattern.BuiltInData;
+            var data = clip.BuiltInData;
             var rows = new BuiltInRows
             {
-                Name = pattern.Name,
+                Name = clip.Name,
                 Machine = machine.Name,
-                Rows = pattern.Length,
+                Rows = clip.Length,
                 Global = data.Global,
                 Tracks = data.Tracks,
                 GlobalNoValue = machine.ParameterGroupsList.Count > 1 ? machine.ParameterGroupsList[1].ParametersList.Select(p => p.NoValue).ToArray() : Array.Empty<int>(),

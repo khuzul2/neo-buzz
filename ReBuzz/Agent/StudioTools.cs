@@ -508,7 +508,7 @@ namespace ReBuzz.Agent
                 ["counts"] = new JsonObject
                 {
                     ["machines"] = SongModel.Machines(core).Count(),
-                    ["patterns"] = SongModel.Machines(core).Sum(m => m.Patterns.Count),
+                    ["patterns"] = SongModel.Machines(core).Sum(m => m.Clips.Count),
                     ["waves"] = song.Wavetable.Waves.Count(w => w != null),
                 },
                 ["undo"] = undo,

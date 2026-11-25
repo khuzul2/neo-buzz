@@ -35,7 +35,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ Clone with patterns
 
         [AvaloniaTest]
-        public void CloneWithPatternsCopiesTheMachineItsPatternsItsSequenceAndTheWiresBetweenTheClones()
+        public void CloneWithClipsCopiesTheMachineItsClipsItsSequenceAndTheWiresBetweenTheClones()
         {
             var window = SongWith("Neo Poly", 8);
             using var restore = Studio.AfterTest(() => Restore(window, null));
@@ -45,20 +45,20 @@ namespace ReBuzz.Studio.Tests
             int machines = Core.SongCore.Machines.Count, sequences = Core.SongCore.Sequences.Count;
             int events = Core.SongCore.Sequences.First(s => s.Machine == voice).Events.Count;
             var plain = MachineEdits.Duplicate(Core, new[] { voice });
-            Assert.That(plain[0].Patterns.Count, Is.EqualTo(0), "Duplicate leaves the patterns behind");
+            Assert.That(plain[0].Clips.Count, Is.EqualTo(0), "Duplicate leaves the patterns behind");
             Core.SongCore.ActionStack.Undo();
             Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(machines));
 
-            var copies = MachineEdits.CloneWithPatterns(Core, new[] { voice, Machine("Echo") });
+            var copies = MachineEdits.CloneWithClips(Core, new[] { voice, Machine("Echo") });
             Assert.That(copies, Has.Count.EqualTo(2));
             Assert.That(Core.SongCore.Machines.Count, Is.EqualTo(machines + 2));
             var v2 = copies[0];
-            Assert.That(v2.Patterns.Select(p => p.Name), Is.EqualTo(new[] { "P" }), "the pattern came along");
-            Assert.That(v2.Patterns[0].Length, Is.EqualTo(voice.Patterns[0].Length));
+            Assert.That(v2.Clips.Select(p => p.Name), Is.EqualTo(new[] { "P" }), "the pattern came along");
+            Assert.That(v2.Clips[0].Length, Is.EqualTo(voice.Clips[0].Length));
             Assert.That(Core.SongCore.Sequences.Count, Is.EqualTo(sequences + 1), "and its row in the sequence");
             var row = Core.SongCore.Sequences.First(s => s.Machine == v2);
             Assert.That(row.Events.Count, Is.EqualTo(events));
-            Assert.That(row.Events.Values.Where(e => e.Pattern != null).All(e => e.Pattern == v2.Patterns[0]), "playing the copy's pattern, not the original's");
+            Assert.That(row.Events.Values.Where(e => e.Clip != null).All(e => e.Clip == v2.Clips[0]), "playing the copy's pattern, not the original's");
             Assert.That(copies[0].Outputs.Select(c => c.Destination), Contains.Item(copies[1]), "the wire between the two selected machines was cloned");
             Assert.That(voice.Outputs.Select(c => c.Destination), Does.Not.Contain(copies[1]), "and not crossed with the originals");
             Core.SongCore.ActionStack.Undo();
@@ -67,7 +67,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheMachineMenuHasClonePatternsLatencyAndSignalAnalysisAndTheMasterHasSignalAnalysis()
+        public void TheMachineMenuHasCloneClipsLatencyAndSignalAnalysisAndTheMasterHasSignalAnalysis()
         {
             var window = SongWith("Neo Poly", 8);
             using var restore = Studio.AfterTest(() => Restore(window, null));

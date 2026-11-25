@@ -58,7 +58,7 @@ namespace ReBuzz.Studio.Views.Session
         static readonly Cursor SizeAll = new Cursor(StandardCursorType.SizeAll);
 
         /// <summary>A session clip's piano roll: its notes on the session's undo history.</summary>
-        public PianoRoll(ReBuzzCore buzz, SessionLayout layout, ISequence track, IPattern clip)
+        public PianoRoll(ReBuzzCore buzz, SessionLayout layout, ISequence track, IClip clip)
             : this(buzz, new SessionClipNotes(layout, clip), track)
         {
         }
@@ -169,7 +169,7 @@ namespace ReBuzz.Studio.Views.Session
         internal INoteSource Source { get; }
 
         /// <summary>The clip, as it stands now: the session's undo may have made it again (0.7.1 hardening).</summary>
-        public IPattern Pattern => Source.Pattern;
+        public IClip Clip => Source.Clip;
 
         /// <summary>Whether the clip is in the song (not deleted, or brought back by an undo).</summary>
         public bool IsLive => Source.IsLive;
@@ -312,7 +312,7 @@ namespace ReBuzz.Studio.Views.Session
         readonly DispatcherTimer mapTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(250) };
 
         /// <summary>The machine the roll plays: the track's, else its clip's.</summary>
-        internal IMachine Machine => Track?.Machine ?? Source.Pattern?.Machine;
+        internal IMachine Machine => Track?.Machine ?? Source.Clip?.Machine;
 
         /// <summary>The machine's keys: which make a sound and their names (<see cref="NoteMap.None"/> when it reports none).</summary>
         internal NoteMap Map => map;
@@ -805,7 +805,7 @@ namespace ReBuzz.Studio.Views.Session
             }
 
             // The play position, while the clip plays on its track.
-            if (Track != null && Pattern != null && session.GetState(Track, Pattern) is ClipState.Playing or ClipState.Stopping)
+            if (Track != null && Clip != null && session.GetState(Track, Clip) is ClipState.Playing or ClipState.Stopping)
             {
                 int position = session.GetClipPosition(Track);
                 if (position >= 0)
@@ -1247,7 +1247,7 @@ namespace ReBuzz.Studio.Views.Session
     /// <summary>A window with a clip's piano roll and its tools (0.7.1). One per clip.</summary>
     internal sealed class PianoRollWindow : Window
     {
-        static readonly Dictionary<IPattern, PianoRollWindow> open = new Dictionary<IPattern, PianoRollWindow>();
+        static readonly Dictionary<IClip, PianoRollWindow> open = new Dictionary<IClip, PianoRollWindow>();
 
         readonly PianoRoll roll;
         readonly TextBlock summary;
@@ -1258,10 +1258,10 @@ namespace ReBuzz.Studio.Views.Session
         (int Count, long Sum) seen;
 
         /// <summary>Shows the clip's piano roll (bringing an open one to the front).</summary>
-        public static PianoRollWindow Show(Window owner, ReBuzzCore buzz, SessionLayout layout, ISequence track, IPattern clip)
+        public static PianoRollWindow Show(Window owner, ReBuzzCore buzz, SessionLayout layout, ISequence track, IClip clip)
         {
             if (clip == null) return null;
-            var existing = open.Values.FirstOrDefault(w => ReferenceEquals(w.roll.Pattern, layout.Current(clip)));
+            var existing = open.Values.FirstOrDefault(w => ReferenceEquals(w.roll.Clip, layout.Current(clip)));
             if (existing != null)
             {
                 existing.Activate();
@@ -1280,7 +1280,7 @@ namespace ReBuzz.Studio.Views.Session
 
         internal static IEnumerable<PianoRollWindow> OpenWindows => open.Values.ToList();
 
-        internal PianoRollWindow(ReBuzzCore buzz, SessionLayout layout, ISequence track, IPattern clip)
+        internal PianoRollWindow(ReBuzzCore buzz, SessionLayout layout, ISequence track, IClip clip)
         {
             this.layout = layout;
             Title = $"Notes — {clip.Machine?.Name} · {clip.Name}";

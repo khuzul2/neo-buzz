@@ -32,12 +32,12 @@ namespace ReBuzz.Core.SongHistory
             public int Group = -1;       // the parameter's group type, -1 for a MIDI column
             public int Index = -1;
             public int Track;
-            public List<PatternEvent> Events = new();
+            public List<ClipEvent> Events = new();
             public Dictionary<string, string> Meta = new();
             public string Key => Type + ":" + Group + ":" + Index + ":" + Track;
         }
 
-        public sealed class Pattern
+        public sealed class Clip
         {
             public string Name;
             public int Length;
@@ -53,7 +53,7 @@ namespace ReBuzz.Core.SongHistory
             public bool Muted, Bypassed, IsMaster, IsNative, IsMissing;
             public byte[] Data, EditorData;
             public List<Param> Params = new();
-            public List<Pattern> Patterns = new();
+            public List<Clip> Clips = new();
 
             /// <summary>What can't change in place: the gear, its tracks, saved data, the pattern editor's data and the patterns' shape (names, lengths, data, column layout).</summary>
             public string Fingerprint { get; private set; }
@@ -64,8 +64,8 @@ namespace ReBuzz.Core.SongHistory
                 void S(string s) { var b = Encoding.UTF8.GetBytes(s ?? ""); h.AppendData(BitConverter.GetBytes(b.Length)); h.AppendData(b); }
                 void B(byte[] b) { h.AppendData(BitConverter.GetBytes(b?.Length ?? -1)); if (b != null) h.AppendData(b); }
                 void I(int v) => h.AppendData(BitConverter.GetBytes(v));
-                S(Gear); S(Instrument); I(Tracks); B(Data); S(EditorGear); B(EditorData); I(Patterns.Count);
-                foreach (var p in Patterns.OrderBy(p => p.Name, StringComparer.Ordinal))
+                S(Gear); S(Instrument); I(Tracks); B(Data); S(EditorGear); B(EditorData); I(Clips.Count);
+                foreach (var p in Clips.OrderBy(p => p.Name, StringComparer.Ordinal))
                 {
                     S(p.Name); I(p.Length); B(p.Data);
                     foreach (var c in p.Columns.OrderBy(c => c.Key, StringComparer.Ordinal)) S(c.Key);
@@ -85,7 +85,7 @@ namespace ReBuzz.Core.SongHistory
         {
             public int Time, Type, Span, Offset, End, PlacementId;
             public double Gain = 1;
-            public string Pattern;
+            public string Clip;
         }
 
         public sealed class Sequence
@@ -127,10 +127,10 @@ namespace ReBuzz.Core.SongHistory
                 if (!lm.IsMaster)
                 {
                     try { lm.Data = m.Data; } catch (Exception) { lm.Data = null; }
-                    lm.EditorGear = m.PatternEditorDLL?.Name;
+                    lm.EditorGear = m.ClipEditorDLL?.Name;
                     if (m.EditorMachine != null)
                     {
-                        try { lm.EditorData = m.ClipsAttached ? null : m.PatternEditorData; } catch (Exception) { lm.EditorData = null; }       // clips CU3: where the editor views the store its data is derived from the lanes, which the columns of the patterns carry
+                        try { lm.EditorData = m.ClipsAttached ? null : m.ClipEditorData; } catch (Exception) { lm.EditorData = null; }       // clips CU3: where the editor views the store its data is derived from the lanes, which the columns of the patterns carry
                     }
                 }
                 for (int g = 1; g <= 2 && g < m.ParameterGroups.Count; g++)
@@ -142,10 +142,10 @@ namespace ReBuzz.Core.SongHistory
                             if ((p.Flags & ParameterFlags.State) != 0 && p.Type != ParameterType.Internal)
                                 lm.Params.Add(new Param { Group = g, Index = p.IndexInGroup, Track = t, Value = p.GetValue(t), Glides = IsContinuous(p) });
                 }
-                foreach (var pat in m.PatternsList)
+                foreach (var pat in m.ClipsList)
                 {
-                    var lp = new Pattern { Name = pat.Name, Length = pat.Length, Data = pat.Data };
-                    foreach (var col in pat.ColumnsList.OfType<PatternColumnCore>())
+                    var lp = new Clip { Name = pat.Name, Length = pat.Length, Data = pat.Data };
+                    foreach (var col in pat.ColumnsList.OfType<ClipColumnCore>())
                     {
                         var lc = new Column
                         {
@@ -158,7 +158,7 @@ namespace ReBuzz.Core.SongHistory
                         };
                         lp.Columns.Add(lc);
                     }
-                    lm.Patterns.Add(lp);
+                    lm.Clips.Add(lp);
                 }
                 lm.Seal();
                 s.Machines.Add(lm);
@@ -173,7 +173,7 @@ namespace ReBuzz.Core.SongHistory
                     ls.Events.Add(new SeqEvent
                     {
                         Time = kv.Key, Type = (int)kv.Value.Type, Span = kv.Value.Span, Offset = kv.Value.Offset, End = kv.Value.End,
-                        PlacementId = kv.Value.PlacementId, Gain = kv.Value.Gain, Pattern = kv.Value.Pattern?.Name,
+                        PlacementId = kv.Value.PlacementId, Gain = kv.Value.Gain, Clip = kv.Value.Clip?.Name,
                     });
                 s.Sequences.Add(ls);
             }
@@ -202,8 +202,8 @@ namespace ReBuzz.Core.SongHistory
                     WriteB(w, m.Data); WriteB(w, m.EditorData);
                     w.Write(m.Params.Count);
                     foreach (var p in m.Params) { w.Write(p.Group); w.Write(p.Index); w.Write(p.Track); w.Write(p.Value); w.Write(p.Glides); }
-                    w.Write(m.Patterns.Count);
-                    foreach (var p in m.Patterns)
+                    w.Write(m.Clips.Count);
+                    foreach (var p in m.Clips)
                     {
                         w.Write(p.Name ?? ""); w.Write(p.Length); WriteB(w, p.Data);
                         w.Write(p.Columns.Count);
@@ -226,7 +226,7 @@ namespace ReBuzz.Core.SongHistory
                     w.Write(q.Events.Count);
                     foreach (var e in q.Events)
                     {
-                        w.Write(e.Time); w.Write(e.Type); w.Write(e.Span); w.Write(e.Offset); w.Write(e.End); w.Write(e.PlacementId); w.Write(e.Gain); WriteN(w, e.Pattern);
+                        w.Write(e.Time); w.Write(e.Type); w.Write(e.Span); w.Write(e.Offset); w.Write(e.End); w.Write(e.PlacementId); w.Write(e.Gain); WriteN(w, e.Clip);
                     }
                 }
             }
@@ -258,7 +258,7 @@ namespace ReBuzz.Core.SongHistory
                     int npat = r.ReadInt32();
                     for (int k = 0; k < npat; k++)
                     {
-                        var p = new Pattern { Name = r.ReadString(), Length = r.ReadInt32(), Data = ReadB(r) };
+                        var p = new Clip { Name = r.ReadString(), Length = r.ReadInt32(), Data = ReadB(r) };
                         int nc = r.ReadInt32();
                         for (int c = 0; c < nc; c++)
                         {
@@ -266,10 +266,10 @@ namespace ReBuzz.Core.SongHistory
                             int nm = r.ReadInt32();
                             for (int k2 = 0; k2 < nm; k2++) col.Meta[r.ReadString()] = r.ReadString();
                             int ne = r.ReadInt32();
-                            for (int e = 0; e < ne; e++) col.Events.Add(new PatternEvent(r.ReadInt32(), r.ReadInt32(), r.ReadInt32()));
+                            for (int e = 0; e < ne; e++) col.Events.Add(new ClipEvent(r.ReadInt32(), r.ReadInt32(), r.ReadInt32()));
                             p.Columns.Add(col);
                         }
-                        m.Patterns.Add(p);
+                        m.Clips.Add(p);
                     }
                     m.Seal();
                     s.Machines.Add(m);
@@ -283,7 +283,7 @@ namespace ReBuzz.Core.SongHistory
                     var q = new Sequence { Machine = ReadN(r) };
                     int ne = r.ReadInt32();
                     for (int e = 0; e < ne; e++)
-                        q.Events.Add(new SeqEvent { Time = r.ReadInt32(), Type = r.ReadInt32(), Span = r.ReadInt32(), Offset = r.ReadInt32(), End = r.ReadInt32(), PlacementId = r.ReadInt32(), Gain = r.ReadDouble(), Pattern = ReadN(r) });
+                        q.Events.Add(new SeqEvent { Time = r.ReadInt32(), Type = r.ReadInt32(), Span = r.ReadInt32(), Offset = r.ReadInt32(), End = r.ReadInt32(), PlacementId = r.ReadInt32(), Gain = r.ReadDouble(), Clip = ReadN(r) });
                     s.Sequences.Add(q);
                 }
                 return s;

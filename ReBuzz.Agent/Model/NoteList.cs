@@ -53,11 +53,11 @@ namespace ReBuzz.Agent.Model
         /// (beats from the pattern start, or "bar.beat" in it) and a length in beats; velocity is
         /// 1–127 (100 when absent). Notes running past the pattern's end are shortened, with a warning.
         /// </summary>
-        public static List<NoteEvent> Parse(JsonArray notes, int ticksPerBeat, int beatsPerBar, int patternTicks, List<string> warnings)
+        public static List<NoteEvent> Parse(JsonArray notes, int ticksPerBeat, int beatsPerBar, int clipTicks, List<string> warnings)
         {
             var list = new List<NoteEvent>();
-            int patternTime = patternTicks * TimeBase;
-            double patternBeats = patternTicks / (double)ticksPerBeat;
+            int clipTime = clipTicks * TimeBase;
+            double clipBeats = clipTicks / (double)ticksPerBeat;
             for (int i = 0; i < notes.Count; i++)
             {
                 string at = $"notes[{i}]";
@@ -96,13 +96,13 @@ namespace ReBuzz.Agent.Model
                 if (sample == 0 && (offset != 0 || tune != 0))
                     throw new ToolError($"{at}: offset and tune belong to a sample; give the note a sample too.");
                 int time = Time(start, ticksPerBeat);
-                if (time >= patternTime)
-                    throw new ToolError($"{at}: starts at beat {Fmt(start)}, but the pattern is {Fmt(patternBeats)} beats long. " +
+                if (time >= clipTime)
+                    throw new ToolError($"{at}: starts at beat {Fmt(start)}, but the pattern is {Fmt(clipBeats)} beats long. " +
                                         "Make the pattern longer (pattern_create with length_beats) or use another pattern.");
                 int duration = Math.Max(1, Time(start + length, ticksPerBeat) - time);
-                if (time + duration > patternTime)
+                if (time + duration > clipTime)
                 {
-                    duration = patternTime - time;
+                    duration = clipTime - time;
                     warnings.Add($"{at} ({Pitch.Name(pitch)} at beat {Fmt(start)}) ran past the pattern's end; shortened to {Fmt(Beats(duration, ticksPerBeat))} beats.");
                 }
                 list.Add(new NoteEvent(time, duration, pitch, velocity, 0, sample, offset, tune));

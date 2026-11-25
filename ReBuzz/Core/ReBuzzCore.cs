@@ -475,7 +475,7 @@ namespace ReBuzz.Core
                         Recording = false;
                     }
 
-                    SoloPattern = null;
+                    SoloClip = null;
                     RaiseOutsideAudioLock("Playing");   // fork: also set from the audio thread at the song end
                 }
 
@@ -846,13 +846,13 @@ namespace ReBuzz.Core
                   PropertyChanged.Raise(this, "Modified"));
             }
         }
-        public IPattern PatternEditorPattern { get; private set; }
-        internal PatternCore SoloPattern { get; set; }
+        public IClip ClipEditorClip { get; private set; }
+        internal ClipCore SoloClip { get; set; }
 
         public event Action<IOpenSong> OpenSong;
         public event Action<ISaveSong> SaveSong;
         public event Action<int> MIDIInput;
-        public event Action PatternEditorActivated;
+        public event Action ClipEditorActivated;
         public event Action SequenceEditorActivated;
         public event Action<float[], bool, SongTime> MasterTap;
         public event Action<float[], int, SongTime> MasterTapMultiChannel;
@@ -921,7 +921,7 @@ namespace ReBuzz.Core
             // Init process and thread priorities
             ProcessAndThreadProfile.SetProfile(engineSettings.PriorityProfile);
 
-            DefaultPatternEditor = "Modern Pattern Editor";
+            DefaultClipEditor = "Modern Pattern Editor";
 
             SessionCore = new SessionCore(this);
             global::ReBuzz.Core.Session.SessionClipEngine.Install();      // fork (1.0): audio tracks
@@ -1289,18 +1289,18 @@ namespace ReBuzz.Core
             }
         }
 
-        public void ActivatePatternEditor()
+        public void ActivateClipEditor()
         {
             NewSequenceEditorActivate = false;
-            if (ActiveView != BuzzView.PatternView)
+            if (ActiveView != BuzzView.ClipView)
             {
-                ActiveView = BuzzView.PatternView;
+                ActiveView = BuzzView.ClipView;
             }
-            PatternEditorActivated?.Invoke();
+            ClipEditorActivated?.Invoke();
 
-            if (PatternEditorPattern != null)
+            if (ClipEditorClip != null)
             {
-                var mc = PatternEditorPattern.Machine as MachineCore;
+                var mc = ClipEditorClip.Machine as MachineCore;
                 var em = mc.EditorMachine;
                 MachineManager.ActivateEditor(em);
             }
@@ -1309,9 +1309,9 @@ namespace ReBuzz.Core
         public void ActivateSequenceEditor()
         {
             NewSequenceEditorActivate = true;
-            if (ActiveView != BuzzView.PatternView)
+            if (ActiveView != BuzzView.ClipView)
             {
-                ActiveView = BuzzView.PatternView;
+                ActiveView = BuzzView.ClipView;
             }
             SequenceEditorActivated?.Invoke();
         }
@@ -1422,9 +1422,9 @@ namespace ReBuzz.Core
                 //lock (AudioLock)
                 {
                     Playing = Recording = false;
-                    if (SoloPattern != null)
+                    if (SoloClip != null)
                     {
-                        SoloPattern.IsPlayingSolo = false;
+                        SoloClip.IsPlayingSolo = false;
                     }
                 }
             }
@@ -1714,7 +1714,7 @@ namespace ReBuzz.Core
 
                 // Fork (docs/specs/clips.md §7.1, CU3): after the machines and the engine columns, the clips of every machine move into the
                 // store, in memory (the file is never written), and each pattern editor is told to view it. Where the engine plays every lane.
-                if (PatternColumnCore.PlaysEveryLane)
+                if (ClipColumnCore.PlaysEveryLane)
                     ClipOpen.Run(this, OpenedNativeVersion >= 3 || NblCoreSections.IsSnapshot(filename));       // a snapshot is cut from the live song: its lanes are in the store's columns
 
                 SongCore.SongName = restore ? (restoreAs.Length == 0 ? null : restoreAs) : filename;
@@ -2085,15 +2085,15 @@ namespace ReBuzz.Core
         }
 
         /// <summary>The pattern editor's control (a WPF UserControl in the app), or null.</summary>
-        public event Action<object> SetPatternEditorControl;
-        public event Action<IPattern> SetPatternEditorPatternChanged;
+        public event Action<object> SetClipEditorControl;
+        public event Action<IClip> SetClipEditorClipChanged;
         public event Action<IMachine> SelectedMachineChanged;
 
 
-        public void SetPatternEditorMachine(IMachine m)
+        public void SetClipEditorMachine(IMachine m)
         {
-            PatternEditorMachine = m;
-            object patternEditorControl;
+            ClipEditorMachine = m;
+            object clipEditorControl;
             MachineCore mc;
             if (m != null)
             {
@@ -2106,11 +2106,11 @@ namespace ReBuzz.Core
 
 
             var em = mc.EditorMachine;
-            patternEditorControl = MachineManager.GetPatternEditorControl(em);
+            clipEditorControl = MachineManager.GetClipEditorControl(em);
 
-            if (SetPatternEditorControl != null)
+            if (SetClipEditorControl != null)
             {
-                SetPatternEditorControl.Invoke(patternEditorControl);
+                SetClipEditorControl.Invoke(clipEditorControl);
             }
 
             if (SelectedMachineChanged != null)
@@ -2125,11 +2125,11 @@ namespace ReBuzz.Core
         /// pattern doesn't give it an editor of its own meanwhile, which would stay in the song unused
         /// (a machine that is ready while it loads got one: a managed machine, or a placeholder).
         /// </summary>
-        internal MachineCore PatternsAwaitingEditor;
+        internal MachineCore ClipsAwaitingEditor;
 
-        public void SetPatternEditorPattern(IPattern p)
+        public void SetClipEditorClip(IClip p)
         {
-            PatternEditorPattern = p;
+            ClipEditorClip = p;
             if (p != null)
             {
                 var mc = p.Machine as MachineCore;
@@ -2138,7 +2138,7 @@ namespace ReBuzz.Core
                     return;
 
                 var em = mc.EditorMachine;
-                if (em == null && mc != PatternsAwaitingEditor)
+                if (em == null && mc != ClipsAwaitingEditor)
                 {
                     // Create editor
                     CreateEditor(mc, null, null);
@@ -2147,25 +2147,25 @@ namespace ReBuzz.Core
                 // Fork (mac-engine.md M2): no pattern editor machine in this host: nothing to link.
                 if (em == null)
                 {
-                    SetPatternEditorPatternChanged?.Invoke(p);
+                    SetClipEditorClipChanged?.Invoke(p);
                     return;
                 }
 
-                object patternEditorControl = MachineManager.GetPatternEditorControl(em);
+                object clipEditorControl = MachineManager.GetClipEditorControl(em);
 
                 // Calling this first time will link editor machine to machine owning pattern p.
                 // Make "AssingEditorToMachineMethod"?
-                MachineManager.SetPatternEditorPattern(em, p);
-                if (SetPatternEditorControl != null && patternEditorControl != null)
+                MachineManager.SetClipEditorClip(em, p);
+                if (SetClipEditorControl != null && clipEditorControl != null)
                 {
-                    SetPatternEditorControl.Invoke(patternEditorControl);
+                    SetClipEditorControl.Invoke(clipEditorControl);
                 }
             }
             else
             {
-                SetPatternEditorControl?.Invoke(null);
+                SetClipEditorControl?.Invoke(null);
             }
-            SetPatternEditorPatternChanged?.Invoke(p);
+            SetClipEditorClipChanged?.Invoke(p);
         }
 
 
@@ -2331,7 +2331,7 @@ namespace ReBuzz.Core
         }
 
         internal MachineCore CreateMachine(string machine, string instrument, string name, byte[] data,
-            string patternEditor, byte[] patterneditordata, int trackcount, float x, float y, string editorName = null)
+            string clipEditor, byte[] clipeditordata, int trackcount, float x, float y, string editorName = null)
         {
             if (machine == "Master")
                 return null;
@@ -2355,9 +2355,9 @@ namespace ReBuzz.Core
             //{
             //}
 
-            if (machineCore != null && patternEditor != null)
+            if (machineCore != null && clipEditor != null)
             {
-                CreateEditor(machineCore, patternEditor, patterneditordata, editorName);
+                CreateEditor(machineCore, clipEditor, clipeditordata, editorName);
             }
 
             MIDIFocusMachine = machineCore;
@@ -2366,7 +2366,7 @@ namespace ReBuzz.Core
             return machineCore;
         }
 
-        internal void CreateEditor(MachineCore machineToUseEditor, string patternEditor, byte[] patterneditordata, string editorName = null)
+        internal void CreateEditor(MachineCore machineToUseEditor, string clipEditor, byte[] clipeditordata, string editorName = null)
         {
             // Create pattern editor but keep it hidden
             MachineCore peMachine = null;
@@ -2375,43 +2375,43 @@ namespace ReBuzz.Core
             // Fork (docs/specs/mac-engine.md M2): a host without the pattern editor machine (the Modern
             // Pattern Editor is WPF; rebuzz-headless off Windows has none) gives machines no editor.
             // Their patterns keep the engine-played note and automation columns, which play without one.
-            if (!(patternEditor != null && MachineDLLs.ContainsKey(patternEditor)) && !MachineDLLs.ContainsKey(DefaultPatternEditor))
+            if (!(clipEditor != null && MachineDLLs.ContainsKey(clipEditor)) && !MachineDLLs.ContainsKey(DefaultClipEditor))
                 return;
 
-            if (patternEditor != null)
+            if (clipEditor != null)
             {
-                if (MachineDLLs.ContainsKey(patternEditor))
+                if (MachineDLLs.ContainsKey(clipEditor))
                 {
-                    editorMachineDll = MachineDLLs[patternEditor];
+                    editorMachineDll = MachineDLLs[clipEditor];
                 }
                 else
                 {
-                    if (!Gear.HasSameDataFormat(patternEditor, DefaultPatternEditor))
+                    if (!Gear.HasSameDataFormat(clipEditor, DefaultClipEditor))
                     {
                         // Clear pattern editor data if not compatible with MPE
-                        patterneditordata = null;
+                        clipeditordata = null;
                     }
-                    editorMachineDll = MachineDLLs[DefaultPatternEditor];
+                    editorMachineDll = MachineDLLs[DefaultClipEditor];
                 }
             }
             else
             {
-                editorMachineDll = MachineDLLs[DefaultPatternEditor];
+                editorMachineDll = MachineDLLs[DefaultClipEditor];
             }
             string name = editorName == null ? GetNewEditorName() : editorName;
-            peMachine = MachineManager.CreateMachine(editorMachineDll.Name, editorMachineDll.Path, null, patterneditordata, editorMachineDll.Info.MinTracks, 0, 0, true, name);
+            peMachine = MachineManager.CreateMachine(editorMachineDll.Name, editorMachineDll.Path, null, clipeditordata, editorMachineDll.Info.MinTracks, 0, 0, true, name);
 
             // Connect editor to master
             var master = SongCore.Machines.FirstOrDefault(m => m.DLL.Info.Type == MachineType.Master);
             new ConnectMachinesAction(this, peMachine, master, [0], [0], 0x4000, 0x4000, dispatcher, engineSettings).Do();
 
             // Link machine to editor. Maybe specific call?
-            MachineManager.SetPatternEditorPattern(peMachine, machineToUseEditor.Patterns.FirstOrDefault());
+            MachineManager.SetClipEditorClip(peMachine, machineToUseEditor.Clips.FirstOrDefault());
             machineToUseEditor.EditorMachine = peMachine;
 
             // Fork (clips.md §6, CU3): a machine made while no song is loading has no clips to move: its editor views the store from the start.
             // (A song's machines are attached by ClipOpen after the load.)
-            if (PatternColumnCore.PlaysEveryLane && !SongLoading && (patterneditordata == null || patterneditordata.Length == 0) && machineToUseEditor.PatternsList.Count <= 1 && machineToUseEditor.PatternsList.All(p => p.BuiltInData == null))
+            if (ClipColumnCore.PlaysEveryLane && !SongLoading && (clipeditordata == null || clipeditordata.Length == 0) && machineToUseEditor.ClipsList.Count <= 1 && machineToUseEditor.ClipsList.All(p => p.BuiltInData == null))
             {
                 peMachine.LoadedEditorData = null;
                 if (MachineManager.AttachClipStore(machineToUseEditor))
@@ -2494,7 +2494,7 @@ namespace ReBuzz.Core
             AddMachine(machine);
 
             // Create editor for Master
-            CreateEditor(machine, DefaultPatternEditor, null);
+            CreateEditor(machine, DefaultClipEditor, null);
 
             var masterGlobalParameters = machine.ParameterGroups[1].Parameters;
             masterGlobalParameters[0].SubscribeEvents(0, MasterVolumeChanged, null);
@@ -2608,10 +2608,10 @@ namespace ReBuzz.Core
                     machine.EditorMachine.AllOutputs.Clear();
                 }
 
-                foreach (var pattern in machine.PatternsList.ToArray())
+                foreach (var clip in machine.ClipsList.ToArray())
                 {
-                    machine.DeletePattern(pattern);
-                    pattern.ClearEvents();
+                    machine.DeleteClip(clip);
+                    clip.ClearEvents();
                 }
             }
 
@@ -2634,11 +2634,11 @@ namespace ReBuzz.Core
             // isn't the machine being removed.
             if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
             {
-                SetPatternEditorMachine(SongCore.Machines.Last());
+                SetClipEditorMachine(SongCore.Machines.Last());
             }
         }
 
-        internal void RemovePatternEditorMachine(MachineCore patEdMach, MachineCore newEditorMachine)
+        internal void RemoveClipEditorMachine(MachineCore patEdMach, MachineCore newEditorMachine)
         {
             if (patEdMach.DLL.Info.Type == MachineType.Master)
                 return;
@@ -2650,9 +2650,9 @@ namespace ReBuzz.Core
             if (patEdMach.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
             {
                 if (newEditorMachine == null)
-                    SetPatternEditorMachine(SongCore.Machines.Last());
+                    SetClipEditorMachine(SongCore.Machines.Last());
                 else
-                    SetPatternEditorMachine(newEditorMachine);
+                    SetClipEditorMachine(newEditorMachine);
             }
         }
 
@@ -2675,9 +2675,9 @@ namespace ReBuzz.Core
             }
         }
 
-        internal void PlayCurrentEditorPattern()
+        internal void PlayCurrentEditorClip()
         {
-            PatternEditorPattern.IsPlayingSolo = true;
+            ClipEditorClip.IsPlayingSolo = true;
             Playing = true;
         }
 
@@ -2770,8 +2770,8 @@ namespace ReBuzz.Core
                 else
                 {
                     // Master
-                    foreach (var pattern in machine.Patterns.ToArray())
-                        machine.DeletePattern(pattern);
+                    foreach (var clip in machine.Clips.ToArray())
+                        machine.DeleteClip(clip);
 
                     foreach (var seq in SongCore.Sequences.Where(s => s.Machine == machine).ToArray())
                     {
@@ -2793,8 +2793,8 @@ namespace ReBuzz.Core
             }
 
             // Clear pattern and sequece
-            master.PatternsList.Clear();
-            SetPatternEditorPattern(null);
+            master.ClipsList.Clear();
+            SetClipEditorClip(null);
 
             Speed = 0;
             FileEvent?.Invoke(FileEventType.Close, "Done.", null);
@@ -2878,8 +2878,8 @@ namespace ReBuzz.Core
         }
 
         public AudioEngine AudioEngine { get; internal set; }
-        public string DefaultPatternEditor { get; internal set; }
-        internal IMachine PatternEditorMachine { get; set; }
+        public string DefaultClipEditor { get; internal set; }
+        internal IMachine ClipEditorMachine { get; set; }
 
         /// <summary>Fork (audio hygiene): the audio thread's events on their way to the UI thread (UiEventQueue).</summary>
         internal UiEventQueue UiEvents { get; }
@@ -2899,11 +2899,11 @@ namespace ReBuzz.Core
             return songTime;
         }
 
-        internal void PatternEditorCommand(BuzzCommand cmd)
+        internal void ClipEditorCommand(BuzzCommand cmd)
         {
-            if (PatternEditorPattern != null)
+            if (ClipEditorClip != null)
             {
-                var machine = PatternEditorPattern.Machine as MachineCore;
+                var machine = ClipEditorClip.Machine as MachineCore;
 
                 MachineManager.Command(machine.EditorMachine, (int)cmd);
             }
@@ -2930,10 +2930,10 @@ namespace ReBuzz.Core
         internal bool SetEditorMachineForCurrent(IMachineDLL editorMachine)
         {
             bool ret = false;
-            if (PatternEditorPattern != null && PatternEditorPattern.Machine.PatternEditorDLL != editorMachine)
+            if (ClipEditorClip != null && ClipEditorClip.Machine.ClipEditorDLL != editorMachine)
             {
                 ret = false;
-                var machine = PatternEditorPattern.Machine as MachineCore;
+                var machine = ClipEditorClip.Machine as MachineCore;
                 byte[] data = null;
                 var currentEditorMachine = machine.EditorMachine;
                 // Change it
@@ -2946,9 +2946,9 @@ namespace ReBuzz.Core
                     {
                         CreateEditor(machine, editorMachine.Name, data);
                         // Do we need to do this?
-                        foreach (var p in machine.Patterns)
+                        foreach (var p in machine.Clips)
                         {
-                            MachineManager.SetPatternEditorPattern(machine.EditorMachine, p);
+                            MachineManager.SetClipEditorClip(machine.EditorMachine, p);
                         }
 
                         // Remove connections
@@ -2958,7 +2958,7 @@ namespace ReBuzz.Core
                         }
 
                         //Remove and delete old pattern editor, and replace it with the new one
-                        RemovePatternEditorMachine(currentEditorMachine, machine);
+                        RemoveClipEditorMachine(currentEditorMachine, machine);
                     }
                     catch (Exception)
                     {
@@ -2967,8 +2967,8 @@ namespace ReBuzz.Core
                     }
                 }
 
-                if (PatternEditorPattern != null)
-                    SetPatternEditorPattern(PatternEditorPattern);
+                if (ClipEditorClip != null)
+                    SetClipEditorClip(ClipEditorClip);
             }
             return ret;
         }

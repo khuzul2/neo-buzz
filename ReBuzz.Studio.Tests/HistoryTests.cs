@@ -474,19 +474,19 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void APatternRenameFromAnEditorIsAStepAndAnUndoIsNotRecordedAgain()
+        public void AClipRenameFromAnEditorIsAStepAndAnUndoIsNotRecordedAgain()
         {
             using var rig = new SessionRig("Lead");
             var song = rig.Core.SongCore;
             var stack = song.ActionStack;
             var lead = rig.Machine("Lead");
-            var riff = rig.Pattern(lead, "Riff", 8);
+            var riff = rig.Clip(lead, "Riff", 8);
             stack.Clear();
 
-            lead.RenamePattern(riff, "Hook");
+            lead.RenameClip(riff, "Hook");
             Assert.That(riff.Name, Is.EqualTo("Hook"));
             Assert.That(stack.Steps.Select(s => s.Name), Is.EqualTo(new[] { "Rename pattern" }));
-            lead.RenamePattern(riff, "Hook");                          // the same name: taken, nothing happens
+            lead.RenameClip(riff, "Hook");                          // the same name: taken, nothing happens
             Assert.That(stack.Steps.Count, Is.EqualTo(1));
 
             song.Undo();

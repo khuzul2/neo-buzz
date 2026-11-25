@@ -93,13 +93,13 @@ namespace ReBuzz.Agent
                     {
                         var sources = Named(core, c.List("machines"), "cloned");
                         if (sources.Count == 0) throw new ToolError("Name at least one machine.");
-                        bool patterns = c.Bool("with_patterns") == true;
-                        var copies = patterns ? MachineEditing.CloneWithPatterns(core, sources) : MachineEditing.Duplicate(core, sources);
+                        bool clips = c.Bool("with_patterns") == true;
+                        var copies = clips ? MachineEditing.CloneWithClips(core, sources) : MachineEditing.Duplicate(core, sources);
                         if (copies.Count == 0) throw new ToolError($"{Product.Name} made no copy: a machine of this kind can't be cloned (machine_add makes a new one).");
                         var pairs = new JsonArray();
                         for (int i = 0; i < copies.Count && i < sources.Count; i++)
                             pairs.Add(new JsonObject { ["name"] = copies[i].Name, ["from"] = sources[i].Name });
-                        return new JsonObject { ["copies"] = pairs, ["with_patterns"] = patterns };
+                        return new JsonObject { ["copies"] = pairs, ["with_patterns"] = clips };
                     }, c.Cancellation);
                     return ToolResult.Ok("Cloned " + string.Join(", ", r["copies"]!.AsArray().Select(p => $"{p!["from"]} → {p["name"]}")) +
                                          (r["with_patterns"]!.GetValue<bool>() ? " (with patterns)." : "."), r);

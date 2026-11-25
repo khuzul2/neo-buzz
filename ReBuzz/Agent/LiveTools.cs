@@ -223,7 +223,7 @@ namespace ReBuzz.Agent
                         var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         var session = core.SessionCore;
                         int? scene = c.Int("scene") is int sc ? sc - 1 : null;
-                        string machineName = c.String("machine"), patternName = c.String("pattern");
+                        string machineName = c.String("machine"), clipName = c.String("pattern");
                         MachineCore m = machineName != null ? SongModel.Machine(core, machineName) : null;
                         int track = -1;
                         if (m != null)
@@ -251,15 +251,15 @@ namespace ReBuzz.Agent
                             return LiveState(core);
                         }
                         var seq = layout.SequenceOf(track);
-                        IPattern pattern;
-                        if (patternName != null) pattern = SongModel.Pattern(m, patternName);
+                        IClip clip;
+                        if (clipName != null) clip = SongModel.Clip(m, clipName);
                         else if (scene != null)
                         {
                             if (scene >= layout.SceneCount) throw new ToolError($"There are {layout.SceneCount} scenes; session_get shows them.");
-                            pattern = layout.PatternAt(track, scene.Value) ?? throw new ToolError($"{m.Name}'s slot in scene {scene + 1} is empty; session_get shows the grid.");
+                            clip = layout.ClipAt(track, scene.Value) ?? throw new ToolError($"{m.Name}'s slot in scene {scene + 1} is empty; session_get shows the grid.");
                         }
                         else throw new ToolError("With machine, say scene (its slot) or pattern.");
-                        layout.LaunchClip(seq, pattern, 127, scene ?? -1);
+                        layout.LaunchClip(seq, clip, 127, scene ?? -1);
                         return LiveState(core);
                     }, c.Cancellation);
                     return ToolResult.Ok(StateLine(s), s);
@@ -336,12 +336,12 @@ namespace ReBuzz.Agent
                                     host.ArmedByAgent.Add(m.Name);
                                 }
                                 int s = (c.Int("scene") ?? 1) - 1;
-                                while (s < layout.SceneCount && layout.PatternAt(t, s) != null) s++;
+                                while (s < layout.SceneCount && layout.ClipAt(t, s) != null) s++;
                                 while (layout.SceneCount <= s) layout.InsertScene(layout.SceneCount);
                                 var doc = layout.Document;
                                 int bars = doc.RecordBars;
                                 if (c.Int("bars") is int b) layout.SetRecordBars(b);
-                                IPattern take;
+                                IClip take;
                                 try { take = layout.RecordTake(t, s); }
                                 finally { if (c.Int("bars") != null) layout.SetRecordBars(bars); }
                                 if (take == null) throw new ToolError($"{m.Name} couldn't start a take (its slot in scene {s + 1} isn't free, or the machine has no free pattern name).");
@@ -374,7 +374,7 @@ namespace ReBuzz.Agent
                             }
                             case "status":
                                 foreach (var t in Enumerable.Range(0, layout.TrackCount))
-                                    if (m != null && layout.SequenceOf(t)?.Machine == m && FindTake(layout, t) is IPattern p)
+                                    if (m != null && layout.SequenceOf(t)?.Machine == m && FindTake(layout, t) is IClip p)
                                     {
                                         result["take"] = p.Name;
                                         result["notes"] = layout.RecordedNoteCount(p);
@@ -548,11 +548,11 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>The take a track records into now, if any.</summary>
-        static IPattern FindTake(SessionLayout layout, int track)
+        static IClip FindTake(SessionLayout layout, int track)
         {
             var seq = layout.SequenceOf(track);
             for (int s = 0; s < layout.SceneCount; s++)
-                if (layout.PatternAt(track, s) is IPattern p && layout.IsRecordingInto(seq, p)) return p;
+                if (layout.ClipAt(track, s) is IClip p && layout.IsRecordingInto(seq, p)) return p;
             return null;
         }
 

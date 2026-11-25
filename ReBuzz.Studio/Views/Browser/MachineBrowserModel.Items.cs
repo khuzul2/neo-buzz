@@ -20,7 +20,7 @@ namespace ReBuzz.Studio.Views.Browser
 {
     /// <summary>One result of any kind. <see cref="Tag"/> is the list row's tag: "gear:Name", "preset:Gear/Name", "pattern:Machine/Name", "audio:path", "midi:path", "wave:N".</summary>
     internal sealed record BrowserItem(BrowserKind Kind, string Id, string Name, string Group, string Detail, string Tag,
-        MachineEntry Machine = null, SampleEntry File = null, IPattern Pattern = null, string Preset = null)
+        MachineEntry Machine = null, SampleEntry File = null, IClip Clip = null, string Preset = null)
     {
         public BrowserDragData Drag => new(Kind, Id, Preset, Name);
 
@@ -182,8 +182,8 @@ namespace ReBuzz.Studio.Views.Browser
         public IEnumerable<BrowserItem> ClipItems()
         {
             foreach (var m in core.Song.Machines.Where(m => m.DLL.Info.Type != MachineType.Master))
-                foreach (var p in m.Patterns)
-                    yield return new BrowserItem(BrowserKind.Pattern, m.Name + "/" + p.Name, p.Name, m.Name, p.Length + " rows", "pattern:" + m.Name + "/" + p.Name, Pattern: p);
+                foreach (var p in m.Clips)
+                    yield return new BrowserItem(BrowserKind.Clip, m.Name + "/" + p.Name, p.Name, m.Name, p.Length + " rows", "pattern:" + m.Name + "/" + p.Name, Clip: p);
         }
 
         public IEnumerable<BrowserItem> SongAudioItems()
@@ -317,7 +317,7 @@ namespace ReBuzz.Studio.Views.Browser
             var words = query.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
             bool Has(BrowserItem i) => words.All(w => (i.Name + " " + i.Group).Contains(w, StringComparison.OrdinalIgnoreCase));
             if (Want(BrowserKind.Preset)) result.AddRange(PresetItems().Where(Has).Take(perKind));
-            if (Want(BrowserKind.Pattern)) result.AddRange(ClipItems().Where(Has).Take(perKind));
+            if (Want(BrowserKind.Clip)) result.AddRange(ClipItems().Where(Has).Take(perKind));
             if (Want(BrowserKind.Audio) || Want(BrowserKind.Midi))
             {
                 result.AddRange(Library.Index.Search(query, perKind, kind switch { BrowserKind.Midi => IndexKind.Midi, BrowserKind.Audio => IndexKind.Audio, _ => null })

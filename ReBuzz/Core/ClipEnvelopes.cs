@@ -18,7 +18,7 @@ namespace ReBuzz.Core
     /// <summary>One parameter of one clip as the lane shows it: the engine column's points (editable) and the Tracker's steps (read only).</summary>
     internal sealed class ClipEnvelope
     {
-        public IPattern Pattern { get; init; }
+        public IClip Clip { get; init; }
         public AutoParam Param { get; init; }
         public ColumnKey Key { get; init; }
 
@@ -42,48 +42,48 @@ namespace ReBuzz.Core
     /// <summary>Reads the envelopes of a clip, and finds which parameters hold data.</summary>
     internal static class ClipEnvelopes
     {
-        public const int Unit = PatternEvent.TimeBase;
+        public const int Unit = ClipEvent.TimeBase;
 
         /// <summary>A clip's length in 1/240 ticks (at least one tick).</summary>
-        public static int LengthOf(IPattern pattern) => Math.Max(1, pattern?.Length ?? 1) * Unit;
+        public static int LengthOf(IClip clip) => Math.Max(1, clip?.Length ?? 1) * Unit;
 
-        static AutoSegment Segment(IPattern pattern, AutoSource source, IReadOnlyList<AutoPoint> points, bool editable) => new AutoSegment
+        static AutoSegment Segment(IClip clip, AutoSource source, IReadOnlyList<AutoPoint> points, bool editable) => new AutoSegment
         {
-            Source = source, Pattern = pattern, Start = 0, End = LengthOf(pattern), PatternFrom = 0, Points = points, Editable = editable,
+            Source = source, Clip = clip, Start = 0, End = LengthOf(clip), ClipFrom = 0, Points = points, Editable = editable,
         };
 
         /// <summary>One parameter of a clip, read now; null when the clip's machine has no such state parameter.</summary>
-        public static ClipEnvelope Read(IPattern pattern, ColumnKey key, Dictionary<IPattern, List<(int, int, IParameter, int, PatternEvent[])>> cache = null)
+        public static ClipEnvelope Read(IClip clip, ColumnKey key, Dictionary<IClip, List<(int, int, IParameter, int, ClipEvent[])>> cache = null)
         {
-            var machine = pattern?.Machine;
+            var machine = clip?.Machine;
             var param = AutomationParams.Find(machine, key);
             if (param == null) return null;
             var points = new List<AutoPoint>();
-            foreach (var column in AutomationReader.EngineColumns(pattern, param.Parameter, key.Track))
+            foreach (var column in AutomationReader.EngineColumns(clip, param.Parameter, key.Track))
                 points = AutomationMath.PointsOf(column.GetEvents(int.MinValue, int.MaxValue), true);
-            var engine = Segment(pattern, AutoSource.ClipColumn, points, true);
+            var engine = Segment(clip, AutoSource.ClipColumn, points, true);
             AutoSegment tracker = null;
-            cache ??= new Dictionary<IPattern, List<(int, int, IParameter, int, PatternEvent[])>>();
-            foreach (var t in AutomationReader.TrackerColumns(cache, pattern))
+            cache ??= new Dictionary<IClip, List<(int, int, IParameter, int, ClipEvent[])>>();
+            foreach (var t in AutomationReader.TrackerColumns(cache, clip))
             {
                 if (!AutomationReader.Same(machine, t, key) || t.Events.All(x => x.Value == param.Parameter.NoValue)) continue;
-                tracker = Segment(pattern, AutoSource.Tracker, AutomationMath.PointsOf(t.Events, false, param.Parameter.NoValue), false);
+                tracker = Segment(clip, AutoSource.Tracker, AutomationMath.PointsOf(t.Events, false, param.Parameter.NoValue), false);
                 break;
             }
             var overlaps = tracker != null && points.Count > 0 ? AutomationReader.OverlapsOf(new[] { engine, tracker }) : new List<AutoOverlap>();
-            return new ClipEnvelope { Pattern = pattern, Param = param, Key = key, Engine = engine, Tracker = tracker, Overlaps = overlaps };
+            return new ClipEnvelope { Clip = clip, Param = param, Key = key, Engine = engine, Tracker = tracker, Overlaps = overlaps };
         }
 
         /// <summary>The parameters that hold data in a clip: its engine columns first, then the pattern editor's, each in the machine's parameter order.</summary>
-        public static List<ColumnKey> KeysWithData(IPattern pattern)
+        public static List<ColumnKey> KeysWithData(IClip clip)
         {
             var found = new List<ColumnKey>();
-            var machine = pattern?.Machine;
+            var machine = clip?.Machine;
             if (machine == null) return found;
             var groups = machine.ParameterGroups;
-            foreach (var column in pattern.Columns)
+            foreach (var column in clip.Columns)
             {
-                if (column.Type != PatternColumnType.Parameter || column.Parameter?.Group == null || column is not PatternColumnCore { IsMarkedAutomation: true }) continue;
+                if (column.Type != ClipColumnType.Parameter || column.Parameter?.Group == null || column is not ClipColumnCore { IsMarkedAutomation: true }) continue;
                 int g = IndexOfGroup(groups, column.Parameter.Group);
                 if (g < 0 || !column.GetEvents(int.MinValue, int.MaxValue).Any()) continue;
                 var key = new ColumnKey(g, column.Parameter.IndexInGroup, column.Track);
@@ -91,8 +91,8 @@ namespace ReBuzz.Core
             }
             found.Sort(Compare);
             var tracker = new List<ColumnKey>();
-            var cache = new Dictionary<IPattern, List<(int, int, IParameter, int, PatternEvent[])>>();
-            foreach (var t in AutomationReader.TrackerColumns(cache, pattern))
+            var cache = new Dictionary<IClip, List<(int, int, IParameter, int, ClipEvent[])>>();
+            foreach (var t in AutomationReader.TrackerColumns(cache, clip))
             {
                 var key = new ColumnKey(t.Group, t.Index, t.Order);
                 if (found.Contains(key) || tracker.Contains(key) || AutomationParams.Find(machine, key) is not { } p || t.Events.All(x => x.Value == p.Parameter.NoValue)) continue;
@@ -119,8 +119,8 @@ namespace ReBuzz.Core
         {
             ColumnKey? best = null;
             if (machine == null) return null;
-            foreach (var pattern in machine.Patterns)
-                foreach (var key in KeysWithData(pattern))
+            foreach (var clip in machine.Clips)
+                foreach (var key in KeysWithData(clip))
                     if (best == null || Compare(key, best.Value) < 0) best = key;
             return best;
         }
@@ -134,9 +134,9 @@ namespace ReBuzz.Core
         }
 
         /// <summary>The curve a clip draws for a parameter: its engine points, else the Tracker's steps (marked); empty when it holds none.</summary>
-        public static (IReadOnlyList<AutoPoint> Points, bool FromTracker) CurveOf(IPattern pattern, ColumnKey key)
+        public static (IReadOnlyList<AutoPoint> Points, bool FromTracker) CurveOf(IClip clip, ColumnKey key)
         {
-            var e = Read(pattern, key);
+            var e = Read(clip, key);
             if (e == null) return (Array.Empty<AutoPoint>(), false);
             if (e.Engine.Points.Count > 0) return (e.Engine.Points, false);
             return e.Tracker != null ? (e.Tracker.Points, true) : (Array.Empty<AutoPoint>(), false);

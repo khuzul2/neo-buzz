@@ -30,7 +30,7 @@ namespace ReBuzz.Studio.Tests
             public SessionRig Song { get; }
             public MainWindow Window { get; }
             public MachineCore Drums, Bass;
-            public PatternCore Beat, Line;
+            public ClipCore Beat, Line;
             public StudioSelection Selection => StudioSelection.For(Song.Core);
             public BrowserPanel Browser => Window.Browser;
             public DetailPanel Detail => Window.Detail;
@@ -41,8 +41,8 @@ namespace ReBuzz.Studio.Tests
                 Song = new SessionRig("Drums", "Bass");
                 Drums = Song.Machine("Drums");
                 Bass = Song.Machine("Bass");
-                Beat = Song.Pattern(Drums, "Beat", 16, (0, 60), (4, 62));
-                Line = Song.Pattern(Bass, "Line", 16, (0, 48));
+                Beat = Song.Clip(Drums, "Beat", 16, (0, 60), (4, 62));
+                Line = Song.Clip(Bass, "Line", 16, (0, 48));
                 Song.Layout.SetSlot(0, 0, Beat);
                 Song.Layout.SetSlot(1, 0, Line);
                 Selection.Clear(this);
@@ -146,7 +146,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the browser
 
         [AvaloniaTest]
-        public void TheBrowserListsTheMachinesAndThePatternsOfTheSelection()
+        public void TheBrowserListsTheMachinesAndTheClipsOfTheSelection()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
@@ -195,7 +195,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AClickOnAPatternSelectsItEverywhereAndADoubleClickOpensTheTracker()
+        public void AClickOnAClipSelectsItEverywhereAndADoubleClickOpensTheTracker()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
@@ -208,14 +208,14 @@ namespace ReBuzz.Studio.Tests
             rig.Window.MouseUp(p, MouseButton.Left);
             Settle();
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Drums));
-            Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Beat), "the studio's selection: the inspector and the other views follow");
+            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Beat), "the studio's selection: the inspector and the other views follow");
             Assert.That(rig.Window.Inspector.Facts.Single(f => f.Label == "Pattern").Value, Is.EqualTo("Beat"));
             Assert.That(rig.Detail.IsOpen, Is.False, "one click only selects");
 
             DoubleClick(rig.Window, rig.CentreOf(rig.Row("pattern:Beat")));
             Settle();
             Assert.That(rig.Detail.IsOpen, Is.True, "a double-click opens it in the Tracker");
-            Assert.That(PatternView.Page!.Pattern, Is.SameAs(rig.Beat));
+            Assert.That(ClipView.Page!.Clip, Is.SameAs(rig.Beat));
         }
 
         [AvaloniaTest]
@@ -274,12 +274,12 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the detail panel and the Tracker
 
         [AvaloniaTest]
-        public void ThePatternViewIsTheDetailPanelsTrackerNotATab()
+        public void TheClipViewIsTheDetailPanelsTrackerNotATab()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
             Assert.That(rig.Window.Tabs.Items.Cast<TabItem>().Select(t => t.Header), Is.EqualTo(new[] { "Arrangement", "Session", "Machines" }));
-            Assert.That(rig.Detail.Page, Is.SameAs(PatternView.Page));
+            Assert.That(rig.Detail.Page, Is.SameAs(ClipView.Page));
             rig.Key(PhysicalKey.Digit4, Rig.Cmd);
             Assert.That(rig.Detail.IsOpen, Is.True, "⌘4: the Tracker");
             Assert.That(rig.Detail.IsMaximised, Is.False, "docked");
@@ -296,7 +296,7 @@ namespace ReBuzz.Studio.Tests
             rig.Selection.Set(rig.Drums, rig.Beat, this);
             rig.Window.ShowView("Pattern");
             Settle();
-            Assert.That(PatternView.Page!.Pattern, Is.SameAs(rig.Beat), "it shows the selected pattern");
+            Assert.That(ClipView.Page!.Clip, Is.SameAs(rig.Beat), "it shows the selected pattern");
         }
 
         [AvaloniaTest]

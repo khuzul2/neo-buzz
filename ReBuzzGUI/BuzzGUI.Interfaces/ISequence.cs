@@ -1,19 +1,21 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace BuzzGUI.Interfaces
 {
-    public enum SequenceEventType { PlayPattern, Break, Mute, Thru, Off };
+    // A saved template stores the member's old name (BuzzGUI.Common.Templates): the file format keeps PlayPattern.
+    public enum SequenceEventType { [XmlEnum("PlayPattern")] PlayClip, Break, Mute, Thru, Off };
 
     public class SequenceEvent
     {
-        public SequenceEvent(SequenceEvent e) { Type = e.Type; Pattern = e.Pattern; Span = e.Span; Offset = e.Offset; End = e.End; Gain = e.Gain; PlacementId = e.PlacementId; }
+        public SequenceEvent(SequenceEvent e) { Type = e.Type; Clip = e.Clip; Span = e.Span; Offset = e.Offset; End = e.End; Gain = e.Gain; PlacementId = e.PlacementId; }
         public SequenceEvent(SequenceEventType type) { Type = type; }
-        public SequenceEvent(SequenceEventType type, IPattern pattern) { Type = type; Pattern = pattern; }
-        public SequenceEvent(SequenceEventType type, IPattern pattern, int span) { Type = type; Pattern = pattern; Span = span; }
+        public SequenceEvent(SequenceEventType type, IClip clip) { Type = type; Clip = clip; }
+        public SequenceEvent(SequenceEventType type, IClip clip, int span) { Type = type; Clip = clip; Span = span; }
 
         public SequenceEventType Type { get; private set; }
-        public IPattern Pattern { get; private set; }
+        public IClip Clip { get; private set; }
         public int Span { get; set; }       // = PlayedLength unless clipped by another event
 
         // Fork (docs/specs/session-view.md 0.5.1): an event can play part of its pattern, at a
@@ -42,19 +44,19 @@ namespace BuzzGUI.Interfaces
         public int PlacementId { get; set; }
 
         /// <summary>Where the pattern starts playing, within the pattern as it is now.</summary>
-        public int PlayedOffset => Pattern == null ? 0 : Math.Clamp(Offset, 0, Math.Max(0, PlayedEnd - 1));
+        public int PlayedOffset => Clip == null ? 0 : Math.Clamp(Offset, 0, Math.Max(0, PlayedEnd - 1));
 
         /// <summary>Ticks the event plays before another event cuts it: from its offset to its end (at least 1).</summary>
-        public int PlayedLength => Pattern == null ? 0 : Math.Max(1, PlayedEnd - PlayedOffset);
+        public int PlayedLength => Clip == null ? 0 : Math.Max(1, PlayedEnd - PlayedOffset);
 
-        int PlayedEnd => End > 0 ? Math.Min(End, Pattern.Length) : Pattern.Length;
+        int PlayedEnd => End > 0 ? Math.Min(End, Clip.Length) : Clip.Length;
 
         /// <summary>The pattern's name, with the part played and the volume when not the whole at full ("Verse 4–12 50%").</summary>
         public string Describe()
         {
-            if (Pattern == null) return "";
-            string text = Pattern.Name;
-            if (Offset > 0 || (End > 0 && End < Pattern.Length))
+            if (Clip == null) return "";
+            string text = Clip.Name;
+            if (Offset > 0 || (End > 0 && End < Clip.Length))
                 text += $" {PlayedOffset}–{PlayedOffset + PlayedLength}";
             if (Gain < 1.0)
                 text += $" {Math.Round(Gain * 100)}%";
@@ -69,8 +71,8 @@ namespace BuzzGUI.Interfaces
 
         bool IsDisabled { get; set;  }
 
-        IPattern PlayingPattern { get; }
-        int PlayingPatternPosition { get; }
+        IClip PlayingClip { get; }
+        int PlayingClipPosition { get; }
 
         event Action<int> EventChanged;
 

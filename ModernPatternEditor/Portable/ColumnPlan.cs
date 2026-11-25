@@ -11,7 +11,7 @@
 
 using BuzzGUI.Interfaces;
 using WDE.ModernPatternEditor.MPEStructures;
-using static WDE.ModernPatternEditor.MPEStructures.MPEPattern;
+using static WDE.ModernPatternEditor.MPEStructures.MPEClip;
 
 namespace WDE.ModernPatternEditor
 {

@@ -71,14 +71,14 @@ namespace ReBuzz.Core.Notes
         readonly ReBuzzCore buzz;
         readonly MidiColumnNotes notes;
 
-        public MidiControllers(ReBuzzCore buzz, IPattern pattern)
+        public MidiControllers(ReBuzzCore buzz, IClip clip)
         {
             this.buzz = buzz;
-            notes = new MidiColumnNotes(buzz, pattern);
-            Pattern = pattern;
+            notes = new MidiColumnNotes(buzz, clip);
+            Clip = clip;
         }
 
-        public IPattern Pattern { get; }
+        public IClip Clip { get; }
 
         /// <summary>The pattern's length in pattern time (1/240 tick).</summary>
         public int Length => notes.Length;
@@ -91,7 +91,7 @@ namespace ReBuzz.Core.Notes
         {
             var points = new List<ControllerPoint>();
             if (!notes.IsLive) return points;
-            var column = SessionLayout.ColumnFor(Pattern, ColumnKey.Midi, create: false);
+            var column = SessionLayout.ColumnFor(Clip, ColumnKey.Midi, create: false);
             if (column == null) return points;
             foreach (var e in column.GetEvents(int.MinValue, int.MaxValue))
                 if (ControllerPoint.TryFrom((e.Time, e.Value, e.Duration), out var p)) points.Add(p);
@@ -110,16 +110,16 @@ namespace ReBuzz.Core.Notes
             added ??= Array.Empty<ControllerPoint>();
             if (removed.Count == 0 && added.Count == 0) return null;
             if (removed.SequenceEqual(added)) return null;
-            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, Pattern,
+            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, Clip,
                 new[] { new ColumnEventsAction.Change(ColumnKey.Midi, removed.Select(ToEvent).ToArray(), added.Select(ToEvent).ToArray()) }));
             buzz.SetModifiedFlag();
             return null;
         }
 
-        static PatternEvent ToEvent(ControllerPoint p)
+        static ClipEvent ToEvent(ControllerPoint p)
         {
             var (time, value, duration) = p.ToEvent();
-            return new PatternEvent(time, value, duration);
+            return new ClipEvent(time, value, duration);
         }
     }
 }

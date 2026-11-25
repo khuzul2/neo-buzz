@@ -80,7 +80,7 @@ namespace ReBuzz.Studio.Views.Machines
                 if (machine == null) return null;
 
                 if (machine.AllNonInputParameters().Any())
-                    machine.CreatePattern("00", Global.GeneralSettings.PatternLength > 0 ? Global.GeneralSettings.PatternLength : 16);
+                    machine.CreateClip("00", Global.GeneralSettings.ClipLength > 0 ? Global.GeneralSettings.ClipLength : 16);
 
                 if (machine.DLL.Info.Type == MachineType.Generator)
                 {
@@ -89,8 +89,8 @@ namespace ReBuzz.Studio.Views.Machines
                         song.ConnectMachines(machine, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
 
                     song.AddSequence(machine, song.Sequences.Count);
-                    if (songWasEmpty && machine.Patterns.Count > 0)
-                        song.Sequences.First(s => s.Machine == machine).SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, machine.Patterns[0]));
+                    if (songWasEmpty && machine.Clips.Count > 0)
+                        song.Sequences.First(s => s.Machine == machine).SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, machine.Clips[0]));
                 }
                 return machine;
             }
@@ -234,7 +234,7 @@ namespace ReBuzz.Studio.Views.Machines
         public static List<IMachine> Duplicate(ReBuzzCore core, IReadOnlyList<IMachine> machines) => MachineEditing.Duplicate(core, machines);
 
         /// <summary>Clone with patterns (BuzzGUI.MachineView's CloneSelectedMachines(true)): see <see cref="MachineEditing.CloneWithPatterns"/>.</summary>
-        public static List<IMachine> CloneWithPatterns(ReBuzzCore core, IReadOnlyList<IMachine> machines) => MachineEditing.CloneWithPatterns(core, machines);
+        public static List<IMachine> CloneWithClips(ReBuzzCore core, IReadOnlyList<IMachine> machines) => MachineEditing.CloneWithClips(core, machines);
 
         // ---- machine groups (BuzzGUI.MachineView's Group menu): the steps are ReBuzz.Core.MachineEditing's, which the agent's machine_group also calls.
 

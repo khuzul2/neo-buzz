@@ -25,21 +25,21 @@ namespace ReBuzz.Core.Notes
     internal sealed class TrackerColumnNotes : NoteSourceBase
     {
         readonly ReBuzzCore buzz;
-        readonly IPattern pattern;
+        readonly IClip clip;
         readonly IParameter noteParameter;
         readonly IParameter velocityParameter;
         readonly IParameter sampleParameter, offsetParameter, offsetHiParameter, tuneParameter;
         List<string> raised;
 
-        TrackerColumnNotes(ReBuzzCore buzz, IPattern pattern, IParameter note, IParameter velocity)
+        TrackerColumnNotes(ReBuzzCore buzz, IClip clip, IParameter note, IParameter velocity)
         {
             this.buzz = buzz;
-            this.pattern = pattern;
+            this.clip = clip;
             noteParameter = note;
             velocityParameter = velocity;
-            if (pattern.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } } && pattern.Machine.ParameterGroups.Count > 2)
+            if (clip.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } } && clip.Machine.ParameterGroups.Count > 2)
             {
-                var track = pattern.Machine.ParameterGroups[2].Parameters;
+                var track = clip.Machine.ParameterGroups[2].Parameters;
                 IParameter Find(string name) => track.FirstOrDefault(p => p.Name == name);
                 var sample = Find("Sample");
                 var lo = Find("Offset");
@@ -65,16 +65,16 @@ namespace ReBuzz.Core.Notes
         public const int TuneCentre = 2400;
 
         /// <summary>The pattern's tracker notes, or null when its machine has no Note track parameter.</summary>
-        public static TrackerColumnNotes For(ReBuzzCore buzz, IPattern pattern)
+        public static TrackerColumnNotes For(ReBuzzCore buzz, IClip clip)
         {
-            var (note, velocity) = Parameters(pattern);
-            return note == null ? null : new TrackerColumnNotes(buzz, pattern, note, velocity);
+            var (note, velocity) = Parameters(clip);
+            return note == null ? null : new TrackerColumnNotes(buzz, clip, note, velocity);
         }
 
         /// <summary>The Note track parameter and the velocity one (as the agent finds them), or nulls.</summary>
-        static (IParameter Note, IParameter Velocity) Parameters(IPattern pattern)
+        static (IParameter Note, IParameter Velocity) Parameters(IClip clip)
         {
-            var groups = pattern?.Machine?.ParameterGroups;
+            var groups = clip?.Machine?.ParameterGroups;
             if (groups == null || groups.Count < 3) return (null, null);
             var track = groups[2].Parameters;
             var note = track.FirstOrDefault(p => p.Type == ParameterType.Note);
@@ -84,12 +84,12 @@ namespace ReBuzz.Core.Notes
             return (note, velocity);
         }
 
-        public override IPattern Pattern => pattern;
+        public override IClip Clip => clip;
 
         /// <summary>The tracks the machine has now.</summary>
-        int Tracks => Math.Max(1, pattern.Machine.TrackCount);
+        int Tracks => Math.Max(1, clip.Machine.TrackCount);
 
-        int PatternTime => Math.Max(1, pattern.Length) * PatternEvent.TimeBase;
+        int ClipTime => Math.Max(1, clip.Length) * ClipEvent.TimeBase;
 
         (int Min, int Max)? VelocityRange => velocityParameter is { } v ? (v.MinValue, v.MaxValue) : null;
 
@@ -107,9 +107,9 @@ namespace ReBuzz.Core.Notes
             return d;
         }
 
-        static List<PatternEvent> EventsOf(IPattern pattern, ColumnKey key) => StoreLanes.Events(pattern, key);
+        static List<ClipEvent> EventsOf(IClip clip, ColumnKey key) => StoreLanes.Events(clip, key);
 
-        List<PatternEvent> Events(ColumnKey key) => EventsOf(pattern, key);
+        List<ClipEvent> Events(ColumnKey key) => EventsOf(clip, key);
 
         /// <summary>The agent's way: a chord that needs more tracks than the machine has raises its track count (up to what it can have), and the problems list says so.</summary>
         public TrackerColumnNotes AllowMoreTracks(List<string> problems)
@@ -123,9 +123,9 @@ namespace ReBuzz.Core.Notes
         {
             get
             {
-                foreach (var lane in StoreLanes.All(pattern, NoteKey(0)))
+                foreach (var lane in StoreLanes.All(clip, NoteKey(0)))
                     if (lane.Metadata.TryGetValue(BuzzGUI.Common.ClipMeta.Grid, out var grid) && BuzzGUI.Common.ClipGrid.TryParse(grid, out int rpb, out _) && rpb > 0)
-                        return Math.Max(1, PatternEvent.TimeBase * 4 / rpb);
+                        return Math.Max(1, ClipEvent.TimeBase * 4 / rpb);
                 return ClipNotes.TimeBase;
             }
         }
@@ -134,7 +134,7 @@ namespace ReBuzz.Core.Notes
         int TracksWithColumns()
         {
             int n = Tracks;
-            foreach (var c in pattern.Columns)
+            foreach (var c in clip.Columns)
                 if (ReferenceEquals(c.Parameter, noteParameter)) n = Math.Max(n, c.Track + 1);
             return n;
         }
@@ -142,7 +142,7 @@ namespace ReBuzz.Core.Notes
         /// <summary>The changes made, as one undo step of the song's history; null when done, else why not.</summary>
         string Commit(List<ColumnEventsAction.Change> changes)
         {
-            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, pattern, changes));
+            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, clip, changes));
             buzz.SetModifiedFlag();
             return null;
         }
@@ -168,7 +168,7 @@ namespace ReBuzz.Core.Notes
                     offsetsHi = ByTime(offsetHiParameter, t);
                     tunes = ByTime(tuneParameter, t);
                 }
-                foreach (var ne in TrackNotes.Read(notes, PatternTime, PatternEvent.TimeBase, velocities, VelocityRange))
+                foreach (var ne in TrackNotes.Read(notes, ClipTime, ClipEvent.TimeBase, velocities, VelocityRange))
                 {
                     var clip = new ClipNote(ne.Time, ne.Duration, ne.Pitch, Math.Clamp(ne.Velocity, 1, 127));
                     if (samples != null && samples.TryGetValue(ne.Time, out int sample) && sample > 0)
@@ -193,7 +193,7 @@ namespace ReBuzz.Core.Notes
 
         public override string WhyNotEditable =>
             !IsLive ? "The pattern was deleted."
-            : buzz.SessionLayout?.IsRecordingClip(pattern) == true ? "Recording: edits wait until it stops."
+            : buzz.SessionLayout?.IsRecordingClip(clip) == true ? "Recording: edits wait until it stops."
             : null;
 
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
@@ -210,7 +210,7 @@ namespace ReBuzz.Core.Notes
             int tracks = Tracks;
             foreach (var n in added)
                 if (TrackNotes.ToBuzz(n.Note) < 0)
-                    return $"{ClipNotes.Name(n.Note)} is above what {pattern.Machine.Name} takes in its tracks ({BuzzGUI.Common.NoteNames.Name(119)} is the highest a Buzz track takes).";
+                    return $"{ClipNotes.Name(n.Note)} is above what {clip.Machine.Name} takes in its tracks ({BuzzGUI.Common.NoteNames.Name(119)} is the highest a Buzz track takes).";
             if (raised != null)
             {
                 // The agent's way: all the notes get tracks again, and the machine gets the tracks they need.
@@ -218,7 +218,7 @@ namespace ReBuzz.Core.Notes
                 var sorted = notes.Select(n => n.Note).OrderBy(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity), Comparer<NoteEvent>.Create(NoteList.Order)).ToList();
                 var all = sorted.Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity)).ToList();
                 var (given, needed) = TrackNotes.Allocate(all);
-                var machine = (MachineCore)pattern.Machine;
+                var machine = (MachineCore)clip.Machine;
                 int most = Math.Max(machine.DLL.Info.MinTracks, machine.DLL.Info.MaxTracks);
                 if (needed > most)
                     return $"{machine.Name} ({machine.DLL.Name}) plays a note per track and has at most {most} tracks, but these notes need {needed} at once. " +
@@ -242,44 +242,44 @@ namespace ReBuzz.Core.Notes
                     for (int t = 0; t < tracks && track < 0; t++)
                         if (Free(t, n)) track = t;
                     if (track < 0)
-                        return $"{pattern.Machine.Name} plays a note per track and has {tracks} track{(tracks == 1 ? "" : "s")}: " +
-                               $"{ClipNotes.Name(n.Note)} at {n.Time / (double)PatternEvent.TimeBase:0.##} ticks needs one more at once.";
+                        return $"{clip.Machine.Name} plays a note per track and has {tracks} track{(tracks == 1 ? "" : "s")}: " +
+                               $"{ClipNotes.Name(n.Note)} at {n.Time / (double)ClipEvent.TimeBase:0.##} ticks needs one more at once.";
                     notes.Add((n, track));
                 }
             }
 
             // Each track's Note events (and velocities) from its notes, changed where they differ.
             var list = notes.Select(n => new NoteEvent(n.Note.Time, n.Note.Duration, n.Note.Note, n.Note.Velocity)).ToList();
-            var events = TrackNotes.Events(list, notes.Select(n => n.Track).ToArray(), PatternTime, PatternEvent.TimeBase, VelocityRange);
+            var events = TrackNotes.Events(list, notes.Select(n => n.Track).ToArray(), ClipTime, ClipEvent.TimeBase, VelocityRange);
             var changes = new List<ColumnEventsAction.Change>();
             for (int t = 0, n = Math.Max(tracks, TracksWithColumns()); t < n; t++)
             {
                 var noteOld = Events(NoteKey(t));
-                var noteNew = events.Where(e => e.Track == t).Select(e => new PatternEvent(e.Time, e.Note, 0)).ToList();
+                var noteNew = events.Where(e => e.Track == t).Select(e => new ClipEvent(e.Time, e.Note, 0)).ToList();
                 AddChange(changes, NoteKey(t), noteOld, noteNew);
                 if (velocityParameter == null) continue;
                 var velocityOld = Events(VelocityKey(t));
-                var velocityNew = events.Where(e => e.Track == t && e.Velocity.HasValue).Select(e => new PatternEvent(e.Time, e.Velocity.Value, 0)).ToList();
+                var velocityNew = events.Where(e => e.Track == t && e.Velocity.HasValue).Select(e => new ClipEvent(e.Time, e.Velocity.Value, 0)).ToList();
                 AddChange(changes, VelocityKey(t), velocityOld, velocityNew);
             }
             if (PerNoteSamples)
                 for (int t = 0, n = Math.Max(tracks, TracksWithColumns()); t < n; t++)
                 {
                     var mine = notes.Where(x => x.Track == t).Select(x => x.Note).ToList();
-                    AddChange(changes, KeyOf(sampleParameter, t), Events(KeyOf(sampleParameter, t)), mine.Where(x => x.Sample > 0).Select(x => new PatternEvent(x.Time, Math.Min(x.Sample, sampleParameter.MaxValue), 0)).ToList());
+                    AddChange(changes, KeyOf(sampleParameter, t), Events(KeyOf(sampleParameter, t)), mine.Where(x => x.Sample > 0).Select(x => new ClipEvent(x.Time, Math.Min(x.Sample, sampleParameter.MaxValue), 0)).ToList());
                     // The offset and tune cells are written only where they differ from the default, as a tracker writes them.
                     AddChange(changes, KeyOf(offsetParameter, t), Events(KeyOf(offsetParameter, t)),
-                        mine.Where(x => x.Sample > 0 && x.Offset % OffsetStep > 0).Select(x => new PatternEvent(x.Time, x.Offset % OffsetStep, 0)).ToList());
+                        mine.Where(x => x.Sample > 0 && x.Offset % OffsetStep > 0).Select(x => new ClipEvent(x.Time, x.Offset % OffsetStep, 0)).ToList());
                     AddChange(changes, KeyOf(offsetHiParameter, t), Events(KeyOf(offsetHiParameter, t)),
-                        mine.Where(x => x.Sample > 0 && x.Offset >= OffsetStep).Select(x => new PatternEvent(x.Time, Math.Min(x.Offset / OffsetStep, offsetHiParameter.MaxValue), 0)).ToList());
+                        mine.Where(x => x.Sample > 0 && x.Offset >= OffsetStep).Select(x => new ClipEvent(x.Time, Math.Min(x.Offset / OffsetStep, offsetHiParameter.MaxValue), 0)).ToList());
                     AddChange(changes, KeyOf(tuneParameter, t), Events(KeyOf(tuneParameter, t)),
-                        mine.Where(x => x.Sample > 0 && x.Tune != 0).Select(x => new PatternEvent(x.Time, Math.Clamp(TuneCentre + x.Tune, tuneParameter.MinValue, tuneParameter.MaxValue), 0)).ToList());
+                        mine.Where(x => x.Sample > 0 && x.Tune != 0).Select(x => new ClipEvent(x.Time, Math.Clamp(TuneCentre + x.Tune, tuneParameter.MinValue, tuneParameter.MaxValue), 0)).ToList());
                 }
             if (changes.Count == 0) return null;
             return Commit(changes);
         }
 
-        static void AddChange(List<ColumnEventsAction.Change> changes, ColumnKey key, List<PatternEvent> before, List<PatternEvent> after)
+        static void AddChange(List<ColumnEventsAction.Change> changes, ColumnKey key, List<ClipEvent> before, List<ClipEvent> after)
         {
             var gone = before.Where(e => !after.Contains(e)).ToArray();
             var come = after.Where(e => !before.Contains(e)).ToArray();
@@ -289,7 +289,7 @@ namespace ReBuzz.Core.Notes
         /// <summary>Plays the note on the machine's first track (its Note parameter), or lets it go.</summary>
         public override void Preview(int note, int velocity, bool on)
         {
-            if (pattern?.Machine is not MachineCore machine || machine.DLL == null || machine.DLL.IsMissing || machine.DLL.IsCrashed || !machine.Ready) return;
+            if (clip?.Machine is not MachineCore machine || machine.DLL == null || machine.DLL.IsMissing || machine.DLL.IsCrashed || !machine.Ready) return;
             int value = on ? TrackNotes.ToBuzz(note) : TrackNotes.Off;
             if (value < 0) return;
             const int notRecorded = 1 << 16;

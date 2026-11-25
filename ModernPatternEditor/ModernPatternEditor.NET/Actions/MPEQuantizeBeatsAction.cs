@@ -5,17 +5,17 @@ using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor.Actions
 {
-    public class MPEQuantizeBeatsAction : PatternAction
+    public class MPEQuantizeBeatsAction : ClipAction
     {
-        Dictionary<int, List<PatternEvent>> oldData = new Dictionary<int, List<PatternEvent>>();
-        MPEPattern mpePattern;
+        Dictionary<int, List<ClipEvent>> oldData = new Dictionary<int, List<ClipEvent>>();
+        MPEClip mpeClip;
         Selection selection;
 
-        public MPEQuantizeBeatsAction(MPEPattern pattern, Selection selection)
-            : base(pattern.Pattern)
+        public MPEQuantizeBeatsAction(MPEClip clip, Selection selection)
+            : base(clip.Clip)
         {
             this.selection = selection;
-            this.mpePattern = pattern;
+            this.mpeClip = clip;
         }
 
         protected override void DoAction()
@@ -25,14 +25,14 @@ namespace WDE.ModernPatternEditor.Actions
 
             while (true)
             {
-                var buzzCol = columnIterator.ParameterColumn.PatternColumn;
-                var mpeCol = mpePattern.GetColumn(buzzCol);
-                int beatLength = PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase;
+                var buzzCol = columnIterator.ParameterColumn.ClipColumn;
+                var mpeCol = mpeClip.GetColumn(buzzCol);
+                int beatLength = ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase;
                 int start = beatLength * columnIterator.Beat;
                 int end = start + beatLength * (columnEndDigit.Beat - columnIterator.Beat + 1);
-                List<PatternEvent> oldEvents = new List<PatternEvent>();
+                List<ClipEvent> oldEvents = new List<ClipEvent>();
                 foreach (var e in mpeCol.GetEvents(start, end))
-                    oldEvents.Add(new PatternEvent(e.Time, e.Value, e.Duration));
+                    oldEvents.Add(new ClipEvent(e.Time, e.Value, e.Duration));
                 // Save
                 oldData[columnIterator.Column] = oldEvents;
 
@@ -51,12 +51,12 @@ namespace WDE.ModernPatternEditor.Actions
 
             while (true)
             {
-                var buzzCol = columnIterator.ParameterColumn.PatternColumn;
-                var mpeCol = mpePattern.GetColumn(buzzCol);
-                int beatLength = PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase;
+                var buzzCol = columnIterator.ParameterColumn.ClipColumn;
+                var mpeCol = mpeClip.GetColumn(buzzCol);
+                int beatLength = ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase;
                 int start = beatLength * columnIterator.Beat;
                 int end = start + beatLength * (columnEndDigit.Beat - columnIterator.Beat + 1);
-                List<PatternEvent> oldEvents = oldData[columnIterator.Column];
+                List<ClipEvent> oldEvents = oldData[columnIterator.Column];
                 mpeCol.ClearRegion(end - start, start, columnIterator);
                 // Save
                 mpeCol.SetEvents(oldEvents.ToArray(), true);

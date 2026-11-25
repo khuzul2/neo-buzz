@@ -52,7 +52,7 @@ namespace ReBuzz.Studio.Views.Session
             public int Track { get; }
             public int Scene { get; }
             public ISequence Sequence { get; }
-            public IPattern Pattern { get; }
+            public IClip Clip { get; }
 
             /// <summary>The ▶ area (tests press it).</summary>
             internal Control LaunchArea { get; }
@@ -60,20 +60,20 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>The empty slot's ● (tests press it).</summary>
             internal Control RecordButton => recordButton;
 
-            public SlotCell(SessionView view, int track, int scene, ISequence sequence, IPattern pattern, string midiText,
+            public SlotCell(SessionView view, int track, int scene, ISequence sequence, IClip clip, string midiText,
                             SessionDocument.ClipSettings settings = null)
             {
                 this.view = view;
                 Track = track;
                 Scene = scene;
                 Sequence = sequence;
-                Pattern = pattern;
+                Clip = clip;
                 isAudioClip = settings?.Audio != null;
 
                 Margin = new Thickness(0, 0, Gap, Gap);
                 BorderThickness = new Thickness(2);      // fork (ux-overhaul.md §3.1): a 2 pt outline for the state and the selection
                 Background = SessionPalette.Empty;
-                ToolTip.SetTip(this, Tip(view, pattern, midiText, settings));
+                ToolTip.SetTip(this, Tip(view, clip, midiText, settings));
 
                 progress = new Border
                 {
@@ -90,28 +90,28 @@ namespace ReBuzz.Studio.Views.Session
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                 // NA3: an audio clip's slot shows its waveform (from the peak cache, warped, times the gain), behind the rest.
-                if (pattern != null && settings?.Audio != null && view.layout.ViewOf(pattern) is { } audioView)
+                if (clip != null && settings?.Audio != null && view.layout.ViewOf(clip) is { } audioView)
                 {
-                    wave = new Audio.AudioSlotWave(audioView, pattern.Length / (double)Math.Max(1, view.buzz.TPB)) { LowerHalf = true };
+                    wave = new Audio.AudioSlotWave(audioView, clip.Length / (double)Math.Max(1, view.buzz.TPB)) { LowerHalf = true };
                     Grid.SetColumnSpan(wave, 3);
                     grid.Children.Add(wave);
                 }
 
-                if (pattern != null && view.CurveKey(sequence?.Machine) is { } curveKey && SlotCurve.For(pattern, curveKey) is { } slotCurve)
+                if (clip != null && view.CurveKey(sequence?.Machine) is { } curveKey && SlotCurve.For(clip, curveKey) is { } slotCurve)
                 {
                     curve = slotCurve;
                     Grid.SetColumnSpan(curve, 3);
                     grid.Children.Add(curve);
                 }
 
-                if (pattern != null && settings?.Audio != null)
+                if (clip != null && settings?.Audio != null)
                 {
                     liveWave = new Audio.RecordingWave { IsVisible = false, LowerHalf = true };
                     Grid.SetColumnSpan(liveWave, 3);
                     grid.Children.Add(liveWave);
                 }
 
-                if (pattern != null)
+                if (clip != null)
                 {
                     glyph = new TextBlock { Text = "▶", FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
                     // A dark chip under the glyph while the slot has a state (ux-overhaul.md §3.1): the state colour reads on any clip colour.
@@ -162,7 +162,7 @@ namespace ReBuzz.Studio.Views.Session
 
                     label = new TextBlock
                     {
-                        Text = (settings?.Audio != null ? "∿ " : "") + pattern.Name,         // 1.0: an audio clip
+                        Text = (settings?.Audio != null ? "∿ " : "") + clip.Name,         // 1.0: an audio clip
                         Margin = new Thickness(0, 0, 4, 0),
                         VerticalAlignment = VerticalAlignment.Center,
                         TextTrimming = TextTrimming.CharacterEllipsis,
@@ -229,13 +229,13 @@ namespace ReBuzz.Studio.Views.Session
                 PointerCaptureLost += (s, e) => EndDrag(null, false);
             }
 
-            static string Tip(SessionView view, IPattern pattern, string midiText, SessionDocument.ClipSettings settings)
+            static string Tip(SessionView view, IClip clip, string midiText, SessionDocument.ClipSettings settings)
             {
                 // Fork (ux-overhaul.md §2): its length in bars and beats (it was ticks).
-                string tip = pattern != null
-                    ? $"{pattern.Name} ({Shell.TimeText.Length(pattern.Length, view.buzz.TPB, view.session.BeatsPerBar)})\n▶ launches · double-click edits · drag moves ({ModName} copies) · right-click for more"
+                string tip = clip != null
+                    ? $"{clip.Name} ({Shell.TimeText.Length(clip.Length, view.buzz.TPB, view.session.BeatsPerBar)})\n▶ launches · double-click edits · drag moves ({ModName} copies) · right-click for more"
                     : "Empty slot\n■ stops the track · double-click creates a clip · right-click for more";
-                if (pattern != null && settings != null && !settings.IsDefault)
+                if (clip != null && settings != null && !settings.IsDefault)
                     tip += "\n" + Summary(view, settings);
                 return midiText == null ? tip : tip + "\n" + midiText;
             }
@@ -298,16 +298,16 @@ namespace ReBuzz.Studio.Views.Session
             protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
             {
                 base.OnAttachedToVisualTree(e);
-                if (Pattern != null && curve == null) Pattern.ColumnAdded += OnColumnAdded;
+                if (Clip != null && curve == null) Clip.ColumnAdded += OnColumnAdded;
             }
 
             protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
             {
-                if (Pattern != null) Pattern.ColumnAdded -= OnColumnAdded;
+                if (Clip != null) Clip.ColumnAdded -= OnColumnAdded;
                 base.OnDetachedFromVisualTree(e);
             }
 
-            void OnColumnAdded(IPatternColumn c) => Avalonia.Threading.Dispatcher.UIThread.Post(view.RebuildWhenSeen);
+            void OnColumnAdded(IClipColumn c) => Avalonia.Threading.Dispatcher.UIThread.Post(view.RebuildWhenSeen);
 
             void OnPressed(object sender, PointerPressedEventArgs e)
             {
@@ -318,10 +318,10 @@ namespace ReBuzz.Studio.Views.Session
                     // EV1: a double click on the mini curve opens the clip's lane in the Detail panel.
                     var at = e.GetPosition(this);
                     if (curve != null && at.Y >= Bounds.Height - SlotCurve.Height - 2 && curve.DistanceAt(at.X, at.Y - (Bounds.Height - SlotCurve.Height - 2)) < 8
-                        && Detail.EnvelopeOpener.Open?.Invoke(Pattern, curve.Key) == true) { e.Handled = true; return; }
+                        && Detail.EnvelopeOpener.Open?.Invoke(Clip, curve.Key) == true) { e.Handled = true; return; }
                     view.SlotDoubleClicked(this, Normalize(e.KeyModifiers));
                 }
-                else if (Pattern != null)
+                else if (Clip != null)
                 {
                     pressPoint = e.GetPosition(view);
                     e.Pointer.Capture(this);
@@ -364,7 +364,7 @@ namespace ReBuzz.Studio.Views.Session
             public void Refresh(ISession session, bool blinkOn, IBrush border)
             {
                 bool hover = IsPointerOver;
-                if (Pattern == null || Sequence == null)
+                if (Clip == null || Sequence == null)
                 {
                     Background = hover ? SessionPalette.EmptyHover : SessionPalette.Empty;
                     BorderBrush = border ?? SessionPalette.Transparent;
@@ -377,8 +377,8 @@ namespace ReBuzz.Studio.Views.Session
                     return;
                 }
 
-                var color = SessionPalette.ColorBrush(PatternColors.Get(Pattern));
-                var state = view.layout.SlotState(Sequence, Pattern, Track, Scene);   // only the slot it plays from
+                var color = SessionPalette.ColorBrush(ClipColors.Get(Clip));
+                var state = view.layout.SlotState(Sequence, Clip, Track, Scene);   // only the slot it plays from
                 // Fork (ux-overhaul.md §3.1): a clip keeps its own fill in every state (an uncoloured one turned green while it
                 // played, the same green a user can pick); its state is the chip under ▶ or ●, a 2 pt outline and the progress
                 // bar, in the reserved state colours. Waiting for the launch point (queued, stopping, a take about to record) blinks.
@@ -406,7 +406,7 @@ namespace ReBuzz.Studio.Views.Session
                         break;
                 }
                 // 0.7: a take waiting or recording, or the clip an armed track overdubs: red.
-                bool recording = view.layout.IsRecordingInto(Sequence, Pattern);
+                bool recording = view.layout.IsRecordingInto(Sequence, Clip);
                 if (recording)
                 {
                     stateBrush = SessionPalette.Record;
@@ -418,12 +418,12 @@ namespace ReBuzz.Studio.Views.Session
                     glyph.Text = "▶";
                 }
                 // PL1: while a take records the slot shows its real name ("Voice take 1"; the record dot is the chip before it), not "∿ 00".
-                string shown = (isAudioClip ? "∿ " : "") + Pattern.Name;
-                if (recording && view.layout.TakeNameOf(Sequence, Pattern) is { } takeName) shown = takeName;
+                string shown = (isAudioClip ? "∿ " : "") + Clip.Name;
+                if (recording && view.layout.TakeNameOf(Sequence, Clip) is { } takeName) shown = takeName;
                 if (label.Text != shown) label.Text = shown;
                 if (liveWave != null)
                 {
-                    var cap = recording ? view.layout.LiveCaptureOf(Sequence, Pattern) : null;
+                    var cap = recording ? view.layout.LiveCaptureOf(Sequence, Clip) : null;
                     liveWave.IsVisible = cap != null;
                     liveWave.Source = cap;
                     if (cap != null) liveWave.InvalidateVisual();
@@ -440,7 +440,7 @@ namespace ReBuzz.Studio.Views.Session
                 if (state == ClipState.Playing || state == ClipState.Stopping)
                 {
                     int pos = session.GetClipPosition(Sequence);
-                    int len = Math.Max(1, Pattern.Length);
+                    int len = Math.Max(1, Clip.Length);
                     progress.Width = pos < 0 ? 0 : Math.Max(0, Bounds.Width - 4) * (pos + 1) / len;
                     wave?.SetPosition(pos < 0 ? -1 : (double)pos / len);
                 }

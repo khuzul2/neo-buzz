@@ -127,12 +127,12 @@ namespace ReBuzz.Studio.Tests
             var imported = Tool("audio_import", new JsonObject { ["path"] = Tones("agent.wav"), ["slot"] = 3, ["at_beats"] = 4 });
             Assert.That(imported["isError"]?.GetValue<bool>() ?? false, Is.False, imported.ToJsonString());
             var s = imported["structuredContent"]!.AsObject();
-            string machine = (string)s["machine"], pattern = (string)s["pattern"];
-            var sourceClip = core.SongCore.MachinesList.First(m => m.Name == machine).PatternsList.First(p => p.Name == pattern);
+            string machine = (string)s["machine"], clip = (string)s["pattern"];
+            var sourceClip = core.SongCore.MachinesList.First(m => m.Name == machine).ClipsList.First(p => p.Name == clip);
             int machinesBefore = Visible(core), sequencesBefore = core.SongCore.SequencesList.Count;
-            var sourceEvent = core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single(e => e.Value.Pattern == sourceClip);
+            var sourceEvent = core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single(e => e.Value.Clip == sourceClip);
 
-            var r = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["quality"] = "Best", ["stems"] = new JsonArray("bass", "drums") });
+            var r = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["quality"] = "Best", ["stems"] = new JsonArray("bass", "drums") });
             Assert.That(r["isError"]?.GetValue<bool>() ?? false, Is.False, r.ToJsonString());
             var o = r["structuredContent"]!.AsObject();
             Assert.That((string)o["model"], Is.EqualTo("tiny"));
@@ -149,19 +149,19 @@ namespace ReBuzz.Studio.Tests
             foreach (var (t, gain) in new[] { (tracks[0], Gains[1]), (tracks[1], Gains[2]) })
             {
                 var m = core.SongCore.MachinesList.First(x => x.Name == (string)t["machine"]);
-                var clip = m.PatternsList.Single(p => layout.IsAudioClip(p));
+                var stemClip = m.ClipsList.Single(p => layout.IsAudioClip(p));
                 Assert.That((int)t["slot"], Is.EqualTo((int)s["slot"]), "the source's Session scene");
-                Assert.That(layout.PatternAt(layout.FirstTrackOf(m), (int)s["slot"] - 1), Is.SameAs(clip));
-                Assert.That(clip.Length, Is.EqualTo(sourceClip.Length), "the same length");
-                Assert.That(layout.ClipOf(clip).Audio.Bpm, Is.EqualTo(layout.ClipOf(sourceClip).Audio.Bpm).Within(1e-9));
-                var stem = layout.AudioSourceOf(clip)!;
+                Assert.That(layout.ClipAt(layout.FirstTrackOf(m), (int)s["slot"] - 1), Is.SameAs(stemClip));
+                Assert.That(stemClip.Length, Is.EqualTo(sourceClip.Length), "the same length");
+                Assert.That(layout.ClipOf(stemClip).Audio.Bpm, Is.EqualTo(layout.ClipOf(sourceClip).Audio.Bpm).Within(1e-9));
+                var stem = layout.AudioSourceOf(stemClip)!;
                 Assert.That(stem.Length, Is.EqualTo(source.Length));
                 Assert.That(Worst(stem.Left, source.Left, gain), Is.LessThan(2e-3), (string)t["machine"]);
                 Assert.That(Worst(stem.Right, source.Right, gain), Is.LessThan(2e-3), (string)t["machine"]);
                 var seq = core.SongCore.SequencesList.First(q => q.Machine == m);
                 var at = seq.Events.Single();
                 Assert.That(at.Key, Is.EqualTo(sourceEvent.Key), "the same arrangement position");
-                Assert.That(at.Value.Pattern, Is.SameAs(clip));
+                Assert.That(at.Value.Clip, Is.SameAs(stemClip));
             }
 
             // one undo step takes every track away
@@ -170,7 +170,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(core.SongCore.SequencesList.Count, Is.EqualTo(sequencesBefore));
 
             // the same again is from the cache
-            var again = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["quality"] = "Best", ["stems"] = new JsonArray("bass") });
+            var again = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["quality"] = "Best", ["stems"] = new JsonArray("bass") });
             Assert.That(again["isError"]?.GetValue<bool>() ?? false, Is.False, again.ToJsonString());
             Assert.That((bool)again["structuredContent"]!["from_cache"], Is.True);
         }
@@ -184,16 +184,16 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             using var models = TinyModel("refuse");
             var imported = Tool("audio_import", new JsonObject { ["path"] = Tones("refuse.wav") })["structuredContent"]!.AsObject();
-            string machine = (string)imported["machine"], pattern = (string)imported["pattern"];
+            string machine = (string)imported["machine"], clip = (string)imported["pattern"];
 
-            var noModel = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["quality"] = "Balanced" });
+            var noModel = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["quality"] = "Balanced" });
             Assert.That(noModel["isError"]?.GetValue<bool>(), Is.True);
             Assert.That(noModel["content"]![0]!["text"]!.GetValue<string>(), Does.Contain("Install models"));
-            var both = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["path"] = Tones("x.wav"), ["quality"] = "Best" });
+            var both = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["path"] = Tones("x.wav"), ["quality"] = "Best" });
             Assert.That(both["isError"]?.GetValue<bool>(), Is.True, "a clip or a path, not both");
             var neither = Tool("audio_separate", new JsonObject { ["quality"] = "Best" });
             Assert.That(neither["isError"]?.GetValue<bool>(), Is.True);
-            var badStem = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["quality"] = "Best", ["stems"] = new JsonArray("guitar") });
+            var badStem = Tool("audio_separate", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["quality"] = "Best", ["stems"] = new JsonArray("guitar") });
             Assert.That(badStem["isError"]?.GetValue<bool>(), Is.True);
             var noFile = Tool("audio_separate", new JsonObject { ["path"] = Work("nothing.wav"), ["quality"] = "Best" });
             Assert.That(noFile["isError"]?.GetValue<bool>(), Is.True);
@@ -227,8 +227,8 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; StemFlow.Responder = null; StemFlow.ZipPicker = null; StemFlow.FilePicker = null; core.Modified = false; });
             using var models = TinyModel("flow");
             var imported = Tool("audio_import", new JsonObject { ["path"] = Tones("flow.wav") })["structuredContent"]!.AsObject();
-            string machine = (string)imported["machine"], pattern = (string)imported["pattern"];
-            var clip = core.SongCore.MachinesList.First(m => m.Name == machine).PatternsList.First(p => p.Name == pattern);
+            string machine = (string)imported["machine"], clipName = (string)imported["pattern"];
+            var clip = core.SongCore.MachinesList.First(m => m.Name == machine).ClipsList.First(p => p.Name == clipName);
             var view = rig.Show();
             int track = core.SessionLayout.FirstTrackOf(core.SongCore.MachinesList.First(m => m.Name == machine));
             int scene = (int)imported["slot"] - 1;

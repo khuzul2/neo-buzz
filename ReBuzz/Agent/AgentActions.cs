@@ -42,7 +42,7 @@ namespace ReBuzz.Agent
     {
         static MachineCore Find(ReBuzzCore core, string machine) => core.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine);
 
-        static IPattern Find(ReBuzzCore core, string machine, string pattern) => Find(core, machine)?.Patterns.FirstOrDefault(p => p.Name == pattern);
+        static IClip Find(ReBuzzCore core, string machine, string clip) => Find(core, machine)?.Clips.FirstOrDefault(p => p.Name == clip);
 
         public static void Do(ReBuzzCore core, IAction action) => core.SongCore.ActionStack.Do(action);
 
@@ -101,12 +101,12 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>Replaces events in one of a pattern's engine columns (automation): <paramref name="removed"/> go, <paramref name="added"/> come.</summary>
-        public static void ReplaceColumnEvents(ReBuzzCore core, IPattern pattern, ColumnKey key, IReadOnlyList<PatternEvent> removed, IReadOnlyList<PatternEvent> added)
+        public static void ReplaceColumnEvents(ReBuzzCore core, IClip clip, ColumnKey key, IReadOnlyList<ClipEvent> removed, IReadOnlyList<ClipEvent> added)
         {
-            string machine = pattern.Machine.Name, name = pattern.Name;
+            string machine = clip.Machine.Name, name = clip.Name;
             var take = removed.ToArray();
             var put = added.ToArray();
-            void Apply(PatternEvent[] gone, PatternEvent[] come)
+            void Apply(ClipEvent[] gone, ClipEvent[] come)
             {
                 var p = Find(core, machine, name);
                 if (p == null) return;
@@ -119,27 +119,27 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>Deletes a pattern; undo makes it again with its engine columns (notes, automation).</summary>
-        public static void DeletePattern(ReBuzzCore core, IPattern pattern)
+        public static void DeleteClip(ReBuzzCore core, IClip clip)
         {
-            string machine = pattern.Machine.Name, name = pattern.Name;
-            int length = pattern.Length;
+            string machine = clip.Machine.Name, name = clip.Name;
+            int length = clip.Length;
             EngineColumns data = null;
-            IPattern deleted = null;
+            IClip deleted = null;
             void Delete()
             {
                 var m = Find(core, machine);
-                var p = m?.Patterns.FirstOrDefault(x => x.Name == name);
+                var p = m?.Clips.FirstOrDefault(x => x.Name == name);
                 if (p == null) return;
                 data = EngineColumns.Capture(p);
                 deleted = p;
-                m.DeletePattern(p);
+                m.DeleteClip(p);
             }
             void Restore()
             {
                 var m = Find(core, machine);
-                if (m == null || data == null || m.Patterns.Any(x => x.Name == name)) return;
-                m.CreatePattern(name, length);
-                var again = m.Patterns.FirstOrDefault(x => x.Name == name);
+                if (m == null || data == null || m.Clips.Any(x => x.Name == name)) return;
+                m.CreateClip(name, length);
+                var again = m.Clips.FirstOrDefault(x => x.Name == name);
                 if (again == null) return;
                 data.RestoreInto(again, core.SongCore.Machines);
                 BuzzGUI.Common.Actions.Restorations.Report(deleted, again);
@@ -148,36 +148,36 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>Copies a pattern: the pattern editor's data (when it has an editor) and the engine columns.</summary>
-        public static void DuplicatePattern(ReBuzzCore core, IPattern source, string copyName)
+        public static void DuplicateClip(ReBuzzCore core, IClip source, string copyName)
         {
             string machine = source.Machine.Name, from = source.Name;
             void Copy()
             {
                 var m = Find(core, machine);
-                var src = m?.Patterns.FirstOrDefault(x => x.Name == from);
-                if (src == null || m.Patterns.Any(x => x.Name == copyName)) return;
-                if (m.EditorMachine != null) m.ClonePattern(copyName, src);
-                else m.CreatePattern(copyName, src.Length);
-                var copy = m.Patterns.FirstOrDefault(x => x.Name == copyName);
+                var src = m?.Clips.FirstOrDefault(x => x.Name == from);
+                if (src == null || m.Clips.Any(x => x.Name == copyName)) return;
+                if (m.EditorMachine != null) m.CloneClip(copyName, src);
+                else m.CreateClip(copyName, src.Length);
+                var copy = m.Clips.FirstOrDefault(x => x.Name == copyName);
                 if (copy != null && copy.Columns.Count == 0) EngineColumns.Copy(src, copy, core.SongCore.Machines);      // (ClonePattern copies them when the machine has an editor)
             }
             void Remove()
             {
                 var m = Find(core, machine);
-                var copy = m?.Patterns.FirstOrDefault(x => x.Name == copyName);
-                if (copy != null) m.DeletePattern(copy);
+                var copy = m?.Clips.FirstOrDefault(x => x.Name == copyName);
+                if (copy != null) m.DeleteClip(copy);
             }
             Do(core, new DelegateAction(Copy, Remove));
         }
 
-        public static void RenamePattern(ReBuzzCore core, IPattern pattern, string newName)
+        public static void RenameClip(ReBuzzCore core, IClip clip, string newName)
         {
-            string machine = pattern.Machine.Name, oldName = pattern.Name;
+            string machine = clip.Machine.Name, oldName = clip.Name;
             void Rename(string from, string to)
             {
                 var m = Find(core, machine);
-                var p = m?.Patterns.FirstOrDefault(x => x.Name == from);
-                if (p != null) m.RenamePattern(p, to);
+                var p = m?.Clips.FirstOrDefault(x => x.Name == from);
+                if (p != null) m.RenameClip(p, to);
             }
             Do(core, new DelegateAction(() => Rename(oldName, newName), () => Rename(newName, oldName)));
         }

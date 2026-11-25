@@ -132,15 +132,15 @@ namespace ReBuzz.Studio.Tests
             }
 
             /// <summary>A clip drawn on a lane at a tick (a double click on empty space), then opened (a double click on it): the roll shows its pattern.</summary>
-            public IPattern DrawAndOpen(ISequence lane, int tick)
+            public IClip DrawAndOpen(ISequence lane, int tick)
             {
                 DoubleClick(At(lane, tick, 2));
                 var clip = View.Arrangement.ItemsOf(lane).First(i => i.Time == tick);
                 DoubleClick(At(lane, tick, 6));
                 Assert.That(Panel.IsVisible, Is.True, "a double click on a clip opens its piano roll");
-                Assert.That(Panel.Pattern, Is.SameAs(clip.Pattern));
+                Assert.That(Panel.Clip, Is.SameAs(clip.Clip));
                 Settle();
-                return clip.Pattern;
+                return clip.Clip;
             }
 
             /// <summary>The point of a cell of the arrangement's roll in window pixels, with the roll scrolled so that it shows.</summary>
@@ -199,7 +199,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Plays a pattern as a session clip from the start and returns the audio.</summary>
-        static float[] RenderClip(ISequence lane, IPattern pattern, int ticks)
+        static float[] RenderClip(ISequence lane, IClip clip, int ticks)
         {
             Core.SessionCore.Stop(lane, immediate: true);
             ResetMachines();
@@ -208,7 +208,7 @@ namespace ReBuzz.Studio.Tests
             var all = new float[blocks * 512];
             var buffer = new float[512];
             Core.Playing = true;
-            Core.Session.Launch(lane, pattern);
+            Core.Session.Launch(lane, clip);
             lock (ReBuzzCore.AudioLock)
             {
                 for (int i = 0; i < blocks; i++)
@@ -232,8 +232,8 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig(("Neo Poly", "Bass"));
             var lane = rig.Lane("Bass");
-            var pattern = rig.DrawAndOpen(lane, 0);
-            var machine = (MachineCore)pattern.Machine;
+            var clip = rig.DrawAndOpen(lane, 0);
+            var machine = (MachineCore)clip.Machine;
             Assert.That(rig.Roll.IsSongLane, Is.True, "the arrangement's roll is on the song's notes");
             Assert.That(rig.Roll.Message, Is.Null);
             int undos = Undos;
@@ -245,19 +245,19 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Undos, Is.EqualTo(undos + 4), "each on the song's history");
 
             // They are the pattern's MIDI column: what the session clip (and the sequence) plays.
-            var session = Core.SessionLayout.NotesOf(pattern);
+            var session = Core.SessionLayout.NotesOf(clip);
             Assert.That(session, Is.EqualTo(rig.Notes.Notes.ToList()), "the Session View's clip has the notes");
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes(), Is.EqualTo(session));
+            Assert.That(new MidiColumnNotes(Core, clip).Notes(), Is.EqualTo(session));
 
             // The same four notes written to another clip by the session itself.
-            machine.CreatePattern("Reference", pattern.Length);
-            var reference = machine.PatternsList.Single(p => p.Name == "Reference");
+            machine.CreateClip("Reference", clip.Length);
+            var reference = machine.ClipsList.Single(p => p.Name == "Reference");
             Core.SessionLayout.EditNotes(reference, null, session.ToArray());
-            machine.CreatePattern("Other", pattern.Length);
-            var other = machine.PatternsList.Single(p => p.Name == "Other");
+            machine.CreateClip("Other", clip.Length);
+            var other = machine.ClipsList.Single(p => p.Name == "Other");
             Core.SessionLayout.EditNotes(other, null, new[] { N(0, 48), N(2, 50) });
 
-            var drawn = RenderClip(lane, pattern, 48);
+            var drawn = RenderClip(lane, clip, 48);
             var written = RenderClip(lane, reference, 48);
             var different = RenderClip(lane, other, 48);
             Assert.That(Peak(drawn), Is.GreaterThan(0.001f), "the clip sounds");
@@ -272,39 +272,39 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig(("Keys Test", "Acid"));
             var lane = rig.Lane("Acid");
-            var pattern = rig.DrawAndOpen(lane, 0);
+            var clip = rig.DrawAndOpen(lane, 0);
             Assert.That(rig.Roll.IsSongLane, Is.True);
             Assert.That(rig.Notes.Source, Is.InstanceOf<TrackerColumnNotes>(), "a machine that takes notes in its Note track parameter only");
             rig.DrawNote(0, 36);
             rig.DrawNote(4, 43);
             Assert.That(rig.Notes.Notes.Select(n => n.Note), Is.EqualTo(new[] { 36, 43 }));
-            var column = pattern.Columns.First(c => c.Parameter?.Type == ParameterType.Note && c.Track == 0);
+            var column = clip.Columns.First(c => c.Parameter?.Type == ParameterType.Note && c.Track == 0);
             Assert.That(column.GetEvents(0, int.MaxValue).Select(e => e.Value).Where(v => v != BuzzNote.Off), Is.EqualTo(new[] { BuzzNote.FromMIDINote(36), BuzzNote.FromMIDINote(43) }), "Buzz notes on track 0");
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes(), Is.Empty, "nothing in the MIDI column, which this machine would not play");
+            Assert.That(new MidiColumnNotes(Core, clip).Notes(), Is.Empty, "nothing in the MIDI column, which this machine would not play");
             Assert.That(rig.Roll.LowerBox.Items.Count, Is.EqualTo(1), "no controllers for a machine that takes no MIDI");
-            var audio = RenderClip(lane, pattern, 48);
+            var audio = RenderClip(lane, clip, 48);
             Assert.That(Peak(audio), Is.GreaterThan(0.001f), "and it sounds");
         }
 
         // ------------------------------------------------------------------ the Pattern tab
 
         [AvaloniaTest]
-        public void ThePatternTabsRollEditsTheSameNotesAndUndoIsTheSongs()
+        public void TheClipTabsRollEditsTheSameNotesAndUndoIsTheSongs()
         {
             using var rig = new Rig(("Neo Poly", "Lead"));
             var lane = rig.Lane("Lead");
-            var pattern = rig.DrawAndOpen(lane, 0);
+            var clip = rig.DrawAndOpen(lane, 0);
             rig.DrawNote(0, 60);
             rig.DrawNote(2, 64);
             Assert.That(rig.Notes.Notes.Count, Is.EqualTo(2));
 
             // The Pattern tab's toggle between the Tracker and the roll: it shows the notes the arrangement's roll drew.
-            Core.SetPatternEditorPattern(pattern);
+            Core.SetClipEditorClip(clip);
             rig.Window.ShowPianoRoll();
             Settle();
-            var page = PatternView.Page;
+            var page = ClipView.Page;
             Assert.That(page, Is.Not.Null);
-            page.Edit(pattern);
+            page.Edit(clip);
             Settle();
             Assert.That(page.IsRollMode, Is.True);
             var tabRoll = page.Roll;
@@ -315,18 +315,18 @@ namespace ReBuzz.Studio.Tests
             int undos = Undos;
             tabRoll.Roll.AddNote(4 * TB, 67);
             Assert.That(Undos, Is.EqualTo(undos + 1));
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }));
+            Assert.That(new MidiColumnNotes(Core, clip).Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }));
             rig.Roll.Poll();
             Assert.That(rig.Notes.Notes.Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }), "the arrangement's roll follows");
 
             // Undo and redo, from the keys, are the song's: the tab's roll and the arrangement's both follow.
             rig.Key(PhysicalKey.Z, Cmd);
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64 }));
+            Assert.That(new MidiColumnNotes(Core, clip).Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64 }));
             tabRoll.Poll();
             Assert.That(tabRoll.Notes().Count, Is.EqualTo(2));
             if (OperatingSystem.IsMacOS()) rig.Key(PhysicalKey.Z, Cmd | RawInputModifiers.Shift);
             else rig.Key(PhysicalKey.Y, Cmd);
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }), "redo");
+            Assert.That(new MidiColumnNotes(Core, clip).Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }), "redo");
         }
 
         [AvaloniaTest]
@@ -334,7 +334,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig(("Neo Poly", "Lead"));
             var lane = rig.Lane("Lead");
-            var pattern = rig.DrawAndOpen(lane, 0);
+            var clip = rig.DrawAndOpen(lane, 0);
             rig.DrawNote(0, 60);
             rig.DrawNote(1, 62);
             Assert.That(rig.Notes.Notes.Count, Is.EqualTo(2));
@@ -357,7 +357,7 @@ namespace ReBuzz.Studio.Tests
             else rig.Key(PhysicalKey.Y, Cmd);
             rig.Roll.Poll();
             Assert.That(rig.Notes.Notes.Select(n => n.Note), Is.EqualTo(new[] { 60 }), "redo brings the first back");
-            Assert.That(Core.SessionLayout.NotesOf(pattern).Select(n => n.Note), Is.EqualTo(new[] { 60 }), "and the session's clip has it");
+            Assert.That(Core.SessionLayout.NotesOf(clip).Select(n => n.Note), Is.EqualTo(new[] { 60 }), "and the session's clip has it");
         }
 
         // ------------------------------------------------------------------ velocity and controller lanes
@@ -366,7 +366,7 @@ namespace ReBuzz.Studio.Tests
         public void TheVelocityLaneSetsAVelocityAndAControllerLaneDrawsAndEditsACcOnTheSongsHistory()
         {
             using var rig = new Rig(("Neo Poly", "Lead"));
-            var pattern = rig.DrawAndOpen(rig.Lane("Lead"), 0);
+            var clip = rig.DrawAndOpen(rig.Lane("Lead"), 0);
             rig.DrawNote(0, 60);
             var velocity = rig.Roll.Velocities;
             Assert.That(velocity, Is.Not.Null);
@@ -385,12 +385,12 @@ namespace ReBuzz.Studio.Tests
             var lane = rig.Roll.Controller;
             Assert.That(lane, Is.Not.Null, "the lane replaces the velocity lane");
             Assert.That(velocity.IsVisible, Is.False);
-            var store = new MidiControllers(Core, pattern);
+            var store = new MidiControllers(Core, clip);
             undos = Undos;
             rig.Click(lane.TranslatePoint(lane.At(2 * TB, 100), rig.Window)!.Value);
             Assert.That(store.Points(), Is.EqualTo(new[] { new ControllerPoint(2 * TB, 1, 100) }), "a click adds a point");
             Assert.That(Undos, Is.EqualTo(undos + 1));
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes().Count, Is.EqualTo(1), "the notes are not touched");
+            Assert.That(new MidiColumnNotes(Core, clip).Notes().Count, Is.EqualTo(1), "the notes are not touched");
             var point = lane.Points[0];
             rig.Drag(lane.TranslatePoint(lane.PointOf(point), rig.Window)!.Value, lane.TranslatePoint(new Point(lane.PointOf(point).X, lane.PointOf(point with { Value = 30 }).Y), rig.Window)!.Value);
             Assert.That(store.Points().Single().Value, Is.InRange(28, 32), "a drag moves its value");
@@ -408,7 +408,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(bend.Controller, Is.EqualTo(ControllerPoint.PitchBend));
             Assert.That(store.Edit(null, new[] { new ControllerPoint(0, ControllerPoint.PitchBend, 12000) }), Is.Null);
             Assert.That(store.Points().Single().Value, Is.EqualTo(12000));
-            Assert.That(new MidiColumnNotes(Core, pattern).Notes().Count, Is.EqualTo(1));
+            Assert.That(new MidiColumnNotes(Core, clip).Notes().Count, Is.EqualTo(1));
             rig.Roll.Poll();
             Assert.That(bend.Points.Single().Value, Is.EqualTo(12000), "the lane follows the column");
         }
@@ -451,7 +451,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig(("Neo Poly", "Lead"));
             rig.DrawAndOpen(rig.Lane("Lead"), 0);
             var roll = rig.Roll;
-            Core.SessionLayout.EditNotes(rig.Notes.Pattern, null, new[] { N(0, 48), N(2, 55), N(4, 61) });
+            Core.SessionLayout.EditNotes(rig.Notes.Clip, null, new[] { N(0, 48), N(2, 55), N(4, 61) });
             roll.Poll();
             Assert.That(rig.Notes.Notes.Count, Is.EqualTo(3));
             Assert.That(rig.Notes.Rows, Is.Null, "all rows to begin with");
@@ -493,7 +493,7 @@ namespace ReBuzz.Studio.Tests
         public void StepInputWritesTheKeysAtTheCursorAndStepsOnByTheGridAndHeldKeysMakeAChord()
         {
             using var rig = new Rig(("Neo Poly", "Lead"));
-            var pattern = rig.DrawAndOpen(rig.Lane("Lead"), 0);
+            var clip = rig.DrawAndOpen(rig.Lane("Lead"), 0);
             var roll = rig.Roll;
             roll.StepBox.IsChecked = true;
             Settle();
@@ -534,7 +534,7 @@ namespace ReBuzz.Studio.Tests
             roll.StepBox.IsChecked = false;
             Settle();
             Assert.That(rig.Notes.StepInput, Is.False);
-            Assert.That(Core.SessionLayout.NotesOf(pattern).Count, Is.EqualTo(4));
+            Assert.That(Core.SessionLayout.NotesOf(clip).Count, Is.EqualTo(4));
         }
 
         // ------------------------------------------------------------------ ghosts
@@ -546,10 +546,10 @@ namespace ReBuzz.Studio.Tests
             var lead = rig.Lane("Lead");
             var bass = rig.Lane("Bass");
             rig.DoubleClick(rig.At(lead, 0, 2));
-            var leadPattern = lead.Events.Values.First().Pattern;
-            Core.SessionLayout.EditNotes(leadPattern, null, new[] { N(0, 72), N(4, 76) });
-            var bassPattern = rig.DrawAndOpen(bass, 0);
-            Core.SessionLayout.EditNotes(bassPattern, null, new[] { N(0, 36) });
+            var leadClip = lead.Events.Values.First().Clip;
+            Core.SessionLayout.EditNotes(leadClip, null, new[] { N(0, 72), N(4, 76) });
+            var bassClip = rig.DrawAndOpen(bass, 0);
+            Core.SessionLayout.EditNotes(bassClip, null, new[] { N(0, 36) });
             var roll = rig.Roll;
             roll.Poll();
 
@@ -562,7 +562,7 @@ namespace ReBuzz.Studio.Tests
             int undos = Undos;
             rig.Notes.SelectAll();
             rig.Notes.DeleteSelected();
-            Assert.That(new MidiColumnNotes(Core, leadPattern).Notes().Count, Is.EqualTo(2), "editing leaves them alone");
+            Assert.That(new MidiColumnNotes(Core, leadClip).Notes().Count, Is.EqualTo(2), "editing leaves them alone");
             Assert.That(Undos, Is.EqualTo(undos + 1));
 
             // A clip on a second lane of the same machine is "this track's".
@@ -570,11 +570,11 @@ namespace ReBuzz.Studio.Tests
             Settle();
             var lane2 = rig.Lane("Bass", 1);
             rig.DoubleClick(rig.At(lane2, 0, 2));
-            var secondPattern = lane2.Events.Values.First().Pattern;
-            Core.SessionLayout.EditNotes(secondPattern, null, new[] { N(2, 40) });
-            Assert.That(rig.Panel.Pattern, Is.SameAs(secondPattern), "the open roll followed the clip just drawn");
+            var secondClip = lane2.Events.Values.First().Clip;
+            Core.SessionLayout.EditNotes(secondClip, null, new[] { N(2, 40) });
+            Assert.That(rig.Panel.Clip, Is.SameAs(secondClip), "the open roll followed the clip just drawn");
             rig.Click(rig.At(bass, 4));
-            Assert.That(rig.Panel.Pattern, Is.SameAs(bassPattern));
+            Assert.That(rig.Panel.Clip, Is.SameAs(bassClip));
             roll.GhostBox.SelectedIndex = 1;
             Settle();
             Assert.That(string.Join(",", roll.Ghosts.Select(g => $"{g.Time / TB}:{g.Note}")), Is.EqualTo("2:40"), "this track's: the other lane's clip, not Lead's");
@@ -594,16 +594,16 @@ namespace ReBuzz.Studio.Tests
             rig.DoubleClick(rig.At(lane, 32, 2));      // a second clip, on empty space
             rig.Click(rig.At(lane, 4));                // select the first again
             rig.DoubleClick(rig.At(lane, 34, 6));
-            var second = rig.Panel.Pattern;
+            var second = rig.Panel.Clip;
             Assert.That(second, Is.Not.SameAs(first), "a double click on the second clip shows it");
             Assert.That(rig.Panel.TitleText, Does.Contain(second.Name));
             rig.Click(rig.At(lane, 4));
-            Assert.That(rig.Panel.Pattern, Is.SameAs(first), "the open roll follows the selected clip");
+            Assert.That(rig.Panel.Clip, Is.SameAs(first), "the open roll follows the selected clip");
 
             // The Pattern tab button of the panel asks for the pattern editor.
-            IPattern asked = null;
-            Action<IPattern> handler = p => asked = p;
-            SequenceTab.PatternChosen += handler;
+            IClip asked = null;
+            Action<IClip> handler = p => asked = p;
+            SequenceTab.ClipChosen += handler;
             try
             {
                 rig.Click(rig.Of(rig.Panel.EditorButton));
@@ -611,7 +611,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                SequenceTab.PatternChosen -= handler;
+                SequenceTab.ClipChosen -= handler;
             }
 
             // Closing it lets go: the roll is dropped and nothing is left listening to the source.
@@ -619,7 +619,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Listeners(source), Is.GreaterThan(0), "the open roll listens to its source");
             rig.Click(rig.Of(rig.Panel.CloseButton));
             Assert.That(rig.Panel.IsVisible, Is.False);
-            Assert.That(rig.Panel.Pattern, Is.Null);
+            Assert.That(rig.Panel.Clip, Is.Null);
             Assert.That(rig.Roll.Roll, Is.Null);
             Assert.That(Listeners(source), Is.EqualTo(0), "the closed roll no longer listens to the song's notes");
 
@@ -690,11 +690,11 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig(("Neo Poly", "Lead"));
             var lane = rig.Lane("Lead");
             rig.DoubleClick(rig.At(lane, 0, 2));
-            var pattern = lane.Events.Values.First().Pattern;
-            Core.SessionLayout.EditNotes(pattern, null, new[] { N(0, 60), N(2, 64), N(4, 67) });
+            var clip = lane.Events.Values.First().Clip;
+            Core.SessionLayout.EditNotes(clip, null, new[] { N(0, 60), N(2, 64), N(4, 67) });
             Core.SongCore.SongEnd = 32;
-            string before = Snapshot(pattern);
-            var first = RenderClip(lane, pattern, 48);
+            string before = Snapshot(clip);
+            var first = RenderClip(lane, clip, 48);
             Assert.That(Peak(first), Is.GreaterThan(0.001f));
 
             rig.DoubleClick(rig.At(lane, 0, 6));          // the arrangement's roll
@@ -704,15 +704,15 @@ namespace ReBuzz.Studio.Tests
             rig.Roll.StepBox.IsChecked = true;
             rig.Roll.StepBox.IsChecked = false;
             rig.Window.ShowPianoRoll();                    // and the Pattern tab's
-            PatternView.Page!.Edit(pattern);
+            ClipView.Page!.Edit(clip);
             Settle();
             rig.Click(rig.Of(rig.Panel.CloseButton));
-            Assert.That(Snapshot(pattern), Is.EqualTo(before), "looking at the notes changes nothing of the pattern");
-            var second = RenderClip(lane, pattern, 48);
+            Assert.That(Snapshot(clip), Is.EqualTo(before), "looking at the notes changes nothing of the pattern");
+            var second = RenderClip(lane, clip, 48);
             Assert.That(second, Is.EqualTo(first), "and the render is the same bits");
         }
 
-        static string Snapshot(IPattern pattern) =>
-            string.Join(";", pattern.Columns.Select(c => c.Parameter?.Name + "/" + c.Track + ":" + string.Join(",", c.GetEvents(int.MinValue, int.MaxValue).Select(e => $"{e.Time}.{e.Value}.{e.Duration}"))));
+        static string Snapshot(IClip clip) =>
+            string.Join(";", clip.Columns.Select(c => c.Parameter?.Name + "/" + c.Track + ":" + string.Join(",", c.GetEvents(int.MinValue, int.MaxValue).Select(e => $"{e.Time}.{e.Value}.{e.Duration}"))));
     }
 }

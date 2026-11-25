@@ -83,7 +83,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public const double MinTickWidth = 0.25, MaxTickWidth = 7.75, TickWidthStep = 0.25, DefaultTickWidth = 2;
 
         /// <summary>Ticks a break, mute, thru or stop event is drawn over (ViewSettings.NonPlayPattenSpan).</summary>
-        public const int NonPatternSpan = 10;
+        public const int NonClipSpan = 10;
 
         /// <summary>A block is at least this wide (PatternElement: Math.Max(w, 10)).</summary>
         public const double MinBlockWidth = 10;
@@ -171,7 +171,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public Rect TracksArea(Size s) => new Rect(LeadX, LeadY, Math.Max(0, s.Width - LeadX), Math.Max(0, s.Height - LeadY));
 
         /// <summary>Ticks a block covers: the event's span, or <see cref="NonPatternSpan"/> for the other kinds.</summary>
-        public static int SpanOf(SequenceEvent e) => e.Type == SequenceEventType.PlayPattern && e.Pattern != null ? Math.Max(1, e.Span) : NonPatternSpan;
+        public static int SpanOf(SequenceEvent e) => e.Type == SequenceEventType.PlayClip && e.Clip != null ? Math.Max(1, e.Span) : NonClipSpan;
 
         public Rect BlockRect(int time, int row, SequenceEvent e) => Span(time, Math.Max(SpanOf(e) * PxPerTick, MinBlockWidth), row, 1, 0);
 

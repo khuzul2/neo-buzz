@@ -20,9 +20,9 @@ namespace WDE.ModernPatternEditor
                 if (machine != null)
                 {
                     machine.PropertyChanged -= machine_PropertyChanged;
-                    machine.PatternAdded -= machine_PatternAdded;
-                    machine.PatternRemoved -= machine_PatternRemoved;
-                    RemoveAllPatterns();
+                    machine.ClipAdded -= machine_ClipAdded;
+                    machine.ClipRemoved -= machine_ClipRemoved;
+                    RemoveAllClips();
                 }
 
                 machine = value;
@@ -30,12 +30,12 @@ namespace WDE.ModernPatternEditor
                 if (machine != null)
                 {
                     machine.PropertyChanged += machine_PropertyChanged;
-                    machine.PatternAdded += machine_PatternAdded;
-                    machine.PatternRemoved += machine_PatternRemoved;
+                    machine.ClipAdded += machine_ClipAdded;
+                    machine.ClipRemoved += machine_ClipRemoved;
 
                     //BaseOctave = PatternEditor.Settings.DefaultBaseOctave ? 3 : machine.BaseOctave;
 
-                    AddAllPatterns();
+                    AddAllClips();
                 }
 
                 PropertyChanged.Raise(this, "Machine");
@@ -54,7 +54,7 @@ namespace WDE.ModernPatternEditor
             }
             else if (e.PropertyName == "Patterns")
             {
-                SortAllPatterns();
+                SortAllClips();
                 PropertyChanged.Raise(this, "Machine");
             }
             //else if (e.PropertyName == "BaseOctave")
@@ -63,83 +63,83 @@ namespace WDE.ModernPatternEditor
             //}
         }
 
-        void machine_PatternRemoved(IPattern p)
+        void machine_ClipRemoved(IClip p)
         {
-            Editor.TargetMachine_PatternRemoved(p);
-            var vm = Patterns.First(x => x.Pattern == p);
-            vm.Pattern = null;
-            bool wasselected = SelectedPattern == vm;
-            patterns.Remove(vm);
-            if (wasselected) SelectedPattern = patterns.LastOrDefault();
+            Editor.TargetMachine_ClipRemoved(p);
+            var vm = Clips.First(x => x.Clip == p);
+            vm.Clip = null;
+            bool wasselected = SelectedClip == vm;
+            clips.Remove(vm);
+            if (wasselected) SelectedClip = clips.LastOrDefault();
         }
 
-        void machine_PatternAdded(IPattern p)
+        void machine_ClipAdded(IClip p)
         {
-            Editor.TargetMachine_PatternAdded(p);
-            var vm = new PatternVM(this, Editor) { Pattern = p };
-            patterns.Add(vm);
-            SelectedPattern = vm;
+            Editor.TargetMachine_ClipAdded(p);
+            var vm = new ClipVM(this, Editor) { Clip = p };
+            clips.Add(vm);
+            SelectedClip = vm;
         }
-        void RemoveAllPatterns()
+        void RemoveAllClips()
         {
-            foreach (var p in patterns)
+            foreach (var p in clips)
             {
-                p.Pattern = null;
+                p.Clip = null;
             }
 
-            patterns.Clear();
-            SelectedPattern = null;
+            clips.Clear();
+            SelectedClip = null;
         }
 
-        void AddAllPatterns()
+        void AddAllClips()
         {
-            foreach (var p in machine.Patterns.OrderBy(x => x.Name))
+            foreach (var p in machine.Clips.OrderBy(x => x.Name))
             {
-                var vm = new PatternVM(this, Editor) { Pattern = p };
-                patterns.Add(vm);
+                var vm = new ClipVM(this, Editor) { Clip = p };
+                clips.Add(vm);
             }
 
-            SelectedPattern = patterns.FirstOrDefault();
+            SelectedClip = clips.FirstOrDefault();
         }
 
-        void SortAllPatterns()
+        void SortAllClips()
         {
-            if (SelectedPattern != null)
+            if (SelectedClip != null)
             {
-                var pattern = SelectedPattern.Pattern;
-                patterns.Clear();
-                foreach (var p in machine.Patterns.OrderBy(x => x.Name))
+                var clip = SelectedClip.Clip;
+                clips.Clear();
+                foreach (var p in machine.Clips.OrderBy(x => x.Name))
                 {
-                    var vm = new PatternVM(this, Editor) { Pattern = p };
-                    patterns.Add(vm);
+                    var vm = new ClipVM(this, Editor) { Clip = p };
+                    clips.Add(vm);
                 }
-                SelectedPattern = Patterns.FirstOrDefault(x => x.Pattern == pattern);
+                SelectedClip = Clips.FirstOrDefault(x => x.Clip == clip);
             }
         }
 
-        public PatternEditor Editor { get; private set; }
+        public ClipEditor Editor { get; private set; }
 
-        public MachineVM(PatternEditor editor)
+        public MachineVM(ClipEditor editor)
         {
             this.Editor = editor;
         }
 
-        public ObservableCollection<PatternVM> patterns = new ObservableCollection<PatternVM>();
-        public ObservableCollection<PatternVM> Patterns { get { return patterns; } }
+        public ObservableCollection<ClipVM> clips = new ObservableCollection<ClipVM>();
+        public ObservableCollection<ClipVM> Clips { get { return clips; } }
 
-        PatternVM selectedPattern;
-        public PatternVM SelectedPattern
+        ClipVM selectedClip;
+        public ClipVM SelectedClip
         {
-            get { return selectedPattern; }
+            get { return selectedClip; }
             set
             {   
-                selectedPattern = value;
+                selectedClip = value;
                 PropertyChanged.Raise(this, "SelectedPattern");
                 PropertyChanged.Raise(this, "HasSelectedPattern");
             }
         }
 
-        public bool HasSelectedPattern { get { return SelectedPattern != null; } }
+        public bool HasSelectedClip { get { return SelectedClip != null; } }
 
         public string Name { get { return Machine.Name; } }
         public IEnumerable<int> BaseOctaves { get { return Enumerable.Range(0, 10); } }

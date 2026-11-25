@@ -101,9 +101,9 @@ namespace ReBuzz.Studio.Tests
             stepper.SetValue(0, stepper.GetValue(0) == stepper.MaxValue ? stepper.MinValue : stepper.MaxValue);
             pad.IsMuted = true;
             lead.AllOutputs.First().Amp = 0x2000;
-            var pattern = lead.PatternsList.Single(x => x.Name == "P0");
-            rig.Layout.EditNotes(pattern, null, new[] { new ClipNote(1 * SessionRig.TB, SessionRig.TB, 70, 100) });
-            core.SongCore.SequencesList.First(s => s.Machine == lead).SetEvent(32, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+            var clip = lead.ClipsList.Single(x => x.Name == "P0");
+            rig.Layout.EditNotes(clip, null, new[] { new ClipNote(1 * SessionRig.TB, SessionRig.TB, 70, 100) });
+            core.SongCore.SequencesList.First(s => s.Machine == lead).SetEvent(32, new SequenceEvent(SequenceEventType.PlayClip, clip));
             PlayIntoBar(rig);
             using var restore = Studio.AfterTest(() => SnapshotTests.Silence(core));
             for (int i = 0; i < 40; i++) rig.RunTicks(1, runJobs: false);        // warm up: first runs of everything
@@ -153,7 +153,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void PatternsAndTracksChangeTogetherAtTheBoundary()
+        public void ClipsAndTracksChangeTogetherAtTheBoundary()
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = SnapshotTests.Song("Lead", "Pad");
@@ -163,11 +163,11 @@ namespace ReBuzz.Studio.Tests
             var snap = core.Snapshots.Capture("a");
             core.Snapshots.Flush();
             // Edit a pattern's notes and the arrangement after the snapshot.
-            var pattern = lead.PatternsList.Single(x => x.Name == "P0");
-            rig.Layout.EditNotes(pattern, null, new[] { new ClipNote(1 * SessionRig.TB, SessionRig.TB, 70, 100) });
+            var clip = lead.ClipsList.Single(x => x.Name == "P0");
+            rig.Layout.EditNotes(clip, null, new[] { new ClipNote(1 * SessionRig.TB, SessionRig.TB, 70, 100) });
             var seq = core.SongCore.SequencesList.First(s => s.Machine == lead);
-            seq.SetEvent(32, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
-            string Notes() => string.Join(";", pattern.ColumnsList.OfType<PatternColumnCore>().SelectMany(c => c.GetEvents(0, 100000)).Select(e => e.Time + "/" + e.Value));
+            seq.SetEvent(32, new SequenceEvent(SequenceEventType.PlayClip, clip));
+            string Notes() => string.Join(";", clip.ColumnsList.OfType<ClipColumnCore>().SelectMany(c => c.GetEvents(0, 100000)).Select(e => e.Time + "/" + e.Value));
             string notesNow = Notes();
             int eventsNow = seq.EventsList.Count;
             PlayIntoBar(rig);
@@ -231,7 +231,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void APatternEditorsDataThatDiffersCantBeSwappedWhilePlayingSoTheRestoreWaits()
+        public void AClipEditorsDataThatDiffersCantBeSwappedWhilePlayingSoTheRestoreWaits()
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = SnapshotTests.Song("Lead");
@@ -239,17 +239,17 @@ namespace ReBuzz.Studio.Tests
             core.Snapshots.Bind(null);
             var snap = core.Snapshots.Capture("a");
             core.Snapshots.Flush();
-            rig.Machine("Lead").PatternsList.Single(x => x.Name == "P0").Length = 32;
+            rig.Machine("Lead").ClipsList.Single(x => x.Name == "P0").Length = 32;
             PlayIntoBar(rig);
             using var restore = Studio.AfterTest(() => SnapshotTests.Silence(core));
             var r = core.Snapshots.Restore(snap);
             Assert.That(r.Mode, Is.EqualTo("deferred"));
             Assert.That(r.Reason, Does.Contain("pattern editor"));
             Assert.That(r.Text, Does.StartWith("The restore waits until the transport stops"));
-            Assert.That(rig.Machine("Lead").PatternsList.Single(x => x.Name == "P0").Length, Is.EqualTo(32), "unchanged while it plays");
+            Assert.That(rig.Machine("Lead").ClipsList.Single(x => x.Name == "P0").Length, Is.EqualTo(32), "unchanged while it plays");
             SnapshotTests.Silence(core);
             core.Snapshots.Pump();
-            Assert.That(rig.Machine("Lead").PatternsList.Single(x => x.Name == "P0").Length, Is.EqualTo(16));
+            Assert.That(rig.Machine("Lead").ClipsList.Single(x => x.Name == "P0").Length, Is.EqualTo(16));
         }
 
         [AvaloniaTest]

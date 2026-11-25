@@ -70,7 +70,7 @@ namespace ReBuzz.Studio.Views.Machines
             List<IMachine> copies;
             using (MachineEdits.Group(core))
             {
-                copies = MachineEdits.CloneWithPatterns(core, from);
+                copies = MachineEdits.CloneWithClips(core, from);
                 if (copies.Count == 0) return copies;
                 if (at is Point p)
                 {

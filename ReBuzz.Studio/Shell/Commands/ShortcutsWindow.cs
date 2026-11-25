@@ -64,14 +64,14 @@ namespace ReBuzz.Studio.Shell.Commands
             }
             if (mac) result.Insert(result.FindIndex(r => r.Section == "Edit"), new Row("App", "⌘,", "Preferences"));
             foreach (var k in StudioKeymap.ViewKeys(mac)) result.Add(new Row(k.Section, k.Keys, k.What));
-            foreach (var k in StudioKeymap.PatternKeys(PatternEditorRows(), mac)) result.Add(new Row(k.Section, k.Keys, k.What));
+            foreach (var k in StudioKeymap.ClipKeys(ClipEditorRows(), mac)) result.Add(new Row(k.Section, k.Keys, k.What));
             return result;
         }
 
         static string Lower(string s) => s.Length > 1 && char.IsUpper(s[0]) && !char.IsUpper(s[1]) ? char.ToLowerInvariant(s[0]) + s.Substring(1) : s;
 
         /// <summary>The Pattern editor's key table (its help panel's), from its view's assembly once Gear has loaded it.</summary>
-        static IEnumerable<string[]> PatternEditorRows()
+        static IEnumerable<string[]> ClipEditorRows()
         {
             try
             {

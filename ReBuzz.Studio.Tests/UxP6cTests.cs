@@ -54,7 +54,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void CopyAndPasteMakeTheMachinesAgainWithPatternsRowsAndWiresInOneUndoStepAndPasteAgainWorks()
+        public void CopyAndPasteMakeTheMachinesAgainWithClipsRowsAndWiresInOneUndoStepAndPasteAgainWorks()
         {
             var (window, view) = MachinesWithEcho();
             using var restore = Studio.AfterTest(() => { MachineClipboard.Clear(); Restore(window, null); });
@@ -73,7 +73,7 @@ namespace ReBuzz.Studio.Tests
             var copies = view.Canvas.Selection.ToList();
             Assert.That(copies, Has.Count.EqualTo(2));
             Assert.That(copies.All(m => m.Name != "Voice" && m.Name != "Echo"), "named apart from the originals");
-            Assert.That(copies.First(m => m.Patterns.Count > 0).Patterns.Select(p => p.Name), Is.EqualTo(new[] { "P" }));
+            Assert.That(copies.First(m => m.Clips.Count > 0).Clips.Select(p => p.Name), Is.EqualTo(new[] { "P" }));
             Assert.That(copies[0].Outputs.Select(c => c.Destination), Contains.Item(copies[1]), "the wire between the two");
             song.ActionStack.Undo();
             Assert.That(song.Machines.Count, Is.EqualTo(machines), "one undo step");
@@ -109,16 +109,16 @@ namespace ReBuzz.Studio.Tests
             Assert.That(view.Cut(), Is.True);
             Assert.That(MachineClipboard.IsCut);
             Assert.That(song.Machines.Count, Is.EqualTo(machines), "cut waits for the paste");
-            Assert.That(M("Voice").Patterns.Count, Is.EqualTo(1));
+            Assert.That(M("Voice").Clips.Count, Is.EqualTo(1));
             var copies = MachineClipboard.Paste(Core, new Point(0.3, -0.2));
             Assert.That(song.Machines.Count, Is.EqualTo(machines), "the same number: moved");
             Assert.That(copies.Select(m => m.Name), Is.EqualTo(new[] { "Voice", "Echo" }), "with their names");
-            Assert.That(copies[0].Patterns.Select(p => p.Name), Is.EqualTo(new[] { "P" }));
+            Assert.That(copies[0].Clips.Select(p => p.Name), Is.EqualTo(new[] { "P" }));
             Assert.That(copies[0].Outputs.Select(c => c.Destination), Contains.Item(copies[1]));
             Assert.That(MachineClipboard.Count, Is.EqualTo(0), "a cut is pasted once");
             song.ActionStack.Undo();
             Assert.That(song.Machines.Count, Is.EqualTo(machines));
-            Assert.That(M("Voice").Patterns.Count, Is.EqualTo(1), "one undo step brings the originals back");
+            Assert.That(M("Voice").Clips.Count, Is.EqualTo(1), "one undo step brings the originals back");
         }
 
         [AvaloniaTest]

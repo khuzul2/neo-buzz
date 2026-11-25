@@ -78,16 +78,16 @@ namespace BuzzGUI.Common
         /// A built-in pattern's rows as lanes: a lane for each parameter with a value, an event for each row that has one at row × 240
         /// (4 rows a beat), as BuiltInPattern.ToPXP and the editor read them. The connections' amp and pan are dropped (one log line each source).
         /// </summary>
-        public static ClipContent FromBuiltIn(BuiltInRows pattern, ClipMachine machine, int lengthTicks, ClipLog log, Result result = null)
+        public static ClipContent FromBuiltIn(BuiltInRows builtIn, ClipMachine machine, int lengthTicks, ClipLog log, Result result = null)
         {
-            var clip = new ClipContent { Name = pattern.Name, Length = lengthTicks > 0 ? lengthTicks : Math.Max(1, pattern.Rows), RowsPerBeat = 4 };
+            var clip = new ClipContent { Name = builtIn.Name, Length = lengthTicks > 0 ? lengthTicks : Math.Max(1, builtIn.Rows), RowsPerBeat = 4 };
             result ??= new Result();
             var lanes = new Dictionary<string, ClipLane>();
             int shifted = 0;
 
             void Column(int group, int index, int track, int[][] rows, int column, int noValue)
             {
-                var events = new List<PatternEvent>();
+                var events = new List<ClipEvent>();
                 bool note = machine.IsNote(group, index);
                 int fixedNotes = 0;
                 for (int i = 0; i < rows.Length; i++)
@@ -95,14 +95,14 @@ namespace BuzzGUI.Common
                     {
                         int v = rows[i][column];
                         if (note) { int f = FixNote(v); if (f != v) fixedNotes++; v = f; }
-                        events.Add(new PatternEvent(i * PatternEvent.TimeBase, v));
+                        events.Add(new ClipEvent(i * ClipEvent.TimeBase, v));
                     }
                 result.EventsIn += events.Count;
                 if (events.Count == 0) return;
                 if (group == 2 && track >= machine.TrackCount)
                 {
                     result.EventsDropped += events.Count;
-                    log.Loss(ClipTags.TrackDropped, machine.Name, pattern.Name, $"{group}.{index}.{track}", events.Count, $"the machine has {machine.TrackCount} tracks");
+                    log.Loss(ClipTags.TrackDropped, machine.Name, builtIn.Name, $"{group}.{index}.{track}", events.Count, $"the machine has {machine.TrackCount} tracks");
                     return;
                 }
                 var lane = new ClipLane { Kind = ClipLaneKind.Parameter, Machine = machine.Name, Group = group, Index = index, Track = track, Grid = ClipGrid.Format(4, null) };
@@ -110,22 +110,22 @@ namespace BuzzGUI.Common
                 lanes[lane.Key] = lane;
                 result.EventsKept += events.Count;
                 shifted += events.Count;
-                log.Change(ClipTags.NoteFixed, machine.Name, pattern.Name, $"{group}.{index}.{track}", fixedNotes);
+                log.Change(ClipTags.NoteFixed, machine.Name, builtIn.Name, $"{group}.{index}.{track}", fixedNotes);
             }
 
             for (int j = 0; j < machine.GlobalCount; j++)
-                Column(1, j, 0, pattern.Global, j, j < pattern.GlobalNoValue.Length ? pattern.GlobalNoValue[j] : 0);
-            for (int t = 0; t < pattern.Tracks.Length; t++)
+                Column(1, j, 0, builtIn.Global, j, j < builtIn.GlobalNoValue.Length ? builtIn.GlobalNoValue[j] : 0);
+            for (int t = 0; t < builtIn.Tracks.Length; t++)
                 for (int j = 0; j < machine.TrackParamCount; j++)
-                    Column(2, j, t, pattern.Tracks[t], j, j < pattern.TrackNoValue.Length ? pattern.TrackNoValue[j] : 0);
+                    Column(2, j, t, builtIn.Tracks[t], j, j < builtIn.TrackNoValue.Length ? builtIn.TrackNoValue[j] : 0);
 
-            foreach (var kv in pattern.InputCells)
+            foreach (var kv in builtIn.InputCells)
             {
                 result.EventsIn += kv.Value;
                 result.EventsDropped += kv.Value;
-                log.Loss(ClipTags.InputColumn, machine.Name, pattern.Name, "input " + kv.Key, kv.Value, "a connection's amp and pan");
+                log.Loss(ClipTags.InputColumn, machine.Name, builtIn.Name, "input " + kv.Key, kv.Value, "a connection's amp and pan");
             }
-            log.Change(ClipTags.BlockShift, machine.Name, pattern.Name, "parameters", shifted);
+            log.Change(ClipTags.BlockShift, machine.Name, builtIn.Name, "parameters", shifted);
             clip.Lanes.AddRange(lanes.Values);
             result.Clips.Add(clip);
             return clip;
@@ -142,7 +142,7 @@ namespace BuzzGUI.Common
         {
             var result = new Result();
             var data = ClipBlob.Parse(blob);
-            if (data.Problem != null && data.Patterns.Count == 0 && data.Format == BlobFormat.None)
+            if (data.Problem != null && data.Clips.Count == 0 && data.Format == BlobFormat.None)
             {
                 // Data of another editor, or of a version we do not read: dropped, one line (the editor clears it today).
                 result.EventsIn = 0;
@@ -153,8 +153,8 @@ namespace BuzzGUI.Common
                 log.Loss(ClipTags.ForeignDropped, owner, null, null, 1, $"the data ends early: {data.Problem}");
 
             var ring = new Dictionary<(string, int), int>();
-            foreach (var p in data.Patterns)
-                result.Clips.Add(Pattern(p, data.Format, machines, lengthOf, log, result, ring));
+            foreach (var p in data.Clips)
+                result.Clips.Add(Clip(p, data.Format, machines, lengthOf, log, result, ring));
             return result;
         }
 
@@ -164,12 +164,12 @@ namespace BuzzGUI.Common
             public readonly List<BlobColumn> Wheel = new List<BlobColumn>(), Cc = new List<BlobColumn>();
         }
 
-        static ClipContent Pattern(BlobPattern p, BlobFormat format, IClipMachines machines, Func<string, int> lengthOf, ClipLog log, Result result, Dictionary<(string, int), int> ring)
+        static ClipContent Clip(BlobClip p, BlobFormat format, IClipMachines machines, Func<string, int> lengthOf, ClipLog log, Result result, Dictionary<(string, int), int> ring)
         {
             int length = lengthOf?.Invoke(p.Name) ?? 0;
             bool inSong = length > 0;
             if (!inSong)
-                length = p.Beats > 0 ? p.Beats * 4 : Math.Max(1, p.Columns.SelectMany(c => c.Events).Select(e => e.Time / PatternEvent.TimeBase + 1).DefaultIfEmpty(1).Max());
+                length = p.Beats > 0 ? p.Beats * 4 : Math.Max(1, p.Columns.SelectMany(c => c.Events).Select(e => e.Time / ClipEvent.TimeBase + 1).DefaultIfEmpty(1).Max());
             var clip = new ClipContent { Name = p.Name, Length = length, RowsPerBeat = Math.Max(1, p.RowsPerBeat) };
             var lanes = new Dictionary<string, ClipLane>();
             var midi = new Dictionary<(string Machine, int Track), MidiTrack>();
@@ -183,7 +183,7 @@ namespace BuzzGUI.Common
                 if (inSong)
                 {
                     // The editor drops the events past the end of the pattern as it loads them (MPEPatternColumn.SetEvents).
-                    int limit = length * PatternEvent.TimeBase;
+                    int limit = length * ClipEvent.TimeBase;
                     int past = col.Events.Count(e => e.Time >= limit);
                     if (past > 0)
                     {
@@ -231,14 +231,14 @@ namespace BuzzGUI.Common
                 }
                 if (group == 2 && col.Track >= machine.TrackCount || col.Track < 0) { Drop(ClipTags.TrackDropped, $"the machine has {machine.TrackCount} tracks"); continue; }
 
-                var events = new List<PatternEvent>(n);
+                var events = new List<ClipEvent>(n);
                 bool note = machine.IsNote(group, index);
                 int fixedNotes = 0;
                 foreach (var e in col.Events)
                 {
                     int v = e.Value;
                     if (note) { int f = FixNote(v); if (f != v) fixedNotes++; v = f; }
-                    events.Add(new PatternEvent(e.Time, v));
+                    events.Add(new ClipEvent(e.Time, v));
                 }
                 var l = new ClipLane { Kind = ClipLaneKind.Parameter, Machine = machine.Name, Group = group, Index = index, Track = col.Track };
                 l.Grid = GridOf(col, p, beats);
@@ -252,7 +252,7 @@ namespace BuzzGUI.Common
             foreach (var g in lanes.Values.Where(l => l.Kind == ClipLaneKind.Parameter).GroupBy(l => l.Machine))
             {
                 int all = g.Sum(l => l.Events.Count);
-                int off = g.Sum(l => l.Events.Count(e => e.Time % PatternEvent.TimeBase != 0));
+                int off = g.Sum(l => l.Events.Count(e => e.Time % ClipEvent.TimeBase != 0));
                 log.Change(ClipTags.BlockShift, g.Key, p.Name, "parameters", all);
                 log.Change(ClipTags.Subtick, g.Key, p.Name, "parameters", off);
             }
@@ -266,7 +266,7 @@ namespace BuzzGUI.Common
             void Merge(BlobColumn into, BlobColumn extra) => into.Events.AddRange(extra.Events);
         }
 
-        static string GridOf(BlobColumn col, BlobPattern p, int beats)
+        static string GridOf(BlobColumn col, BlobClip p, int beats)
         {
             if (col.BeatRows.Count == 0) return ClipGrid.Format(Math.Max(1, p.RowsPerBeat), null);
             var rows = new List<int>(beats);
@@ -283,13 +283,13 @@ namespace BuzzGUI.Common
             return 0;
         }
 
-        static void NotesLane(string machine, BlobPattern p, ClipContent clip, Dictionary<string, ClipLane> lanes,
+        static void NotesLane(string machine, BlobClip p, ClipContent clip, Dictionary<string, ClipLane> lanes,
             List<KeyValuePair<(string Machine, int Track), MidiTrack>> tracks, int beats, ClipLog log, Result result, Dictionary<(string, int), int> ring)
         {
             if (tracks.Count == 0) return;
-            int lengthTime = clip.Length * PatternEvent.TimeBase;
+            int lengthTime = clip.Length * ClipEvent.TimeBase;
             var rows = new List<TrackerRow>();
-            var controllers = new List<PatternEvent>();
+            var controllers = new List<ClipEvent>();
             string grid = null;
             int delays = 0, cuts = 0;
 
@@ -343,13 +343,13 @@ namespace BuzzGUI.Common
                 foreach (var c in mt.Wheel)
                     foreach (var e in c.Events)
                     {
-                        controllers.Add(new PatternEvent(e.Time, ClipEvents.PitchWheel(Math.Clamp(e.Value, 0, 0x3FFF)), 0));
+                        controllers.Add(new ClipEvent(e.Time, ClipEvents.PitchWheel(Math.Clamp(e.Value, 0, 0x3FFF)), 0));
                         result.EventsMerged++;
                     }
                 foreach (var c in mt.Cc)
                     foreach (var e in c.Events)
                     {
-                        controllers.Add(new PatternEvent(e.Time, ClipEvents.ControlChange((e.Value >> 8) & 0x7F, e.Value & 0x7F), 0));
+                        controllers.Add(new ClipEvent(e.Time, ClipEvents.ControlChange((e.Value >> 8) & 0x7F, e.Value & 0x7F), 0));
                         result.EventsMerged++;
                     }
             }
@@ -363,9 +363,9 @@ namespace BuzzGUI.Common
                 result.EventsDropped += skipped;
                 log.Loss(ClipTags.EventPastEnd, machine, p.Name, "notes", skipped, "a note delayed past the end of the pattern");
             }
-            var events = new List<PatternEvent>();
+            var events = new List<ClipEvent>();
             foreach (var n in notes)
-                events.Add(new PatternEvent(n.Time, ClipEvents.NoteOn(n.Midi, n.Velocity), n.Duration));
+                events.Add(new ClipEvent(n.Time, ClipEvents.NoteOn(n.Midi, n.Velocity), n.Duration));
 
             // An off with no note before it on its voice in this clip (a note rings across clips): an explicit note-off event, duration 0.
             int explicitOffs = 0, unknownOffs = 0;

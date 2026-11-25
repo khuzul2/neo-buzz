@@ -197,9 +197,9 @@ namespace BuzzGUI.Common.InterfaceExtensions
         }
 
 
-        public static string GetNewPatternName(this IMachine machine)
+        public static string GetNewClipName(this IMachine machine)
         {
-            return Enumerable.Range(0, 1000).Select(n => n.ToString("D2")).Where(n => !machine.Patterns.Select(p => p.Name).Contains(n)).FirstOrDefault();
+            return Enumerable.Range(0, 1000).Select(n => n.ToString("D2")).Where(n => !machine.Clips.Select(p => p.Name).Contains(n)).FirstOrDefault();
         }
 
         public static R GUIMessageExchange<R>(this IMachine machine, params object[] p) where R : struct

@@ -40,9 +40,9 @@ namespace ReBuzz.Studio.Views.Sequence
         /// A pattern was chosen for editing in the sequence editor (a double click on its block, or
         /// Return): the pattern editor (S6) shows it. The engine's pattern editor pattern is set too.
         /// </summary>
-        public static event Action<IPattern> PatternChosen;
+        public static event Action<IClip> ClipChosen;
 
-        internal static void RaisePatternChosen(IPattern p) => PatternChosen?.Invoke(p);
+        internal static void RaiseClipChosen(IClip p) => ClipChosen?.Invoke(p);
     }
 
     internal sealed class SequenceView : UserControl, IStudioEditTarget
@@ -64,7 +64,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly ComboBox steps = new ComboBox { Width = 58, Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center };
         readonly Button addTrack = new Button { Content = "+", Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center };
         readonly ToggleButton follow = new ToggleButton { Content = "Follow", Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, IsChecked = true };
-        readonly ListBox patternList = new ListBox
+        readonly ListBox clipList = new ListBox
         {
             FontSize = 12, BorderThickness = new Thickness(1),
         };
@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Views.Sequence
         ArrangementHeaders headers;
         readonly ArrangementRollPanel rollPanel;
         bool isArrangement;
-        readonly List<(char Char, IPattern Pattern)> patterns = new List<(char, IPattern)>();
+        readonly List<(char Char, IClip Clip)> clips = new List<(char, IClip)>();
         bool syncing;
         bool attached;
         DockPanel right, root;
@@ -102,9 +102,9 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             var look = StudioTheme.Sequence;
             root.Background = right.Background = look.Background;
-            patternList.Background = Shell.Design.StudioTheme.Solid(look.PatternList);
-            patternList.Foreground = look.ListText;
-            patternList.BorderBrush = look.ListBorder;
+            clipList.Background = Shell.Design.StudioTheme.Solid(look.ClipList);
+            clipList.Foreground = look.ListText;
+            clipList.BorderBrush = look.ListBorder;
             status.Foreground = look.HeaderText;
             foreach (var c in new TemplatedControl[] { addTrack, steps, follow, trackerMode, arrangementMode, verticalMode, record, loopRecord, overdub, backToArrangement, envelopes })
             {
@@ -113,17 +113,17 @@ namespace ReBuzz.Studio.Views.Sequence
                 c.BorderBrush = look.ControlBorder;
                 c.BorderThickness = new Thickness(1);
             }
-            foreach (var style in listStates) patternList.Styles.Remove(style);
+            foreach (var style in listStates) clipList.Styles.Remove(style);
             listStates.Clear();
-            ListStates(patternList, look, listStates);
+            ListStates(clipList, look, listStates);
         }
 
         /// <summary>Fork (ux-overhaul.md P2c): the cursor's track (and pattern) is the studio's selection; a track another view selected is the cursor's.</summary>
         void OnCursorChanged()
         {
-            RefreshPatternList();
+            RefreshClipList();
             if (Canvas.FollowingSelection || Canvas.CursorSequence?.Machine is not { } machine) return;
-            StudioSelection.For(core).Set(machine, Canvas.CursorPattern, this);
+            StudioSelection.For(core).Set(machine, Canvas.CursorClip, this);
         }
 
         void FollowSelection(object source)
@@ -138,10 +138,10 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The arrangement's selected clip or lane is the studio's selection (its machine, and its pattern).</summary>
         void OnArrangementSelection()
         {
-            RefreshPatternList();
+            RefreshClipList();
             var lane = Arrangement.Selected?.Sequence ?? Arrangement.CursorLane;
-            if (lane?.Machine is { } machine) StudioSelection.For(core).Set(machine, Arrangement.Selected?.Pattern, this);
-            if (rollPanel.IsVisible && Arrangement.Selected?.Pattern is { } shown && shown != rollPanel.Pattern) rollPanel.Open(shown);      // the open roll follows the selected clip
+            if (lane?.Machine is { } machine) StudioSelection.For(core).Set(machine, Arrangement.Selected?.Clip, this);
+            if (rollPanel.IsVisible && Arrangement.Selected?.Clip is { } shown && shown != rollPanel.Clip) rollPanel.Open(shown);      // the open roll follows the selected clip
         }
 
         /// <summary>The remembered orientation of the tracker.</summary>
@@ -215,7 +215,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 Canvas.Focus();
             }
             ApplyOrientation();
-            RefreshPatternList();
+            RefreshClipList();
             UpdateEmpty();
         }
 
@@ -256,10 +256,10 @@ namespace ReBuzz.Studio.Views.Sequence
             headers = new ArrangementHeaders(core, Arrangement) { IsVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
             Arrangement.AttachDropTo(headers);      // DD1: a drop on a track's header is a drop on the track
             rollPanel = new ArrangementRollPanel(core) { IsVisible = false };
-            rollPanel.PatternEditorRequested += p => ChoosePattern(p, true);
+            rollPanel.ClipEditorRequested += p => ChooseClip(p, true);
             Focusable = true;
 
-            patternList.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
+            clipList.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
             {
                 Setters =
                 {
@@ -337,7 +337,7 @@ namespace ReBuzz.Studio.Views.Sequence
             ToolTip.SetTip(verticalMode, "Vertical: time runs down the page and the tracks are columns, as in Buzz. Remembered");
             ToolTip.SetTip(trackerMode, "Tracker: a row for each sequence; a block's edges set its pattern's length");
             ToolTip.SetTip(arrangementMode, "Arrangement: a track for each machine with lanes; clips you draw, move, copy, trim, loop, split and join");
-            right.Children.Add(patternList);
+            right.Children.Add(clipList);
 
             root = new DockPanel();
             DockPanel.SetDock(right, Dock.Right);
@@ -354,10 +354,10 @@ namespace ReBuzz.Studio.Views.Sequence
             zoom.Value = state.Zoom;
             Canvas.ViewChanged += Sync;
             Canvas.CursorChanged += OnCursorChanged;
-            Canvas.TracksChanged += RefreshPatternList;
+            Canvas.TracksChanged += RefreshClipList;
             Canvas.TracksChanged += UpdateEmpty;
             emptyTimer.Tick += (s, e) => UpdateEmpty();
-            Canvas.PatternDoubleClicked += p => ChoosePattern(p, true);
+            Canvas.ClipDoubleClicked += p => ChooseClip(p, true);
             Canvas.MenuRequested += p => OpenContextMenu(Canvas);
             horizontal.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.ScrollTo(e.NewValue, Arrangement.Geometry.ScrollY); else Canvas.ScrollTo(e.NewValue, Canvas.Geometry.ScrollY); };
             vertical.ValueChanged += (s, e) => { if (syncing) return; if (isArrangement) Arrangement.ScrollTo(Arrangement.Geometry.ScrollX, e.NewValue); else Canvas.ScrollTo(Canvas.Geometry.ScrollX, e.NewValue); };
@@ -375,7 +375,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Arrangement.ViewChanged += Sync;
             Arrangement.ViewChanged += UpdateEmpty;
             Arrangement.SelectionChanged += OnArrangementSelection;
-            Arrangement.PatternDoubleClicked += p => ChoosePattern(p, true);
+            Arrangement.ClipDoubleClicked += p => ChooseClip(p, true);
             Arrangement.ClipOpened += OpenPianoRoll;
             Arrangement.MenuRequested += p => OpenArrangementMenu(Arrangement);
             Arrangement.StatusChanged += () => { status.Text = Arrangement.Status ?? ""; };
@@ -399,7 +399,7 @@ namespace ReBuzz.Studio.Views.Sequence
             };
             follow.IsCheckedChanged += (s, e) => Canvas.Follow = Arrangement.Follow = follow.IsChecked == true;
             addTrack.Click += (s, e) => OpenAddTrackMenu();
-            patternList.DoubleTapped += (s, e) => PlaceListedPattern();
+            clipList.DoubleTapped += (s, e) => PlaceListedClip();
 
             AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
             AddHandler(TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
@@ -417,16 +417,16 @@ namespace ReBuzz.Studio.Views.Sequence
         public TextBlock StatusLine => status;
         public Slider ZoomSlider => zoom;
         public ComboBox StepsBox => steps;
-        public ListBox PatternList => patternList;
+        public ListBox ClipList => clipList;
         /// <summary>The list's own background (its items' states draw on it).</summary>
-        internal static Color PatternListBackground => StudioTheme.Sequence.PatternList;
+        internal static Color ClipListBackground => StudioTheme.Sequence.ClipList;
         public Button AddTrackButton => addTrack;
 
         /// <summary>The menu a right click (or the add-track button) opened last (tests click through it).</summary>
         public ContextMenu OpenMenu { get; private set; }
 
         /// <summary>A pattern was chosen for editing here (as <see cref="SequenceTab.PatternChosen"/>).</summary>
-        public event Action<IPattern> PatternChosen;
+        public event Action<IClip> ClipChosen;
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
@@ -440,7 +440,7 @@ namespace ReBuzz.Studio.Views.Sequence
             ApplyLook();
             state.Changed += OnStateChanged;
             OnStateChanged();
-            RefreshPatternList();
+            RefreshClipList();
             UpdateEmpty();
             emptyTimer.Start();
             // Shown (its tab selected): the timeline takes the keys, unless something in the view has them.
@@ -486,7 +486,7 @@ namespace ReBuzz.Studio.Views.Sequence
             }
             emptyState.Update(!arranged, "arrange", "Nothing is arranged yet",
                 "Put a pattern on a track: pick a row and press the pattern's key, or double-click it in the list on the right. Or launch clips in the Session View.",
-                new (string, Action)[] { ("New pattern here", () => { Canvas.Edits.CreatePatterns(Math.Max(0, Canvas.CursorRow), Math.Max(0, Canvas.CursorTime), 1, SequenceCanvas.NewPatternLength, false); Canvas.Focus(); }) }, false);
+                new (string, Action)[] { ("New pattern here", () => { Canvas.Edits.CreateClips(Math.Max(0, Canvas.CursorRow), Math.Max(0, Canvas.CursorTime), 1, SequenceCanvas.NewClipLength, false); Canvas.Focus(); }) }, false);
         }
 
         void OnStateChanged()
@@ -559,33 +559,33 @@ namespace ReBuzz.Studio.Views.Sequence
         static char KeyOf(int i) => i < 10 ? (char)('0' + i) : i < 36 ? (char)('a' + i - 10) : (char)('A' + i - 36);
 
         /// <summary>The cursor track's patterns by name, each with the key that places it.</summary>
-        public IReadOnlyList<(char Char, IPattern Pattern)> Patterns => patterns;
+        public IReadOnlyList<(char Char, IClip Clip)> Clips => clips;
 
-        void RefreshPatternList()
+        void RefreshClipList()
         {
             var machine = isArrangement ? (Arrangement.Selected?.Sequence ?? Arrangement.CursorLane)?.Machine : Canvas.CursorSequence?.Machine;
-            var now = machine?.Patterns.OrderBy(p => p.Name, StringComparer.Ordinal).Select((p, i) => (KeyOf(i), p)).ToList() ?? new List<(char, IPattern)>();
-            if (!now.SequenceEqual(patterns))
+            var now = machine?.Clips.OrderBy(p => p.Name, StringComparer.Ordinal).Select((p, i) => (KeyOf(i), p)).ToList() ?? new List<(char, IClip)>();
+            if (!now.SequenceEqual(clips))
             {
-                patterns.Clear();
-                patterns.AddRange(now);
-                patternList.ItemsSource = patterns.Select(x => $"{x.Char}. {x.Pattern.Name}").ToList();
+                clips.Clear();
+                clips.AddRange(now);
+                clipList.ItemsSource = clips.Select(x => $"{x.Char}. {x.Clip.Name}").ToList();
             }
-            int index = patterns.FindIndex(x => x.Pattern == (isArrangement ? Arrangement.Selected?.Pattern : Canvas.CursorPattern));
-            if (patternList.SelectedIndex != index) patternList.SelectedIndex = index;
+            int index = clips.FindIndex(x => x.Clip == (isArrangement ? Arrangement.Selected?.Clip : Canvas.CursorClip));
+            if (clipList.SelectedIndex != index) clipList.SelectedIndex = index;
         }
 
         /// <summary>A double click in the list places that pattern at the cursor (patternListBox).</summary>
-        void PlaceListedPattern()
+        void PlaceListedClip()
         {
-            int i = patternList.SelectedIndex;
-            if (i < 0 || i >= patterns.Count) return;
-            Place(patterns[i].Pattern);
+            int i = clipList.SelectedIndex;
+            if (i < 0 || i >= clips.Count) return;
+            Place(clips[i].Clip);
             Canvas.Focus();
         }
 
         /// <summary>Places a pattern at the cursor and moves past it (typing its key).</summary>
-        public void Place(IPattern p)
+        public void Place(IClip p)
         {
             if (isArrangement)
             {
@@ -593,7 +593,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 return;
             }
             if (p == null || Canvas.CursorSequence == null) return;
-            Canvas.Edits.PlacePattern(Canvas.CursorRow, Canvas.CursorTime, p);
+            Canvas.Edits.PlaceClip(Canvas.CursorRow, Canvas.CursorTime, p);
             Canvas.MoveCursor(Canvas.CursorTime + Math.Max(1, p.Length), Canvas.CursorRow);
         }
 
@@ -696,32 +696,32 @@ namespace ReBuzz.Studio.Views.Sequence
         /// A pattern for editing (SelectPatternCommand): the engine's pattern editor gets it, and
         /// <see cref="SequenceTab.PatternChosen"/> tells the pattern editor's tab.
         /// </summary>
-        public void ChoosePattern(IPattern p, bool activate)
+        public void ChooseClip(IClip p, bool activate)
         {
             if (p == null) return;
             // NA3: an audio clip has no notes to edit: opening it shows its Audio page.
             if (activate && core.SessionLayout?.IsAudioClip(p) == true && Audio.AudioClipPage.Opener?.Invoke(p) == true) return;
             try
             {
-                core.SetPatternEditorPattern(p);
+                core.SetClipEditorClip(p);
             }
             catch (Exception e)
             {
                 core.DCWriteLine("Sequence editor: " + e.Message);
             }
             if (!activate) return;
-            PatternChosen?.Invoke(p);
-            SequenceTab.RaisePatternChosen(p);
+            ClipChosen?.Invoke(p);
+            SequenceTab.RaiseClipChosen(p);
         }
 
         /// <summary>Opens the piano roll under the arrangement on a clip's pattern (a double click on the clip, P): its notes as the machine plays them.</summary>
-        public void OpenPianoRoll(IPattern p)
+        public void OpenPianoRoll(IClip p)
         {
             if (p == null) return;
             if (core.SessionLayout?.IsAudioClip(p) == true && Audio.AudioClipPage.Opener?.Invoke(p) == true) return;   // NA3: an audio clip has no notes, its Audio page opens
             try
             {
-                core.SetPatternEditorPattern(p);
+                core.SetClipEditorClip(p);
             }
             catch (Exception e)
             {
@@ -756,7 +756,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public void SetColour(int index)
         {
-            var p = Canvas.CursorPattern;
+            var p = Canvas.CursorClip;
             if (p == null) return;
             if (index < 0) state.Remove(p);
             else state.Set(p, index);
@@ -901,7 +901,7 @@ namespace ReBuzz.Studio.Views.Sequence
                         if (c.CursorTime < before) c.Edits.Clear(c.CursorRow, c.CursorTime, c.CursorSpan);
                         return true;
                     case Key.Return:
-                        ChoosePattern(c.CursorPattern, true);
+                        ChooseClip(c.CursorClip, true);
                         return true;
                     case Key.Escape:
                         c.Selection.Kill();
@@ -984,20 +984,20 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 Items =
                 {
-                    Item("Piano Roll", () => OpenPianoRoll(a.Selected?.Pattern), new KeyGesture(Key.P), clip),
-                    Item("Edit Pattern", () => ChoosePattern(a.Selected?.Pattern, true), new KeyGesture(Key.Return), clip),
+                    Item("Piano Roll", () => OpenPianoRoll(a.Selected?.Clip), new KeyGesture(Key.P), clip),
+                    Item("Edit Pattern", () => ChooseClip(a.Selected?.Clip, true), new KeyGesture(Key.Return), clip),
                     new Separator(),
                     Item("Split at Cursor", () => a.SplitAtCursor(), new KeyGesture(Key.S), inside),
                     Item("Join with Next", () => a.JoinWithNext(), new KeyGesture(Key.J), clip),
                     Item(clip && a.Selected.Spec.Loop ? "Loop Off" : "Loop On", () => a.ToggleLoop(), new KeyGesture(Key.L), clip),
-                    Item(clip && a.UsesOf(a.Selected.Pattern) > 1 ? $"Make Unique ({a.UsesOf(a.Selected.Pattern)} places use it)" : "Make Unique", () => a.MakeUnique(), new KeyGesture(Key.U), clip),
+                    Item(clip && a.UsesOf(a.Selected.Clip) > 1 ? $"Make Unique ({a.UsesOf(a.Selected.Clip)} places use it)" : "Make Unique", () => a.MakeUnique(), new KeyGesture(Key.U), clip),
                     new Separator(),
                     Item("Split at Playhead", () => a.SplitAtPlayhead(), Gesture(Key.E), a.IsAudioSelected),
                     Item("Consolidate", () => a.ConsolidateSelected(), Gesture(Key.J), a.IsAudioSelected),
                     Item("Reverse", () => a.ReverseSelected(), new KeyGesture(Key.R), a.IsAudioSelected),
                     Item("Reset Gain", () => a.ResetGain(), null, a.IsAudioSelected),
                     // Fork (neo-audio.md, AW5): auto-warp the selected audio clip: follow the beat, to grid, or with options.
-                    ReBuzz.Studio.Shell.AutoWarpFlow.Menu(() => a.Selected?.Pattern is { } ap ? new[] { ap } : System.Array.Empty<IPattern>(), null, a.IsAudioSelected),
+                    ReBuzz.Studio.Shell.AutoWarpFlow.Menu(() => a.Selected?.Clip is { } ap ? new[] { ap } : System.Array.Empty<IClip>(), null, a.IsAudioSelected),
                     new Separator(),
                     Item("Comp to Main Lane", () => a.CompAtCursor(), new KeyGesture(Key.C), clip && core.Arrangement.RoleOf(a.Selected.Sequence) == LaneRole.Take),
                     Item("Launch in Session", () => a.LaunchSelected(), null, clip),
@@ -1035,10 +1035,10 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             var c = Canvas;
             if (c.CursorSequence == null) return false;
-            var listed = patterns.FirstOrDefault(x => x.Char == ch);
-            if (listed.Pattern != null)
+            var listed = clips.FirstOrDefault(x => x.Char == ch);
+            if (listed.Clip != null)
             {
-                Place(listed.Pattern);
+                Place(listed.Clip);
                 return true;
             }
             SequenceEventType? type = ch switch
@@ -1088,9 +1088,9 @@ namespace ReBuzz.Studio.Views.Sequence
             var add = new MenuItem { Header = "Add Track" };
             foreach (var i in MachineItems()) add.Items.Add(i);
 
-            var colour = new MenuItem { Header = "Color", IsEnabled = c.CursorPattern != null };
+            var colour = new MenuItem { Header = "Color", IsEnabled = c.CursorClip != null };
             var palette = SequenceSongState.Palette;
-            int current = c.CursorPattern != null ? ReBuzz.Core.Session.PatternColors.Get(c.CursorPattern) : -1;
+            int current = c.CursorClip != null ? ReBuzz.Core.Session.ClipColors.Get(c.CursorClip) : -1;
             for (int i = 0; i < palette.Count; i++)
             {
                 int index = i;
@@ -1107,7 +1107,7 @@ namespace ReBuzz.Studio.Views.Sequence
             for (int n = 1; n <= 8; n++)
             {
                 int count = n;
-                quick.Items.Add(Item(n.ToString(), () => c.Edits.CreatePatterns(c.CursorRow, c.CursorTime, count, SequenceCanvas.NewPatternLength, StudioKeyboardHeld(KeyModifiers.Control))));
+                quick.Items.Add(Item(n.ToString(), () => c.Edits.CreateClips(c.CursorRow, c.CursorTime, count, SequenceCanvas.NewClipLength, StudioKeyboardHeld(KeyModifiers.Control))));
             }
 
             bool hasTarget = Target() != null;
@@ -1128,11 +1128,11 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Delete (All Tracks)", DeleteAll, new KeyGesture(IsMac ? Key.Back : Key.Delete, (IsMac ? KeyModifiers.Meta : KeyModifiers.Control) | KeyModifiers.Shift), hasTrack),
                     Item("Duplicate", () => Duplicate(), Gesture(Key.D), hasTarget),
                     // Fork (docs/specs/stem-separation.md): an audio clip into stems on new tracks.
-                    Item("Separate Stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(c.CursorPattern), null, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
+                    Item("Separate Stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(c.CursorClip), null, c.CursorClip != null && core.SessionLayout?.IsAudioClip(c.CursorClip) == true),
                     // Fork (docs/specs/pitch.md section 9): an audio clip into MIDI on a new track.
-                    ReBuzz.Studio.Shell.ConvertFlow.Menu(() => c.CursorPattern, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
+                    ReBuzz.Studio.Shell.ConvertFlow.Menu(() => c.CursorClip, c.CursorClip != null && core.SessionLayout?.IsAudioClip(c.CursorClip) == true),
                     // Fork (docs/specs/audio-to-midi.md, SL1): an audio clip cut into slices played from a Neo Sampler on a new MIDI track.
-                    ReBuzz.Studio.Shell.SliceFlow.Menu(() => c.CursorPattern, c.CursorPattern != null && core.SessionLayout?.IsAudioClip(c.CursorPattern) == true),
+                    ReBuzz.Studio.Shell.SliceFlow.Menu(() => c.CursorClip, c.CursorClip != null && core.SessionLayout?.IsAudioClip(c.CursorClip) == true),
                     new Separator(),
                     colour,
                     new Separator(),

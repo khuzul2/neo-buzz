@@ -38,7 +38,7 @@ namespace ReBuzz.Core.Session
         /// </summary>
         sealed class Grave
         {
-            public IPattern Original;
+            public IClip Original;
             public string MachineName = "";      // as the layout knows it now (retired while the machine is gone)
             public string Retired = "";          // the pattern's name in the layout meanwhile
         }
@@ -222,17 +222,17 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ patterns
 
-        void OnPatternRemovedFromSong(IPattern pattern)
+        void OnClipRemovedFromSong(IClip clip)
         {
-            var machine = pattern?.Machine;
-            if (document == null || machine == null || SessionDocument.IsRetired(pattern.Name)) return;
+            var machine = clip?.Machine;
+            if (document == null || machine == null || SessionDocument.IsRetired(clip.Name)) return;
             string machineName = machineNames.TryGetValue(machine, out var known) ? known : machine.Name;
-            string name = pattern.Name;
+            string name = clip.Name;
             string retired = SessionDocument.Retire(name, ++retiredCounter);
             // Its slots and settings stay where they are under the retired name: empty to everyone
             // (a newcomer with its name inherits nothing), until an undo brings it back.
-            TransformNames(d => d.RenamePattern(machineName, name, retired));
-            graves.Add(new Grave { Original = pattern, MachineName = machineName, Retired = retired });
+            TransformNames(d => d.RenameClip(machineName, name, retired));
+            graves.Add(new Grave { Original = clip, MachineName = machineName, Retired = retired });
             if (graves.Count > MaxGraves)
             {
                 var gone = graves[0];
@@ -246,7 +246,7 @@ namespace ReBuzz.Core.Session
         /// another name, if its own was taken meanwhile): its slots and settings come back where
         /// they are, and the session's actions follow it.
         /// </summary>
-        internal void ResurrectAs(IPattern dead, IPattern alive)
+        internal void ResurrectAs(IClip dead, IClip alive)
         {
             if (dead == null || alive?.Machine == null) return;
             forward[dead] = alive;
@@ -255,7 +255,7 @@ namespace ReBuzz.Core.Session
             graves.Remove(grave);
             string machineName = alive.Machine.Name;
             if (grave.MachineName != machineName) return;      // its machine is gone (retired): nothing to give back
-            TransformNames(d => d.RenamePattern(grave.MachineName, grave.Retired, alive.Name));
+            TransformNames(d => d.RenameClip(grave.MachineName, grave.Retired, alive.Name));
             RaiseChanged();
         }
 
@@ -291,9 +291,9 @@ namespace ReBuzz.Core.Session
                     break;
                 // 0.6.3: only for the same machine (or the one an undo made in its place): a
                 // newcomer that merely got the old machine's name inherits nothing.
-                case IPattern pattern when previous is IPattern old && pattern.Machine != null && IsInSong(pattern.Machine)
-                                          && ReferenceEquals(Current(old.Machine), pattern.Machine):
-                    ResurrectAs(old, pattern);
+                case IClip clip when previous is IClip old && clip.Machine != null && IsInSong(clip.Machine)
+                                          && ReferenceEquals(Current(old.Machine), clip.Machine):
+                    ResurrectAs(old, clip);
                     break;
                 case ISequence sequence when previous is ISequence old && song.Sequences.Contains(sequence)
                                             && ReferenceEquals(Current(old.Machine), sequence.Machine):
@@ -349,19 +349,19 @@ namespace ReBuzz.Core.Session
     /// slots back.
     /// </summary>
     [BuzzGUI.Common.HistoryName("New clip")]
-    internal sealed class SessionCreatePatternAction : IAction
+    internal sealed class SessionCreateClipAction : IAction
     {
         readonly SessionLayout layout;
         readonly IMachine machine;
         readonly string name;
         int length;
-        readonly IPattern source;
+        readonly IClip source;
         readonly bool midiColumn;
         EngineColumns data;              // 0.6.3: engine columns (MIDI, takes); editors keep their own data
-        IPattern created;
+        IClip created;
 
         /// <param name="midiColumn">0.7: made with an engine MIDI column (a take).</param>
-        public SessionCreatePatternAction(SessionLayout layout, IMachine machine, string name, int length, IPattern source = null, bool midiColumn = false)
+        public SessionCreateClipAction(SessionLayout layout, IMachine machine, string name, int length, IClip source = null, bool midiColumn = false)
         {
             this.layout = layout;
             this.machine = machine;
@@ -372,22 +372,22 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>The pattern made (the latest, after a redo).</summary>
-        public IPattern Created => created == null ? null : layout.Current(created);
+        public IClip Created => created == null ? null : layout.Current(created);
 
         public void Do()
         {
             var m = layout.Current(machine);
             if (!layout.IsInSong(m)) return;         // its machine was deleted since
-            string free = m.Patterns.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
+            string free = m.Clips.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
             if (created == null)
             {
                 var src = source == null ? null : layout.Current(source);
-                bool clone = src != null && m.Patterns.Contains(src);
+                bool clone = src != null && m.Clips.Contains(src);
                 if (clone)
-                    m.ClonePattern(free, src);
+                    m.CloneClip(free, src);
                 else
-                    m.CreatePattern(free, length);
-                created = m.Patterns.FirstOrDefault(p => p.Name == free);
+                    m.CreateClip(free, length);
+                created = m.Clips.FirstOrDefault(p => p.Name == free);
                 // 0.6.3: a copy gets the engine columns too (the editor copies its own data).
                 if (clone && created != null && created.Columns.Count == 0)
                     EngineColumns.Copy(src, created, layout.SongMachines);
@@ -396,8 +396,8 @@ namespace ReBuzz.Core.Session
                 return;
             }
             var dead = layout.Current(created);
-            m.CreatePattern(free, length);
-            var again = m.Patterns.FirstOrDefault(p => p.Name == free);
+            m.CreateClip(free, length);
+            var again = m.Clips.FirstOrDefault(p => p.Name == free);
             if (again == null) return;
             data?.RestoreInto(again, layout.SongMachines);
             layout.ResurrectAs(dead, again);
@@ -407,10 +407,10 @@ namespace ReBuzz.Core.Session
         {
             var m = layout.Current(machine);
             var p = Created;
-            if (!layout.IsInSong(m) || p == null || !m.Patterns.Contains(p)) return;
+            if (!layout.IsInSong(m) || p == null || !m.Clips.Contains(p)) return;
             data = EngineColumns.Capture(p);
             length = p.Length;                       // a redo makes it as it is now
-            m.DeletePattern(p);
+            m.DeleteClip(p);
         }
     }
 
@@ -419,44 +419,44 @@ namespace ReBuzz.Core.Session
     /// was taken meanwhile) and puts its slots and settings back. Holds the object, not its name.
     /// </summary>
     [BuzzGUI.Common.HistoryName("Delete clip")]
-    internal sealed class SessionDeletePatternAction : IAction
+    internal sealed class SessionDeleteClipAction : IAction
     {
         readonly SessionLayout layout;
         readonly IMachine machine;
-        IPattern pattern;
+        IClip clip;
         string name;
         int length;
         EngineColumns data;
 
-        public SessionDeletePatternAction(SessionLayout layout, IPattern pattern)
+        public SessionDeleteClipAction(SessionLayout layout, IClip clip)
         {
             this.layout = layout;
-            this.pattern = pattern;
-            machine = pattern.Machine;
+            this.clip = clip;
+            machine = clip.Machine;
         }
 
         public void Do()
         {
             var m = layout.Current(machine);
-            var p = layout.Current(pattern);
-            if (!layout.IsInSong(m) || p == null || !m.Patterns.Contains(p)) return;
+            var p = layout.Current(clip);
+            if (!layout.IsInSong(m) || p == null || !m.Clips.Contains(p)) return;
             name = p.Name;
             length = p.Length;
             data = EngineColumns.Capture(p);
-            pattern = p;
-            m.DeletePattern(p);
+            clip = p;
+            m.DeleteClip(p);
         }
 
         public void Undo()
         {
             var m = layout.Current(machine);
             if (!layout.IsInSong(m) || data == null) return;   // its machine was deleted since: no ghost pattern
-            string free = m.Patterns.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
-            m.CreatePattern(free, length);
-            var again = m.Patterns.FirstOrDefault(p => p.Name == free);
+            string free = m.Clips.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
+            m.CreateClip(free, length);
+            var again = m.Clips.FirstOrDefault(p => p.Name == free);
             if (again == null) return;
             data.RestoreInto(again, layout.SongMachines);
-            layout.ResurrectAs(pattern, again);
+            layout.ResurrectAs(clip, again);
         }
     }
 }

@@ -26,22 +26,22 @@ namespace ReBuzz.Core.Notes
         /// and writer of a clip's notes (clips.md §8): <paramref name="route"/> ("midi" or "tracks", the agent's input argument) overrides
         /// what the machine's keyboard decides.
         /// </summary>
-        public static INoteSource For(ReBuzzCore buzz, IPattern pattern, string route = null)
+        public static INoteSource For(ReBuzzCore buzz, IClip clip, string route = null)
         {
-            if (buzz == null || pattern?.Machine is not MachineCore machine || machine.DLL?.Info == null) return null;
+            if (buzz == null || clip?.Machine is not MachineCore machine || machine.DLL?.Info == null) return null;
             if (machine.DLL.Info.Type == MachineType.Master) return null;
-            if (route == "midi") return new MidiColumnNotes(buzz, pattern);
-            if (route == "tracks") return TrackerColumnNotes.For(buzz, pattern);
+            if (route == "midi") return new MidiColumnNotes(buzz, clip);
+            if (route == "tracks") return TrackerColumnNotes.For(buzz, clip);
             // How the machine takes notes is what its keyboard decides (KeyboardRoute, the agent's rule): a managed machine with
             // MidiNote takes MIDI whatever an older manifest says; one that has a Note track parameter and no MIDI plays its tracks.
             // A machine that plays a sample per note (Neo Sampler's Tracker mode, TM1) keeps its notes in its tracks: the sample, offset and tune are
             // track parameters beside the note, and the MIDI column has no room for them.
-            if (machine.ManagedMachine is INoteSampleProvider { PlaysSamplePerNote: true } && TrackerColumnNotes.For(buzz, pattern) is { PerNoteSamples: true } samples) return samples;
+            if (machine.ManagedMachine is INoteSampleProvider { PlaysSamplePerNote: true } && TrackerColumnNotes.For(buzz, clip) is { PerNoteSamples: true } samples) return samples;
             var kb = KeyboardRoute.For(machine);
-            if (kb.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, pattern) is { } tracker) return tracker;
-            if (kb.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, pattern);
+            if (kb.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, clip) is { } tracker) return tracker;
+            if (kb.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, clip);
             var manifest = SongModel.Manifest(machine);
-            if (machine.DLL.Info.Type == MachineType.Generator || manifest?.Notes != null) return new MidiColumnNotes(buzz, pattern);
+            if (machine.DLL.Info.Type == MachineType.Generator || manifest?.Notes != null) return new MidiColumnNotes(buzz, clip);
             return null;
         }
 
@@ -53,25 +53,25 @@ namespace ReBuzz.Core.Notes
         /// faintly). <paramref name="anchor"/> is the song tick of the pattern's first tick. Only what overlaps the pattern's
         /// length is kept, cut to it. With <paramref name="otherTracks"/> the clips on the other machines' lanes count too.
         /// </summary>
-        public static List<ClipNote> Ghosts(ReBuzzCore buzz, IPattern pattern, int anchor, bool otherTracks, int limit = 4000)
+        public static List<ClipNote> Ghosts(ReBuzzCore buzz, IClip clip, int anchor, bool otherTracks, int limit = 4000)
         {
             var ghosts = new List<ClipNote>();
-            if (buzz?.Song == null || pattern == null) return ghosts;
-            int length = SessionLayout.ClipLengthOf(pattern);
-            var cache = new Dictionary<IPattern, List<ClipNote>>();
+            if (buzz?.Song == null || clip == null) return ghosts;
+            int length = SessionLayout.ClipLengthOf(clip);
+            var cache = new Dictionary<IClip, List<ClipNote>>();
             foreach (var seq in buzz.Song.Sequences)
             {
-                bool same = seq.Machine == pattern.Machine;
+                bool same = seq.Machine == clip.Machine;
                 if (!same && !otherTracks) continue;
                 foreach (var kv in seq.Events)
                 {
                     var e = kv.Value;
-                    if (e.Type != SequenceEventType.PlayPattern || e.Pattern == null || ReferenceEquals(e.Pattern, pattern)) continue;
+                    if (e.Type != SequenceEventType.PlayClip || e.Clip == null || ReferenceEquals(e.Clip, clip)) continue;
                     // The clip's span in this pattern's time.
                     long from = (long)(kv.Key - anchor) * ClipNotes.TimeBase, to = from + (long)Math.Max(1, e.Span) * ClipNotes.TimeBase;
                     if (to <= 0 || from >= length) continue;
-                    if (!cache.TryGetValue(e.Pattern, out var notes))
-                        cache[e.Pattern] = notes = For(buzz, e.Pattern)?.Notes() ?? new List<ClipNote>();
+                    if (!cache.TryGetValue(e.Clip, out var notes))
+                        cache[e.Clip] = notes = For(buzz, e.Clip)?.Notes() ?? new List<ClipNote>();
                     // Pattern tick t of the other pattern is at song tick key - PlayedOffset + t.
                     long shift = (long)(kv.Key - e.PlayedOffset - anchor) * ClipNotes.TimeBase;
                     foreach (var n in notes)

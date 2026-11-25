@@ -25,7 +25,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly TrackerRoll roll;
         readonly TextBlock title = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0), FontSize = StudioTokens.FontBody, TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
         readonly Button close, editor;
-        IPattern pattern;
+        IClip clip;
 
         public ArrangementRollPanel(ReBuzzCore core)
         {
@@ -41,7 +41,7 @@ namespace ReBuzz.Studio.Views.Sequence
             editor = StudioButtons.KeepFocus(new Button { Content = "Pattern tab", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
             ToolTip.SetTip(editor, "Edit this pattern in the Pattern tab (Return)");
             AutomationProperties.SetName(editor, "Edit in the Pattern tab");
-            editor.Click += (s, e) => { if (pattern != null) PatternEditorRequested?.Invoke(pattern); };
+            editor.Click += (s, e) => { if (clip != null) ClipEditorRequested?.Invoke(clip); };
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { editor, close } };
             var bar = new DockPanel { Height = 30, Background = StudioTokens.SurfacePanelBrush, LastChildFill = true };
@@ -60,7 +60,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public TrackerRoll Roll => roll;
 
         /// <summary>The pattern the roll shows, or null when closed.</summary>
-        public IPattern Pattern => IsVisible ? pattern : null;
+        public IClip Clip => IsVisible ? clip : null;
 
         public Button CloseButton => close;
 
@@ -69,13 +69,13 @@ namespace ReBuzz.Studio.Views.Sequence
         public string TitleText => title.Text;
 
         /// <summary>The pattern editor was asked for (the Pattern tab button).</summary>
-        public event Action<IPattern> PatternEditorRequested;
+        public event Action<IClip> ClipEditorRequested;
 
         /// <summary>Shows a pattern's notes.</summary>
-        public void Open(IPattern p)
+        public void Open(IClip p)
         {
             if (p == null) return;
-            pattern = p;
+            clip = p;
             IsVisible = true;
             title.Text = $"Piano roll · {p.Machine?.Name} · {p.Name}";
             roll.Show(p);
@@ -85,7 +85,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Hides the roll; it lets go of the song's pattern.</summary>
         public void Close()
         {
-            pattern = null;
+            clip = null;
             IsVisible = false;
             roll.Show(null);
         }

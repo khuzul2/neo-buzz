@@ -59,7 +59,7 @@ namespace ReBuzz.Core.SongHistory
             public int[] FinalAmps = Array.Empty<int>();
         }
         internal struct WireStep { public MachineConnectionCore Wire; public int Amp, Pan; }
-        internal sealed class ColumnSwap { public PatternColumnCore Column; public List<PatternEvent> New; public bool Ramps; public List<PatternEvent> Old; public PatternCore Pattern; }
+        internal sealed class ColumnSwap { public ClipColumnCore Column; public List<ClipEvent> New; public bool Ramps; public List<ClipEvent> Old; public ClipCore Clip; }
         internal sealed class SeqSwap { public SequenceCore Sequence; public Wintellect.PowerCollections.OrderedDictionary<int, SequenceEvent> New, Old; public SequenceCore.ArrangedEvents Arranged; }
 
         public string Name;
@@ -342,7 +342,7 @@ namespace ReBuzz.Core.SongHistory
             {
                 var m = instance[t.Name];
                 SetState(m, t);
-                BuildPatterns(song, m, t);
+                BuildClips(song, m, t);
             }
             var inPlaceThen = inPlace.ToDictionary(x => x.Then.Name, x => x);
 
@@ -397,8 +397,8 @@ namespace ReBuzz.Core.SongHistory
                     var seq = song.SequencesList[song.SequencesList.Count - 1];
                     foreach (var e in q.Events)
                     {
-                        var pattern = e.Pattern == null ? null : m.PatternsList.FirstOrDefault(p => p.Name == e.Pattern);
-                        seq.SetEvent(e.Time, MakeEvent(e, pattern));
+                        var clip = e.Clip == null ? null : m.ClipsList.FirstOrDefault(p => p.Name == e.Clip);
+                        seq.SetEvent(e.Time, MakeEvent(e, clip));
                     }
                 }
             }
@@ -412,7 +412,7 @@ namespace ReBuzz.Core.SongHistory
                     if (SameEvents(live[i], then[i], m)) continue;
                     var dict = new Wintellect.PowerCollections.OrderedDictionary<int, SequenceEvent>();
                     foreach (var e in then[i].Events)
-                        dict[e.Time] = MakeEvent(e, e.Pattern == null ? null : m.PatternsList.FirstOrDefault(p => p.Name == e.Pattern));
+                        dict[e.Time] = MakeEvent(e, e.Clip == null ? null : m.ClipsList.FirstOrDefault(p => p.Name == e.Clip));
                     steps.Sequences.Add(new LiveRestorePlan.SeqSwap { Sequence = live[i], New = dict, Arranged = SequenceCore.Arrange(dict) });
                 }
             }
@@ -443,19 +443,19 @@ namespace ReBuzz.Core.SongHistory
                     if (n.Muted != t.Muted)
                         steps.Wires.RemoveAll(w => outs.Contains(w.Wire));          // the mute's own fade takes these wires to their levels
                 }
-                foreach (var tp in t.Patterns)
+                foreach (var tp in t.Clips)
                 {
-                    var pattern = m.PatternsList.FirstOrDefault(p => p.Name == tp.Name);
-                    var np = n.Patterns.FirstOrDefault(p => p.Name == tp.Name);
-                    if (pattern == null || np == null) continue;
+                    var clip = m.ClipsList.FirstOrDefault(p => p.Name == tp.Name);
+                    var np = n.Clips.FirstOrDefault(p => p.Name == tp.Name);
+                    if (clip == null || np == null) continue;
                     foreach (var tc in tp.Columns)
                     {
                         var nc = np.Columns.FirstOrDefault(c => c.Key == tc.Key);
                         if (nc == null || SameEvents(nc.Events, tc.Events)) continue;
-                        var column = pattern.ColumnsList.OfType<PatternColumnCore>()
+                        var column = clip.ColumnsList.OfType<ClipColumnCore>()
                             .FirstOrDefault(c => (int)c.Type == tc.Type && c.Track == tc.Track && (c.Parameter == null ? -1 : (int)c.Parameter.Group.Type) == tc.Group && (c.Parameter == null ? -1 : c.Parameter.IndexInGroup) == tc.Index);
                         if (column == null) continue;
-                        steps.Columns.Add(new LiveRestorePlan.ColumnSwap { Column = column, Pattern = pattern, New = new List<PatternEvent>(tc.Events), Ramps = tc.Events.Any(e => e.Duration > 0) });
+                        steps.Columns.Add(new LiveRestorePlan.ColumnSwap { Column = column, Clip = clip, New = new List<ClipEvent>(tc.Events), Ramps = tc.Events.Any(e => e.Duration > 0) });
                     }
                 }
             }
@@ -472,7 +472,7 @@ namespace ReBuzz.Core.SongHistory
             return index >= 0 && index < list.Count ? list[index] as ParameterCore : null;
         }
 
-        static bool SameEvents(List<PatternEvent> a, List<PatternEvent> b)
+        static bool SameEvents(List<ClipEvent> a, List<ClipEvent> b)
         {
             if (a.Count != b.Count) return false;
             for (int i = 0; i < a.Count; i++)
@@ -489,14 +489,14 @@ namespace ReBuzz.Core.SongHistory
             {
                 var e = then.Events[i++];
                 var v = kv.Value;
-                if (kv.Key != e.Time || (int)v.Type != e.Type || v.Span != e.Span || v.Offset != e.Offset || v.End != e.End || v.PlacementId != e.PlacementId || v.Gain != e.Gain || (v.Pattern?.Name) != e.Pattern)
+                if (kv.Key != e.Time || (int)v.Type != e.Type || v.Span != e.Span || v.Offset != e.Offset || v.End != e.End || v.PlacementId != e.PlacementId || v.Gain != e.Gain || (v.Clip?.Name) != e.Clip)
                     return false;
             }
             return true;
         }
 
-        static SequenceEvent MakeEvent(LiveSong.SeqEvent e, PatternCore pattern) =>
-            new SequenceEvent((SequenceEventType)e.Type, pattern, e.Span) { Offset = e.Offset, End = e.End, Gain = e.Gain, PlacementId = e.PlacementId };
+        static SequenceEvent MakeEvent(LiveSong.SeqEvent e, ClipCore clip) =>
+            new SequenceEvent((SequenceEventType)e.Type, clip, e.Span) { Offset = e.Offset, End = e.End, Gain = e.Gain, PlacementId = e.PlacementId };
 
         static string TempName(SongCore song, string name)
         {
@@ -526,23 +526,23 @@ namespace ReBuzz.Core.SongHistory
             m.SetBypassedFromRestore(t.Bypassed);
         }
 
-        static void BuildPatterns(SongCore song, MachineCore m, LiveSong.Machine t)
+        static void BuildClips(SongCore song, MachineCore m, LiveSong.Machine t)
         {
-            foreach (var tp in t.Patterns)
+            foreach (var tp in t.Clips)
             {
-                var pattern = new PatternCore(m, tp.Name, tp.Length, m.Graph.Buzz is ReBuzzCore rb ? rb.dispatcher : null);
-                lock (ReBuzzCore.AudioLock) m.PatternsList.Add(pattern);
+                var clip = new ClipCore(m, tp.Name, tp.Length, m.Graph.Buzz is ReBuzzCore rb ? rb.dispatcher : null);
+                lock (ReBuzzCore.AudioLock) m.ClipsList.Add(clip);
                 foreach (var tc in tp.Columns)
                 {
-                    if (tc.Type == (int)PatternColumnType.MIDI)
-                        pattern.InsertColumn(pattern.ColumnsList.Count, (IMachine)null);
+                    if (tc.Type == (int)ClipColumnType.MIDI)
+                        clip.InsertColumn(clip.ColumnsList.Count, (IMachine)null);
                     else
                     {
                         var parameter = Parameter(m, tc.Group, tc.Index);
                         if (parameter == null) continue;
-                        pattern.InsertColumn(pattern.ColumnsList.Count, parameter, tc.Track, new Dictionary<string, string>(tc.Meta));
+                        clip.InsertColumn(clip.ColumnsList.Count, parameter, tc.Track, new Dictionary<string, string>(tc.Meta));
                     }
-                    if (pattern.ColumnsList[pattern.ColumnsList.Count - 1] is PatternColumnCore col && tc.Events.Count > 0)
+                    if (clip.ColumnsList[clip.ColumnsList.Count - 1] is ClipColumnCore col && tc.Events.Count > 0)
                         col.SetEvents(tc.Events, true);
                 }
             }
@@ -582,7 +582,7 @@ namespace ReBuzz.Core.SongHistory
                     }
                 f.Machine.ReportRestoredFlags();
             }
-            foreach (var c in plan.Columns) c.Pattern.NotifyPatternChanged();
+            foreach (var c in plan.Columns) c.Clip.NotifyClipChanged();
             foreach (var s in plan.Sequences) s.Sequence.InvokeEvents();
             // Glide values that didn't get to their end (the transport stopped meanwhile) are set now.
             foreach (var p in plan.Params)

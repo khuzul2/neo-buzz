@@ -50,7 +50,7 @@ namespace ReBuzz.Core.Session
         readonly Dictionary<string, WaveAudio> assetAudio = new Dictionary<string, WaveAudio>(StringComparer.Ordinal);
         readonly Dictionary<int, MigratedWave> migratedWaves = new Dictionary<int, MigratedWave>();
         AudioAssetStore Assets => buzz.AudioAssets;
-        readonly Dictionary<PatternCore, string> audioKeys = new Dictionary<PatternCore, string>();
+        readonly Dictionary<ClipCore, string> audioKeys = new Dictionary<ClipCore, string>();
         int waveVersion;
         bool audioRefreshPosted;
         readonly HashSet<int> changedWaves = new HashSet<int>();
@@ -65,9 +65,9 @@ namespace ReBuzz.Core.Session
         public bool CanMakeAudioTracks => ClipPlayerDll != null;
 
         /// <summary>A pattern's audio, or null when it is no audio clip.</summary>
-        public SessionDocument.AudioSettings AudioOf(IPattern pattern) => IsClipPlayer(pattern?.Machine) ? ClipOf(pattern).Audio : null;
+        public SessionDocument.AudioSettings AudioOf(IClip clip) => IsClipPlayer(clip?.Machine) ? ClipOf(clip).Audio : null;
 
-        public bool IsAudioClip(IPattern pattern) => AudioOf(pattern) != null;
+        public bool IsAudioClip(IClip clip) => AudioOf(clip) != null;
 
         void InitAudio()
         {
@@ -137,7 +137,7 @@ namespace ReBuzz.Core.Session
             try
             {
                 // The default pattern editor, as machines made from the menu get (none if it isn't there).
-                string editor = buzz.DefaultPatternEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultPatternEditor) ? buzz.DefaultPatternEditor : null;
+                string editor = buzz.DefaultClipEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultClipEditor) ? buzz.DefaultClipEditor : null;
                 song.CreateMachine(dll.Name, null, machineName, null, editor, null, -1, x, y);
                 machine = song.Machines.LastOrDefault(m => m.Name == machineName && IsClipPlayer(m));
                 if (machine == null) return null;
@@ -172,7 +172,7 @@ namespace ReBuzz.Core.Session
         /// On a track that isn't an audio track, a new audio track gets it (in the same scene). The clip is one undo step of the session;
         /// the asset stays in the song. Null and a reason when it can't.
         /// </summary>
-        public IPattern ImportAudio(int track, int scene, string path, out string error)
+        public IClip ImportAudio(int track, int scene, string path, out string error)
         {
             error = null;
             if (scene < 0 || string.IsNullOrEmpty(path))
@@ -235,7 +235,7 @@ namespace ReBuzz.Core.Session
         /// Makes an audio clip of an asset (or of a wave, which is migrated to an asset first) in a slot (undoable); the slot's clip, if
         /// any, makes way (its pattern stays).
         /// </summary>
-        internal IPattern AddAudioClip(int track, int scene, IMachine machine, string name, SessionDocument.AudioSettings audio)
+        internal IClip AddAudioClip(int track, int scene, IMachine machine, string name, SessionDocument.AudioSettings audio)
         {
             var source = ClipAudioOf(audio)?.Source;
             if (source == null || machine == null) return null;
@@ -243,7 +243,7 @@ namespace ReBuzz.Core.Session
             UndoStack.BeginActionGroup();
             try
             {
-                var create = new SessionCreatePatternAction(this, machine, string.IsNullOrWhiteSpace(name) ? "Audio" : name.Trim(), length);
+                var create = new SessionCreateClipAction(this, machine, string.IsNullOrWhiteSpace(name) ? "Audio" : name.Trim(), length);
                 UndoStack.Do(create);
                 var created = create.Created;
                 if (created == null) return null;
@@ -264,12 +264,12 @@ namespace ReBuzz.Core.Session
         /// A pattern for an arrangement audio clip (NA2): the audio's length, its settings, in no slot. Part of the caller's undo group; null when
         /// the audio is missing.
         /// </summary>
-        internal IPattern CreateAudioPattern(IMachine machine, string name, SessionDocument.AudioSettings audio, SessionDocument.ClipSettings settings = null)
+        internal IClip CreateAudioClip(IMachine machine, string name, SessionDocument.AudioSettings audio, SessionDocument.ClipSettings settings = null)
         {
             var source = ClipAudioOf(audio)?.Source;
             if (source == null || machine == null) return null;
             int length = AudioClipLength(source, audio);
-            var create = new SessionCreatePatternAction(this, machine, string.IsNullOrWhiteSpace(name) ? "Audio" : name.Trim(), length);
+            var create = new SessionCreateClipAction(this, machine, string.IsNullOrWhiteSpace(name) ? "Audio" : name.Trim(), length);
             UndoStack.Do(create);
             var created = create.Created;
             if (created == null) return null;
@@ -280,9 +280,9 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>What a view needs to draw an audio clip's waveform: the asset (and its peaks), the map from the clip's beats to the audio, and whether it plays backwards. Null when it isn't an audio clip or its audio is gone.</summary>
-        internal AudioClipView ViewOf(IPattern pattern)
+        internal AudioClipView ViewOf(IClip clip)
         {
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             var w = audio == null ? null : ClipAudioOf(audio);
             if (w == null) return null;
             var map = MapOf(w.Source, audio);
@@ -290,7 +290,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>How the pattern plays now (null when it isn't an audio clip): offline renders play it with a voice of their own.</summary>
-        internal AudioClipParams ParamsOfPattern(IPattern pattern) => (pattern as PatternCore)?.SessionAudio?.Params;
+        internal AudioClipParams ParamsOfClip(IClip clip) => (clip as ClipCore)?.SessionAudio?.Params;
 
         /// <summary>The song's sample rate (what an offline render makes).</summary>
         internal int RenderRate => SampleRate;
@@ -335,10 +335,10 @@ namespace ReBuzz.Core.Session
         /// Changes an audio clip's audio settings (undoable). Without warp markers its length
         /// follows its tempo (a clip of 4 beats at 120 BPM is 8 at 60).
         /// </summary>
-        public void SetAudio(IPattern pattern, SessionDocument.AudioSettings audio)
+        public void SetAudio(IClip clip, SessionDocument.AudioSettings audio)
         {
-            if (pattern?.Machine == null || audio == null || !IsClipPlayer(pattern.Machine)) return;
-            var settings = ClipOf(pattern);
+            if (clip?.Machine == null || audio == null || !IsClipPlayer(clip.Machine)) return;
+            var settings = ClipOf(clip);
             if (settings.Audio == null) return;
             audio = audio.Clone();
             if (string.IsNullOrEmpty(audio.Asset)) audio.Asset = settings.Audio.Asset;       // a caller that names only a wave or nothing keeps the clip's asset
@@ -352,11 +352,11 @@ namespace ReBuzz.Core.Session
                 if (source != null && timing)
                 {
                     int length = AudioClipLength(source, audio);
-                    if (length != pattern.Length)
-                        UndoStack.Do(new SessionPatternLengthAction(this, pattern, length));
+                    if (length != clip.Length)
+                        UndoStack.Do(new SessionClipLengthAction(this, clip, length));
                 }
                 settings.Audio = audio.Clone();
-                SetClipSettings(pattern, settings);
+                SetClipSettings(clip, settings);
             }
             finally
             {
@@ -365,15 +365,15 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Finds an audio clip's tempo again from its audio (undoable); the tempo found, or 0.</summary>
-        public double DetectTempo(IPattern pattern)
+        public double DetectTempo(IClip clip)
         {
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             var source = audio == null ? null : ClipAudioOf(audio)?.Source;
             if (source == null) return 0;
             var (bpm, _) = AudioAnalysis.Tempo(source, Session.BeatsPerBar);
             audio.Bpm = bpm;
             audio.Markers.Clear();
-            SetAudio(pattern, audio);
+            SetAudio(clip, audio);
             return audio.Bpm;
         }
 
@@ -382,10 +382,10 @@ namespace ReBuzz.Core.Session
         /// step. Returns why it can't be made, or null. The pattern's own loop and region are the Session slot's; an arrangement clip's are the clip's
         /// (<see cref="ClipEditor"/>). <paramref name="label"/> names the history step.
         /// </summary>
-        internal string EditAudio(IPattern pattern, AudioClipEdit edit, ClipEditor editor, string label = null)
+        internal string EditAudio(IClip clip, AudioClipEdit edit, ClipEditor editor, string label = null)
         {
-            if (pattern?.Machine == null || edit == null) return "No clip.";
-            if (!IsClipPlayer(pattern.Machine) || ClipOf(pattern)?.Audio == null) return $"\"{pattern.Name}\" of {pattern.Machine.Name} is not an audio clip (audio_import makes one).";
+            if (clip?.Machine == null || edit == null) return "No clip.";
+            if (!IsClipPlayer(clip.Machine) || ClipOf(clip)?.Audio == null) return $"\"{clip.Name}\" of {clip.Machine.Name} is not an audio clip (audio_import makes one).";
             string why = edit.Check();
             if (why != null) return why;
             // Auto-warp (AW1): the beats first, nothing is changed when there are none.
@@ -394,16 +394,16 @@ namespace ReBuzz.Core.Session
             GridWarpReport gridReport = null;
             if (edit.AutoWarp)
             {
-                warp = AnalyseAutoWarp(pattern, edit.FromSeconds ?? 0, out why);
+                warp = AnalyseAutoWarp(clip, edit.FromSeconds ?? 0, out why);
                 if (warp == null && !edit.ToGrid) return why;
                 if (warp == null && edit.ToSeconds != null) return why;
                 if (edit.ToGrid)
                 {
                     // AW5: the beats first (a clip with none found keeps its own line), then the transients, with the sensitivity this edit sets or the clip has.
-                    var src = AudioSourceOf(pattern);
+                    var src = AudioSourceOf(clip);
                     if (src == null) return "The clip's audio is not there.";
                     gridReport = new GridWarpReport();
-                    gridTransients = AudioAnalysis.GridOnsets(src, edit.AutoSensitivity ?? AudioOf(pattern).AutoSensitivity, out int gated, edit.AutoLeaveSustained ?? AudioOf(pattern).AutoLeaveSustained);
+                    gridTransients = AudioAnalysis.GridOnsets(src, edit.AutoSensitivity ?? AudioOf(clip).AutoSensitivity, out int gated, edit.AutoLeaveSustained ?? AudioOf(clip).AutoLeaveSustained);
                     gridReport.Gated = gated;
                 }
             }
@@ -412,15 +412,15 @@ namespace ReBuzz.Core.Session
             try
             {
                 if (label != null) UndoStack.Label(label);
-                var settings = ClipOf(pattern).Clone();
+                var settings = ClipOf(clip).Clone();
                 edit.ApplyTo(settings);
-                if (warp != null) ApplyAutoWarp(settings.Audio, AudioSourceOf(pattern), warp, edit.FromSeconds ?? 0, edit.ToSeconds);
-                if (gridTransients != null) ApplyToGrid(settings.Audio, AudioSourceOf(pattern), gridTransients, gridReport, edit.FromSeconds ?? 0, warp != null, edit.ToSeconds);
-                SetAudio(pattern, settings.Audio);
-                SetClipSettings(pattern, settings);
-                if (edit.DetectTempo) DetectTempo(pattern);
-                if (edit.Reverse is bool reverse && reverse != AudioOf(pattern).Reverse)
-                    result = (editor ?? new ClipEditor(buzz)).ReversePattern(pattern);
+                if (warp != null) ApplyAutoWarp(settings.Audio, AudioSourceOf(clip), warp, edit.FromSeconds ?? 0, edit.ToSeconds);
+                if (gridTransients != null) ApplyToGrid(settings.Audio, AudioSourceOf(clip), gridTransients, gridReport, edit.FromSeconds ?? 0, warp != null, edit.ToSeconds);
+                SetAudio(clip, settings.Audio);
+                SetClipSettings(clip, settings);
+                if (edit.DetectTempo) DetectTempo(clip);
+                if (edit.Reverse is bool reverse && reverse != AudioOf(clip).Reverse)
+                    result = (editor ?? new ClipEditor(buzz)).ReverseClip(clip);
             }
             finally
             {
@@ -430,9 +430,9 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>What the clip panel shows of an audio clip's audio: the asset's name, seconds, rate and channels; null if it is gone.</summary>
-        public (string Wave, double Seconds, int Rate, int Channels, double Beats)? AudioInfo(IPattern pattern)
+        public (string Wave, double Seconds, int Rate, int Channels, double Beats)? AudioInfo(IClip clip)
         {
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             if (audio == null) return null;
             var w = ClipAudioOf(audio);
             if (w == null) return null;
@@ -440,16 +440,16 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>An audio clip's audio as it plays (for the warp marker editor and tests), or null.</summary>
-        internal AudioSource AudioSourceOf(IPattern pattern)
+        internal AudioSource AudioSourceOf(IClip clip)
         {
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             return audio == null ? null : ClipAudioOf(audio)?.Source;
         }
 
         /// <summary>The attacks Auto-warp to grid looks at for a clip: its transients at the clip's sensitivity without those in quiet or sustained passages (cached while the options stay).</summary>
-        internal IReadOnlyList<double> GridOnsetsOf(IPattern pattern)
+        internal IReadOnlyList<double> GridOnsetsOf(IClip clip)
         {
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             var w = audio == null ? null : ClipAudioOf(audio);
             if (w == null) return Array.Empty<double>();
             if (w.GridOnsets == null || w.GridOnsetsKey != (audio.AutoSensitivity, audio.AutoLeaveSustained))
@@ -461,9 +461,9 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>An audio clip's transients (audio samples), found once per wave; empty if none.</summary>
-        internal IReadOnlyList<double> TransientsOf(IPattern pattern)
+        internal IReadOnlyList<double> TransientsOf(IClip clip)
         {
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             var w = audio == null ? null : ClipAudioOf(audio);
             if (w == null) return Array.Empty<double>();
             return w.Onsets ??= AudioAnalysis.Onsets(w.Source);
@@ -475,7 +475,7 @@ namespace ReBuzz.Core.Session
         sealed class AudioTake
         {
             public SequenceCore Track;
-            public PatternCore Take;
+            public ClipCore Take;
             public AudioCapture Capture;
             public SessionClipEngine.TakeCapture Capturing;
             /// <summary>The id the clip names until the take is done (the store aliases it to the finished asset).</summary>
@@ -552,7 +552,7 @@ namespace ReBuzz.Core.Session
         /// the record length, or until stopped (then whole bars). Its audio becomes an asset of the
         /// song when the take is done; it plays from its next pass. One undo step (the clip).
         /// </summary>
-        IPattern RecordAudioTake(int track, int scene, SequenceCore seq)
+        IClip RecordAudioTake(int track, int scene, SequenceCore seq)
         {
             var machine = seq.Machine;
             StopRecording(seq);
@@ -562,7 +562,7 @@ namespace ReBuzz.Core.Session
                 stopping.Capture.SetLength(Math.Min(stopping.Capture.Length, stopping.Capture.Written));
                 FinishAudioTake(stopping);
             }
-            string name = machine?.GetNewPatternName();
+            string name = machine?.GetNewClipName();
             if (name == null) return null;
             var doc = Ensure();
             int bar = BarTicks;
@@ -574,13 +574,13 @@ namespace ReBuzz.Core.Session
             // The clip names an id the store doesn't hold yet (silent) until the take's audio becomes an asset.
             string waveName = $"{machine.Name} {name}";
             string pendingId = "take-" + Guid.NewGuid().ToString("N");
-            PatternCore take;
+            ClipCore take;
             UndoStack.BeginActionGroup();
             try
             {
-                var create = new SessionCreatePatternAction(this, machine, name, ticks);
+                var create = new SessionCreateClipAction(this, machine, name, ticks);
                 UndoStack.Do(create);
-                take = create.Created as PatternCore;
+                take = create.Created as ClipCore;
                 if (take == null)
                     return null;
                 Edit(d =>
@@ -729,7 +729,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>Whether an audio take records (or waits to) on the track.</summary>
         /// <summary>NA4b: the capture of the audio take recording into this slot (its peaks draw the growing waveform), or null.</summary>
-        internal AudioCapture LiveCaptureOf(ISequence track, IPattern clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.Capture : null;
+        internal AudioCapture LiveCaptureOf(ISequence track, IClip clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.Capture : null;
 
         readonly Dictionary<string, int> takeNumbers = new Dictionary<string, int>();
 
@@ -742,11 +742,11 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Polish (PL1): the name of the take recording into this slot ("Voice take 1"), or null when it is not a take being recorded.</summary>
-        internal string TakeNameOf(ISequence track, IPattern clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.DisplayName : null;
+        internal string TakeNameOf(ISequence track, IClip clip) => track is SequenceCore seq && audioTakes.TryGetValue(seq, out var t) && ReferenceEquals(t.Take, clip) ? t.DisplayName : null;
 
         bool IsAudioRecording(ISequence track) => track is SequenceCore seq && audioTakes.ContainsKey(seq);
 
-        bool IsAudioTake(IPattern clip) => clip != null && audioTakes.Values.Any(t => ReferenceEquals(t.Take, clip));
+        bool IsAudioTake(IClip clip) => clip != null && audioTakes.Values.Any(t => ReferenceEquals(t.Take, clip));
 
         // ------------------------------------------------------------------ playback objects
 
@@ -866,7 +866,7 @@ namespace ReBuzz.Core.Session
         /// </summary>
         internal void RefreshAudio()
         {
-            var live = new HashSet<PatternCore>();
+            var live = new HashSet<ClipCore>();
             var doc = document;
             if (doc != null && doc.Clips.Count > 0)
             {
@@ -877,12 +877,12 @@ namespace ReBuzz.Core.Session
                 {
                     var audio = entry.Value.Audio;
                     if (audio == null || !machines.TryGetValue(entry.Key.Machine, out var machine)) continue;
-                    if (machine.Patterns.FirstOrDefault(p => p.Name == entry.Key.Pattern) is not PatternCore pattern) continue;
-                    live.Add(pattern);
+                    if (machine.Clips.FirstOrDefault(p => p.Name == entry.Key.Clip) is not ClipCore clip) continue;
+                    live.Add(clip);
                     var w = ClipAudioOf(audio);                 // migrates a wave to an asset, and a take's placeholder id to its asset's
                     string key = audio.ToXml().ToString(System.Xml.Linq.SaveOptions.DisableFormatting) + "|" + (w?.Version ?? 0);
-                    var playback = pattern.SessionAudio ??= new ClipPlayback();
-                    if (audioKeys.TryGetValue(pattern, out var old) && old == key) continue;
+                    var playback = clip.SessionAudio ??= new ClipPlayback();
+                    if (audioKeys.TryGetValue(clip, out var old) && old == key) continue;
                     try
                     {
                         playback.Params = w == null ? null : ParamsOf(audio, w);
@@ -891,8 +891,8 @@ namespace ReBuzz.Core.Session
                     {
                         playback.Params = null;               // never stops the layout; the clip is silent
                     }
-                    PinClip(pattern, w?.Asset, playback.Params, entry.Value);
-                    audioKeys[pattern] = key;
+                    PinClip(clip, w?.Asset, playback.Params, entry.Value);
+                    audioKeys[clip] = key;
                 }
             }
             foreach (var gone in audioKeys.Keys.Where(p => !live.Contains(p)).ToList())
@@ -903,18 +903,18 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        readonly Dictionary<PatternCore, AudioAsset> pinnedAssets = new Dictionary<PatternCore, AudioAsset>();
+        readonly Dictionary<ClipCore, AudioAsset> pinnedAssets = new Dictionary<ClipCore, AudioAsset>();
 
         /// <summary>
         /// A streamed asset keeps the audio a clip may start from in memory (neo-audio.md, NA1b): the start of the audio (the asset's own pin), the
         /// clip's start marker and loop start through its warp map, and each warp marker, each for the head's length, so a launch is instant.
         /// </summary>
-        void PinClip(PatternCore pattern, AudioAsset asset, AudioClipParams p, SessionDocument.ClipSettings settings)
+        void PinClip(ClipCore clip, AudioAsset asset, AudioClipParams p, SessionDocument.ClipSettings settings)
         {
-            if (pinnedAssets.TryGetValue(pattern, out var old) && !ReferenceEquals(old, asset))
+            if (pinnedAssets.TryGetValue(clip, out var old) && !ReferenceEquals(old, asset))
             {
-                old.PinClip(pattern, null, null);
-                pinnedAssets.Remove(pattern);
+                old.PinClip(clip, null, null);
+                pinnedAssets.Remove(clip);
             }
             if (asset == null || p == null || !StreamingPolicy.ShouldStream(asset.Frames, asset.Channels)) return;
             long head = Math.Max(1024, (long)(StreamingPolicy.HeadMilliseconds / 1000.0 * p.Source.SampleRate));
@@ -932,8 +932,8 @@ namespace ReBuzz.Core.Session
                 At(p.Map.SampleAt(settings.LoopStart / tpb));
             }
             foreach (var m in p.Map.Markers.Take(48)) At(m.Sample);
-            asset.PinClip(pattern, p.Source, ranges);
-            pinnedAssets[pattern] = asset;
+            asset.PinClip(clip, p.Source, ranges);
+            pinnedAssets[clip] = asset;
         }
     }
 
@@ -955,17 +955,17 @@ namespace ReBuzz.Core.Session
     /// holds the pattern itself, not its name: renames and undone deletions don't lose it.
     /// </summary>
     [HistoryName("Set clip length")]
-    internal sealed class SessionPatternLengthAction : IAction
+    internal sealed class SessionClipLengthAction : IAction
     {
         readonly SessionLayout layout;
-        readonly IPattern pattern;
+        readonly IClip clip;
         readonly int from, to;
 
-        public SessionPatternLengthAction(SessionLayout layout, IPattern pattern, int length)
+        public SessionClipLengthAction(SessionLayout layout, IClip clip, int length)
         {
             this.layout = layout;
-            this.pattern = pattern;
-            from = pattern.Length;
+            this.clip = clip;
+            from = clip.Length;
             to = length;
         }
 
@@ -975,8 +975,8 @@ namespace ReBuzz.Core.Session
 
         void Set(int length)
         {
-            var p = layout.Current(pattern);
-            if (p?.Machine == null || !layout.IsInSong(p.Machine) || !p.Machine.Patterns.Contains(p)) return;
+            var p = layout.Current(clip);
+            if (p?.Machine == null || !layout.IsInSong(p.Machine) || !p.Machine.Clips.Contains(p)) return;
             p.Length = length;
         }
     }

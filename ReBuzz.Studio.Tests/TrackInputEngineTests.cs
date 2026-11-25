@@ -228,7 +228,7 @@ namespace ReBuzz.Studio.Tests
             float Click(long f, int c) => c == 0 && f >= round && (f - round) % spacing == 0 ? 0.9f : 0f;
             long start;
             {
-                var cap = ((PatternCore)take).SessionAudio.Capture;
+                var cap = ((ClipCore)take).SessionAudio.Capture;
                 var f = typeof(ReBuzz.Core.Clips.AudioCapture).GetField("started", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 int r = 0;
                 while (!(bool)f.GetValue(cap) && r < 20000) { device.Run(rig, 1, Click); r++; }
@@ -256,7 +256,7 @@ namespace ReBuzz.Studio.Tests
         static int NoteOn(int note, int channel = 0) => 0x90 | channel | (note << 8) | (100 << 16);
         static int NoteOff(int note, int channel = 0) => 0x80 | channel | (note << 8);
 
-        static IPattern TakeOf(SessionRig rig, MachineCore machine, int scene)
+        static IClip TakeOf(SessionRig rig, MachineCore machine, int scene)
         {
             int track = rig.Layout.FirstTrackOf(machine);
             var take = rig.Layout.RecordTake(track, scene)!;
@@ -264,7 +264,7 @@ namespace ReBuzz.Studio.Tests
             return take;
         }
 
-        static int[] NotesIn(SessionRig rig, IPattern take) => rig.Layout.NotesOf(take).Select(n => n.Note).OrderBy(n => n).ToArray();
+        static int[] NotesIn(SessionRig rig, IClip take) => rig.Layout.NotesOf(take).Select(n => n.Note).OrderBy(n => n).ToArray();
 
         [AvaloniaTest]
         public void TwoDevicesPlayTwoArmedTracksAndTheSameSourcePlaysBoth()

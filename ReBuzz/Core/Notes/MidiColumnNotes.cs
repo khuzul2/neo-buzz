@@ -13,46 +13,46 @@ namespace ReBuzz.Core.Notes
     internal sealed class MidiColumnNotes : NoteSourceBase
     {
         readonly ReBuzzCore buzz;
-        readonly IPattern pattern;
+        readonly IClip clip;
 
-        public MidiColumnNotes(ReBuzzCore buzz, IPattern pattern)
+        public MidiColumnNotes(ReBuzzCore buzz, IClip clip)
         {
             this.buzz = buzz;
-            this.pattern = pattern;
+            this.clip = clip;
         }
 
-        public override IPattern Pattern => pattern;
+        public override IClip Clip => clip;
 
         public override List<ClipNote> Notes()
         {
             if (!IsLive) return new List<ClipNote>();
-            var column = SessionLayout.ColumnFor(pattern, ColumnKey.Midi, create: false);
+            var column = SessionLayout.ColumnFor(clip, ColumnKey.Midi, create: false);
             return column == null ? new List<ClipNote>() : ClipNotes.From(column.GetEvents(int.MinValue, int.MaxValue).Select(e => (e.Time, e.Value, e.Duration)));
         }
 
         public override string WhyNotEditable =>
             !IsLive ? "The pattern was deleted."
-            : buzz.SessionLayout?.IsRecordingClip(pattern) == true ? "Recording: edits wait until it stops."
+            : buzz.SessionLayout?.IsRecordingClip(clip) == true ? "Recording: edits wait until it stops."
             : null;
 
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
-            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, pattern,
+            buzz.SongCore.ActionStack.Do(new ColumnEventsAction(buzz, clip,
                 new[] { new ColumnEventsAction.Change(ColumnKey.Midi, removed.Select(ToEvent).ToArray(), added.Select(ToEvent).ToArray()) }));
             buzz.SetModifiedFlag();
             return null;
         }
 
-        public override void Preview(int note, int velocity, bool on) => SendMidiNote(buzz, pattern, note, velocity, on);
+        public override void Preview(int note, int velocity, bool on) => SendMidiNote(buzz, clip, note, velocity, on);
 
         protected override void DoUndo() => buzz.SongCore.ActionStack.Undo();
 
         protected override void DoRedo() => buzz.SongCore.ActionStack.Redo();
 
-        static PatternEvent ToEvent(ClipNote n)
+        static ClipEvent ToEvent(ClipNote n)
         {
             var (time, value, duration) = n.ToEvent();
-            return new PatternEvent(time, value, duration);
+            return new ClipEvent(time, value, duration);
         }
     }
 
@@ -64,7 +64,7 @@ namespace ReBuzz.Core.Notes
     /// </summary>
     internal sealed class ColumnEventsAction : IAction
     {
-        internal readonly record struct Change(ColumnKey Column, PatternEvent[] Removed, PatternEvent[] Added);
+        internal readonly record struct Change(ColumnKey Column, ClipEvent[] Removed, ClipEvent[] Added);
 
         readonly ReBuzzCore buzz;
         readonly string machine;
@@ -73,12 +73,12 @@ namespace ReBuzz.Core.Notes
         readonly bool automation;
 
         /// <param name="automation">An arrangement or clip envelope: new events go to the marked lane, not the tracker's.</param>
-        public ColumnEventsAction(ReBuzzCore buzz, IPattern pattern, IReadOnlyList<Change> changes, bool automation = false)
+        public ColumnEventsAction(ReBuzzCore buzz, IClip clip, IReadOnlyList<Change> changes, bool automation = false)
         {
             this.automation = automation;
             this.buzz = buzz;
-            machine = pattern.Machine.Name;
-            name = pattern.Name;
+            machine = clip.Machine.Name;
+            name = clip.Name;
             this.changes = changes.ToArray();
         }
 
@@ -92,9 +92,9 @@ namespace ReBuzz.Core.Notes
             for (int i = changes.Length - 1; i >= 0; i--) Apply(changes[i].Column, changes[i].Added, changes[i].Removed);
         }
 
-        void Apply(ColumnKey key, PatternEvent[] take, PatternEvent[] put)
+        void Apply(ColumnKey key, ClipEvent[] take, ClipEvent[] put)
         {
-            var p = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(x => x.Name == name);
+            var p = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine)?.Clips.FirstOrDefault(x => x.Name == name);
             if (p == null) return;
             StoreLanes.Change(p, key, take, put, automation);
         }

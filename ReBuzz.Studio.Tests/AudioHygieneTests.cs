@@ -59,7 +59,7 @@ namespace ReBuzz.Studio.Tests
 
     public class AudioHygieneTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
         internal const int Frames = 256;
 
         internal static ReBuzzCore Core => Studio.Host.Core;
@@ -429,11 +429,11 @@ namespace ReBuzz.Studio.Tests
             return fx;
         }
 
-        internal static void Arrange(MachineCore m, IPattern p)
+        internal static void Arrange(MachineCore m, IClip p)
         {
             var song = Core.SongCore;
             song.AddSequence(m, song.Sequences.Count);
-            song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+            song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, p));
             Core.Looping = true;
             song.LoopStart = 0;
             song.LoopEnd = p.Length;
@@ -476,17 +476,17 @@ namespace ReBuzz.Studio.Tests
         /// row of track 0's Note column, Uni detune interpolated over every row, and notes on the
         /// MIDI note lanes (as the Session View moves a clip's notes there).
         /// </summary>
-        static (MachineCore Machine, IPattern Pattern, MainWindow Window) MpePattern(string name)
+        static (MachineCore Machine, IClip Clip, MainWindow Window) MpeClip(string name)
         {
             var m = AddPoly(name);
-            m.CreatePattern("00", 16);
-            var pattern = m.Patterns.First(p => p.Name == "00");
+            m.CreateClip("00", 16);
+            var clip = m.Clips.First(p => p.Name == "00");
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Pump();
-            PatternView.Edit(pattern);
+            ClipView.Edit(clip);
             Pump();
-            dynamic view = PatternView.Page.EditorControl;
+            dynamic view = ClipView.Page.EditorControl;
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
 
@@ -505,24 +505,24 @@ namespace ReBuzz.Studio.Tests
             // (None ends on the last tick: the editor never sends a lane note's end there, and keeps
             // it queued for good, one more on every loop: upstream's, left as it is.)
             var lanes = Enumerable.Range(0, 7).Select(i => new ClipNote(i * 2 * TB, TB, 48 + i, 100)).ToArray();
-            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, pattern)!.Edit(null, lanes), Is.Null, "notes on the Notes lane");
+            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, clip)!.Edit(null, lanes), Is.Null, "notes on the Notes lane");
             Pump();
 
-            var columns = pattern.PatternEditorMachineEvents.ToList();
+            var columns = clip.ClipEditorMachineEvents.ToList();
             Assert.That(columns.Single(c => c.Parameter.Name == "Note").Events.Count(), Is.EqualTo(16), "a note on every row");
             Assert.That(columns.Single(c => c.Parameter.Name == "Uni detune").Events.Count(), Is.EqualTo(16), "automation on every row");
-            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, pattern)!.Notes().Count, Is.EqualTo(7), "notes on the Notes lane");
-            Arrange(m, pattern);
-            return (m, pattern, window);
+            Assert.That(ReBuzz.Core.Notes.SongNotes.For(Core, clip)!.Notes().Count, Is.EqualTo(7), "notes on the Notes lane");
+            Arrange(m, clip);
+            return (m, clip, window);
         }
 
         // One window and pattern for every work algorithm: a studio window closed in a test leaves
         // some of its views listening to the engine, slowing the tests after it a little each.
         [AvaloniaTest]
-        public void AModernPatternEditorPatternPlayingNotesAndAutomationAllocatesNothing()
+        public void AModernPatternEditorClipPlayingNotesAndAutomationAllocatesNothing()
         {
             NewSong();
-            var (m, pattern, window) = MpePattern("Hygiene MPE");
+            var (m, clip, window) = MpeClip("Hygiene MPE");
             var ensemble = InsertEnsemble(m, "Hygiene Ensemble");
             var eq = InsertGraphicEq(ensemble, "Hygiene EQ");
             var delay = InsertDelay(eq, "Hygiene Delay");
@@ -579,12 +579,12 @@ namespace ReBuzz.Studio.Tests
         {
             NewSong();
             var m = AddPoly("Hygiene Listened");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
             var cutoff = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "F1 cutoff");
-            var column = SessionLayout.ColumnFor(pattern, new ColumnKey(1, cutoff.IndexInGroup, 0), create: true);
-            column.SetEvents(Enumerable.Range(0, 16).Select(t => new PatternEvent(t * TB, cutoff.MinValue + (t * 37) % (cutoff.MaxValue - cutoff.MinValue), 0)).ToList(), true);
-            Arrange(m, pattern);
+            var column = SessionLayout.ColumnFor(clip, new ColumnKey(1, cutoff.IndexInGroup, 0), create: true);
+            column.SetEvents(Enumerable.Range(0, 16).Select(t => new ClipEvent(t * TB, cutoff.MinValue + (t * 37) % (cutoff.MaxValue - cutoff.MinValue), 0)).ToList(), true);
+            Arrange(m, clip);
 
             // The parameter window: a row per parameter, each listening to its parameter.
             Core.UiHost.OpenParameterWindow(m, null);
@@ -677,8 +677,8 @@ namespace ReBuzz.Studio.Tests
                 var firstMultiband = InsertMultiband(firstDelay, "Hygiene First Multiband");
                 var firstScope = InsertScope(firstMultiband, "Hygiene First Scope");
                 InsertFilter(firstScope, "Hygiene First Filter");
-                m.CreatePattern("00", 16);
-                var p = (PatternCore)m.Patterns.First();
+                m.CreateClip("00", 16);
+                var p = (ClipCore)m.Clips.First();
                 Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 60 + i % 5, 100)).ToArray());
                 Arrange(m, p);
                 Assert.That(AudioWarmUp.Wait(), Is.True, "the machine's assembly compiled");
@@ -756,11 +756,11 @@ namespace ReBuzz.Studio.Tests
             int length = 0;
             void Play(MachineCore m, params int[] keys)
             {
-                m.CreatePattern("00", 16);
-                var p = (PatternCore)m.Patterns.First();
+                m.CreateClip("00", 16);
+                var p = (ClipCore)m.Clips.First();
                 Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, keys[i % keys.Length], 100)).ToArray());
                 song.AddSequence(m, song.Sequences.Count);
-                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, p));
                 length = Math.Max(length, p.Length);
             }
             try
@@ -845,10 +845,10 @@ namespace ReBuzz.Studio.Tests
             Set("Z2 choke", 1);
             Set("Filter", 1);
             Set("Resonance", 400);
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, i % 2 == 0 ? 52 + i % 5 : 64 + i % 3, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, i % 2 == 0 ? 52 + i % 5 : 64 + i % 3, 100)).ToArray());
+            Arrange(m, clip);
             var tune = globals.First(p => p.Name == "Z1 tune");
             var busy = m.ManagedMachine.GetType().GetProperty("Busy")!;
             try
@@ -891,12 +891,12 @@ namespace ReBuzz.Studio.Tests
             var m = song.MachinesList.Last(x => x.Name == "Hygiene Drums");
             song.ConnectMachines(m, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             var globals = m.ParameterGroupsList[1].ParametersList;
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
             // Every voice's key (General MIDI from C2), at rising velocities: the closed hats choke the open one.
             int[] keys = { 36, 42, 38, 42, 36, 46, 39, 42, 37, 44, 43, 47, 50, 56, 49, 51 };
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, keys[i], 40 + i * 5)).ToArray());
-            Arrange(m, pattern);
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, keys[i], 40 + i * 5)).ToArray());
+            Arrange(m, clip);
             var tune = globals.First(p => p.Name == "Kick tune");
             var level = globals.First(p => p.Name == "Snare level");
             var bd = m.ParameterGroupsList[2].ParametersList.First(p => p.Name == "BD");
@@ -928,14 +928,14 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ Neo Filter
 
         [AvaloniaTest]
-        public void ANeoFilterSweepingAPatternAllocatesNothing()
+        public void ANeoFilterSweepingAClipAllocatesNothing()
         {
             NewSong();
             var m = AddPoly("Hygiene Filter Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+            Arrange(m, clip);
             var filter = InsertFilter(m, "Hygiene Filter");
             var globals = filter.ParameterGroupsList[1].ParametersList;
             var cutoff = globals.First(p => p.Name == "Cutoff");
@@ -984,10 +984,10 @@ namespace ReBuzz.Studio.Tests
             song.CreateMachine("Neo Plug", synth, "Hygiene Plug", null, null, null, 2, 0.3f, 0.3f);
             var m = song.MachinesList.Last(x => x.Name == "Hygiene Plug");
             song.ConnectMachines(m, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+            Arrange(m, clip);
             var master = song.MachinesList[0];
             song.CreateMachine("Neo Plug FX", gain, "Hygiene Plug FX", null, null, null, -1, 0.85f, 0.75f);
             var fx = song.MachinesList.Last(x => x.Name == "Hygiene Plug FX");
@@ -1043,10 +1043,10 @@ namespace ReBuzz.Studio.Tests
             // phase mode switched now and then: the engine's latency moves through its crossfade).
             NewSong();
             var m = AddPoly("Hygiene Shaper Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var transient = InsertAfter(m, "Neo Transient", "Hygiene Transient");
             var lowEnd = InsertAfter(transient, "Neo Low End", "Hygiene Low End");
             var tg = transient.ParameterGroupsList[1].ParametersList;
@@ -1095,10 +1095,10 @@ namespace ReBuzz.Studio.Tests
             // lookahead moved) and Neo Gate (detection and sidechain switched, a lookahead moved) over a pattern.
             NewSong();
             var m = AddPoly("Hygiene Dynamics Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var tape = InsertAfter(m, "Neo Tape", "Hygiene Tape");
             var deesser = InsertAfter(tape, "Neo De-esser", "Hygiene De-esser");
             var gate = InsertAfter(deesser, "Neo Gate", "Hygiene Gate");
@@ -1153,10 +1153,10 @@ namespace ReBuzz.Studio.Tests
             // mastering-tools.md §5.16: Neo Spectral (the mode switched, Depth, Lift, Smoothing and the region moved, Mix and Delta) over a pattern.
             NewSong();
             var m = AddPoly("Hygiene Spectral Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var spectral = InsertAfter(m, "Neo Spectral", "Hygiene Spectral");
             var sg = spectral.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             var mode = sg.First(p => p.Name == "Mode");
@@ -1201,10 +1201,10 @@ namespace ReBuzz.Studio.Tests
             // neo-tune.md: Neo Tune (the scale, Retune speed, Correction, Transpose, Formant shift, Add vibrato, Range and Mix moved) over a pattern.
             NewSong();
             var m = AddPoly("Hygiene Tune Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var tune = InsertAfter(m, "Neo Tune", "Hygiene Tune");
             var tg = tune.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             var scale = tg.First(p => p.Name == "Scale");
@@ -1252,10 +1252,10 @@ namespace ReBuzz.Studio.Tests
             // buffer), Neo Exciter (its curve switched now and then, mid/side, auto gain) and Neo Dither (shaping switched).
             NewSong();
             var m = AddPoly("Hygiene Finisher Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var imager = InsertAfter(m, "Neo Imager", "Hygiene Imager");
             var exciter = InsertAfter(imager, "Neo Exciter", "Hygiene Exciter");
             var dither = InsertAfter(exciter, "Neo Dither", "Hygiene Dither");
@@ -1310,10 +1310,10 @@ namespace ReBuzz.Studio.Tests
             // latency moves through the engine's crossfade).
             NewSong();
             var m = AddPoly("Hygiene Clip Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 40 + (i * 7) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 40 + (i * 7) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var clipper = InsertAfter(m, "Neo Clipper", "Hygiene Clipper");
             var limiter = InsertAfter(clipper, "Neo Limiter", "Hygiene Limiter");
             var cg = clipper.ParameterGroupsList[1].ParametersList;
@@ -1328,7 +1328,7 @@ namespace ReBuzz.Studio.Tests
             lg.First(p => p.Name == "Slow stage").SetValue(0, 500);
             lg.First(p => p.Name == "Transient unlink").SetValue(0, 500);
             lg.First(p => p.Name == "Unity listen").SetValue(0, 1);
-            var clip = lg.First(p => p.Name == "Soft clip");
+            var softClip = lg.First(p => p.Name == "Soft clip");
             try
             {
                 int n = 0;
@@ -1340,7 +1340,7 @@ namespace ReBuzz.Studio.Tests
                     {
                         drive.SetValue(1 << 16, 180 + (n % 40) * 3);
                         if (++n % 100 == 0) delta.SetValue(1 << 16, (n / 100) % 2);
-                        if (n % 150 == 0) clip.SetValue(1 << 16, (n / 150) % 4);
+                        if (n % 150 == 0) softClip.SetValue(1 << 16, (n / 150) % 4);
                     });
                     AssertNoAllocation(cost, $"a pattern through a Neo Clipper and a Neo Limiter with every stage (algorithm {algorithm})");
                     Assert.That(limiter.IsActive, Is.True, $"the limiter sounds (algorithm {algorithm})");
@@ -1361,10 +1361,10 @@ namespace ReBuzz.Studio.Tests
             // shapes, a dynamic band's frequency moved every buffer and Delta switched now and then.
             NewSong();
             var m = AddPoly("Hygiene EQ Poly");
-            m.CreatePattern("00", 16);
-            var pattern = (PatternCore)m.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 40 + (i * 5) % 24, 100)).ToArray());
-            Arrange(m, pattern);
+            m.CreateClip("00", 16);
+            var clip = (ClipCore)m.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 40 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, clip);
             var eq = InsertAfter(m, "Neo EQ", "Hygiene EQ v2");
             var g = eq.ParameterGroupsList[1].ParametersList;
             IParameter P(string name) => g.First(p => p.Name == name);

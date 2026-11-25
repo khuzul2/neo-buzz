@@ -41,7 +41,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                 }
                 else
                 {
-                    string peName = m.PatternEditorDLL != null ? m.PatternEditorDLL.Name : null;
+                    string peName = m.ClipEditorDLL != null ? m.ClipEditorDLL.Name : null;
                     deleteMachinesAction = new DeleteMachinesAction(buzz, new List<IMachine>() { m }, this.dispatcher, this.engineSettings);
                     createMachinesAction = new CreateMachineAction(buzz, MachineDll.Name, instInfo.InstrumentName, null, null, peName, null, m.TrackCount, m.Position.Item1, m.Position.Item2);
                 }
@@ -85,7 +85,7 @@ namespace ReBuzz.Core.Actions.GraphActions
             }
             else
             {
-                string peName = m.PatternEditorDLL != null ? m.PatternEditorDLL.Name : null;
+                string peName = m.ClipEditorDLL != null ? m.ClipEditorDLL.Name : null;
                 // Delete machine action saves patterns and editor data
                 deleteMachinesAction = new DeleteMachinesAction(buzz, new List<IMachine>() { m }, this.dispatcher, this.engineSettings);
                 createMachinesAction = new CreateMachineAction(buzz, machine, instrument, null, null, peName, null, m.TrackCount, m.Position.Item1, m.Position.Item2);
@@ -134,8 +134,8 @@ namespace ReBuzz.Core.Actions.GraphActions
                     {
                         // Adapter machine was crashed, so we need to recreate adapter and save & restore all relevant data
                         // Save editor data
-                        byte[] editorData = machine.PatternEditorData;
-                        string editorDLLName = machine.PatternEditorDLL != null ? machine.PatternEditorDLL.Name : null;
+                        byte[] editorData = machine.ClipEditorData;
+                        string editorDLLName = machine.ClipEditorDLL != null ? machine.ClipEditorDLL.Name : null;
                         string dllName = machine.DLL.Name;
                         string oldMachineName = machine.Name;
                         int tracks = machine.TrackCount;
@@ -143,8 +143,8 @@ namespace ReBuzz.Core.Actions.GraphActions
                         float y = machine.Position.Item2;
 
                         // Save pattern information, and the clips' lanes (the editor data holds no events: they are columns in the store)
-                        var patterns = machine.Patterns.ToArray();
-                        var lanes = patterns.ToDictionary(p => p.Name, p => EngineColumns.Capture(p));
+                        var clips = machine.Clips.ToArray();
+                        var lanes = clips.ToDictionary(p => p.Name, p => EngineColumns.Capture(p));
 
                         // Save sequences and events
                         List<Tuple<int, List<Tuple<int, SequenceEvent>>>> oldSeqs = new List<Tuple<int, List<Tuple<int, SequenceEvent>>>>();
@@ -178,10 +178,10 @@ namespace ReBuzz.Core.Actions.GraphActions
 
                         // Create patterns
                         var songMachines = buzz.SongCore.MachinesList.Cast<IMachine>().ToList();
-                        foreach (var p in patterns)
+                        foreach (var p in clips)
                         {
-                            newMachine.CreatePattern(p.Name, p.Length);
-                            var made = newMachine.Patterns.FirstOrDefault(q => q.Name == p.Name);
+                            newMachine.CreateClip(p.Name, p.Length);
+                            var made = newMachine.Clips.FirstOrDefault(q => q.Name == p.Name);
                             if (made != null && made.Columns.Count == 0) lanes[p.Name].RestoreInto(made, songMachines);
                         }
 
@@ -195,8 +195,8 @@ namespace ReBuzz.Core.Actions.GraphActions
                             {
                                 var seOld = e.Item2;
                                 var time = e.Item1;
-                                var pattern = newMachine.Patterns.FirstOrDefault(p => p.Name == e.Item2.Pattern.Name);
-                                SequenceEvent seNew = new SequenceEvent(seOld.Type, pattern, seOld.Span) { Offset = seOld.Offset, End = seOld.End, Gain = seOld.Gain, PlacementId = seOld.PlacementId };
+                                var clip = newMachine.Clips.FirstOrDefault(p => p.Name == e.Item2.Clip.Name);
+                                SequenceEvent seNew = new SequenceEvent(seOld.Type, clip, seOld.Span) { Offset = seOld.Offset, End = seOld.End, Gain = seOld.Gain, PlacementId = seOld.PlacementId };
                                 newSeq.SetEvent(time, seNew);
                             }
                         }
@@ -233,15 +233,15 @@ namespace ReBuzz.Core.Actions.GraphActions
                 var machine = buzz.Song.Machines.Last() as MachineCore;
                 newMachineName = machine.Name; // Save name for undo
 
-                if (machine.Patterns.Count == 0)
+                if (machine.Clips.Count == 0)
                 {
-                    machine.CreatePattern("00", 16);
+                    machine.CreateClip("00", 16);
                 }
 
                 if (buzz.Song.Sequences.Count == 0)
                 {
                     buzz.Song.AddSequence(machine, buzz.Song.Sequences.Count);
-                    buzz.Song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, machine.Patterns.First()));
+                    buzz.Song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, machine.Clips.First()));
                 }
                 else
                 {

@@ -228,16 +228,16 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => Dialogs.Responder = null);
             var lead = rig.Machine("Lead");
             lead.Name = "Léad 音樂 €";
-            var pattern = lead.Patterns.First();
-            pattern.Name = "Pattern ☃";
+            var clip = lead.Clips.First();
+            clip.Name = "Pattern ☃";
             var seq = core.SongCore.SequencesList.First(s => s.Machine == lead);
-            seq.SetEvent(100_000, new SequenceEvent(SequenceEventType.PlayPattern, (PatternCore)pattern));
+            seq.SetEvent(100_000, new SequenceEvent(SequenceEventType.PlayClip, (ClipCore)clip));
             string path = Work("utf8.nbl");
             core.SaveSongCopy(path);
             Reopen(core, path);
             var back = core.SongCore.MachinesList.First(m => m.Name.StartsWith("L"));
             Assert.That(back.Name, Is.EqualTo("Léad 音樂 €"), "a name with characters the old formats can't hold");
-            Assert.That(back.Patterns.Select(p => p.Name), Does.Contain("Pattern ☃"));
+            Assert.That(back.Clips.Select(p => p.Name), Does.Contain("Pattern ☃"));
             var events = core.SongCore.SequencesList.First(s => s.Machine == back).Events;
             Assert.That(events.ContainsKey(100_000), Is.True, "an event past 65,535 ticks");
         }

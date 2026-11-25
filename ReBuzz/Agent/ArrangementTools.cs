@@ -53,7 +53,7 @@ namespace ReBuzz.Agent
             var s = it.Spec;
             var o = new JsonObject
             {
-                ["pattern"] = it.Pattern.Name,
+                ["pattern"] = it.Clip.Name,
                 ["at"] = SongModel.Beats(core, it.Time),
                 ["ends"] = SongModel.Beats(core, it.End),
                 ["start_beats"] = SongModel.Beats(core, s.Start),
@@ -66,7 +66,7 @@ namespace ReBuzz.Agent
             };
             if (s.Id != 0) o["clip"] = s.Id;
             if (s.Gain != 1.0) o["gain"] = Math.Round(s.Gain, 4);
-            if (core.SessionLayout?.AudioOf(it.Pattern) is { } a)
+            if (core.SessionLayout?.AudioOf(it.Clip) is { } a)
             {
                 // neo-audio.md (NA2): an audio clip's own settings (its pattern is its own; copies share the audio asset only).
                 var audio = new JsonObject { ["warp"] = a.Warp, ["gain_db"] = Math.Round(a.GainDb, 3) };
@@ -84,7 +84,7 @@ namespace ReBuzz.Agent
 
         static string ClipList(ReBuzzCore core, List<ClipItem> items) =>
             items.Count == 0 ? "The lane has no clips." : "Clips there: " + string.Join(", ", items.Take(12).Select(i =>
-                $"\"{i.Pattern.Name}\" {NoteList.Fmt(SongModel.Beats(core, i.Time))}-{NoteList.Fmt(SongModel.Beats(core, i.End))}")) + (items.Count > 12 ? ", …" : "") + ".";
+                $"\"{i.Clip.Name}\" {NoteList.Fmt(SongModel.Beats(core, i.Time))}-{NoteList.Fmt(SongModel.Beats(core, i.End))}")) + (items.Count > 12 ? ", …" : "") + ".";
 
         static ClipItem FindClip(ReBuzzCore core, ClipEditor editor, ISequence seq, ToolContext c, string name)
         {
@@ -181,7 +181,7 @@ namespace ReBuzz.Agent
                         {
                             case "add":
                             {
-                                var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                                var p = SongModel.Clip(m, c.RequiredString("pattern"));
                                 int len = c.Number("length_beats") is double lb ? Math.Max(1, SongModel.Ticks(core, lb)) : 0;
                                 Check(editor.Place(seq, p, Pos("at"), len));
                                 done = $"placed \"{p.Name}\"";
@@ -209,7 +209,7 @@ namespace ReBuzz.Agent
                                 int to = c.Arguments["to"] != null ? Pos("to") : op == "copy" ? it.End : throw new ToolError("move needs to.");
                                 var mode = op == "move" ? ClipEditor.CopyMode.Move : c.Bool("link") == true ? ClipEditor.CopyMode.Linked : ClipEditor.CopyMode.Independent;
                                 Check(editor.Move(it, target, to, mode));
-                                done = op == "move" ? "moved" : mode == ClipEditor.CopyMode.Linked && !editor.IsAudio(it.Pattern) ? "copied (same pattern)" : "copied (a pattern of its own)";
+                                done = op == "move" ? "moved" : mode == ClipEditor.CopyMode.Linked && !editor.IsAudio(it.Clip) ? "copied (same pattern)" : "copied (a pattern of its own)";
                                 if (target != seq) { seq = target; m = (MachineCore)target.Machine; }
                                 break;
                             }
@@ -257,7 +257,7 @@ namespace ReBuzz.Agent
                             {
                                 var it = FindClip(core, editor, seq, c, name);
                                 Check(editor.MakeUnique(it));
-                                done = $"gave the clip a pattern of its own (a copy of \"{it.Pattern.Name}\")";
+                                done = $"gave the clip a pattern of its own (a copy of \"{it.Clip.Name}\")";
                                 break;
                             }
                             case "fade":
@@ -517,7 +517,7 @@ namespace ReBuzz.Agent
                         segs.Add(new JsonObject
                         {
                             ["source"] = s.Source switch { AutoSource.AutomationClip => "clip", AutoSource.ClipColumn => "pattern", _ => "tracker" },
-                            ["pattern"] = s.Pattern.Name,
+                            ["pattern"] = s.Clip.Name,
                             ["at"] = NoteList.Beats(s.Start, tpb), ["ends"] = NoteList.Beats(s.End, tpb),
                             ["points"] = pts,
                         });
@@ -561,10 +561,10 @@ namespace ReBuzz.Agent
                 {
                     int count = s.Points.Count(p => s.Plays(p.Time) && s.ToSong(p.Time) >= from && s.ToSong(p.Time) < to);
                     if (count == 0) continue;
-                    if (s.Start >= from && s.End <= to && !HoldsOthers(s.Pattern, auto.Parameter))
+                    if (s.Start >= from && s.End <= to && !HoldsOthers(s.Clip, auto.Parameter))
                     {
                         // A clip wholly inside the range goes (its pattern stays), unless it moves other parameters too.
-                        var item = editor.Read(s.Sequence).FirstOrDefault(i => i.Time * unit == s.Start && ReferenceEquals(i.Pattern, s.Pattern));
+                        var item = editor.Read(s.Sequence).FirstOrDefault(i => i.Time * unit == s.Start && ReferenceEquals(i.Clip, s.Clip));
                         if (item != null) { Check(editor.Delete(item)); removed += count; continue; }
                     }
                     Check(automation.Edit(s, key2, pts => pts.Where(p => !(s.ToSong(p.Time) >= from && s.ToSong(p.Time) < to)).ToList()));
@@ -607,32 +607,32 @@ namespace ReBuzz.Agent
 
             var existing = AutomationReader.Read(core, mach, key2).Segments
                 .FirstOrDefault(s => s.Source == AutoSource.AutomationClip && s.Editable && s.Start <= startTick * unit && s.End >= endTick * unit);
-            IPattern pattern;
+            IClip clip;
             AutoSegment seg;
             var problems = new JsonArray();
             if (existing != null)
             {
                 seg = existing;
-                pattern = existing.Pattern;
+                clip = existing.Clip;
             }
             else
             {
-                Check(automation.DrawClip(mach, key2, startTick, endTick - startTick, auto.Min, auto.Min, out pattern, withPoints: false));
-                seg = AutomationReader.Read(core, mach, key2).Segments.FirstOrDefault(s => ReferenceEquals(s.Pattern, pattern))
+                Check(automation.DrawClip(mach, key2, startTick, endTick - startTick, auto.Min, auto.Min, out clip, withPoints: false));
+                seg = AutomationReader.Read(core, mach, key2).Segments.FirstOrDefault(s => ReferenceEquals(s.Clip, clip))
                       ?? throw new ToolError("The automation clip was made but couldn't be read back.");
             }
             int last = seg.End - 1;
-            var newPoints = pts2.Select(p => new AutoPoint(seg.ToPattern(Math.Min(p.Tick * unit, last)), p.Raw, p.Ramp ?? linear)).ToList();
+            var newPoints = pts2.Select(p => new AutoPoint(seg.ToClip(Math.Min(p.Tick * unit, last)), p.Raw, p.Ramp ?? linear)).ToList();
             int firstT = newPoints[0].Time, lastT = newPoints[^1].Time;
             Check(automation.Edit(seg, key2, old => old.Where(p => p.Time < firstT || p.Time > lastT).Concat(newPoints).ToList()));
             if (unsafeWhy != null) problems.Add($"Unsafe (allow_unsafe): {param.Name} goes {unsafeWhy}.");
-            var after = AutomationReader.Read(core, mach, key2).Segments.FirstOrDefault(s => ReferenceEquals(s.Pattern, pattern) && s.Start == seg.Start);
-            if (SongModel.Placements(core, pattern).Count == 0) problems.Add("The clip isn't placed (unexpected).");
+            var after = AutomationReader.Read(core, mach, key2).Segments.FirstOrDefault(s => ReferenceEquals(s.Clip, clip) && s.Start == seg.Start);
+            if (SongModel.Placements(core, clip).Count == 0) problems.Add("The clip isn't placed (unexpected).");
             return new JsonObject
             {
                 ["clip"] = new JsonObject
                 {
-                    ["pattern"] = pattern.Name,
+                    ["pattern"] = clip.Name,
                     ["lane"] = LanesOf(core, mach).IndexOf(seg.Sequence),
                     ["at"] = SongModel.Beats(core, seg.Start / unit), ["ends"] = SongModel.Beats(core, seg.End / unit),
                     ["points"] = after?.Points.Count ?? newPoints.Count,
@@ -642,8 +642,8 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>Whether the pattern has automation of a parameter other than <paramref name="parameter"/>.</summary>
-        static bool HoldsOthers(IPattern pattern, IParameter parameter) =>
-            pattern.Columns.Any(col => col.Type == PatternColumnType.Parameter && col.Parameter != null && !ReferenceEquals(col.Parameter, parameter) && col.GetEvents(int.MinValue, int.MaxValue).Any());
+        static bool HoldsOthers(IClip clip, IParameter parameter) =>
+            clip.Columns.Any(col => col.Type == ClipColumnType.Parameter && col.Parameter != null && !ReferenceEquals(col.Parameter, parameter) && col.GetEvents(int.MinValue, int.MaxValue).Any());
 
         // ------------------------------------------------------------------ takes and comping
 
@@ -652,11 +652,11 @@ namespace ReBuzz.Agent
         static JsonNode TakeJson(ReBuzzCore core, ClipEditor editor, TakeInfo t) => new JsonObject
         {
             ["take"] = t.Number,
-            ["lane"] = LanesOf(core, t.Clip.Pattern.Machine).IndexOf(t.Lane),
-            ["pattern"] = t.Clip.Pattern.Name,
+            ["lane"] = LanesOf(core, t.Clip.Clip.Machine).IndexOf(t.Lane),
+            ["pattern"] = t.Clip.Clip.Name,
             ["from"] = Math.Round(SongModel.Beats(core, t.Clip.Time), 4),
             ["to"] = Math.Round(SongModel.Beats(core, t.Clip.End), 4),
-            ["kind"] = editor.IsAudio(t.Clip.Pattern) ? "audio" : "midi",
+            ["kind"] = editor.IsAudio(t.Clip.Clip) ? "audio" : "midi",
             ["used"] = t.Used,
         };
 
@@ -737,7 +737,7 @@ namespace ReBuzz.Agent
                             {
                                 int? from = c.Arguments["from"] == null ? null : SongModel.ParseTicks(core, c.Arguments["from"], "from");
                                 int? to = c.Arguments["to"] == null ? null : SongModel.ParseTicks(core, c.Arguments["to"], "to");
-                                Check(editor.FlattenComp(m, from, to, out IPattern flat));
+                                Check(editor.FlattenComp(m, from, to, out IClip flat));
                                 break;
                             }
                             case "delete_unused": deleted = editor.DeleteUnusedTakes(m); break;
@@ -751,7 +751,7 @@ namespace ReBuzz.Agent
                         if (editor.MainLaneOf(m) is { } main)
                             o2["main"] = new JsonArray(editor.Read(main).Select(i => (JsonNode)new JsonObject
                             {
-                                ["from"] = Math.Round(SongModel.Beats(core, i.Time), 4), ["to"] = Math.Round(SongModel.Beats(core, i.End), 4), ["pattern"] = i.Pattern.Name,
+                                ["from"] = Math.Round(SongModel.Beats(core, i.Time), 4), ["to"] = Math.Round(SongModel.Beats(core, i.End), 4), ["pattern"] = i.Clip.Name,
                             }).ToArray());
                         if (deleted != null) o2["deleted"] = deleted;
                         return o2;

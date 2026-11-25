@@ -10,7 +10,7 @@ using System.Text.Json.Nodes;
 namespace ReBuzz.Agent.Browser
 {
     /// <summary>What a dragged browser row is.</summary>
-    public enum BrowserKind { Machine, Plugin, Preset, Audio, Midi, Pattern }
+    public enum BrowserKind { Machine, Plugin, Preset, Audio, Midi, Clip }
 
     /// <summary>
     /// A dragged browser item. <see cref="Id"/> is, by kind: the gear's name (machine), the plug-in's gear name "Vendor/Name (VST3)"

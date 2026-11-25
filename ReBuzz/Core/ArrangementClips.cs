@@ -22,7 +22,7 @@ namespace ReBuzz.Core
     /// pattern, where it starts and how long it plays (ticks, cut at the next event), where its
     /// first event starts in the pattern, how many events it has, and its loop if it has one.
     /// </summary>
-    internal readonly record struct ArrangementClip(int Id, IPattern Pattern, int Time, int Length, int Offset, int Events, ClipLoop? Loop)
+    internal readonly record struct ArrangementClip(int Id, IClip Clip, int Time, int Length, int Offset, int Events, ClipLoop? Loop)
     {
         public int End => Time + Length;
     }
@@ -83,14 +83,14 @@ namespace ReBuzz.Core
             {
                 var e = kv.Value;
                 int time = kv.Key;
-                if (e.Type != SequenceEventType.PlayPattern || e.Pattern == null)
+                if (e.Type != SequenceEventType.PlayClip || e.Clip == null)
                 {
                     if (open != null) clips.Add(open.Value);
                     open = null;
                     continue;
                 }
                 int span = Math.Max(0, e.Span);
-                if (open is ArrangementClip c && e.PlacementId != 0 && c.Id == e.PlacementId && ReferenceEquals(c.Pattern, e.Pattern) && openEnd == time)
+                if (open is ArrangementClip c && e.PlacementId != 0 && c.Id == e.PlacementId && ReferenceEquals(c.Clip, e.Clip) && openEnd == time)
                 {
                     open = c with { Length = time + span - c.Time, Events = c.Events + 1 };
                     openEnd = time + span;
@@ -98,7 +98,7 @@ namespace ReBuzz.Core
                 }
                 if (open != null) clips.Add(open.Value);
                 ClipLoop? loop = e.PlacementId != 0 && loops.TryGetValue(e.PlacementId, out var l) ? l : null;
-                open = new ArrangementClip(e.PlacementId, e.Pattern, time, span, e.PlayedOffset, 1, loop);
+                open = new ArrangementClip(e.PlacementId, e.Clip, time, span, e.PlayedOffset, 1, loop);
                 openEnd = time + span;
             }
             if (open != null) clips.Add(open.Value);

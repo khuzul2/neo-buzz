@@ -55,7 +55,7 @@ namespace ReBuzz.Core
         /// cloned together; one undo step. The copies, in the order given. (The WPF app builds a template for this; the template code
         /// is WPF-only, so this does the same steps with the engine's own operations.)
         /// </summary>
-        public static List<IMachine> CloneWithPatterns(ReBuzzCore core, IReadOnlyList<IMachine> machines)
+        public static List<IMachine> CloneWithClips(ReBuzzCore core, IReadOnlyList<IMachine> machines)
         {
             var song = core.SongCore;
             var copies = new Dictionary<IMachine, IMachine>();
@@ -68,16 +68,16 @@ namespace ReBuzz.Core
                     var copy = song.Machines.FirstOrDefault(x => !before.Contains(x) && !(x is MachineCore mc && mc.Hidden));
                     if (copy == null) continue;
                     copies[m] = copy;
-                    foreach (var p in m.Patterns.ToList()) copy.ClonePattern(p.Name, p);
+                    foreach (var p in m.Clips.ToList()) copy.CloneClip(p.Name, p);
                     foreach (var seq in song.Sequences.Where(q => q.Machine == m).ToList())
                     {
                         song.AddSequence(copy, song.Sequences.Count);
                         var made = song.Sequences[song.Sequences.Count - 1];
                         foreach (var e in seq.Events.OrderBy(k => k.Key))
                         {
-                            var pattern = e.Value.Type == SequenceEventType.PlayPattern ? copy.Patterns.FirstOrDefault(q => q.Name == e.Value.Pattern?.Name) : null;
-                            if (e.Value.Type == SequenceEventType.PlayPattern && pattern == null) continue;
-                            made.SetEvent(e.Key, new SequenceEvent(e.Value.Type, pattern) { Span = e.Value.Span, Offset = e.Value.Offset, End = e.Value.End, Gain = e.Value.Gain });
+                            var clip = e.Value.Type == SequenceEventType.PlayClip ? copy.Clips.FirstOrDefault(q => q.Name == e.Value.Clip?.Name) : null;
+                            if (e.Value.Type == SequenceEventType.PlayClip && clip == null) continue;
+                            made.SetEvent(e.Key, new SequenceEvent(e.Value.Type, clip) { Span = e.Value.Span, Offset = e.Value.Offset, End = e.Value.End, Gain = e.Value.Gain });
                         }
                     }
                 }
@@ -183,25 +183,25 @@ namespace ReBuzz.Core
         // ---- hot-swap (docs/specs/browser.md, BR1)
 
         /// <summary>Makes sure the machine has patterns of these names and lengths (an undo step of its own, inside a group: the machine is made again by the replace's redo, then this runs).</summary>
-        sealed class EnsurePatterns : IAction
+        sealed class EnsureClips : IAction
         {
             readonly ReBuzzCore core;
             readonly string machine;
-            readonly List<(string Name, int Length)> patterns;
+            readonly List<(string Name, int Length)> clips;
 
-            public EnsurePatterns(ReBuzzCore core, string machine, List<(string Name, int Length)> patterns)
+            public EnsureClips(ReBuzzCore core, string machine, List<(string Name, int Length)> clips)
             {
                 this.core = core;
                 this.machine = machine;
-                this.patterns = patterns;
+                this.clips = clips;
             }
 
             public void Do()
             {
                 var m = core.SongCore.Machines.FirstOrDefault(x => x.Name == machine);
                 if (m == null) return;
-                foreach (var (name, length) in patterns)
-                    if (!m.Patterns.Any(p => p.Name == name)) m.CreatePattern(name, length);
+                foreach (var (name, length) in clips)
+                    if (!m.Clips.Any(p => p.Name == name)) m.CreateClip(name, length);
             }
 
             public void Undo() { /* the replace's undo removes the machine, and its patterns with it */ }
@@ -216,7 +216,7 @@ namespace ReBuzz.Core
         public static IMachine HotSwap(ReBuzzCore core, IMachine machine, string dll, string instrument)
         {
             string name = machine.Name;
-            var patterns = machine.Patterns.Select(p => (p.Name, p.Length)).ToList();
+            var clips = machine.Clips.Select(p => (p.Name, p.Length)).ToList();
             bool inPlace = machine.DLL.Name == dll && !string.IsNullOrEmpty(instrument);
             using (Group(core))
             {
@@ -224,7 +224,7 @@ namespace ReBuzz.Core
                 if (inPlace) return core.SongCore.Machines.FirstOrDefault(m => m.Name == name);
                 var made = core.SongCore.Machines.Last() as MachineCore;
                 if (made != null && made.Name != name) core.SongCore.RenameMachineUndoable(made, name);
-                core.SongCore.Do(new EnsurePatterns(core, name, patterns));
+                core.SongCore.Do(new EnsureClips(core, name, clips));
             }
             return core.SongCore.Machines.FirstOrDefault(m => m.Name == name);
         }

@@ -263,7 +263,7 @@ namespace ReBuzz.Studio.Shell.Commands
         }
 
         /// <summary>The Pattern editor's own keys (its help panel's, from the editor's view), or a pointer to them.</summary>
-        public static IEnumerable<ViewKey> PatternKeys(IEnumerable<string[]> editorRows, bool? onMac = null)
+        public static IEnumerable<ViewKey> ClipKeys(IEnumerable<string[]> editorRows, bool? onMac = null)
         {
             bool mac = onMac ?? KeyText.IsMac;
             const string P = "Pattern";

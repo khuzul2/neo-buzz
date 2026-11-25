@@ -76,22 +76,22 @@ namespace ReBuzz.Studio.Views.Sequence
     /// <summary>Sets a pattern's length (BuzzGUI.Common SetLengthAction).</summary>
     internal sealed class SetLengthAction : MachineAction
     {
-        readonly string patternName;
+        readonly string clipName;
         readonly int newLength;
         readonly int oldLength;
 
-        public SetLengthAction(IPattern pattern, int length) : base(pattern.Machine)
+        public SetLengthAction(IClip clip, int length) : base(clip.Machine)
         {
-            patternName = pattern.Name;
+            clipName = clip.Name;
             newLength = length;
-            oldLength = pattern.Length;
+            oldLength = clip.Length;
         }
 
-        IPattern Pattern => Machine.Patterns.FirstOrDefault(x => x.Name == patternName) ?? throw new ActionException(this);
+        IClip Clip => Machine.Clips.FirstOrDefault(x => x.Name == clipName) ?? throw new ActionException(this);
 
-        protected override void DoAction() => Pattern.Length = newLength;
+        protected override void DoAction() => Clip.Length = newLength;
 
-        protected override void UndoAction() => Pattern.Length = oldLength;
+        protected override void UndoAction() => Clip.Length = oldLength;
     }
 
     /// <summary>
@@ -312,27 +312,27 @@ namespace ReBuzz.Studio.Views.Sequence
             if (seq != null) Do(new SetEventAction(seq, time, e));
         }
 
-        public void PlacePattern(int row, int time, IPattern pattern) =>
-            SetEvent(row, time, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+        public void PlaceClip(int row, int time, IClip clip) =>
+            SetEvent(row, time, new SequenceEvent(SequenceEventType.PlayClip, clip));
 
         /// <summary>A new pattern of <paramref name="length"/> ticks, placed (a double click on an empty cell).</summary>
-        public IPattern NewPatternAt(int row, int time, int length)
+        public IClip NewClipAt(int row, int time, int length)
         {
             var seq = Track(row);
             if (seq == null) return null;
-            IPattern made = null;
+            IClip made = null;
             Group(() =>
             {
-                string name = seq.Machine.GetNewPatternName();
-                Do(new CreatePatternAction(seq.Machine, name, length));
-                made = seq.Machine.Patterns.FirstOrDefault(p => p.Name == name);
-                if (made != null) Do(new SetEventAction(seq, time, new SequenceEvent(SequenceEventType.PlayPattern, made)));
+                string name = seq.Machine.GetNewClipName();
+                Do(new CreateClipAction(seq.Machine, name, length));
+                made = seq.Machine.Clips.FirstOrDefault(p => p.Name == name);
+                if (made != null) Do(new SetEventAction(seq, time, new SequenceEvent(SequenceEventType.PlayClip, made)));
             });
             return made;
         }
 
         /// <summary>Quick Create Patterns: <paramref name="count"/> new patterns in a row from the cursor, over what was there (or inserted).</summary>
-        public void CreatePatterns(int row, int time, int count, int length, bool insert)
+        public void CreateClips(int row, int time, int count, int length, bool insert)
         {
             var seq = Track(row);
             if (seq == null || count <= 0) return;
@@ -343,10 +343,10 @@ namespace ReBuzz.Studio.Views.Sequence
                 Do(new InsertOrDeleteAction(seq, time, span, true));
                 for (int i = 0; i < count; i++)
                 {
-                    string name = seq.Machine.GetNewPatternName();
-                    Do(new CreatePatternAction(seq.Machine, name, length));
-                    var p = seq.Machine.Patterns.FirstOrDefault(x => x.Name == name);
-                    if (p != null) Do(new SetEventAction(seq, time + i * length, new SequenceEvent(SequenceEventType.PlayPattern, p)));
+                    string name = seq.Machine.GetNewClipName();
+                    Do(new CreateClipAction(seq.Machine, name, length));
+                    var p = seq.Machine.Clips.FirstOrDefault(x => x.Name == name);
+                    if (p != null) Do(new SetEventAction(seq, time + i * length, new SequenceEvent(SequenceEventType.PlayClip, p)));
                 }
             });
         }
@@ -366,25 +366,25 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>A right-edge resize: the pattern's new length (all its blocks change).</summary>
-        public void SetPatternLength(IPattern pattern, int length)
+        public void SetClipLength(IClip clip, int length)
         {
-            if (pattern == null || length <= 0 || length == pattern.Length) return;
-            Do(new SetLengthAction(pattern, length));
+            if (clip == null || length <= 0 || length == clip.Length) return;
+            Do(new SetLengthAction(clip, length));
         }
 
         /// <summary>A left-edge resize: the event starts at <paramref name="newTime"/> and its pattern ends where the block did.</summary>
         public void ResizeLeft(int row, int time, int newTime, int newLength)
         {
             var seq = Track(row);
-            if (seq == null || !seq.Events.TryGetValue(time, out var e) || e.Pattern == null) return;
-            if (newTime == time && newLength == e.Pattern.Length) return;
+            if (seq == null || !seq.Events.TryGetValue(time, out var e) || e.Clip == null) return;
+            if (newTime == time && newLength == e.Clip.Length) return;
             var copy = new SequenceEvent(e);
-            var pattern = e.Pattern;
+            var clip = e.Clip;
             Group(() =>
             {
                 Do(new ClearAction(seq, time, GeometrySpan(e)));
                 Do(new SetEventAction(seq, newTime, copy));
-                Do(new SetLengthAction(pattern, newLength));
+                Do(new SetLengthAction(clip, newLength));
             });
         }
 

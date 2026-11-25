@@ -20,7 +20,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class NoteMapTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         // (Another test's core may have installed its dispatcher: a change is raised where it is made, here.)
         Action<Action> marshal;

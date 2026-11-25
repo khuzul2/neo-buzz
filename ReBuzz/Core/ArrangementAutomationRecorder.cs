@@ -20,7 +20,7 @@ namespace ReBuzz.Core
         sealed class Pass
         {
             public int Last = AutomationSweep.None;     // pattern time of the last point written
-            public IPattern Pattern;
+            public IClip Clip;
         }
 
         readonly ReBuzzCore buzz;
@@ -101,8 +101,8 @@ namespace ReBuzz.Core
         int Now()
         {
             var info = ReBuzzCore.masterInfo;
-            int fraction = info != null && info.SamplesPerTick > 0 ? info.PosInTick * PatternEvent.TimeBase / info.SamplesPerTick : 0;
-            return buzz.Song.PlayPosition * PatternEvent.TimeBase + Math.Clamp(fraction, 0, PatternEvent.TimeBase - 1);
+            int fraction = info != null && info.SamplesPerTick > 0 ? info.PosInTick * ClipEvent.TimeBase / info.SamplesPerTick : 0;
+            return buzz.Song.PlayPosition * ClipEvent.TimeBase + Math.Clamp(fraction, 0, ClipEvent.TimeBase - 1);
         }
 
         void Write(IMachine machine, ColumnKey key, int value)
@@ -119,16 +119,16 @@ namespace ReBuzz.Core
             var seg = Under(machine, key, now);
             if (seg == null)
             {
-                int start = BarStart(now / PatternEvent.TimeBase);
+                int start = BarStart(now / ClipEvent.TimeBase);
                 int length = Math.Max(BarLength(start), buzz.Song.SongEnd - start);
                 editor.DrawClip(machine, key, start, length, value, value, out _, withPoints: false);
                 seg = Under(machine, key, now);
                 if (seg == null) return;
             }
             var id = (machine.Name, key);
-            if (!passes.TryGetValue(id, out var pass) || !ReferenceEquals(pass.Pattern, seg.Pattern))
-                passes[id] = pass = new Pass { Pattern = seg.Pattern };
-            int t = Math.Clamp(seg.ToPattern(now), 0, seg.Pattern.Length * PatternEvent.TimeBase - 1);
+            if (!passes.TryGetValue(id, out var pass) || !ReferenceEquals(pass.Clip, seg.Clip))
+                passes[id] = pass = new Pass { Clip = seg.Clip };
+            int t = Math.Clamp(seg.ToClip(now), 0, seg.Clip.Length * ClipEvent.TimeBase - 1);
             int last = pass.Last;
             editor.Edit(seg, key, points =>
             {

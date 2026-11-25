@@ -11,8 +11,8 @@ namespace ReBuzz.AgentTests
     {
         static readonly string Sep = Path.DirectorySeparatorChar.ToString();
 
-        static IEnumerable<string> Files(string root, params string[] patterns) =>
-            patterns.SelectMany(p => Directory.GetFiles(root, p, SearchOption.AllDirectories))
+        static IEnumerable<string> Files(string root, params string[] clips) =>
+            clips.SelectMany(p => Directory.GetFiles(root, p, SearchOption.AllDirectories))
                 .Where(f => !f.Contains(Sep + "obj" + Sep) && !f.Contains(Sep + "bin" + Sep) && !f.Contains(Sep + ".git" + Sep)
                             && !f.Contains(Sep + "3rdParty" + Sep) && !f.Contains(Sep + "ExternalMachines" + Sep));
 

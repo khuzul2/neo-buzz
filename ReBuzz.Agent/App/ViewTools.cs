@@ -53,18 +53,18 @@ namespace ReBuzz.Agent.App
                 Handler = async c =>
                 {
                     var v = View(app);
-                    string? view = c.String("view"), machine = c.String("machine"), pattern = c.String("pattern");
-                    if ((machine == null) != (pattern == null)) throw new ToolError("Give machine and pattern together.");
+                    string? view = c.String("view"), machine = c.String("machine"), clip = c.String("pattern");
+                    if ((machine == null) != (clip == null)) throw new ToolError("Give machine and pattern together.");
                     if (view != null && machine != null) throw new ToolError("Give view, or machine and pattern, not both.");
                     if (view != null) view = Views.FirstOrDefault(x => x.Equals(view, StringComparison.OrdinalIgnoreCase)) ?? (view.Equals("Sequence", StringComparison.OrdinalIgnoreCase) ? "Arrangement" : throw new ToolError($"view: {string.Join(", ", Views)}."));
                     if (machine != null) NotWhileRecording(v, "showing a pattern editor");
                     var s = await app.Engine("view_show", false, () =>
                     {
                         if (view != null) v.ShowView(view);
-                        else if (machine != null) v.ShowPattern(machine, pattern!, c.String("editor") == "piano_roll");
+                        else if (machine != null) v.ShowClip(machine, clip!, c.String("editor") == "piano_roll");
                         return v.State();
                     }, c.Cancellation);
-                    return ToolResult.Ok(machine != null ? $"Showing {machine}'s {pattern} in the {(c.String("editor") == "piano_roll" ? "piano roll" : "Tracker")}. " + Line(s) : (view != null ? $"Showing {view}. " : "") + Line(s), State(s));
+                    return ToolResult.Ok(machine != null ? $"Showing {machine}'s {clip} in the {(c.String("editor") == "piano_roll" ? "piano roll" : "Tracker")}. " + Line(s) : (view != null ? $"Showing {view}. " : "") + Line(s), State(s));
                 },
             });
 
@@ -109,15 +109,15 @@ namespace ReBuzz.Agent.App
                 {
                     var v = View(app);
                     bool clear = c.Bool("clear") == true;
-                    string? machine = c.String("machine"), pattern = c.String("pattern");
-                    if (clear == (machine != null || pattern != null || c.Int("scene") != null)) throw new ToolError("Give a machine (with a pattern or scene), or clear=true.");
-                    if (pattern != null && machine == null) throw new ToolError("pattern goes with machine.");
+                    string? machine = c.String("machine"), clip = c.String("pattern");
+                    if (clear == (machine != null || clip != null || c.Int("scene") != null)) throw new ToolError("Give a machine (with a pattern or scene), or clear=true.");
+                    if (clip != null && machine == null) throw new ToolError("pattern goes with machine.");
                     var s = await app.Engine("select", false, () =>
                     {
-                        v.Select(clear ? null : machine, clear ? null : pattern, c.Int("scene"));
+                        v.Select(clear ? null : machine, clear ? null : clip, c.Int("scene"));
                         return v.State();
                     }, c.Cancellation);
-                    return ToolResult.Ok(clear ? "Selection cleared. " + Line(s) : "Selected " + machine + (pattern != null ? $" / {pattern}" : "") + ". " + Line(s), State(s));
+                    return ToolResult.Ok(clear ? "Selection cleared. " + Line(s) : "Selected " + machine + (clip != null ? $" / {clip}" : "") + ". " + Line(s), State(s));
                 },
             });
 
@@ -181,7 +181,7 @@ namespace ReBuzz.Agent.App
 
         static string Line(ViewState s) =>
             $"{s.View} view; browser {(s.BrowserOpen ? "open" : "closed")}, inspector {(s.InspectorOpen ? "open (" + s.InspectorTab + ")" : "closed")}, detail {(s.DetailOpen ? (s.DetailMaximised ? "maximised " : "open ") + s.DetailPage : "closed")}" +
-            (s.Machine != null ? $"; selected {s.Machine}" + (s.Pattern != null ? $" / {s.Pattern}" : "") : "; nothing selected") + $"; window {s.WindowWidth:0}x{s.WindowHeight:0}{(s.Maximised ? " (maximised)" : "")}.";
+            (s.Machine != null ? $"; selected {s.Machine}" + (s.Clip != null ? $" / {s.Clip}" : "") : "; nothing selected") + $"; window {s.WindowWidth:0}x{s.WindowHeight:0}{(s.Maximised ? " (maximised)" : "")}.";
 
         static JsonObject StateSchema() => Object("Where the studio window is",
             Req("view", String("The view shown: Arrangement, Session, Machines (or Song notes)")),
@@ -196,7 +196,7 @@ namespace ReBuzz.Agent.App
         {
             var sel = new JsonObject();
             if (s.Machine != null) sel["machine"] = s.Machine;
-            if (s.Pattern != null) sel["pattern"] = s.Pattern;
+            if (s.Clip != null) sel["pattern"] = s.Clip;
             if (s.Scene != null) sel["scene"] = s.Scene;
             return new JsonObject
             {

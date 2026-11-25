@@ -235,7 +235,7 @@ namespace ReBuzz.Core
 
         readonly ReBuzzCore buzz;
         double zoom = 2;                                                 // the classic editor's
-        readonly List<(string Machine, string Pattern, int Colour)> colours = new List<(string, string, int)>();
+        readonly List<(string Machine, string Clip, int Colour)> colours = new List<(string, string, int)>();
 
         internal SongMeterStore(ReBuzzCore buzz)
         {
@@ -287,24 +287,24 @@ namespace ReBuzz.Core
             buzz.SongMeter.Write(bw);
             // The colours: the sequence editor's when one is up, else those the song had, of patterns still in it.
             var live = new List<(string, string, int)>();
-            var view = PatternColours.Current;
+            var view = ClipColours.Current;
             if (view != null)
             {
-                foreach (var p in view.Patterns)
-                    if (p?.Machine != null && save.Song.Machines.Contains(p.Machine) && p.Machine.Patterns.Contains(p) && view.TryGet(p, out int ci))
+                foreach (var p in view.Clips)
+                    if (p?.Machine != null && save.Song.Machines.Contains(p.Machine) && p.Machine.Clips.Contains(p) && view.TryGet(p, out int ci))
                         live.Add((p.Machine.Name, p.Name, ci));
             }
             else
             {
                 foreach (var c in colours)
-                    if (save.Song.Machines.FirstOrDefault(m => m.Name == c.Machine)?.Patterns.Any(p => p.Name == c.Pattern) == true)
+                    if (save.Song.Machines.FirstOrDefault(m => m.Name == c.Machine)?.Clips.Any(p => p.Name == c.Clip) == true)
                         live.Add(c);
             }
             bw.Write(live.Count);
-            foreach (var (machine, pattern, colour) in live)
+            foreach (var (machine, clip, colour) in live)
             {
                 bw.Write(machine);
-                bw.Write(pattern);
+                bw.Write(clip);
                 bw.Write(colour);
             }
             bw.Flush();

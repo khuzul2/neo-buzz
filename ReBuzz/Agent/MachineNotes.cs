@@ -47,7 +47,7 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>The pattern's notes as the agent reads them (pitches as heard): SongNotes reads every lane of the clip.</summary>
-        public static List<NoteEvent> Read(IPattern p, NoteInput input)
+        public static List<NoteEvent> Read(IClip p, NoteInput input)
         {
             var stored = Source(p, input)?.Notes().Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune)).ToList() ?? new List<NoteEvent>();
             if (input.Offset == 0) return stored;
@@ -55,14 +55,14 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>The note source the input names, from the clip's own machine (null for a pattern that is not in a song).</summary>
-        static INoteSource Source(IPattern p, NoteInput input) =>
+        static INoteSource Source(IClip p, NoteInput input) =>
             (p?.Machine as MachineCore)?.Graph?.Buzz is ReBuzzCore core ? SongNotes.For(core, p, input.Mode) : null;
 
         /// <summary>
         /// Replaces notes (as the agent reads them): <paramref name="removed"/> go, <paramref name="added"/> come,
         /// in one undo step with the call, through SongNotes. Track input rewrites the Note columns, raising the track count when a chord needs more voices.
         /// </summary>
-        public static void Replace(ReBuzzCore core, IPattern p, NoteInput input, IReadOnlyList<NoteEvent> removed, IReadOnlyList<NoteEvent> added, List<string> problems)
+        public static void Replace(ReBuzzCore core, IClip p, NoteInput input, IReadOnlyList<NoteEvent> removed, IReadOnlyList<NoteEvent> added, List<string> problems)
         {
             NoteEvent Sent(NoteEvent n) => input.Offset == 0 && n.Pitch <= input.Highest ? n : n with { Pitch = TrackNotes.Sent(n.Pitch, input.Offset, input.Highest, input.Machine) };
             var source = SongNotes.For(core, p, input.Mode) ?? throw new ToolError($"{p.Machine?.Name} takes no notes.");
@@ -76,7 +76,7 @@ namespace ReBuzz.Agent
         public static bool PerNoteSamples(MachineCore m) => m.ManagedMachine is Buzz.MachineInterface.INoteSampleProvider { PlaysSamplePerNote: true };
 
         /// <summary>Whether a pattern column holds a machine's track notes (not automation).</summary>
-        public static bool IsNoteColumn(IPatternColumn column)
+        public static bool IsNoteColumn(IClipColumn column)
         {
             var parameter = column.Parameter;
             if (parameter == null || parameter.Group.Type != ParameterGroupType.Track) return false;

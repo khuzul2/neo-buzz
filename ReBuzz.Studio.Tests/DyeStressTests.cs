@@ -39,7 +39,7 @@ namespace ReBuzz.Studio.Tests
         const string Gear = "Dye Stress";
         const int Globals = 704;
         const int Frames = 3 * 256;   // three tables of 256 frames of 2048 samples
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         static ReBuzzCore Core => Studio.Host.Core;
 
@@ -185,22 +185,22 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the pattern editor
 
         [AvaloniaTest]
-        public void ThePatternEditorShowsEveryColumnAndTypesIntoTheLast()
+        public void TheClipEditorShowsEveryColumnAndTypesIntoTheLast()
         {
             NewSong();
             var machine = Add("Stress PE");
-            machine.CreatePattern("00", 16);
-            var pattern = machine.Patterns.First(p => p.Name == "00");
+            machine.CreateClip("00", 16);
+            var clip = machine.Clips.First(p => p.Name == "00");
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             try
             {
                 window.Show();
                 Pump();
                 var sw = Stopwatch.StartNew();
-                PatternView.Edit(pattern);
+                ClipView.Edit(clip);
                 Pump();
                 double openMs = sw.Elapsed.TotalMilliseconds;
-                var view = PatternView.Page?.EditorControl;
+                var view = ClipView.Page?.EditorControl;
                 Assert.That(view, Is.Not.Null, "the Modern Pattern Editor's view is in the tab");
                 dynamic grid = ((dynamic)view!).TrackerGrid;
                 var body = (Control)grid.Body;
@@ -231,7 +231,7 @@ namespace ReBuzz.Studio.Tests
                 top.KeyPressQwerty(PhysicalKey.Digit3, RawInputModifiers.None);
                 top.KeyReleaseQwerty(PhysicalKey.Digit3, RawInputModifiers.None);
                 Pump();
-                var column = pattern.PatternEditorMachineEvents.FirstOrDefault(c => c.Parameter.Name == "Arp scale");
+                var column = clip.ClipEditorMachineEvents.FirstOrDefault(c => c.Parameter.Name == "Arp scale");
                 Assert.That(column, Is.Not.Null, "the last global parameter has a column");
                 Assert.That(column!.Events.Count(), Is.EqualTo(1), "a digit typed at its end is its automation");
                 double last = Draw();
@@ -252,13 +252,13 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ a pattern playing every parameter
 
         /// <summary>An engine automation column for every global parameter: one value from tick 0, another from tick 8.</summary>
-        static void AutomateEveryGlobal(MachineCore machine, IPattern pattern)
+        static void AutomateEveryGlobal(MachineCore machine, IClip clip)
         {
             var globals = GlobalsOf(machine);
             for (int i = 0; i < globals.Count; i++)
             {
-                var column = SessionLayout.ColumnFor(pattern, new ColumnKey(1, i, 0), create: true);
-                column.SetEvents(new[] { new PatternEvent(0, ValueFor(globals[i], i, 1), 0), new PatternEvent(8 * TB, ValueFor(globals[i], i, 2), 0) }, true);
+                var column = SessionLayout.ColumnFor(clip, new ColumnKey(1, i, 0), create: true);
+                column.SetEvents(new[] { new ClipEvent(0, ValueFor(globals[i], i, 1), 0), new ClipEvent(8 * TB, ValueFor(globals[i], i, 2), 0) }, true);
             }
         }
 
@@ -318,7 +318,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void APatternPlaysEveryParameter()
+        public void AClipPlaysEveryParameter()
         {
             NewSong();
             var machine = Add("Stress Play");
@@ -328,14 +328,14 @@ namespace ReBuzz.Studio.Tests
             {
                 var master = song.Machines.First(m => m.DLL.Info.Type == MachineType.Master);
                 song.ConnectMachines(machine, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
-                machine.CreatePattern("P", 16);
-                var pattern = machine.Patterns.First(p => p.Name == "P");
+                machine.CreateClip("P", 16);
+                var clip = machine.Clips.First(p => p.Name == "P");
                 var sw = Stopwatch.StartNew();
-                AutomateEveryGlobal(machine, pattern);
+                AutomateEveryGlobal(machine, clip);
                 double writeMs = sw.Elapsed.TotalMilliseconds;
                 song.AddSequence(machine, song.Sequences.Count);
                 seq = song.Sequences.Last();
-                seq.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+                seq.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, clip));
 
                 var globals = GlobalsOf(machine);
                 RenderUntil(4, fromStart: true);
@@ -346,17 +346,17 @@ namespace ReBuzz.Studio.Tests
                 // The cost: a song of 64 ticks with every parameter changing every tick, against the same
                 // pattern with no events (its columns still there); after a warm-up, each rendered four
                 // times in turn, the fastest kept (a shared runner is noisy).
-                var every = new PatternEvent[globals.Count][];
+                var every = new ClipEvent[globals.Count][];
                 for (int i = 0; i < globals.Count; i++)
-                    every[i] = Enumerable.Range(0, 16).Select(t => new PatternEvent(t * TB, ValueFor(globals[i], i, t), 0)).ToArray();
+                    every[i] = Enumerable.Range(0, 16).Select(t => new ClipEvent(t * TB, ValueFor(globals[i], i, t), 0)).ToArray();
                 double automated = double.MaxValue, plain = double.MaxValue;
                 RenderUntil(64, fromStart: true);   // warm up
                 for (int round = 0; round < 4; round++)
                 {
                     for (int i = 0; i < globals.Count; i++)
-                        SessionLayout.ColumnFor(pattern, new ColumnKey(1, i, 0), create: true).SetEvents(every[i], true);
+                        SessionLayout.ColumnFor(clip, new ColumnKey(1, i, 0), create: true).SetEvents(every[i], true);
                     automated = Math.Min(automated, RenderUntil(64, fromStart: true));
-                    foreach (var c in pattern.Columns.ToList()) c.SetEvents(c.GetEvents(0, int.MaxValue).ToArray(), false);
+                    foreach (var c in clip.Columns.ToList()) c.SetEvents(c.GetEvents(0, int.MaxValue).ToArray(), false);
                     plain = Math.Min(plain, RenderUntil(64, fromStart: true));
                 }
                 double tickMs = (automated - plain) * 1000 / 64;
@@ -417,8 +417,8 @@ namespace ReBuzz.Studio.Tests
             {
                 SetEveryGlobal(machine);
                 var (tables, routes) = SetLargeState(machine);
-                machine.CreatePattern("P", 16);
-                AutomateEveryGlobal(machine, machine.Patterns.First(p => p.Name == "P"));
+                machine.CreateClip("P", 16);
+                AutomateEveryGlobal(machine, machine.Clips.First(p => p.Name == "P"));
                 var globals = GlobalsOf(machine);
                 for (int i = 0; i < globals.Count; i++) globals[i].BindToMIDIController(0, i / 128, i % 128);
                 var expected = globals.Select(p => p.GetValue(0)).ToArray();
@@ -444,7 +444,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Raw(opened), Is.EqualTo(expected), "the machine has them too");
                 Assert.That(StateText(opened, "Tables"), Is.EqualTo(tables), "the tables, every byte");
                 Assert.That(StateText(opened, "Routes"), Is.EqualTo(routes), "the routes");
-                var p2 = opened.Patterns.First(p => p.Name == "P");
+                var p2 = opened.Clips.First(p => p.Name == "P");
                 for (int i = 0; i < back.Count; i += 37)
                 {
                     var c = SessionLayout.ColumnFor(p2, new ColumnKey(1, i, 0), create: false);

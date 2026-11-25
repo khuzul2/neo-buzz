@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Tests
             var a = rig.SessionClip;
             var b = rig.ArrangedClip;
             string before = State("A", a.Name) + State("B", b.Name);
-            Assert.That(Layout.AutoWarpClips(new IPattern[] { a, b }, true), Is.Null);
+            Assert.That(Layout.AutoWarpClips(new IClip[] { a, b }, true), Is.Null);
             Assert.That(Audio(a).Markers.Count, Is.GreaterThan(4));
             Assert.That(Audio(b).Markers.Count, Is.GreaterThan(4));
             Assert.That(Layout.LastGridReports.Count, Is.EqualTo(2));

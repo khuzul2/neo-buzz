@@ -52,7 +52,7 @@ namespace ReBuzz.Studio.Shell
         // ------------------------------------------------------------------ entry points
 
         /// <summary>An audio clip of the song.</summary>
-        public static async Task SeparateClip(IPattern clip)
+        public static async Task SeparateClip(IClip clip)
         {
             var layout = Core?.SessionLayout;
             if (layout == null || clip == null) return;

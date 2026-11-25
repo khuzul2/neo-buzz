@@ -162,7 +162,7 @@ namespace ReBuzz.MachineManagement
             if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
             {
                 machine.LoadedEditorData = data;        // fork (clips.md §7.1, CU3): what the song file gave the editor
-                managedMachineHost.SetPatternEditorData(data);
+                managedMachineHost.SetClipEditorData(data);
             }
             else
             {
@@ -205,7 +205,7 @@ namespace ReBuzz.MachineManagement
                 machine.ParameterGroupsList.Add(new ParameterGroup(machine, ParameterGroupType.Track));
             }
         }
-        internal IMachineDLL GetPatternEditorDLL(MachineCore machine)
+        internal IMachineDLL GetClipEditorDLL(MachineCore machine)
         {
             // ToDo: Check register for default machines.
             return buzz.MachineDLLs["Modern Pattern Editor"];
@@ -379,12 +379,12 @@ namespace ReBuzz.MachineManagement
             return machine;
         }
 
-        internal static int PatternEditorNumber = 1;
+        internal static int ClipEditorNumber = 1;
         internal string GetPEName()
         {
             string name = System.Text.Encoding.UTF8.GetString(new byte[1] { 1 }, 0, 1);
-            name += "pe" + PatternEditorNumber;
-            PatternEditorNumber++;
+            name += "pe" + ClipEditorNumber;
+            ClipEditorNumber++;
             return name;
         }
 
@@ -544,18 +544,18 @@ namespace ReBuzz.MachineManagement
         }
 
         /// <summary>The pattern editor machine's control (a WPF UserControl in the app), or null.</summary>
-        internal object GetPatternEditorControl(MachineCore machine)
+        internal object GetClipEditorControl(MachineCore machine)
         {
             object ret = null;
             if (machine != null && machine.DLL.IsManaged && managedMachines.ContainsKey(machine))
             {
                 var machineHost = ManagedMachines[machine];
-                ret = machineHost.PatternEditorControl;
+                ret = machineHost.ClipEditorControl;
             }
             return ret;
         }
 
-        internal void SetPatternEditorPattern(MachineCore machine, IPattern p)
+        internal void SetClipEditorClip(MachineCore machine, IClip p)
         {
             if (machine == null) return;                // fork (mac-engine.md M2): no editor machine
             if (machine.DLL.IsManaged && managedMachines.ContainsKey(machine) && p != null)
@@ -563,7 +563,7 @@ namespace ReBuzz.MachineManagement
                 try
                 {
                     var machineHost = ManagedMachines[machine];
-                    machineHost.SetEditorPattern = p;
+                    machineHost.SetEditorClip = p;
                 }
                 catch { }
             }
@@ -578,13 +578,13 @@ namespace ReBuzz.MachineManagement
             }
         }
 
-        internal void CreatePatternCopy(MachineCore machine, IPattern newp, IPattern p)
+        internal void CreateClipCopy(MachineCore machine, IClip newp, IClip p)
         {
             if (machine == null) return;                // fork (mac-engine.md M2): no editor machine
             if (machine.DLL.IsManaged && managedMachines.ContainsKey(machine))
             {
                 var machineHost = ManagedMachines[machine];
-                machineHost.CreatePatternCopy(newp, p);
+                machineHost.CreateClipCopy(newp, p);
             }
         }
 
@@ -602,7 +602,7 @@ namespace ReBuzz.MachineManagement
                     var machineHost = ManagedMachines[machine];
                     if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
                     {
-                        return machineHost.GetPatternEditorData();
+                        return machineHost.GetClipEditorData();
                     }
                     else
                     {
@@ -628,7 +628,7 @@ namespace ReBuzz.MachineManagement
                 if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.PATTERN_EDITOR))
                 {
                     machine.LoadedEditorData = value;      // fork (clips.md §7.1, CU3): the migration on open reads what the file gave
-                    machineHost.SetPatternEditorData(value);
+                    machineHost.SetClipEditorData(value);
                 }
                 else if (value != null)
                 {
@@ -830,36 +830,36 @@ namespace ReBuzz.MachineManagement
             }
         }
 
-        internal int[] GetPatternEditorMachineMIDIEvents(MachineCore machine, PatternCore pattern)
+        internal int[] GetClipEditorMachineMIDIEvents(MachineCore machine, ClipCore clip)
         {
             var editor = machine.EditorMachine;
             if (managedMachines.ContainsKey(editor))
             {
                 var machineHost = ManagedMachines[editor];
-                return machineHost.GetPatternEditorMachineMIDIEvents(pattern);
+                return machineHost.GetClipEditorMachineMIDIEvents(clip);
             }
             return new int[0];
         }
 
-        internal void SetPatternEditorMachineMIDIEvents(MachineCore machine, PatternCore pattern, int[] data)
+        internal void SetClipEditorMachineMIDIEvents(MachineCore machine, ClipCore clip, int[] data)
         {
             var editor = machine.EditorMachine;
             if (managedMachines.ContainsKey(editor))
             {
                 var machineHost = ManagedMachines[editor];
-                machineHost.SetPatternEditorMachineMIDIEvents(pattern, data);
+                machineHost.SetClipEditorMachineMIDIEvents(clip, data);
             }
         }
 
-        internal IEnumerable<IPatternEditorColumn> PatternEditorMachineEvents(MachineCore machine, PatternCore patternCore)
+        internal IEnumerable<IClipEditorColumn> ClipEditorMachineEvents(MachineCore machine, ClipCore clipCore)
         {
             var editor = machine.EditorMachine;
             if (managedMachines.ContainsKey(editor))
             {
                 var machineHost = ManagedMachines[editor];
-                return machineHost.GetPatternCloumnEvents(patternCore, 0, int.MaxValue);
+                return machineHost.GetClipCloumnEvents(clipCore, 0, int.MaxValue);
             }
-            return new List<IPatternEditorColumn>();
+            return new List<IClipEditorColumn>();
         }
 
         /// <summary>Fork (clips.md §6, CU3): tells the machine's pattern editor that the song's clips are in the store: it drops what it held and views the store. False when it has no such editor.</summary>
@@ -911,12 +911,12 @@ namespace ReBuzz.MachineManagement
         {
         }
 
-        internal int GetTicksPerBeat(MachineCore machine, IPattern pattern, int pp)
+        internal int GetTicksPerBeat(MachineCore machine, IClip clip, int pp)
         {
             if (machine.EditorMachine != null)
             {
                 var host = managedMachines[machine.EditorMachine];
-                return host.GetTicksPerBeat(machine, pattern, pp);
+                return host.GetTicksPerBeat(machine, clip, pp);
             }
             return 4; // Buzz ticks per beat
         }
@@ -930,12 +930,12 @@ namespace ReBuzz.MachineManagement
             }
         }
 
-        internal int GetEditorPatternPosition(MachineCore machine)
+        internal int GetEditorClipPosition(MachineCore machine)
         {
             if (machine.EditorMachine != null)
             {
                 var host = managedMachines[machine.EditorMachine];
-                return host.GetEditorPatternPosition();
+                return host.GetEditorClipPosition();
             }
             return 0;
         }

@@ -67,18 +67,18 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>The clip's markers as they play: its own, or the two ends of its straight map; null if it isn't an audio clip.</summary>
-        internal List<(double Sample, double Beat)> WarpMarkersOf(IPattern pattern)
+        internal List<(double Sample, double Beat)> WarpMarkersOf(IClip clip)
         {
-            var audio = AudioOf(pattern);
-            var source = audio == null ? null : AudioSourceOf(pattern);
+            var audio = AudioOf(clip);
+            var source = audio == null ? null : AudioSourceOf(clip);
             return source == null ? null : WarpMath.Effective(audio.Markers, source.Length, source.SampleRate, audio.Bpm);
         }
 
         /// <summary>The tempo of the audio in each segment between the clip's markers (the last marker has none), beats of the clip per second of audio.</summary>
-        internal List<double> SegmentTempos(IPattern pattern)
+        internal List<double> SegmentTempos(IClip clip)
         {
-            var m = WarpMarkersOf(pattern);
-            var source = AudioSourceOf(pattern);
+            var m = WarpMarkersOf(clip);
+            var source = AudioSourceOf(clip);
             return m == null ? new() : Enumerable.Range(0, m.Count - 1).Select(i => WarpMath.SegmentTempo(m, i, source.SampleRate)).ToList();
         }
 
@@ -86,18 +86,18 @@ namespace ReBuzz.Core.Session
         /// Edits an audio clip's warp markers (undoable, one step). Returns why it can't be made, or null; <paramref name="result"/> says what it made (which markers
         /// are the new ones, how many). Nothing changes when it can't, or when it would change nothing.
         /// </summary>
-        internal string WarpEdit(IPattern pattern, WarpRequest request, ClipEditor editor, out WarpResult result, string label = null)
+        internal string WarpEdit(IClip clip, WarpRequest request, ClipEditor editor, out WarpResult result, string label = null)
         {
             result = null;
-            if (pattern?.Machine == null || request == null) return "No clip.";
-            var audio = AudioOf(pattern);
-            if (audio == null) return $"\"{pattern.Name}\" of {pattern.Machine.Name} is not an audio clip (audio_import makes one).";
-            var source = AudioSourceOf(pattern);
+            if (clip?.Machine == null || request == null) return "No clip.";
+            var audio = AudioOf(clip);
+            if (audio == null) return $"\"{clip.Name}\" of {clip.Machine.Name} is not an audio clip (audio_import makes one).";
+            var source = AudioSourceOf(clip);
             if (source == null) return "The audio of this clip is missing.";
             if (audio.Warp == "Off" && request.Action != WarpRequest.QuantizeStrength && request.Action != WarpRequest.List)
                 return "Warp is off for this clip: turn a warp mode on (audio_clip_set warp) before editing warp markers.";
             double rate = source.SampleRate, length = source.Length;
-            var m = WarpMarkersOf(pattern);
+            var m = WarpMarkersOf(clip);
             int bpb = Math.Max(1, Session?.BeatsPerBar ?? 4);
             double baseBeat = WarpMath.BeatAt(m, length);
             bool reverse = audio.Reverse;
@@ -169,9 +169,9 @@ namespace ReBuzz.Core.Session
                     // Auto-warp (AW1) from here: the markers before stay, the beats after are found and followed. The same edit as audio_clip_set(auto_warp, from_seconds).
                     if (reverse) return "Warp from here isn't offered for a reversed clip: turn reverse off first.";
                     if (at == null) return "warp_follow needs a sample, or a beat.";
-                    string why = EditAudio(pattern, new AudioClipEdit { AutoWarp = true, FromSeconds = at.Value / rate }, editor, label ?? request.Label);
+                    string why = EditAudio(clip, new AudioClipEdit { AutoWarp = true, FromSeconds = at.Value / rate }, editor, label ?? request.Label);
                     if (why != null) return why;
-                    var now = WarpMarkersOf(pattern);
+                    var now = WarpMarkersOf(clip);
                     result = new WarpResult { Markers = now, Count = now.Count(x => x.Sample >= at.Value - 1) };
                     for (int i = 0; i < now.Count; i++) if (now[i].Sample >= at.Value - 1) result.Touched.Add(i);
                     return null;
@@ -182,8 +182,8 @@ namespace ReBuzz.Core.Session
                     if (double.IsNaN(a) || double.IsNaN(b))
                     {
                         // The clip's region (the slot's start and loop end; the whole clip when they are not set).
-                        var settings = ClipOf(pattern);
-                        int end = settings.LoopEnd > 0 && settings.LoopEnd < pattern.Length ? settings.LoopEnd : pattern.Length;
+                        var settings = ClipOf(clip);
+                        int end = settings.LoopEnd > 0 && settings.LoopEnd < clip.Length ? settings.LoopEnd : clip.Length;
                         double t0 = settings.Start / (double)Math.Max(1, buzz.TPB), t1 = end / (double)Math.Max(1, buzz.TPB);
                         a = WarpMath.SampleAt(m, reverse ? baseBeat - t1 : t0);
                         b = WarpMath.SampleAt(m, reverse ? baseBeat - t0 : t1);
@@ -195,7 +195,7 @@ namespace ReBuzz.Core.Session
                     break;
                 }
                 case WarpRequest.InsertAtTransients:
-                    result = WarpMath.InsertAtTransients(m, TransientsOf(pattern), from, to);
+                    result = WarpMath.InsertAtTransients(m, TransientsOf(clip), from, to);
                     break;
                 case WarpRequest.InsertEveryBar:
                     result = WarpMath.InsertEveryBar(m, bpb, from, to);
@@ -212,7 +212,7 @@ namespace ReBuzz.Core.Session
                 {
                     double percent = request.Strength ?? QuantizeStrength;
                     if (!double.IsFinite(percent) || percent < 0 || percent > 100) return "strength is a percent, 0 to 100.";
-                    result = WarpMath.Quantize(m, marks, from, to, TransientsOf(pattern), request.GridBeats ?? 0.25, percent / 100);
+                    result = WarpMath.Quantize(m, marks, from, to, TransientsOf(clip), request.GridBeats ?? 0.25, percent / 100);
                     break;
                 }
                 default:
@@ -221,7 +221,7 @@ namespace ReBuzz.Core.Session
             if (!result.Ok) return result.Error;
             if (WarpMath.Same(result.Markers, m) && (audio.Markers?.Count ?? 0) >= 2) { result = null; return "Nothing changed."; }
             var edit = new AudioClipEdit { Markers = result.Markers.ToList() };
-            return EditAudio(pattern, edit, editor, label ?? request.Label);
+            return EditAudio(clip, edit, editor, label ?? request.Label);
         }
 
         /// <summary>The audio from a sample on, as a source of its own (to find its tempo), or null when it is too short.</summary>

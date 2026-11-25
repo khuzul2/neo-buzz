@@ -56,7 +56,7 @@ namespace ReBuzz.Agent
                         string from = old.DLL.Name;
                         string name = old.Name;
                         var now = ReBuzz.Core.MachineEditing.HotSwap(core, old, dll.Name, string.IsNullOrEmpty(plugin) ? null : plugin) ?? throw new ToolError("The swap didn't leave a machine of that name; undo restores the song.");
-                        return new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["patterns"] = now.Patterns.Count };
+                        return new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["patterns"] = now.Clips.Count };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Swapped {r["machine"]} from {r["from"]} to {r["to"]}; {r["patterns"]} patterns.", r);
                 },

@@ -49,7 +49,7 @@ namespace ReBuzz.Agent
             return -1;
         }
 
-        static JsonObject ClipJson(ReBuzzCore core, SessionLayout layout, MachineCore m, IPattern p)
+        static JsonObject ClipJson(ReBuzzCore core, SessionLayout layout, MachineCore m, IClip p)
         {
             var settings = layout.ClipOf(p);
             var a = settings.Audio ?? throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
@@ -173,9 +173,9 @@ namespace ReBuzz.Agent
                         else
                         {
                             scene = 0;
-                            while (track >= 0 && layout.PatternAt(track, scene) != null) scene++;
+                            while (track >= 0 && layout.ClipAt(track, scene) != null) scene++;
                         }
-                        IPattern clip;
+                        IClip clip;
                         if (scene >= 0)
                         {
                             while (layout.SceneCount <= scene) layout.InsertScene(layout.SceneCount);
@@ -200,7 +200,7 @@ namespace ReBuzz.Agent
                         {
                             int t = SongModel.Ticks(core, beats);
                             var seq = core.SongCore.Sequences.First(s => s.Machine == m);
-                            AgentActions.Do(core, new SetEventAction(seq, t, new SequenceEvent(SequenceEventType.PlayPattern, clip)));
+                            AgentActions.Do(core, new SetEventAction(seq, t, new SequenceEvent(SequenceEventType.PlayClip, clip)));
                             int end = t + clip.Length;
                             if (core.SongCore.SongEnd < end) AgentActions.Do(core, new SetMarkerAction(core.SongCore, SongMarkers.SongEnd, end));
                             placed = SongModel.Beats(core, t);
@@ -238,7 +238,7 @@ namespace ReBuzz.Agent
                     var r = await host.Engine("audio_clip_get", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
                         return ClipJson(core, Layout(core), m, p);
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, " +
@@ -297,7 +297,7 @@ namespace ReBuzz.Agent
                     {
                         var layout = Layout(core);
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
                         if (layout.ClipOf(p)?.Audio == null) throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
                         var doc = layout.Ensure();
                         var before = doc.CloneLayout();
@@ -381,10 +381,10 @@ namespace ReBuzz.Agent
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    string machineName = c.String("machine"), patternName = c.String("pattern"), path = c.String("path");
-                    if ((patternName != null) == (path != null))
+                    string machineName = c.String("machine"), clipName = c.String("pattern"), path = c.String("path");
+                    if ((clipName != null) == (path != null))
                         throw new ToolError("Give a clip (machine and pattern) or a path to a file, one of the two.");
-                    if (patternName != null && machineName == null) throw new ToolError("A clip needs its machine as well as its pattern.");
+                    if (clipName != null && machineName == null) throw new ToolError("A clip needs its machine as well as its pattern.");
                     string qname = c.String("quality") ?? "Fast";
                     if (!Enum.TryParse<StemQuality>(qname, true, out var quality)) throw new ToolError("quality: Fast, Balanced or Best.");
                     string[] stems;
@@ -403,7 +403,7 @@ namespace ReBuzz.Agent
                         else
                         {
                             var m = SongModel.Machine(core, machineName);
-                            s = layout.StemSourceOfClip(SongModel.Pattern(m, patternName), out error);
+                            s = layout.StemSourceOfClip(SongModel.Clip(m, clipName), out error);
                         }
                         return s ?? throw new ToolError(error);
                     }, c.Cancellation);
@@ -432,8 +432,8 @@ namespace ReBuzz.Agent
                         {
                             var t = new JsonObject
                             {
-                                ["stem"] = o.Stem, ["machine"] = o.Machine.Name, ["pattern"] = o.Pattern.Name, ["asset"] = o.Asset.Id,
-                                ["length_beats"] = SongModel.Beats(core, o.Pattern.Length),
+                                ["stem"] = o.Stem, ["machine"] = o.Machine.Name, ["pattern"] = o.Clip.Name, ["asset"] = o.Asset.Id,
+                                ["length_beats"] = SongModel.Beats(core, o.Clip.Length),
                             };
                             if (o.Scene >= 0) t["slot"] = o.Scene + 1;
                             if (o.Ticks.Count > 0) t["at_beats"] = new JsonArray(o.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
@@ -492,7 +492,7 @@ namespace ReBuzz.Agent
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    string machineName = c.String("machine"), patternName = c.String("pattern");
+                    string machineName = c.String("machine"), clipName = c.String("pattern");
                     if (!Enum.TryParse<ConvertMode>(c.String("mode") ?? "", true, out var mode)) throw new ToolError("mode: melody, harmony or drums.");
                     var options = new ConvertOptions { Mode = mode };
                     string range = (c.String("range") ?? "any").ToLowerInvariant();
@@ -514,7 +514,7 @@ namespace ReBuzz.Agent
                     {
                         var layout = Layout(core);
                         var m = SongModel.Machine(core, machineName);
-                        var s = layout.ConvertSourceOfClip(SongModel.Pattern(m, patternName), out string error);
+                        var s = layout.ConvertSourceOfClip(SongModel.Clip(m, clipName), out string error);
                         if (s == null) throw new ToolError(error);
                         if (write && layout.ConvertBlocker(mode) is string blocker) throw new ToolError(blocker);
                         return s;
@@ -562,13 +562,13 @@ namespace ReBuzz.Agent
                         return outcome;
                     }, c.Cancellation);
                     output["machine"] = r.Machine.Name;
-                    output["pattern"] = r.Pattern.Name;
+                    output["pattern"] = r.Clip.Name;
                     output["instrument"] = r.Instrument;
                     output["pitch_bends"] = r.Bends;
                     output["notes"] = r.Notes;
                     if (r.Scene >= 0) output["slot"] = r.Scene + 1;
                     if (r.Ticks.Count > 0) output["at_beats"] = new JsonArray(r.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
-                    return ToolResult.Ok($"{result.Summary} {r.Instrument} plays {r.Notes} of them on the new track \"{r.Machine.Name}\" (clip \"{r.Pattern.Name}\").", output);
+                    return ToolResult.Ok($"{result.Summary} {r.Instrument} plays {r.Notes} of them on the new track \"{r.Machine.Name}\" (clip \"{r.Clip.Name}\").", output);
                 },
             });
             tools.Add(new ToolDef
@@ -600,22 +600,22 @@ namespace ReBuzz.Agent
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    string machineName = c.RequiredString("machine"), patternName = c.String("pattern");
+                    string machineName = c.RequiredString("machine"), clipName = c.String("pattern");
                     int? sceneArg = c.Int("slot");
-                    if ((patternName != null) == (sceneArg != null)) throw new ToolError("Give the clip as pattern or as slot (its Session scene, from 1), one of the two.");
+                    if ((clipName != null) == (sceneArg != null)) throw new ToolError("Give the clip as pattern or as slot (its Session scene, from 1), one of the two.");
                     if (!SliceMath.TryParse(c.String("by") ?? "transients", out var by)) throw new ToolError("by: transients, warp_markers, bar, 1/4, 1/8 or 1/16.");
                     bool write = c.Bool("apply") ?? true;
                     var source = await host.Engine("audio_slice_to_midi", false, _ =>
                     {
                         var layout = Layout(core);
                         var m = SongModel.Machine(core, machineName);
-                        IPattern clip;
-                        if (patternName != null) clip = SongModel.Pattern(m, patternName);
+                        IClip clip;
+                        if (clipName != null) clip = SongModel.Clip(m, clipName);
                         else
                         {
                             int track = TrackOf(layout, m);
                             if (track < 0) throw new ToolError($"{m.Name} has no session track.");
-                            clip = layout.PatternAt(track, sceneArg!.Value - 1) ?? throw new ToolError($"{m.Name} has no clip in scene {sceneArg}.");
+                            clip = layout.ClipAt(track, sceneArg!.Value - 1) ?? throw new ToolError($"{m.Name} has no clip in scene {sceneArg}.");
                         }
                         var s = layout.SliceSourceOfClip(clip, out string error);
                         if (s == null) throw new ToolError(error);
@@ -666,10 +666,10 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var output = Common(r.Slices);
                     output["machine"] = r.Machine.Name;
-                    output["pattern"] = r.Pattern.Name;
+                    output["pattern"] = r.Clip.Name;
                     if (r.Scene >= 0) output["slot"] = r.Scene + 1;
                     if (r.Ticks.Count > 0) output["at_beats"] = new JsonArray(r.Ticks.Select(x => (JsonNode)JsonValue.Create(SongModel.Beats(core, x))).ToArray());
-                    string summary = $"{Line(r.Slices.Count)} {r.Instrument} plays them on the new track \"{r.Machine.Name}\" (clip \"{r.Pattern.Name}\"; waves {r.Slices[0].Slot}–{r.Slices[^1].Slot}, keys {r.Slices[0].Key}–{r.Slices[^1].Key}).";
+                    string summary = $"{Line(r.Slices.Count)} {r.Instrument} plays them on the new track \"{r.Machine.Name}\" (clip \"{r.Clip.Name}\"; waves {r.Slices[0].Slot}–{r.Slices[^1].Slot}, keys {r.Slices[0].Key}–{r.Slices[^1].Key}).";
                     output["summary"] = summary;
                     return ToolResult.Ok(summary, output);
                 },

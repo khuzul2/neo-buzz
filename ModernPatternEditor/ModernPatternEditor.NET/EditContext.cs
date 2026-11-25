@@ -6,19 +6,19 @@ namespace WDE.ModernPatternEditor
 {
     public class EditContext : IEditContext
     {
-        PatternEditor editor;
+        ClipEditor editor;
         ManagedActionStack actionStack = new ManagedActionStack();
         public ManagedActionStack ManagedActionStack { get { return actionStack; } }
 
-        public EditContext(PatternEditor e)
+        public EditContext(ClipEditor e)
         {
             editor = e;
         }
 
         public IActionStack ActionStack { get { return actionStack; } }
-        public ICommand CutCommand { get { return editor.patternControl.CutCommand; } }
-        public ICommand CopyCommand { get { return editor.patternControl.CopyCommand; } }
-        public ICommand PasteCommand { get { return editor.patternControl.PasteCommand; } }
+        public ICommand CutCommand { get { return editor.clipControl.CutCommand; } }
+        public ICommand CopyCommand { get { return editor.clipControl.CopyCommand; } }
+        public ICommand PasteCommand { get { return editor.clipControl.PasteCommand; } }
 
     }
 }

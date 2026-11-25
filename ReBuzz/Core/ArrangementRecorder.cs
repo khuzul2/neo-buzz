@@ -315,8 +315,8 @@ namespace ReBuzz.Core
             }
         }
 
-        static PatternEvent[] Batch(IEnumerable<TakeEvent> events) =>
-            events.OrderBy(e => e.Time).Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray();
+        static ClipEvent[] Batch(IEnumerable<TakeEvent> events) =>
+            events.OrderBy(e => e.Time).Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray();
 
         /// <summary>One pass, or a single recording: a new pattern with the events, and the clip over it. Returns 1 if written.</summary>
         int WriteClip(TrackTake t, long endSong)
@@ -329,23 +329,23 @@ namespace ReBuzz.Core
             if (Overdub && OverdubInto(t, editor, events, origin)) return 1;
             int length = Math.Max(1, (int)((endSong - (long)origin * TakeTime.TimeBase + TakeTime.TimeBase - 1) / TakeTime.TimeBase));
             length = Math.Max(length, 1 + events.Max(e => e.Time + Math.Max(e.Duration, 1) - 1) / TakeTime.TimeBase);
-            var pattern = NewTake(t.Machine, length, events, layout);
-            if (pattern == null) return 0;
-            Status = editor.Place(t.Lane, pattern, origin, length);
+            var clip = NewTake(t.Machine, length, events, layout);
+            if (clip == null) return 0;
+            Status = editor.Place(t.Lane, clip, origin, length);
             return Status == null ? 1 : 0;
         }
 
-        IPattern NewTake(IMachine machine, int length, IReadOnlyList<TakeEvent> events, SessionLayout layout)
+        IClip NewTake(IMachine machine, int length, IReadOnlyList<TakeEvent> events, SessionLayout layout)
         {
-            string name = machine.GetNewPatternName();
+            string name = machine.GetNewClipName();
             if (name == null) return null;
             var stack = buzz.SongCore.ActionStack;
-            var create = new SessionCreatePatternAction(layout, machine, name, length, midiColumn: true);
+            var create = new SessionCreateClipAction(layout, machine, name, length, midiColumn: true);
             stack.Do(create);
-            var pattern = create.Created;
-            if (pattern == null) return null;
-            stack.Do(new ClipEventsAction(layout, pattern, ColumnKey.Midi, Batch(events), add: true, done: false));
-            return pattern;
+            var clip = create.Created;
+            if (clip == null) return null;
+            stack.Do(new ClipEventsAction(layout, clip, ColumnKey.Midi, Batch(events), add: true, done: false));
+            return clip;
         }
 
         /// <summary>Over a clip at the start, with overdub on: the notes go into that clip's pattern at pattern time. False when no clip is there.</summary>
@@ -353,21 +353,21 @@ namespace ReBuzz.Core
         {
             var item = editor.Read(t.Lane).FirstOrDefault(i => i.Time <= origin && origin < i.End);
             if (item == null) return false;
-            var pattern = item.Pattern;
+            var clip = item.Clip;
             var add = new List<TakeEvent>();
             foreach (var e in events)
             {
                 long song = (long)origin * TakeTime.TimeBase + e.Time;
                 int tick = (int)(song / TakeTime.TimeBase);
-                if (item.Spec.PatternPositionAt(tick) is not int inPattern) continue;
-                int time = inPattern * TakeTime.TimeBase + (int)(song % TakeTime.TimeBase);
-                int room = pattern.Length * TakeTime.TimeBase - time;
+                if (item.Spec.ClipPositionAt(tick) is not int inClip) continue;
+                int time = inClip * TakeTime.TimeBase + (int)(song % TakeTime.TimeBase);
+                int room = clip.Length * TakeTime.TimeBase - time;
                 add.Add(new TakeEvent(time, e.Value, e.Duration == 0 ? 0 : Math.Clamp(e.Duration, 1, Math.Max(1, room))));
             }
             if (add.Count == 0) return false;
-            buzz.SongCore.ActionStack.Do(new ClipEventsAction(buzz.SessionLayout, pattern, ColumnKey.Midi, Batch(add), add: true, done: false));
-            int uses = editor.Uses(pattern);
-            Status = uses > 1 ? $"{pattern.Name} is used in {uses} places: the notes went into all of them (Make Unique first to keep the others)." : null;
+            buzz.SongCore.ActionStack.Do(new ClipEventsAction(buzz.SessionLayout, clip, ColumnKey.Midi, Batch(add), add: true, done: false));
+            int uses = editor.Uses(clip);
+            Status = uses > 1 ? $"{clip.Name} is used in {uses} places: the notes went into all of them (Make Unique first to keep the others)." : null;
             return true;
         }
 
@@ -382,11 +382,11 @@ namespace ReBuzz.Core
             foreach (var (pass, events) in t.Passes)
             {
                 if (events.Count == 0) continue;
-                var pattern = NewTake(t.Machine, length, events, layout);
-                if (pattern == null) continue;
+                var clip = NewTake(t.Machine, length, events, layout);
+                if (clip == null) continue;
                 var lane = FreeTakeLane(t.Machine, editor, origin, origin + length);
                 if (lane == null) continue;
-                Status = editor.Place(lane, pattern, origin, length);
+                Status = editor.Place(lane, clip, origin, length);
                 if (Status == null) count++;
             }
             return count;

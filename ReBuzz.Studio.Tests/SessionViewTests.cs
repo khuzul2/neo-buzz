@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Tests
 
     public class SessionViewTests
     {
-        static ClipState StateOf(SessionRig rig, int track, IPattern clip) => rig.Session.GetState(rig.Layout.SequenceOf(track), clip);
+        static ClipState StateOf(SessionRig rig, int track, IClip clip) => rig.Session.GetState(rig.Layout.SequenceOf(track), clip);
 
         // ------------------------------------------------------------------ the tab
 
@@ -31,8 +31,8 @@ namespace ReBuzz.Studio.Tests
         public void TheSessionTabIsTheSessionView()
         {
             using var rig = new SessionRig("Drums", "Bass");
-            rig.Pattern(rig.Machine("Drums"), "Beat", Bar);
-            rig.Pattern(rig.Machine("Bass"), "Line", 2 * Bar);
+            rig.Clip(rig.Machine("Drums"), "Beat", Bar);
+            rig.Clip(rig.Machine("Bass"), "Line", 2 * Bar);
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             Quiet(window);
             window.Show();
@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
                 window.UpdateLayout();
                 Assert.That(tab.Content, Is.InstanceOf<SessionView>());
                 var view = (SessionView)tab.Content;
-                Assert.That(view.Slots.Where(s => s.Pattern != null).Select(s => s.Pattern.Name), Is.EquivalentTo(new[] { "Beat", "Line" }),
+                Assert.That(view.Slots.Where(s => s.Clip != null).Select(s => s.Clip.Name), Is.EquivalentTo(new[] { "Beat", "Line" }),
                     "a song without a layout fills the grid from its patterns");
                 Assert.That(view.Headers.Select(h => h.Machine?.Name), Is.EqualTo(new[] { "Drums", "Bass" }));
                 Studio.Screenshot(window, "session-tab");
@@ -61,13 +61,13 @@ namespace ReBuzz.Studio.Tests
         public void LaunchingASceneShowsItQueuedThenPlaying()
         {
             using var rig = new SessionRig("Drums", "Bass", "Lead");
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (4, 38), (8, 36), (12, 38));
-            var fill = rig.Pattern(rig.Machine("Drums"), "Fill", Bar, (0, 36), (2, 36), (4, 38));
-            rig.Pattern(rig.Machine("Drums"), "Break", 2 * Bar);
-            var line = rig.Pattern(rig.Machine("Bass"), "Line A", 2 * Bar, (0, 40), (8, 43));
-            var lineB = rig.Pattern(rig.Machine("Bass"), "Line B", 2 * Bar, (0, 45));
-            var hook = rig.Pattern(rig.Machine("Lead"), "Hook", Bar, (0, 72));
-            rig.Pattern(rig.Machine("Lead"), "Answer", Bar);
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar, (0, 36), (4, 38), (8, 36), (12, 38));
+            var fill = rig.Clip(rig.Machine("Drums"), "Fill", Bar, (0, 36), (2, 36), (4, 38));
+            rig.Clip(rig.Machine("Drums"), "Break", 2 * Bar);
+            var line = rig.Clip(rig.Machine("Bass"), "Line A", 2 * Bar, (0, 40), (8, 43));
+            var lineB = rig.Clip(rig.Machine("Bass"), "Line B", 2 * Bar, (0, 45));
+            var hook = rig.Clip(rig.Machine("Lead"), "Hook", Bar, (0, 72));
+            rig.Clip(rig.Machine("Lead"), "Answer", Bar);
             var layout = rig.Layout;
             layout.Ensure();
             layout.RenameScene(0, "Intro");
@@ -134,8 +134,8 @@ namespace ReBuzz.Studio.Tests
             // The demo song's case (gallery mac-042): one pattern in several slots of a track. A
             // track plays one clip at a time, so only the slot it was launched from may light up.
             using var rig = new SessionRig("Drums", "Pad");
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
-            var chords = rig.Pattern(rig.Machine("Pad"), "Chords", Bar, (0, 60));
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
+            var chords = rig.Clip(rig.Machine("Pad"), "Chords", Bar, (0, 60));
             var layout = rig.Layout;
             layout.Ensure();
             for (int s = 0; s < 3; s++) layout.SetSlot(1, s, chords);
@@ -187,8 +187,8 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig("Drums", "Lead");
             var verb = rig.Add("Neo Verb", "Verb", track: false);
             rig.Add("Neo Delay", "Delay", track: false);
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
-            rig.Pattern(rig.Machine("Lead"), "Hook", Bar, (0, 72));
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
+            rig.Clip(rig.Machine("Lead"), "Hook", Bar, (0, 72));
             var layout = rig.Layout;
             layout.Ensure();
             layout.AddReturn(verb);
@@ -242,8 +242,8 @@ namespace ReBuzz.Studio.Tests
         public void HidingTheMixerGivesTheGridMoreRowsAndTheClipPanelIsFullHeight()
         {
             using var rig = new SessionRig("Drums", "Bass");
-            rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36));
-            rig.Pattern(rig.Machine("Bass"), "Line", Bar, (0, 40));
+            rig.Clip(rig.Machine("Drums"), "Beat", Bar, (0, 36));
+            rig.Clip(rig.Machine("Bass"), "Line", Bar, (0, 40));
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show(1100, 760);
@@ -269,7 +269,7 @@ namespace ReBuzz.Studio.Tests
             var spare = view.SpareSlotsOf(1);
             rig.DoubleClick(spare, fy: (RowHeightForTests * 2.5) / spare.Bounds.Height);
             Assert.That(layout.SceneCount, Is.EqualTo(scenes + 3));
-            Assert.That(layout.PatternAt(1, scenes + 2), Is.Not.Null, "a clip in the row double-clicked");
+            Assert.That(layout.ClipAt(1, scenes + 2), Is.Not.Null, "a clip in the row double-clicked");
             Assert.That(view.Selected, Is.EqualTo((1, scenes + 2)));
             rig.Click(view.MixerButton);
         }
@@ -281,7 +281,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new SessionRig("Drums", "Bass", "Lead", "Pad", "Keys", "Arp", "Pluck");
             foreach (var name in new[] { "Drums", "Bass", "Lead", "Pad", "Keys", "Arp", "Pluck" })
-                rig.Pattern(rig.Machine(name), name + " 1", Bar, (0, 60));
+                rig.Clip(rig.Machine(name), name + " 1", Bar, (0, 60));
             var layout = rig.Layout;
             layout.Ensure();
             layout.RenameScene(0, "Intro");
@@ -318,7 +318,7 @@ namespace ReBuzz.Studio.Tests
         public void TheClipPanelStatusWrapsInsteadOfBeingCut()
         {
             using var rig = new SessionRig("Pad");
-            rig.Pattern(rig.Machine("Pad"), "00", 64 * Bar);
+            rig.Clip(rig.Machine("Pad"), "00", 64 * Bar);
             rig.Layout.Ensure();
             var view = rig.Show();
             rig.Click(view.SlotAt(0, 0), fx: 0.6);
@@ -339,7 +339,7 @@ namespace ReBuzz.Studio.Tests
             var view = rig.Show();
 
             rig.DoubleClick(view.SlotAt(0, 0), fx: 0.85);              // an empty slot (not its ■): a new clip
-            var clip = rig.Layout.PatternAt(0, 0);
+            var clip = rig.Layout.ClipAt(0, 0);
             Assert.That(clip, Is.Not.Null, "double-click creates a clip");
             Assert.That(clip.Length, Is.EqualTo(Bar), "one bar (⚙ New clip length)");
             Assert.That(view.Selected, Is.EqualTo((0, 0)));
@@ -350,7 +350,7 @@ namespace ReBuzz.Studio.Tests
             var piano = PianoRollWindow.OpenWindows.Single();
             Quiet(piano);
             var roll = piano.Roll;
-            Assert.That(roll.Pattern, Is.SameAs(clip));
+            Assert.That(roll.Clip, Is.SameAs(clip));
             Assert.That(piano.SummaryText, Does.Contain("No notes yet"));
 
             void At(int time, int note, Action<Avalonia.Point> act)
@@ -366,7 +366,7 @@ namespace ReBuzz.Studio.Tests
             DoubleClickNote(0, 60);                                     // double-click draws a note, a grid step long
             DoubleClickNote(4 * TB, 64);
             Assert.That(rig.Layout.NotesOf(clip), Is.EqualTo(new[] { new ClipNote(0, TB, 60, 100), new ClipNote(4 * TB, TB, 64, 100) }));
-            Assert.That(clip.Columns.Single().Type, Is.EqualTo(PatternColumnType.MIDI), "drawing gave the clip an engine MIDI column");
+            Assert.That(clip.Columns.Single().Type, Is.EqualTo(ClipColumnType.MIDI), "drawing gave the clip an engine MIDI column");
 
             // Drag the second note two ticks right and three semitones up.
             At(4 * TB, 64, p =>
@@ -422,7 +422,7 @@ namespace ReBuzz.Studio.Tests
             var empty = view.SlotAt(0, 0);
             Assert.That(empty.RecordButton.IsVisible, Is.True, "an armed track's empty slots record");
             rig.Click(empty.RecordButton);
-            var take = layout.PatternAt(0, 0);
+            var take = layout.ClipAt(0, 0);
             var track = layout.SequenceOf(0);
             Assert.That(take, Is.Not.Null, "a take in the slot");
             Assert.That(take.Length, Is.EqualTo(Bar));
@@ -450,9 +450,9 @@ namespace ReBuzz.Studio.Tests
             // The take is one undo step.
             string name = take.Name;
             rig.Click(view.UndoButton);
-            Assert.That(rig.Machine("Keys").Patterns.Any(p => p.Name == name), Is.False, "undo takes the whole take");
+            Assert.That(rig.Machine("Keys").Clips.Any(p => p.Name == name), Is.False, "undo takes the whole take");
             rig.Click(view.RedoButton);
-            Assert.That(layout.NotesOf(layout.PatternAt(0, 0)).Single().Note, Is.EqualTo(60), "redo brings it back with what it recorded");
+            Assert.That(layout.NotesOf(layout.ClipAt(0, 0)).Single().Note, Is.EqualTo(60), "redo brings it back with what it recorded");
         }
 
         // ------------------------------------------------------------------ mixing (SessionMixerTests)
@@ -464,8 +464,8 @@ namespace ReBuzz.Studio.Tests
             var drums = rig.Machine("Drums");
             var lead = rig.Machine("Lead");
             var verb = rig.Add("Neo Verb", "Verb", track: false);
-            rig.Pattern(drums, "Beat", Bar, (0, 48), (4, 50), (8, 48), (12, 50));
-            rig.Pattern(lead, "Hook", Bar, (0, 72), (2, 76), (4, 79), (8, 84));
+            rig.Clip(drums, "Beat", Bar, (0, 48), (4, 50), (8, 48), (12, 50));
+            rig.Clip(lead, "Hook", Bar, (0, 72), (2, 76), (4, 79), (8, 84));
             var layout = rig.Layout;
             layout.Ensure();
             layout.RenameScene(0, "Intro");
@@ -560,9 +560,9 @@ namespace ReBuzz.Studio.Tests
             foreach (var m in new IMachine[] { drums, bass, bus })
                 song.AddMachineToGroup(m, group);
             group.MainOutputMachine = bus;
-            var beat = rig.Pattern(drums, "Beat", Bar, (0, 36));
-            var line = rig.Pattern(bass, "Line", Bar, (0, 40));
-            var hook = rig.Pattern(lead, "Hook", Bar, (0, 72));
+            var beat = rig.Clip(drums, "Beat", Bar, (0, 36));
+            var line = rig.Clip(bass, "Line", Bar, (0, 40));
+            var hook = rig.Clip(lead, "Hook", Bar, (0, 72));
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show(1100, 680);
@@ -599,8 +599,8 @@ namespace ReBuzz.Studio.Tests
         public void UndoInTheViewTakesBackGridAndClipEdits()
         {
             using var rig = new SessionRig("Drums", "Bass");
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar);
-            var line = rig.Pattern(rig.Machine("Bass"), "Line", Bar);
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar);
+            var line = rig.Clip(rig.Machine("Bass"), "Line", Bar);
             var layout = rig.Layout;
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             Quiet(window);
@@ -617,17 +617,17 @@ namespace ReBuzz.Studio.Tests
                 rig.Click(view.SlotAt(1, 0), fx: 0.6);                   // selects (not ▶)
                 Assert.That(view.Selected, Is.EqualTo((1, 0)));
                 rig.Key(PhysicalKey.D, RawInputModifiers.Control, window);
-                Assert.That(layout.PatternAt(1, 1)?.Name, Is.EqualTo("Line 2"), "Ctrl+D duplicates into the slot below");
+                Assert.That(layout.ClipAt(1, 1)?.Name, Is.EqualTo("Line 2"), "Ctrl+D duplicates into the slot below");
                 int applied = history.Steps.Count(s => s.Done);
                 rig.Key(PhysicalKey.Z, RawInputModifiers.Control, window);
-                Assert.That(layout.PatternAt(1, 1), Is.Null, "Ctrl+Z in the view: the session's undo");
+                Assert.That(layout.ClipAt(1, 1), Is.Null, "Ctrl+Z in the view: the session's undo");
                 Assert.That(history.Steps.Count(s => s.Done), Is.EqualTo(applied - 1), "one step of the song's one history");
                 rig.Key(PhysicalKey.Y, RawInputModifiers.Control, window);
-                Assert.That(layout.PatternAt(1, 1)?.Name, Is.EqualTo("Line 2"), "Ctrl+Y redoes");
+                Assert.That(layout.ClipAt(1, 1)?.Name, Is.EqualTo("Line 2"), "Ctrl+Y redoes");
 
                 // A clip panel edit, undone and redone with ↶ ↷.
                 rig.Click(view.SlotAt(0, 0), fx: 0.6);
-                Assert.That(view.ClipPanelView.Pattern, Is.SameAs(beat));
+                Assert.That(view.ClipPanelView.Clip, Is.SameAs(beat));
                 rig.Choose(view.ClipPanelView.ModeBox, 1);            // Gate
                 Assert.That(layout.ClipOf(beat).Mode, Is.EqualTo("Gate"));
                 rig.Click(view.UndoButton);
@@ -637,11 +637,11 @@ namespace ReBuzz.Studio.Tests
 
                 // Moving a clip by dragging it down its track (Ctrl copies), then undoing.
                 rig.Drag(view.SlotAt(1, 0), 0, 2 * 28, fx: 0.6);
-                Assert.That(layout.PatternAt(1, 2), Is.SameAs(line), "dragged two scenes down");
-                Assert.That(layout.PatternAt(1, 0), Is.Null);
+                Assert.That(layout.ClipAt(1, 2), Is.SameAs(line), "dragged two scenes down");
+                Assert.That(layout.ClipAt(1, 0), Is.Null);
                 rig.Key(PhysicalKey.Z, RawInputModifiers.Control, window);
-                Assert.That(layout.PatternAt(1, 0), Is.SameAs(line));
-                Assert.That(layout.PatternAt(1, 2), Is.Null);
+                Assert.That(layout.ClipAt(1, 0), Is.SameAs(line));
+                Assert.That(layout.ClipAt(1, 2), Is.Null);
                 Studio.Screenshot(window, "session-undo");
             }
             finally
@@ -656,8 +656,8 @@ namespace ReBuzz.Studio.Tests
         public void TheKeyboardDrivesTheGrid()
         {
             using var rig = new SessionRig("Drums", "Bass");
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar);
-            var line = rig.Pattern(rig.Machine("Bass"), "Line", Bar);
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar);
+            var line = rig.Clip(rig.Machine("Bass"), "Line", Bar);
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show();
@@ -669,15 +669,15 @@ namespace ReBuzz.Studio.Tests
 
             rig.Key(PhysicalKey.ArrowRight);                             // (1,0): Line
             rig.Key(PhysicalKey.D, RawInputModifiers.Control);           // duplicate below
-            Assert.That(layout.PatternAt(1, 1)?.Name, Is.EqualTo("Line 2"));
+            Assert.That(layout.ClipAt(1, 1)?.Name, Is.EqualTo("Line 2"));
             rig.Key(PhysicalKey.Z, RawInputModifiers.Control);
-            Assert.That(layout.PatternAt(1, 1), Is.Null);
+            Assert.That(layout.ClipAt(1, 1), Is.Null);
 
             // The selection followed the copy to (1,1), now empty again.
             rig.Key(PhysicalKey.M, RawInputModifiers.Control | RawInputModifiers.Shift);   // create clip
-            Assert.That(layout.PatternAt(1, 1), Is.Not.Null);
+            Assert.That(layout.ClipAt(1, 1), Is.Not.Null);
             rig.Key(PhysicalKey.Delete);
-            Assert.That(layout.PatternAt(1, 1), Is.Null);
+            Assert.That(layout.ClipAt(1, 1), Is.Null);
 
             rig.Key(PhysicalKey.Digit1);                                  // scene 1
             Assert.That(StateOf(rig, 1, line), Is.EqualTo(ClipState.Queued));
@@ -711,7 +711,7 @@ namespace ReBuzz.Studio.Tests
         {
             // Gallery mac-041…046: the Loop end box was empty while the text below said where it loops.
             using var rig = new SessionRig("Lead");
-            var hook = rig.Pattern(rig.Machine("Lead"), "Hook", 2 * Bar, (0, 72));
+            var hook = rig.Clip(rig.Machine("Lead"), "Hook", 2 * Bar, (0, 72));
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show();
@@ -740,9 +740,9 @@ namespace ReBuzz.Studio.Tests
         public void TheClipPanelEditsClipAndSceneProperties()
         {
             using var rig = new SessionRig("Drums", "Bass");
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36));
-            rig.Pattern(rig.Machine("Drums"), "Fill", Bar);
-            rig.Pattern(rig.Machine("Bass"), "Line", 2 * Bar);
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar, (0, 36));
+            rig.Clip(rig.Machine("Drums"), "Fill", Bar);
+            rig.Clip(rig.Machine("Bass"), "Line", 2 * Bar);
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show(1180, 760);
@@ -808,8 +808,8 @@ namespace ReBuzz.Studio.Tests
         public void FollowActionsAndTheTempoControls()
         {
             using var rig = new SessionRig("Drums");
-            var a = rig.Pattern(rig.Machine("Drums"), "A", 4, (0, 36));
-            var b = rig.Pattern(rig.Machine("Drums"), "B", 4, (0, 38));
+            var a = rig.Clip(rig.Machine("Drums"), "A", 4, (0, 36));
+            var b = rig.Clip(rig.Machine("Drums"), "B", 4, (0, 38));
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show();
@@ -870,18 +870,18 @@ namespace ReBuzz.Studio.Tests
         public void SlotAndSceneMenusEditTheGrid()
         {
             using var rig = new SessionRig("Drums");
-            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar);
-            var fill = rig.Pattern(rig.Machine("Drums"), "Fill", Bar);
+            var beat = rig.Clip(rig.Machine("Drums"), "Beat", Bar);
+            var fill = rig.Clip(rig.Machine("Drums"), "Fill", Bar);
             var layout = rig.Layout;
             layout.Ensure();
             var view = rig.Show();
 
             rig.Click(view.SlotAt(0, 0), MouseButton.Right, fx: 0.6);
             rig.Menu("Colour/Lilac");                                   // fork (ux-overhaul.md §3.1): Red is the record state's, no longer offered
-            Assert.That(PatternColors.Get(beat), Is.EqualTo(8));
+            Assert.That(ClipColors.Get(beat), Is.EqualTo(8));
             rig.Click(view.SlotAt(0, 2), MouseButton.Right, fx: 0.6);
             rig.Menu("Assign pattern/Fill");
-            Assert.That(layout.PatternAt(0, 2), Is.SameAs(fill));
+            Assert.That(layout.ClipAt(0, 2), Is.SameAs(fill));
 
             Dialogs.TextResponder = (title, current) => title == "Scene tempo" ? "128" : "Chorus";
             rig.Click(view.Scenes[1], MouseButton.Right);
@@ -895,13 +895,13 @@ namespace ReBuzz.Studio.Tests
             ArrangementInsertDialog.Responder = (scene, bar, bars) => new ArrangementInsertDialog.Answer(1, 2, false);
             rig.Click(view.Scenes[0], MouseButton.Right);
             rig.Menu("Insert into arrangement…");
-            Assert.That(layout.SequenceOf(0).Events.Values.Select(e => e.Pattern), Does.Contain(beat), "the arrangement plays Beat");
+            Assert.That(layout.SequenceOf(0).Events.Values.Select(e => e.Clip), Does.Contain(beat), "the arrangement plays Beat");
 
             int scenes = layout.SceneCount;
             rig.Click(view.Scenes[0], MouseButton.Right);
             rig.Menu("Duplicate scene");
             Assert.That(layout.SceneCount, Is.EqualTo(scenes + 1));
-            Assert.That(layout.PatternAt(0, 1), Is.SameAs(beat), "the copy is below");
+            Assert.That(layout.ClipAt(0, 1), Is.SameAs(beat), "the copy is below");
             // MIDI learn from a slot's menu: the status line says what it waits for, Esc cancels.
             rig.Click(view.SlotAt(0, 1), MouseButton.Right, fx: 0.6);
             rig.Menu("MIDI learn…");

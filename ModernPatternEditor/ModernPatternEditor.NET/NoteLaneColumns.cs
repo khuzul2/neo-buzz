@@ -13,7 +13,7 @@ using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using WDE.ModernPatternEditor.ColumnRenderer;
 using WDE.ModernPatternEditor.MPEStructures;
-using static WDE.ModernPatternEditor.PatternEditorUtils;
+using static WDE.ModernPatternEditor.ClipEditorUtils;
 
 namespace WDE.ModernPatternEditor
 {
@@ -25,9 +25,9 @@ namespace WDE.ModernPatternEditor
     /// </summary>
     internal sealed class NoteLaneHost : IDisposable
     {
-        readonly PatternVM vm;
-        readonly IPattern pattern;
-        IPatternColumn column;
+        readonly ClipVM vm;
+        readonly IClip clip;
+        IClipColumn column;
         NoteLanes lanes;
         int builtRpb;
         bool pending;
@@ -38,36 +38,36 @@ namespace WDE.ModernPatternEditor
         /// <summary>Raised on the editor's thread after the column changed (the lanes will be made again).</summary>
         public event Action Changed;
 
-        public NoteLaneHost(PatternVM vm, IPattern pattern)
+        public NoteLaneHost(ClipVM vm, IClip clip)
         {
             this.vm = vm;
-            this.pattern = pattern;
-            pattern.ColumnAdded += OnColumnAdded;
-            Attach(FindColumn(pattern));
+            this.clip = clip;
+            clip.ColumnAdded += OnColumnAdded;
+            Attach(FindColumn(clip));
         }
 
-        public IPattern Pattern => pattern;
+        public IClip Clip => clip;
 
         public void Dispose()
         {
-            pattern.ColumnAdded -= OnColumnAdded;
+            clip.ColumnAdded -= OnColumnAdded;
             Attach(null);
         }
 
         /// <summary>The pattern's MIDI column for its own machine, as the Session View finds it (a parameter column of a track isn't).</summary>
-        internal static IPatternColumn FindColumn(IPattern pattern) =>
-            pattern?.Columns.FirstOrDefault(c => c.Type == PatternColumnType.MIDI && (c.Parameter == null || c.Parameter.IndexInGroup < 0) && ReferenceEquals(c.Machine, pattern.Machine));
+        internal static IClipColumn FindColumn(IClip clip) =>
+            clip?.Columns.FirstOrDefault(c => c.Type == ClipColumnType.MIDI && (c.Parameter == null || c.Parameter.IndexInGroup < 0) && ReferenceEquals(c.Machine, clip.Machine));
 
         /// <summary>The MIDI column, made if the pattern has none.</summary>
-        internal static IPatternColumn EnsureColumn(IPattern pattern)
+        internal static IClipColumn EnsureColumn(IClip clip)
         {
-            var c = FindColumn(pattern);
-            if (c != null || pattern == null) return c;
-            pattern.InsertColumn(pattern.Columns.Count, (IMachine)null);
-            return FindColumn(pattern);
+            var c = FindColumn(clip);
+            if (c != null || clip == null) return c;
+            clip.InsertColumn(clip.Columns.Count, (IMachine)null);
+            return FindColumn(clip);
         }
 
-        void Attach(IPatternColumn c)
+        void Attach(IClipColumn c)
         {
             if (ReferenceEquals(c, column)) return;
             if (column != null) column.EventsChanged -= OnEventsChanged;
@@ -75,9 +75,9 @@ namespace WDE.ModernPatternEditor
             if (column != null) column.EventsChanged += OnEventsChanged;
         }
 
-        void OnColumnAdded(IPatternColumn added)
+        void OnColumnAdded(IClipColumn added)
         {
-            var c = FindColumn(pattern);
+            var c = FindColumn(clip);
             if (c != null && !ReferenceEquals(c, column))
             {
                 Attach(c);
@@ -85,7 +85,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        void OnEventsChanged(IEnumerable<PatternEvent> events, bool set)
+        void OnEventsChanged(IEnumerable<ClipEvent> events, bool set)
         {
             // Raised wherever the column was written: the lanes are made again on the editor's thread, once for a burst of edits.
             lanes = null;
@@ -115,7 +115,7 @@ namespace WDE.ModernPatternEditor
                     ? Enumerable.Empty<LaneEvent>()
                     : column.GetEvents(int.MinValue, int.MaxValue).Select(e => new LaneEvent(e.Time, e.Value, e.Duration));
                 builtRpb = rpb;
-                return lanes = new NoteLanes(events, RowGrid.Beats(new[] { rpb }), pattern.Length * PatternEvent.TimeBase);
+                return lanes = new NoteLanes(events, RowGrid.Beats(new[] { rpb }), clip.Length * ClipEvent.TimeBase);
             }
         }
 
@@ -130,8 +130,8 @@ namespace WDE.ModernPatternEditor
         {
             if (edit.Refused != null) return edit.Refused;
             if (edit.IsEmpty) return null;
-            var action = new NotesEditAction(pattern, edit.Removed.ToArray(), edit.Added.ToArray());
-            pattern.Machine.Graph.Do(action);
+            var action = new NotesEditAction(clip, edit.Removed.ToArray(), edit.Added.ToArray());
+            clip.Machine.Graph.Do(action);
             vm.Editor.SetModifiedFlag();
             return null;
         }
@@ -149,10 +149,10 @@ namespace WDE.ModernPatternEditor
         readonly LaneEvent[] removed;
         readonly LaneEvent[] added;
 
-        public NotesEditAction(IPattern pattern, LaneEvent[] removed, LaneEvent[] added)
+        public NotesEditAction(IClip clip, LaneEvent[] removed, LaneEvent[] added)
         {
-            machine = pattern.Machine.Name;
-            name = pattern.Name;
+            machine = clip.Machine.Name;
+            name = clip.Name;
             this.removed = removed;
             this.added = added;
         }
@@ -163,12 +163,12 @@ namespace WDE.ModernPatternEditor
 
         void Apply(LaneEvent[] take, LaneEvent[] put)
         {
-            var p = Global.Buzz.Song.Machines.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(x => x.Name == name);
+            var p = Global.Buzz.Song.Machines.FirstOrDefault(m => m.Name == machine)?.Clips.FirstOrDefault(x => x.Name == name);
             if (p == null) return;
             var column = put.Length > 0 ? NoteLaneHost.EnsureColumn(p) : NoteLaneHost.FindColumn(p);
             if (column == null) return;
-            if (take.Length > 0) column.SetEvents(take.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), false);
-            if (put.Length > 0) column.SetEvents(put.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
+            if (take.Length > 0) column.SetEvents(take.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray(), false);
+            if (put.Length > 0) column.SetEvents(put.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
         }
     }
 
@@ -207,25 +207,25 @@ namespace WDE.ModernPatternEditor
         public readonly NoteLaneHost Host;
         public readonly int Voice;
 
-        public NoteLaneColumnSet(PatternVM pattern, NoteLaneHost host, int voice) : base(pattern, voice)
+        public NoteLaneColumnSet(ClipVM clip, NoteLaneHost host, int voice) : base(clip, voice)
         {
             Host = host;
             Voice = voice;
-            var machine = pattern.Pattern.Machine;
+            var machine = clip.Clip.Machine;
             columns = new ParameterColumn[]
             {
-                Make(machine, PatternEditorUtils.InternalParameter.MidiNote, NoteLaneKind.Note),
-                Make(machine, PatternEditorUtils.InternalParameter.MidiVelocity, NoteLaneKind.Velocity),
-                Make(machine, PatternEditorUtils.InternalParameter.MidiNoteDelay, NoteLaneKind.Delay),
-                Make(machine, PatternEditorUtils.InternalParameter.MidiNoteCut, NoteLaneKind.Cut),
+                Make(machine, ClipEditorUtils.InternalParameter.MidiNote, NoteLaneKind.Note),
+                Make(machine, ClipEditorUtils.InternalParameter.MidiVelocity, NoteLaneKind.Velocity),
+                Make(machine, ClipEditorUtils.InternalParameter.MidiNoteDelay, NoteLaneKind.Delay),
+                Make(machine, ClipEditorUtils.InternalParameter.MidiNoteCut, NoteLaneKind.Cut),
             };
             Label = "Notes\nVoice " + (voice + 1);
         }
 
-        ParameterColumn Make(IMachine machine, PatternEditorUtils.InternalParameter type, NoteLaneKind kind)
+        ParameterColumn Make(IMachine machine, ClipEditorUtils.InternalParameter type, NoteLaneKind kind)
         {
             var parameter = MPEInternalParameter.GetInternalParameter(machine, type);
-            return new NoteLaneColumn(this, kind, new MPEPatternColumnBuzz(PatternColumnType.MIDI, Pattern.Pattern, machine, parameter, Voice));
+            return new NoteLaneColumn(this, kind, new MPEClipColumnBuzz(ClipColumnType.MIDI, Clip.Clip, machine, parameter, Voice));
         }
 
         /// <summary>The lanes aren't played by the editor, so there is nothing to send.</summary>
@@ -236,18 +236,18 @@ namespace WDE.ModernPatternEditor
 
     internal sealed class NoteLaneColumn : ParameterColumn
     {
-        static readonly int BeatTime = 4 * PatternEvent.TimeBase;
+        static readonly int BeatTime = 4 * ClipEvent.TimeBase;
 
         public readonly NoteLaneKind Kind;
         readonly NoteLaneColumnSet lanesSet;
 
-        public NoteLaneColumn(NoteLaneColumnSet set, NoteLaneKind kind, IPatternColumn pc) : base(set, pc, set.Voice)
+        public NoteLaneColumn(NoteLaneColumnSet set, NoteLaneKind kind, IClipColumn pc) : base(set, pc, set.Voice)
         {
             lanesSet = set;
             Kind = kind;
         }
 
-        int Rpb => Math.Max(1, Set.Pattern.DefaultRPB);
+        int Rpb => Math.Max(1, Set.Clip.DefaultRPB);
 
         int Voice => lanesSet.Voice;
 
@@ -255,7 +255,7 @@ namespace WDE.ModernPatternEditor
 
         internal override bool IsDecimal => Kind != NoteLaneKind.Note && !ValueDisplay.IsHex;
 
-        public override int DigitCount => Kind == NoteLaneKind.Note ? 3 : IsDecimal ? ValueDisplay.DecimalDigits(PatternColumn.Parameter.MaxValue) : 2;
+        public override int DigitCount => Kind == NoteLaneKind.Note ? 3 : IsDecimal ? ValueDisplay.DecimalDigits(ClipColumn.Parameter.MaxValue) : 2;
 
         public override bool TiedToNext => false;
 
@@ -281,7 +281,7 @@ namespace WDE.ModernPatternEditor
 
         public override Digit GetDigitAtTime(int time)
         {
-            var digit = new Digit(Set.Pattern, Set.Pattern.ColumnSets.IndexOf(Set), Set.Columns.IndexOf(this), 0, 0, 0);
+            var digit = new Digit(Set.Clip, Set.Clip.ColumnSets.IndexOf(Set), Set.Columns.IndexOf(this), 0, 0, 0);
             int beat = time / BeatTime;
             if (beat < 0 || beat >= Set.BeatCount) return digit;
             return digit.SetBeat(beat).SetRowInBeat(Math.Min(Rpb - 1, (time - beat * BeatTime) * Rpb / BeatTime));
@@ -291,7 +291,7 @@ namespace WDE.ModernPatternEditor
         int ValueIn(int beat, int rowInBeat)
         {
             var lanes = lanesSet.Host.Lanes;
-            if (!lanes.TryCell(Voice, beat * Rpb + rowInBeat, out var cell)) return PatternColumn.Parameter.NoValue;
+            if (!lanes.TryCell(Voice, beat * Rpb + rowInBeat, out var cell)) return ClipColumn.Parameter.NoValue;
             switch (Kind)
             {
                 case NoteLaneKind.Note: return cell.IsOff ? BuzzNote.Off : BuzzNote.FromMIDINote(cell.Midi);
@@ -327,7 +327,7 @@ namespace WDE.ModernPatternEditor
                             Value = v,
                             Time = time,
                             VisualTime = time,
-                            Type = v == column.PatternColumn.Parameter.NoValue ? BeatValueType.NoValue
+                            Type = v == column.ClipColumn.Parameter.NoValue ? BeatValueType.NoValue
                                  : column.Kind == NoteLaneKind.Note ? BeatValueType.Note : BeatValueType.Parameter,
                             ValueString = column.Text(v),
                         };
@@ -339,7 +339,7 @@ namespace WDE.ModernPatternEditor
 
         string Text(int v)
         {
-            var parameter = PatternColumn.Parameter;
+            var parameter = ClipColumn.Parameter;
             if (v == parameter.NoValue) return new string('.', DigitCount);
             if (Kind == NoteLaneKind.Note) return v != BuzzNote.Off && NoteName(v) is string name ? name : parameter.GetHexValueString(v);
             return IsDecimal ? v.ToString("D" + DigitCount) : parameter.GetHexValueString(v);
@@ -403,7 +403,7 @@ namespace WDE.ModernPatternEditor
             }
 
             int current = ValueIn(d.Beat, d.RowInBeat);
-            if (current == PatternColumn.Parameter.NoValue) current = 0;
+            if (current == ClipColumn.Parameter.NoValue) current = 0;
             int value;
             if (IsDecimal)
             {
@@ -414,7 +414,7 @@ namespace WDE.ModernPatternEditor
             }
             else
                 value = (current & (0x0f << (d.Index * 4))) | (newvalue << ((d.Index ^ 1) * 4));
-            value = Math.Min(value, PatternColumn.Parameter.MaxValue);
+            value = Math.Min(value, ClipColumn.Parameter.MaxValue);
             return EditValue(d, value);
         }
     }

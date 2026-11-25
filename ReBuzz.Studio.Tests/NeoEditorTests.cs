@@ -1573,11 +1573,11 @@ namespace ReBuzz.Studio.Tests
                 var busy = sampler.ManagedMachine.GetType().GetProperty("Busy")!;
                 var clock = System.Diagnostics.Stopwatch.StartNew();
                 while (busy.GetValue(sampler.ManagedMachine) is true && clock.ElapsedMilliseconds < 20000) Thread.Sleep(20);
-                sampler.CreatePattern("00", 16);
-                var pattern = sampler.Patterns.First(p => p.Name == "00");
-                Core.SessionLayout.EditNotes(pattern, null, new[] { new ReBuzz.Core.Session.ClipNote(0, PatternEvent.TimeBase * 2, 36, 120) });
+                sampler.CreateClip("00", 16);
+                var clip = sampler.Clips.First(p => p.Name == "00");
+                Core.SessionLayout.EditNotes(clip, null, new[] { new ReBuzz.Core.Session.ClipNote(0, ClipEvent.TimeBase * 2, 36, 120) });
                 song.AddSequence(sampler, song.Sequences.Count);
-                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, clip));
                 Core.Looping = true;
                 song.LoopStart = 0;
                 song.LoopEnd = 16;

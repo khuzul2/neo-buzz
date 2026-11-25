@@ -177,7 +177,7 @@ namespace ReBuzz.Studio.Views.Machines
             menu.Items.Add(Item("Hot-swap", () => canvas.Browser?.BeginSwap(machine), machine.DLL.Info.Type != MachineType.Master));
             menu.Items.Add(Item("Duplicate", () => { var copies = MachineEdits.Duplicate(core, selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList()); if (copies.Count > 0) canvas.Select(copies); },
                 key: new KeyGesture(Key.D, CommandKey)));
-            menu.Items.Add(Item("Clone with patterns", () => CloneWithPatterns(selection)));
+            menu.Items.Add(Item("Clone with patterns", () => CloneWithClips(selection)));
             menu.Items.Add(Sub("Group", GroupItems(machine, selection)));
             menu.Items.Add(Item("Rename...", () => MachineEdits.Rename(machine), key: new KeyGesture(Key.R, CommandKey)));
             menu.Items.Add(Item("Delete", () => MachineEdits.Delete(core, selection), key: DeleteKey));
@@ -339,13 +339,13 @@ namespace ReBuzz.Studio.Views.Machines
         }
 
         /// <summary>Clone with patterns on the selection (the machine's menu); the copies are selected.</summary>
-        void CloneWithPatterns(IReadOnlyList<IMachine> selection)
+        void CloneWithClips(IReadOnlyList<IMachine> selection)
         {
             var from = selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList();
             if (from.Count == 0) return;
             try
             {
-                var copies = MachineEdits.CloneWithPatterns(core, from);
+                var copies = MachineEdits.CloneWithClips(core, from);
                 if (copies.Count > 0) canvas.Select(copies);
             }
             catch (Exception e)

@@ -26,7 +26,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class DawModesSeamTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         static string Work(string name)
         {
@@ -109,17 +109,17 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new SessionRig("Lead");
             var lead = rig.Machine("Lead");
-            var verse = rig.Pattern(lead, "Verse", 8, (0, 60), (4, 64));
+            var verse = rig.Clip(lead, "Verse", 8, (0, 60), (4, 64));
             var track = Track(rig, "Lead");
             var clips = rig.Core.Clips;
             int id = clips.NewId();
             clips.SetLoop(id, new ClipLoop(2, 6, true));
             // A clip: from tick 1 to the loop end, then the loop twice, the last repeat cut at 16.
-            track.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 1, End = 6, PlacementId = id });
-            track.SetEvent(5, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 2, End = 6, PlacementId = id });
-            track.SetEvent(9, new SequenceEvent(SequenceEventType.PlayPattern, verse) { Offset = 2, End = 6, PlacementId = id });
+            track.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, verse) { Offset = 1, End = 6, PlacementId = id });
+            track.SetEvent(5, new SequenceEvent(SequenceEventType.PlayClip, verse) { Offset = 2, End = 6, PlacementId = id });
+            track.SetEvent(9, new SequenceEvent(SequenceEventType.PlayClip, verse) { Offset = 2, End = 6, PlacementId = id });
             track.SetEvent(12, new SequenceEvent(SequenceEventType.Break));
-            track.SetEvent(16, new SequenceEvent(SequenceEventType.PlayPattern, verse));          // a plain event: a clip of its own
+            track.SetEvent(16, new SequenceEvent(SequenceEventType.PlayClip, verse));          // a plain event: a clip of its own
 
             var read = clips.Of(track);
             Assert.That(read.Select(c => (c.Id, c.Time, c.Length, c.Offset, c.Events)), Is.EqualTo(new[] { (id, 0, 12, 1, 3), (0, 16, 8, 0, 1) }));
@@ -131,7 +131,7 @@ namespace ReBuzz.Studio.Tests
             clear.Do();
             Assert.That(track.Events.Keys, Is.EqualTo(new[] { 16 }));
             clear.Undo();
-            Assert.That(track.Events.Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Key < 16).Select(e => e.Value.PlacementId), Is.All.EqualTo(id));
+            Assert.That(track.Events.Where(e => e.Value.Type == SequenceEventType.PlayClip && e.Key < 16).Select(e => e.Value.PlacementId), Is.All.EqualTo(id));
             var edits = new SequenceEditing(rig.Core.Song, rig.Core.SongCore.ActionStack, rig.Core.SongMeter, new SequenceClipboard());
             Assert.That(edits.MoveEvent(0, 16, 32, clone: false), Is.True);
             Assert.That(track.Events[32].PlacementId, Is.EqualTo(0));
@@ -155,8 +155,8 @@ namespace ReBuzz.Studio.Tests
         public void PlainArrangementsStillSaveNoArrangementEvents()
         {
             using var rig = new SessionRig("Lead");
-            var verse = rig.Pattern(rig.Machine("Lead"), "Verse", 8);
-            Track(rig, "Lead").SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, verse));
+            var verse = rig.Clip(rig.Machine("Lead"), "Verse", 8);
+            Track(rig, "Lead").SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, verse));
             Assert.That(ArrangementEventStore.ToXml(rig.Core.SongCore.Sequences, rig.Core.Clips), Is.Null);
         }
 
@@ -164,8 +164,8 @@ namespace ReBuzz.Studio.Tests
         public void SceneToArrangementWritesEachTracksClipWithItsLoop()
         {
             using var rig = new SessionRig("Lead", "Bass");
-            var a = rig.Pattern(rig.Machine("Lead"), "a", 8, (0, 60));
-            var b = rig.Pattern(rig.Machine("Bass"), "b", 12, (0, 40));
+            var a = rig.Clip(rig.Machine("Lead"), "a", 8, (0, 60));
+            var b = rig.Clip(rig.Machine("Bass"), "b", 12, (0, 40));
             var layout = rig.Layout;
             layout.Ensure();
             var c = layout.ClipOf(a);
@@ -195,7 +195,7 @@ namespace ReBuzz.Studio.Tests
         public void RecordingWritesALaunchAndItsLoopWrapsAsOneClip()
         {
             using var rig = new SessionRig("Lead");
-            var a = rig.Pattern(rig.Machine("Lead"), "a", 4, (0, 60));
+            var a = rig.Clip(rig.Machine("Lead"), "a", 4, (0, 60));
             var track = Track(rig, "Lead");
             rig.Session.LaunchQuantization = LaunchQuantization.None;
             rig.Core.Looping = false;
@@ -211,7 +211,7 @@ namespace ReBuzz.Studio.Tests
             rig.Core.Playing = false;
             rig.Settle();
 
-            var played = track.Events.OrderBy(e => e.Key).Where(e => e.Value.Type == SequenceEventType.PlayPattern).ToList();
+            var played = track.Events.OrderBy(e => e.Key).Where(e => e.Value.Type == SequenceEventType.PlayClip).ToList();
             Assert.That(played.Count, Is.GreaterThanOrEqualTo(5), string.Join(" ", track.Events.Select(e => $"{e.Key}:{e.Value.Type}/{e.Value.PlacementId}")));
             Assert.That(played.All(e => e.Value.PlacementId != 0), Is.True, "recorded starts carry clip ids");
             var clips = rig.Core.Clips.Of(track);
@@ -223,14 +223,14 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ S3: automation ramps
 
-        static (PatternCore Pattern, IParameter Parameter, IPatternColumn Column) RampSong(SessionRig rig, bool ramp, int at = 0)
+        static (ClipCore Clip, IParameter Parameter, IClipColumn Column) RampSong(SessionRig rig, bool ramp, int at = 0)
         {
             var lead = rig.Machine("Lead");
-            var p = rig.Pattern(lead, "Sweep", 16, (0, 48));
+            var p = rig.Clip(lead, "Sweep", 16, (0, 48));
             var parameter = lead.ParameterGroups[1].Parameters.First(x => x.Flags.HasFlag(ParameterFlags.State) && x.MaxValue - x.MinValue >= 64);
             var column = SessionLayout.ColumnFor(p, new ColumnKey(1, parameter.IndexInGroup, 0), create: true);
-            column.SetEvents(new[] { new PatternEvent(0, parameter.MinValue, ramp ? 8 * TB : 0), new PatternEvent(8 * TB, parameter.MinValue + 64, 0) }, true);
-            Track(rig, "Lead").SetEvent(at, new SequenceEvent(SequenceEventType.PlayPattern, p));
+            column.SetEvents(new[] { new ClipEvent(0, parameter.MinValue, ramp ? 8 * TB : 0), new ClipEvent(8 * TB, parameter.MinValue + 64, 0) }, true);
+            Track(rig, "Lead").SetEvent(at, new SequenceEvent(SequenceEventType.PlayClip, p));
             rig.Core.SongCore.SongEnd = at + 16;
             rig.Core.SongCore.LoopEnd = at + 16;
             return (p, parameter, column);
@@ -257,7 +257,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig("Lead");
             var (_, parameter, column) = RampSong(rig, ramp: true);
             int lo = parameter.MinValue;
-            Assert.That(((PatternColumnCore)column).HasRamps, Is.True);
+            Assert.That(((ClipColumnCore)column).HasRamps, Is.True);
             var values = ValuesPerTick(rig, parameter, 12);
             TestContext.Out.WriteLine("ramp: " + string.Join(" ", values));
             for (int t = 1; t < values.Count; t++)
@@ -274,15 +274,15 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig("Lead");
             var (_, parameter, column) = RampSong(rig, ramp: false);
             int lo = parameter.MinValue;
-            Assert.That(((PatternColumnCore)column).HasRamps, Is.False);
+            Assert.That(((ClipColumnCore)column).HasRamps, Is.False);
             var values = ValuesPerTick(rig, parameter, 12);
             TestContext.Out.WriteLine("steps: " + string.Join(" ", values));
             Assert.That(values.Distinct().ToArray(), Is.EqualTo(new[] { lo, lo + 64 }), "two steps: " + string.Join(" ", values));
-            Assert.That(PatternColumnCoreRamp(column, 4 * TB), Is.Null);
+            Assert.That(ClipColumnCoreRamp(column, 4 * TB), Is.Null);
         }
 
-        static int? PatternColumnCoreRamp(IPatternColumn column, int time) =>
-            ((PatternColumnCore)column).TryRampValue(time, out int v) ? v : null;
+        static int? ClipColumnCoreRamp(IClipColumn column, int time) =>
+            ((ClipColumnCore)column).TryRampValue(time, out int v) ? v : null;
 
         [AvaloniaTest]
         public void RampsAreExactOnTheLine()
@@ -290,10 +290,10 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig("Lead");
             var (_, parameter, column) = RampSong(rig, ramp: true);
             int lo = parameter.MinValue;
-            Assert.That(PatternColumnCoreRamp(column, 0), Is.Null, "on the event itself the event plays");
-            Assert.That(PatternColumnCoreRamp(column, 4 * TB), Is.EqualTo(lo + 32));
-            Assert.That(PatternColumnCoreRamp(column, 2 * TB + TB / 2), Is.EqualTo(lo + 20));
-            Assert.That(PatternColumnCoreRamp(column, 9 * TB), Is.Null, "after the last event: nothing to ramp to");
+            Assert.That(ClipColumnCoreRamp(column, 0), Is.Null, "on the event itself the event plays");
+            Assert.That(ClipColumnCoreRamp(column, 4 * TB), Is.EqualTo(lo + 32));
+            Assert.That(ClipColumnCoreRamp(column, 2 * TB + TB / 2), Is.EqualTo(lo + 20));
+            Assert.That(ClipColumnCoreRamp(column, 9 * TB), Is.Null, "after the last event: nothing to ramp to");
         }
 
         // Allocation: DawModesSeamTests.PlayingRampsAllocatesNothing, in the release build CI tests
@@ -305,7 +305,7 @@ namespace ReBuzz.Studio.Tests
         public void MidiColumnNotesEditOnTheSongsHistory()
         {
             using var rig = new SessionRig("Lead");
-            var p = rig.Pattern(rig.Machine("Lead"), "Riff", 8, (0, 60));
+            var p = rig.Clip(rig.Machine("Lead"), "Riff", 8, (0, 60));
             var source = new MidiColumnNotes(rig.Core, p);
             int changed = 0;
             source.Changed += () => changed++;
@@ -323,7 +323,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(source.Notes().Select(n => n.Note), Is.EqualTo(new[] { 60, 67 }));
             Assert.That(changed, Is.EqualTo(3));
 
-            rig.Machine("Lead").DeletePattern(p);
+            rig.Machine("Lead").DeleteClip(p);
             Assert.That(source.IsLive, Is.False);
             Assert.That(source.Edit(null, new[] { new ClipNote(0, TB, 50, 90) }), Is.Not.Null);
         }
@@ -332,7 +332,7 @@ namespace ReBuzz.Studio.Tests
         public void SessionClipNotesAreWhatTheSessionsPianoRollEdits()
         {
             using var rig = new SessionRig("Lead");
-            var p = rig.Pattern(rig.Machine("Lead"), "Riff", 8, (0, 60));
+            var p = rig.Clip(rig.Machine("Lead"), "Riff", 8, (0, 60));
             var source = new SessionClipNotes(rig.Layout, p);
             Assert.That(source.Notes(), Is.EqualTo(rig.Layout.NotesOf(p)));
             int songUndo = rig.Core.SongCore.ActionStack.Actions.Count();
@@ -354,7 +354,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new SessionRig();
             var bass = rig.Add("Keys Test", "Bass");
-            var p = rig.Pattern(bass, "Line", 16);
+            var p = rig.Clip(bass, "Line", 16);
             var source = TrackerColumnNotes.For(rig.Core, p);
             Assert.That(source, Is.Not.Null, "Keys Test has a Note track parameter");
             int tracks = Math.Max(1, bass.TrackCount);
@@ -388,13 +388,13 @@ namespace ReBuzz.Studio.Tests
         public void SongNotesChoosesTheRouteAMachineTakesItsNotesByAndTheAgentCanAskForTheOther()
         {
             using var rig = new SessionRig("Lead");
-            var p = rig.Pattern(rig.Machine("Lead"), "Riff", 4);
+            var p = rig.Clip(rig.Machine("Lead"), "Riff", 4);
             Assert.That(SongNotes.For(rig.Core, p), Is.InstanceOf<MidiColumnNotes>(), "a synth that takes MIDI: the Notes lane");
             Assert.That(SongNotes.For(rig.Core, p, "midi"), Is.InstanceOf<MidiColumnNotes>());
             Assert.That(SongNotes.For(rig.Core, p, "tracks"), Is.InstanceOf<TrackerColumnNotes>(), "its Note parameter's lanes, when asked");
             var fx = rig.Add("Neo Delay", "Echo");
-            fx.CreatePattern("00", 4);
-            Assert.That(SongNotes.For(rig.Core, fx.PatternsList.Single()), Is.Null, "an effect takes no notes");
+            fx.CreateClip("00", 4);
+            Assert.That(SongNotes.For(rig.Core, fx.ClipsList.Single()), Is.Null, "an effect takes no notes");
             Assert.That(SongNotes.For(rig.Core, null), Is.Null);
             Assert.That(SongNotes.For(null, p), Is.Null);
         }
@@ -406,8 +406,8 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new SessionRig("Lead", "Bass");
             var layout = rig.Layout;
-            var a = rig.Pattern(rig.Machine("Lead"), "a", 8, (0, 60), (3, 63));
-            var b = rig.Pattern(rig.Machine("Bass"), "b", 12, (0, 40));
+            var a = rig.Clip(rig.Machine("Lead"), "a", 8, (0, 60), (3, 63));
+            var b = rig.Clip(rig.Machine("Bass"), "b", 12, (0, 40));
             layout.Ensure();
             var settings = layout.ClipOf(a);
             settings.Start = 2;
@@ -424,10 +424,10 @@ namespace ReBuzz.Studio.Tests
                 var lines = new List<string> { "meter " + string.Join(" ", rig.Core.SongMeter.Entries.Select(e => $"{e.Key}:{e.Value}")) };
                 foreach (var s in rig.Core.SongCore.SequencesList)
                 {
-                    lines.Add($"{s.Machine.Name}: " + string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e => $"{e.Key}:{e.Value.Type}:{e.Value.Pattern?.Name}:{e.Value.Offset}-{e.Value.End}:c{e.Value.PlacementId}")));
+                    lines.Add($"{s.Machine.Name}: " + string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e => $"{e.Key}:{e.Value.Type}:{e.Value.Clip?.Name}:{e.Value.Offset}-{e.Value.End}:c{e.Value.PlacementId}")));
                     lines.Add($"{s.Machine.Name} clips: " + string.Join(" ", rig.Core.Clips.Of(s).Select(c => $"{c.Time}+{c.Length}x{c.Events}:{c.Loop}")));
                 }
-                foreach (var c in rig.Machine("Lead").Patterns.First(p => p.Name == "Sweep").Columns)
+                foreach (var c in rig.Machine("Lead").Clips.First(p => p.Name == "Sweep").Columns)
                     lines.Add($"Sweep {c.Type} {c.Parameter?.Name}: " + string.Join(" ", c.GetEvents(0, int.MaxValue).Select(e => $"{e.Time}={e.Value}/{e.Duration}")));
                 return string.Join("\n", lines);
             }

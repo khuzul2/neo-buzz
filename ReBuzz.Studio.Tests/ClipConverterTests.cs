@@ -15,7 +15,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class ClipConverterTests
     {
-        const int TB = PatternEvent.TimeBase, Beat = 4 * TB;
+        const int TB = ClipEvent.TimeBase, Beat = 4 * TB;
         const int Off = BuzzNote.Off;
 
         /// <summary>A machine with one global parameter (Level), the track parameters Note and Volume on 3 tracks, and a second machine "Other" with one global.</summary>
@@ -29,14 +29,14 @@ namespace ReBuzz.Studio.Tests
 
         static BlobColumn Col(string machine, int index, int track, (int Time, int Value)[] events, int[] beatRows = null) => new BlobColumn
         {
-            Machine = machine, ParamIndex = index, Track = track, Events = events.Select(e => new PatternEvent(e.Time, e.Value)).ToList(), BeatRows = beatRows?.ToList() ?? new List<int>(),
+            Machine = machine, ParamIndex = index, Track = track, Events = events.Select(e => new ClipEvent(e.Time, e.Value)).ToList(), BeatRows = beatRows?.ToList() ?? new List<int>(),
         };
 
-        static BlobPattern Pat(string name, int beats, int rpb, params BlobColumn[] columns) => new BlobPattern { Name = name, Beats = beats, RowsPerBeat = rpb, Columns = columns.ToList() };
+        static BlobClip Pat(string name, int beats, int rpb, params BlobColumn[] columns) => new BlobClip { Name = name, Beats = beats, RowsPerBeat = rpb, Columns = columns.ToList() };
 
         static ClipMigration.Result Migrate(byte[] blob, ClipLog log, int length = 8) => ClipMigration.FromBlob(blob, Machines(), _ => length, log, "Trk");
 
-        static ClipMigration.Result Migrate(BlobPattern[] patterns, ClipLog log, int length = 8) => Migrate(ClipBlobWriter.WriteMpe(patterns), log, length);
+        static ClipMigration.Result Migrate(BlobClip[] clips, ClipLog log, int length = 8) => Migrate(ClipBlobWriter.WriteMpe(clips), log, length);
 
         static ClipLane Lane(ClipMigration.Result r, string key, int clip = 0) => r.Clips[clip].Lanes.SingleOrDefault(l => l.Key == key);
 
@@ -61,7 +61,7 @@ namespace ReBuzz.Studio.Tests
             var off = ClipEvents.Off(480, 60);
             Assert.That((off.Time, off.Duration, off.Value & 0xF0, (off.Value >> 8) & 0x7F), Is.EqualTo((480, 0, 0x80, 60)));
             Assert.That(ClipEvents.IsExplicitOff(off), Is.True);
-            var on = new PatternEvent(0, ClipEvents.NoteOn(60, 100), 240);
+            var on = new ClipEvent(0, ClipEvents.NoteOn(60, 100), 240);
             Assert.That(ClipEvents.IsExplicitOff(on), Is.False);
             Assert.That(ClipEvents.IsNoteOn(on), Is.True);
             Assert.That(ClipEvents.NoteOff(60), Is.EqualTo(0x80 | (60 << 8)), "as the Session View's own note-off");
@@ -77,14 +77,14 @@ namespace ReBuzz.Studio.Tests
             var back = ClipBlob.Parse(blob);
             Assert.That(back.Problem, Is.Null);
             Assert.That(back.Format, Is.EqualTo(BlobFormat.Mpe1));
-            Assert.That(back.Patterns.Select(x => (x.Name, x.Beats, x.RowsPerBeat, x.Columns.Count)), Is.EqualTo(new[] { ("A", 2, 4, 2), ("B", 1, 6, 0) }));
-            var c = back.Patterns[0].Columns[0];
+            Assert.That(back.Clips.Select(x => (x.Name, x.Beats, x.RowsPerBeat, x.Columns.Count)), Is.EqualTo(new[] { ("A", 2, 4, 2), ("B", 1, 6, 0) }));
+            var c = back.Clips[0].Columns[0];
             Assert.That((c.Machine, c.ParamIndex, c.Track, c.BeatRows), Is.EqualTo(("Trk", 0, 0, new List<int> { 4, 3 })));
             Assert.That(c.Events.Select(e => (e.Time, e.Value)), Is.EqualTo(new[] { (0, 5), (240, 7) }));
         }
 
         [AvaloniaTest]
-        public void PatternXPsDataOfEveryVersionReadsAsRowsAtThePatternsRowsPerBeat()
+        public void PatternXPsDataOfEveryVersionReadsAsRowsAtTheClipsRowsPerBeat()
         {
             static byte[] Pxp(byte version, int rpb)
             {
@@ -105,8 +105,8 @@ namespace ReBuzz.Studio.Tests
                 var blob = ClipBlob.Parse(Pxp(version, rpb));
                 Assert.That(blob.Problem, Is.Null, $"version {version}");
                 Assert.That(blob.Format, Is.EqualTo(format));
-                Assert.That(blob.Patterns[0].RowsPerBeat, Is.EqualTo(version == 1 ? 4 : rpb));
-                var c = blob.Patterns[0].Columns[0];
+                Assert.That(blob.Clips[0].RowsPerBeat, Is.EqualTo(version == 1 ? 4 : rpb));
+                var c = blob.Clips[0].Columns[0];
                 Assert.That((c.Machine, c.ParamIndex, c.Track), Is.EqualTo(("T", 1, 0)));
                 Assert.That(c.Events.Select(e => e.Time), Is.EqualTo(new[] { 0, 5 * TB * 4 / (version == 1 ? 4 : rpb) }), "a row is a beat over the rows per beat: the editor's own rule");
             }
@@ -127,8 +127,8 @@ namespace ReBuzz.Studio.Tests
                 if (junk[0] == 255 && junk.Length > 1) junk[1] = 1;
                 Assert.DoesNotThrow(() => ClipBlob.Parse(junk));
             }
-            Assert.That(ClipBlob.Parse(null).Patterns, Is.Empty);
-            Assert.That(ClipBlob.Parse(new byte[0]).Patterns, Is.Empty);
+            Assert.That(ClipBlob.Parse(null).Clips, Is.Empty);
+            Assert.That(ClipBlob.Parse(new byte[0]).Clips, Is.Empty);
             Assert.That(ClipBlob.Parse(new byte[] { 9, 9, 9 }).Problem, Is.Not.Null, "another editor's data says so");
         }
 
@@ -275,7 +275,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ABuiltInPatternsRowsBecomeLanesAtRowsTimes240AndItsInputColumnsAreDropped()
+        public void ABuiltInClipsRowsBecomeLanesAtRowsTimes240AndItsInputColumnsAreDropped()
         {
             var trk = Machines().Find("Trk");
             var rows = new BuiltInRows
@@ -311,16 +311,16 @@ namespace ReBuzz.Studio.Tests
             var core = Studio.Host.Core;
             AudioHygieneTests.NewSong();
             var lead = AddPoly();
-            lead.CreatePattern("A", 16);
-            var pattern = lead.PatternsList.Single(p => p.Name == "A");
+            lead.CreateClip("A", 16);
+            var clip = lead.ClipsList.Single(p => p.Name == "A");
             var globals = lead.ParameterGroupsList[1].ParametersList;
             var notes = new ClipLane { Kind = ClipLaneKind.Notes, Machine = "Lead", Grid = "rpb=4;sub=1:3,2:6" };
-            notes.Events.Add(new PatternEvent(0, ClipEvents.NoteOn(60, 100), 480));
+            notes.Events.Add(new ClipEvent(0, ClipEvents.NoteOn(60, 100), 480));
             notes.Events.Add(ClipEvents.Off(1200, 62));
             var level = new ClipLane { Kind = ClipLaneKind.Parameter, Machine = "Lead", Group = 1, Index = 0, Track = 0, Grid = "rpb=4;sub=3:6,7:3", Mute = true };
-            level.Events.Add(new PatternEvent(240, globals[0].MinValue + 1));
-            var clip = new ClipContent { Name = "A", Length = 16, Lanes = { notes, level } };
-            Assert.That(ClipStore.Write(pattern, clip, core.SongCore, new ClipLog()), Is.EqualTo(2));
+            level.Events.Add(new ClipEvent(240, globals[0].MinValue + 1));
+            var content = new ClipContent { Name = "A", Length = 16, Lanes = { notes, level } };
+            Assert.That(ClipStore.Write(clip, content, core.SongCore, new ClipLog()), Is.EqualTo(2));
 
             string path = TestTemp.Path($"clip-cu2-{Environment.ProcessId}{extension}");
             try
@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Tests
                 core.SaveSongCopy(path);
                 core.Modified = false;
                 core.OpenSongFile(path);
-                var back = ClipStore.Read(core.SongCore.MachinesList.Single(m => m.Name == "Lead").PatternsList.Single(p => p.Name == "A"));
+                var back = ClipStore.Read(core.SongCore.MachinesList.Single(m => m.Name == "Lead").ClipsList.Single(p => p.Name == "A"));
                 var n = back.Lanes.Single(l => l.Kind == ClipLaneKind.Notes);
                 Assert.That(n.Grid, Is.EqualTo("rpb=4;sub=1:3,2:6"));
                 Assert.That(n.Events.Select(e => (e.Time, e.Value, e.Duration)), Is.EquivalentTo(new[] { (0, ClipEvents.NoteOn(60, 100), 480), (1200, ClipEvents.NoteOff(62), 0) }),
@@ -349,15 +349,15 @@ namespace ReBuzz.Studio.Tests
             var core = Studio.Host.Core;
             AudioHygieneTests.NewSong();
             var lead = AddPoly();
-            lead.CreatePattern("A", 16);
-            var pattern = lead.PatternsList.Single(p => p.Name == "A");
+            lead.CreateClip("A", 16);
+            var clip = lead.ClipsList.Single(p => p.Name == "A");
             var level = new ClipLane { Kind = ClipLaneKind.Parameter, Machine = "Lead", Group = 1, Index = 0, Track = 0 };
-            level.Events.Add(new PatternEvent(0, lead.ParameterGroupsList[1].ParametersList[0].MinValue));
-            ClipStore.Write(pattern, new ClipContent { Name = "A", Length = 16, Lanes = { level } }, core.SongCore, new ClipLog());
-            var column = pattern.ColumnsList.Single();
-            Assert.That(column.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey), Is.False, "no session mark: the engine does not play a migrated parameter column (CU3 does)");
-            Assert.That(ClipMeta.SessionAutomation, Is.EqualTo(PatternColumnCore.SessionAutomationKey));
-            Assert.That(((PatternColumnCore)column).IsMarkedAutomation, Is.False);
+            level.Events.Add(new ClipEvent(0, lead.ParameterGroupsList[1].ParametersList[0].MinValue));
+            ClipStore.Write(clip, new ClipContent { Name = "A", Length = 16, Lanes = { level } }, core.SongCore, new ClipLog());
+            var column = clip.ColumnsList.Single();
+            Assert.That(column.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey), Is.False, "no session mark: the engine does not play a migrated parameter column (CU3 does)");
+            Assert.That(ClipMeta.SessionAutomation, Is.EqualTo(ClipColumnCore.SessionAutomationKey));
+            Assert.That(((ClipColumnCore)column).IsMarkedAutomation, Is.False);
         }
     }
 }

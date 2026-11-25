@@ -48,7 +48,7 @@ namespace BuzzGUI.Common
         public const string TrackDropped = "track-dropped";         // a column of a track the machine no longer has
         public const string MidiLaneOrphan = "midi-lane-orphan";    // a velocity, delay or cut lane with no note lane on its track
         public const string NoteInvalid = "note-invalid";           // a MIDI lane Note the editor could not turn into a MIDI note
-        public const string PatternMissing = "pattern-missing";     // data of a pattern the machine does not have
+        public const string ClipMissing = "pattern-missing";     // data of a pattern the machine does not have
         public const string EventPastEnd = "event-past-end";        // an event after the end of its pattern (the editor drops these as it loads them)
         // The note-off events (clips.md §5.4).
         public const string OffExplicit = "off-explicit";           // an off with no note before it in the clip: an explicit note-off event on the Notes lane
@@ -58,7 +58,7 @@ namespace BuzzGUI.Common
         public static readonly IReadOnlyCollection<string> Losses = new HashSet<string>
         {
             PxpSpDropped, InputColumn, CcLaneDropped, ForeignDropped, MachineMissing, ParamMissing, TrackDropped, MidiLaneOrphan,
-            NoteInvalid, PatternMissing, EventPastEnd,
+            NoteInvalid, ClipMissing, EventPastEnd,
         };
     }
 
@@ -116,7 +116,7 @@ namespace BuzzGUI.Common
         public int Group;                       // 1 global, 2 track (Parameter lanes)
         public int Index;                       // the parameter in its group
         public int Track;
-        public List<PatternEvent> Events = new List<PatternEvent>();
+        public List<ClipEvent> Events = new List<ClipEvent>();
         public Dictionary<string, string> Meta = new Dictionary<string, string>();
 
         public bool Auto => Meta.ContainsKey(ClipMeta.SessionAutomation);
@@ -136,10 +136,10 @@ namespace BuzzGUI.Common
         /// <summary>What names the lane in its clip: a column is the same lane when the key is the same.</summary>
         public string Key => (Kind == ClipLaneKind.Notes ? $"{Machine}|notes" : $"{Machine}|{Group}.{Index}.{Track}") + (Auto ? "|auto" : "");
 
-        public ClipLane Clone() => new ClipLane { Kind = Kind, Machine = Machine, Group = Group, Index = Index, Track = Track, Events = new List<PatternEvent>(Events), Meta = new Dictionary<string, string>(Meta) };
+        public ClipLane Clone() => new ClipLane { Kind = Kind, Machine = Machine, Group = Group, Index = Index, Track = Track, Events = new List<ClipEvent>(Events), Meta = new Dictionary<string, string>(Meta) };
 
         /// <summary>The events in a fixed order, for comparing lanes (the order of events in a column is not data).</summary>
-        public List<PatternEvent> Sorted() => Events.OrderBy(e => e.Time).ThenBy(e => e.Value).ThenBy(e => e.Duration).ToList();
+        public List<ClipEvent> Sorted() => Events.OrderBy(e => e.Time).ThenBy(e => e.Value).ThenBy(e => e.Duration).ToList();
 
         public override string ToString() => $"{Key} {Events.Count} events";
     }
@@ -278,11 +278,11 @@ namespace BuzzGUI.Common
         public static int NoteOff(int note, int channel = 0) => 0x80 | (channel & 0x0F) | ((note & 0x7F) << 8);
 
         /// <summary>An explicit note-off event: duration 0, nothing before it in the clip to end.</summary>
-        public static PatternEvent Off(int time, int note, int channel = 0) => new PatternEvent(time, NoteOff(note, channel), 0);
+        public static ClipEvent Off(int time, int note, int channel = 0) => new ClipEvent(time, NoteOff(note, channel), 0);
 
-        public static bool IsExplicitOff(PatternEvent e) => (e.Value & 0xF0) == 0x80 && e.Duration == 0;
+        public static bool IsExplicitOff(ClipEvent e) => (e.Value & 0xF0) == 0x80 && e.Duration == 0;
 
-        public static bool IsNoteOn(PatternEvent e) => (e.Value & 0xF0) == 0x90 && ((e.Value >> 16) & 0x7F) > 0;
+        public static bool IsNoteOn(ClipEvent e) => (e.Value & 0xF0) == 0x90 && ((e.Value >> 16) & 0x7F) > 0;
 
         /// <summary>A controller event: a pitch wheel (14 bits) or a control change.</summary>
         public static int PitchWheel(int value14, int channel = 0) => 0xE0 | (channel & 0x0F) | ((value14 & 0x7F) << 8) | (((value14 >> 7) & 0x7F) << 16);

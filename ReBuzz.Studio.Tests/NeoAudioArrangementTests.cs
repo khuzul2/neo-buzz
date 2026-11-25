@@ -105,9 +105,9 @@ namespace ReBuzz.Studio.Tests
             public ClipItem Clip(ISequence lane, int time, int ticks = 0)
             {
                 var layout = Core.SessionLayout;
-                var pattern = layout.ImportAudio(layout.FirstTrackOf(lane.Machine), 0, Tones("tones.wav"), out string error);
-                Assert.That(pattern, Is.Not.Null, error);
-                Assert.That(Editor.Place(lane, pattern, time, ticks), Is.Null);
+                var clip = layout.ImportAudio(layout.FirstTrackOf(lane.Machine), 0, Tones("tones.wav"), out string error);
+                Assert.That(clip, Is.Not.Null, error);
+                Assert.That(Editor.Place(lane, clip, time, ticks), Is.Null);
                 Settle();
                 return Canvas.ItemsOf(lane).Single(i => i.Time == time);
             }
@@ -197,9 +197,9 @@ namespace ReBuzz.Studio.Tests
         static string Snap() => string.Join(" ; ", Core.Song.Sequences.Where(s => SessionLayout.IsClipPlayer(s.Machine)).Select(s =>
             s.Machine.Name + ": " + string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e =>
             {
-                var a = e.Value.Pattern == null ? null : Core.SessionLayout.AudioOf(e.Value.Pattern);
-                return $"{e.Key}:{e.Value.Pattern?.Name}[{e.Value.Offset},{e.Value.End}]" +
-                    (a == null ? "" : $"<in {Math.Round(a.FadeIn, 3)} out {Math.Round(a.FadeOut, 3)} tail {Math.Round(a.Tail, 3)} x {a.CrossIn} gain {Math.Round(a.GainDb, 2)} rev {a.Reverse} warp {a.Warp} bpm {Math.Round(a.Bpm, 2)} len {e.Value.Pattern.Length} {a.Asset.Length}>");
+                var a = e.Value.Clip == null ? null : Core.SessionLayout.AudioOf(e.Value.Clip);
+                return $"{e.Key}:{e.Value.Clip?.Name}[{e.Value.Offset},{e.Value.End}]" +
+                    (a == null ? "" : $"<in {Math.Round(a.FadeIn, 3)} out {Math.Round(a.FadeOut, 3)} tail {Math.Round(a.Tail, 3)} x {a.CrossIn} gain {Math.Round(a.GainDb, 2)} rev {a.Reverse} warp {a.Warp} bpm {Math.Round(a.Bpm, 2)} len {e.Value.Clip.Length} {a.Asset.Length}>");
             })) + " loops " + string.Join(",", new ClipEditor(Core).Read(s).Select(i => i.Spec.Loop ? "on" : "off"))));
 
         static void Reopen(string path)
@@ -258,8 +258,8 @@ namespace ReBuzz.Studio.Tests
             {
                 Assert.That(rig.Editor.Read(rig.LaneA), Is.Empty, "it left the first track");
                 var moved = rig.First(rig.LaneB);
-                Assert.That(moved.Pattern.Machine, Is.SameAs(rig.LaneB.Machine), "its pattern belongs to the machine it plays on");
-                Assert.That(Core.SessionLayout.IsAudioClip(moved.Pattern), Is.True);
+                Assert.That(moved.Clip.Machine, Is.SameAs(rig.LaneB.Machine), "its pattern belongs to the machine it plays on");
+                Assert.That(Core.SessionLayout.IsAudioClip(moved.Clip), Is.True);
             });
         }
 
@@ -276,13 +276,13 @@ namespace ReBuzz.Studio.Tests
                 // Independent: the copy's gain doesn't touch the original.
                 var original = rig.First(rig.LaneA);
                 var copy = rig.First(rig.LaneB);
-                Assert.That(copy.Pattern, Is.Not.SameAs(original.Pattern), "each has its own pattern");
-                Assert.That(Core.SessionLayout.AudioOf(copy.Pattern).Asset, Is.EqualTo(Core.SessionLayout.AudioOf(original.Pattern).Asset), "they share the audio");
+                Assert.That(copy.Clip, Is.Not.SameAs(original.Clip), "each has its own pattern");
+                Assert.That(Core.SessionLayout.AudioOf(copy.Clip).Asset, Is.EqualTo(Core.SessionLayout.AudioOf(original.Clip).Asset), "they share the audio");
                 Assert.That(rig.Editor.SetGain(copy, -9), Is.Null);
-                Assert.That(Core.SessionLayout.AudioOf(original.Pattern).GainDb, Is.EqualTo(0), "the original is as it was");
-                Assert.That(Core.SessionLayout.AudioOf(copy.Pattern).GainDb, Is.EqualTo(-9).Within(1e-9));
+                Assert.That(Core.SessionLayout.AudioOf(original.Clip).GainDb, Is.EqualTo(0), "the original is as it was");
+                Assert.That(Core.SessionLayout.AudioOf(copy.Clip).GainDb, Is.EqualTo(-9).Within(1e-9));
                 rig.Undo();                                 // the gain was a step of its own
-                Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneB).Pattern).GainDb, Is.EqualTo(0));
+                Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneB).Clip).GainDb, Is.EqualTo(0));
             });
         }
 
@@ -335,10 +335,10 @@ namespace ReBuzz.Studio.Tests
             rig.Select(item);
             double w = rig.Canvas.ClipRect(item).Width;
             Steps(rig, () => rig.Drag(rig.Px(item, 6, 26), rig.Px(item, 6 + w * 0.2, 26)), ext,
-                _ => Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern).FadeIn, Is.GreaterThan(0)), save: false);
+                _ => Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip).FadeIn, Is.GreaterThan(0)), save: false);
             item = rig.Item(rig.LaneA);
             Steps(rig, () => rig.Drag(rig.Px(item, w - 8, 26), rig.Px(item, w - 8 - w * 0.2, 26)), ext,
-                _ => Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern).FadeOut, Is.GreaterThan(0)));
+                _ => Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip).FadeOut, Is.GreaterThan(0)));
         }
 
         [AvaloniaTest]
@@ -350,7 +350,7 @@ namespace ReBuzz.Studio.Tests
             var r = rig.Canvas.ClipRect(item);
             double area = r.Height - 21, zero = 19 + area / 3, minus12 = 19 + area * 2 / 3;
             Steps(rig, () => rig.Drag(rig.Px(item, r.Width / 2, zero), rig.Px(item, r.Width / 2, minus12)), ext,
-                _ => Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern).GainDb, Is.LessThan(-6)));
+                _ => Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip).GainDb, Is.LessThan(-6)));
         }
 
         [AvaloniaTest]
@@ -363,7 +363,7 @@ namespace ReBuzz.Studio.Tests
             // Drag the second onto the end of the first (across to the lane of the first): the overlap is a crossfade.
             Steps(rig, () => rig.Drag(rig.In(second, 0.3, 0.8), rig.At(rig.LaneA, length - 16)), ext, _ =>
             {
-                var a = Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern);
+                var a = Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip);
                 Assert.That(a.Tail, Is.GreaterThan(0), "the first clip's audio goes on under the second");
             });
         }
@@ -380,7 +380,7 @@ namespace ReBuzz.Studio.Tests
             {
                 var clips = rig.Editor.Read(rig.LaneA);
                 Assert.That(clips.Count, Is.EqualTo(2), "two clips");
-                Assert.That(clips[0].Pattern, Is.Not.SameAs(clips[1].Pattern), "each with a pattern of its own");
+                Assert.That(clips[0].Clip, Is.Not.SameAs(clips[1].Clip), "each with a pattern of its own");
             }, save: false);
             rig.Click(rig.In(rig.Item(rig.LaneA), 0.3, 0.8));
             int assets = Core.AudioAssets.Count;
@@ -395,7 +395,7 @@ namespace ReBuzz.Studio.Tests
             var item = rig.Clip(rig.LaneA, 0);
             rig.Select(item);
             Steps(rig, () => rig.Key(PhysicalKey.R), ext, _ =>
-                Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern).Reverse, Is.True));
+                Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip).Reverse, Is.True));
         }
 
         // ------------------------------------------------------------------ the agent
@@ -443,7 +443,7 @@ namespace ReBuzz.Studio.Tests
             Clip("gain", new JsonObject { ["gain_db"] = -6.0 });
             Clip("reverse", new JsonObject());
             string done = Snap();
-            Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern).Reverse, Is.True);
+            Assert.That(Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip).Reverse, Is.True);
             // Stretch to half the length; then consolidate it.
             Clip("stretch", new JsonObject { ["end"] = beats / 2 });
             Assert.That(SongModel.Beats(Core, rig.First(rig.LaneA).End), Is.EqualTo(beats / 2).Within(0.05));
@@ -463,18 +463,18 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig();
             var item = rig.Clip(rig.LaneA, 0);
-            string machine = rig.LaneA.Machine.Name, pattern = item.Pattern.Name;
+            string machine = rig.LaneA.Machine.Name, clip = item.Clip.Name;
             double beats = SongModel.Beats(Core, item.End - item.Time);
-            var set = Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["fade_in_beats"] = 0.5, ["fade_out_beats"] = 1.5, ["reverse"] = true }));
-            var a = Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Pattern);
+            var set = Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["fade_in_beats"] = 0.5, ["fade_out_beats"] = 1.5, ["reverse"] = true }));
+            var a = Core.SessionLayout.AudioOf(rig.First(rig.LaneA).Clip);
             Assert.That(a.FadeIn, Is.EqualTo(0.5).Within(1e-9));
             Assert.That(a.FadeOut, Is.EqualTo(1.5).Within(1e-9));
             Assert.That(a.Reverse, Is.True);
-            var get = Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern }));
+            var get = Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clip }));
             Assert.That(get.ToJsonString(), Does.Contain("fade_in_beats"));
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["stretch_to_beats"] = beats / 2 }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["stretch_to_beats"] = beats / 2 }));
             Assert.That(SongModel.Beats(Core, rig.First(rig.LaneA).End), Is.EqualTo(beats / 2).Within(0.05));
-            var bad = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["fade_in_beats"] = -1.0 });
+            var bad = Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clip, ["fade_in_beats"] = -1.0 });
             Assert.That(bad["isError"]?.GetValue<bool>() ?? false, Is.True, "a negative fade is refused");
         }
     }

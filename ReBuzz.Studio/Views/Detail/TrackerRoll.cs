@@ -68,7 +68,7 @@ namespace ReBuzz.Studio.Views.Detail
         bool settingLower;
         (int, int, long) ghostSeen;
         (int Count, long Sum) ctrlSeen;
-        IPattern pattern;
+        IClip clip;
         (int Count, long Sum) seen;
         int rowTime = ClipNotes.TimeBase;
 
@@ -224,7 +224,7 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>The notes the roll shows (tests); null when it shows a message.</summary>
         internal System.Collections.Generic.IReadOnlyList<ClipNote> Notes() => roll?.Notes;
 
-        public IPattern Pattern => pattern;
+        public IClip Clip => clip;
 
         public ScrollViewer Scroll => scroll;
 
@@ -236,14 +236,14 @@ namespace ReBuzz.Studio.Views.Detail
         public string SummaryText => summary.Text;
 
         /// <summary>Shows a pattern's notes (the Tracker's pattern), or says why there are none.</summary>
-        public void Show(IPattern p)
+        public void Show(IClip p)
         {
-            if (roll != null && ReferenceEquals(pattern, p) && source?.IsLive == true)
+            if (roll != null && ReferenceEquals(clip, p) && source?.IsLive == true)
             {
                 Poll();
                 return;
             }
-            pattern = p;
+            clip = p;
             DropRoll();
             if (p == null)
             {
@@ -298,15 +298,15 @@ namespace ReBuzz.Studio.Views.Detail
         {
             if (envelopes == null) return;
             envelopes.ShowRuler = roll == null;
-            envelopes.Show(pattern, focus);
+            envelopes.Show(clip, focus);
             axis.Raise();
         }
 
         /// <summary>Shows the clip with the lane of a parameter (a double click on a curve in the Arrangement or the Session).</summary>
-        internal void ShowEnvelope(IPattern p, ColumnKey key)
+        internal void ShowEnvelope(IClip p, ColumnKey key)
         {
             if (envelopes == null) return;
-            if (!ReferenceEquals(pattern, p)) Show(p);
+            if (!ReferenceEquals(clip, p)) Show(p);
             ShowEnvelopes(key);
             envelopes.LaneFor(key)?.Focus();
         }
@@ -386,7 +386,7 @@ namespace ReBuzz.Studio.Views.Detail
             var key = (stack?.Actions.Count() ?? 0, (stack?.CanRedo == true ? 1 : 0) + 2 * (ghostBox.SelectedIndex), (long)(anchor ?? int.MinValue));
             if (!force && key == ghostSeen) return;
             ghostSeen = key;
-            roll.Ghosts = anchor == null ? null : SongNotes.Ghosts(core, pattern, anchor.Value, otherTracks: ghostBox.SelectedIndex == 2);
+            roll.Ghosts = anchor == null ? null : SongNotes.Ghosts(core, clip, anchor.Value, otherTracks: ghostBox.SelectedIndex == 2);
         }
 
         // The lane under the roll: the velocity of the notes, or one controller of the MIDI column (a machine whose notes are in its tracks has none).
@@ -478,7 +478,7 @@ namespace ReBuzz.Studio.Views.Detail
         void ApplyGrid()
         {
             if (roll == null) return;
-            int beat = PatternEvent.TimeBase * 4;
+            int beat = ClipEvent.TimeBase * 4;
             roll.Grid = gridBox.SelectedIndex switch
             {
                 1 => beat,
@@ -525,14 +525,14 @@ namespace ReBuzz.Studio.Views.Detail
             if (roll == null || !IsEffectivelyVisible) return;       // a roll that isn't shown doesn't read the pattern
             if (!source.IsLive)
             {
-                Show(pattern);
+                Show(clip);
                 return;
             }
             // TM1: the machine's Mode changed (a sample per note, or not): the roll is made again for the notes' other store.
             if (MachinePlaysPerNote() != (sampleContext != null))
             {
-                var again = pattern;
-                pattern = null;
+                var again = clip;
+                clip = null;
                 Show(again);
                 return;
             }
@@ -588,12 +588,12 @@ namespace ReBuzz.Studio.Views.Detail
 
         // ---- TM1: a sample per note
 
-        bool MachinePlaysPerNote() => pattern?.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } };
+        bool MachinePlaysPerNote() => clip?.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } };
 
-        bool PerNoteNow() => pattern?.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } } && source is TrackerColumnNotes { PerNoteSamples: true };
+        bool PerNoteNow() => clip?.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } } && source is TrackerColumnNotes { PerNoteSamples: true };
 
         /// <summary>When the machine plays a sample per note and the notes carry one: the roll gets the samples (chips, picker, colour), the Sample lane is offered.</summary>
-        void SetUpSamples(IPattern p)
+        void SetUpSamples(IClip p)
         {
             picker.Close();
             sampleContext = null;
@@ -668,7 +668,7 @@ namespace ReBuzz.Studio.Views.Detail
 
         void OpenSampler()
         {
-            if (pattern?.Machine is not IMachine machine) return;
+            if (clip?.Machine is not IMachine machine) return;
             ReBuzz.Studio.Views.StudioSelection.For(core).SelectMachine(machine, this);
             ReBuzz.Studio.Views.Mixer.MixerView.DeviceOpener?.Invoke(machine);
         }
@@ -752,22 +752,22 @@ namespace ReBuzz.Studio.Views.Detail
         void OnSourceEdited() { loopUndoable = false; loopRedoable = false; RefreshGhosts(force: true); }
 
         /// <summary>The song's tick where this pattern's first tick lies: its event that plays now, else its first in the song; null if it isn't in the song.</summary>
-        internal int? Anchor() => AnchorOf(core, pattern);
+        internal int? Anchor() => AnchorOf(core, clip);
 
         /// <summary>Anchor for any pattern (the Tracker's bar rules use it too).</summary>
-        internal static int? AnchorOf(ReBuzzCore core, IPattern pattern)
+        internal static int? AnchorOf(ReBuzzCore core, IClip clip)
         {
             var song = core.Song;
-            if (song == null || pattern == null) return null;
+            if (song == null || clip == null) return null;
             int? first = null;
             int pos = core.SongCore?.PlayPosition ?? 0;
             foreach (var seq in song.Sequences)
             {
-                if (seq.Machine != pattern.Machine) continue;
+                if (seq.Machine != clip.Machine) continue;
                 foreach (var kv in seq.Events)
                 {
                     var e = kv.Value;
-                    if (e.Type != SequenceEventType.PlayPattern || !ReferenceEquals(e.Pattern, pattern)) continue;
+                    if (e.Type != SequenceEventType.PlayClip || !ReferenceEquals(e.Clip, clip)) continue;
                     int a = kv.Key - e.PlayedOffset;
                     if (pos >= kv.Key && pos < kv.Key + Math.Max(1, e.Span)) return a;
                     if (first == null || a < first) first = a;
@@ -777,9 +777,9 @@ namespace ReBuzz.Studio.Views.Detail
         }
 
         /// <summary>The bar length in ticks the song's list has where the pattern lies (the first bar's when it isn't in the song).</summary>
-        internal int BarLength() => BarLengthOf(core, pattern);
+        internal int BarLength() => BarLengthOf(core, clip);
 
-        internal static int BarLengthOf(ReBuzzCore core, IPattern pattern) => Math.Max(1, core.SongMeter.GetBarLengthAt(Math.Max(0, AnchorOf(core, pattern) ?? 0)));
+        internal static int BarLengthOf(ReBuzzCore core, IClip clip) => Math.Max(1, core.SongMeter.GetBarLengthAt(Math.Max(0, AnchorOf(core, clip) ?? 0)));
 
         /// <summary>The bars, the loop and the length the ruler shows, read from the song again.</summary>
         internal void RefreshBars()
@@ -868,15 +868,15 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Moves the playhead with the pattern's own play position (Tracker's row marker), and the viewer with it when Follow is on.</summary>
         internal void UpdatePlayhead()
         {
-            if (pattern == null) return;
+            if (clip == null) return;
             if (roll == null)
             {
                 // No roll (the machine takes no notes): the envelope lanes draw the play position.
-                int at = pattern.PlayPosition;
+                int at = clip.PlayPosition;
                 if (at != shownPlay) { shownPlay = at; envelopes?.Invalidate(); }
                 return;
             }
-            int pos = pattern.PlayPosition;
+            int pos = clip.PlayPosition;
             if (pos == shownPlay) return;
             shownPlay = pos;
             int time = pos == int.MinValue ? -1 : pos;
@@ -935,12 +935,12 @@ namespace ReBuzz.Studio.Views.Detail
 
             public int BeatUnits => Math.Max(1, host.core.TPB) * ClipNotes.TimeBase;
 
-            public int BarUnits => Roll != null ? Roll.BarTime : Math.Max(1, host.pattern == null ? 1 : BarLengthOf(host.core, host.pattern)) * ClipNotes.TimeBase;
+            public int BarUnits => Roll != null ? Roll.BarTime : Math.Max(1, host.clip == null ? 1 : BarLengthOf(host.core, host.clip)) * ClipNotes.TimeBase;
 
             public (int From, int To)? Loop =>
                 host.ruler is { LoopStartTick: >= 0 } r && r.LoopEndTick > r.LoopStartTick ? (r.LoopStartTick * ClipNotes.TimeBase, r.LoopEndTick * ClipNotes.TimeBase) : null;
 
-            public int Playhead => Roll != null ? Roll.PlayheadTime : host.pattern is { } p && p.PlayPosition != int.MinValue ? p.PlayPosition : -1;
+            public int Playhead => Roll != null ? Roll.PlayheadTime : host.clip is { } p && p.PlayPosition != int.MinValue ? p.PlayPosition : -1;
 
             public void Zoom(double factor)
             {

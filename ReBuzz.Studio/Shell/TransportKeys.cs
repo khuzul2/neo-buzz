@@ -23,15 +23,15 @@ namespace ReBuzz.Studio.Shell
     internal sealed class TransportKeys
     {
         readonly Func<ReBuzzCore> core;
-        readonly Func<bool> patternShown;
+        readonly Func<bool> clipShown;
         bool taken;     // the Space held now was the transport's: its repeats and its release are too
 
         /// <param name="core">The engine, or null while the window has no views yet.</param>
         /// <param name="patternShown">Whether the Pattern tab is the one shown (Shift+Space).</param>
-        public TransportKeys(Window window, Func<ReBuzzCore> core, Func<bool> patternShown)
+        public TransportKeys(Window window, Func<ReBuzzCore> core, Func<bool> clipShown)
         {
             this.core = core;
-            this.patternShown = patternShown;
+            this.clipShown = clipShown;
             window.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
             window.AddHandler(InputElement.KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel, handledEventsToo: true);
             window.Deactivated += (s, e) => taken = false;      // released in another window
@@ -51,8 +51,8 @@ namespace ReBuzz.Studio.Shell
             if (c == null) return;
             if (shift)
             {
-                if (!patternShown()) return;
-                TransportCommands.TogglePatternPreview(c);
+                if (!clipShown()) return;
+                TransportCommands.ToggleClipPreview(c);
             }
             else
             {

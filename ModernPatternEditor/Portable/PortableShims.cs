@@ -28,24 +28,24 @@ namespace BuzzGUI.Common
 namespace BuzzGUI.Common.Actions
 {
     /// <summary>BuzzGUI.Common's PatternAction: an action on a pattern, found again by name.</summary>
-    public abstract class PatternAction : MachineAction
+    public abstract class ClipAction : MachineAction
     {
-        readonly string patternName;
+        readonly string clipName;
 
-        protected IPattern Pattern
+        protected IClip Clip
         {
             get
             {
-                var p = Machine.Patterns.FirstOrDefault(x => x.Name == patternName);
+                var p = Machine.Clips.FirstOrDefault(x => x.Name == clipName);
                 if (p == null) throw new ActionException(this);
                 return p;
             }
         }
 
-        public PatternAction(IPattern p)
+        public ClipAction(IClip p)
             : base(p.Machine)
         {
-            patternName = p.Name;
+            clipName = p.Name;
         }
     }
 }
@@ -57,13 +57,13 @@ namespace BuzzGUI.Common.Actions.MachineActions
     /// isn't portable): undo makes the pattern again, empty, as the editor's data comes back empty
     /// on Windows too (the editor drops a deleted pattern's data).
     /// </summary>
-    public class DeletePatternAction : MachineAction
+    public class DeleteClipAction : MachineAction
     {
         string name;
         readonly int length;
-        IPattern target;
+        IClip target;
 
-        public DeletePatternAction(IPattern p)
+        public DeleteClipAction(IClip p)
             : base(p.Machine)
         {
             name = p.Name;
@@ -73,20 +73,20 @@ namespace BuzzGUI.Common.Actions.MachineActions
 
         protected override void DoAction()
         {
-            var pat = target != null && Machine.Patterns.Contains(target) ? target : Machine.Patterns.FirstOrDefault(p => p.Name == name);
+            var pat = target != null && Machine.Clips.Contains(target) ? target : Machine.Clips.FirstOrDefault(p => p.Name == name);
             if (pat != null)
             {
                 target = pat;
                 name = pat.Name;
-                Machine.DeletePattern(pat);
+                Machine.DeleteClip(pat);
             }
         }
 
         protected override void UndoAction()
         {
-            var before = Machine.Patterns.ToList();
-            Machine.CreatePattern(PatternNames.Free(Machine, name), length);
-            target = PatternNames.Added(Machine, before) ?? target;
+            var before = Machine.Clips.ToList();
+            Machine.CreateClip(ClipNames.Free(Machine, name), length);
+            target = ClipNames.Added(Machine, before) ?? target;
         }
     }
 }

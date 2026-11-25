@@ -114,19 +114,19 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The audio clip of a file at a Session slot and in the arrangement, its tempo set so a loop is the bars it is; (machine, pattern, the clip, the song's rate).</summary>
-        static (string Machine, string Pattern, IPattern Clip, int Rate, JsonObject Imported) Import(ReBuzzCore core, string file, double bpm = 120, int slot = 1, double atBeats = 0, string warp = null)
+        static (string Machine, string ClipName, IClip Clip, int Rate, JsonObject Imported) Import(ReBuzzCore core, string file, double bpm = 120, int slot = 1, double atBeats = 0, string warp = null)
         {
             var imported = Ok(Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = slot, ["at_beats"] = atBeats }));
-            string machine = (string)imported["machine"], pattern = (string)imported["pattern"];
-            var set = new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["tempo_bpm"] = bpm };
+            string machine = (string)imported["machine"], clipName = (string)imported["pattern"];
+            var set = new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["tempo_bpm"] = bpm };
             if (warp != null) set["warp"] = warp;
             var clipJson = Ok(Tool("audio_clip_set", set));
-            var clip = core.SongCore.MachinesList.First(m => m.Name == machine).PatternsList.First(p => p.Name == pattern);
-            return (machine, pattern, clip, (int)clipJson["audio"]!["sample_rate"]!, imported);
+            var clip = core.SongCore.MachinesList.First(m => m.Name == machine).ClipsList.First(p => p.Name == clipName);
+            return (machine, clipName, clip, (int)clipJson["audio"]!["sample_rate"]!, imported);
         }
 
-        static JsonObject Slice(string machine, string pattern, string by = "transients", bool apply = true) =>
-            Tool("audio_slice_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["by"] = by, ["apply"] = apply });
+        static JsonObject Slice(string machine, string clipName, string by = "transients", bool apply = true) =>
+            Tool("audio_slice_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["by"] = by, ["apply"] = apply });
 
         static MachineCore MachineNamed(ReBuzzCore core, string name) => core.SongCore.MachinesList.First(m => m.Name == name);
 
@@ -154,16 +154,16 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, rate, imported) = Import(core, Wav("clicks.wav", Clicks(Hits.Select(h => (h, 0.4 + 0.05 * (h % 3))), 2.0)));
+            var (machine, clipName, clip, rate, imported) = Import(core, Wav("clicks.wav", Clicks(Hits.Select(h => (h, 0.4 + 0.05 * (h % 3))), 2.0)));
             var layout = core.SessionLayout;
             int machines = Visible(core), sequences = core.SongCore.SequencesList.Count, waves = FilledWaves(core);
-            var sourceBefore = Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })).ToJsonString();
-            var sourceEvent = core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single(e => e.Value.Pattern == clip);
+            var sourceBefore = Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clipName })).ToJsonString();
+            var sourceEvent = core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single(e => e.Value.Clip == clip);
 
-            var o = Ok(Slice(machine, pattern));
+            var o = Ok(Slice(machine, clipName));
             Assert.That((int)o["count"], Is.EqualTo(8));
             Assert.That((bool)o["capped"], Is.False);
-            Assert.That((string)o["machine"], Is.EqualTo(pattern + " slices"), "named after the clip");
+            Assert.That((string)o["machine"], Is.EqualTo(clipName + " slices"), "named after the clip");
             Assert.That((int)o["slot"], Is.EqualTo((int)imported["slot"]), "the source's Session scene");
 
             // the boundaries: within a millisecond of the known hits
@@ -182,7 +182,7 @@ namespace ReBuzz.Studio.Tests
                 int slot = (int)slices[i]!["slot"]!;
                 Assert.That(slot, Is.EqualTo(waves + 1 + i), "the first free slots in order");
                 var w = core.SongCore.Wavetable.Waves[slot - 1];
-                Assert.That(w.Name, Is.EqualTo($"{pattern} {i + 1:00}"));
+                Assert.That(w.Name, Is.EqualTo($"{clipName} {i + 1:00}"));
                 Assert.That(w.Layers.First().SampleCount, Is.EqualTo((long)slices[i]!["length"]!));
                 Assert.That(w.Layers.First().SampleRate, Is.EqualTo(rate));
             }
@@ -202,13 +202,13 @@ namespace ReBuzz.Studio.Tests
             Assert.That(core.SongCore.SequencesList.Count, Is.EqualTo(sequences + 1));
 
             // the clip: same length, scene and arrangement position; one note a slice, at its place in beats, as long as the slice, velocity 100
-            var midi = sampler.PatternsList.Single(p => p.Name == (string)o["pattern"]);
+            var midi = sampler.ClipsList.Single(p => p.Name == (string)o["pattern"]);
             Assert.That(midi.Length, Is.EqualTo(clip.Length));
             Assert.That(layout.IsAudioClip(midi), Is.False);
-            Assert.That(layout.PatternAt(layout.FirstTrackOf(sampler), (int)imported["slot"] - 1), Is.SameAs(midi), "in the same scene");
+            Assert.That(layout.ClipAt(layout.FirstTrackOf(sampler), (int)imported["slot"] - 1), Is.SameAs(midi), "in the same scene");
             var at = core.SongCore.SequencesList.First(q => q.Machine == sampler).Events.Single();
             Assert.That(at.Key, Is.EqualTo(sourceEvent.Key), "at the same arrangement position");
-            Assert.That(at.Value.Pattern, Is.SameAs(midi));
+            Assert.That(at.Value.Clip, Is.SameAs(midi));
             var notes = layout.NotesOf(midi);
             Assert.That(notes.Count, Is.EqualTo(8));
             double ticksPerSecond = 120 / 60.0 * core.TPB * SessionRig.TB;
@@ -224,7 +224,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(beats[1], Is.EqualTo(0.52).Within(0.005), "the beat is in the clip's beats");
 
             // the source clip is as it was
-            Assert.That(Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })).ToJsonString(), Is.EqualTo(sourceBefore));
+            Assert.That(Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clipName })).ToJsonString(), Is.EqualTo(sourceBefore));
 
             // one undo step takes the track, its clip, the waves and the settings away
             core.SongCore.ActionStack.Undo();
@@ -232,9 +232,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(core.SongCore.SequencesList.Count, Is.EqualTo(sequences));
             Assert.That(FilledWaves(core), Is.EqualTo(waves), "the waves are gone");
             Assert.That(core.SongCore.MachinesList.Any(m => m.Name == (string)o["machine"]), Is.False);
-            Assert.That(layout.PatternAt(layout.FirstTrackOf(MachineNamed(core, machine)), (int)imported["slot"] - 1), Is.SameAs(clip), "the source is in its slot");
-            Assert.That(Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })).ToJsonString(), Is.EqualTo(sourceBefore), "the source is as it was");
-            Assert.That(core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single().Value.Pattern, Is.SameAs(clip));
+            Assert.That(layout.ClipAt(layout.FirstTrackOf(MachineNamed(core, machine)), (int)imported["slot"] - 1), Is.SameAs(clip), "the source is in its slot");
+            Assert.That(Ok(Tool("audio_clip_get", new JsonObject { ["machine"] = machine, ["pattern"] = clipName })).ToJsonString(), Is.EqualTo(sourceBefore), "the source is as it was");
+            Assert.That(core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single().Value.Clip, Is.SameAs(clip));
 
             // redo brings it all back
             core.SongCore.ActionStack.Redo();
@@ -243,7 +243,7 @@ namespace ReBuzz.Studio.Tests
             var again = MachineNamed(core, (string)o["machine"]);
             Assert.That(Param(again, "Z8 wave"), Is.EqualTo((int)slices[7]!["slot"]!), "the zones are set again");
             Assert.That(Param(again, "Z1 choke"), Is.EqualTo(1));
-            Assert.That(layout.NotesOf(again.PatternsList.Single(p => !layout.IsAudioClip(p))).Count, Is.EqualTo(8), "the notes are back");
+            Assert.That(layout.NotesOf(again.ClipsList.Single(p => !layout.IsAudioClip(p))).Count, Is.EqualTo(8), "the notes are back");
         }
 
         [AvaloniaTest]
@@ -255,10 +255,10 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             // 24 clicks over 3 s (6 beats at 120 BPM), the levels all different
             var hits = Enumerable.Range(0, 24).Select(i => (At: i * 0.125, Level: 0.2 + 0.03 * ((i * 7) % 24))).ToArray();
-            var (machine, pattern, clip, rate, _) = Import(core, Wav("many.wav", Clicks(hits, 3.0)));
+            var (machine, clipName, clip, rate, _) = Import(core, Wav("many.wav", Clicks(hits, 3.0)));
             int machines = Visible(core), waves = FilledWaves(core);
 
-            var capped = Ok(Slice(machine, pattern, "transients", apply: false));
+            var capped = Ok(Slice(machine, clipName, "transients", apply: false));
             Assert.That((int)capped["count"], Is.EqualTo(16));
             Assert.That((int)capped["found"], Is.EqualTo(24));
             Assert.That((bool)capped["capped"], Is.True);
@@ -268,33 +268,33 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Visible(core), Is.EqualTo(machines), "apply=false changes nothing");
             Assert.That(FilledWaves(core), Is.EqualTo(waves));
 
-            var capApplied = Ok(Slice(machine, pattern, "transients"));
+            var capApplied = Ok(Slice(machine, clipName, "transients"));
             Assert.That(capApplied["slices"]!.AsArray().Count, Is.EqualTo(16));
             Assert.That(Param(MachineNamed(core, (string)capApplied["machine"]), "Z16 wave"), Is.EqualTo((int)capApplied["slices"]![15]!["slot"]!), "all 16 zones are used");
             Assert.That(Visible(core), Is.EqualTo(machines + 1));
             core.SongCore.ActionStack.Undo();
 
             // grids: 6 beats
-            Assert.That((int)Ok(Slice(machine, pattern, "bar", false))["count"], Is.EqualTo(2));
-            Assert.That((int)Ok(Slice(machine, pattern, "1/4", false))["count"], Is.EqualTo(6));
-            Assert.That((int)Ok(Slice(machine, pattern, "1/8", false))["count"], Is.EqualTo(12));
-            string refused = Error(Slice(machine, pattern, "1/16"));
+            Assert.That((int)Ok(Slice(machine, clipName, "bar", false))["count"], Is.EqualTo(2));
+            Assert.That((int)Ok(Slice(machine, clipName, "1/4", false))["count"], Is.EqualTo(6));
+            Assert.That((int)Ok(Slice(machine, clipName, "1/8", false))["count"], Is.EqualTo(12));
+            string refused = Error(Slice(machine, clipName, "1/16"));
             Assert.That(refused, Does.Contain("24").And.Contain("16"), "the message says how many it would make: " + refused);
             Assert.That(Visible(core), Is.EqualTo(machines), "a refused call changes nothing");
             Assert.That(FilledWaves(core), Is.EqualTo(waves));
-            Assert.That(Error(Slice(machine, pattern, "warp_markers")), Does.Contain("warp markers"));
-            Assert.That(Error(Tool("audio_slice_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["by"] = "1/32" })), Does.Contain("by:"));
+            Assert.That(Error(Slice(machine, clipName, "warp_markers")), Does.Contain("warp markers"));
+            Assert.That(Error(Tool("audio_slice_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["by"] = "1/32" })), Does.Contain("by:"));
             Assert.That(Error(Tool("audio_slice_to_midi", new JsonObject { ["machine"] = machine })), Does.Contain("pattern or as slot"));
 
             // warp markers: two inside the clip are three slices
             Ok(Tool("audio_clip_set", new JsonObject
             {
-                ["machine"] = machine, ["pattern"] = pattern,
+                ["machine"] = machine, ["pattern"] = clipName,
                 ["warp_markers"] = new JsonArray(
                     new JsonObject { ["sample"] = 0.0, ["beat"] = 0.0 }, new JsonObject { ["sample"] = (double)rate, ["beat"] = 2.0 },
                     new JsonObject { ["sample"] = (double)(int)(2.2 * rate), ["beat"] = 4.4 }, new JsonObject { ["sample"] = 3.0 * rate, ["beat"] = 6.0 }),
             }));
-            var marked = Ok(Slice(machine, pattern, "warp_markers", false));
+            var marked = Ok(Slice(machine, clipName, "warp_markers", false));
             Assert.That((int)marked["count"], Is.EqualTo(3));
             Assert.That(marked["slices"]!.AsArray().Select(s => (long)s!["start"]!), Is.EqualTo(new long[] { 0, rate, (long)(2.2 * rate) }));
             Assert.That(marked["slices"]!.AsArray().Select(s => (double)s!["beat"]!), Is.EqualTo(new[] { 0.0, 2.0, 4.4 }));
@@ -314,22 +314,22 @@ namespace ReBuzz.Studio.Tests
                 hits.Add(("kick", t0)); hits.Add(("hat", t0 + 0.25)); hits.Add(("snare", t0 + 0.5)); hits.Add(("hat", t0 + 0.75));
                 hits.Add(("kick", t0 + 1.0)); hits.Add(("hat", t0 + 1.25)); hits.Add(("snare", t0 + 1.5)); hits.Add(("hat", t0 + 1.75));
             }
-            var (machine, pattern, clip, rate, _) = Import(core, Wav("beat.wav", ConvertSignals.Drums(hits, 4.0)));
-            var o = Ok(Slice(machine, pattern, "transients", apply: false));
+            var (machine, clipName, clip, rate, _) = Import(core, Wav("beat.wav", ConvertSignals.Drums(hits, 4.0)));
+            var o = Ok(Slice(machine, clipName, "transients", apply: false));
             Assert.That((int)o["count"], Is.EqualTo(16), "two bars of eight hits");
             var slices = o["slices"]!.AsArray();
             for (int i = 0; i < 16; i++)
                 Assert.That((long)slices[i]!["start"]! * 1000.0 / rate, Is.EqualTo(hits[i].At * 1000).Within(1.0), $"slice {i + 1} ({hits[i].Drum}) starts on its hit");
 
             // the clip's loop is the region: the second bar only
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["loop"] = true, ["region"] = new JsonObject { ["start_beats"] = 4.0, ["loop_start_beats"] = 4.0, ["loop_end_beats"] = 8.0 } }));
-            var looped = Ok(Slice(machine, pattern, "transients", apply: false));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["loop"] = true, ["region"] = new JsonObject { ["start_beats"] = 4.0, ["loop_start_beats"] = 4.0, ["loop_end_beats"] = 8.0 } }));
+            var looped = Ok(Slice(machine, clipName, "transients", apply: false));
             Assert.That((int)looped["count"], Is.EqualTo(8), "one bar of the two");
             for (int i = 0; i < 8; i++)
                 Assert.That((long)looped["slices"]![i]!["start"]! * 1000.0 / rate, Is.EqualTo(hits[8 + i].At * 1000).Within(1.0), $"looped slice {i + 1}");
             Assert.That((double)looped["slices"]![0]!["beat"]!, Is.EqualTo(4.0).Within(0.01));
-            var applied = Ok(Slice(machine, pattern, "transients"));
-            var midi = MachineNamed(core, (string)applied["machine"]).PatternsList.Single(p => !core.SessionLayout.IsAudioClip(p));
+            var applied = Ok(Slice(machine, clipName, "transients"));
+            var midi = MachineNamed(core, (string)applied["machine"]).ClipsList.Single(p => !core.SessionLayout.IsAudioClip(p));
             var settings = core.SessionLayout.ClipOf(midi);
             Assert.That(settings.Loop, Is.True, "the same loop");
             Assert.That(settings.LoopStart, Is.EqualTo(4 * core.TPB));
@@ -348,9 +348,9 @@ namespace ReBuzz.Studio.Tests
             // a steady tone cut into beats: not on a zero crossing, so the fades show
             var tone = new float[2 * FileRate];
             for (int i = 0; i < tone.Length; i++) tone[i] = (float)(0.5 * Math.Sin(2 * Math.PI * 441 * i / FileRate + 1.0));
-            var (machine, pattern, clip, rate, _) = Import(core, Wav("tone.wav", tone));
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["gain_db"] = -6.0, ["transpose"] = 3.0, ["detune"] = 20.0 }));
-            var o = Ok(Slice(machine, pattern, "1/4"));
+            var (machine, clipName, clip, rate, _) = Import(core, Wav("tone.wav", tone));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["gain_db"] = -6.0, ["transpose"] = 3.0, ["detune"] = 20.0 }));
+            var o = Ok(Slice(machine, clipName, "1/4"));
             Assert.That((int)o["count"], Is.EqualTo(4));
             var source = core.SessionLayout.AudioSourceOf(clip)!.Left;
             var w0 = WaveOf(core.SongCore.Wavetable.Waves[(int)o["slices"]![0]!["slot"]! - 1]);
@@ -372,8 +372,8 @@ namespace ReBuzz.Studio.Tests
             core.SongCore.ActionStack.Undo();
 
             // reverse: the slices are cut from the audio backwards, the first of them the end of the audio reversed
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["gain_db"] = 0.0, ["transpose"] = 0.0, ["detune"] = 0.0, ["reverse"] = true }));
-            var back = Ok(Slice(machine, pattern, "1/4"));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["gain_db"] = 0.0, ["transpose"] = 0.0, ["detune"] = 0.0, ["reverse"] = true }));
+            var back = Ok(Slice(machine, clipName, "1/4"));
             var r0 = WaveOf(core.SongCore.Wavetable.Waves[(int)back["slices"]![0]!["slot"]! - 1]);
             for (int i = one + 5; i < r0.Length - two - 5; i += 97)
                 Assert.That(r0[i], Is.EqualTo(source[source.Length - 1 - i]).Within(1e-6), $"reversed sample {i}");
@@ -389,10 +389,10 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             Ok(Tool("song_set", new JsonObject { ["tempo_bpm"] = 90 }));
             // the loop's own tempo is 120 BPM: a clip of 4 beats that the song plays at 90
-            var (machine, pattern, clip, rate, _) = Import(core, Wav("warped.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)), bpm: 120, warp: "Repitch");
-            var o = Ok(Slice(machine, pattern));
+            var (machine, clipName, clip, rate, _) = Import(core, Wav("warped.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)), bpm: 120, warp: "Repitch");
+            var o = Ok(Slice(machine, clipName));
             Assert.That((int)o["count"], Is.EqualTo(8));
-            var notes = core.SessionLayout.NotesOf(MachineNamed(core, (string)o["machine"]).PatternsList.Single(p => !core.SessionLayout.IsAudioClip(p)));
+            var notes = core.SessionLayout.NotesOf(MachineNamed(core, (string)o["machine"]).ClipsList.Single(p => !core.SessionLayout.IsAudioClip(p)));
             double ticksPerClipSecond = 120 / 60.0 * core.TPB * SessionRig.TB;           // the clip's beats: the audio's own tempo, not the song's
             for (int i = 0; i < 8; i++)
                 Assert.That(notes[i].Time, Is.EqualTo(Hits[i] * ticksPerClipSecond).Within(0.002 * ticksPerClipSecond), $"note {i + 1}");
@@ -438,8 +438,8 @@ namespace ReBuzz.Studio.Tests
                 hits.Add(("kick", t0)); hits.Add(("hat", t0 + 0.25)); hits.Add(("snare", t0 + 0.5)); hits.Add(("hat", t0 + 0.75));
                 hits.Add(("kick", t0 + 1.0)); hits.Add(("hat", t0 + 1.25)); hits.Add(("snare", t0 + 1.5)); hits.Add(("open", t0 + 1.75));
             }
-            var (machine, pattern, clip, rate, _) = Import(core, Wav(stereo ? "null-stereo.wav" : "null.wav", ConvertSignals.Drums(hits, 4.0), stereo: stereo), bpm: 120, warp: "Off");
-            var o = Ok(Slice(machine, pattern));
+            var (machine, clipName, clip, rate, _) = Import(core, Wav(stereo ? "null-stereo.wav" : "null.wav", ConvertSignals.Drums(hits, 4.0), stereo: stereo), bpm: 120, warp: "Off");
+            var o = Ok(Slice(machine, clipName));
             TestContext.Out.WriteLine("[notice] starts (ms): " + string.Join(" ", o["slices"]!.AsArray().Select(x => ((long)x!["start"]! * 1000.0 / rate).ToString("0.0"))));
             Assert.That((int)o["count"], Is.EqualTo(16));
             string slicesTrack = (string)o["machine"];
@@ -509,11 +509,11 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, rate, imported) = Import(core, Wav("saved.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)));
-            var o = Ok(Slice(machine, pattern));
+            var (machine, clipName, clip, rate, imported) = Import(core, Wav("saved.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)));
+            var o = Ok(Slice(machine, clipName));
             string sampler = (string)o["machine"], midiName = (string)o["pattern"];
             var slots = o["slices"]!.AsArray().Select(s => (int)s!["slot"]!).ToArray();
-            var notesBefore = core.SessionLayout.NotesOf(MachineNamed(core, sampler).PatternsList.Single(p => p.Name == midiName));
+            var notesBefore = core.SessionLayout.NotesOf(MachineNamed(core, sampler).ClipsList.Single(p => p.Name == midiName));
             var wave0 = WaveOf(core.SongCore.Wavetable.Waves[slots[0] - 1]);
 
             void Check(string what)
@@ -527,15 +527,15 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(Param(m, $"Z{z} choke"), Is.EqualTo(1), $"{what}: zone {z} choke");
                     var w = core.SongCore.Wavetable.Waves[slots[z - 1] - 1];
                     Assert.That(w, Is.Not.Null, $"{what}: wave {slots[z - 1]}");
-                    Assert.That(w.Name, Is.EqualTo($"{pattern} {z:00}"), what);
+                    Assert.That(w.Name, Is.EqualTo($"{clipName} {z:00}"), what);
                 }
                 var back = WaveOf(core.SongCore.Wavetable.Waves[slots[0] - 1]);
                 Assert.That(back.Length, Is.EqualTo(wave0.Length), what);
                 for (int i = 0; i < back.Length; i += 53) Assert.That(back[i], Is.EqualTo(wave0[i]).Within(1e-4), $"{what}: sample {i}");
-                var notes = core.SessionLayout.NotesOf(m.PatternsList.Single(p => p.Name == midiName));
+                var notes = core.SessionLayout.NotesOf(m.ClipsList.Single(p => p.Name == midiName));
                 Assert.That(notes, Is.EqualTo(notesBefore), what + ": the same notes");
                 var layout = core.SessionLayout;
-                Assert.That(layout.PatternAt(layout.FirstTrackOf(m), (int)imported["slot"] - 1)?.Name, Is.EqualTo(midiName), what + ": still in the scene");
+                Assert.That(layout.ClipAt(layout.FirstTrackOf(m), (int)imported["slot"] - 1)?.Name, Is.EqualTo(midiName), what + ": still in the scene");
             }
 
             string nbl = Work("sliced.nbl");
@@ -553,7 +553,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; SliceFlow.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, rate, imported) = Import(core, Wav("flow.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)));
+            var (machine, clipName, clip, rate, imported) = Import(core, Wav("flow.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)));
             var view = rig.Show();
             var layout = core.SessionLayout;
             int track = layout.FirstTrackOf(MachineNamed(core, machine));
@@ -586,7 +586,7 @@ namespace ReBuzz.Studio.Tests
             finally { dialog.Close(); }
 
             // 8 beats: 1/16 would make 32
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["tempo_bpm"] = 240.0 }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["tempo_bpm"] = 240.0 }));
             var longer = layout.SliceSourceOfClip(clip, out error)!;
             var big = new SliceFlow.SliceWindow(layout, longer);
             big.Show();
@@ -602,12 +602,12 @@ namespace ReBuzz.Studio.Tests
             finally { big.Close(); }
 
             // the flow
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["tempo_bpm"] = 120.0 }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["tempo_bpm"] = 120.0 }));
             string asked = null;
             SliceFlow.Responder = name => { asked = name; return SliceBy.Quarter; };
             int machines = Visible(core);
             Pump(SliceFlow.SliceClip(clip));
-            Assert.That(asked, Is.EqualTo(pattern));
+            Assert.That(asked, Is.EqualTo(clipName));
             Assert.That(SliceFlow.LastOutcome, Is.Not.Null, SliceFlow.LastSummary);
             Assert.That(SliceFlow.LastOutcome.Slices.Count, Is.EqualTo(4));
             Assert.That(SliceFlow.LastSummary, Does.Contain("Neo Sampler"));
@@ -620,7 +620,7 @@ namespace ReBuzz.Studio.Tests
             // a clip that isn't audio is refused with the reason
             SliceFlow.Responder = _ => throw new InvalidOperationException("must not ask");
             Dialogs.Responder = (m, c, b) => UserAnswer.Ok;
-            Pump(SliceFlow.SliceClip(SliceFlow.LastOutcome.Pattern));
+            Pump(SliceFlow.SliceClip(SliceFlow.LastOutcome.Clip));
             Assert.That(SliceFlow.LastSummary, Does.Contain("isn't an audio clip"));
             Assert.That(Visible(core), Is.EqualTo(machines + 1));
         }
@@ -632,7 +632,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, rate, _) = Import(core, Wav("full.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)));
+            var (machine, clipName, clip, rate, _) = Import(core, Wav("full.wav", Clicks(Hits.Select(h => (h, 0.5)), 2.0)));
             var table = core.SongCore.Wavetable;
             var filler = new List<int>();
             // fill all but five slots with a one-sample wave
@@ -644,7 +644,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 int machines = Visible(core);
-                string why = Error(Slice(machine, pattern));
+                string why = Error(Slice(machine, clipName));
                 Assert.That(why, Does.Contain("5 free slots").And.Contain("need 8"), why);
                 Assert.That(Visible(core), Is.EqualTo(machines));
             }

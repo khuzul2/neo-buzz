@@ -18,7 +18,7 @@ namespace ReBuzz.Agent
 {
     internal static class AudioWarpTools
     {
-        static JsonObject State(ReBuzzCore core, SessionLayout layout, MachineCore m, IPattern p, WarpResult result, string action)
+        static JsonObject State(ReBuzzCore core, SessionLayout layout, MachineCore m, IClip p, WarpResult result, string action)
         {
             var markers = result?.Markers ?? layout.WarpMarkersOf(p);
             var source = layout.AudioSourceOf(p);
@@ -106,7 +106,7 @@ namespace ReBuzz.Agent
                     {
                         var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View, so no audio clips.");
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("pattern"));
                         if (layout.ClipOf(p)?.Audio == null) throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
                         if (!WarpRequest.Actions.Contains(action)) throw new ToolError($"action: one of {string.Join(", ", WarpRequest.Actions)}.");
                         var request = new WarpRequest

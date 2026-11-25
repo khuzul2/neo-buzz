@@ -23,11 +23,11 @@ namespace BuzzGUI.Common
         public int ParamIndex;                  // globals first, then the track parameters; negative: the editor's own (MIDI lanes, PatternXP's)
         public int Track;
         public bool Graphical;
-        public List<PatternEvent> Events = new List<PatternEvent>();   // Time in 1/240 tick (PXP rows are already converted), Duration 0
+        public List<ClipEvent> Events = new List<ClipEvent>();   // Time in 1/240 tick (PXP rows are already converted), Duration 0
         public List<int> BeatRows = new List<int>();                    // MPE only: rows in each beat
     }
 
-    public sealed class BlobPattern
+    public sealed class BlobClip
     {
         public string Name;
         public int Beats;                       // MPE only
@@ -38,11 +38,11 @@ namespace BuzzGUI.Common
     public sealed class BlobData
     {
         public BlobFormat Format;
-        public List<BlobPattern> Patterns = new List<BlobPattern>();
+        public List<BlobClip> Clips = new List<BlobClip>();
         /// <summary>Why the blob could not be read whole (nothing after that point is in <see cref="Patterns"/>), or null.</summary>
         public string Problem;
         /// <summary>The number of events in every column of every pattern.</summary>
-        public int EventCount => Patterns.Sum(p => p.Columns.Sum(c => c.Events.Count));
+        public int EventCount => Clips.Sum(p => p.Columns.Sum(c => c.Events.Count));
     }
 
     public static class ClipBlob
@@ -50,7 +50,7 @@ namespace BuzzGUI.Common
         public const byte PxpVersion = 3;
         const byte NotPxp = 255;
         const byte MpeVersion = 1;
-        public const int PxpTime = PatternEvent.TimeBase * 4;       // the pattern time of a beat: a PXP row is this over the rows per beat
+        public const int PxpTime = ClipEvent.TimeBase * 4;       // the pattern time of a beat: a PXP row is this over the rows per beat
 
         sealed class Reader
         {
@@ -102,7 +102,7 @@ namespace BuzzGUI.Common
                 int count = r.Int();
                 if (count < 0 || count > 1 << 20) r.Problem ??= "a pattern count out of range";
                 for (int i = 0; i < count && r.Ok; i++)
-                    result.Patterns.Add(ReadPxpPattern(r, version));
+                    result.Clips.Add(ReadPxpClip(r, version));
             }
             else if (version == NotPxp)
             {
@@ -118,7 +118,7 @@ namespace BuzzGUI.Common
                 int count = r.Int();
                 if (count < 0 || count > 1 << 20) r.Problem ??= "a pattern count out of range";
                 for (int i = 0; i < count && r.Ok; i++)
-                    result.Patterns.Add(ReadMpePattern(r));
+                    result.Clips.Add(ReadMpeClip(r));
             }
             else
             {
@@ -129,9 +129,9 @@ namespace BuzzGUI.Common
             return result;
         }
 
-        static BlobPattern ReadPxpPattern(Reader r, byte version)
+        static BlobClip ReadPxpClip(Reader r, byte version)
         {
-            var p = new BlobPattern { Name = r.String() };
+            var p = new BlobClip { Name = r.String() };
             p.RowsPerBeat = version > 1 ? r.Int() : 4;
             int count = r.Int();
             if (p.RowsPerBeat < 1) { r.Problem ??= $"{p.Name}: rows per beat {p.RowsPerBeat}"; return p; }
@@ -145,16 +145,16 @@ namespace BuzzGUI.Common
                 for (int k = 0; k < n && r.Ok; k++)
                 {
                     int row = r.Int(), value = r.Int();
-                    c.Events.Add(new PatternEvent(row * PatternEvent.TimeBase * 4 / p.RowsPerBeat, value));
+                    c.Events.Add(new ClipEvent(row * ClipEvent.TimeBase * 4 / p.RowsPerBeat, value));
                 }
                 p.Columns.Add(c);
             }
             return p;
         }
 
-        static BlobPattern ReadMpePattern(Reader r)
+        static BlobClip ReadMpeClip(Reader r)
         {
-            var p = new BlobPattern { Name = r.String() };
+            var p = new BlobClip { Name = r.String() };
             p.Beats = r.Int();
             p.RowsPerBeat = r.Int();
             int count = r.Int();
@@ -168,7 +168,7 @@ namespace BuzzGUI.Common
                 for (int k = 0; k < n && r.Ok; k++)
                 {
                     int time = r.Int(), value = r.Int();
-                    c.Events.Add(new PatternEvent(time, value));
+                    c.Events.Add(new ClipEvent(time, value));
                 }
                 for (int b = 0; b < p.Beats && r.Ok; b++)
                     c.BeatRows.Add(r.Int());

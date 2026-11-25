@@ -23,7 +23,7 @@ namespace ReBuzz.Core
             // A pattern played on its own (Shift+Space, the pattern editor's ▶) stops through its flag,
             // which stops the transport as Playing = false does and puts the editor's ▶ out. Playing =
             // false alone left the flag on, and the next Shift+Space only turned it off.
-            if (core.SoloPattern is { IsPlayingSolo: true } solo) solo.IsPlayingSolo = false;
+            if (core.SoloClip is { IsPlayingSolo: true } solo) solo.IsPlayingSolo = false;
             else core.Playing = false;
         }
 
@@ -32,11 +32,11 @@ namespace ReBuzz.Core
         /// editor's cursor, or stopped when it is playing (ReBuzz.exe's Shift+Space, as upstream has it).
         /// False when the editor shows no pattern.
         /// </summary>
-        public static bool TogglePatternPreview(ReBuzzCore core)
+        public static bool ToggleClipPreview(ReBuzzCore core)
         {
-            if (core.PatternEditorPattern is not PatternCore pattern) return false;
-            if (pattern.IsPlayingSolo) pattern.IsPlayingSolo = false;
-            else pattern.PlayFormPatternEditorPosition();
+            if (core.ClipEditorClip is not ClipCore clip) return false;
+            if (clip.IsPlayingSolo) clip.IsPlayingSolo = false;
+            else clip.PlayFormClipEditorPosition();
             return true;
         }
     }

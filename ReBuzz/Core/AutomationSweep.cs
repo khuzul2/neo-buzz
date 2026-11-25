@@ -13,7 +13,7 @@ namespace ReBuzz.Core
     internal static class AutomationSweep
     {
         /// <summary>Points closer than this (1/240 tick) are one point.</summary>
-        public const int Quarter = PatternEvent.TimeBase / 4;
+        public const int Quarter = ClipEvent.TimeBase / 4;
 
         /// <summary>"No point written yet in this pass".</summary>
         public const int None = int.MinValue;

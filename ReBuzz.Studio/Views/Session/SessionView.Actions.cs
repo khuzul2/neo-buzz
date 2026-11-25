@@ -55,7 +55,7 @@ namespace ReBuzz.Studio.Views.Session
             if (followingSelection || selected is not { } sel) return;
             var machine = headers.FirstOrDefault(h => h.Track == sel.Track)?.Machine;
             if (machine == null) return;
-            StudioSelection.For(buzz).Set(machine, CellAt(sel.Track, sel.Scene)?.Pattern, this, sel.Scene);
+            StudioSelection.For(buzz).Set(machine, CellAt(sel.Track, sel.Scene)?.Clip, this, sel.Scene);
         }
 
         bool followingSelection;
@@ -71,7 +71,7 @@ namespace ReBuzz.Studio.Views.Session
             if (selection.Machine is not { } machine || headers.FirstOrDefault(h => h.Machine == machine) is not { } header) return;
             if (selected?.Track == header.Track) return;
             int scene = selected?.Scene ?? 0;
-            if (selection.Pattern is { } pattern && slots.FirstOrDefault(c => c.Track == header.Track && c.Pattern == pattern) is { } cell) scene = cell.Scene;
+            if (selection.Clip is { } clip && slots.FirstOrDefault(c => c.Track == header.Track && c.Clip == clip) is { } cell) scene = cell.Scene;
             followingSelection = true;
             try
             {
@@ -94,8 +94,8 @@ namespace ReBuzz.Studio.Views.Session
         {
             if (SelectOnLaunch) Select(cell.Track, cell.Scene);
             if (cell.Sequence == null) return;
-            if (cell.Pattern != null)
-                layout.LaunchClip(cell.Sequence, cell.Pattern, 127, cell.Scene);
+            if (cell.Clip != null)
+                layout.LaunchClip(cell.Sequence, cell.Clip, 127, cell.Scene);
             else
                 session.Stop(cell.Sequence);     // an empty slot works as the track's stop button, as in Live
             RefreshState();
@@ -104,8 +104,8 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>The release of a slot's launch control (0.5): Gate clips stop, Repeat clips play on.</summary>
         void ReleaseSlot(SlotCell cell)
         {
-            if (cell.Sequence != null && cell.Pattern != null)
-                layout.ReleaseClip(cell.Sequence, cell.Pattern);
+            if (cell.Sequence != null && cell.Clip != null)
+                layout.ReleaseClip(cell.Sequence, cell.Clip);
             RefreshState();
         }
 
@@ -179,8 +179,8 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>The clip's notes in the piano roll (0.7.1).</summary>
-        internal PianoRollWindow EditNotes(ISequence track, IPattern pattern) =>
-            PianoRollWindow.Show(TopLevel.GetTopLevel(this) as Window, buzz, layout, track, pattern);
+        internal PianoRollWindow EditNotes(ISequence track, IClip clip) =>
+            PianoRollWindow.Show(TopLevel.GetTopLevel(this) as Window, buzz, layout, track, clip);
 
         // ------------------------------------------------------------------ recording (0.7)
 
@@ -214,22 +214,22 @@ namespace ReBuzz.Studio.Views.Session
 
         public bool Duplicate()
         {
-            if (selected is not { } at || layout.PatternAt(at.Track, at.Scene) == null) return false;
+            if (selected is not { } at || layout.ClipAt(at.Track, at.Scene) == null) return false;
             DuplicateClip(at.Track, at.Scene);
             return true;
         }
 
         public bool Delete()
         {
-            if (selected is not { } at || layout.PatternAt(at.Track, at.Scene) == null) return false;
+            if (selected is not { } at || layout.ClipAt(at.Track, at.Scene) == null) return false;
             layout.ClearSlot(at.Track, at.Scene);
             return true;
         }
 
         public bool Rename()
         {
-            if (selected is not { } at || layout.PatternAt(at.Track, at.Scene) is not { } pattern) return false;
-            _ = RenameClip(pattern);
+            if (selected is not { } at || layout.ClipAt(at.Track, at.Scene) is not { } clip) return false;
+            _ = RenameClip(clip);
             return true;
         }
 
@@ -250,13 +250,13 @@ namespace ReBuzz.Studio.Views.Session
         internal void SlotDoubleClicked(SlotCell cell, KeyModifiers mods)
         {
             // NA3: an audio clip has no notes: a double click shows its Audio page (the detail panel).
-            if (cell.Pattern != null && layout.IsAudioClip(cell.Pattern) && Audio.AudioClipPage.Opener?.Invoke(cell.Pattern) == true)
+            if (cell.Clip != null && layout.IsAudioClip(cell.Clip) && Audio.AudioClipPage.Opener?.Invoke(cell.Clip) == true)
                 return;
             // Until the pattern editor is in the studio (S6), a clip's notes open in the piano roll.
-            if (cell.Pattern != null && (mods.HasFlag(KeyModifiers.Control) || !StudioViews.Has("Pattern")))
-                EditNotes(cell.Sequence, cell.Pattern);
-            else if (cell.Pattern != null)
-                EditPattern(cell.Pattern);
+            if (cell.Clip != null && (mods.HasFlag(KeyModifiers.Control) || !StudioViews.Has("Pattern")))
+                EditNotes(cell.Sequence, cell.Clip);
+            else if (cell.Clip != null)
+                EditClip(cell.Clip);
             else
                 CreateClip(cell.Track, cell.Scene);
         }
@@ -265,7 +265,7 @@ namespace ReBuzz.Studio.Views.Session
 
         void CreateClip(int track, int scene)
         {
-            if (layout.PatternAt(track, scene) != null) return;
+            if (layout.ClipAt(track, scene) != null) return;
             if (layout.CreateClip(track, scene) != null)
                 Select(track, scene);
         }
@@ -283,35 +283,35 @@ namespace ReBuzz.Studio.Views.Session
                 Select(track, target);
         }
 
-        async Task RenameClip(IPattern pattern)
+        async Task RenameClip(IClip clip)
         {
-            if (pattern == null) return;
-            string name = await Prompt("Rename clip", $"New name for pattern '{pattern.Name}' of {pattern.Machine?.Name}", pattern.Name);
+            if (clip == null) return;
+            string name = await Prompt("Rename clip", $"New name for pattern '{clip.Name}' of {clip.Machine?.Name}", clip.Name);
             if (name == null) return;
-            if (!layout.RenameClip(pattern, name) && name.Trim() != pattern.Name)
-                await Dialogs.Info($"'{name.Trim()}' is empty or already used by another pattern of {pattern.Machine?.Name}.", "Rename clip");
+            if (!layout.RenameClip(clip, name) && name.Trim() != clip.Name)
+                await Dialogs.Info($"'{name.Trim()}' is empty or already used by another pattern of {clip.Machine?.Name}.", "Rename clip");
         }
 
-        async Task DeleteClip(IPattern pattern)
+        async Task DeleteClip(IClip clip)
         {
-            if (pattern == null) return;
-            bool arranged = buzz.Song.Sequences.Any(s => s.Events.Values.Any(e => e.Pattern == pattern));
+            if (clip == null) return;
+            bool arranged = buzz.Song.Sequences.Any(s => s.Events.Values.Any(e => e.Clip == clip));
             if (arranged)
             {
                 var answer = await Dialogs.Ask(
-                    $"Pattern '{pattern.Name}' is also used in the arrangement. Deleting it removes it there too, and undo only brings the pattern back.\n\nDelete it?",
+                    $"Pattern '{clip.Name}' is also used in the arrangement. Deleting it removes it there too, and undo only brings the pattern back.\n\nDelete it?",
                     "Delete pattern", UserButtons.YesNo, DialogChoices.Delete);
                 if (answer != UserAnswer.Yes) return;
             }
-            layout.DeleteClip(pattern);
+            layout.DeleteClip(clip);
         }
 
         /// <summary>The clip in the pattern editor: the Pattern tab (step S6 brings its editor).</summary>
-        void EditPattern(IPattern pattern)
+        void EditClip(IClip clip)
         {
-            if (pattern == null) return;
-            buzz.SetPatternEditorPattern(pattern);
-            buzz.ActiveView = BuzzView.PatternView;
+            if (clip == null) return;
+            buzz.SetClipEditorClip(clip);
+            buzz.ActiveView = BuzzView.ClipView;
             if (this.FindAncestorOfType<TabControl>() is TabControl tabs)
             {
                 var tab = tabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == "Pattern");
@@ -513,7 +513,7 @@ namespace ReBuzz.Studio.Views.Session
             }
 
             if (sel is not { } at) return false;
-            var pattern = layout.PatternAt(at.Track, at.Scene);
+            var clip = layout.ClipAt(at.Track, at.Scene);
 
             if (none && key == Key.Enter)
             {
@@ -521,17 +521,17 @@ namespace ReBuzz.Studio.Views.Session
                 if (CellAt(at.Track, at.Scene) is SlotCell cell)
                 {
                     LaunchSlot(cell);
-                    enterHeld = cell.Pattern != null ? cell : null;
+                    enterHeld = cell.Clip != null ? cell : null;
                 }
                 return true;
             }
             // Fork (ux-overhaul.md §4): ⌫ deletes in every view: here the clip leaves its slot (⌫ stopped the track; Enter on an
             // empty slot, its ■, or the track menu do that); ⇧⌫ deletes its pattern, after asking.
             if (none && key is Key.Back or Key.Delete) { layout.ClearSlot(at.Track, at.Scene); return true; }
-            if (mods == KeyModifiers.Shift && key is Key.Back or Key.Delete) { _ = DeleteClip(pattern); return true; }
+            if (mods == KeyModifiers.Shift && key is Key.Back or Key.Delete) { _ = DeleteClip(clip); return true; }
             if (mods == (KeyModifiers.Control | KeyModifiers.Shift) && key == Key.M) { CreateClip(at.Track, at.Scene); return true; }
             if (ctrl && key == Key.D) { DuplicateClip(at.Track, at.Scene); return true; }
-            if ((none && key == Key.F2) || (ctrl && key == Key.R)) { _ = RenameClip(pattern); return true; }
+            if ((none && key == Key.F2) || (ctrl && key == Key.R)) { _ = RenameClip(clip); return true; }
             return false;
         }
 
@@ -576,35 +576,35 @@ namespace ReBuzz.Studio.Views.Session
         {
             Select(cell.Track, cell.Scene);
             var menu = new ContextMenu();
-            var pattern = cell.Pattern;
+            var clip = cell.Clip;
             var machine = cell.Sequence?.Machine;
 
-            if (pattern != null)
+            if (clip != null)
             {
                 menu.Items.Add(Item("Launch", () => LaunchSlot(cell), "Enter"));
                 menu.Items.Add(Item("Clip settings", ShowClipPanel));
-                menu.Items.Add(Item("Edit pattern", () => EditPattern(pattern), "double-click"));
-                menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, pattern)));
-                menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), KeyOf("Cmd+R")));
+                menu.Items.Add(Item("Edit pattern", () => EditClip(clip), "double-click"));
+                menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, clip)));
+                menu.Items.Add(Item("Rename…", () => _ = RenameClip(clip), KeyOf("Cmd+R")));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
                 menu.Items.Add(Item("Send to Arrangement", () => SendToArrangement(cell), null, () => buzz.Arrangement != null));
-                if (layout.IsAudioClip(pattern))
+                if (layout.IsAudioClip(clip))
                 {
-                    menu.Items.Add(Item("Separate stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(pattern), tag: "Separate stems"));
-                    menu.Items.Add(ReBuzz.Studio.Shell.AutoWarpFlow.Menu(() => new[] { pattern }));     // Fork (neo-audio.md, AW5)
-                    menu.Items.Add(ReBuzz.Studio.Shell.ConvertFlow.Menu(() => pattern));   // Fork (docs/specs/pitch.md section 9)
-                    menu.Items.Add(ReBuzz.Studio.Shell.SliceFlow.Menu(() => pattern));     // Fork (docs/specs/audio-to-midi.md, SL1)
+                    menu.Items.Add(Item("Separate stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(clip), tag: "Separate stems"));
+                    menu.Items.Add(ReBuzz.Studio.Shell.AutoWarpFlow.Menu(() => new[] { clip }));     // Fork (neo-audio.md, AW5)
+                    menu.Items.Add(ReBuzz.Studio.Shell.ConvertFlow.Menu(() => clip));   // Fork (docs/specs/pitch.md section 9)
+                    menu.Items.Add(ReBuzz.Studio.Shell.SliceFlow.Menu(() => clip));     // Fork (docs/specs/audio-to-midi.md, SL1)
                 }
-                menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i), MachineColourName));
-                int notes = layout.RecordedNoteCount(pattern);
+                menu.Items.Add(ColorMenu("Colour", ClipColors.Get(clip), i => layout.SetClipColor(clip, i), MachineColourName));
+                int notes = layout.RecordedNoteCount(clip);
                 if (notes > 0)
-                    menu.Items.Add(Item($"Clear recorded notes ({notes})", () => layout.ClearRecordedNotes(pattern)));
-                int moves = layout.RecordedAutomationCount(pattern);
+                    menu.Items.Add(Item($"Clear recorded notes ({notes})", () => layout.ClearRecordedNotes(clip)));
+                int moves = layout.RecordedAutomationCount(clip);
                 if (moves > 0)
-                    menu.Items.Add(Item($"Clear recorded automation ({moves})", () => layout.ClearRecordedAutomation(pattern)));
+                    menu.Items.Add(Item($"Clear recorded automation ({moves})", () => layout.ClearRecordedAutomation(clip)));
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Remove from slot", () => layout.ClearSlot(cell.Track, cell.Scene), KeyOf(DeleteKeys)));
-                menu.Items.Add(Item("Delete pattern…", () => _ = DeleteClip(pattern), KeyOf("Shift+" + DeleteKeys)));
+                menu.Items.Add(Item("Delete pattern…", () => _ = DeleteClip(clip), KeyOf("Shift+" + DeleteKeys)));
             }
             else
             {
@@ -615,7 +615,7 @@ namespace ReBuzz.Studio.Views.Session
             if (machine != null)
             {
                 var assign = new MenuItem { Header = $"Assign pattern of {machine.Name}", Tag = "Assign pattern" };
-                foreach (var p in machine.Patterns.ToList())
+                foreach (var p in machine.Clips.ToList())
                 {
                     var choice = p;
                     assign.Items.Add(new MenuItem
@@ -623,7 +623,7 @@ namespace ReBuzz.Studio.Views.Session
                         Header = choice.Name,
                         Tag = choice.Name,
                         ToggleType = MenuItemToggleType.CheckBox,
-                        IsChecked = choice == pattern,
+                        IsChecked = choice == clip,
                         Command = new Command(() => layout.SetSlot(cell.Track, cell.Scene, choice))
                     });
                 }

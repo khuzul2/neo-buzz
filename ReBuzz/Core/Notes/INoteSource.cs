@@ -17,7 +17,7 @@ namespace ReBuzz.Core.Notes
     internal interface INoteSource
     {
         /// <summary>The pattern, as it stands now (an undo may have made it again); null if there is none.</summary>
-        IPattern Pattern { get; }
+        IClip Clip { get; }
 
         /// <summary>Whether the pattern is in the song (not deleted). Without it there are no notes.</summary>
         bool IsLive { get; }
@@ -56,15 +56,15 @@ namespace ReBuzz.Core.Notes
     /// <summary>What every source does the same way.</summary>
     internal abstract class NoteSourceBase : INoteSource
     {
-        public abstract IPattern Pattern { get; }
+        public abstract IClip Clip { get; }
 
-        public virtual bool IsLive => Pattern is PatternCore p && !p.IsDeleted && p.Machine?.Graph?.Buzz?.Song?.Machines.Contains(p.Machine) == true;
+        public virtual bool IsLive => Clip is ClipCore p && !p.IsDeleted && p.Machine?.Graph?.Buzz?.Song?.Machines.Contains(p.Machine) == true;
 
         public abstract List<ClipNote> Notes();
 
         public virtual int RowTime => ClipNotes.TimeBase;
 
-        public virtual int Length => SessionLayout.ClipLengthOf(Pattern);
+        public virtual int Length => SessionLayout.ClipLengthOf(Clip);
 
         public abstract string WhyNotEditable { get; }
 
@@ -104,9 +104,9 @@ namespace ReBuzz.Core.Notes
         public event Action Changed;
 
         /// <summary>A MIDI note-on (or note-off) sent to the machine, as SessionLayout.PreviewNote sends it.</summary>
-        protected static void SendMidiNote(ReBuzzCore buzz, IPattern pattern, int note, int velocity, bool on)
+        protected static void SendMidiNote(ReBuzzCore buzz, IClip clip, int note, int velocity, bool on)
         {
-            if (pattern?.Machine is not MachineCore machine || machine.DLL == null || machine.DLL.IsMissing || machine.DLL.IsCrashed || !machine.Ready) return;
+            if (clip?.Machine is not MachineCore machine || machine.DLL == null || machine.DLL.IsMissing || machine.DLL.IsCrashed || !machine.Ready) return;
             int data = on
                 ? 0x90 | ((note & 0x7F) << 8) | ((Math.Clamp(velocity, 1, 127) & 0x7F) << 16)
                 : 0x80 | ((note & 0x7F) << 8);

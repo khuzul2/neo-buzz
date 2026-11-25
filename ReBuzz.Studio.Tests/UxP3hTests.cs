@@ -112,7 +112,7 @@ namespace ReBuzz.Studio.Tests
             });
             using var rig = new SessionRig("Lead");
             var lead = rig.Machine("Lead");
-            var hook = rig.Pattern(lead, "Hook", SessionRig.Bar, (0, 72));
+            var hook = rig.Clip(lead, "Hook", SessionRig.Bar, (0, 72));
             rig.Layout.Ensure();
             rig.Layout.SetSlot(0, 0, hook);
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
@@ -205,7 +205,7 @@ namespace ReBuzz.Studio.Tests
             var lead = rig.Machine("Lead");                         // Neo Poly: Synth
             var drums = rig.Add("Neo Drums", "Kit");                 // Drums
             var verb = rig.Add("Neo Verb", "Room", track: false);   // Delay and reverb
-            var hook = rig.Pattern(lead, "Hook", SessionRig.Bar, (0, 72));
+            var hook = rig.Clip(lead, "Hook", SessionRig.Bar, (0, 72));
             rig.Layout.Ensure();
             rig.Layout.SetSlot(0, 0, hook);
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
@@ -247,7 +247,7 @@ namespace ReBuzz.Studio.Tests
                 window.ShowView("Session");
                 Settle(window);
                 var session = window.Tabs.Items.Cast<TabItem>().Select(t => t.Content).OfType<SessionView>().First();
-                Assert.That(PatternColors.Get(hook), Is.EqualTo(-1), "the clip has no colour of its own");
+                Assert.That(ClipColors.Get(hook), Is.EqualTo(-1), "the clip has no colour of its own");
                 // MX1 (option A): the track's colour, the one it was given, is what the tracks and their clips wear; the box keeps the kind's colour.
                 var track = TrackColour.Of(lead)!.Value;
                 var cell = session.SlotAt(0, 0);
@@ -262,7 +262,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(seq.Canvas.BlockColour(0, hook), Is.EqualTo(track));
 
                 // Nothing is written into the song (§3.4): the indices stay "none".
-                Assert.That(PatternColors.Get(hook), Is.EqualTo(-1));
+                Assert.That(ClipColors.Get(hook), Is.EqualTo(-1));
                 Assert.That(rig.Layout.Ensure().Tracks[0].ColorIndex, Is.EqualTo(-1));
 
                 // The user can still recolour, and take the colour back.
@@ -342,7 +342,7 @@ namespace ReBuzz.Studio.Tests
                 // Tracker and piano roll: the same state, in both views of a pattern.
                 window.Detail.ShowPage(false, false);
                 Settle(window);
-                var page = PatternView.Page;
+                var page = ClipView.Page;
                 Assert.That(page.EmptyState.IsVisible, Is.True, "the Tracker");
                 Assert.That(page.EmptyState.Title, Is.EqualTo("No machine to edit"));
                 Assert.That(Labels(page.EmptyState), Is.EqualTo(starters.Concat(new[] { "Add machine…" }).ToList()));
@@ -388,7 +388,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.SongCore.ActionStack.Steps.Count, Is.EqualTo(steps + 1), "one undo step");
                 var made = StudioSelection.For(Core).Machine;
                 Assert.That(made, Is.Not.Null, "the new machine is selected");
-                Assert.That(made!.Patterns.Count, Is.EqualTo(1), "a starter comes with its first pattern");
+                Assert.That(made!.Clips.Count, Is.EqualTo(1), "a starter comes with its first pattern");
                 Assert.That(page.EmptyState.IsVisible, Is.False, "so the Tracker opens on it");
                 seq.RefreshEmpty();
                 Assert.That(seq.EmptyState.IsVisible, Is.False, "the Arrangement has its track, and the starter's pattern is on it");
@@ -399,14 +399,14 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(machines.Starters.IsVisible, Is.False);
 
                 // Without its pattern the Tracker says to make one; "New pattern" makes it (undoable) and the empty state goes.
-                made.DeletePattern(made.Patterns[0]);
+                made.DeleteClip(made.Clips[0]);
                 Settle(window);
                 Assert.That(page.EmptyState.Title, Is.EqualTo($"{made.Name} has no patterns"));
                 Assert.That(Labels(page.EmptyState), Is.EqualTo(new[] { "New pattern" }));
                 page.EmptyState.Step("New pattern")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Settle(window);
-                Assert.That(made.Patterns.Count, Is.EqualTo(1));
-                Assert.That(page.Pattern, Is.Not.Null, "the Tracker has it");
+                Assert.That(made.Clips.Count, Is.EqualTo(1));
+                Assert.That(page.Clip, Is.Not.Null, "the Tracker has it");
                 Assert.That(page.EmptyState.IsVisible, Is.False, "and its empty state is gone");
             }
             finally

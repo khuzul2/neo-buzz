@@ -55,7 +55,7 @@ namespace ReBuzz.Studio.Views
             new Sequence.SequenceTab(),
             new Session.SessionStudioView(),
             new Machines.MachinesTab(),
-            new PatternView(),
+            new ClipView(),
         };
 
         /// <summary>The view the window shows when it opens: the machines, where a song starts.</summary>

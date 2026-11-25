@@ -78,12 +78,12 @@ namespace ReBuzz.Core
         /// <summary>A take is used while the main lane plays it (its pattern, or an audio comp piece of its asset) anywhere over it.</summary>
         bool IsUsed(ClipItem take, List<ClipItem> main)
         {
-            string asset = IsAudio(take.Pattern) ? AudioOf(take.Pattern)?.Asset : null;
+            string asset = IsAudio(take.Clip) ? AudioOf(take.Clip)?.Asset : null;
             foreach (var m in main)
             {
                 if (m.End <= take.Time || m.Time >= take.End) continue;
-                if (ReferenceEquals(m.Pattern, take.Pattern)) return true;
-                if (asset != null && IsAudio(m.Pattern) && AudioOf(m.Pattern)?.Asset == asset) return true;
+                if (ReferenceEquals(m.Clip, take.Clip)) return true;
+                if (asset != null && IsAudio(m.Clip) && AudioOf(m.Clip)?.Asset == asset) return true;
             }
             return false;
         }
@@ -95,10 +95,10 @@ namespace ReBuzz.Core
             string result = null;
             Group(() =>
             {
-                var copy = CloneAudioPattern(item.Pattern, main.Machine);
+                var copy = CloneAudioClip(item.Clip, main.Machine);
                 if (copy == null) { result = "The take couldn't be copied."; return; }
                 // The piece plays the take's audio over the same song time: its start in the pattern is where the range starts in the take.
-                var spec = new ClipSpec(0, copy, from, to - from, item.Spec.PatternPositionAt(from) ?? 0, 0, 0, false, item.Spec.Gain);
+                var spec = new ClipSpec(0, copy, from, to - from, item.Spec.ClipPositionAt(from) ?? 0, 0, 0, false, item.Spec.Gain);
                 var plan = new Plan(this) { NoCrossfade = true };
                 plan.Overwrite(main, from, to);
                 plan.Write(main, spec, newId: true);
@@ -109,23 +109,23 @@ namespace ReBuzz.Core
         }
 
         /// <summary>Crossfades a comp piece with the audio clips that touch it, a few milliseconds long (the earlier one's tail under the later one's fade in).</summary>
-        void CompCrossfades(ISequence main, IPattern piece)
+        void CompCrossfades(ISequence main, IClip piece)
         {
-            var items = Read(main).Where(i => IsAudio(i.Pattern)).ToList();
-            var me = items.FirstOrDefault(i => ReferenceEquals(i.Pattern, piece));
+            var items = Read(main).Where(i => IsAudio(i.Clip)).ToList();
+            var me = items.FirstOrDefault(i => ReferenceEquals(i.Clip, piece));
             if (me == null) return;
             double beats = CompCrossfadeMs / 1000.0 * Math.Max(1, core.BPM) / 60.0;
-            var before = items.FirstOrDefault(i => i.End == me.Time && !ReferenceEquals(i.Pattern, piece));
-            var after = items.FirstOrDefault(i => i.Time == me.End && !ReferenceEquals(i.Pattern, piece));
+            var before = items.FirstOrDefault(i => i.End == me.Time && !ReferenceEquals(i.Clip, piece));
+            var after = items.FirstOrDefault(i => i.Time == me.End && !ReferenceEquals(i.Clip, piece));
             if (before != null)
             {
-                SetAudioFields(before.Pattern, a => a.Tail = beats);
+                SetAudioFields(before.Clip, a => a.Tail = beats);
                 SetAudioFields(piece, a => { a.FadeIn = beats; a.CrossIn = true; });
             }
             if (after != null)
             {
                 SetAudioFields(piece, a => a.Tail = beats);
-                SetAudioFields(after.Pattern, a => { a.FadeIn = beats; a.CrossIn = true; });
+                SetAudioFields(after.Clip, a => { a.FadeIn = beats; a.CrossIn = true; });
             }
             FixCrossfades(main);
         }
@@ -168,12 +168,12 @@ namespace ReBuzz.Core
         /// Flatten comp: renders what the main lane plays between two ticks (the comp, crossfades and all) into one new asset and one clip.
         /// Without a range, the whole span of the lane's audio. Audio only.
         /// </summary>
-        public string FlattenComp(IMachine machine, int? from, int? to, out IPattern made)
+        public string FlattenComp(IMachine machine, int? from, int? to, out IClip made)
         {
             made = null;
             var main = MainLaneOf(machine);
             if (main == null) return $"{machine?.Name} has no main lane.";
-            var audio = Read(main).Where(i => IsAudio(i.Pattern)).ToList();
+            var audio = Read(main).Where(i => IsAudio(i.Clip)).ToList();
             if (audio.Count == 0) return "Flatten renders audio: there is no audio clip on the main lane.";
             return Consolidate(main, from ?? audio.Min(i => i.Time), to ?? audio.Max(i => i.End), out made);
         }
@@ -189,8 +189,8 @@ namespace ReBuzz.Core
                 foreach (var t in unused) plan.Remove(t.Clip);
                 Commit(plan);
                 foreach (var t in unused)
-                    if (t.Clip.Pattern?.Machine != null && Uses(t.Clip.Pattern) == 0)
-                        Layout?.DeleteClip(t.Clip.Pattern);
+                    if (t.Clip.Clip?.Machine != null && Uses(t.Clip.Clip) == 0)
+                        Layout?.DeleteClip(t.Clip.Clip);
                 // Take lanes with nothing on them go (from the last: the indices of the earlier ones stay).
                 foreach (var lane in TakeLanesOf(machine).Where(l => Read(l).Count == 0 && l.Events.Count == 0).Reverse().ToList())
                     core.SongCore.ActionStack.Do(new RemoveTakeLaneAction(core, lane));

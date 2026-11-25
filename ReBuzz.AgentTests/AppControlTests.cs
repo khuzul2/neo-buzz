@@ -108,10 +108,10 @@ namespace ReBuzz.AgentTests
 
             public void ShowView(string view) { Calls.Add("view " + view); S = S with { View = view }; }
 
-            public void ShowPattern(string machine, string pattern, bool pianoRoll)
+            public void ShowClip(string machine, string clip, bool pianoRoll)
             {
-                Calls.Add($"pattern {machine}/{pattern} {(pianoRoll ? "roll" : "tracker")}");
-                S = S with { DetailOpen = true, DetailPage = pianoRoll ? "piano_roll" : "tracker", Machine = machine, Pattern = pattern };
+                Calls.Add($"pattern {machine}/{clip} {(pianoRoll ? "roll" : "tracker")}");
+                S = S with { DetailOpen = true, DetailPage = pianoRoll ? "piano_roll" : "tracker", Machine = machine, Clip = clip };
             }
 
             public bool OpenMachineWindow(string machine, string window)
@@ -120,7 +120,7 @@ namespace ReBuzz.AgentTests
                 return window != "editor";
             }
 
-            public void Select(string? machine, string? pattern, int? scene) { Calls.Add($"select {machine}/{pattern}/{scene}"); S = S with { Machine = machine, Pattern = pattern, Scene = scene }; }
+            public void Select(string? machine, string? clip, int? scene) { Calls.Add($"select {machine}/{clip}/{scene}"); S = S with { Machine = machine, Clip = clip, Scene = scene }; }
 
             public void Panel(string panel, bool? open, double? size, string? tab, bool? maximised)
             {
@@ -827,9 +827,9 @@ namespace ReBuzz.AgentTests
         {
             var (s, app) = Make();
             var v = app.ViewFake = new FakeView { Recording = true };
-            var pattern = Call(s, "view_show", Args(("machine", "Bass"), ("pattern", "Verse")));
-            Assert.That(pattern.Error, Is.True);
-            Assert.That(pattern.Text, Does.Contain("recording"));
+            var clip = Call(s, "view_show", Args(("machine", "Bass"), ("pattern", "Verse")));
+            Assert.That(clip.Error, Is.True);
+            Assert.That(clip.Text, Does.Contain("recording"));
             var window = Call(s, "machine_open_editor", Args(("machine", "Bass")));
             Assert.That(window.Error, Is.True);
             Assert.That(window.Text, Does.Contain("Stop recording"));

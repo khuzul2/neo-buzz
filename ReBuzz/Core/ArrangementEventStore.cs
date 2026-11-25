@@ -80,7 +80,7 @@ namespace ReBuzz.Core
             foreach (var seq in sequences)
             {
                 var events = seq.Events
-                    .Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern != null && (!e.Value.IsPlain || e.Value.PlacementId != 0))
+                    .Where(e => e.Value.Type == SequenceEventType.PlayClip && e.Value.Clip != null && (!e.Value.IsPlain || e.Value.PlacementId != 0))
                     .Select(e =>
                     {
                         var x = new XElement("Event", new XAttribute("time", e.Key));
@@ -133,7 +133,7 @@ namespace ReBuzz.Core
                 foreach (var x in s.Elements("Event"))
                 {
                     if (!int.TryParse((string)x.Attribute("time"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int time)) continue;
-                    if (!seq.EventsList.TryGetValue(time, out var e) || e.Type != SequenceEventType.PlayPattern || e.Pattern == null) continue;
+                    if (!seq.EventsList.TryGetValue(time, out var e) || e.Type != SequenceEventType.PlayClip || e.Clip == null) continue;
                     e.Offset = Math.Max(0, Int(x, "offset", 0));
                     e.End = Math.Max(0, Int(x, "end", 0));
                     e.Gain = double.TryParse((string)x.Attribute("gain"), NumberStyles.Float, CultureInfo.InvariantCulture, out double g) && !double.IsNaN(g)

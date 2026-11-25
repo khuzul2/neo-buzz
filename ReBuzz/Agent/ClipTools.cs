@@ -79,13 +79,13 @@ namespace ReBuzz.Agent
             foreach (var col in p.Columns)
             {
                 var o = new JsonObject();
-                bool marked = col.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey);
-                if (col.Type == PatternColumnType.MIDI && (col.Parameter == null || col.Parameter.IndexInGroup < 0))
+                bool marked = col.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey);
+                if (col.Type == ClipColumnType.MIDI && (col.Parameter == null || col.Parameter.IndexInGroup < 0))
                 {
                     o["kind"] = "notes";
                     o["source"] = "notes";
                 }
-                else if (col.Type == PatternColumnType.Parameter && col.Parameter != null)
+                else if (col.Type == ClipColumnType.Parameter && col.Parameter != null)
                 {
                     o["kind"] = "parameter";
                     o["param"] = col.Parameter.Name;

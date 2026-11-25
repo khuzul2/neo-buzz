@@ -19,7 +19,7 @@ namespace ReBuzz.Studio.Views.Sequence
         bool envelopesOn;
 
         // What a clip draws, read once and kept until a column or clip changes: (the parameter, its points, whether they are the Tracker's steps).
-        readonly Dictionary<IPattern, (ColumnKey Key, AutoParam Param, IReadOnlyList<AutoPoint> Points, bool FromTracker)?> curves = new();
+        readonly Dictionary<IClip, (ColumnKey Key, AutoParam Param, IReadOnlyList<AutoPoint> Points, bool FromTracker)?> curves = new();
         readonly Dictionary<IMachine, ColumnKey?> chosen = new();
 
         /// <summary>Whether the clips draw their curves (the Envelopes toggle).</summary>
@@ -40,7 +40,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public event Action EnvelopesChanged;
 
         /// <summary>A double click on a clip's curve: the clip and the parameter.</summary>
-        public event Action<IPattern, ColumnKey> EnvelopeOpened;
+        public event Action<IClip, ColumnKey> EnvelopeOpened;
 
         void ClearCurves()
         {
@@ -57,19 +57,19 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>What a clip's pattern draws now (null when its track chose nothing or the clip holds none).</summary>
-        internal (ColumnKey Key, AutoParam Param, IReadOnlyList<AutoPoint> Points, bool FromTracker)? CurveOfClip(IPattern pattern)
+        internal (ColumnKey Key, AutoParam Param, IReadOnlyList<AutoPoint> Points, bool FromTracker)? CurveOfClip(IClip clip)
         {
-            if (pattern?.Machine == null) return null;
-            if (curves.TryGetValue(pattern, out var known)) return known;
+            if (clip?.Machine == null) return null;
+            if (curves.TryGetValue(clip, out var known)) return known;
             (ColumnKey, AutoParam, IReadOnlyList<AutoPoint>, bool FromTracker)? curve = null;
-            if (CurveKeyOf(pattern.Machine) is { } key && AutomationParams.Find(pattern.Machine, key) is { } param)
+            if (CurveKeyOf(clip.Machine) is { } key && AutomationParams.Find(clip.Machine, key) is { } param)
             {
-                var (points, fromTracker) = ClipEnvelopes.CurveOf(pattern, key);
+                var (points, fromTracker) = ClipEnvelopes.CurveOf(clip, key);
                 if (points.Count > 0) curve = (key, param, points, fromTracker);
             }
-            Watch(pattern);
-            foreach (var column in pattern.Columns) WatchColumn(column);
-            curves[pattern] = curve;
+            Watch(clip);
+            foreach (var column in clip.Columns) WatchColumn(column);
+            curves[clip] = curve;
             return curve;
         }
 
@@ -77,7 +77,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         void DrawEnvelopes(DrawingContext ctx, ClipItem item, IReadOnlyList<ClipSegment> segments, double h)
         {
-            if (CurveOfClip(item.Pattern) is not { } curve || h < CurveTop + 8) return;
+            if (CurveOfClip(item.Clip) is not { } curve || h < CurveTop + 8) return;
             var colour = Colors.White;
             for (int i = 0; i < segments.Count; i++)
             {
@@ -122,7 +122,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>A double click inside a clip, on or near its curve: the clip opens in the Detail panel with that parameter's lane.</summary>
         bool TryOpenEnvelope(ClipItem item, Point p)
         {
-            if (!envelopesOn || item == null || CurveOfClip(item.Pattern) is not { } curve || EnvelopeOpened == null) return false;
+            if (!envelopesOn || item == null || CurveOfClip(item.Clip) is not { } curve || EnvelopeOpened == null) return false;
             var r = ClipRect(item);
             double h = r.Height;
             foreach (var s in item.Actual)
@@ -138,7 +138,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (v == null) return false;
                 double y = area.Y + (1 - curve.Param.Fraction(v.Value)) * area.Height;
                 if (Math.Abs(p.Y - y) > 10) return false;
-                EnvelopeOpened.Invoke(item.Pattern, curve.Key);
+                EnvelopeOpened.Invoke(item.Clip, curve.Key);
                 return true;
             }
             return false;

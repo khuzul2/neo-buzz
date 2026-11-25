@@ -39,7 +39,7 @@ namespace ReBuzz.Core.Session
         bool changePosted;
 
         // Last known names, to turn PropertyChanged("Name") into renames.
-        readonly Dictionary<IPattern, string> patternNames = new Dictionary<IPattern, string>();
+        readonly Dictionary<IClip, string> clipNames = new Dictionary<IClip, string>();
         readonly Dictionary<IMachine, string> machineNames = new Dictionary<IMachine, string>();
 
         /// <summary>Structure or contents changed (tracks, scenes, slots, settings).</summary>
@@ -170,11 +170,11 @@ namespace ReBuzz.Core.Session
             return index >= 0 && index < sequences.Count ? sequences[index] : null;
         }
 
-        public IPattern PatternAt(int track, int scene)
+        public IClip ClipAt(int track, int scene)
         {
             string name = Document?.GetSlot(track, scene);
             if (name == null) return null;
-            return SequenceOf(track)?.Machine?.Patterns.FirstOrDefault(p => p.Name == name);
+            return SequenceOf(track)?.Machine?.Clips.FirstOrDefault(p => p.Name == name);
         }
 
         /// <summary>
@@ -184,16 +184,16 @@ namespace ReBuzz.Core.Session
         /// is the one that plays (the first slot holding it when that isn't known, as for a launch
         /// from the agent); the others show stopped.
         /// </summary>
-        public ClipState SlotState(int track, int scene) => SlotState(SequenceOf(track), PatternAt(track, scene), track, scene);
+        public ClipState SlotState(int track, int scene) => SlotState(SequenceOf(track), ClipAt(track, scene), track, scene);
 
         /// <summary><see cref="SlotState(int, int)"/> for a slot whose sequence and pattern the caller holds.</summary>
-        public ClipState SlotState(ISequence sequence, IPattern pattern, int track, int scene)
+        public ClipState SlotState(ISequence sequence, IClip clip, int track, int scene)
         {
-            if (sequence == null || pattern == null || Session == null) return ClipState.Stopped;
-            var state = Session.GetState(sequence, pattern);
+            if (sequence == null || clip == null || Session == null) return ClipState.Stopped;
+            var state = Session.GetState(sequence, clip);
             if (state == ClipState.Stopped || Session is not SessionCore core) return state;
-            bool playsHere = ReferenceEquals(core.GetPlaying(sequence), pattern) && SlotHolding(track, pattern, core.GetPlayingSlot(sequence)) == scene;
-            bool waitsHere = ReferenceEquals(core.GetQueued(sequence), pattern) && SlotHolding(track, pattern, core.GetQueuedSlot(sequence)) == scene;
+            bool playsHere = ReferenceEquals(core.GetPlaying(sequence), clip) && SlotHolding(track, clip, core.GetPlayingSlot(sequence)) == scene;
+            bool waitsHere = ReferenceEquals(core.GetQueued(sequence), clip) && SlotHolding(track, clip, core.GetQueuedSlot(sequence)) == scene;
             return state switch
             {
                 ClipState.Playing or ClipState.Stopping => playsHere ? state : ClipState.Stopped,
@@ -203,13 +203,13 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>The slot of a track a clip plays from: the known one if it still holds the clip, else the first that does; -1 for none.</summary>
-        int SlotHolding(int track, IPattern pattern, int known)
+        int SlotHolding(int track, IClip clip, int known)
         {
             var doc = Document;
             if (doc == null) return -1;
-            if (known >= 0 && known < doc.Scenes.Count && ReferenceEquals(PatternAt(track, known), pattern)) return known;
+            if (known >= 0 && known < doc.Scenes.Count && ReferenceEquals(ClipAt(track, known), clip)) return known;
             for (int s = 0; s < doc.Scenes.Count; s++)
-                if (ReferenceEquals(PatternAt(track, s), pattern)) return s;
+                if (ReferenceEquals(ClipAt(track, s), clip)) return s;
             return -1;
         }
 
@@ -227,8 +227,8 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ grid edits (undoable)
 
-        public void SetSlot(int track, int scene, IPattern pattern) =>
-            Edit(doc => { if (track >= 0 && track < doc.Tracks.Count) doc.SetSlot(track, scene, pattern?.Name); });
+        public void SetSlot(int track, int scene, IClip clip) =>
+            Edit(doc => { if (track >= 0 && track < doc.Tracks.Count) doc.SetSlot(track, scene, clip?.Name); });
 
         public void ClearSlot(int track, int scene) => SetSlot(track, scene, null);
 
@@ -276,18 +276,18 @@ namespace ReBuzz.Core.Session
         public int NewClipLength => Math.Max(1, buzz.TPB * Session.BeatsPerBar * (Document?.ClipBars ?? 1));
 
         /// <summary>Creates a pattern on the track's machine and puts it in the slot.</summary>
-        public IPattern CreateClip(int track, int scene)
+        public IClip CreateClip(int track, int scene)
         {
             var machine = SequenceOf(track)?.Machine;
             if (machine == null || scene < 0) return null;
-            string name = machine.GetNewPatternName();
+            string name = machine.GetNewClipName();
             if (name == null) return null;
             int length = NewClipLength;
 
             UndoStack.BeginActionGroup();
             try
             {
-                var create = new SessionCreatePatternAction(this, machine, name, length);
+                var create = new SessionCreateClipAction(this, machine, name, length);
                 UndoStack.Do(create);
                 if (create.Created == null) return null;
                 Edit(doc => doc.SetSlot(track, scene, create.Created.Name));
@@ -303,27 +303,27 @@ namespace ReBuzz.Core.Session
         /// Copies the slot's pattern into a new pattern (Live-style independent copy) in the slot
         /// below; inserts a scene there if that slot is taken. Returns the copy, or null.
         /// </summary>
-        public IPattern DuplicateClip(int track, int scene, out int targetScene)
+        public IClip DuplicateClip(int track, int scene, out int targetScene)
         {
             targetScene = scene + 1;
-            var source = PatternAt(track, scene);
+            var source = ClipAt(track, scene);
             if (source == null) return null;
             var machine = source.Machine;
             string name = CopyName(machine, source.Name);
             int target = targetScene;
-            int color = PatternColors.Get(source);
+            int color = ClipColors.Get(source);
 
             UndoStack.BeginActionGroup();
             try
             {
                 if (Ensure().GetSlot(track, target) != null)
                     Edit(doc => doc.InsertScene(target));
-                var create = new SessionCreatePatternAction(this, machine, name, source.Length, source);
+                var create = new SessionCreateClipAction(this, machine, name, source.Length, source);
                 UndoStack.Do(create);
                 var copy = create.Created;
                 if (copy == null) return null;
                 if (color >= 0)
-                    UndoStack.Do(new PatternColorAction(this, copy, color));
+                    UndoStack.Do(new ClipColorAction(this, copy, color));
                 Edit(doc =>
                 {
                     doc.SetSlot(track, target, copy.Name);
@@ -338,22 +338,22 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Renames a pattern. False if the name is empty or taken.</summary>
-        public bool RenameClip(IPattern pattern, string newName)
+        public bool RenameClip(IClip clip, string newName)
         {
             newName = newName?.Trim();
-            if (pattern?.Machine == null || string.IsNullOrEmpty(newName) || newName == pattern.Name) return false;
-            if (pattern.Machine.Patterns.Any(p => p.Name == newName)) return false;
-            UndoStack.Do(new RenamePatternAction(this, pattern, newName));
+            if (clip?.Machine == null || string.IsNullOrEmpty(newName) || newName == clip.Name) return false;
+            if (clip.Machine.Clips.Any(p => p.Name == newName)) return false;
+            UndoStack.Do(new RenameClipAction(this, clip, newName));
             buzz.SetModifiedFlag();
             return true;
         }
 
         /// <summary>Deletes a pattern from its machine (and from every slot showing it).</summary>
-        public void DeleteClip(IPattern pattern)
+        public void DeleteClip(IClip clip)
         {
-            if (pattern?.Machine == null) return;
-            string machine = pattern.Machine.Name;
-            string name = pattern.Name;
+            if (clip?.Machine == null) return;
+            string machine = clip.Machine.Name;
+            string name = clip.Name;
 
             UndoStack.BeginActionGroup();
             try
@@ -366,7 +366,7 @@ namespace ReBuzz.Core.Session
                             t.Slots.Remove(key);
                     doc.SetClip(machine, name, null);
                 });
-                UndoStack.Do(new SessionDeletePatternAction(this, pattern));
+                UndoStack.Do(new SessionDeleteClipAction(this, clip));
             }
             finally
             {
@@ -375,10 +375,10 @@ namespace ReBuzz.Core.Session
             buzz.SetModifiedFlag();
         }
 
-        public void SetClipColor(IPattern pattern, int colorIndex)
+        public void SetClipColor(IClip clip, int colorIndex)
         {
-            if (pattern?.Machine == null || PatternColors.Get(pattern) == colorIndex) return;
-            UndoStack.Do(new PatternColorAction(this, pattern, colorIndex));
+            if (clip?.Machine == null || ClipColors.Get(clip) == colorIndex) return;
+            UndoStack.Do(new ClipColorAction(this, clip, colorIndex));
             buzz.SetModifiedFlag();
             RaiseChanged();
         }
@@ -424,7 +424,7 @@ namespace ReBuzz.Core.Session
         /// A free name for a copy of <paramref name="name"/>: the number at its end counted up
         /// ("00" gives "01", "Beat 2" gives "Beat 3"), or " 2" appended.
         /// </summary>
-        internal static string CopyName(IMachine machine, string name) => BuzzGUI.Common.Actions.PatternNames.Copy(machine, name);
+        internal static string CopyName(IMachine machine, string name) => BuzzGUI.Common.Actions.ClipNames.Copy(machine, name);
 
         /// <summary>
         /// Applies a layout edit and records it for undo (as snapshots) if it changed anything.
@@ -573,10 +573,10 @@ namespace ReBuzz.Core.Session
         public void LaunchGroupScene(IEnumerable<int> tracks, int scene, int velocity = 127)
         {
             var map = LaunchMap;
-            var slots = new List<(ISequence, IPattern, LaunchOptions)>();
+            var slots = new List<(ISequence, IClip, LaunchOptions)>();
             foreach (int track in tracks)
                 if (map.Track(track) is ISequence seq && map.Slot(track, scene) is LaunchMap.SlotEntry entry)
-                    slots.Add((seq, entry.Pattern, entry.OptionsAt(velocity)));
+                    slots.Add((seq, entry.Clip, entry.OptionsAt(velocity)));
             if (slots.Count > 0)
                 Session.LaunchScene(slots, null);
         }
@@ -592,21 +592,21 @@ namespace ReBuzz.Core.Session
         internal static void LaunchScene(ISession session, LaunchMap.SceneEntry entry, int velocity)
         {
             if (entry == null) return;
-            var launches = new (ISequence, IPattern, LaunchOptions)[entry.Clips.Length];
+            var launches = new (ISequence, IClip, LaunchOptions)[entry.Clips.Length];
             for (int i = 0; i < entry.Clips.Length; i++)
-                launches[i] = (entry.Clips[i].Track, entry.Clips[i].Slot.Pattern, entry.Clips[i].Slot.OptionsAt(velocity));
+                launches[i] = (entry.Clips[i].Track, entry.Clips[i].Slot.Clip, entry.Clips[i].Slot.OptionsAt(velocity));
             session.LaunchScene(launches, entry.Options);
         }
 
         // ------------------------------------------------------------------ clip and scene properties (0.5, 0.6)
 
         /// <summary>A press of a clip's launch control (mouse, key, MIDI note with its velocity), from a slot (scene row) if known.</summary>
-        public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127, int slot = -1)
+        public void LaunchClip(ISequence track, IClip clip, int velocity = 127, int slot = -1)
         {
-            if (track == null || pattern == null) return;
+            if (track == null || clip == null) return;
             // 0.7 (Live's): launching the take being recorded ends its recording; it plays on.
-            if (track is SequenceCore seq && (recordings.TryGetValue(seq, out var r) && ReferenceEquals(r.Take, pattern) ||
-                                              audioTakes.TryGetValue(seq, out var a) && ReferenceEquals(a.Take, pattern)))   // 1.0: an audio take too
+            if (track is SequenceCore seq && (recordings.TryGetValue(seq, out var r) && ReferenceEquals(r.Take, clip) ||
+                                              audioTakes.TryGetValue(seq, out var a) && ReferenceEquals(a.Take, clip)))   // 1.0: an audio take too
             {
                 StopRecording(track);
                 return;
@@ -614,41 +614,41 @@ namespace ReBuzz.Core.Session
             var map = LaunchMap;
             int t = Array.IndexOf(map.Tracks, track);
             var entry = map.Slot(t, slot);
-            var options = entry != null && ReferenceEquals(entry.Pattern, pattern) ? entry.OptionsAt(velocity) : OptionsFor(pattern, velocity, slot);
-            Session.Launch(track, pattern, options);
+            var options = entry != null && ReferenceEquals(entry.Clip, clip) ? entry.OptionsAt(velocity) : OptionsFor(clip, velocity, slot);
+            Session.Launch(track, clip, options);
         }
 
         /// <summary>The release of a clip's launch control: matters for Gate and Repeat clips.</summary>
-        public void ReleaseClip(ISequence track, IPattern pattern)
+        public void ReleaseClip(ISequence track, IClip clip)
         {
-            if (track == null || pattern == null) return;
-            Session.Release(track, pattern, OptionsFor(pattern));
+            if (track == null || clip == null) return;
+            Session.Release(track, clip, OptionsFor(clip));
         }
 
         /// <summary>A pattern's clip settings (a copy; defaults without a layout).</summary>
-        public SessionDocument.ClipSettings ClipOf(IPattern pattern) =>
-            pattern?.Machine == null || Document == null ? new SessionDocument.ClipSettings() : Document.GetClip(pattern.Machine.Name, pattern.Name);
+        public SessionDocument.ClipSettings ClipOf(IClip clip) =>
+            clip?.Machine == null || Document == null ? new SessionDocument.ClipSettings() : Document.GetClip(clip.Machine.Name, clip.Name);
 
         /// <summary>
         /// Changes a pattern's clip settings (undoable). Markers apply at once to the clip if it
         /// plays or waits; the other settings from its next launch.
         /// </summary>
-        public void SetClipSettings(IPattern pattern, SessionDocument.ClipSettings settings)
+        public void SetClipSettings(IClip clip, SessionDocument.ClipSettings settings)
         {
-            if (pattern?.Machine == null || settings == null) return;
-            string machine = pattern.Machine.Name, name = pattern.Name;
+            if (clip?.Machine == null || settings == null) return;
+            string machine = clip.Machine.Name, name = clip.Name;
             if (!Edit(doc => doc.SetClip(machine, name, settings))) return;
             if (Session is SessionCore core)
             {
                 var options = ToOptions(settings, 127, -1, Session.BeatsPerBar, buzz.TPB);
-                foreach (var seq in song.Sequences.Where(s => s.Machine == pattern.Machine))
-                    core.Reshape(seq, pattern, options);
+                foreach (var seq in song.Sequences.Where(s => s.Machine == clip.Machine))
+                    core.Reshape(seq, clip, options);
             }
         }
 
         /// <summary>Launch options of a pattern's clip settings, at a launch velocity (1..127), from a slot if known.</summary>
-        public LaunchOptions OptionsFor(IPattern pattern, int velocity = 127, int slot = -1) =>
-            ToOptions(ClipOf(pattern), velocity, slot, Session.BeatsPerBar, buzz.TPB);
+        public LaunchOptions OptionsFor(IClip clip, int velocity = 127, int slot = -1) =>
+            ToOptions(ClipOf(clip), velocity, slot, Session.BeatsPerBar, buzz.TPB);
 
         /// <summary>Launch options for clip settings at a launch velocity (any thread).</summary>
         internal static LaunchOptions ToOptions(SessionDocument.ClipSettings c, int velocity, int slot = -1, int beatsPerBar = 4, int ticksPerBeat = 4)
@@ -711,7 +711,7 @@ namespace ReBuzz.Core.Session
             {
                 stops = new List<ISequence>();
                 for (int t = 0; t < doc.Tracks.Count; t++)
-                    if (SequenceOf(t) is ISequence seq && PatternAt(t, scene) == null && !stops.Contains(seq))
+                    if (SequenceOf(t) is ISequence seq && ClipAt(t, scene) == null && !stops.Contains(seq))
                         stops.Add(seq);
             }
             return new SceneOptions
@@ -829,10 +829,10 @@ namespace ReBuzz.Core.Session
                     if (tracks[t] == null) continue;
                     for (int s = 0; s < sceneCount; s++)
                     {
-                        var pattern = PatternAt(t, s);
-                        if (pattern == null) continue;
-                        var settings = ClipOf(pattern);
-                        slots[t][s] = new LaunchMap.SlotEntry(pattern, settings, ToOptions(settings, 127, s, beats, tpb));
+                        var clip = ClipAt(t, s);
+                        if (clip == null) continue;
+                        var settings = ClipOf(clip);
+                        slots[t][s] = new LaunchMap.SlotEntry(clip, settings, ToOptions(settings, 127, s, beats, tpb));
                     }
                 }
                 var scenes = new LaunchMap.SceneEntry[sceneCount];
@@ -926,7 +926,7 @@ namespace ReBuzz.Core.Session
             song.Sequences
                 .Select(s => new SessionDocument.SongTrack(
                     s.Machine?.Name ?? "",
-                    s.Machine?.Patterns.Select(p => p.Name).ToList() ?? new List<string>()))
+                    s.Machine?.Clips.Select(p => p.Name).ToList() ?? new List<string>()))
                 .ToList();
 
         void Sync()
@@ -948,45 +948,45 @@ namespace ReBuzz.Core.Session
             if (machine == null || machineNames.ContainsKey(machine)) return;
             machineNames[machine] = machine.Name;
             machine.PropertyChanged += Machine_PropertyChanged;
-            machine.PatternAdded += Machine_PatternAdded;
-            machine.PatternRemoved += Machine_PatternRemoved;
-            foreach (var p in machine.Patterns)
-                WatchPattern(p);
+            machine.ClipAdded += Machine_ClipAdded;
+            machine.ClipRemoved += Machine_ClipRemoved;
+            foreach (var p in machine.Clips)
+                WatchClip(p);
         }
 
         void Unwatch(IMachine machine)
         {
             if (machine == null || !machineNames.Remove(machine)) return;
             machine.PropertyChanged -= Machine_PropertyChanged;
-            machine.PatternAdded -= Machine_PatternAdded;
-            machine.PatternRemoved -= Machine_PatternRemoved;
-            foreach (var p in patternNames.Keys.Where(p => p.Machine == machine).ToList())
-                UnwatchPattern(p);
+            machine.ClipAdded -= Machine_ClipAdded;
+            machine.ClipRemoved -= Machine_ClipRemoved;
+            foreach (var p in clipNames.Keys.Where(p => p.Machine == machine).ToList())
+                UnwatchClip(p);
         }
 
-        void WatchPattern(IPattern pattern)
+        void WatchClip(IClip clip)
         {
-            if (pattern == null || patternNames.ContainsKey(pattern)) return;
-            patternNames[pattern] = pattern.Name;
-            pattern.PropertyChanged += Pattern_PropertyChanged;
+            if (clip == null || clipNames.ContainsKey(clip)) return;
+            clipNames[clip] = clip.Name;
+            clip.PropertyChanged += Clip_PropertyChanged;
         }
 
-        void UnwatchPattern(IPattern pattern)
+        void UnwatchClip(IClip clip)
         {
-            if (pattern == null || !patternNames.Remove(pattern)) return;
-            pattern.PropertyChanged -= Pattern_PropertyChanged;
+            if (clip == null || !clipNames.Remove(clip)) return;
+            clip.PropertyChanged -= Clip_PropertyChanged;
         }
 
-        void Machine_PatternAdded(IPattern pattern)
+        void Machine_ClipAdded(IClip clip)
         {
-            WatchPattern(pattern);
+            WatchClip(clip);
             OnStructureChanged();
         }
 
-        void Machine_PatternRemoved(IPattern pattern)
+        void Machine_ClipRemoved(IClip clip)
         {
-            OnPatternRemovedFromSong(pattern);
-            UnwatchPattern(pattern);
+            OnClipRemovedFromSong(clip);
+            UnwatchClip(clip);
             OnStructureChanged();
         }
 
@@ -1011,20 +1011,20 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        void Pattern_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        void Clip_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != "Name" || sender is not IPattern pattern) return;
+            if (e.PropertyName != "Name" || sender is not IClip clip) return;
             if (!dispatcher.CheckAccess())
             {
-                dispatcher.BeginInvoke(() => Pattern_PropertyChanged(sender, e));
+                dispatcher.BeginInvoke(() => Clip_PropertyChanged(sender, e));
                 return;
             }
-            if (patternNames.TryGetValue(pattern, out var old) && old != pattern.Name)
+            if (clipNames.TryGetValue(clip, out var old) && old != clip.Name)
             {
-                patternNames[pattern] = pattern.Name;
-                if (pattern.Machine != null)
+                clipNames[clip] = clip.Name;
+                if (clip.Machine != null)
                 {
-                    TransformNames(d => d.RenamePattern(pattern.Machine.Name, old, pattern.Name));
+                    TransformNames(d => d.RenameClip(clip.Machine.Name, old, clip.Name));
                     if (document != null)
                         RaiseChanged();
                 }

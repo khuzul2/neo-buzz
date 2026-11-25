@@ -39,10 +39,10 @@ namespace ReBuzz.Studio.Tests
             return file;
         }
 
-        static SessionDocument.AudioSettings AudioOf(IPattern p) => Layout.AudioOf(p)!;
+        static SessionDocument.AudioSettings AudioOf(IClip p) => Layout.AudioOf(p)!;
 
         /// <summary>A marker at 5 s (so there is something before the point that has to stay) on a clip that is straight otherwise.</summary>
-        static void SeedAt5s(Rig rig, IPattern clip)
+        static void SeedAt5s(Rig rig, IClip clip)
         {
             var src = Layout.AudioSourceOf(clip)!;
             var a = AudioOf(clip);
@@ -54,13 +54,13 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The transient nearest a time: "here" for the menu (it lands on a transient when one is near) and the sample the agent is given.</summary>
-        static double TransientNear(IPattern clip, double seconds)
+        static double TransientNear(IClip clip, double seconds)
         {
             double rate = Layout.AudioSourceOf(clip)!.SampleRate;
             return Layout.TransientsOf(clip).OrderBy(t => Math.Abs(t - seconds * rate)).First();
         }
 
-        static void Open(Rig rig, IPattern clip, AudioClipPage page)
+        static void Open(Rig rig, IClip clip, AudioClipPage page)
         {
             Settle();
             rig.WaitPeaks(clip);

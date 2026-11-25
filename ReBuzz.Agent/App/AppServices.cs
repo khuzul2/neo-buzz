@@ -99,7 +99,7 @@ namespace ReBuzz.Agent.App
     /// <summary>Where the studio's views and panels are.</summary>
     public sealed record ViewState(string View, bool BrowserOpen, double BrowserWidth, bool InspectorOpen, double InspectorWidth,
         string InspectorTab, bool DetailOpen, double DetailHeight, bool DetailMaximised, string DetailPage,
-        string? Machine, string? Pattern, int? Scene, double WindowWidth, double WindowHeight, bool Maximised, bool Recording);
+        string? Machine, string? Clip, int? Scene, double WindowWidth, double WindowHeight, bool Maximised, bool Recording);
 
     /// <summary>The studio window (Avalonia studio only): the person watching sees every call.</summary>
     public interface IViewControl
@@ -113,12 +113,12 @@ namespace ReBuzz.Agent.App
         void ShowView(string view);
 
         /// <summary>A pattern in the Tracker or piano roll of the detail panel.</summary>
-        void ShowPattern(string machine, string pattern, bool pianoRoll);
+        void ShowClip(string machine, string clip, bool pianoRoll);
 
         /// <summary>A machine's window: gui (its own), parameters or editor (its manifest editor); false when it has none.</summary>
         bool OpenMachineWindow(string machine, string window);
 
-        void Select(string? machine, string? pattern, int? scene);
+        void Select(string? machine, string? clip, int? scene);
 
         /// <summary>browser, inspector or detail: open or close, a size (width; the detail's height), the inspector's tab, the detail's maximised state.</summary>
         void Panel(string panel, bool? open, double? size, string? tab, bool? maximised);

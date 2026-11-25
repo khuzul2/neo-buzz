@@ -26,18 +26,18 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The gain line's range: its top is +12 dB, its bottom -24 dB (0 dB is a third of the way down).</summary>
         const double GainTopDb = 12, GainBottomDb = -24;
 
-        readonly Dictionary<IPattern, AudioClipView> views = new();
+        readonly Dictionary<IClip, AudioClipView> views = new();
         ClipItem hover;
         double dragFade, dragDb;
 
         /// <summary>Whether the item is an audio clip (the editor's word for it).</summary>
-        internal bool IsAudioItem(ClipItem item) => item != null && editor.IsAudio(item.Pattern);
+        internal bool IsAudioItem(ClipItem item) => item != null && editor.IsAudio(item.Clip);
 
         AudioClipView ViewOf(ClipItem item)
         {
             if (!IsAudioItem(item)) return null;
-            if (!views.TryGetValue(item.Pattern, out var view))
-                views[item.Pattern] = view = core.SessionLayout?.ViewOf(item.Pattern);
+            if (!views.TryGetValue(item.Clip, out var view))
+                views[item.Clip] = view = core.SessionLayout?.ViewOf(item.Clip);
             return view;
         }
 
@@ -259,7 +259,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 },
             };
             // The name on a line of its own: a short clip's label is cut to a few letters, and here it is whole.
-            return $"{item.Pattern.Name}\n{BarBeat(item.Time)} · {item.End - item.Time} ticks · {view.Audio.Warp} · {seconds}\n{text}";
+            return $"{item.Clip.Name}\n{BarBeat(item.Time)} · {item.End - item.Time} ticks · {view.Audio.Warp} · {seconds}\n{text}";
         }
 
         void BeginAudioHandleDrag(ClipItem item, AudioHandle handle, Point p, PointerPressedEventArgs e)

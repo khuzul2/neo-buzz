@@ -103,7 +103,7 @@ namespace ReBuzz.Studio.Tests
 
             var set = Call("settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
             Assert.That(set["previous"]!.GetValue<string>(), Is.EqualTo("16"));
-            Assert.That(Global.GeneralSettings.PatternLength, Is.EqualTo(32), "the setting itself");
+            Assert.That(Global.GeneralSettings.ClipLength, Is.EqualTo(32), "the setting itself");
             Assert.That(Try("settings_set", Args(("key", "general.PatternLength"), ("value", 5000))).Error, Is.True);
             var restartKey = Call("settings_get", Args(("search", "restart")))["settings"]!.AsArray().First(s => s["restart_required"]!.GetValue<bool>());
             Assert.That(restartKey["description"]!.GetValue<string>(), Does.Contain("estart"));
@@ -111,7 +111,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(history[0]!["from"]!.GetValue<string>(), Is.EqualTo("16"));
             Assert.That(history[0]!["to"]!.GetValue<string>(), Is.EqualTo("32"));
             Call("settings_reset", Args(("key", "general.PatternLength")));
-            Assert.That(Global.GeneralSettings.PatternLength, Is.EqualTo(16));
+            Assert.That(Global.GeneralSettings.ClipLength, Is.EqualTo(16));
 
             // The safety limiter is the real one.
             var core = Host.Core;
@@ -249,7 +249,7 @@ namespace ReBuzz.Studio.Tests
             Call("select", Args(("clear", true)));
             Assert.That(ReBuzz.Studio.Views.StudioSelection.For(core).Machine, Is.Null);
 
-            var pattern = Call("pattern_create", Args(("machine", "Viewed"), ("name", "Shown"), ("length_beats", 4)));
+            var clip = Call("pattern_create", Args(("machine", "Viewed"), ("name", "Shown"), ("length_beats", 4)));
             Settle(window);
             var roll = Call("view_show", Args(("machine", "Viewed"), ("pattern", "Shown"), ("editor", "piano_roll")));
             Assert.That(roll["detail"]!["page"]!.GetValue<string>(), Is.EqualTo("piano_roll"));

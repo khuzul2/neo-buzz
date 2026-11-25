@@ -22,7 +22,7 @@ namespace ReBuzz.Core.Session
     internal sealed class SliceSource
     {
         public string Name { get; init; } = "";
-        public IPattern Clip { get; init; }
+        public IClip Clip { get; init; }
         public AudioAsset Asset { get; init; }
         /// <summary>The audio as the clip plays it: backwards when the clip is reversed.</summary>
         public AudioSource Audio { get; init; }
@@ -97,7 +97,7 @@ namespace ReBuzz.Core.Session
     internal sealed class SliceOutcome
     {
         public IMachine Machine { get; init; }
-        public IPattern Pattern { get; init; }
+        public IClip Clip { get; init; }
         public string Instrument { get; init; } = "Neo Sampler";
         public List<SliceWave> Slices { get; } = new();
         public int Scene { get; init; } = -1;
@@ -116,7 +116,7 @@ namespace ReBuzz.Core.Session
         public const int SliceKeyBase = 36;
 
         /// <summary>The source of a slice: an audio clip of the song; null and a reason when it isn't one.</summary>
-        internal SliceSource SliceSourceOfClip(IPattern clip, out string error)
+        internal SliceSource SliceSourceOfClip(IClip clip, out string error)
         {
             var stem = StemSourceOfClip(clip, out error);
             if (stem == null) return null;
@@ -262,16 +262,16 @@ namespace ReBuzz.Core.Session
             }
             error = SliceBlocker(plan.Slices.Count);
             if (error != null) return null;
-            var clip = source.Clip;
-            var audio = AudioOf(clip);
+            var sourceClip = source.Clip;
+            var audio = AudioOf(sourceClip);
             if (audio == null)
             {
-                error = $"\"{clip.Name}\" isn't an audio clip any more.";
+                error = $"\"{sourceClip.Name}\" isn't an audio clip any more.";
                 return null;
             }
 
             int tpb = Math.Max(1, buzz.TPB);
-            int clipTime = clip.Length * ClipNotes.TimeBase;
+            int clipTime = sourceClip.Length * ClipNotes.TimeBase;
             var slots = FreeWaveSlots(plan.Slices.Count);
             var cuts = plan.Slices.Select(s => CutSlice(source, s)).ToList();
             string baseName = source.Name.Length > 24 ? source.Name[..24] : source.Name;
@@ -291,7 +291,7 @@ namespace ReBuzz.Core.Session
                 if (time < 0 || time >= clipTime) continue;
                 notes.Add(new ClipNote(time, Math.Max(ClipNotes.MinDuration, Math.Min(length, clipTime - time)), key, 100));
             }
-            SourcePlace(clip, out int sourceScene, out var sourceEvents, out var sourceSettings);
+            SourcePlace(sourceClip, out int sourceScene, out var sourceEvents, out var sourceSettings);
 
             UndoStack.BeginActionGroup();
             try
@@ -306,8 +306,8 @@ namespace ReBuzz.Core.Session
                 if (track < 0) throw new InvalidOperationException("Couldn't make the MIDI track.");
                 SetSamplerZones(machine, slots, audio);
                 var added = notes.Select(ToEvent).ToArray();
-                var (pattern, ticks) = PutMidiClip(clip, machine, track, name, added, sourceScene, sourceEvents, sourceSettings);
-                var outcome = new SliceOutcome { Machine = machine, Pattern = pattern, Scene = sourceScene, By = plan.By, Found = plan.Found, Capped = plan.Capped };
+                var (clip, ticks) = PutMidiClip(sourceClip, machine, track, name, added, sourceScene, sourceEvents, sourceSettings);
+                var outcome = new SliceOutcome { Machine = machine, Clip = clip, Scene = sourceScene, By = plan.By, Found = plan.Found, Capped = plan.Capped };
                 outcome.Slices.AddRange(waves);
                 outcome.Ticks.AddRange(ticks);
                 UndoStack.EndActionGroup();

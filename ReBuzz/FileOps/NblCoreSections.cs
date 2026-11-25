@@ -155,7 +155,7 @@ namespace ReBuzz.FileOps
                 LoadXNOC();
                 LoadYNOC();
                 LoadXTAP(import);
-                LoadPatterns(import);
+                LoadClips(import);
                 LoadSequences(import);
                 LoadXCAM();
                 LoadWaves();
@@ -177,7 +177,7 @@ namespace ReBuzz.FileOps
                         // Assign editor to pattern before calling UpdateWaveReferences
                         if (machine.EditorMachine != null)
                         {
-                            buzz.MachineManager.SetPatternEditorPattern(machine.EditorMachine, machine.Patterns.FirstOrDefault());
+                            buzz.MachineManager.SetClipEditorClip(machine.EditorMachine, machine.Clips.FirstOrDefault());
                             // Notify machines that waveReferences have changed due to import
                             buzz.MachineManager.UpdateWaveReferences(machine.EditorMachine, machine, remappedWaveReferences);
                         }
@@ -467,14 +467,14 @@ namespace ReBuzz.FileOps
                 // If editor and missing, replace with default
                 // Fork (mac-engine.md M2): unless there's no default either (rebuzz-headless off
                 // Windows). Then the editor stays as a placeholder that keeps its data.
-                if (machineDLL.IsMissing && machineProto.Hidden && HasDefaultPatternEditor(buzz))
+                if (machineDLL.IsMissing && machineProto.Hidden && HasDefaultClipEditor(buzz))
                 {
-                    if (!buzz.Gear.HasSameDataFormat(machineLibrary, buzz.DefaultPatternEditor))
+                    if (!buzz.Gear.HasSameDataFormat(machineLibrary, buzz.DefaultClipEditor))
                     {
                         // Clear pattern editor data if not compatible with MPE
                         data = null;
                     }
-                    machineDLL = (MachineDLL)buzz.MachineDLLs[buzz.DefaultPatternEditor];
+                    machineDLL = (MachineDLL)buzz.MachineDLLs[buzz.DefaultClipEditor];
                 }
 
                 // Create machine instances and replace dummies
@@ -617,14 +617,14 @@ namespace ReBuzz.FileOps
 
         // Fork (mac-engine.md M2): whether the default pattern editor is installed. Off Windows it
         // isn't (the Modern Pattern Editor is WPF).
-        internal static bool HasDefaultPatternEditor(ReBuzzCore buzz) =>
-            buzz.DefaultPatternEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultPatternEditor);
+        internal static bool HasDefaultClipEditor(ReBuzzCore buzz) =>
+            buzz.DefaultClipEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultClipEditor);
 
         // Fork (mac-engine.md M2): a machine without an editor whose patterns kept the built-in
         // editor's contents (a host without a pattern editor). All its patterns stay the built-in
         // editor's when the song is saved.
-        internal static bool KeepsBuiltInPatterns(MachineCore machine) =>
-            machine.EditorMachine == null && machine.PlaceholderEditor == null && machine.PatternsList.Any(p => p.BuiltInData != null);
+        internal static bool KeepsBuiltInClips(MachineCore machine) =>
+            machine.EditorMachine == null && machine.PlaceholderEditor == null && machine.ClipsList.Any(p => p.BuiltInData != null);
 
         // Fork (mac-engine.md M2): links a machine to its pattern editor. One that isn't installed
         // (only when there's no default to replace it) is a placeholder the engine mustn't drive,
@@ -829,7 +829,7 @@ namespace ReBuzz.FileOps
             }
         }
 
-        private bool LoadPatterns(bool import)
+        private bool LoadClips(bool import)
         {
             Section section;
             if (sections.TryGetValue(SectionType.PATT, out section))
@@ -839,20 +839,20 @@ namespace ReBuzz.FileOps
 
                 foreach (MachineCore machine in machines)
                 {
-                    ushort patterns = ReadUShort(fs);
+                    ushort clips = ReadUShort(fs);
                     ushort tracks = ReadUShort(fs);
 
                     // Fork (mac-engine.md M2): each pattern's contents are read once (BuiltInPattern),
                     // then converted to PXP for the pattern editor as before, or kept on the pattern
                     // when there's no editor to take them.
-                    var contents = new List<(string Name, BuiltInPattern Data)>();
+                    var contents = new List<(string Name, BuiltInClip Data)>();
                     Func<int, int> read = size => size == 1 ? ReadByte(fs) : size == 2 ? ReadUShort(fs) : 0;
 
-                    for (int j = 0; j < patterns; j++)
+                    for (int j = 0; j < clips; j++)
                     {
                         string name = ReadString(fs);
                         ushort rows = ReadUShort(fs);
-                        var data = new BuiltInPattern();
+                        var data = new BuiltInClip();
 
                         // ----
                         // Rest of the code used by built in buzz PE. We convert the data to PXP format
@@ -886,18 +886,18 @@ namespace ReBuzz.FileOps
                             // If conn is null the connection was saved, but not successfully reconnected. Just skip it.
                             if (conn != null)
                             {
-                                data.Inputs.Add(new BuiltInPattern.Input { Source = sourceMachine, AmpPan = ampPan });
+                                data.Inputs.Add(new BuiltInClip.Input { Source = sourceMachine, AmpPan = ampPan });
                             }
                         }
 
                         // Global
-                        data.Global = BuiltInPattern.ReadRows(read, machine, 1, rows);
+                        data.Global = BuiltInClip.ReadRows(read, machine, 1, rows);
 
                         // Tracks
                         data.Tracks = new int[tracks][][];
                         for (int l = 0; l < tracks; l++)
                         {
-                            data.Tracks[l] = BuiltInPattern.ReadRows(read, machine, 2, rows);
+                            data.Tracks[l] = BuiltInClip.ReadRows(read, machine, 2, rows);
                         }
 
                         contents.Add((name, data));
@@ -910,33 +910,33 @@ namespace ReBuzz.FileOps
                     }
 
                     // Create patterns
-                    int first = machine.PatternsList.Count;
-                    bool builtIn = builtInPeDictionary.ContainsKey(machine.Name) && patterns > 0;
-                    buzz.PatternsAwaitingEditor = builtIn ? machine : null;     // fork (studio-mvp.md S6)
+                    int first = machine.ClipsList.Count;
+                    bool builtIn = builtInPeDictionary.ContainsKey(machine.Name) && clips > 0;
+                    buzz.ClipsAwaitingEditor = builtIn ? machine : null;     // fork (studio-mvp.md S6)
                     try
                     {
                         foreach (var (name, data) in contents)
                         {
-                            machine.CreatePattern(name, data.Global.Length);
+                            machine.CreateClip(name, data.Global.Length);
                         }
                     }
                     finally
                     {
-                        buzz.PatternsAwaitingEditor = null;
+                        buzz.ClipsAwaitingEditor = null;
                     }
 
                     // Does machine use built in editor?
                     if (builtIn)
                     {
                         // Create PXP compatible editor and input converted data
-                        buzz.CreateEditor(machine, buzz.DefaultPatternEditor, BuiltInPattern.ToPXP(machine, contents));
+                        buzz.CreateEditor(machine, buzz.DefaultClipEditor, BuiltInClip.ToPXP(machine, contents));
 
                         // Fork (mac-engine.md M2): no pattern editor here, so the patterns keep their contents.
                         if (machine.EditorMachine == null)
                         {
-                            for (int j = 0; j < contents.Count && first + j < machine.PatternsList.Count; j++)
+                            for (int j = 0; j < contents.Count && first + j < machine.ClipsList.Count; j++)
                             {
-                                machine.PatternsList[first + j].BuiltInData = contents[j].Data;
+                                machine.ClipsList[first + j].BuiltInData = contents[j].Data;
                             }
                         }
                     }
@@ -961,14 +961,14 @@ namespace ReBuzz.FileOps
                 {
                     for (int i = 0; i < machines.Count; i++)
                     {
-                        ushort numPatterns = ReadUShort(fs);
+                        ushort numClips = ReadUShort(fs);
                         var machine = machines[i];
 
-                        for (int j = 0; j < numPatterns; j++)
+                        for (int j = 0; j < numClips; j++)
                         {
-                            ushort patternEditorIndex = ReadUShort(fs);
+                            ushort clipEditorIndex = ReadUShort(fs);
 
-                            if (patternEditorIndex == 65535)    // If pattern is assigned to built in editor
+                            if (clipEditorIndex == 65535)    // If pattern is assigned to built in editor
                             {
                                 // Don't do anything if master and builtin pattern data
                                 if (import && i == 0)
@@ -984,11 +984,11 @@ namespace ReBuzz.FileOps
                                 // Don't import master editor. Remove the imported editor
                                 if (import && i == 0)
                                 {
-                                    masterEditor = machines[patternEditorIndex];
+                                    masterEditor = machines[clipEditorIndex];
                                 }
                                 else
                                 {
-                                    var editor = machines[patternEditorIndex];
+                                    var editor = machines[clipEditorIndex];
                                     SetEditor(machine, editor);     // fork (mac-engine.md M2)
                                 }
                             }
@@ -1028,12 +1028,12 @@ namespace ReBuzz.FileOps
 
                 foreach (MachineCore machine in machines)
                 {
-                    ushort numPatterns = ReadUShort(fs);
+                    ushort numClips = ReadUShort(fs);
 
-                    for (ushort i = 0; i < numPatterns; i++)
+                    for (ushort i = 0; i < numClips; i++)
                     {
-                        string patternName = ReadString(fs);
-                        var pattern = machine.Patterns.FirstOrDefault(p => p.Name == patternName);
+                        string clipName = ReadString(fs);
+                        var clip = machine.Clips.FirstOrDefault(p => p.Name == clipName);
 
                         int parameterColumnCount = ReadInt(fs);
                         for (int j = 0; j < parameterColumnCount; j++)
@@ -1058,22 +1058,22 @@ namespace ReBuzz.FileOps
                                 }
                             }
 
-                            IPatternColumn column = null;
-                            if (pattern != null && targetParameter != null)
+                            IClipColumn column = null;
+                            if (clip != null && targetParameter != null)
                             {
                                 // Fork (daw-modes.md AR0): in the order saved. Upstream clamped to Count - 1, which put a
                                 // pattern's second column before its first (a MIDI column and an automation column
                                 // swapped places on every open, so a saved song never saved back the same).
-                                int newIndex = Math.Clamp(j, 0, pattern.Columns.Count);
-                                pattern.InsertColumn(newIndex, targetParameter, track);
-                                column = pattern.Columns[newIndex];
+                                int newIndex = Math.Clamp(j, 0, clip.Columns.Count);
+                                clip.InsertColumn(newIndex, targetParameter, track);
+                                column = clip.Columns[newIndex];
                             }
 
                             int numberOfevents = ReadInt(fs);
-                            List<PatternEvent> events = new List<PatternEvent>();
+                            List<ClipEvent> events = new List<ClipEvent>();
                             for (int k = 0; k < numberOfevents; k++)
                             {
-                                PatternEvent pe = new PatternEvent
+                                ClipEvent pe = new ClipEvent
                                 {
                                     Time = ReadInt(fs),
                                     Value = ReadInt(fs),
@@ -1173,10 +1173,10 @@ namespace ReBuzz.FileOps
                             {
                                 // machine+value -> pattern id
                                 int ptnidx = (int)(value - 0x10);
-                                if (ptnidx >= 0 && ptnidx < machine.Patterns.Count)
+                                if (ptnidx >= 0 && ptnidx < machine.Clips.Count)
                                 {
-                                    var mp = machine.PatternsList[ptnidx];
-                                    sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.PlayPattern, mp, mp.Length));
+                                    var mp = machine.ClipsList[ptnidx];
+                                    sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.PlayClip, mp, mp.Length));
                                 }
                             }
                         }
@@ -1694,7 +1694,7 @@ namespace ReBuzz.FileOps
             CreateConnectionsSection();
             CreateXNOC();
             CreateYNOC();
-            CreatePatternsSection();
+            CreateClipsSection();
             CreateXPATSection();
             CreateSequencesSection();
             CreateXCAMSection();
@@ -2055,29 +2055,29 @@ namespace ReBuzz.FileOps
             AddSection(ms.ToArray(), SectionType.YNOC);
         }
 
-        void CreatePatternsSection()
+        void CreateClipsSection()
         {
             MemoryStream ms = new MemoryStream();
 
             foreach (MachineCore machine in machines)
             {
-                ushort patterns = (ushort)machine.Patterns.Count;
+                ushort clips = (ushort)machine.Clips.Count;
                 ushort tracks = (ushort)machine.TrackCount;
 
-                WriteUShort(ms, patterns);
+                WriteUShort(ms, clips);
                 WriteUShort(ms, tracks);
 
-                foreach (var pattern in machine.PatternsList)
+                foreach (var clip in machine.ClipsList)
                 {
-                    WriteString(ms, pattern.Name);
-                    ushort rows = (ushort)pattern.Length;
+                    WriteString(ms, clip.Name);
+                    ushort rows = (ushort)clip.Length;
                     WriteUShort(ms, rows);
 
-                    var patternInputs = machine.AllInputs.Where(input => !(input.Source as MachineCore).Hidden).ToArray();
-                    int inputCount = patternInputs.Length;
+                    var clipInputs = machine.AllInputs.Where(input => !(input.Source as MachineCore).Hidden).ToArray();
+                    int inputCount = clipInputs.Length;
                     for (int k = 0; k < inputCount; k++)
                     {
-                        var sourceMachine = patternInputs[k].Source as MachineCore;
+                        var sourceMachine = clipInputs[k].Source as MachineCore;
                         ushort sourceMachineIndex = (ushort)machines.IndexOf(sourceMachine);
 
                         WriteUShort(ms, sourceMachineIndex);
@@ -2087,7 +2087,7 @@ namespace ReBuzz.FileOps
                         if (conn != null)
                         {
                             // Fork (mac-engine.md M2): a pattern that kept its built-in contents writes its input columns back.
-                            var builtIn = pattern.BuiltInData;
+                            var builtIn = clip.BuiltInData;
                             for (int k1 = 0; k1 < rows; k1++)
                             {
                                 WriteUShort(ms, builtIn != null ? builtIn.AmpPanAt(sourceMachine, 2 * k1) : (ushort)65535);
@@ -2107,13 +2107,13 @@ namespace ReBuzz.FileOps
                     }
 
                     // Global
-                    WriteTrack(ms, machine, pattern, 1, 0, rows);
+                    WriteTrack(ms, machine, clip, 1, 0, rows);
 
                     // Tracks
 
                     for (int l = 0; l < tracks; l++)
                     {
-                        WriteTrack(ms, machine, pattern, 2, l, rows);
+                        WriteTrack(ms, machine, clip, 2, l, rows);
                     }
                 }
             }
@@ -2121,14 +2121,14 @@ namespace ReBuzz.FileOps
             AddSection(ms.ToArray(), SectionType.PATT);
         }
 
-        private bool WriteTrack(MemoryStream ms, MachineCore machine, PatternCore Pattern, int group, int track, int rows)
+        private bool WriteTrack(MemoryStream ms, MachineCore machine, ClipCore Clip, int group, int track, int rows)
         {
             // We don't use these so write no values
             // Fork (mac-engine.md M2): except a pattern's kept built-in contents (BuiltInData).
-            var builtIn = Pattern.BuiltInData;
+            var builtIn = Clip.BuiltInData;
             for (int i = 0; i < rows; i++)
             {
-                List<PatternEvent> events = new List<PatternEvent>();
+                List<ClipEvent> events = new List<ClipEvent>();
                 for (int j = 0; j < machine.ParameterGroups[group].Parameters.Count; j++)
                 {
                     ParameterCore param = machine.ParameterGroupsList[group].ParametersList[j];
@@ -2161,21 +2161,21 @@ namespace ReBuzz.FileOps
             for (int i = 0; i < buzz.SongCore.MachinesList.Count; i++)
             {
                 var machine = machines[i];
-                ushort numPatterns = (ushort)machine.Patterns.Count;
+                ushort numClips = (ushort)machine.Clips.Count;
 
                 // Fork (mac-engine.md M2): a placeholder editor is still the patterns' editor, and
                 // patterns that kept built-in contents stay the built-in editor's (65535), so a host
                 // with a pattern editor converts them as it does for an old song.
                 var editor = machine.EditorMachine ?? machine.PlaceholderEditor;
                 int editorIndex = buzz.SongCore.MachinesList.IndexOf(editor);
-                if (editorIndex == -1 && KeepsBuiltInPatterns(machine))
+                if (editorIndex == -1 && KeepsBuiltInClips(machine))
                     editorIndex = 65535;
                 if (editorIndex == -1)
-                    numPatterns = 0; // Ensure editor is correct. Should not go here.
+                    numClips = 0; // Ensure editor is correct. Should not go here.
 
-                WriteUShort(ms, numPatterns);
+                WriteUShort(ms, numClips);
 
-                for (int j = 0; j < numPatterns; j++)
+                for (int j = 0; j < numClips; j++)
                 {
                     WriteUShort(ms, (ushort)editorIndex);
                 }
@@ -2192,20 +2192,20 @@ namespace ReBuzz.FileOps
 
             foreach (MachineCore machine in buzz.SongCore.MachinesList)
             {
-                ushort numPatterns = (ushort)machine.Patterns.Count;
-                WriteUShort(ms, numPatterns);
+                ushort numClips = (ushort)machine.Clips.Count;
+                WriteUShort(ms, numClips);
 
-                for (ushort i = 0; i < numPatterns; i++)
+                for (ushort i = 0; i < numClips; i++)
                 {
-                    var pattern = machine.Patterns[i];
-                    WriteString(ms, pattern.Name);
+                    var clip = machine.Clips[i];
+                    WriteString(ms, clip.Name);
 
-                    int parameterColumnCount = pattern.Columns.Count;
+                    int parameterColumnCount = clip.Columns.Count;
                     WriteInt(ms, parameterColumnCount);
 
                     for (int j = 0; j < parameterColumnCount; j++)
                     {
-                        var column = pattern.Columns[j];
+                        var column = clip.Columns[j];
                         var parameter = column.Parameter as ParameterCore;
                         var targetMachine = column.Parameter.Group != null ? column.Parameter.Group.Machine as MachineCore : null;
                         if (targetMachine == null && parameter.Group.Machine != null)
@@ -2290,7 +2290,7 @@ namespace ReBuzz.FileOps
                     else
                     {
                         // machine+value -> pattern id
-                        int ptnidx = sequence.Machine.Patterns.IndexOf(sequenceEvent.Pattern);
+                        int ptnidx = sequence.Machine.Clips.IndexOf(sequenceEvent.Clip);
                         if (ptnidx < 0)
                             continue;
                         value = (ulong)ptnidx + 0x10;

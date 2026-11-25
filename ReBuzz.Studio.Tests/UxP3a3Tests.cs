@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Tests
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
                 Song = new SessionRig("Drums", "Bass");
                 var drums = Song.Machine("Drums");
-                var beat = Song.Pattern(drums, "Beat", 16, (0, 60), (4, 62));
+                var beat = Song.Clip(drums, "Beat", 16, (0, 60), (4, 62));
                 Song.Layout.SetSlot(0, 0, beat);
                 StudioSelection.For(Song.Core).Clear(this);
                 Window = new MainWindow(Studio.Host) { Width = width, Height = height };

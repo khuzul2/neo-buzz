@@ -173,7 +173,7 @@ namespace ReBuzz.Studio.Shell.Design
         public IPen RecordPen;
 
         // the pattern list and the corner
-        public Color PatternList;
+        public Color ClipList;
         public IBrush ListText, ListHover, ListHoverText, ListPressed, ListSelected, ListSelectedHover, ListBorder;
         public IBrush ControlBack, ControlText, ControlBorder;
 
@@ -231,7 +231,7 @@ namespace ReBuzz.Studio.Shell.Design
             l.SongEnd = StudioTokens.Black;
             l.Play = S("#FFFF00");
             l.PlayEdge = S("#B0000000");
-            l.PatternList = Color.Parse("#F7F7F3");
+            l.ClipList = Color.Parse("#F7F7F3");
             l.ListText = StudioTokens.Black;
             l.ListHover = S("#E0E0D8");
             l.ListHoverText = StudioTokens.Black;
@@ -295,7 +295,7 @@ namespace ReBuzz.Studio.Shell.Design
             l.SongEnd = B(t.Primary);
             l.Play = B(StudioTokens.Play);
             l.PlayEdge = StudioTheme.Solid(StudioTokens.SurfaceBase, 0xE0);
-            l.PatternList = t.Panel;
+            l.ClipList = t.Panel;
             l.ListText = B(t.Primary);
             l.ListHover = B(t.Control);
             l.ListHoverText = B(t.Primary);

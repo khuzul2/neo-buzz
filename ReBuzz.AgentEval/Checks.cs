@@ -236,8 +236,8 @@ namespace ReBuzz.AgentEval
             s.C.Ok("preset_load", new JsonObject { ["machine"] = "Bass", ["preset"] = "Bass — Acid" });
             Recipes.Add(s, "Neo Drive", "Grit", 0, insertAfter: "Bass");
             Recipes.Add(s, "Neo Comp", "Squash", 0, insertAfter: "Grit");
-            Recipes.Pattern(s, "Keys", "Chords", 8, new[] { "A3", "C4", "E4" }.Select(p => J.Note(p, 0, 4, 90)).Concat(new[] { "F3", "A3", "C4" }.Select(p => J.Note(p, 4, 4, 90))));
-            Recipes.Pattern(s, "Bass", "Line", 8, Enumerable.Range(0, 16).Select(i => J.Note(i % 3 == 0 ? "A1" : "A2", i * 0.5, 0.3, 80 + i * 3)));
+            Recipes.Clip(s, "Keys", "Chords", 8, new[] { "A3", "C4", "E4" }.Select(p => J.Note(p, 0, 4, 90)).Concat(new[] { "F3", "A3", "C4" }.Select(p => J.Note(p, 4, 4, 90))));
+            Recipes.Clip(s, "Bass", "Line", 8, Enumerable.Range(0, 16).Select(i => J.Note(i % 3 == 0 ? "A1" : "A2", i * 0.5, 0.3, 80 + i * 3)));
             Recipes.Place(s, "Keys", "Chords", 0);
             Recipes.Place(s, "Bass", "Line", 0);
             string song = Path.Combine(env.Folder, "determinism.nbl");
@@ -428,10 +428,10 @@ namespace ReBuzz.AgentEval
                 ps[name] = perTrack;
             }
             s["params"] = ps;
-            var patterns = ByName(c.Ok("pattern_list")["machines"]!, "machine");
-            s["patterns"] = patterns;
+            var clips = ByName(c.Ok("pattern_list")["machines"]!, "machine");
+            s["patterns"] = clips;
             var notes = new JsonObject();
-            foreach (var m in J.Objects(patterns))
+            foreach (var m in J.Objects(clips))
                 foreach (var p in J.Objects(m["patterns"]))
                 {
                     var args = new JsonObject { ["machine"] = J.Str(m["machine"]), ["pattern"] = J.Str(p["name"]) };
@@ -505,8 +505,8 @@ namespace ReBuzz.AgentEval
             Recipes.Add(s, Recipes.Synth, "Bass", -6);
             Recipes.Add(s, "Neo Drive", "Drive", 0, insertAfter: "Bass");
             Recipes.Add(s, Recipes.Synth, "Pad", -8);
-            Recipes.Pattern(s, "Bass", "Riff", 8, new[] { J.Note("A1", 0, 1), J.Note("C2", 2, 1), J.Note("G1", 4, 2) });
-            Recipes.Pattern(s, "Pad", "P", 8, new[] { "A3", "C4", "E4" }.Select(p => J.Note(p, 0, 8, 90)));
+            Recipes.Clip(s, "Bass", "Riff", 8, new[] { J.Note("A1", 0, 1), J.Note("C2", 2, 1), J.Note("G1", 4, 2) });
+            Recipes.Clip(s, "Pad", "P", 8, new[] { "A3", "C4", "E4" }.Select(p => J.Note(p, 0, 8, 90)));
             Recipes.Place(s, "Bass", "Riff", 0, 8, 2);
             Recipes.Place(s, "Pad", "P", 0, 8, 2);
             string tone = WriteSignal(env, "tone", 1, (i, rate) => { float v = (float)(0.4 * Math.Sin(2 * Math.PI * 330 * i / rate)); return (v, v); });

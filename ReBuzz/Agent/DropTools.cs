@@ -116,7 +116,7 @@ namespace ReBuzz.Agent
                         }
                         var o = new JsonObject { ["action"] = result.Action.ToString(), ["message"] = result.Message };
                         if (result.Machine != null) o["machine"] = result.Machine.Name;
-                        o["patterns"] = new JsonArray(result.Patterns.Select(p => (JsonNode)p.Name).ToArray());
+                        o["patterns"] = new JsonArray(result.Clips.Select(p => (JsonNode)p.Name).ToArray());
                         return o;
                     }, c.Cancellation);
                     return ToolResult.Ok((string)r["message"]!, r);

@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Detail
             grip.PointerMoved += GripMoved;
             grip.PointerReleased += GripReleased;
             Child = new Grid { Children = { frame, grip } };
-            if (page is PatternPage pp) pp.SetRollMode(rollPage);
+            if (page is ClipPage pp) pp.SetRollMode(rollPage);
             Apply();
         }
 
@@ -243,7 +243,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (rollPage == roll) return;
             rollPage = roll;
             Write(RollKey, roll);
-            if (page is PatternPage pp) pp.SetRollMode(roll);
+            if (page is ClipPage pp) pp.SetRollMode(roll);
             Apply();
         }
 

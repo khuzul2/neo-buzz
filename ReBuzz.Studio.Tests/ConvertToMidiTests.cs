@@ -86,15 +86,15 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>An audio clip of a file at a Session slot and in the arrangement, as (machine, pattern, the clip).</summary>
-        static (string Machine, string Pattern, IPattern Clip, JsonObject Imported) Import(ReBuzzCore core, string file, int slot = 3, double atBeats = 4)
+        static (string Machine, string ClipName, IClip Clip, JsonObject Imported) Import(ReBuzzCore core, string file, int slot = 3, double atBeats = 4)
         {
             var imported = Ok(Tool("audio_import", new JsonObject { ["path"] = file, ["slot"] = slot, ["at_beats"] = atBeats }));
-            string machine = (string)imported["machine"], pattern = (string)imported["pattern"];
-            return (machine, pattern, core.SongCore.MachinesList.First(m => m.Name == machine).PatternsList.First(p => p.Name == pattern), imported);
+            string machine = (string)imported["machine"], clipName = (string)imported["pattern"];
+            return (machine, clipName, core.SongCore.MachinesList.First(m => m.Name == machine).ClipsList.First(p => p.Name == clipName), imported);
         }
 
-        static List<ClipNote> NotesOf(ReBuzzCore core, string machine, string pattern) =>
-            core.SessionLayout.NotesOf(core.SongCore.MachinesList.First(m => m.Name == machine).PatternsList.First(p => p.Name == pattern));
+        static List<ClipNote> NotesOf(ReBuzzCore core, string machine, string clipName) =>
+            core.SessionLayout.NotesOf(core.SongCore.MachinesList.First(m => m.Name == machine).ClipsList.First(p => p.Name == clipName));
 
         static void Reopen(ReBuzzCore core, string path)
         {
@@ -111,12 +111,12 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, imported) = Import(core, MelodyFile());
+            var (machine, clipName, clip, imported) = Import(core, MelodyFile());
             var layout = core.SessionLayout;
             int machinesBefore = Visible(core), sequencesBefore = core.SongCore.SequencesList.Count;
-            var sourceEvent = core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single(e => e.Value.Pattern == clip);
+            var sourceEvent = core.SongCore.SequencesList.First(q => q.Machine.Name == machine).Events.Single(e => e.Value.Clip == clip);
 
-            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "melody" }));
+            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "melody" }));
             Assert.That((int)o["notes"], Is.EqualTo(Melody.Length));
             Assert.That((string)o["instrument"], Is.EqualTo("Neo Poly"));
             Assert.That((string)o["machine"], Does.StartWith("Melody - "), "named after the mode and the clip");
@@ -126,13 +126,13 @@ namespace ReBuzz.Studio.Tests
 
             var made = core.SongCore.MachinesList.First(m => m.Name == (string)o["machine"]);
             Assert.That(made.DLL.Name, Is.EqualTo("Neo Poly"), "an instrument on the track");
-            var midi = made.PatternsList.Single(p => p.Name == (string)o["pattern"]);
+            var midi = made.ClipsList.Single(p => p.Name == (string)o["pattern"]);
             Assert.That(midi.Length, Is.EqualTo(clip.Length), "the same length");
             Assert.That(layout.IsAudioClip(midi), Is.False);
-            Assert.That(layout.PatternAt(layout.FirstTrackOf(made), (int)imported["slot"] - 1), Is.SameAs(midi), "in the same scene");
+            Assert.That(layout.ClipAt(layout.FirstTrackOf(made), (int)imported["slot"] - 1), Is.SameAs(midi), "in the same scene");
             var at = core.SongCore.SequencesList.First(q => q.Machine == made).Events.Single();
             Assert.That(at.Key, Is.EqualTo(sourceEvent.Key), "at the same arrangement position");
-            Assert.That(at.Value.Pattern, Is.SameAs(midi));
+            Assert.That(at.Value.Clip, Is.SameAs(midi));
 
             double bpm = layout.AudioOf(clip).Bpm;
             var notes = layout.NotesOf(midi);
@@ -154,7 +154,7 @@ namespace ReBuzz.Studio.Tests
             core.SongCore.ActionStack.Redo();
             Assert.That(Visible(core), Is.EqualTo(machinesBefore + 1));
             var again = core.SongCore.MachinesList.First(m => m.Name == (string)o["machine"]);
-            Assert.That(layout.NotesOf(again.PatternsList.Single(p => !layout.IsAudioClip(p))).Count, Is.EqualTo(Melody.Length), "the notes are back");
+            Assert.That(layout.NotesOf(again.ClipsList.Single(p => !layout.IsAudioClip(p))).Count, Is.EqualTo(Melody.Length), "the notes are back");
         }
 
         [AvaloniaTest]
@@ -164,20 +164,20 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, imported) = Import(core, MelodyFile("saved.wav"));
-            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "melody", ["pitch_bends"] = false }));
-            string newMachine = (string)o["machine"], newPattern = (string)o["pattern"];
-            var before = NotesOf(core, newMachine, newPattern);
+            var (machine, clipName, clip, imported) = Import(core, MelodyFile("saved.wav"));
+            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "melody", ["pitch_bends"] = false }));
+            string newMachine = (string)o["machine"], newClip = (string)o["pattern"];
+            var before = NotesOf(core, newMachine, newClip);
             Assert.That(before.Count, Is.EqualTo(Melody.Length));
             string path = Work("converted.nbl");
             core.SaveSongCopy(path);
             Reopen(core, path);
-            var back = NotesOf(core, newMachine, newPattern);
+            var back = NotesOf(core, newMachine, newClip);
             Assert.That(back, Is.EqualTo(before), "the same notes after saving and opening");
             var made = core.SongCore.MachinesList.First(m => m.Name == newMachine);
             Assert.That(made.DLL.Name, Is.EqualTo("Neo Poly"));
             var layout = core.SessionLayout;
-            Assert.That(layout.PatternAt(layout.FirstTrackOf(made), (int)imported["slot"] - 1)?.Name, Is.EqualTo(newPattern), "still in the scene");
+            Assert.That(layout.ClipAt(layout.FirstTrackOf(made), (int)imported["slot"] - 1)?.Name, Is.EqualTo(newClip), "still in the scene");
         }
 
         [AvaloniaTest]
@@ -187,9 +187,9 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, _) = Import(core, MelodyFile("shifted.wav"));
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["transpose"] = 2 }));
-            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "melody", ["quantize"] = "1/4", ["strength"] = 1 }));
+            var (machine, clipName, clip, _) = Import(core, MelodyFile("shifted.wav"));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["transpose"] = 2 }));
+            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "melody", ["quantize"] = "1/4", ["strength"] = 1 }));
             var notes = NotesOf(core, (string)o["machine"], (string)o["pattern"]);
             Assert.That(notes.Select(n => n.Note), Is.EqualTo(Melody.Select(m => (int)m.Midi + 2)), "transposed by the clip's two semitones");
             int beat = core.TPB * SessionRig.TB;
@@ -210,8 +210,8 @@ namespace ReBuzz.Studio.Tests
                 hits.Add(("kick", t0)); hits.Add(("snare", t0 + 0.5)); hits.Add(("kick", t0 + 1.0)); hits.Add(("snare", t0 + 1.5));
                 for (int i = 0; i < 4; i++) hits.Add(("hat", t0 + 0.25 + i * 0.5));
             }
-            var (machine, pattern, _, _) = Import(core, Wav("beat.wav", ConvertSignals.Drums(hits, 4.5), ConvertSignals.Rate));
-            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "drums" }));
+            var (machine, clipName, _, _) = Import(core, Wav("beat.wav", ConvertSignals.Drums(hits, 4.5), ConvertSignals.Rate));
+            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "drums" }));
             Assert.That((string)o["instrument"], Is.EqualTo("Neo Drums"));
             Assert.That((int)o["notes"], Is.EqualTo(hits.Count));
             var notes = NotesOf(core, (string)o["machine"], (string)o["pattern"]);
@@ -229,13 +229,13 @@ namespace ReBuzz.Studio.Tests
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             var chords = new[] { (0.3, 1.6, new[] { 60, 64, 67 }), (2.2, 1.6, new[] { 57, 60, 64 }) };
-            var (machine, pattern, _, _) = Import(core, Wav("chords.wav", ConvertSignals.Chords(chords, 4.2), 22050));
+            var (machine, clipName, _, _) = Import(core, Wav("chords.wav", ConvertSignals.Chords(chords, 4.2), 22050));
             int before = Visible(core);
-            var look = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "harmony", ["apply"] = false }));
+            var look = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "harmony", ["apply"] = false }));
             Assert.That(Visible(core), Is.EqualTo(before), "apply=false changes nothing");
             var found = look["found"]!.AsArray().Select(f => (int)f!["note"]).ToList();
             foreach (var chord in chords) foreach (int p in chord.Item3) Assert.That(found, Does.Contain(p), MidiNames.Of(p));
-            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "harmony" }));
+            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "harmony" }));
             Assert.That((string)o["instrument"], Is.EqualTo("Neo Poly"));
             var notes = NotesOf(core, (string)o["machine"], (string)o["pattern"]);
             foreach (var chord in chords) foreach (int p in chord.Item3) Assert.That(notes.Any(n => n.Note == p), Is.True, MidiNames.Of(p));
@@ -248,12 +248,12 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, _, _) = Import(core, Wav("slide.wav", ConvertSignals.Glide(0.5, 1.0, 60, 61.6, 2), ConvertSignals.Rate));
-            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "melody", ["pitch_bends"] = true }));
+            var (machine, clipName, _, _) = Import(core, Wav("slide.wav", ConvertSignals.Glide(0.5, 1.0, 60, 61.6, 2), ConvertSignals.Rate));
+            var o = Ok(Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "melody", ["pitch_bends"] = true }));
             Assert.That((int)o["notes"], Is.EqualTo(1));
             Assert.That((int)o["pitch_bends"], Is.GreaterThan(2));
-            var midi = core.SongCore.MachinesList.First(m => m.Name == (string)o["machine"]).PatternsList.Single(p => !core.SessionLayout.IsAudioClip(p));
-            var column = midi.Columns.First(c => c.Type == PatternColumnType.MIDI);
+            var midi = core.SongCore.MachinesList.First(m => m.Name == (string)o["machine"]).ClipsList.Single(p => !core.SessionLayout.IsAudioClip(p));
+            var column = midi.Columns.First(c => c.Type == ClipColumnType.MIDI);
             int bends = column.GetEvents(int.MinValue, int.MaxValue).Count(e => (e.Value & 0xF0) == 0xE0);
             Assert.That(bends, Is.GreaterThan(2), "pitch-bend events in the clip's MIDI column");
         }
@@ -265,15 +265,15 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig("Lead");
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var (machine, pattern, _, _) = Import(core, MelodyFile("refuse.wav"));
+            var (machine, clipName, _, _) = Import(core, MelodyFile("refuse.wav"));
             int machines = Visible(core);
             var notAudio = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = "Lead", ["pattern"] = "00", ["mode"] = "melody" });
             Assert.That(notAudio["isError"]?.GetValue<bool>(), Is.True, "a pattern of an instrument isn't audio");
-            var mode = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "singing" });
+            var mode = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "singing" });
             Assert.That(mode["isError"]?.GetValue<bool>(), Is.True);
-            var quantize = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "melody", ["quantize"] = "1/7" });
+            var quantize = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "melody", ["quantize"] = "1/7" });
             Assert.That(quantize["isError"]?.GetValue<bool>(), Is.True);
-            var range = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = pattern, ["mode"] = "melody", ["range"] = "tuba" });
+            var range = Tool("audio_convert_to_midi", new JsonObject { ["machine"] = machine, ["pattern"] = clipName, ["mode"] = "melody", ["range"] = "tuba" });
             Assert.That(range["isError"]?.GetValue<bool>(), Is.True);
             Assert.That(Visible(core), Is.EqualTo(machines), "a refused call changes nothing");
         }
@@ -285,7 +285,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig();
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; ConvertFlow.Responder = null; core.Modified = false; });
-            var (machine, pattern, clip, imported) = Import(core, MelodyFile("flow.wav"));
+            var (machine, clipName, clip, imported) = Import(core, MelodyFile("flow.wav"));
             var view = rig.Show();
             var layout = core.SessionLayout;
             int track = layout.FirstTrackOf(core.SongCore.MachinesList.First(m => m.Name == machine));
@@ -304,7 +304,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(ConvertFlow.LastOutcome, Is.Not.Null, ConvertFlow.LastSummary);
             Assert.That(ConvertFlow.LastSummary, Does.Contain("Neo Poly"));
             Assert.That(Visible(core), Is.EqualTo(machines + 1));
-            var notes = layout.NotesOf(ConvertFlow.LastOutcome.Pattern);
+            var notes = layout.NotesOf(ConvertFlow.LastOutcome.Clip);
             Assert.That(notes.Count, Is.EqualTo(Melody.Length));
             int half = core.TPB * SessionRig.TB / 2;
             Assert.That(notes.Select(n => n.Time % half), Is.All.EqualTo(0), "quantized to eighths");
@@ -316,7 +316,7 @@ namespace ReBuzz.Studio.Tests
             // a clip that isn't audio is refused with the reason, and nothing changes
             ConvertFlow.Responder = (_, _) => throw new InvalidOperationException("must not ask");
             Dialogs.Responder = (m, c, b) => UserAnswer.Ok;
-            var instrumentClip = ConvertFlow.LastOutcome.Pattern;
+            var instrumentClip = ConvertFlow.LastOutcome.Clip;
             Pump(ConvertFlow.ConvertClip(instrumentClip, ConvertMode.Melody));
             Assert.That(ConvertFlow.LastSummary, Does.Contain("isn't an audio clip"));
             Assert.That(Visible(core), Is.EqualTo(machines + 1));
@@ -331,7 +331,7 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             // a minute of chords: the harmony model takes a while, so the call has to return before it is done
             var long1 = ConvertSignals.Chords(new[] { (0.2, 59.0, new[] { 60, 64, 67 }) }, 60, 22050);
-            var (machine, pattern, clip, _) = Import(core, Wav("long.wav", long1, 22050));
+            var (machine, clipName, clip, _) = Import(core, Wav("long.wav", long1, 22050));
             var layout = core.SessionLayout;
             var source = layout.ConvertSourceOfClip(clip, out string error);
             Assert.That(source, Is.Not.Null, error);

@@ -78,29 +78,29 @@ namespace ReBuzz.Agent
 
         // ------------------------------------------------------------------ patterns
 
-        public static IPattern Pattern(MachineCore machine, string name)
+        public static IClip Clip(MachineCore machine, string name)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ToolError($"Give a pattern of {machine.Name} by name (pattern_list shows them).");
-            var p = machine.Patterns.FirstOrDefault(x => x.Name == name) ?? machine.Patterns.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+            var p = machine.Clips.FirstOrDefault(x => x.Name == name) ?? machine.Clips.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
             if (p != null) return p;
-            if (machine.Patterns.Count == 0)
+            if (machine.Clips.Count == 0)
                 throw new ToolError($"{machine.Name} has no patterns. Make one with pattern_create(machine=\"{machine.Name}\", length_beats=16).");
-            var near = Text.Closest(name, machine.Patterns.Select(x => x.Name));
+            var near = Text.Closest(name, machine.Clips.Select(x => x.Name));
             throw new ToolError($"{machine.Name} has no pattern \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") +
-                                $" Its patterns: {string.Join(", ", machine.Patterns.Select(x => x.Name))}.");
+                                $" Its patterns: {string.Join(", ", machine.Clips.Select(x => x.Name))}.");
         }
 
         /// <summary>
         /// The pattern's notes as the agent reads them, in time order: SongNotes' notes (the engine MIDI column's note-ons, or the Note
         /// track lanes for a machine that takes notes in tracks), with the machine's pitch offset taken off (§12.2, MachineNotes).
         /// </summary>
-        public static List<NoteEvent> Notes(IPattern p) =>
+        public static List<NoteEvent> Notes(IClip p) =>
             p.Machine is MachineCore m ? MachineNotes.Read(p, MachineNotes.For(m)) : new List<NoteEvent>();
 
         /// <summary>Where the pattern is placed in the arrangement, in ticks.</summary>
-        public static List<int> Placements(ReBuzzCore core, IPattern p) =>
+        public static List<int> Placements(ReBuzzCore core, IClip p) =>
             core.SongCore.Sequences.Where(s => s.Machine == p.Machine)
-                .SelectMany(s => s.Events.Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern == p).Select(e => e.Key))
+                .SelectMany(s => s.Events.Where(e => e.Value.Type == SequenceEventType.PlayClip && e.Value.Clip == p).Select(e => e.Key))
                 .OrderBy(t => t).ToList();
 
         // ------------------------------------------------------------------ time
@@ -302,7 +302,7 @@ namespace ReBuzz.Agent
                 o["soloed"] = m.IsSoloed;
                 o["bypassed"] = m.IsBypassed;
                 o["tracks"] = m.TrackCount;
-                o["patterns"] = m.Patterns.Count;
+                o["patterns"] = m.Clips.Count;
             }
             // Fork (ux-overhaul.md §11, MX1): a track's colour, the palette colour every view draws it in (machine_set(colour=...) sets it).
             if (!IsMaster(m) && core.TrackColours is { } colours && colours.IndexOf(m) is int ci && ci >= 0)

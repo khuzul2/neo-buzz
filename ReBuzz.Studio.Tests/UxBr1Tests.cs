@@ -303,14 +303,14 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ hot-swap
 
         [AvaloniaTest]
-        public void DroppingAMachineOnABoxReplacesItKeepingConnectionsAndPatternsInOneUndoStep()
+        public void DroppingAMachineOnABoxReplacesItKeepingConnectionsAndClipsInOneUndoStep()
         {
             var (window, view) = OpenEmpty();
             try
             {
                 var trim = MakeEffect("Neo Utility", "Trim", 0.1f, -0.2f);
                 Core.SongCore.ConnectMachines(trim, Machine("Master"), new[] { 0 }, new[] { 0 }, 0x2000, 0x4000);
-                trim.CreatePattern("P1", 16);
+                trim.CreateClip("P1", 16);
                 Settle();
                 Assert.That(Graph(), Is.EqualTo("Master; Trim; Trim→Master"));
                 var made = view.Canvas.DropBrowserItem(new BrowserDragData(BrowserKind.Machine, "Neo Comp"), ViewPoint(view, trim));
@@ -320,7 +320,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(now.DLL.Name, Is.EqualTo("Neo Comp"), "the box now holds the dropped machine");
                 Assert.That(Graph(), Is.EqualTo("Master; Trim; Trim→Master"), "connections kept");
                 Assert.That(Wire("Trim", "Master").Amp, Is.EqualTo(0x2000), "with their gain");
-                Assert.That(now.Patterns.Select(p => p.Name), Does.Contain("P1"), "patterns kept where they fit");
+                Assert.That(now.Clips.Select(p => p.Name), Does.Contain("P1"), "patterns kept where they fit");
                 Assert.That(view.Canvas.Selection, Does.Contain(made), "and selected");
                 Core.SongCore.ActionStack.Undo();
                 Settle();

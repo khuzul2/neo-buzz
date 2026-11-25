@@ -42,7 +42,7 @@ namespace ReBuzz.SessionTests
         void Launch(Track track, int slot)
         {
             var entry = columns[track][slot]!;
-            s.Launch(track, entry.TestClip, 0, s.Clock, entry.Spec, 0);
+            s.Launch(track, entry.Clip, 0, s.Clock, entry.Spec, 0);
         }
 
         void RunTo(long clock)
@@ -192,7 +192,7 @@ namespace ReBuzz.SessionTests
         public void AFollowActionWaitsForTheTargetsOwnQuantization()
         {
             Column(drums, 4, i => Spec(i, FollowAction.Next), "A", "B");
-            columns[drums][1] = new SessionScheduler<Track, TestClip>.Slot(columns[drums][1]!.TestClip, columns[drums][1]!.Spec, quantization: 2);   // 8 ticks
+            columns[drums][1] = new SessionScheduler<Track, TestClip>.Slot(columns[drums][1]!.Clip, columns[drums][1]!.Spec, quantization: 2);   // 8 ticks
             s.Start(0);
             Launch(drums, 0);                                            // starts at 1, follow due at 5
             RunTo(7);

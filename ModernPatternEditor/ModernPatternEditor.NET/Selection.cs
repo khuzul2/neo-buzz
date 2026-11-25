@@ -16,7 +16,7 @@ namespace WDE.ModernPatternEditor
 
         public bool Active { get { return active; } }
 
-        public Selection(PatternVM vm)
+        public Selection(ClipVM vm)
         {
             this.start = new Digit(vm);
             this.end = new Digit(vm);
@@ -52,19 +52,19 @@ namespace WDE.ModernPatternEditor
             switch (unit)
             {
                 case SelectionUnit.Row:
-                    e = new Digit(d.PatternVM, d.ColumnSet, end.Column, d.Beat, d.RowInBeat, end.Index);
+                    e = new Digit(d.ClipVM, d.ColumnSet, end.Column, d.Beat, d.RowInBeat, end.Index);
                     break;
 
                 case SelectionUnit.Beat:
-                    e = new Digit(d.PatternVM, d.ColumnSet, end.Column, d.Beat, end.RowInBeat, end.Index);
+                    e = new Digit(d.ClipVM, d.ColumnSet, end.Column, d.Beat, end.RowInBeat, end.Index);
                     break;
 
                 case SelectionUnit.FullRow:
-                    e = new Digit(d.PatternVM, end.ColumnSet, end.Column, d.Beat, d.RowInBeat, end.Index);
+                    e = new Digit(d.ClipVM, end.ColumnSet, end.Column, d.Beat, d.RowInBeat, end.Index);
                     break;
 
                 case SelectionUnit.FullBeat:
-                    e = new Digit(d.PatternVM, end.ColumnSet, end.Column, d.Beat, end.RowInBeat, end.Index);
+                    e = new Digit(d.ClipVM, end.ColumnSet, end.Column, d.Beat, end.RowInBeat, end.Index);
                     break;
 
                 default:
@@ -77,12 +77,12 @@ namespace WDE.ModernPatternEditor
             return new Selection(start, e, unit, !singleField).Constrained;
         }
 
-        public static Selection Empty(PatternVM p)
+        public static Selection Empty(ClipVM p)
         {
             return new Selection(p);
         }
 
-        public static Selection All(PatternVM p)
+        public static Selection All(ClipVM p)
         {
             return new Selection(
                 new Digit(p), new Digit(p).LastColumnSet.LastColumn.LastIndex.LastBeat.LastRowInBeat,
@@ -174,7 +174,7 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public IEnumerable<MPEPatternColumnBeatRef> ColumnsAndBeats
+        public IEnumerable<MPEClipColumnBeatRef> ColumnsAndBeats
         {
             get
             {
@@ -186,10 +186,10 @@ namespace WDE.ModernPatternEditor
 
                 while (true)
                 {
-                    var cr = new MPEPatternColumnRef(cd.ParameterColumn.PatternColumn);
+                    var cr = new MPEClipColumnRef(cd.ParameterColumn.ClipColumn);
 
                     for (int beat = bounds.Item1.Beat; beat <= bounds.Item2.Beat; beat++)
-                        yield return new MPEPatternColumnBeatRef(cr, beat);
+                        yield return new MPEClipColumnBeatRef(cr, beat);
 
                     if (cd.ColumnSet == bounds.Item2.ColumnSet && cd.Column == bounds.Item2.Column)
                         break;

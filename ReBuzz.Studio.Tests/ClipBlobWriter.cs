@@ -23,10 +23,10 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The Modern Pattern Editor's data (PatternEditorUtils.CreateModernPatternEditorData): exact times, the rows of each beat.</summary>
-        public static byte[] WriteMpe(IEnumerable<BlobPattern> patterns)
+        public static byte[] WriteMpe(IEnumerable<BlobClip> clips)
         {
             var data = new List<byte> { NotPxp, MpeVersion };
-            var list = patterns.ToList();
+            var list = clips.ToList();
             Int(data, list.Count);
             foreach (var p in list)
             {
@@ -52,10 +52,10 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>PatternXP's data, version 3: events on rows, each at the start of its row.</summary>
-        public static byte[] WritePxp(IEnumerable<BlobPattern> patterns)
+        public static byte[] WritePxp(IEnumerable<BlobClip> clips)
         {
             var data = new List<byte> { ClipBlob.PxpVersion };
-            var list = patterns.ToList();
+            var list = clips.ToList();
             Int(data, list.Count);
             foreach (var p in list)
             {

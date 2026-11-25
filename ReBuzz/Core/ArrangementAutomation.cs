@@ -88,34 +88,34 @@ namespace ReBuzz.Core
         public AutoSource Source { get; init; }
         public ISequence Sequence { get; init; }
         public int EventTime { get; init; }
-        public IPattern Pattern { get; init; }
+        public IClip Clip { get; init; }
         public int Start { get; init; }
         public int End { get; init; }
-        public int PatternFrom { get; init; }
+        public int ClipFrom { get; init; }
         public IReadOnlyList<AutoPoint> Points { get; init; } = Array.Empty<AutoPoint>();
         /// <summary>Whether the points can be edited here: engine columns of the parameter's own machine (tracker columns are the pattern editor's).</summary>
         public bool Editable { get; init; }
 
-        public int PatternTo => PatternFrom + (End - Start);
+        public int ClipTo => ClipFrom + (End - Start);
 
         /// <summary>A pattern time in song time.</summary>
-        public int ToSong(int patternTime) => Start + (patternTime - PatternFrom);
+        public int ToSong(int clipTime) => Start + (clipTime - ClipFrom);
 
-        public int ToPattern(int songTime) => PatternFrom + (songTime - Start);
+        public int ToClip(int songTime) => ClipFrom + (songTime - Start);
 
-        public bool Plays(int patternTime) => patternTime >= PatternFrom && patternTime < PatternTo;
+        public bool Plays(int clipTime) => clipTime >= ClipFrom && clipTime < ClipTo;
 
         public bool Covers(int songTime) => songTime >= Start && songTime < End;
 
         public string Describe => Source switch
         {
-            AutoSource.AutomationClip => $"automation clip {Pattern?.Name}",
-            AutoSource.ClipColumn => $"clip {Pattern?.Name}",
-            _ => $"tracker, pattern {Pattern?.Name}",
+            AutoSource.AutomationClip => $"automation clip {Clip?.Name}",
+            AutoSource.ClipColumn => $"clip {Clip?.Name}",
+            _ => $"tracker, pattern {Clip?.Name}",
         };
 
         /// <summary>The value this writer gives at a song time: the last point at or before it, a ramp followed along its line; null before the first point or outside the placement.</summary>
-        public int? ValueAt(int songTime) => Covers(songTime) ? AutomationMath.ValueAt(Points, ToPattern(songTime)) : null;
+        public int? ValueAt(int songTime) => Covers(songTime) ? AutomationMath.ValueAt(Points, ToClip(songTime)) : null;
 
         /// <summary>The song times (1/240 tick) this writer sets the parameter in: each step for a tick, each ramp over its run.</summary>
         public List<(int From, int To)> Writes()
@@ -125,7 +125,7 @@ namespace ReBuzz.Core
             {
                 var p = Points[i];
                 if (!Plays(p.Time)) continue;
-                int from = ToSong(p.Time), to = from + PatternEvent.TimeBase;
+                int from = ToSong(p.Time), to = from + ClipEvent.TimeBase;
                 if (p.Ramp && i + 1 < Points.Count) to = Math.Min(End, Math.Max(to, ToSong(Points[i + 1].Time)));
                 list.Add((from, Math.Min(End, to)));
             }
@@ -169,7 +169,7 @@ namespace ReBuzz.Core
         }
 
         /// <summary>A column's events as points, in time order; of two at one time the later in the column's order is the one that sets the value.</summary>
-        public static List<AutoPoint> PointsOf(IEnumerable<PatternEvent> events, bool ramps, int noValue = int.MinValue)
+        public static List<AutoPoint> PointsOf(IEnumerable<ClipEvent> events, bool ramps, int noValue = int.MinValue)
         {
             var byTime = new SortedDictionary<int, AutoPoint>();
             foreach (var e in events)
@@ -191,7 +191,7 @@ namespace ReBuzz.Core
             var result = new List<AutoLane>();
             var song = core.Song;
             var sequences = song.Sequences.ToList();
-            var tracker = new Dictionary<IPattern, List<(int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events)>>();
+            var tracker = new Dictionary<IClip, List<(int Group, int Index, IParameter Parameter, int Order, ClipEvent[] Events)>>();
             foreach (var (machine, key) in lanes)
             {
                 var param = AutomationParams.Find(machine, key);
@@ -204,12 +204,12 @@ namespace ReBuzz.Core
                     foreach (var kv in seq.Events.OrderBy(e => e.Key))
                     {
                         var e = kv.Value;
-                        if (e.Type != SequenceEventType.PlayPattern || e.Pattern == null) continue;
+                        if (e.Type != SequenceEventType.PlayClip || e.Clip == null) continue;
                         int span = Math.Max(1, Math.Min(Math.Max(1, e.Span), Math.Max(1, e.PlayedLength)));
-                        int start = kv.Key * PatternEvent.TimeBase, end = start + span * PatternEvent.TimeBase;
-                        int from = e.PlayedOffset * PatternEvent.TimeBase;
+                        int start = kv.Key * ClipEvent.TimeBase, end = start + span * ClipEvent.TimeBase;
+                        int from = e.PlayedOffset * ClipEvent.TimeBase;
                         bool found = false;
-                        foreach (var column in EngineColumns(e.Pattern, param.Parameter, key.Track))
+                        foreach (var column in EngineColumns(e.Clip, param.Parameter, key.Track))
                         {
                             var events = column.GetEvents(int.MinValue, int.MaxValue);
                             if (!events.Any()) continue;
@@ -217,21 +217,21 @@ namespace ReBuzz.Core
                             lane.Segments.Add(new AutoSegment
                             {
                                 Source = role == LaneRole.Automation ? AutoSource.AutomationClip : AutoSource.ClipColumn,
-                                Sequence = seq, EventTime = kv.Key, Pattern = e.Pattern, Start = start, End = end, PatternFrom = from,
+                                Sequence = seq, EventTime = kv.Key, Clip = e.Clip, Start = start, End = end, ClipFrom = from,
                                 Points = AutomationMath.PointsOf(events, true),
-                                Editable = ReferenceEquals(e.Pattern.Machine, machine),
+                                Editable = ReferenceEquals(e.Clip.Machine, machine),
                             });
                         }
                         // An automation clip with no point yet is still a place a point can be put (recording and the mouse add the first).
-                        if (!found && role == LaneRole.Automation && ReferenceEquals(e.Pattern.Machine, machine))
-                            lane.Segments.Add(new AutoSegment { Source = AutoSource.AutomationClip, Sequence = seq, EventTime = kv.Key, Pattern = e.Pattern, Start = start, End = end, PatternFrom = from, Editable = true });
+                        if (!found && role == LaneRole.Automation && ReferenceEquals(e.Clip.Machine, machine))
+                            lane.Segments.Add(new AutoSegment { Source = AutoSource.AutomationClip, Sequence = seq, EventTime = kv.Key, Clip = e.Clip, Start = start, End = end, ClipFrom = from, Editable = true });
                         if (role == LaneRole.Automation || !ReferenceEquals(seq.Machine, machine)) continue;
-                        foreach (var t in TrackerColumns(tracker, e.Pattern))
+                        foreach (var t in TrackerColumns(tracker, e.Clip))
                         {
                             if (!Same(machine, t, key) || t.Events.All(x => x.Value == param.Parameter.NoValue)) continue;
                             lane.Segments.Add(new AutoSegment
                             {
-                                Source = AutoSource.Tracker, Sequence = seq, EventTime = kv.Key, Pattern = e.Pattern, Start = start, End = end, PatternFrom = from,
+                                Source = AutoSource.Tracker, Sequence = seq, EventTime = kv.Key, Clip = e.Clip, Start = start, End = end, ClipFrom = from,
                                 Points = AutomationMath.PointsOf(t.Events, false, param.Parameter.NoValue), Editable = false,
                             });
                         }
@@ -242,33 +242,33 @@ namespace ReBuzz.Core
             return result;
         }
 
-        internal static bool Same(IMachine machine, (int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events) t, ColumnKey key) =>
+        internal static bool Same(IMachine machine, (int Group, int Index, IParameter Parameter, int Order, ClipEvent[] Events) t, ColumnKey key) =>
             t.Group == key.Group && t.Index == key.Index && t.Order == key.Track;
 
         /// <summary>The engine automation columns of a pattern that hold a parameter (and track): the ones the song plays (S3), not the pattern editor's.</summary>
-        internal static IEnumerable<PatternColumnCore> EngineColumns(IPattern pattern, IParameter parameter, int track)
+        internal static IEnumerable<ClipColumnCore> EngineColumns(IClip clip, IParameter parameter, int track)
         {
-            foreach (var column in pattern.Columns)
+            foreach (var column in clip.Columns)
             {
-                if (column.Type != PatternColumnType.Parameter || column.Track != track || !ReferenceEquals(column.Parameter, parameter)) continue;
-                if (column is PatternColumnCore { IsMarkedAutomation: true } engine) yield return engine;
+                if (column.Type != ClipColumnType.Parameter || column.Track != track || !ReferenceEquals(column.Parameter, parameter)) continue;
+                if (column is ClipColumnCore { IsMarkedAutomation: true } engine) yield return engine;
             }
         }
 
         /// <summary>The pattern editor's parameter columns: which parameter (group, index) and, for a track parameter, which track (the columns of one parameter come in track order).</summary>
-        internal static List<(int Group, int Index, IParameter Parameter, int Order, PatternEvent[] Events)> TrackerColumns(
-            Dictionary<IPattern, List<(int, int, IParameter, int, PatternEvent[])>> cache, IPattern pattern)
+        internal static List<(int Group, int Index, IParameter Parameter, int Order, ClipEvent[] Events)> TrackerColumns(
+            Dictionary<IClip, List<(int, int, IParameter, int, ClipEvent[])>> cache, IClip clip)
         {
-            if (cache.TryGetValue(pattern, out var known)) return known;
-            var list = new List<(int, int, IParameter, int, PatternEvent[])>();
+            if (cache.TryGetValue(clip, out var known)) return known;
+            var list = new List<(int, int, IParameter, int, ClipEvent[])>();
             // CU3 (one store, one engine): where the engine plays every lane, the tracker's data is the pattern's unmarked parameter lanes (the
             // editor's columns are views of them), so they are the one source: the editor is not read as well, which would list everything twice.
-            if (PatternColumnCore.PlaysEveryLane)
+            if (ClipColumnCore.PlaysEveryLane)
             {
-                var groups2 = pattern.Machine?.ParameterGroups;
-                foreach (var c in pattern.Columns)
+                var groups2 = clip.Machine?.ParameterGroups;
+                foreach (var c in clip.Columns)
                 {
-                    if (c is not PatternColumnCore { Type: PatternColumnType.Parameter, IsMarkedAutomation: false } core || core.Parameter?.Group == null || groups2 == null) continue;
+                    if (c is not ClipColumnCore { Type: ClipColumnType.Parameter, IsMarkedAutomation: false } core || core.Parameter?.Group == null || groups2 == null) continue;
                     int g = -1;
                     for (int i = 0; i < groups2.Count && g < 0; i++)
                         if (ReferenceEquals(groups2[i], core.Parameter.Group)) g = i;
@@ -276,14 +276,14 @@ namespace ReBuzz.Core
                     var events = core.GetEvents(int.MinValue, int.MaxValue).ToArray();
                     if (events.Length > 0) list.Add((g, core.Parameter.IndexInGroup, core.Parameter, core.Track, events));
                 }
-                cache[pattern] = list;
+                cache[clip] = list;
                 return list;
             }
             try
             {
                 var counts = new Dictionary<(int, int), int>();
-                var groups = pattern.Machine?.ParameterGroups;
-                foreach (var c in pattern.PatternEditorMachineEvents ?? Enumerable.Empty<IPatternEditorColumn>())
+                var groups = clip.Machine?.ParameterGroups;
+                foreach (var c in clip.ClipEditorMachineEvents ?? Enumerable.Empty<IClipEditorColumn>())
                 {
                     var p = c.Parameter;
                     if (p?.Group == null || groups == null) continue;
@@ -304,7 +304,7 @@ namespace ReBuzz.Core
             {
                 // A pattern editor that can't be read shows nothing.
             }
-            cache[pattern] = list;
+            cache[clip] = list;
             return list;
         }
 
@@ -380,9 +380,9 @@ namespace ReBuzz.Core
         }
 
         /// <summary>The 1/240-tick grid points live on.</summary>
-        public const int Unit = PatternEvent.TimeBase;
+        public const int Unit = ClipEvent.TimeBase;
 
-        static PatternEvent Event(AutoPoint p, IReadOnlyList<AutoPoint> all)
+        static ClipEvent Event(AutoPoint p, IReadOnlyList<AutoPoint> all)
         {
             int duration = 0;
             if (p.Ramp)
@@ -390,14 +390,14 @@ namespace ReBuzz.Core
                 var next = all.FirstOrDefault(q => q.Time > p.Time);
                 duration = next.Time > p.Time ? next.Time - p.Time : 1;
             }
-            return new PatternEvent(p.Time, p.Value, duration);
+            return new ClipEvent(p.Time, p.Value, duration);
         }
 
         /// <summary>The column's events now, in time order.</summary>
-        static PatternEvent[] Current(IPattern pattern, ColumnKey key)
+        static ClipEvent[] Current(IClip clip, ColumnKey key)
         {
-            var column = SessionLayout.ColumnFor(pattern, key, create: false);
-            return column == null ? Array.Empty<PatternEvent>() : column.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToArray();
+            var column = SessionLayout.ColumnFor(clip, key, create: false);
+            return column == null ? Array.Empty<ClipEvent>() : column.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToArray();
         }
 
         static string Check(AutoSegment seg)
@@ -407,10 +407,10 @@ namespace ReBuzz.Core
             return null;
         }
 
-        void Do(IPattern pattern, ColumnKey key, PatternEvent[] removed, PatternEvent[] added)
+        void Do(IClip clip, ColumnKey key, ClipEvent[] removed, ClipEvent[] added)
         {
             if (removed.Length == 0 && added.Length == 0) return;
-            core.SongCore.ActionStack.Do(new ColumnEventsAction(core, pattern, new[] { new ColumnEventsAction.Change(key, removed, added) }, automation: true));
+            core.SongCore.ActionStack.Do(new ColumnEventsAction(core, clip, new[] { new ColumnEventsAction.Change(key, removed, added) }, automation: true));
             core.SetModifiedFlag();
         }
 
@@ -418,17 +418,17 @@ namespace ReBuzz.Core
         public string AddPoint(AutoSegment seg, ColumnKey key, int songTime, int value, bool ramp = true)
         {
             if (Check(seg) is { } why) return why;
-            var param = AutomationParams.Find(seg.Pattern.Machine, key);
+            var param = AutomationParams.Find(seg.Clip.Machine, key);
             if (param == null) return "That parameter can't be automated.";
-            int t = Math.Clamp(seg.ToPattern(songTime), seg.PatternFrom, Math.Min(seg.PatternTo, seg.Pattern.Length * Unit) - 1);
-            if (t < 0 || t >= seg.Pattern.Length * Unit) return "That is outside the pattern.";
+            int t = Math.Clamp(seg.ToClip(songTime), seg.ClipFrom, Math.Min(seg.ClipTo, seg.Clip.Length * Unit) - 1);
+            if (t < 0 || t >= seg.Clip.Length * Unit) return "That is outside the pattern.";
             value = Math.Clamp(value, param.Min, param.Max);
-            var now = Current(seg.Pattern, key);
+            var now = Current(seg.Clip, key);
             var points = AutomationMath.PointsOf(now, true).Where(p => p.Time != t).ToList();
             var point = new AutoPoint(t, value, ramp);
             points.Add(point);
             points.Sort((a, b) => a.Time.CompareTo(b.Time));
-            Replace(seg.Pattern, key, now, points);
+            Replace(seg.Clip, key, now, points);
             return null;
         }
 
@@ -436,27 +436,27 @@ namespace ReBuzz.Core
         public string MovePoint(AutoSegment seg, ColumnKey key, int index, int songTime, int value)
         {
             if (Check(seg) is { } why) return why;
-            var now = Current(seg.Pattern, key);
+            var now = Current(seg.Clip, key);
             var points = AutomationMath.PointsOf(now, true);
             if (index < 0 || index >= points.Count) return "That point is gone.";
-            var param = AutomationParams.Find(seg.Pattern.Machine, key);
+            var param = AutomationParams.Find(seg.Clip.Machine, key);
             if (param == null) return "That parameter can't be automated.";
             int lo = index > 0 ? points[index - 1].Time + 1 : 0;
-            int hi = index + 1 < points.Count ? points[index + 1].Time - 1 : seg.Pattern.Length * Unit - 1;
-            int t = Math.Clamp(seg.ToPattern(songTime), lo, Math.Max(lo, hi));
+            int hi = index + 1 < points.Count ? points[index + 1].Time - 1 : seg.Clip.Length * Unit - 1;
+            int t = Math.Clamp(seg.ToClip(songTime), lo, Math.Max(lo, hi));
             points[index] = points[index] with { Time = t, Value = Math.Clamp(value, param.Min, param.Max) };
-            Replace(seg.Pattern, key, now, points);
+            Replace(seg.Clip, key, now, points);
             return null;
         }
 
         public string DeletePoint(AutoSegment seg, ColumnKey key, int index)
         {
             if (Check(seg) is { } why) return why;
-            var now = Current(seg.Pattern, key);
+            var now = Current(seg.Clip, key);
             var points = AutomationMath.PointsOf(now, true);
             if (index < 0 || index >= points.Count) return "That point is gone.";
             points.RemoveAt(index);
-            Replace(seg.Pattern, key, now, points);
+            Replace(seg.Clip, key, now, points);
             return null;
         }
 
@@ -464,11 +464,11 @@ namespace ReBuzz.Core
         public string SetRamp(AutoSegment seg, ColumnKey key, int index, bool ramp)
         {
             if (Check(seg) is { } why) return why;
-            var now = Current(seg.Pattern, key);
+            var now = Current(seg.Clip, key);
             var points = AutomationMath.PointsOf(now, true);
             if (index < 0 || index >= points.Count) return "That point is gone.";
             points[index] = points[index] with { Ramp = ramp };
-            Replace(seg.Pattern, key, now, points);
+            Replace(seg.Clip, key, now, points);
             return null;
         }
 
@@ -476,18 +476,18 @@ namespace ReBuzz.Core
         public string Edit(AutoSegment seg, ColumnKey key, Func<List<AutoPoint>, List<AutoPoint>> change)
         {
             if (Check(seg) is { } why) return why;
-            var now = Current(seg.Pattern, key);
+            var now = Current(seg.Clip, key);
             var points = change(AutomationMath.PointsOf(now, true)).OrderBy(p => p.Time).ToList();
-            Replace(seg.Pattern, key, now, points);
+            Replace(seg.Clip, key, now, points);
             return null;
         }
 
         /// <summary>Puts the points in the column: only the events that differ are taken out and put in.</summary>
-        void Replace(IPattern pattern, ColumnKey key, PatternEvent[] now, List<AutoPoint> points)
+        void Replace(IClip clip, ColumnKey key, ClipEvent[] now, List<AutoPoint> points)
         {
             var want = points.Select(p => Event(p, points)).ToList();
-            var removed = new List<PatternEvent>();
-            var added = new List<PatternEvent>();
+            var removed = new List<ClipEvent>();
+            var added = new List<ClipEvent>();
             var left = want.ToList();
             foreach (var e in now)
             {
@@ -496,7 +496,7 @@ namespace ReBuzz.Core
                 else removed.Add(e);
             }
             added.AddRange(left);
-            Do(pattern, key, removed.ToArray(), added.ToArray());
+            Do(clip, key, removed.ToArray(), added.ToArray());
         }
 
         /// <summary>
@@ -515,7 +515,7 @@ namespace ReBuzz.Core
         /// when none is free), with a point at its start, and another at its end if the value differs (a ramp between them).
         /// One step of the history. <paramref name="made"/> is the clip's pattern.
         /// </summary>
-        public string DrawClip(IMachine machine, ColumnKey key, int start, int length, int startValue, int endValue, out IPattern made, bool withPoints = true)
+        public string DrawClip(IMachine machine, ColumnKey key, int start, int length, int startValue, int endValue, out IClip made, bool withPoints = true)
         {
             made = null;
             var param = AutomationParams.Find(machine, key);
@@ -523,7 +523,7 @@ namespace ReBuzz.Core
             start = Math.Max(0, start);
             length = Math.Max(1, length);
             string why = null;
-            IPattern pattern = null;
+            IClip clip = null;
             var stack = core.SongCore.ActionStack;
             stack.BeginActionGroup();
             try
@@ -537,20 +537,20 @@ namespace ReBuzz.Core
                     lane = add.Lane;
                 }
                 if (lane == null) { why = "There is no lane to draw on."; return why; }
-                why = clips.Draw(lane, start, length, out pattern);
-                if (pattern == null) return why ?? "The clip couldn't be made.";
+                why = clips.Draw(lane, start, length, out clip);
+                if (clip == null) return why ?? "The clip couldn't be made.";
                 startValue = Math.Clamp(startValue, param.Min, param.Max);
                 endValue = Math.Clamp(endValue, param.Min, param.Max);
-                int last = pattern.Length * Unit - 1;
+                int last = clip.Length * Unit - 1;
                 var points = new List<AutoPoint> { new AutoPoint(0, startValue, endValue != startValue && last > 0) };
                 if (endValue != startValue && last > 0) points.Add(new AutoPoint(last, endValue, false));
-                if (withPoints) Do(pattern, key, Array.Empty<PatternEvent>(), points.Select(p => Event(p, points)).ToArray());
+                if (withPoints) Do(clip, key, Array.Empty<ClipEvent>(), points.Select(p => Event(p, points)).ToArray());
             }
             finally
             {
                 stack.EndActionGroup();
             }
-            made = pattern;
+            made = clip;
             return why;
         }
     }

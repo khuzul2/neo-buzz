@@ -25,7 +25,7 @@ namespace ReBuzz.Core.Session
     {
         /// <summary>The clip's name or the file's name without its extension.</summary>
         public string Name { get; init; } = "";
-        public IPattern Clip { get; init; }
+        public IClip Clip { get; init; }
         /// <summary>The clip's asset; null for a file until it is read.</summary>
         public AudioAsset Asset { get; set; }
         public string Path { get; init; }
@@ -37,7 +37,7 @@ namespace ReBuzz.Core.Session
     {
         public string Stem { get; init; } = "";
         public IMachine Machine { get; init; }
-        public IPattern Pattern { get; init; }
+        public IClip Clip { get; init; }
         public AudioAsset Asset { get; init; }
         /// <summary>The Session scene (from 0) the clip is in, or -1.</summary>
         public int Scene { get; init; } = -1;
@@ -48,7 +48,7 @@ namespace ReBuzz.Core.Session
     internal sealed partial class SessionLayout
     {
         /// <summary>The source of an audio clip; null and a reason when the pattern isn't an audio clip.</summary>
-        public StemSource StemSourceOfClip(IPattern clip, out string error)
+        public StemSource StemSourceOfClip(IClip clip, out string error)
         {
             error = null;
             var audio = AudioOf(clip);
@@ -148,10 +148,10 @@ namespace ReBuzz.Core.Session
             {
                 for (int t = 0; t < TrackCount && sourceScene < 0; t++)
                     for (int s = 0; s < SceneCount; s++)
-                        if (ReferenceEquals(PatternAt(t, s), source.Clip)) { sourceScene = s; break; }
+                        if (ReferenceEquals(ClipAt(t, s), source.Clip)) { sourceScene = s; break; }
                 foreach (var seq in song.Sequences.Where(q => q.Machine == source.Clip.Machine))
                     foreach (var e in seq.Events)
-                        if (e.Value.Type == SequenceEventType.PlayPattern && ReferenceEquals(e.Value.Pattern, source.Clip))
+                        if (e.Value.Type == SequenceEventType.PlayClip && ReferenceEquals(e.Value.Clip, source.Clip))
                             sourceEvents.Add((e.Key, e.Value.Span));
             }
             else
@@ -177,30 +177,30 @@ namespace ReBuzz.Core.Session
                     audio.Asset = stemAsset.Id;
                     audio.Wave = 0;
                     while (SceneCount <= targetScene) InsertScene(SceneCount);
-                    var pattern = AddAudioClip(track, targetScene, machine, $"{pretty} - {source.Name}", audio)
+                    var clip = AddAudioClip(track, targetScene, machine, $"{pretty} - {source.Name}", audio)
                         ?? throw new InvalidOperationException("Couldn't make a clip.");
                     if (sourceSettings != null)
                     {
                         var settings = sourceSettings.Clone();
                         settings.Audio = audio.Clone();
-                        SetClipSettings(pattern, settings);
-                        if (pattern.Length != source.Clip.Length) UndoStack.Do(new SessionPatternLengthAction(this, pattern, source.Clip.Length));
-                        SetClipColor(pattern, PatternColors.Get(source.Clip));
+                        SetClipSettings(clip, settings);
+                        if (clip.Length != source.Clip.Length) UndoStack.Do(new SessionClipLengthAction(this, clip, source.Clip.Length));
+                        SetClipColor(clip, ClipColors.Get(source.Clip));
                     }
-                    var outcome = new StemOutcome { Stem = stem, Machine = machine, Pattern = pattern, Asset = stemAsset, Scene = targetScene };
+                    var outcome = new StemOutcome { Stem = stem, Machine = machine, Clip = clip, Asset = stemAsset, Scene = targetScene };
                     var sequence = song.Sequences.FirstOrDefault(q => q.Machine == machine);
                     if (sequence != null)
                     {
                         foreach (var (time, _) in sourceEvents)
                         {
-                            UndoStack.Do(new SetEventAction(sequence, time, new SequenceEvent(SequenceEventType.PlayPattern, pattern)));
+                            UndoStack.Do(new SetEventAction(sequence, time, new SequenceEvent(SequenceEventType.PlayClip, clip)));
                             outcome.Ticks.Add(time);
                         }
                         foreach (int tick in arrangementTicks ?? Array.Empty<int>())
                         {
-                            UndoStack.Do(new SetEventAction(sequence, tick, new SequenceEvent(SequenceEventType.PlayPattern, pattern)));
+                            UndoStack.Do(new SetEventAction(sequence, tick, new SequenceEvent(SequenceEventType.PlayClip, clip)));
                             outcome.Ticks.Add(tick);
-                            int end = tick + pattern.Length;
+                            int end = tick + clip.Length;
                             if (song.SongEnd < end) UndoStack.Do(new SetMarkerAction(song, SongMarkers.SongEnd, end));
                         }
                     }

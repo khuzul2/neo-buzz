@@ -113,7 +113,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(frame.At((int)tracks.X, (int)tracks.Y), Is.EqualTo(StudioTokens.SurfaceView), "the track area");
                 var ruler = view.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 600, 2), window)!.Value;
                 Assert.That(frame.At((int)ruler.X, (int)ruler.Y), Is.EqualTo(StudioTokens.SurfacePanel), "the ruler");
-                var list = view.PatternList.TranslatePoint(new Point(40, 200), window)!.Value;
+                var list = view.ClipList.TranslatePoint(new Point(40, 200), window)!.Value;
                 Assert.That(frame.At((int)list.X, (int)list.Y), Is.EqualTo(StudioTokens.SurfacePanel), "the pattern list");
                 // No white panel: next to the text and the buttons nothing bright covers the view (the old list was #F7F7F3 over 120 × 800 pt).
                 double bright = frame.ShareBrighter(area, 0.30);
@@ -164,14 +164,14 @@ namespace ReBuzz.Studio.Tests
                 frame = Capture(window);
                 var ruler = sequence.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 600, 2), window)!.Value;
                 Assert.That(frame.At((int)ruler.X, (int)ruler.Y), Is.EqualTo(Color.Parse("#BBAA99")), "Buzz's ruler");
-                var list = sequence.PatternList.TranslatePoint(new Point(40, 200), window)!.Value;
+                var list = sequence.ClipList.TranslatePoint(new Point(40, 200), window)!.Value;
                 Assert.That(frame.At((int)list.X, (int)list.Y), Is.EqualTo(Color.Parse("#F7F7F3")), "Buzz's pattern list");
                 Studio.Screenshot(window, "p2b-sequence-classic");
 
                 // And back: the same window draws dark again, the list and the buttons included.
                 StudioTheme.Kind = AppearanceTheme.Dark;
                 frame = Capture(window);
-                list = sequence.PatternList.TranslatePoint(new Point(40, 200), window)!.Value;
+                list = sequence.ClipList.TranslatePoint(new Point(40, 200), window)!.Value;
                 Assert.That(frame.At((int)list.X, (int)list.Y), Is.EqualTo(StudioTokens.SurfacePanel));
                 Assert.That(((ISolidColorBrush)sequence.AddTrackButton.Background!).Color, Is.EqualTo(StudioTokens.SurfaceControl), "the corner's buttons");
             }
@@ -218,7 +218,7 @@ namespace ReBuzz.Studio.Tests
             static Color C(IBrush b) => ((ISolidColorBrush)b).Color;
             Assert.That(StudioTokens.Contrast(C(look.RulerText), C(look.Ruler)), Is.GreaterThanOrEqualTo(4.5), "bar numbers on the ruler");
             Assert.That(StudioTokens.Contrast(C(look.HeaderText), C(look.Header)), Is.GreaterThanOrEqualTo(4.5), "machine names on the headers");
-            Assert.That(StudioTokens.Contrast(C(look.ListText), look.PatternList), Is.GreaterThanOrEqualTo(4.5), "the pattern list");
+            Assert.That(StudioTokens.Contrast(C(look.ListText), look.ClipList), Is.GreaterThanOrEqualTo(4.5), "the pattern list");
             Assert.That(StudioTokens.Contrast(C(look.ControlText), C(look.ControlBack)), Is.GreaterThanOrEqualTo(4.5), "the corner's controls");
             Assert.That(StudioTokens.Contrast(Colors.White, C(look.ListSelected)), Is.GreaterThanOrEqualTo(4.5), "the selected pattern");
             Assert.That(StudioTokens.Contrast(C(look.ButtonBorder.Brush!), C(look.Header)), Is.GreaterThanOrEqualTo(3.0), "a button's edge is a UI part");

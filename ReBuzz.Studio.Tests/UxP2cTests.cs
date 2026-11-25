@@ -29,7 +29,7 @@ namespace ReBuzz.Studio.Tests
             public SessionRig Song { get; }
             public MainWindow Window { get; }
             public MachineCore Drums, Bass;
-            public PatternCore Beat, Line;
+            public ClipCore Beat, Line;
             public StudioSelection Selection => StudioSelection.For(Song.Core);
 
             public Rig()
@@ -38,8 +38,8 @@ namespace ReBuzz.Studio.Tests
                 Song = new SessionRig("Drums", "Bass");
                 Drums = Song.Machine("Drums");
                 Bass = Song.Machine("Bass");
-                Beat = Song.Pattern(Drums, "Beat", 16, (0, 60), (4, 62));
-                Line = Song.Pattern(Bass, "Line", 16, (0, 48));
+                Beat = Song.Clip(Drums, "Beat", 16, (0, 60), (4, 62));
+                Line = Song.Clip(Bass, "Line", 16, (0, 48));
                 Song.Layout.SetSlot(0, 0, Beat);
                 Song.Layout.SetSlot(1, 0, Line);
                 Selection.Clear(this);
@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Tests
             public MachineCanvas Machines => ((MachineView)Show("Machines")).Canvas;
             public SequenceCanvas Sequence => ((SequenceView)Show("Arrangement")).Canvas;
             public SessionView Session => (SessionView)Show("Session");
-            public PatternPage Pattern => (PatternPage)Show("Pattern");
+            public ClipPage Clip => (ClipPage)Show("Pattern");
 
             public void Dispose()
             {
@@ -77,20 +77,20 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the model
 
         [AvaloniaTest]
-        public void TheSelectionIsOneMachineAndItsPattern()
+        public void TheSelectionIsOneMachineAndItsClip()
         {
             using var rig = new Rig();
             var s = rig.Selection;
             Assert.That(s.Machine, Is.Null, "nothing selected: the song");
             Assert.That(s.Set(rig.Bass, rig.Line, this, 2), Is.True);
-            Assert.That((s.Machine, s.Pattern, s.Scene), Is.EqualTo(((IMachine)rig.Bass, (IPattern)rig.Line, (int?)2)));
+            Assert.That((s.Machine, s.Clip, s.Scene), Is.EqualTo(((IMachine)rig.Bass, (IClip)rig.Line, (int?)2)));
             Assert.That(s.Set(rig.Bass, rig.Line, this, 2), Is.False, "the same selection raises nothing");
             Assert.That(s.Set(rig.Drums, rig.Line, this), Is.True);
-            Assert.That(s.Pattern, Is.Null, "another machine's pattern isn't the selection's");
+            Assert.That(s.Clip, Is.Null, "another machine's pattern isn't the selection's");
             Assert.That(s.SelectMachine(rig.Drums, this), Is.False);
             s.Set(rig.Drums, rig.Beat, this);
             Assert.That(s.SelectMachine(rig.Drums, this), Is.False, "selecting the machine again keeps its pattern");
-            Assert.That(s.Pattern, Is.SameAs(rig.Beat));
+            Assert.That(s.Clip, Is.SameAs(rig.Beat));
         }
 
         // ------------------------------------------------------------------ a view pair each way
@@ -101,19 +101,19 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig();
             rig.Machines.Select(new IMachine[] { rig.Bass });
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Bass));
-            Assert.That(rig.Pattern.ShownMachine, Is.SameAs(rig.Bass), "the Pattern view shows its pattern (it follows while its tab is hidden)");
-            Assert.That(rig.Pattern.ShownPattern, Is.SameAs(rig.Line));
+            Assert.That(rig.Clip.ShownMachine, Is.SameAs(rig.Bass), "the Pattern view shows its pattern (it follows while its tab is hidden)");
+            Assert.That(rig.Clip.ShownClip, Is.SameAs(rig.Line));
             Assert.That(rig.Sequence.CursorSequence.Machine, Is.SameAs(rig.Bass), "the Sequence's cursor is on its track");
             Assert.That(rig.Session.Selected?.Track, Is.EqualTo(1), "the Session's column");
 
             rig.Machines.Select(new IMachine[] { rig.Drums });
             Assert.That(rig.Sequence.CursorSequence.Machine, Is.SameAs(rig.Drums));
             Assert.That(rig.Session.Selected?.Track, Is.EqualTo(0));
-            Assert.That(rig.Pattern.ShownPattern, Is.SameAs(rig.Beat));
+            Assert.That(rig.Clip.ShownClip, Is.SameAs(rig.Beat));
         }
 
         [AvaloniaTest]
-        public void MovingTheSequenceCursorSelectsTheMachineAndThePatternUnderIt()
+        public void MovingTheSequenceCursorSelectsTheMachineAndTheClipUnderIt()
         {
             using var rig = new Rig();
             var seq = rig.Sequence;
@@ -125,28 +125,28 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void SelectingAClipInTheSessionSelectsItsMachinePatternAndScene()
+        public void SelectingAClipInTheSessionSelectsItsMachineClipAndScene()
         {
             using var rig = new Rig();
             var session = rig.Session;
             session.Select(1, 0);
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Bass));
-            Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Line), "the clip's pattern");
+            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Line), "the clip's pattern");
             Assert.That(rig.Selection.Scene, Is.EqualTo(0));
-            Assert.That(rig.Pattern.ShownPattern, Is.SameAs(rig.Line));
+            Assert.That(rig.Clip.ShownClip, Is.SameAs(rig.Line));
             Assert.That(rig.Machines.Selection, Is.EqualTo(new IMachine[] { rig.Bass }));
             Assert.That(rig.Sequence.CursorSequence.Machine, Is.SameAs(rig.Bass));
         }
 
         [AvaloniaTest]
-        public void ChoosingAPatternInThePatternViewSelectsItsMachineEverywhere()
+        public void ChoosingAClipInTheClipViewSelectsItsMachineEverywhere()
         {
             using var rig = new Rig();
             rig.Show("Pattern");
-            PatternView.Edit(rig.Beat);
+            ClipView.Edit(rig.Beat);
             Settle();
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Drums));
-            Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Beat));
+            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Beat));
             Assert.That(rig.Machines.Selection, Is.EqualTo(new IMachine[] { rig.Drums }));
             Assert.That(rig.Session.Selected?.Track, Is.EqualTo(0));
             Assert.That(rig.Sequence.CursorSequence.Machine, Is.SameAs(rig.Drums));

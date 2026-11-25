@@ -232,7 +232,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(clip, Is.Not.Null, error);
             var asset = core.AudioAssets.All.Single();
             Assert.That(WaitFor(() => asset.Storage == AssetStorage.Streaming, 60_000), Is.True);
-            var streamed = layout.ParamsOfPattern(clip!);
+            var streamed = layout.ParamsOfClip(clip!);
             Assert.That(streamed.Source.IsStreaming, Is.True, "the clip plays from the cache");
 
             var exact = ClipEditor.Exact(streamed);

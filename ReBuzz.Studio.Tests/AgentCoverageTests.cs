@@ -144,8 +144,8 @@ namespace ReBuzz.Studio.Tests
 
             var copied = Call("arrangement_clip", Args(("op", "copy"), ("machine", "Bass"), ("at", 0), ("to", 16)));
             Assert.That(Clips(copied), Has.Count.EqualTo(2));
-            string copyPattern = Clips(copied)[1]!["pattern"]!.GetValue<string>();
-            Assert.That(copyPattern, Is.Not.EqualTo("Verse"), "an independent copy has a pattern of its own");
+            string copyClip = Clips(copied)[1]!["pattern"]!.GetValue<string>();
+            Assert.That(copyClip, Is.Not.EqualTo("Verse"), "an independent copy has a pattern of its own");
             var linked = Call("arrangement_clip", Args(("op", "copy"), ("machine", "Bass"), ("at", 0), ("to", 24), ("link", true)));
             Assert.That(Clips(linked)[^1]!["pattern"]!.GetValue<string>(), Is.EqualTo("Verse"), "linked: the same pattern");
 
@@ -249,7 +249,7 @@ namespace ReBuzz.Studio.Tests
             var key = new ColumnKey(param.Group, param.Parameter.IndexInGroup, 0);
             JsonArray Points(int a, int b) => new(new JsonObject { ["at"] = 0, ["value"] = $"raw:{a}" }, new JsonObject { ["at"] = 3, ["value"] = $"raw:{b}" });
             Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0), ("length_beats", 8)));
-            var verse = machine.Patterns.Single(p => p.Name == "Verse");
+            var verse = machine.Clips.Single(p => p.Name == "Verse");
 
             // An arrangement clip, by a position inside it.
             int steps = Steps;
@@ -458,7 +458,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void MachinesAreClonedWithTheirPatternsAndGrouped()
+        public void MachinesAreClonedWithTheirClipsAndGrouped()
         {
             var window = Song(out var restore);
             using var _ = restore;
@@ -478,7 +478,7 @@ namespace ReBuzz.Studio.Tests
             string copy = cloned["copies"]![0]!["name"]!.GetValue<string>();
             Assert.That(copy, Is.Not.EqualTo("Bass"));
             var copyMachine = core.SongCore.MachinesList.Single(m => m.Name == copy);
-            Assert.That(copyMachine.Patterns.Select(p => p.Name), Does.Contain("Verse"), "its patterns");
+            Assert.That(copyMachine.Clips.Select(p => p.Name), Does.Contain("Verse"), "its patterns");
             Assert.That(Lane(copy)["events"]!.AsArray(), Has.Count.GreaterThan(0), "its rows in the arrangement");
             core.SongCore.ActionStack.Undo();
             Assert.That(core.SongCore.MachinesList.Any(m => m.Name == copy), Is.False);
@@ -576,8 +576,8 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ CU4 (clips.md §8): one layer over the store
 
-        static JsonArray Notes(string machine, string pattern, string input = null) =>
-            Call("notes_read", input == null ? Args(("machine", machine), ("pattern", pattern)) : Args(("machine", machine), ("pattern", pattern), ("input", input)))["notes"]!.AsArray();
+        static JsonArray Notes(string machine, string clip, string input = null) =>
+            Call("notes_read", input == null ? Args(("machine", machine), ("pattern", clip)) : Args(("machine", machine), ("pattern", clip), ("input", input)))["notes"]!.AsArray();
 
         static JsonArray Note(int pitch, double start) => new(new JsonObject { ["pitch"] = pitch, ["start"] = start, ["length"] = 1 });
 
@@ -588,7 +588,7 @@ namespace ReBuzz.Studio.Tests
             using var _ = restore;
             var core = Host.Core;
             var bass = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
-            var verse = bass.Patterns.Single(p => p.Name == "Verse");
+            var verse = bass.Clips.Single(p => p.Name == "Verse");
 
             // Notes: one call is one undo step, on either route; both land in the store the clip plays.
             int steps = Steps;
@@ -604,7 +604,7 @@ namespace ReBuzz.Studio.Tests
             var key = new ColumnKey(2, noteParameter.IndexInGroup, 1);
             var marked = SessionLayout.ColumnFor(verse, key, create: true);
             Assert.That(marked, Is.Not.Null);
-            marked.SetEvents(new[] { new BuzzGUI.Interfaces.PatternEvent(2 * 240 * 4 / 4 * 2, BuzzGUI.Common.BuzzNote.FromMIDINote(67), 0) }, true);
+            marked.SetEvents(new[] { new BuzzGUI.Interfaces.ClipEvent(2 * 240 * 4 / 4 * 2, BuzzGUI.Common.BuzzNote.FromMIDINote(67), 0) }, true);
             var tracks = Notes("Bass", "Verse", "tracks");
             Assert.That(tracks.Select(n => n!["pitch"]!.GetValue<int>()).OrderBy(x => x), Is.EqualTo(new[] { 64, 67 }), "every lane of the Note parameter");
 
@@ -635,7 +635,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(StoreLanes.Home(verse, pkey, create: false), Is.Not.Null);
             verse.InsertColumn(verse.Columns.Count, param.Parameter, 0);
             var unmarked = StoreLanes.All(verse, pkey).First(c => !StoreLanes.IsMarked(c));
-            unmarked.SetEvents(new[] { new BuzzGUI.Interfaces.PatternEvent(3 * 240, lo, 0) }, true);
+            unmarked.SetEvents(new[] { new BuzzGUI.Interfaces.ClipEvent(3 * 240, lo, 0) }, true);
             var read = Call("automation_read", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name)))["automation"]!.AsArray();
             Assert.That(read, Has.Count.EqualTo(1), "one entry for the parameter");
             Assert.That(read[0]!["source"]!.GetValue<string>(), Is.EqualTo("both"));
@@ -646,7 +646,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ACloneWithPatternsPlaysTheOriginalsDataAndASavedClipReopensWithEveryLane()
+        public void ACloneWithClipsPlaysTheOriginalsDataAndASavedClipReopensWithEveryLane()
         {
             var window = Song(out var restore);
             using var _ = restore;

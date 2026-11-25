@@ -44,11 +44,11 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly StudioSelection selection;
         readonly Action<string> showView;
         readonly SessionView session;
-        readonly SessionView.ClipPanel clip;
+        readonly SessionView.ClipPanel clipCard;
         readonly SongNotesView notes;
 
         readonly Border grip;
-        readonly Button selectionButton, songButton, historyButton, collapseButton, railButton, patternButton, notesButton, audioButton;
+        readonly Button selectionButton, songButton, historyButton, collapseButton, railButton, clipButton, notesButton, audioButton;
         readonly Grid frame;
         readonly DockPanel full;
         readonly Avalonia.Controls.Control rail;
@@ -128,7 +128,7 @@ namespace ReBuzz.Studio.Views.Inspector
             subtitle = new TextBlock { FontSize = 11, Foreground = StudioTokens.TextSecondaryBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) };
             facts = new Grid { Margin = new Thickness(0, 8, 0, 0), ColumnDefinitions = new ColumnDefinitions("Auto,*") };
             hint = new TextBlock { FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-            patternButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
+            clipButton = ActionButton("Open in Tracker", "Edit this pattern in the Tracker", () => showView("Pattern"));
             notesButton = ActionButton("Song notes", "Write about the song: the Song tab", () => ShowTab(SongTab, focus: true));
             audioButton = ActionButton("Audio settings…", "Warp, tempo, pitch, gain, fades and warp markers of this audio clip: the detail panel's Audio page", () => ShowAudio?.Invoke());
             audioButton.IsVisible = false;
@@ -153,18 +153,18 @@ namespace ReBuzz.Studio.Views.Inspector
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, device, inputSection, noteChain, explain, hint, patternButton, audioButton, notesButton, midiPage },
+                Children = { heading, subtitle, facts, device, inputSection, noteChain, explain, hint, clipButton, audioButton, notesButton, midiPage },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
             selectionPage.Children.Add(top);
 
             // The clip panel of the Session View moves in here (the view keeps working without a window around it).
-            clip = session?.MoveClipPanelToInspector(this);
-            if (clip != null)
+            clipCard = session?.MoveClipPanelToInspector(this);
+            if (clipCard != null)
             {
-                clip.Margin = new Thickness(12, 0, 12, 0);
-                selectionPage.Children.Add(clip);
+                clipCard.Margin = new Thickness(12, 0, 12, 0);
+                selectionPage.Children.Add(clipCard);
             }
 
             songPage = notes;
@@ -260,7 +260,7 @@ namespace ReBuzz.Studio.Views.Inspector
         }
 
         public SongNotesView SongNotes => notes;
-        public SessionView.ClipPanel ClipPanel => clip;
+        public SessionView.ClipPanel ClipPanel => clipCard;
 
         // For tests: the controls, as a user would use them.
         internal Button SelectionTabButton => selectionButton;
@@ -269,7 +269,7 @@ namespace ReBuzz.Studio.Views.Inspector
         internal HistoryTab History => historyPage;
         internal Button CollapseButton => collapseButton;
         internal Button RailButton => railButton;
-        internal Button PatternButton => patternButton;
+        internal Button ClipButton => clipButton;
         internal Button NotesButton => notesButton;
         internal Avalonia.Controls.Control Grip => grip;
         internal string HeadingText => heading.Text;
@@ -357,7 +357,7 @@ namespace ReBuzz.Studio.Views.Inspector
         void OnLayoutChanged()
         {
             if (!open || disposed) return;
-            clip?.Follow(ClipSlot(), force: true);
+            clipCard?.Follow(ClipSlot(), force: true);
             Refresh();
         }
 
@@ -368,12 +368,12 @@ namespace ReBuzz.Studio.Views.Inspector
             var doc = layout?.Document;
             if (TrackOf(selection.Machine) is not { } track || doc == null || doc.Scenes.Count == 0) return null;
             int? scene = selection.Scene;
-            if (selection.Pattern is { } pattern)
+            if (selection.Clip is { } clip)
             {
                 // A clip is a pattern in a slot: the scene the selection has when the pattern is there, else its first.
-                if (scene is { } sc && sc < doc.Scenes.Count && doc.GetSlot(track, sc) == pattern.Name) return (track, sc);
+                if (scene is { } sc && sc < doc.Scenes.Count && doc.GetSlot(track, sc) == clip.Name) return (track, sc);
                 for (int s = 0; s < doc.Scenes.Count; s++)
-                    if (doc.GetSlot(track, s) == pattern.Name) return (track, s);
+                    if (doc.GetSlot(track, s) == clip.Name) return (track, s);
                 return null;
             }
             return scene is { } one ? (track, Math.Clamp(one, 0, doc.Scenes.Count - 1)) : null;
@@ -393,7 +393,7 @@ namespace ReBuzz.Studio.Views.Inspector
         {
             if (!open || disposed) return;
             var machine = selection.Machine;
-            var pattern = selection.Pattern;
+            var clip = selection.Clip;
             int tpb = Math.Max(1, core.TPB);
             var rows = new List<(string, string)>();
             string title, sub;
@@ -410,15 +410,15 @@ namespace ReBuzz.Studio.Views.Inspector
                 title = machine.Name;
                 sub = TypeLabel(machine);
                 rows.Add(("Type", machine.DLL?.Name ?? ""));
-                rows.Add(("Patterns", machine.Patterns.Count.ToString()));
+                rows.Add(("Patterns", machine.Clips.Count.ToString()));
                 rows.Add(("Wires", $"{machine.Inputs.Count} in, {machine.Outputs.Count} out"));
                 if (machine.IsMuted) rows.Add(("State", machine.IsBypassed ? "Muted, bypassed" : "Muted"));
                 else if (machine.IsBypassed) rows.Add(("State", "Bypassed"));
-                if (pattern != null)
+                if (clip != null)
                 {
-                    rows.Add(("Pattern", pattern.Name));
-                    rows.Add(("Length", $"{pattern.Length} ticks, {pattern.Length / (double)tpb:0.##} beats"));
-                    if (core.SessionLayout?.AudioOf(pattern) is { } audio) AudioRows(rows, audio);
+                    rows.Add(("Pattern", clip.Name));
+                    rows.Add(("Length", $"{clip.Length} ticks, {clip.Length / (double)tpb:0.##} beats"));
+                    if (core.SessionLayout?.AudioOf(clip) is { } audio) AudioRows(rows, audio);
                 }
             }
 
@@ -443,8 +443,8 @@ namespace ReBuzz.Studio.Views.Inspector
                 }
                 hint.Text = machine == null ? "Select a machine, a pattern or a clip in any view to see its settings here." : "";
                 hint.IsVisible = machine == null;
-                bool audioClip = pattern != null && core.SessionLayout?.IsAudioClip(pattern) == true;
-                patternButton.IsVisible = pattern != null && !audioClip;
+                bool audioClip = clip != null && core.SessionLayout?.IsAudioClip(clip) == true;
+                clipButton.IsVisible = clip != null && !audioClip;
                 audioButton.IsVisible = audioClip;
                 notesButton.IsVisible = machine == null;
             }
@@ -455,15 +455,15 @@ namespace ReBuzz.Studio.Views.Inspector
             midiPage.Refresh();
             RefreshExplain(machine);
 
-            if (clip != null)
+            if (clipCard != null)
             {
                 bool hasTrack = TrackOf(machine) != null;
                 // Only the cards the selection needs: a machine alone, in a view that isn't the Session's, has no clip to show.
-                bool wanted = hasTrack && (pattern != null || SessionShown?.Invoke() == true);
+                bool wanted = hasTrack && (clip != null || SessionShown?.Invoke() == true);
                 // NA3: an audio clip that is not in a slot (an Arrangement clip) has no launch settings: its panel is the detail panel's Audio page.
-                if (pattern != null && core.SessionLayout?.IsAudioClip(pattern) == true && ClipSlot() == null) wanted = false;
-                clip.IsVisible = wanted;
-                if (hasTrack) clip.Follow(ClipSlot());
+                if (clip != null && core.SessionLayout?.IsAudioClip(clip) == true && ClipSlot() == null) wanted = false;
+                clipCard.IsVisible = wanted;
+                if (hasTrack) clipCard.Follow(ClipSlot());
             }
         }
 

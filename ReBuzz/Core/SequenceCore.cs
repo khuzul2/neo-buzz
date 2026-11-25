@@ -27,7 +27,7 @@ namespace ReBuzz.Core
         // clock it stopped on (exclusive): written by the audio thread, read by the UI thread to
         // give a take recorded until stopped its length.
         internal long SessionStoppedAt = -1;
-        internal volatile PatternCore SessionStoppedClip;
+        internal volatile ClipCore SessionStoppedClip;
 
         /// <summary>
         /// Fork (0.6.1): set (under AudioLock) when the sequence is removed from the song. Removed
@@ -89,10 +89,10 @@ namespace ReBuzz.Core
                 int id = ev.PlacementId;
                 if (id == 0) return;
                 int j = index;
-                while (j > 0 && Events[j - 1].PlacementId == id && ReferenceEquals(Events[j - 1].Pattern, ev.Pattern) && Times[j - 1] + Events[j - 1].Span == Times[j]) j--;
+                while (j > 0 && Events[j - 1].PlacementId == id && ReferenceEquals(Events[j - 1].Clip, ev.Clip) && Times[j - 1] + Events[j - 1].Span == Times[j]) j--;
                 start = Times[j];
                 j = index;
-                while (j + 1 < Times.Length && Events[j + 1].PlacementId == id && ReferenceEquals(Events[j + 1].Pattern, ev.Pattern) && Times[j] + Events[j].Span == Times[j + 1]) j++;
+                while (j + 1 < Times.Length && Events[j + 1].PlacementId == id && ReferenceEquals(Events[j + 1].Clip, ev.Clip) && Times[j] + Events[j].Span == Times[j + 1]) j++;
                 end = Times[j] + Events[j].Span;
             }
 
@@ -140,21 +140,21 @@ namespace ReBuzz.Core
             arranged = new ArrangedEvents(times, events);
         }
 
-        public IPattern PlayingPattern
+        public IClip PlayingClip
         {
             get
             {
                 var buzz = MachineCore.Graph.Buzz as ReBuzzCore;
 
-                if (buzz.SoloPattern != null && buzz.SoloPattern.Machine == Machine)
-                    return buzz.SoloPattern;
+                if (buzz.SoloClip != null && buzz.SoloClip.Machine == Machine)
+                    return buzz.SoloClip;
 
                 // Session View (fork): a launched clip wins, and a track taken over by the
                 // session ignores its arrangement until "back to arrangement".
                 var session = buzz.SessionCore;
-                var clip = session.GetPlayingCore(this);
-                if (clip != null && clip.PlayPosition != int.MinValue)
-                    return clip;
+                var playing = session.GetPlayingCore(this);
+                if (playing != null && playing.PlayPosition != int.MinValue)
+                    return playing;
                 if (session.IsArrangementOverridden(this))
                     return null;
 
@@ -166,23 +166,23 @@ namespace ReBuzz.Core
                 int index = events.IndexAtOrBefore(songPosition);
                 if (index < 0) return null;
                 var e = events.Events[index];
-                if (e.Type != SequenceEventType.PlayPattern || songPosition >= events.Times[index] + e.Span) return null;
-                var pattern = e.Pattern as PatternCore;
-                if (pattern == null || pattern.PlayPosition == int.MinValue) return null;
-                if (pattern.SessionTrack != null && pattern.SessionTrack != this) return null;
-                return pattern;
+                if (e.Type != SequenceEventType.PlayClip || songPosition >= events.Times[index] + e.Span) return null;
+                var clip = e.Clip as ClipCore;
+                if (clip == null || clip.PlayPosition == int.MinValue) return null;
+                if (clip.SessionTrack != null && clip.SessionTrack != this) return null;
+                return clip;
             }
         }
 
         // Returns ticks
-        public int PlayingPatternPosition
+        public int PlayingClipPosition
         {
             get
             {
-                var pattern = PlayingPattern;
-                if (pattern != null)
+                var clip = PlayingClip;
+                if (clip != null)
                 {
-                    return pattern.PlayPosition / PatternEvent.TimeBase;
+                    return clip.PlayPosition / ClipEvent.TimeBase;
                 }
                 return -1;
             }
@@ -316,10 +316,10 @@ namespace ReBuzz.Core
         readonly object eventsLock = new object();
 
         /// <summary>Fork (0.6.1): a copy of the events of a pattern (any thread).</summary>
-        internal System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<int, SequenceEvent>> EventsOfPattern(IPattern pattern)
+        internal System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<int, SequenceEvent>> EventsOfClip(IClip clip)
         {
             lock (eventsLock)
-                return EventsList.Where(e => e.Value.Pattern == pattern).ToList();
+                return EventsList.Where(e => e.Value.Clip == clip).ToList();
         }
 
         public void SetEvent(int time, SequenceEvent e)
@@ -340,7 +340,7 @@ namespace ReBuzz.Core
                 }
                 else
                 {
-                    if (e.Type == SequenceEventType.PlayPattern && e.Pattern != null)
+                    if (e.Type == SequenceEventType.PlayClip && e.Clip != null)
                         e.Span = e.PlayedLength;    // fork (0.5.1): the part of the pattern the event plays
 
                     this.EventsList[time] = e;
@@ -358,13 +358,13 @@ namespace ReBuzz.Core
         }
 
         /// <summary>Fork: removes every event of a pattern (it was deleted); call under AudioLock. Returns whether any was removed.</summary>
-        internal bool RemoveEventsOf(IPattern pattern)
+        internal bool RemoveEventsOf(IClip clip)
         {
             var times = new System.Collections.Generic.List<int>();
             lock (eventsLock)
             {
                 foreach (var kv in EventsList)
-                    if (kv.Value.Pattern == pattern)
+                    if (kv.Value.Clip == clip)
                         times.Add(kv.Key);
                 foreach (int t in times)
                     EventsList.Remove(t);
@@ -393,7 +393,7 @@ namespace ReBuzz.Core
             {
                 int time = events[i].Key;
                 var se = events[i].Value;
-                if (se.Type == SequenceEventType.PlayPattern)
+                if (se.Type == SequenceEventType.PlayClip)
                 {
                     se.Span = se.PlayedLength;      // fork (0.5.1): from its offset to its end
                     if ((i < events.Length - 1) && (time + se.Span > events[i + 1].Key))

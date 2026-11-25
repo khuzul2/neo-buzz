@@ -67,7 +67,7 @@ namespace ReBuzz.Studio.Views.Audio
         double baseBeat;                       // the mirror of a reversed clip: the audio's end, in beats, when it was loaded
         double gain = 1;
         bool warpOff;
-        int ticksPerBeat = 4, beatsPerBar = 4, patternTicks = 16;
+        int ticksPerBeat = 4, beatsPerBar = 4, clipTicks = 16;
         (int Start, int LoopStart, int LoopEnd, bool Loop) region;
         double pxPerBeat = 40, offset;
         bool fitted;
@@ -140,7 +140,7 @@ namespace ReBuzz.Studio.Views.Audio
         public (double From, double To)? Range => range is { } r ? (r.A, r.B) : null;
         public bool IsDragging => gesture is Gesture.Marker or Gesture.Handle or Gesture.Range or Gesture.Ghost;
         public double PixelsPerBeat => pxPerBeat;
-        public double ClipBeats => map == null || source == null ? 0 : Math.Max(map.BeatAt(source.Length), patternTicks / (double)ticksPerBeat);
+        public double ClipBeats => map == null || source == null ? 0 : Math.Max(map.BeatAt(source.Length), clipTicks / (double)ticksPerBeat);
         /// <summary>Whether the view follows the playing position.</summary>
         public bool Follow { get; set; }
         public string Hint => hint;
@@ -229,7 +229,7 @@ namespace ReBuzz.Studio.Views.Audio
             view = clip;
             ticksPerBeat = Math.Max(1, tpb);
             beatsPerBar = Math.Max(1, bar);
-            patternTicks = Math.Max(1, length);
+            clipTicks = Math.Max(1, length);
             region = clipRegion;
             if (clip == null)
             {
@@ -356,7 +356,7 @@ namespace ReBuzz.Studio.Views.Audio
         double HandleBeat(Handle h)
         {
             var r = dragHandle != Handle.None ? (dragRegion.Start, dragRegion.LoopStart, dragRegion.LoopEnd) : (region.Start, region.LoopStart, region.LoopEnd);
-            int end = r.LoopEnd > 0 && r.LoopEnd < patternTicks ? r.LoopEnd : patternTicks;
+            int end = r.LoopEnd > 0 && r.LoopEnd < clipTicks ? r.LoopEnd : clipTicks;
             return h switch { Handle.Start => r.Start, Handle.LoopStart => r.LoopStart, _ => end } / (double)ticksPerBeat;
         }
 
@@ -771,7 +771,7 @@ namespace ReBuzz.Studio.Views.Audio
                 if (sel.Count >= 2) { a = Display(markers[sel[0]].Beat); b = Display(markers[sel[^1]].Beat); if (a > b) (a, b) = (b, a); }
                 else
                 {
-                    int end = region.LoopEnd > 0 && region.LoopEnd < patternTicks ? region.LoopEnd : patternTicks;
+                    int end = region.LoopEnd > 0 && region.LoopEnd < clipTicks ? region.LoopEnd : clipTicks;
                     a = region.Start / (double)ticksPerBeat; b = end / (double)ticksPerBeat;
                 }
             }
@@ -1104,7 +1104,7 @@ namespace ReBuzz.Studio.Views.Audio
         void MoveHandle(Handle which, int tick)
         {
             var r = dragRegion;
-            int end = r.LoopEnd > 0 && r.LoopEnd < patternTicks ? r.LoopEnd : patternTicks;
+            int end = r.LoopEnd > 0 && r.LoopEnd < clipTicks ? r.LoopEnd : clipTicks;
             switch (which)
             {
                 case Handle.Start:
@@ -1114,8 +1114,8 @@ namespace ReBuzz.Studio.Views.Audio
                     r.LoopStart = Math.Clamp(tick, 0, end - 1);
                     break;
                 default:
-                    end = Math.Clamp(tick, Math.Max(r.Start, r.LoopStart) + 1, patternTicks);
-                    r.LoopEnd = end >= patternTicks ? 0 : end;
+                    end = Math.Clamp(tick, Math.Max(r.Start, r.LoopStart) + 1, clipTicks);
+                    r.LoopEnd = end >= clipTicks ? 0 : end;
                     break;
             }
             dragRegion = r;

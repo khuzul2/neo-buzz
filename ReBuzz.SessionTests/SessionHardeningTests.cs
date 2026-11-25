@@ -41,7 +41,7 @@ namespace ReBuzz.SessionTests
         void LaunchSlot(Track track, int slot, int quantize = 0)
         {
             var entry = columns[track][slot]!;
-            s.Launch(track, entry.TestClip, quantize, s.Clock, entry.Spec, 0);
+            s.Launch(track, entry.Clip, quantize, s.Clock, entry.Spec, 0);
         }
 
         void RunTo(long clock)

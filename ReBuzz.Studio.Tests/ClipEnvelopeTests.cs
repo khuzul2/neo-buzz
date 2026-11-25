@@ -24,7 +24,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class ClipEnvelopeTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         static ReBuzzCore Core => AutomationLaneTests.Core;
 
@@ -37,41 +37,41 @@ namespace ReBuzz.Studio.Tests
         {
             public Rig Rig;
             public IMachine Machine;
-            public IPattern Pattern;
+            public IClip Clip;
             public ColumnKey Key;
             public AutoParam Param;
 
-            public EnvelopeStack Stack => PatternView.Page.Roll.Envelopes;
+            public EnvelopeStack Stack => ClipView.Page.Roll.Envelopes;
             public EnvelopeLane Lane => Stack.LaneFor(Key);
 
             public static EnvelopeClip Open(Rig rig, bool arrangement, string parameter = Cutoff)
             {
                 var lead = rig.Lane("Lead");
                 var machine = lead.Machine;
-                IPattern pattern;
+                IClip clip;
                 if (arrangement)
                 {
                     rig.DoubleClick(rig.At(lead, 0, 2));
-                    pattern = machine.Patterns.Last();
+                    clip = machine.Clips.Last();
                 }
                 else
                 {
                     var layout = Core.SessionLayout;
                     layout.Ensure();
                     int track = Enumerable.Range(0, layout.TrackCount).First(t => layout.SequenceOf(t)?.Machine == machine);
-                    pattern = layout.CreateClip(track, 0);
+                    clip = layout.CreateClip(track, 0);
                 }
-                Assert.That(pattern, Is.Not.Null);
-                var clip = new EnvelopeClip { Rig = rig, Machine = machine, Pattern = pattern, Key = KeyOf(machine, parameter) };
-                clip.Param = AutomationParams.Find(machine, clip.Key);
-                clip.Show();
-                return clip;
+                Assert.That(clip, Is.Not.Null);
+                var envClip = new EnvelopeClip { Rig = rig, Machine = machine, Clip = clip, Key = KeyOf(machine, parameter) };
+                envClip.Param = AutomationParams.Find(machine, envClip.Key);
+                envClip.Show();
+                return envClip;
             }
 
             public void Show()
             {
                 rigDetail();
-                Assert.That(EnvelopeOpener.Open(Pattern, Key), Is.True, "the window opens the clip's lane");
+                Assert.That(EnvelopeOpener.Open(Clip, Key), Is.True, "the window opens the clip's lane");
                 Settle();
                 Assert.That(Lane, Is.Not.Null, "the lane is there");
                 Lane.Focus();
@@ -94,7 +94,7 @@ namespace ReBuzz.Studio.Tests
                 return Lane.TranslatePoint(Lane.PointOf(time), Rig.Window)!.Value;
             }
 
-            public string Points() => string.Join(" ", ClipEnvelopes.Read(Pattern, Key).Points.Select(p => $"{p.Time / TB}:{p.Value}{(p.Ramp ? "/" : "-")}"));
+            public string Points() => string.Join(" ", ClipEnvelopes.Read(Clip, Key).Points.Select(p => $"{p.Time / TB}:{p.Value}{(p.Ramp ? "/" : "-")}"));
 
             public void Refresh() { Stack.Refresh(); Settle(); }
 
@@ -132,7 +132,7 @@ namespace ReBuzz.Studio.Tests
             clip.Step("add", () => rig.Click(clip.P(4, 0.2)));
             clip.Step("add another", () => rig.Click(clip.P(8, 0.8)));
             clip.Step("add a third", () => rig.Click(clip.P(12, 0.4)));
-            var pts = ClipEnvelopes.Read(clip.Pattern, clip.Key).Points;
+            var pts = ClipEnvelopes.Read(clip.Clip, clip.Key).Points;
             Assert.That(pts.Select(p => p.Time / TB), Is.EqualTo(new[] { 4, 8, 12 }));
             Assert.That(pts.All(p => p.Ramp), Is.True, "a new point ramps to the next");
             rig.Window.MouseMove(clip.PointP(8 * TB));
@@ -144,7 +144,7 @@ namespace ReBuzz.Studio.Tests
             clip.Step("drag a point", () =>
             {
                 rig.Drag(clip.PointP(8 * TB), clip.P(10, 0.5));
-                movedValue = ClipEnvelopes.Read(clip.Pattern, clip.Key).Points.First(p => p.Time == 10 * TB).Value;
+                movedValue = ClipEnvelopes.Read(clip.Clip, clip.Key).Points.First(p => p.Time == 10 * TB).Value;
             });
             Assert.That(clip.Points(), Does.Contain("10:" + movedValue));
             Assert.That(clip.Points(), Does.Not.Contain(" 8:"));
@@ -159,9 +159,9 @@ namespace ReBuzz.Studio.Tests
             rig.Key(PhysicalKey.A, Cmd);
             Assert.That(clip.Lane.Selection.Count, Is.EqualTo(3));
             clip.Step("R makes the selection steps", () => rig.Key(PhysicalKey.R));
-            Assert.That(ClipEnvelopes.Read(clip.Pattern, clip.Key).Points.All(p => !p.Ramp), Is.True);
+            Assert.That(ClipEnvelopes.Read(clip.Clip, clip.Key).Points.All(p => !p.Ramp), Is.True);
             clip.Step("R again makes ramps", () => rig.Key(PhysicalKey.R));
-            Assert.That(ClipEnvelopes.Read(clip.Pattern, clip.Key).Points.All(p => p.Ramp), Is.True);
+            Assert.That(ClipEnvelopes.Read(clip.Clip, clip.Key).Points.All(p => p.Ramp), Is.True);
 
             // Shift/Ctrl-click adds to the selection; Ctrl/Cmd+A takes all.
             rig.Click(clip.PointP(6 * TB));
@@ -188,8 +188,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(clip.Points(), Does.Not.Contain("12:"));
 
             // The clip is a clip in both places: the same pattern and the same events, whichever view holds it.
-            var column = clip.Pattern.Columns.OfType<PatternColumnCore>().Single(c => c.EnginePlays);
-            Assert.That(column.GetEvents(int.MinValue, int.MaxValue).Count(), Is.EqualTo(ClipEnvelopes.Read(clip.Pattern, clip.Key).Points.Count));
+            var column = clip.Clip.Columns.OfType<ClipColumnCore>().Single(c => c.EnginePlays);
+            Assert.That(column.GetEvents(int.MinValue, int.MaxValue).Count(), Is.EqualTo(ClipEnvelopes.Read(clip.Clip, clip.Key).Points.Count));
         }
 
         [AvaloniaTest]
@@ -208,7 +208,7 @@ namespace ReBuzz.Studio.Tests
             rig.Window.MouseMove(to, RawInputModifiers.Shift | RawInputModifiers.LeftMouseButton);
             rig.Window.MouseUp(to, MouseButton.Left, RawInputModifiers.Shift);
             Settle();
-            var time = ClipEnvelopes.Read(clip.Pattern, clip.Key).Points.Single().Time;
+            var time = ClipEnvelopes.Read(clip.Clip, clip.Key).Points.Single().Time;
             Assert.That(time % TB, Is.Not.EqualTo(0), "shift: no snap, between two ticks; time " + time + " selection " + clip.Lane.Selection.Count + " refusal " + clip.Lane.Refusal);
         }
 
@@ -218,15 +218,15 @@ namespace ReBuzz.Studio.Tests
         public void ACurveAndAPerTrackChoiceAreSavedAndReopened([Values(".nbl")] string extension, [Values(false, true)] bool arrangement)
         {
             using var rig = new Rig("Lead");
-            var clip = EnvelopeClip.Open(rig, arrangement);
-            rig.Click(clip.P(4, 0.3));
-            rig.Click(clip.P(8, 0.9));
+            var envClip = EnvelopeClip.Open(rig, arrangement);
+            rig.Click(envClip.P(4, 0.3));
+            rig.Click(envClip.P(8, 0.9));
             rig.Key(PhysicalKey.R);
-            string drawn = clip.Points();
+            string drawn = envClip.Points();
             Assert.That(drawn.Split(' ').Length, Is.EqualTo(2));
-            var voice = KeyOf(clip.Machine, "Voice mode");
+            var voice = KeyOf(envClip.Machine, "Voice mode");
             Core.Arrangement.SetEnvelopeChoice("Lead", voice);
-            string name = clip.Pattern.Name;
+            string name = envClip.Clip.Name;
 
             string path = Path.Combine(Path.GetTempPath(), $"rebuzz-ev1-{Environment.ProcessId}{extension}");
             try
@@ -236,8 +236,8 @@ namespace ReBuzz.Studio.Tests
                 Core.OpenSongFile(path);
                 Settle();
                 var machine = Core.SongCore.MachinesList.Single(m => m.Name == "Lead");
-                var pattern = machine.Patterns.Single(p => p.Name == name);
-                string again = string.Join(" ", ClipEnvelopes.Read(pattern, clip.Key).Points.Select(p => $"{p.Time / TB}:{p.Value}{(p.Ramp ? "/" : "-")}"));
+                var clip = machine.Clips.Single(p => p.Name == name);
+                string again = string.Join(" ", ClipEnvelopes.Read(clip, envClip.Key).Points.Select(p => $"{p.Time / TB}:{p.Value}{(p.Ramp ? "/" : "-")}"));
                 Assert.That(again, Is.EqualTo(drawn), "the points come back");
                 Assert.That(Core.Arrangement.EnvelopeChoice("Lead"), Is.EqualTo(voice), "the track's choice comes back with the song");
                 Assert.That(ClipEnvelopes.ChoiceOf(Core, machine), Is.EqualTo(voice));
@@ -265,19 +265,19 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the tracker's column
 
         [AvaloniaTest]
-        public void ThePatternEditorsColumnShowsAsReadOnlyStepsAndTheOverlapIsMarked()
+        public void TheClipEditorsColumnShowsAsReadOnlyStepsAndTheOverlapIsMarked()
         {
             using var rig = new Rig("Lead");
             var lead = rig.Lane("Lead");
             var machine = lead.Machine;
-            machine.CreatePattern("00", 16);
-            var pattern = machine.Patterns.First(p => p.Name == "00");
+            machine.CreateClip("00", 16);
+            var clip = machine.Clips.First(p => p.Name == "00");
 
             rig.Window.Detail.Show(true);
             Settle();
-            PatternView.Edit(pattern);
+            ClipView.Edit(clip);
             Settle();
-            dynamic view = PatternView.Page.EditorControl;
+            dynamic view = ClipView.Page.EditorControl;
             ((Avalonia.Controls.Control)view.TrackerGrid.Body).Focus();
             Settle();
             foreach (var (rowNumber, digit) in new[] { (4, PhysicalKey.Digit2), (8, PhysicalKey.Digit1) })
@@ -290,22 +290,22 @@ namespace ReBuzz.Studio.Tests
             Settle();
 
             var key = KeyOf(machine, "Voice mode");
-            var clip = new EnvelopeClip { Rig = rig, Machine = machine, Pattern = pattern, Key = key, Param = AutomationParams.Find(machine, key) };
-            clip.Show();
-            var env = clip.Lane.Envelope;
+            var envClip = new EnvelopeClip { Rig = rig, Machine = machine, Clip = clip, Key = key, Param = AutomationParams.Find(machine, key) };
+            envClip.Show();
+            var env = envClip.Lane.Envelope;
             Assert.That(env.Tracker, Is.Not.Null, "the pattern editor's column is read");
             Assert.That(env.Tracker.Points.Select(p => (p.Time / TB, p.Value)), Is.EqualTo(new[] { (4, 2), (8, 1) }));
             Assert.That(env.Tracker.Editable, Is.False, "read only: the Tracker's to edit");
             Assert.That(env.Overlaps, Is.Empty, "one writer");
 
             // A point in the lane over the Tracker's steps: both set the parameter there, and the lane marks it.
-            rig.Click(clip.P(3, 0.0));
-            rig.Click(clip.P(12, 1.0));
-            clip.Refresh();
-            Assert.That(clip.Lane.Envelope.Overlaps, Is.Not.Empty, "two writers in one place are marked");
-            Assert.That(clip.Lane.Envelope.Overlaps.Any(o => o.From <= 4 * TB && o.To > 4 * TB), Is.True, "over the first step");
+            rig.Click(envClip.P(3, 0.0));
+            rig.Click(envClip.P(12, 1.0));
+            envClip.Refresh();
+            Assert.That(envClip.Lane.Envelope.Overlaps, Is.Not.Empty, "two writers in one place are marked");
+            Assert.That(envClip.Lane.Envelope.Overlaps.Any(o => o.From <= 4 * TB && o.To > 4 * TB), Is.True, "over the first step");
             // The Tracker's column is untouched by the lane's edits.
-            Assert.That(pattern.PatternEditorMachineEvents.First(c => c.Parameter.Name == "Voice mode").Events.Select(e => (e.Time / TB, e.Value)), Is.EqualTo(new[] { (4, 2), (8, 1) }));
+            Assert.That(clip.ClipEditorMachineEvents.First(c => c.Parameter.Name == "Voice mode").Events.Select(e => (e.Time / TB, e.Value)), Is.EqualTo(new[] { (4, 2), (8, 1) }));
         }
 
         // ------------------------------------------------------------------ the curves on the clips
@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Tests
             rig.Key(PhysicalKey.E);
             Assert.That(rig.Canvas.Envelopes, Is.True, "E toggles the curves");
             Assert.That(Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(rig.View).OfType<Avalonia.Controls.Primitives.ToggleButton>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Envelopes on clips").IsChecked, Is.True, "the toggle follows");
-            var curve = rig.Canvas.CurveOfClip(clip.Pattern);
+            var curve = rig.Canvas.CurveOfClip(clip.Clip);
             Assert.That(curve, Is.Not.Null);
             Assert.That(curve!.Value.Key, Is.EqualTo(clip.Key), "the first parameter with data");
             Assert.That(curve.Value.Points.Count, Is.EqualTo(2));
@@ -341,10 +341,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.View.Headers.LastCurvePicker.Choose("Voice mode"), Is.True);
             Settle();
             Assert.That(Core.Arrangement.EnvelopeChoice("Lead"), Is.EqualTo(voice));
-            Assert.That(rig.Canvas.CurveOfClip(clip.Pattern), Is.Null, "the clip holds none of it: nothing drawn");
+            Assert.That(rig.Canvas.CurveOfClip(clip.Clip), Is.Null, "the clip holds none of it: nothing drawn");
             Core.Arrangement.SetEnvelopeChoice("Lead", clip.Key);
             Settle();
-            Assert.That(rig.Canvas.CurveOfClip(clip.Pattern), Is.Not.Null);
+            Assert.That(rig.Canvas.CurveOfClip(clip.Clip), Is.Not.Null);
 
             var item = rig.Canvas.ItemsOf(lead).First();
             Assert.That(item.Actual.Count, Is.GreaterThanOrEqualTo(1));
@@ -363,8 +363,8 @@ namespace ReBuzz.Studio.Tests
             var window = rig.Canvas.TranslatePoint(new Point(x, y), rig.Window)!.Value;
             rig.DoubleClick(window);
             Assert.That(rig.Window.Detail.IsOpen, Is.True, "the Detail panel opened");
-            Assert.That(PatternView.Page.Roll.Envelopes.LaneFor(clip.Key), Is.Not.Null, "with the lane of the curve's parameter");
-            Assert.That(PatternView.Page.Pattern, Is.SameAs(clip.Pattern));
+            Assert.That(ClipView.Page.Roll.Envelopes.LaneFor(clip.Key), Is.Not.Null, "with the lane of the curve's parameter");
+            Assert.That(ClipView.Page.Clip, Is.SameAs(clip.Clip));
         }
 
         [AvaloniaTest]
@@ -406,7 +406,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>The first point of a curve, written the same way in both songs: AR4's lane adds to a curve a clip already has.</summary>
         static void Seed(EnvelopeClip clip)
         {
-            Assert.That(new ClipEnvelopeEditor(Core).AddPoint(ClipEnvelopes.Read(clip.Pattern, clip.Key), 0, clip.Param.ValueAt(0.15)), Is.Null);
+            Assert.That(new ClipEnvelopeEditor(Core).AddPoint(ClipEnvelopes.Read(clip.Clip, clip.Key), 0, clip.Param.ValueAt(0.15)), Is.Null);
             clip.Refresh();
         }
 
@@ -423,13 +423,13 @@ namespace ReBuzz.Studio.Tests
                 var lead = rig.Lane("Lead");
                 Core.Looping = false;
                 var clip = EnvelopeClip.Open(rig, true);
-                Notes(clip.Pattern, 16);
+                Notes(clip.Clip, 16);
                 Core.SongCore.SongEnd = 64;
                 Seed(clip);
                 rig.Click(clip.P(8, 0.85));
                 rig.Click(clip.P(14, 0.4));
                 drawn = clip.Points();
-                laneDrawn = ClipEnvelopes.Read(clip.Pattern, clip.Key).Points.ToList();
+                laneDrawn = ClipEnvelopes.Read(clip.Clip, clip.Key).Points.ToList();
                 Assert.That(drawn.Split(' ').Length, Is.EqualTo(3));
                 Core.SongCore.PlayPosition = 0;
                 byLane = Render(64);
@@ -444,7 +444,7 @@ namespace ReBuzz.Studio.Tests
                 var lead = rig.Lane("Lead");
                 Core.Looping = false;
                 var clip = EnvelopeClip.Open(rig, true);
-                Notes(clip.Pattern, 16);
+                Notes(clip.Clip, 16);
                 Core.SongCore.SongEnd = 64;
                 rig.Window.Detail.Close();
                 Settle();
@@ -468,19 +468,19 @@ namespace ReBuzz.Studio.Tests
             var session = EnvelopeClip.Open(rig, false);
             rig.Click(session.P(2, 0.2));
             rig.Click(session.P(8, 0.9));
-            var events = session.Pattern.Columns.OfType<PatternColumnCore>().Single(c => c.EnginePlays).GetEvents(int.MinValue, int.MaxValue).ToList();
+            var events = session.Clip.Columns.OfType<ClipColumnCore>().Single(c => c.EnginePlays).GetEvents(int.MinValue, int.MaxValue).ToList();
             Assert.That(events.Select(e => e.Time), Is.EqualTo(new[] { 2 * TB, 8 * TB }));
 
             // The model is the AR4 one: the arrangement's reader finds the same curve in the clip once it is placed.
             var lead = rig.Lane("Lead");
-            Assert.That(rig.Canvas.Editor.Place(lead, session.Pattern, 0), Is.Null);
+            Assert.That(rig.Canvas.Editor.Place(lead, session.Clip, 0), Is.Null);
             rig.Canvas.Changed();
             rig.Window.Detail.Close();
             Settle();
             rig.AddLane("Lead", Cutoff);
             var read = rig.Read("Lead", Cutoff);
             var seg = read.Segments.Single(s => s.Source == AutoSource.ClipColumn);
-            Assert.That(string.Join(" ", seg.Points.Select(p => $"{p.Time / TB}:{p.Value}")), Is.EqualTo(string.Join(" ", ClipEnvelopes.Read(session.Pattern, session.Key).Points.Select(p => $"{p.Time / TB}:{p.Value}"))));
+            Assert.That(string.Join(" ", seg.Points.Select(p => $"{p.Time / TB}:{p.Value}")), Is.EqualTo(string.Join(" ", ClipEnvelopes.Read(session.Clip, session.Key).Points.Select(p => $"{p.Time / TB}:{p.Value}"))));
         }
 
         [AvaloniaTest]

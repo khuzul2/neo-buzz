@@ -24,7 +24,7 @@ namespace ReBuzz.Studio.Tests
             public readonly ParameterCore P, Q;
             public readonly ISequence Track;
             public readonly int TrackIndex;
-            public PatternCore Take;
+            public ClipCore Take;
 
             public Song()
             {
@@ -60,7 +60,7 @@ namespace ReBuzz.Studio.Tests
             /// <summary>Pass 1: a take of one bar, with a knob moved at each of these positions (value = Lo + position), then it plays on.</summary>
             public void RecordTakeWith(int[] pPositions, int[] qPositions, int note, int notePosition)
             {
-                Take = (PatternCore)Layout.RecordTake(TrackIndex, 0)!;
+                Take = (ClipCore)Layout.RecordTake(TrackIndex, 0)!;
                 Assert.That(Take, Is.Not.Null);
                 Rig.Core.Playing = true;
                 var all = pPositions.Concat(qPositions).Concat(new[] { notePosition, notePosition + 1 }).Distinct().OrderBy(x => x).ToList();
@@ -84,8 +84,8 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static (int Time, int Value)[] Curve(IPattern clip, IParameter parameter) =>
-            clip.Columns.Where(c => c.Type == PatternColumnType.Parameter && ReferenceEquals(c.Parameter, parameter))
+        static (int Time, int Value)[] Curve(IClip clip, IParameter parameter) =>
+            clip.Columns.Where(c => c.Type == ClipColumnType.Parameter && ReferenceEquals(c.Parameter, parameter))
                 .SelectMany(c => c.GetEvents(int.MinValue, int.MaxValue)).OrderBy(e => e.Time).Select(e => (e.Time, e.Value)).ToArray();
 
         static (int Time, int Value)[] Points(ParameterCore p, params int[] positions) =>

@@ -68,7 +68,7 @@ namespace ReBuzz.Studio.Tests
         /// used to stay subscribed to the engine's song, which outlives songs, so every editor of a run stayed.
         /// </summary>
         [AvaloniaTest]
-        public void ANewSongReleasesThePatternEditorOfTheLastOne()
+        public void ANewSongReleasesTheClipEditorOfTheLastOne()
         {
             Dialogs.Responder = (m, c, b) => UserAnswer.No;
             try
@@ -76,7 +76,7 @@ namespace ReBuzz.Studio.Tests
                 SongFiles.New().Wait();
                 Settle();
                 int before = EditorsOnTheSong();
-                var (editor, view) = EditAPatternThenNewSong();
+                var (editor, view) = EditAClipThenNewSong();
                 for (int i = 0; i < 4; i++)
                 {
                     Settle();
@@ -95,17 +95,17 @@ namespace ReBuzz.Studio.Tests
 
         /// <summary>A pattern shown in the Modern Pattern Editor in a main window; the window closed, a new song; weakly held.</summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static (System.WeakReference<object> Editor, System.WeakReference<object> View) EditAPatternThenNewSong()
+        static (System.WeakReference<object> Editor, System.WeakReference<object> View) EditAClipThenNewSong()
         {
             Core.SongCore.CreateMachine("Neo Poly", null, "Lifetime Poly", null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == "Lifetime Poly");
-            machine.CreatePattern("00", 16);
+            machine.CreateClip("00", 16);
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Settle();
-            Views.PatternView.Edit(machine.Patterns.First());
+            Views.ClipView.Edit(machine.Clips.First());
             Settle();
-            object view = Views.PatternView.Page.EditorControl;
+            object view = Views.ClipView.Page.EditorControl;
             Assert.That(view, Is.Not.Null, "the Pattern tab shows the Modern Pattern Editor");
             object editor = ((dynamic)view).Editor;
             Assert.That(editor?.GetType().FullName, Is.EqualTo("WDE.ModernPatternEditor.PatternEditor"));
@@ -184,7 +184,7 @@ namespace ReBuzz.Studio.Tests
             foreach (var m in song.MachinesList)
             {
                 objects.Add(m);
-                objects.AddRange(m.PatternsList);
+                objects.AddRange(m.ClipsList);
             }
             objects.AddRange(song.SequencesList);
             foreach (var o in objects.Where(o => o != null))

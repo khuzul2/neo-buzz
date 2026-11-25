@@ -138,7 +138,7 @@ namespace ReBuzz.Studio.Tests
             var look = StudioTheme.Sequence;
             AtLeast(C(look.RulerText), C(look.Ruler), 4.5, "bar numbers on the ruler");
             AtLeast(C(look.HeaderText), C(look.Header), 4.5, "machine names on the headers");
-            AtLeast(C(look.ListText), look.PatternList, 4.5, "the pattern list");
+            AtLeast(C(look.ListText), look.ClipList, 4.5, "the pattern list");
             AtLeast(C(look.ControlText), C(look.ControlBack), 4.5, "the corner's controls");
             AtLeast(Colors.White, C(look.ListSelected), 4.5, "the selected pattern");
             AtLeast(C(look.ButtonBorder.Brush!), C(look.Header), 3.0, "a button's edge is a UI part");

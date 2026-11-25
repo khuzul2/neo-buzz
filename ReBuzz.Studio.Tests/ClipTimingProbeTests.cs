@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class ClipTimingProbeTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
         static ReBuzzCore Core => Studio.Host.Core;
 
         enum What { Level, Note, Midi }
@@ -105,8 +105,8 @@ namespace ReBuzz.Studio.Tests
             var machine = song.MachinesList.First(m => m.Name == "Probe");
             song.ConnectMachines(machine, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             Assert.That(machine.EditorMachine, Is.Not.Null, "the probe has a pattern editor (the Modern Pattern Editor)");
-            machine.CreatePattern("P", ticks);
-            var pattern = machine.Patterns.First(p => p.Name == "P");
+            machine.CreateClip("P", ticks);
+            var clip = machine.Clips.First(p => p.Name == "P");
             var level = machine.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Level");
             var note = machine.ParameterGroupsList[2].ParametersList.First(p => p.Name == "Note");
             Assert.That((level.IndexInGroup, note.IndexInGroup, machine.ParameterGroupsList[1].ParametersList.Count), Is.EqualTo((0, 0, 1)));
@@ -116,14 +116,14 @@ namespace ReBuzz.Studio.Tests
                 switch (what)
                 {
                     case What.Level:
-                        SessionLayout.ColumnFor(pattern, new ColumnKey(1, level.IndexInGroup, 0), create: true).SetEvents(new[] { new PatternEvent(time, 500) }.ToList(), true);
+                        SessionLayout.ColumnFor(clip, new ColumnKey(1, level.IndexInGroup, 0), create: true).SetEvents(new[] { new ClipEvent(time, 500) }.ToList(), true);
                         break;
                     case What.Note:
-                        SessionLayout.ColumnFor(pattern, new ColumnKey(2, note.IndexInGroup, 0), create: true).SetEvents(new[] { new PatternEvent(time, buzzNote) }.ToList(), true);
+                        SessionLayout.ColumnFor(clip, new ColumnKey(2, note.IndexInGroup, 0), create: true).SetEvents(new[] { new ClipEvent(time, buzzNote) }.ToList(), true);
                         break;
                     case What.Midi:
                         // The engine's MIDI column: a note-on message (status | note << 8 | velocity << 16) with its length.
-                        SessionLayout.EnsureMidiColumn(pattern).SetEvents(new[] { new PatternEvent(time, 0x90 | (midi << 8) | (velocity << 16), TB * 2) }.ToList(), true);
+                        SessionLayout.EnsureMidiColumn(clip).SetEvents(new[] { new ClipEvent(time, 0x90 | (midi << 8) | (velocity << 16), TB * 2) }.ToList(), true);
                         break;
                 }
             }
@@ -131,12 +131,12 @@ namespace ReBuzz.Studio.Tests
             {
                 // Migration on open: the editor's data becomes lanes of the pattern, and nothing else plays it.
                 ReBuzz.Core.ClipOpen.Run(core, false);
-                int held = pattern.Columns.Sum(c => c.GetEvents(int.MinValue, int.MaxValue).Count());
-                Assert.That(held, Is.GreaterThan(0), $"the lanes hold the data ({what}): {string.Join(", ", pattern.Columns.Select(c => c.Type + ":" + c.GetEvents(int.MinValue, int.MaxValue).Count()))}");
+                int held = clip.Columns.Sum(c => c.GetEvents(int.MinValue, int.MaxValue).Count());
+                Assert.That(held, Is.GreaterThan(0), $"the lanes hold the data ({what}): {string.Join(", ", clip.Columns.Select(c => c.Type + ":" + c.GetEvents(int.MinValue, int.MaxValue).Count()))}");
             }
 
             song.AddSequence(machine, song.Sequences.Count);
-            song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+            song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, clip));
 
             var landing = new Landing();
             int total = 0;
@@ -205,13 +205,13 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The Modern Pattern Editor's data (PatternEditorUtils: 255, version 1, size, patterns) for one pattern at 4 rows a beat.</summary>
-        internal static byte[] EditorData(string pattern, int beats, IEnumerable<(string Machine, int Index, int Track, (int Time, int Value)[] Events)> columns)
+        internal static byte[] EditorData(string clip, int beats, IEnumerable<(string Machine, int Index, int Track, (int Time, int Value)[] Events)> columns)
         {
             var body = new MemoryStream();
             using (var w = new BinaryWriter(body, Encoding.ASCII, leaveOpen: true))
             {
                 w.Write(1);
-                w.Write(Encoding.ASCII.GetBytes(pattern));
+                w.Write(Encoding.ASCII.GetBytes(clip));
                 w.Write((byte)0);
                 var list = columns.ToList();
                 w.Write(beats);

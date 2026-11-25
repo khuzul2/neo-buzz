@@ -259,7 +259,7 @@ namespace ReBuzz.Studio.Shell
             inspector.SessionShown = () => (tabs.SelectedItem as TabItem)?.Header as string == "Session";
             EmptyStates.AddMachine = AddMachine;          // the empty states' "Add machine…" (P3i)
             tabs.SelectionChanged += (s, e) => { if (e.Source == tabs) inspector?.Refresh(); };
-            browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => PatternView.Edit(p));
+            browser = new Views.Browser.BrowserPanel(host.Core, host.Registry, p => ClipView.Edit(p));
             // Fork (neo-audio.md NA3): the Audio page of the detail panel, for the audio clip selected in the Session or the Arrangement.
             audioPage = host.Core != null ? new Views.Audio.AudioClipPage(host.Core) { ViewShown = () => SelectedTitle } : null;
             detail = new Views.Detail.DetailPanel(host.Registry, tracker ?? new TextBlock { Text = "The Tracker failed to start.", Foreground = StudioTokens.ErrorTextBrush, Margin = new Thickness(12) },
@@ -277,13 +277,13 @@ namespace ReBuzz.Studio.Shell
             {
                 Views.Audio.AudioClipPage.Opener = OpenAudio;
                 StudioSelection.For(host.Core).Changed += FollowAudioSelection;
-                inspector.ShowAudio = () => { if (StudioSelection.For(host.Core).Pattern is { } p) OpenAudio(p); };
+                inspector.ShowAudio = () => { if (StudioSelection.For(host.Core).Clip is { } p) OpenAudio(p); };
             }
             Views.Detail.EnvelopeOpener.Open = OpenEnvelope;
             // Fork (ux-overhaul.md P3e): a double click on a machine with no editor of its own opens its device view here.
             Platform.StudioMachineUiHost.DeviceOpener = OpenDevice;
             { var weak = new WeakReference<MainWindow>(this); Views.Device.DeviceMenus.ShowArrangement = () => { if (weak.TryGetTarget(out var w)) w.ShowView("Arrangement"); }; }     // fork: the Device menu's Automate shows the lane
-            if (tracker is PatternPage page)
+            if (tracker is ClipPage page)
             {
                 page.Reveal = () => detail.Show(detail.IsMaximised);
                 page.ShowSequence = () => ShowView("Arrangement");
@@ -900,7 +900,7 @@ namespace ReBuzz.Studio.Shell
                 // The Tracker in the detail panel, docked (maximised stays so), with the keyboard in the editor.
                 if (detail == null) return;
                 detail.ShowPage(false, detail.IsMaximised);
-                PatternView.Show();
+                ClipView.Show();
                 return;
             }
             var tab = tabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == title);
@@ -996,31 +996,31 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>A double click on an audio clip (or the inspector's button): selects it and shows the Audio page (true when the page took it).</summary>
-        bool OpenAudio(IPattern pattern)
+        bool OpenAudio(IClip clip)
         {
-            if (audioPage == null || detail == null || host.Core == null || pattern?.Machine == null) return false;
-            if (host.Core.SessionLayout?.IsAudioClip(pattern) != true) return false;
-            StudioSelection.For(host.Core).Set(pattern.Machine, pattern, this);
+            if (audioPage == null || detail == null || host.Core == null || clip?.Machine == null) return false;
+            if (host.Core.SessionLayout?.IsAudioClip(clip) != true) return false;
+            StudioSelection.For(host.Core).Set(clip.Machine, clip, this);
             detail.ShowAudio(detail.IsMaximised);
             audioPage.Refresh(force: true);
             return true;
         }
 
         /// <summary>A double click on a clip's curve: the clip opens in the Detail panel with the lane of that parameter.</summary>
-        bool OpenEnvelope(IPattern pattern, ReBuzz.Core.Session.ColumnKey key)
+        bool OpenEnvelope(IClip clip, ReBuzz.Core.Session.ColumnKey key)
         {
-            if (detail == null || host.Core == null || pattern?.Machine == null) return false;
-            if (host.Core.SessionLayout?.IsAudioClip(pattern) == true && audioPage != null)
+            if (detail == null || host.Core == null || clip?.Machine == null) return false;
+            if (host.Core.SessionLayout?.IsAudioClip(clip) == true && audioPage != null)
             {
-                StudioSelection.For(host.Core).Set(pattern.Machine, pattern, this);
+                StudioSelection.For(host.Core).Set(clip.Machine, clip, this);
                 detail.ShowAudio(detail.IsMaximised);
                 audioPage.Refresh(force: true);
                 audioPage.ShowEnvelope(key);
                 return true;
             }
-            if (PatternView.Page is not { } page) return false;
+            if (ClipView.Page is not { } page) return false;
             detail.ShowPage(true, detail.IsMaximised);
-            page.EditEnvelope(pattern, key);
+            page.EditEnvelope(clip, key);
             return true;
         }
 
@@ -1032,16 +1032,16 @@ namespace ReBuzz.Studio.Shell
         {
             if (detail == null || host.Core == null || !detail.IsOpen) return;
             var selection = StudioSelection.For(host.Core);
-            bool audioClip = selection.Pattern != null && host.Core.SessionLayout?.IsAudioClip(selection.Pattern) == true;
+            bool audioClip = selection.Clip != null && host.Core.SessionLayout?.IsAudioClip(selection.Clip) == true;
             if (audioClip && !detail.IsAudio && !detail.IsDevice) detail.ShowAudio(detail.IsMaximised);
-            else if (!audioClip && detail.IsAudio && selection.Pattern != null) detail.LeaveAudio();
+            else if (!audioClip && detail.IsAudio && selection.Clip != null) detail.LeaveAudio();
         }
 
         internal void ShowPianoRoll()
         {
             if (detail == null) return;
             detail.ShowPage(true, detail.IsMaximised);
-            PatternView.Show();
+            ClipView.Show();
         }
 
         /// <summary>F2 and ⇧⌘F: the Tracker over the whole window, and back to the panel.</summary>
@@ -1049,7 +1049,7 @@ namespace ReBuzz.Studio.Shell
         {
             if (detail == null) return;
             detail.ToggleMaximised();
-            if (detail.IsMaximised && !detail.IsMixer) PatternView.Show();
+            if (detail.IsMaximised && !detail.IsMixer) ClipView.Show();
         }
 
         void ShowPreferences() => PreferencesWindow.Open(host);
@@ -1214,7 +1214,7 @@ namespace ReBuzz.Studio.Shell
             inspector?.Dispose();
             browser?.Dispose();
             if (Platform.StudioMachineUiHost.DeviceOpener == (Func<IMachine, bool>)OpenDevice) Platform.StudioMachineUiHost.DeviceOpener = null;
-            if (Views.Detail.EnvelopeOpener.Open == (Func<IPattern, ReBuzz.Core.Session.ColumnKey, bool>)OpenEnvelope) Views.Detail.EnvelopeOpener.Open = null;
+            if (Views.Detail.EnvelopeOpener.Open == (Func<IClip, ReBuzz.Core.Session.ColumnKey, bool>)OpenEnvelope) Views.Detail.EnvelopeOpener.Open = null;
             if (Platform.StudioMachineUiHost.MasterOpener == (Func<IMachine, bool>)OpenMasterMixer) Platform.StudioMachineUiHost.MasterOpener = null;
             masterClick?.Stop();
             masterSource = null;
@@ -1222,7 +1222,7 @@ namespace ReBuzz.Studio.Shell
             if (host.Core != null) StudioSelection.For(host.Core).Changed -= FollowMasterSelection;
             if (audioPage != null)
             {
-                if (Views.Audio.AudioClipPage.Opener == (Func<IPattern, bool>)OpenAudio) Views.Audio.AudioClipPage.Opener = null;
+                if (Views.Audio.AudioClipPage.Opener == (Func<IClip, bool>)OpenAudio) Views.Audio.AudioClipPage.Opener = null;
                 if (host.Core != null) StudioSelection.For(host.Core).Changed -= FollowAudioSelection;
                 audioPage.Dispose();
             }

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using static WDE.ModernPatternEditor.PatternEditorUtils;
+using static WDE.ModernPatternEditor.ClipEditorUtils;
 
 namespace WDE.ModernPatternEditor.MPEStructures
 {
@@ -204,12 +204,12 @@ namespace WDE.ModernPatternEditor.MPEStructures
     }
 
     // Temporary until cleaned up. Merge with MPEPatternColumn?
-    public class MPEPatternColumnBuzz : IPatternColumn
+    public class MPEClipColumnBuzz : IClipColumn
     {
-        public MPEPatternColumnBuzz(PatternColumnType Type, IPattern Pattern, IMachine Machine, IParameter Parameter, int Track)
+        public MPEClipColumnBuzz(ClipColumnType Type, IClip Clip, IMachine Machine, IParameter Parameter, int Track)
         {
             this.Type = Type;
-            this.Pattern = Pattern;
+            this.Clip = Clip;
             this.Machine = Machine;
             this.Parameter = Parameter;
             this.Track = Track;
@@ -218,9 +218,9 @@ namespace WDE.ModernPatternEditor.MPEStructures
             BeatSubdivision = new BuzzGUI.Interfaces.ReadOnlyDictionary<int, int>(mBeatSubdivision);
         }
 
-        public PatternColumnType Type { get; }
+        public ClipColumnType Type { get; }
 
-        public IPattern Pattern { get; }
+        public IClip Clip { get; }
 
         public IMachine Machine { get; set; }
 
@@ -231,19 +231,19 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         public IDictionary<string, string> Metadata { get; }
 
-        public event Action<IEnumerable<PatternEvent>, bool> EventsChanged;
+        public event Action<IEnumerable<ClipEvent>, bool> EventsChanged;
         public event Action<int> BeatSubdivisionChanged;
         public event PropertyChangedEventHandler PropertyChanged;
 
         public Dictionary<int, int> mBeatSubdivision;
 
 
-        public IEnumerable<PatternEvent> GetEvents(int tbegin, int tend)
+        public IEnumerable<ClipEvent> GetEvents(int tbegin, int tend)
         {
             return null;
         }
 
-        public void GetEventsInto(int tbegin, int tend, List<PatternEvent> dest)
+        public void GetEventsInto(int tbegin, int tend, List<ClipEvent> dest)
         {
             dest.Clear();
         }
@@ -253,11 +253,11 @@ namespace WDE.ModernPatternEditor.MPEStructures
             mBeatSubdivision[beatindex] = subdiv;
         }
 
-        public void SetEvents(IEnumerable<PatternEvent> e, bool set)
+        public void SetEvents(IEnumerable<ClipEvent> e, bool set)
         {
         }
 
-        public IEnumerable<PatternEvent> GetPEEvents(int tbegin, int tend)
+        public IEnumerable<ClipEvent> GetPEEvents(int tbegin, int tend)
         {
             return null;
         }

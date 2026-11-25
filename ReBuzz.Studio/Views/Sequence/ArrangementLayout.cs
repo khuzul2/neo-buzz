@@ -100,9 +100,9 @@ namespace ReBuzz.Studio.Views.Sequence
                 foreach (var seq in song.Sequences.Where(s => s.Machine?.DLL?.Info.Type == MachineType.Master))
                     foreach (var (time, e) in seq.Events)
                     {
-                        if (e.Type != SequenceEventType.PlayPattern || e.Pattern == null) continue;
+                        if (e.Type != SequenceEventType.PlayClip || e.Clip == null) continue;
                         int from = e.PlayedOffset, to = e.PlayedOffset + e.PlayedLength;
-                        foreach (var (tick, bpm) in BpmEvents(e.Pattern))
+                        foreach (var (tick, bpm) in BpmEvents(e.Clip))
                             if (tick >= from && tick < to) list.Add((time + tick - from, bpm));
                     }
             }
@@ -113,15 +113,15 @@ namespace ReBuzz.Studio.Views.Sequence
             return list.OrderBy(x => x.Item1).ToList();
         }
 
-        static IEnumerable<(int Tick, int Bpm)> BpmEvents(IPattern pattern)
+        static IEnumerable<(int Tick, int Bpm)> BpmEvents(IClip clip)
         {
-            foreach (var column in pattern.Columns.Where(c => c.Type == PatternColumnType.Parameter && c.Parameter?.Name == "BPM"))
-                foreach (var e in column.GetEvents(0, pattern.Length * PatternEvent.TimeBase))
-                    if (e.Value != column.Parameter.NoValue) yield return (e.Time / PatternEvent.TimeBase, e.Value);
-            foreach (var column in pattern.PatternEditorMachineEvents ?? Enumerable.Empty<IPatternEditorColumn>())
+            foreach (var column in clip.Columns.Where(c => c.Type == ClipColumnType.Parameter && c.Parameter?.Name == "BPM"))
+                foreach (var e in column.GetEvents(0, clip.Length * ClipEvent.TimeBase))
+                    if (e.Value != column.Parameter.NoValue) yield return (e.Time / ClipEvent.TimeBase, e.Value);
+            foreach (var column in clip.ClipEditorMachineEvents ?? Enumerable.Empty<IClipEditorColumn>())
                 if (column.Parameter?.Name == "BPM")
                     foreach (var e in column.Events)
-                        if (e.Value != column.Parameter.NoValue) yield return (e.Time / PatternEvent.TimeBase, e.Value);
+                        if (e.Value != column.Parameter.NoValue) yield return (e.Time / ClipEvent.TimeBase, e.Value);
         }
     }
 }

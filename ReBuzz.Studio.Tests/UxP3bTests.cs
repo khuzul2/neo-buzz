@@ -31,16 +31,16 @@ namespace ReBuzz.Studio.Tests
 
     public class UxP3bTests
     {
-        const int TB = PatternEvent.TimeBase;           // a tick; a row at four rows a beat
+        const int TB = ClipEvent.TimeBase;           // a tick; a row at four rows a beat
 
         internal sealed class Rig : IDisposable
         {
             public SessionRig Song { get; }
             public MainWindow Window { get; }
             public MachineCore Lead;
-            public PatternCore Pattern;
+            public ClipCore Clip;
             public DetailPanel Detail => Window.Detail;
-            public PatternPage Page => PatternView.Page;
+            public ClipPage Page => ClipView.Page;
             public TrackerRoll Roll => Page.Roll;
             public PianoRoll Notes => Roll.Roll;
 
@@ -49,17 +49,17 @@ namespace ReBuzz.Studio.Tests
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
                 Song = gear == "Neo Poly" ? new SessionRig("Lead") : new SessionRig();
                 Lead = gear == "Neo Poly" ? Song.Machine("Lead") : Song.Add(gear, "Lead");
-                Lead.CreatePattern("00", ticks);
-                Pattern = Lead.PatternsList.Single(p => p.Name == "00");
+                Lead.CreateClip("00", ticks);
+                Clip = Lead.ClipsList.Single(p => p.Name == "00");
                 StudioSelection.For(Song.Core).Clear(this);
                 Window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
                 Window.Show();
                 Pump();
                 Detail.Show(true);              // over the whole window: room to click the notes
-                PatternView.Edit(Pattern);
+                ClipView.Edit(Clip);
                 Pump();
                 Assert.That(Page, Is.Not.Null);
-                Assert.That(Page.Pattern, Is.EqualTo(Pattern));
+                Assert.That(Page.Clip, Is.EqualTo(Clip));
             }
 
             /// <summary>Shows the roll.</summary>
@@ -78,7 +78,7 @@ namespace ReBuzz.Studio.Tests
             }
 
             /// <summary>The clip's notes as SongNotes reads them: (time, length, MIDI note).</summary>
-            public (int Time, int Duration, int Note)[] Stored(string route = null) => StoredOf(Song.Core, Pattern, route);
+            public (int Time, int Duration, int Note)[] Stored(string route = null) => StoredOf(Song.Core, Clip, route);
 
             /// <summary>How many steps the song's history holds (an edit made now is one more).</summary>
             public int Undos => Song.Core.SongCore.ActionStack.Steps.Count;
@@ -123,14 +123,14 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        internal static (int Time, int Duration, int Note)[] StoredOf(ReBuzzCore core, IPattern pattern, string route = null) =>
-            SongNotes.For(core, pattern, route).Notes().Select(n => (n.Time, n.Duration, n.Note)).ToArray();
+        internal static (int Time, int Duration, int Note)[] StoredOf(ReBuzzCore core, IClip clip, string route = null) =>
+            SongNotes.For(core, clip, route).Notes().Select(n => (n.Time, n.Duration, n.Note)).ToArray();
 
         /// <summary>The events of every lane of a parameter and track in the clip, in time order: (time, value).</summary>
-        static (int Time, int Value)[] Events(IPattern pattern, string parameter, int track = 0)
+        static (int Time, int Value)[] Events(IClip clip, string parameter, int track = 0)
         {
-            var key = pattern.Machine.ParameterGroups[2].Parameters.First(q => q.Name == parameter);
-            return StoreLanes.Events(pattern, new ColumnKey(2, key.IndexInGroup, track)).Select(e => (e.Time, e.Value)).ToArray();
+            var key = clip.Machine.ParameterGroups[2].Parameters.First(q => q.Name == parameter);
+            return StoreLanes.Events(clip, new ColumnKey(2, key.IndexInGroup, track)).Select(e => (e.Time, e.Value)).ToArray();
         }
 
         internal static int Buzz(int midi) => BuzzNote.FromMIDINote(midi);
@@ -161,7 +161,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the switch
 
         [AvaloniaTest]
-        public void TheDetailPanelSwitchesBetweenTheTrackerAndThePianoRollOnOnePattern()
+        public void TheDetailPanelSwitchesBetweenTheTrackerAndThePianoRollOnOneClip()
         {
             using var r = new Rig();
             Assert.That(r.Page.IsRollMode, Is.False, "the Tracker first");
@@ -173,12 +173,12 @@ namespace ReBuzz.Studio.Tests
             Assert.That(r.Detail.IsPianoRoll && r.Detail.IsOpen, Is.True);
             Assert.That(grid.IsEffectivelyVisible, Is.False, "the Tracker's grid gives way");
             Assert.That(r.Roll.IsVisible && r.Notes != null, Is.True);
-            Assert.That(r.Roll.Pattern, Is.EqualTo(r.Pattern), "the same pattern");
-            Assert.That(r.Page.Pattern, Is.EqualTo(r.Pattern));
+            Assert.That(r.Roll.Clip, Is.EqualTo(r.Clip), "the same pattern");
+            Assert.That(r.Page.Clip, Is.EqualTo(r.Clip));
 
             r.ShowTracker();
             Assert.That(grid.IsEffectivelyVisible && !r.Roll.IsVisible, Is.True, "and back");
-            Assert.That(r.Page.Pattern, Is.EqualTo(r.Pattern), "still the same pattern");
+            Assert.That(r.Page.Clip, Is.EqualTo(r.Clip), "still the same pattern");
 
             // The menu's command and the page remembered in the settings.
             r.Window.ShowPianoRoll();
@@ -202,9 +202,9 @@ namespace ReBuzz.Studio.Tests
         {
             using var r = new Rig();
             var fx = r.Song.Add("Neo Delay", "Echo");
-            fx.CreatePattern("00", 16);
-            var p = fx.PatternsList.Single();
-            PatternView.Edit(p);
+            fx.CreateClip("00", 16);
+            var p = fx.ClipsList.Single();
+            ClipView.Edit(p);
             Pump();
             r.ShowRoll();
             Assert.That(r.Roll.Notes(), Is.Null);
@@ -327,7 +327,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void NotesSideBySideKeepTheirOwnLengthsAndTheLastOneRunsToThePatternsEnd()
+        public void NotesSideBySideKeepTheirOwnLengthsAndTheLastOneRunsToTheClipsEnd()
         {
             using var r = new Rig();            // 16 ticks: 16 rows
             r.ShowRoll();
@@ -349,7 +349,7 @@ namespace ReBuzz.Studio.Tests
             Pump();
             void Type(PhysicalKey k) { r.Window.KeyPressQwerty(k, RawInputModifiers.None); r.Window.KeyReleaseQwerty(k, RawInputModifiers.None); Pump(); }
             foreach (var k in new[] { PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.Digit1 }) Type(k);
-            var typed = Events(r.Pattern, "Note");
+            var typed = Events(r.Clip, "Note");
             Assert.That(typed.Length, Is.EqualTo(4), "three notes and an off, in the lane the Tracker made");
 
             // SongNotes on the tracks route reads that lane (and any other lane of the Note parameter): the agent and the rolls see what was typed.
@@ -359,10 +359,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(notes.Select(n => n.Duration), Is.EqualTo(new[] { TB, TB, TB }), "each lasts to the next, the last to the off");
 
             // Move the last note an octave through the layer: the others' events are exactly what they were.
-            var source = SongNotes.For(r.Song.Core, r.Pattern, "tracks")!;
+            var source = SongNotes.For(r.Song.Core, r.Clip, "tracks")!;
             var all = source.Notes();
             Assert.That(source.Edit(new[] { all[2] }, new[] { all[2] with { Note = all[2].Note + 12 } }), Is.Null);
-            var after = Events(r.Pattern, "Note");
+            var after = Events(r.Clip, "Note");
             Assert.That(after.Take(2), Is.EqualTo(typed.Take(2)), "the untouched notes' events are unchanged");
             Assert.That(after[2].Value, Is.EqualTo(typed[2].Value + (BuzzNote.FromMIDINote(all[2].Note + 12) - BuzzNote.FromMIDINote(all[2].Note))));
             Assert.That(after[3], Is.EqualTo(typed[3]), "the off stays");
@@ -372,7 +372,7 @@ namespace ReBuzz.Studio.Tests
         public void AChordNeedsATrackEachAndIsRefusedWithTheReasonWhenTheMachineHasNone()
         {
             using var r = new Rig();
-            var source = SongNotes.For(r.Song.Core, r.Pattern, "tracks")!;
+            var source = SongNotes.For(r.Song.Core, r.Clip, "tracks")!;
             int tracks = Math.Max(1, r.Lead.TrackCount);
             var chord = Enumerable.Range(0, tracks).Select(i => new ClipNote(0, TB, 48 + 4 * i, 100)).ToArray();
             Assert.That(source.Edit(null, chord), Is.Null);
@@ -421,17 +421,17 @@ namespace ReBuzz.Studio.Tests
         {
             using var r = new Rig();
             // Notes written by another reader and writer of the layer (what the agent and the Session make) show in the roll.
-            var midi = SongNotes.For(r.Song.Core, r.Pattern)!;
+            var midi = SongNotes.For(r.Song.Core, r.Clip)!;
             Assert.That(midi.Edit(null, new[] { new ClipNote(0, TB, 64, 100) }), Is.Null);
             r.Window.ShowPianoRoll();
             Pump();
             Assert.That(r.Notes.Notes.Select(n => n.Note), Is.EqualTo(new[] { 64 }));
 
             // The tracks route writes the Note parameter's lane and does not touch the MIDI column.
-            var tracks = SongNotes.For(r.Song.Core, r.Pattern, "tracks")!;
+            var tracks = SongNotes.For(r.Song.Core, r.Clip, "tracks")!;
             Assert.That(tracks.Notes(), Is.Empty);
             Assert.That(tracks.Edit(null, new[] { new ClipNote(0, TB, 67, 100) }), Is.Null);
-            Assert.That(Events(r.Pattern, "Note")[0].Value, Is.EqualTo(Buzz(67)));
+            Assert.That(Events(r.Clip, "Note")[0].Value, Is.EqualTo(Buzz(67)));
             Assert.That(r.Stored().Select(n => n.Note), Is.EqualTo(new[] { 64 }), "the MIDI column is not touched");
         }
 
@@ -441,22 +441,22 @@ namespace ReBuzz.Studio.Tests
         public void TheRollFollowsTheStudiosSelectionAndTheTrackersChoosers()
         {
             using var r = new Rig();
-            r.Lead.CreatePattern("01", 8);
-            var other = r.Lead.PatternsList.Single(p => p.Name == "01");
+            r.Lead.CreateClip("01", 8);
+            var other = r.Lead.ClipsList.Single(p => p.Name == "01");
             r.ShowRoll();
             StudioSelection.For(r.Song.Core).Set(r.Lead, other, this);
             Pump();
-            Assert.That(r.Roll.Pattern, Is.EqualTo(other), "a selection made elsewhere shows in the roll");
-            Assert.That(r.Page.Pattern, Is.EqualTo(other), "and in the Tracker's page");
+            Assert.That(r.Roll.Clip, Is.EqualTo(other), "a selection made elsewhere shows in the roll");
+            Assert.That(r.Page.Clip, Is.EqualTo(other), "and in the Tracker's page");
             r.Notes.AddNote(0, 60);
             r.ShowTracker();
             Assert.That(StoredOf(r.Song.Core, other), Is.Not.Empty);
             Assert.That(r.Stored(), Is.Empty);
-            PatternView.Edit(r.Pattern);
+            ClipView.Edit(r.Clip);
             Pump();
-            Assert.That(StudioSelection.For(r.Song.Core).Pattern, Is.EqualTo(r.Pattern), "the page publishes what the user picks");
+            Assert.That(StudioSelection.For(r.Song.Core).Clip, Is.EqualTo(r.Clip), "the page publishes what the user picks");
             r.ShowRoll();
-            Assert.That(r.Roll.Pattern, Is.EqualTo(r.Pattern));
+            Assert.That(r.Roll.Clip, Is.EqualTo(r.Clip));
             Assert.That(r.Notes.Notes, Is.Empty);
         }
 
@@ -504,7 +504,7 @@ namespace ReBuzz.Studio.Tests
                 r.Song.Core.OpenSongFile(c);
                 Pump();
                 var lead = r.Song.Core.SongCore.MachinesList.First(m => m.Name == "Lead");
-                var again = lead.PatternsList.First(p => p.Name == "00");
+                var again = lead.ClipsList.First(p => p.Name == "00");
                 Assert.That(StoredOf(r.Song.Core, again), Is.EqualTo(shown), "the saved song holds the notes the roll shows");
                 Assert.That(shown, Is.EqualTo(new[] { (TB, TB, 60), (4 * TB, TB, 67) }), "and the layer reads them back from the reopened song");
             }
@@ -517,12 +517,12 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ large patterns, names, contrast
 
         [AvaloniaTest]
-        public void OnlyTheVisiblePartOfALargePatternIsDrawn()
+        public void OnlyTheVisiblePartOfALargeClipIsDrawn()
         {
             using var r = new Rig(ticks: 1024);
             r.ShowRoll();
             var roll = r.Notes;
-            var source = SongNotes.For(r.Song.Core, r.Pattern)!;
+            var source = SongNotes.For(r.Song.Core, r.Clip)!;
             var many = Enumerable.Range(0, 400).Select(i => new ClipNote(i * 2 * TB, TB, 36 + i % 48, 100)).ToArray();
             Assert.That(source.Edit(null, many), Is.Null);
             r.Roll.Poll();

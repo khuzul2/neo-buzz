@@ -17,17 +17,17 @@ namespace ReBuzz.Studio.Views.Session
         public const double Height = 10;      // the strip along the slot's bottom
         const double Pad = 3;
 
-        readonly IPattern pattern;
+        readonly IClip clip;
         readonly ColumnKey key;
         readonly AutoParam param;
-        readonly HashSet<PatternColumnCore> watched = new();
+        readonly HashSet<ClipColumnCore> watched = new();
         IReadOnlyList<AutoPoint> points = Array.Empty<AutoPoint>();
         bool fromTracker;
         IBrush brush = Brushes.White;
 
-        SlotCurve(IPattern pattern, ColumnKey key, AutoParam param)
+        SlotCurve(IClip clip, ColumnKey key, AutoParam param)
         {
-            this.pattern = pattern;
+            this.clip = clip;
             this.key = key;
             this.param = param;
             IsHitTestVisible = false;
@@ -38,10 +38,10 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         /// <summary>The slot's curve for the track's chosen parameter, or null when the clip holds none of it.</summary>
-        public static SlotCurve For(IPattern pattern, ColumnKey? key)
+        public static SlotCurve For(IClip clip, ColumnKey? key)
         {
-            if (pattern?.Machine == null || key == null || AutomationParams.Find(pattern.Machine, key.Value) is not { } param) return null;
-            var curve = new SlotCurve(pattern, key.Value, param);
+            if (clip?.Machine == null || key == null || AutomationParams.Find(clip.Machine, key.Value) is not { } param) return null;
+            var curve = new SlotCurve(clip, key.Value, param);
             return curve.points.Count > 0 ? curve : null;
         }
 
@@ -57,7 +57,7 @@ namespace ReBuzz.Studio.Views.Session
         public double DistanceAt(double x, double y)
         {
             if (points.Count == 0 || Bounds.Width <= 0) return double.PositiveInfinity;
-            double len = ClipEnvelopes.LengthOf(pattern);
+            double len = ClipEnvelopes.LengthOf(clip);
             int time = (int)Math.Round(Math.Clamp(x / Bounds.Width, 0, 1) * len);
             if (time < points[0].Time) return double.PositiveInfinity;
             if (AutomationMath.ValueAt(points, time) is not { } v) return double.PositiveInfinity;
@@ -68,7 +68,7 @@ namespace ReBuzz.Studio.Views.Session
 
         void Read()
         {
-            var (p, tracker) = ClipEnvelopes.CurveOf(pattern, key);
+            var (p, tracker) = ClipEnvelopes.CurveOf(clip, key);
             points = p;
             fromTracker = tracker;
         }
@@ -76,8 +76,8 @@ namespace ReBuzz.Studio.Views.Session
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
-            foreach (var column in pattern.Columns)
-                if (column is PatternColumnCore { Type: PatternColumnType.Parameter } c && watched.Add(c)) c.EventsChanged += OnEvents;
+            foreach (var column in clip.Columns)
+                if (column is ClipColumnCore { Type: ClipColumnType.Parameter } c && watched.Add(c)) c.EventsChanged += OnEvents;
             Read();
         }
 
@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Views.Session
             base.OnDetachedFromVisualTree(e);
         }
 
-        void OnEvents(IEnumerable<PatternEvent> events, bool set) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        void OnEvents(IEnumerable<ClipEvent> events, bool set) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             Read();
             InvalidateVisual();
@@ -97,7 +97,7 @@ namespace ReBuzz.Studio.Views.Session
         public override void Render(DrawingContext ctx)
         {
             if (points.Count == 0 || Bounds.Width < 6) return;
-            double len = ClipEnvelopes.LengthOf(pattern), w = Bounds.Width;
+            double len = ClipEnvelopes.LengthOf(clip), w = Bounds.Width;
             double X(int t) => Math.Clamp(t / len, 0, 1) * w;
             var g = new StreamGeometry();
             using (var c = g.Open())

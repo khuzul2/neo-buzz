@@ -30,7 +30,7 @@ namespace ReBuzz.Studio.Tests
             public SessionRig Song { get; }
             public MainWindow Window { get; }
             public MachineCore Drums, Bass;
-            public PatternCore Beat, Line;
+            public ClipCore Beat, Line;
             public StudioSelection Selection => StudioSelection.For(Song.Core);
             public InspectorPanel Inspector => Window.Inspector;
 
@@ -40,8 +40,8 @@ namespace ReBuzz.Studio.Tests
                 Song = new SessionRig("Drums", "Bass");
                 Drums = Song.Machine("Drums");
                 Bass = Song.Machine("Bass");
-                Beat = Song.Pattern(Drums, "Beat", 16, (0, 60), (4, 62));
-                Line = Song.Pattern(Bass, "Line", 16, (0, 48));
+                Beat = Song.Clip(Drums, "Beat", 16, (0, 60), (4, 62));
+                Line = Song.Clip(Bass, "Line", 16, (0, 48));
                 Song.Layout.SetSlot(0, 0, Beat);
                 Song.Layout.SetSlot(1, 0, Line);
                 Selection.Clear(this);
@@ -98,7 +98,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(panel.Facts.Single(f => f.Label == "Machines").Value, Is.EqualTo("2"), "the master isn't counted");
             Assert.That(panel.HintText, Does.Contain("Select a machine"));
             Assert.That(panel.NotesButton.IsVisible, Is.True, "a way to the Song tab");
-            Assert.That(panel.PatternButton.IsVisible, Is.False);
+            Assert.That(panel.ClipButton.IsVisible, Is.False);
             Assert.That(panel.ClipPanel.IsVisible, Is.False, "no clip settings for the song");
         }
 
@@ -123,7 +123,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void APatternShowsItsLengthAndOpensInThePatternView()
+        public void AClipShowsItsLengthAndOpensInTheClipView()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
@@ -132,10 +132,10 @@ namespace ReBuzz.Studio.Tests
             var panel = rig.Inspector;
             Assert.That(panel.Facts.Single(f => f.Label == "Pattern").Value, Is.EqualTo("Beat"));
             Assert.That(panel.Facts.Single(f => f.Label == "Length").Value, Does.StartWith("16 ticks"));
-            Assert.That(panel.PatternButton.IsVisible, Is.True);
-            rig.Click(panel.PatternButton);
+            Assert.That(panel.ClipButton.IsVisible, Is.True);
+            rig.Click(panel.ClipButton);
             Assert.That(rig.Window.Detail.IsOpen, Is.True, "the Tracker opens");
-            Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Beat), "the selection stays");
+            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Beat), "the selection stays");
         }
 
         [AvaloniaTest]
@@ -182,7 +182,7 @@ namespace ReBuzz.Studio.Tests
             rig.Selection.Set(rig.Drums, rig.Beat, this, 0);
             Settle();
             Assert.That(clip.IsVisible, Is.True);
-            Assert.That(clip.Pattern, Is.SameAs(rig.Beat));
+            Assert.That(clip.Clip, Is.SameAs(rig.Beat));
             Assert.That(clip.TitleText, Is.EqualTo("Beat"));
             rig.Song.Choose(clip.ModeBox, 1);
             Assert.That(layout.ClipOf(rig.Beat).Mode, Is.EqualTo("Gate"), "the edit reaches the song from the Machines view");
@@ -191,7 +191,7 @@ namespace ReBuzz.Studio.Tests
             rig.Show("Arrangement");
             rig.Selection.Set(rig.Bass, rig.Line, this, 0);
             Settle();
-            Assert.That(clip.Pattern, Is.SameAs(rig.Line));
+            Assert.That(clip.Clip, Is.SameAs(rig.Line));
             Assert.That(clip.ModeBox.SelectedIndex, Is.EqualTo(0), "its own settings");
             Assert.That(layout.ClipOf(rig.Line).Mode, Is.EqualTo("Trigger"));
 
@@ -211,11 +211,11 @@ namespace ReBuzz.Studio.Tests
             session.Select(1, 0);
             Settle();
             Assert.That(rig.Inspector.HeadingText, Is.EqualTo("Bass"));
-            Assert.That(rig.Inspector.ClipPanel.Pattern, Is.SameAs(rig.Line));
+            Assert.That(rig.Inspector.ClipPanel.Clip, Is.SameAs(rig.Line));
             Assert.That(rig.Inspector.ClipPanel.Slot, Is.EqualTo((1, 0)));
             session.Select(1, 1);
             Settle();
-            Assert.That(rig.Inspector.ClipPanel.Pattern, Is.Null, "an empty slot");
+            Assert.That(rig.Inspector.ClipPanel.Clip, Is.Null, "an empty slot");
             Assert.That(rig.Inspector.ClipPanel.Slot, Is.EqualTo((1, 1)));
             Assert.That(rig.Inspector.ClipPanel.SceneTempoBox.IsEffectivelyVisible, Is.True, "with its scene's settings");
         }

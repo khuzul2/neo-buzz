@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Shell
         };
 
         /// <summary>"Convert to MIDI ▸ Melody / Harmony / Drums" for the audio clip <paramref name="clip"/> gives (menus of the Session, the Arrangement and the Audio page).</summary>
-        public static MenuItem Menu(Func<IPattern> clip, bool enabled = true)
+        public static MenuItem Menu(Func<IClip> clip, bool enabled = true)
         {
             var root = new MenuItem { Header = "Convert to MIDI", Tag = "Convert to MIDI", IsEnabled = enabled };
             foreach (var (label, mode) in Modes)
@@ -59,7 +59,7 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>The menu's items for a button's menu (the Audio page).</summary>
-        public static ContextMenu ButtonMenu(Func<IPattern> clip)
+        public static ContextMenu ButtonMenu(Func<IClip> clip)
         {
             var menu = new ContextMenu();
             foreach (var (label, mode) in Modes)
@@ -72,7 +72,7 @@ namespace ReBuzz.Studio.Shell
             return menu;
         }
 
-        public static async Task ConvertClip(IPattern clip, ConvertMode mode)
+        public static async Task ConvertClip(IClip clip, ConvertMode mode)
         {
             var layout = Core?.SessionLayout;
             if (layout == null || clip == null) return;

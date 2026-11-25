@@ -21,7 +21,7 @@ namespace ReBuzz.Studio.Tests
     internal sealed class SessionRig : IDisposable
     {
         public const int Bar = 16;
-        public const int TB = PatternEvent.TimeBase;
+        public const int TB = ClipEvent.TimeBase;
 
         readonly WorkManager work;
         readonly float[] buffer = new float[512];
@@ -81,10 +81,10 @@ namespace ReBuzz.Studio.Tests
 
         public MachineCore Machine(string name) => Core.SongCore.MachinesList.First(m => m.Name == name);
 
-        public PatternCore Pattern(MachineCore machine, string name, int length, params (int Time, int Note)[] notes)
+        public ClipCore Clip(MachineCore machine, string name, int length, params (int Time, int Note)[] notes)
         {
-            machine.CreatePattern(name, length);
-            var p = machine.PatternsList.Single(x => x.Name == name);
+            machine.CreateClip(name, length);
+            var p = machine.ClipsList.Single(x => x.Name == name);
             if (notes.Length > 0)
                 Layout.EditNotes(p, null, notes.Select(n => new ClipNote(n.Time * TB, TB, n.Note, 100)).ToArray());
             return p;

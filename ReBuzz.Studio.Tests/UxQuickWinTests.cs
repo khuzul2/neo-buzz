@@ -403,10 +403,10 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void BackspaceInTheSessionViewRemovesTheClipAndShiftDeletesItsPattern()
+        public void BackspaceInTheSessionViewRemovesTheClipAndShiftDeletesItsClip()
         {
             using var rig = new SessionRig("Bass");
-            var line = rig.Pattern(rig.Machine("Bass"), "Line", SessionRig.Bar, (0, 48));
+            var line = rig.Clip(rig.Machine("Bass"), "Line", SessionRig.Bar, (0, 48));
             var layout = rig.Layout;
             layout.Ensure();
             layout.SetSlot(0, 0, line);
@@ -415,8 +415,8 @@ namespace ReBuzz.Studio.Tests
             rig.Key(PhysicalKey.ArrowDown);
             Assert.That(view.Selected, Is.EqualTo((0, 0)));
             rig.Key(PhysicalKey.Backspace);
-            Assert.That(layout.PatternAt(0, 0), Is.Null, "⌫ removes the clip from its slot (it stopped the track)");
-            Assert.That(rig.Machine("Bass").Patterns, Does.Contain(line), "its pattern stays");
+            Assert.That(layout.ClipAt(0, 0), Is.Null, "⌫ removes the clip from its slot (it stopped the track)");
+            Assert.That(rig.Machine("Bass").Clips, Does.Contain(line), "its pattern stays");
 
             rig.Key(PhysicalKey.ArrowDown);
             Assert.That(view.Selected, Is.EqualTo((0, 1)));
@@ -425,7 +425,7 @@ namespace ReBuzz.Studio.Tests
             {
                 rig.Key(PhysicalKey.Backspace, RawInputModifiers.Shift);
                 rig.Settle();
-                Assert.That(rig.Machine("Bass").Patterns, Does.Not.Contain(line), "⇧⌫ deletes the pattern");
+                Assert.That(rig.Machine("Bass").Clips, Does.Not.Contain(line), "⇧⌫ deletes the pattern");
             }
             finally
             {
@@ -437,7 +437,7 @@ namespace ReBuzz.Studio.Tests
         public void TheSessionViewTakesTheEditMenusDuplicateDeleteAndRename()
         {
             using var rig = new SessionRig("Bass");
-            var line = rig.Pattern(rig.Machine("Bass"), "Line", SessionRig.Bar);
+            var line = rig.Clip(rig.Machine("Bass"), "Line", SessionRig.Bar);
             var layout = rig.Layout;
             layout.Ensure();
             layout.SetSlot(0, 0, line);
@@ -445,9 +445,9 @@ namespace ReBuzz.Studio.Tests
             rig.Key(PhysicalKey.ArrowDown);
             ReBuzz.Studio.Views.IStudioEditTarget target = view;
             Assert.That(target.Duplicate(), Is.True);
-            Assert.That(layout.PatternAt(0, 1)?.Name, Is.EqualTo("Line 2"));
+            Assert.That(layout.ClipAt(0, 1)?.Name, Is.EqualTo("Line 2"));
             Assert.That(target.Delete(), Is.True);
-            Assert.That(layout.PatternAt(0, 1), Is.Null, "Delete removed the selected (copied) clip");
+            Assert.That(layout.ClipAt(0, 1), Is.Null, "Delete removed the selected (copied) clip");
             Assert.That(target.Delete(), Is.False, "an empty slot: nothing to delete");
         }
 
@@ -643,7 +643,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the pattern editor's block selection
 
         [AvaloniaTest]
-        public void ThePatternEditorsBlockSelectionIsTheAccent()
+        public void TheClipEditorsBlockSelectionIsTheAccent()
         {
             // UX review mac-052: the block selection was a 1.06:1 tint. The editor's view is in the editor machine's
             // assembly (Gear), so its theme is read by name.

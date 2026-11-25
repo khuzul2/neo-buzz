@@ -17,7 +17,7 @@ using ReBuzz.Core;
 
 namespace ReBuzz.Studio.Views.Sequence
 {
-    internal sealed class SequenceSongState : IPatternColours
+    internal sealed class SequenceSongState : IClipColours
     {
         public const string ClassicSection = "SequenceEditor";
         public const string HorizontalSection = "ModernSequenceEditorHorizontal";
@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Views.Sequence
         static SequenceSongState current;
 
         readonly ReBuzzCore core;
-        readonly Dictionary<IPattern, int> colours = new Dictionary<IPattern, int>();
+        readonly Dictionary<IClip, int> colours = new Dictionary<IClip, int>();
         double classicZoom = 2;     // the classic editor's own zoom: kept for Windows
 
         SequenceSongState(ReBuzzCore core)
@@ -37,7 +37,7 @@ namespace ReBuzz.Studio.Views.Sequence
             core.SaveSong += OnSaveSong;
             core.BuzzCommandRaised += OnCommand;
             TimeSignatures.Changed += () => Changed?.Invoke();
-            PatternColours.Source = () => current;
+            ClipColours.Source = () => current;
         }
 
         /// <summary>The state of this engine's song (made once; it follows the song from then on).</summary>
@@ -63,31 +63,31 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The colours a pattern can have: the Default theme's PatternColors (SequenceEditor.xaml), as the Session View's.</summary>
         public static IReadOnlyList<(string Name, uint Argb)> Palette => ReBuzz.Core.Session.SessionColourChoices.Choices;
 
-        public IEnumerable<IPattern> Patterns => colours.Keys;
+        public IEnumerable<IClip> Clips => colours.Keys;
 
-        public bool TryGet(IPattern pattern, out int colorIndex)
+        public bool TryGet(IClip clip, out int colorIndex)
         {
-            if (pattern != null && colours.TryGetValue(pattern, out colorIndex)) return true;
+            if (clip != null && colours.TryGetValue(clip, out colorIndex)) return true;
             colorIndex = -1;
             return false;
         }
 
-        public void Set(IPattern pattern, int colorIndex)
+        public void Set(IClip clip, int colorIndex)
         {
-            if (pattern == null) return;
-            colours[pattern] = colorIndex;
+            if (clip == null) return;
+            colours[clip] = colorIndex;
             Changed?.Invoke();
         }
 
-        public void Add(IPattern pattern, int colorIndex)
+        public void Add(IClip clip, int colorIndex)
         {
-            colours.Add(pattern, colorIndex);
+            colours.Add(clip, colorIndex);
             Changed?.Invoke();
         }
 
-        public bool Remove(IPattern pattern)
+        public bool Remove(IClip clip)
         {
-            bool removed = pattern != null && colours.Remove(pattern);
+            bool removed = clip != null && colours.Remove(clip);
             if (removed) Changed?.Invoke();
             return removed;
         }
@@ -96,12 +96,12 @@ namespace ReBuzz.Studio.Views.Sequence
         /// The colour a pattern's blocks get (PatternElement): its own, else (PatternBoxColors =
         /// Pattern, the default) one by its place among its machine's patterns; -1 for the theme's box colour.
         /// </summary>
-        public int ColourIndexOf(IPattern pattern)
+        public int ColourIndexOf(IClip clip)
         {
             int n = Palette.Count;
-            if (pattern == null || n == 0) return -1;
-            if (colours.TryGetValue(pattern, out int ci) && ci >= 0) return ci % n;
-            int index = pattern.Machine?.Patterns.IndexOf(pattern) ?? -1;
+            if (clip == null || n == 0) return -1;
+            if (colours.TryGetValue(clip, out int ci) && ci >= 0) return ci % n;
+            int index = clip.Machine?.Clips.IndexOf(clip) ?? -1;
             return index >= 0 ? index % n : -1;
         }
 
@@ -158,9 +158,9 @@ namespace ReBuzz.Studio.Views.Sequence
             for (int i = 0; i < count; i++)
             {
                 string machine = br.ReadString();
-                string pattern = br.ReadString();
+                string clip = br.ReadString();
                 int ci = br.ReadInt32();
-                var p = song.Machines.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(x => x.Name == pattern);
+                var p = song.Machines.FirstOrDefault(m => m.Name == machine)?.Clips.FirstOrDefault(x => x.Name == clip);
                 if (p != null) colours[p] = ci;
             }
         }
@@ -172,7 +172,7 @@ namespace ReBuzz.Studio.Views.Sequence
             bw.Write(ClassicVersion);
             bw.Write(classicZoom);
             TimeSignatures.Write(bw);
-            var live = colours.Where(c => c.Key.Machine != null && save.Song.Machines.Contains(c.Key.Machine) && c.Key.Machine.Patterns.Contains(c.Key)).ToList();
+            var live = colours.Where(c => c.Key.Machine != null && save.Song.Machines.Contains(c.Key.Machine) && c.Key.Machine.Clips.Contains(c.Key)).ToList();
             bw.Write(live.Count);
             foreach (var c in live)
             {
