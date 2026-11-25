@@ -290,6 +290,51 @@ namespace ReBuzz.Studio.Tests
             return machine;
         }
 
+        /// <summary>TM1: a Neo Sampler in Tracker mode with nine named song waves and a break of notes, each on its sample; what: 0 roll, 1 picker, 2 mixed selection, 3 Sample lane, 4 zoomed out.</summary>
+        static void SampleRollShot(MainWindow window, string id, int what)
+        {
+            string dir = NeoBuzz.TestSupport.TestTemp.Path("gallery-samples-" + System.Environment.ProcessId);
+            System.IO.Directory.CreateDirectory(dir);
+            string[] names = { "Break · kick", "Break · snare", "Break · snare roll", "Break · hat", "Break · kick and hat", "Break · ride", "Break · crash tail", "Break · ghost snare", "Stab · A minor" };
+            int existing = Core.SongCore.Wavetable.Waves.Count(w => w != null);
+            if (existing == 0)
+                for (int i = 0; i < names.Length; i++)
+                    ReBuzz.Agent.WaveEdits.Load(Core, SamplerPickerTests.Wav(dir, "g" + i, 0.08 + 0.06 * (i % 5), i + 11), -1, names[i], false, out _);
+            string name = "Breaks" + what;
+            Core.SongCore.CreateMachine("Neo Sampler", null, name, null, null, null, -1, 0.3f, 0.3f);
+            var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
+            machine.ParameterGroups[1].Parameters.First(x => x.Name == "Mode").SetValue(0, 2);
+            machine.CreatePattern("Jungle", 16);
+            window.Detail.ShowPage(true, true);
+            PatternView.Edit(machine.PatternsList.First(p => p.Name == "Jungle"));
+            Wait(250);
+            var roll = PatternView.Page.Roll;
+            roll.Poll();
+            var busy = machine.ManagedMachine?.GetType().GetProperty("Busy");
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (busy?.GetValue(machine.ManagedMachine) is true && clock.ElapsedMilliseconds < 5000) Thread.Sleep(20);
+            const int TB = PatternEvent.TimeBase;
+            var line = new ClipNote[]
+            {
+                new(0, TB * 2, 48, 112, 0, 1), new(TB * 2, TB, 48, 100, 0, 4), new(TB * 3, TB, 48, 100, 0, 4), new(TB * 4, TB * 2, 50, 110, 0, 2),
+                new(TB * 6, TB, 48, 90, 0, 8), new(TB * 7, TB, 48, 100, 0, 3), new(TB * 8, TB * 2, 48, 112, 0, 5), new(TB * 10, TB, 53, 100, 0, 4),
+                new(TB * 11, TB, 53, 96, 0, 6), new(TB * 12, TB * 2, 55, 110, 0, 7), new(TB * 14, TB, 48, 100, 0, 9), new(TB * 15, TB, 48, 100, 0, 2),
+            };
+            ReBuzz.Core.Notes.SongNotes.For(Core, machine.PatternsList.First(p => p.Name == "Jungle")).Edit(null, line);
+            Wait(150);
+            roll.Poll();
+            roll.FoldBox.SelectedIndex = 1;
+            Wait(250);
+            string text = "Neo Sampler in Tracker mode, the Jungle pattern: a chip on every note names its sample, and the colour follows the sample.";
+            if (what == 0) { }
+            else if (what == 1) { roll.Roll.SelectOnly(new[] { 1 }); roll.Roll.RequestPicker(); text += " The picker is open on the snare."; }
+            else if (what == 2) { roll.Roll.SelectOnly(new[] { 0, 1, 2, 3 }); roll.Roll.RequestPicker(); text += " The picker over a mixed selection: it applies to four notes with different samples."; }
+            else if (what == 3) { roll.LowerBox.SelectedIndex = roll.LowerBox.Items.Cast<object>().ToList().FindIndex(o => o.ToString() == "Sample"); text += " The Sample lane under the roll."; }
+            else { roll.Roll.TickWidth = 3; text += " Zoomed out: the notes are too short for a chip and keep their colour."; }
+            Wait(300);
+            Shot(window, id, text, "Open a Neo Sampler's pattern in the Piano roll with the sampler's Mode set to Tracker; S opens the picker, the lane box picks the Sample lane.");
+        }
+
         static void Try(string id, System.Action shot)
         {
             // GALLERY_ONLY=059,061: only the shots whose id starts with one of these (a quick look at a new screen; unset in CI).
@@ -1328,6 +1373,33 @@ namespace ReBuzz.Studio.Tests
                         new (int, int)[] { (0, 36), (4, 38), (8, 36), (12, 38), (0, 42), (2, 42), (4, 42), (6, 42), (8, 42), (10, 42), (12, 42), (14, 46), (15, 49) });
                     Shot(window, "061-piano-roll-note-map-drums", "Piano roll on Neo Drums: its voices by name on their keys (kick, snare, hats, toms, cymbals), Fold: playable showing only the keys the drum machine plays.",
                         "Open a Neo Drums pattern in the Piano roll; the fold box ▸ Fold: playable.");
+                    window.Detail.SetPage(false);
+                });
+
+                // A sample per note (TM1): a Neo Sampler in Tracker mode, the roll with a chip on every note, the picker, the Sample lane.
+                Try("062-sample-roll", () =>
+                {
+                    SampleRollShot(window, "062-sample-roll", 0);
+                    window.Detail.SetPage(false);
+                });
+                Try("063-sample-picker", () =>
+                {
+                    SampleRollShot(window, "063-sample-picker", 1);
+                    window.Detail.SetPage(false);
+                });
+                Try("064-sample-picker-mixed", () =>
+                {
+                    SampleRollShot(window, "064-sample-picker-mixed", 2);
+                    window.Detail.SetPage(false);
+                });
+                Try("065-sample-lane", () =>
+                {
+                    SampleRollShot(window, "065-sample-lane", 3);
+                    window.Detail.SetPage(false);
+                });
+                Try("066-sample-roll-zoomed-out", () =>
+                {
+                    SampleRollShot(window, "066-sample-roll-zoomed-out", 4);
                     window.Detail.SetPage(false);
                 });
 
