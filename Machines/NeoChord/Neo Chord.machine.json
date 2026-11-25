@@ -10,7 +10,7 @@
   "notes",
   "chords"
  ],
- "use_for": "Turn single notes into chords before a synth: 20 chord shapes or a chord built in a key and scale, inversions and spreads, a bass note, velocity shaping and a strum with its own timing; sits before an instrument or on a note wire.",
+ "use_for": "Turn single notes into chords before a synth: 20 chord shapes or chords built in a key and scale, voicings, a bass note and a strum; sits before an instrument or on a note wire.",
  "note_in": true,
  "note_out": true,
  "tracks": 0,
