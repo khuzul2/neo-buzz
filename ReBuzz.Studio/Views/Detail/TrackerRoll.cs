@@ -17,6 +17,9 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Avalonia.Platform.Storage;
+using Buzz.MachineInterface;
 using BuzzGUI.Common.Actions.SongActions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Model;
@@ -56,6 +59,12 @@ namespace ReBuzz.Studio.Views.Detail
         ControllerLane ctrl;
         MidiControllers controllers;
         int lowerController = -1;                 // -1: the velocity lane; else the controller the lane under the roll shows
+        // TM1: a machine that plays a sample per note: the picker over the roll, the Sample lane (lowerController SampleLaneId), colour by sample.
+        const int SampleLaneId = -2;
+        readonly SamplePicker picker = new SamplePicker();
+        readonly ToggleButton colourBox;
+        SampleLane sampleLane;
+        NoteSampleContext sampleContext;
         bool settingLower;
         (int, int, long) ghostSeen;
         (int Count, long Sum) ctrlSeen;
@@ -125,6 +134,11 @@ namespace ReBuzz.Studio.Views.Detail
             tools.Children.Add(stepBox);
             tools.Children.Add(ghostBox);
             tools.Children.Add(lowerBox);
+            colourBox = StudioButtons.KeepFocus(new ToggleButton { Content = "Colour: by sample", IsChecked = true, IsVisible = false, Margin = new Thickness(0, 0, 6, 0) });
+            ToolTip.SetTip(colourBox, "Colour every note by its sample, so a re-sequenced break reads at a glance");
+            AutomationProperties.SetName(colourBox, "Colour by sample");
+            colourBox.IsCheckedChanged += (s, e) => { if (sampleContext != null) sampleContext.ColourBySample = colourBox.IsChecked == true; roll?.InvalidateVisual(); roll?.Focus(); };
+            tools.Children.Add(colourBox);
             SetDock(tools, Dock.Top);
             Children.Add(tools);
 
@@ -149,7 +163,15 @@ namespace ReBuzz.Studio.Views.Detail
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16), IsVisible = false,
             };
             // The grid under the ruler, the velocity lane under it; the playhead's line over the viewer.
-            body = new Panel { Children = { scroll, playhead, message } };
+            body = new Panel { Children = { scroll, playhead, message, picker } };
+            picker.Closed += () => roll?.Focus();
+            picker.LoadSample = () => _ = LoadSampleAsync();
+            picker.OpenSampler = OpenSampler;
+            // A press anywhere but in the picker closes it (it is a menu).
+            body.AddHandler(PointerPressedEvent, (s, e) =>
+            {
+                if (picker.IsVisible && !IsInside(e.Source as Visual, picker)) picker.Close();
+            }, RoutingStrategies.Tunnel);
             rollGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
             rollGrid.RowDefinitions.Add(new RowDefinition(GridLength.Star));
             rollGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
@@ -245,6 +267,7 @@ namespace ReBuzz.Studio.Views.Detail
             scroll.IsVisible = true;
             rowTime = source.RowTime;
             roll = new PianoRoll(core, source, null) { Grid = rowTime, AltBypassesGrid = true, RowHeight = 13 };
+            SetUpSamples(p);
             AutomationProperties.SetName(roll, songOnly ? "Arrangement piano roll notes" : "Piano roll");
             roll.Changed += UpdateSummary;
             roll.MapChanged += OnMapChanged;
@@ -332,6 +355,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (roll == null) return;
             roll.Scale = keyBox.SelectedIndex <= 0 || scaleBox.SelectedIndex < 0 ? null : new NoteScale(keyBox.SelectedIndex - 1, Scale.All[scaleBox.SelectedIndex]);
             roll.Fold = (FoldMode)Math.Max(0, foldBox.SelectedIndex);
+            FitRows();
             roll.InvalidateVisual();
             scroll.Offset = new Vector(scroll.Offset.X, Math.Max(0, Math.Min(scroll.Offset.Y, Math.Max(0, roll.Rows == null ? 128 * roll.RowHeight : roll.Rows.Count * roll.RowHeight))));
             UpdateViewport();
@@ -371,6 +395,7 @@ namespace ReBuzz.Studio.Views.Detail
             settingLower = true;
             lowerBox.Items.Clear();
             lowerBox.Items.Add("Velocity");
+            if (sampleContext != null) lowerBox.Items.Add("Sample");
             if (controllers != null)
             {
                 var ids = controllers.Present().Union(ControllerPoint.Usual).OrderBy(c => c == ControllerPoint.PitchBend ? 999 : c).ToList();
@@ -379,18 +404,23 @@ namespace ReBuzz.Studio.Views.Detail
             }
             else
                 lowerIds = new System.Collections.Generic.List<int>();
-            int at = lowerController < 0 ? 0 : lowerIds.IndexOf(lowerController) + 1;
+            int first = sampleContext != null ? 2 : 1;
+            int at = lowerController == SampleLaneId ? (sampleContext != null ? 1 : 0) : lowerController < 0 ? 0 : lowerIds.IndexOf(lowerController) + first;
+            if (lowerController >= 0 && !lowerIds.Contains(lowerController)) at = 0;
             lowerBox.SelectedIndex = at > 0 ? at : 0;
             if (at <= 0) lowerController = -1;
             settingLower = false;
         }
 
         System.Collections.Generic.List<int> lowerIds = new System.Collections.Generic.List<int>();
+        bool lowerChosen;
 
         void ChooseLower()
         {
             int i = lowerBox.SelectedIndex;
-            lowerController = i <= 0 || i - 1 >= lowerIds.Count ? -1 : lowerIds[i - 1];
+            int first = sampleContext != null ? 2 : 1;
+            lowerChosen = true;
+            lowerController = i == 1 && sampleContext != null ? SampleLaneId : i < first || i - first >= lowerIds.Count ? -1 : lowerIds[i - first];
             ShowLower();
         }
 
@@ -405,7 +435,8 @@ namespace ReBuzz.Studio.Views.Detail
                 rollGrid.Children.Add(ctrl);
                 ctrl.Edited += OnControllerEdited;
             }
-            if (lane != null) lane.IsVisible = ctrl == null;
+            if (lane != null) lane.IsVisible = ctrl == null && lowerController != SampleLaneId;
+            if (sampleLane != null) sampleLane.IsVisible = lowerController == SampleLaneId && sampleContext != null;
             ctrlSeen = ControllerSignature();
         }
 
@@ -427,7 +458,8 @@ namespace ReBuzz.Studio.Views.Detail
 
         void DropRoll()
         {
-            if (roll != null) { roll.Changed -= UpdateSummary; roll.MapChanged -= OnMapChanged; }
+            picker.Close();
+            if (roll != null) { roll.Changed -= UpdateSummary; roll.MapChanged -= OnMapChanged; roll.PickerRequested -= OnPickerRequested; }
             if (source != null) source.Changed -= OnSourceEdited;
             ClearFurniture();
             roll = null;
@@ -466,6 +498,7 @@ namespace ReBuzz.Studio.Views.Detail
             UpdateViewport();
             ruler?.InvalidateVisual();
             lane?.InvalidateVisual();
+            sampleLane?.InvalidateVisual();
             ctrl?.InvalidateVisual();
             PlaceHead();
             axis?.Raise();
@@ -474,10 +507,12 @@ namespace ReBuzz.Studio.Views.Detail
         void UpdateViewport()
         {
             if (roll == null) return;
+            FitRows();
             roll.Viewport = new Rect(scroll.Offset.X, scroll.Offset.Y, scroll.Viewport.Width, scroll.Viewport.Height);
             roll.InvalidateVisual();
             if (ruler != null) { ruler.OffsetX = scroll.Offset.X; ruler.InvalidateVisual(); }
             if (lane != null) lane.OffsetX = scroll.Offset.X;
+            if (sampleLane != null) sampleLane.OffsetX = scroll.Offset.X;
             if (ctrl != null) ctrl.OffsetX = scroll.Offset.X;
             PlaceHead();
             axis?.Raise();
@@ -492,6 +527,20 @@ namespace ReBuzz.Studio.Views.Detail
             {
                 Show(pattern);
                 return;
+            }
+            // TM1: the machine's Mode changed (a sample per note, or not): the roll is made again for the notes' other store.
+            if (MachinePlaysPerNote() != (sampleContext != null))
+            {
+                var again = pattern;
+                pattern = null;
+                Show(again);
+                return;
+            }
+            if (sampleContext != null && sampleContext.Refresh())
+            {
+                roll.InvalidateVisual();
+                sampleLane?.InvalidateVisual();
+                picker.Reload();
             }
             var now = Signature();
             if (now != seen)
@@ -518,7 +567,7 @@ namespace ReBuzz.Studio.Views.Detail
         {
             var notes = source.Notes();
             long sum = 0;
-            foreach (var n in notes) sum = sum * 31 + n.Time * 7 + n.Duration * 3 + n.Note * 131 + n.Velocity;
+            foreach (var n in notes) sum = sum * 31 + n.Time * 7 + n.Duration * 3 + n.Note * 131 + n.Velocity + n.Sample * 17 + n.Offset * 29 + n.Tune * 37;
             return (notes.Count, sum);
         }
 
@@ -530,11 +579,123 @@ namespace ReBuzz.Studio.Views.Detail
                 : roll.Source.WhyNotEditable is string waiting ? waiting
                 : count == 0 ? "No notes yet: double-click to draw one."
                 : sel == 0 ? $"{count} note{(count == 1 ? "" : "s")}"
-                : $"{sel} of {count} selected" + (sel == 1 ? $" · {ClipNotes.Name(roll.Notes[roll.Selection.First()].Note)}, velocity {roll.Notes[roll.Selection.First()].Velocity}" : "");
+                : $"{sel} of {count} selected" + (sel == 1 ? $" · {ClipNotes.Name(roll.Notes[roll.Selection.First()].Note)}, velocity {roll.Notes[roll.Selection.First()].Velocity}" + SampleSummary(roll.Notes[roll.Selection.First()]) : "");
             seen = Signature();
             lane?.InvalidateVisual();
+            sampleLane?.InvalidateVisual();
             if (stepBox.IsChecked == true) roll.InvalidateVisual();
         }
+
+        // ---- TM1: a sample per note
+
+        bool MachinePlaysPerNote() => pattern?.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } };
+
+        bool PerNoteNow() => pattern?.Machine is MachineCore { ManagedMachine: INoteSampleProvider { PlaysSamplePerNote: true } } && source is TrackerColumnNotes { PerNoteSamples: true };
+
+        /// <summary>When the machine plays a sample per note and the notes carry one: the roll gets the samples (chips, picker, colour), the Sample lane is offered.</summary>
+        void SetUpSamples(IPattern p)
+        {
+            picker.Close();
+            sampleContext = null;
+            colourBox.IsVisible = false;
+            if (PerNoteNow() && p.Machine is MachineCore { ManagedMachine: INoteSampleProvider provider })
+            {
+                sampleContext = new NoteSampleContext(provider) { ColourBySample = colourBox.IsChecked == true };
+                roll.Samples = sampleContext;
+                roll.RowHeight = 30;
+                roll.PickerRequested += OnPickerRequested;
+                colourBox.IsVisible = true;
+                if (!lowerChosen) lowerController = SampleLaneId;      // the lane to look at when notes name their samples
+            }
+            else if (lowerController == SampleLaneId) lowerController = -1;
+        }
+
+        string SampleSummary(ClipNote n) =>
+            sampleContext == null ? "" : n.Sample > 0 ? $", sample {SampleColours.Label(n.Sample)} {sampleContext.NameOf(n.Sample)}" : ", sample: key map";
+
+        /// <summary>The picker, over the roll at the chip (or the lane's chip) it was asked from.</summary>
+        void OnPickerRequested(Control from, Rect anchor)
+        {
+            if (sampleContext == null) return;
+            sampleContext.Refresh();
+            var at = from.TranslatePoint(anchor.BottomLeft, body) ?? new Point(40, 40);
+            double w = SamplePicker.PickerWidth;
+            double maxList = Math.Max(120, Math.Min(280, body.Bounds.Height - 190));
+            picker.MaxListHeight = maxList;
+            picker.Open(roll);
+            picker.Measure(new Size(w, double.PositiveInfinity));
+            double h = picker.DesiredSize.Height;
+            double x = Math.Clamp(at.X, 4, Math.Max(4, body.Bounds.Width - w - 4));
+            double y = at.Y + 4;
+            if (y + h > body.Bounds.Height - 4)
+            {
+                // No room below the chip: above it, else as low as it fits.
+                var above = from.TranslatePoint(anchor.TopLeft, body) ?? at;
+                y = above.Y - h - 4 >= 4 ? above.Y - h - 4 : Math.Max(4, body.Bounds.Height - h - 4);
+            }
+            picker.Margin = new Thickness(x, Math.Max(4, y), 0, 0);
+        }
+
+        /// <summary>The picker for the selected notes, as S asks (tests).</summary>
+        public SamplePicker Picker => picker;
+
+        /// <summary>The Sample lane under the roll, when it is the one shown (tests).</summary>
+        internal SampleLane Samples => sampleLane;
+
+        /// <summary>The samples the notes can name, when the machine plays one per note (tests); null otherwise.</summary>
+        internal NoteSampleContext SampleContext => sampleContext;
+
+        public ToggleButton ColourBox => colourBox;
+
+        /// <summary>Row height to the room there is: more of the picture when a fold leaves few rows (as the canvas draws it), never under what a chip needs.</summary>
+        void FitRows()
+        {
+            if (roll == null || !roll.PerNoteSamples) return;
+            double h = scroll.Viewport.Height;
+            int n = roll.Rows?.Count ?? 0;
+            double want = n > 0 && h > 0 ? Math.Clamp(Math.Floor(h / n), 30, 56) : 30;
+            if (Math.Abs(want - roll.RowHeight) < 0.5) return;
+            roll.RowHeight = want;
+            roll.InvalidateMeasure();
+        }
+
+        static bool IsInside(Visual v, Visual ancestor)
+        {
+            for (; v != null; v = v.GetVisualParent())
+                if (ReferenceEquals(v, ancestor)) return true;
+            return false;
+        }
+
+        void OpenSampler()
+        {
+            if (pattern?.Machine is not IMachine machine) return;
+            ReBuzz.Studio.Views.StudioSelection.For(core).SelectMachine(machine, this);
+            ReBuzz.Studio.Views.Mixer.MixerView.DeviceOpener?.Invoke(machine);
+        }
+
+        /// <summary>Loads a sample file into the song's first empty wave slot (one undo step) for the picker: its row is there when it is done.</summary>
+        async System.Threading.Tasks.Task LoadSampleAsync()
+        {
+            System.Collections.Generic.IReadOnlyList<string> files = LoadChooser?.Invoke();
+            if (files == null && LoadChooser == null && TopLevel.GetTopLevel(this)?.StorageProvider is { } storage)
+            {
+                var picked = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+                {
+                    Title = "Load a sample",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[] { new Avalonia.Platform.Storage.FilePickerFileType("Audio files") { Patterns = ReBuzz.Agent.WaveEdits.Extensions.Select(e => "*" + e).ToList() } },
+                });
+                files = picked.Select(f => f.TryGetLocalPath()).Where(f => f != null).ToList();
+            }
+            if (files == null || files.Count == 0) return;
+            string refusal = ReBuzz.Agent.WaveEdits.Load(core, files[0], -1, null, false, out _);
+            summary.Text = refusal ?? $"Loaded {System.IO.Path.GetFileName(files[0])} as a new sample.";
+            sampleContext?.Refresh();
+            picker.Reload();
+        }
+
+        /// <summary>Tests choose the file the picker's Load sample… loads (null: the system's file dialog).</summary>
+        internal Func<System.Collections.Generic.IReadOnlyList<string>> LoadChooser { get; set; }
 
         // The Edit commands, when the keyboard is in the roll.
         internal bool Delete() { if (envelopes?.OwnsFocus == true) return envelopes.Delete(); if (roll == null) return false; roll.DeleteSelected(); return true; }
@@ -561,6 +722,12 @@ namespace ReBuzz.Studio.Views.Detail
             Grid.SetRow(lane, 2);
             rollGrid.Children.Add(ruler);
             rollGrid.Children.Add(lane);
+            if (sampleContext != null)
+            {
+                sampleLane = new SampleLane(roll) { IsVisible = false, OffsetX = scroll.Offset.X };
+                Grid.SetRow(sampleLane, 2);
+                rollGrid.Children.Add(sampleLane);
+            }
             source.Changed += OnSourceEdited;
             shownPlay = int.MinValue;
             FillLower();
@@ -571,6 +738,7 @@ namespace ReBuzz.Studio.Views.Detail
         {
             if (ruler != null) { ruler.LoopSet -= SetLoop; rollGrid.Children.Remove(ruler); }
             if (lane != null) rollGrid.Children.Remove(lane);
+            if (sampleLane != null) { rollGrid.Children.Remove(sampleLane); sampleLane = null; }
             if (ctrl != null) { ctrl.Edited -= OnControllerEdited; rollGrid.Children.Remove(ctrl); }
             ruler = null;
             lane = null;
