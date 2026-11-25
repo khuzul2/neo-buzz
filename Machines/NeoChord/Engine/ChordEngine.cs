@@ -349,8 +349,10 @@ namespace NeoBuzz.Chord
         public static double Curve(double pos, double curve)
         {
             if (curve == 0) return pos;
-            double g = Math.Pow(2, 2 * Math.Abs(curve));
-            return curve > 0 ? 1 - Math.Pow(1 - pos, g) : Math.Pow(pos, g);
+            // A blend of the straight line and the fourth power (no libm: the audio paths use plain arithmetic only): the share is x at 0 and x^4 at ±100 %.
+            double a = Math.Abs(curve), x = curve > 0 ? 1 - pos : pos, x2 = x * x;
+            double share = (1 - a) * x + a * x2 * x2;
+            return curve > 0 ? 1 - share : share;
         }
 
         void ReadSettings(out ChordSettings s, out int strum, out double strumMs, out double curve, out double humMs, out double humVel, out int seed, out double top, out double bass, out double tilt)

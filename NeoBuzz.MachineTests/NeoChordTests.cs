@@ -327,8 +327,9 @@ namespace NeoBuzz.MachineTests
                 for (int k = 0; k < 5; k++)
                 {
                     double pos = k / 4.0;
-                    double share = curve == 0 ? pos : curve > 0 ? 1 - Math.Pow(1 - pos, 4) : Math.Pow(pos, 4);       // 2^(2 * |curve|) = 4 at ±100 %
-                    if (Math.Abs(curve) == 40) share = 1 - Math.Pow(1 - pos, Math.Pow(2, 2 * 0.4));
+                    double a = Math.Abs(curve) / 100, x = curve > 0 ? 1 - pos : pos;      // the straight line blended with the fourth power: x^4 at ±100 %
+                    double mix = (1 - a) * x + a * x * x * x * x;
+                    double share = curve == 0 ? pos : curve > 0 ? 1 - mix : mix;
                     Assert.That(ons[k].T, Is.EqualTo(300 + (long)Math.Round(share * 12000)), $"curve {curve}, voice {k}");
                 }
                 if (curve > 0) { var gaps = Gaps(ons); Assert.That(gaps, Is.Ordered.Descending, "accelerating: the gaps shrink"); }
