@@ -391,15 +391,128 @@ namespace NeoBuzz.MachineTests
             Assert.That(relClicks, Is.EqualTo(0), "min-release ADSR gain trace has 0 clicks");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void RetriggerFadesThroughZeroBeforePhaseResetWithZeroClicks(bool raw)
+        [TestCase(false, (int)ChipEnvMode.SawDown)]
+        [TestCase(true, (int)ChipEnvMode.SawDown)]
+        [TestCase(false, (int)ChipEnvMode.Adsr)]
+        [TestCase(true, (int)ChipEnvMode.Adsr)]
+        public void SilentNoteOnHasNoSample24Discontinuity(bool raw, int envModeIndex)
         {
-            // Retriggering a sounding mono voice must fade smoothly through exact 0 (2 ms C1 steal fade)
-            // before resetting oscillator phase and starting the next note — zero gain-trace clicks.
+            // Verify ChipPulseOsc.Reset() pre-fills BlepBuffer and rawDelay with +1f so a silent
+            // note-on has zero step click at sample BlepTable.Z (24) in the rendered audio waveform.
+            var mode = (ChipEnvMode)envModeIndex;
             var (e, _) = Make(v =>
             {
                 v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.Raw, raw ? 1 : 0);
+                v.Set(P.P1Duty, 2); // 50% duty; at C3 (130.8 Hz) first falling edge is at ~183 smp (> 64)
+                v.Set(P.EnvMode, envModeIndex);
+                Set(v, P.EnvAttack, 0.002);
+                v.Set(P.EnvSustain, 15);
+                Set(v, P.EnvPeriod, 0.12);
+                v.Set(P.Spread, 0);
+                Set(v, P.Volume, 0.0);
+            });
+
+            // Exercise both initial silent note-on and a second silent note-on after full silence (ChipPulseOsc.Reset).
+            for (int pass = 0; pass < 2; pass++)
+            {
+                if (pass == 1)
+                {
+                    e.AllNotesOff(true);
+                    RenderStereo(e, 4800); // decay to exact silence so next NoteOn calls Pulse.Reset()
+                }
+                e.NoteOn(1048, 48, 1f, 0); // C3
+                var (l, _) = RenderStereo(e, 128);
+
+                // Across samples 1..64 (straddling BlepTable.Z = 24), audio must ramp smoothly on the +1 plateau
+                // with no 1-sample discontinuity (before pre-fill, sample 24 jumped ~0.04 on SawDown).
+                double maxD1 = 0, maxD2 = 0;
+                for (int i = 1; i <= 64; i++)
+                {
+                    double d1 = Math.Abs(l[i] - l[i - 1]);
+                    if (d1 > maxD1) maxD1 = d1;
+                    if (i >= 2)
+                    {
+                        double d2 = Math.Abs(l[i] - 2.0 * l[i - 1] + l[i - 2]);
+                        if (d2 > maxD2) maxD2 = d2;
+                    }
+                }
+                // ChannelScale (0.20) * pan (0.7071) = 0.1414 full-scale plateau; slewed d1 <= 0.003, d2 <= 0.001.
+                // Check l[16] > 0 (before BlepTable.Z = 24; without pre-fill, l[0..23] were all 0f).
+                Assert.That(l[16], Is.GreaterThan(0f), $"pass {pass} ({mode}, raw={raw}): pre-filled oscillator produces signal before sample 24");
+                Assert.That(maxD1, Is.LessThan(0.004), $"pass {pass} ({mode}, raw={raw}): no step jump in samples 1..64 (maxD1={maxD1:F6})");
+                Assert.That(maxD2, Is.LessThan(0.0015), $"pass {pass} ({mode}, raw={raw}): no sample-24 corner in samples 1..64 (maxD2={maxD2:F6})");
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void MonoRetriggerKeepsPhaseAndContinuousGainWithoutClicks(bool raw)
+        {
+            // Same-channel Mono retrigger while audible must NOT drop to zero via StealFade and must NOT
+            // reset oscillator phase — envelope and velocity glide smoothly with 0 gain-trace clicks.
+            foreach (var envMode in new[] { ChipEnvMode.Adsr, ChipEnvMode.SawDown })
+            {
+                var (e, _) = Make(v =>
+                {
+                    v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                    v.Set(P.Raw, raw ? 1 : 0);
+                    v.Set(P.EnvMode, (int)envMode);
+                    Set(v, P.EnvAttack, 0.12);
+                    v.Set(P.EnvSustain, 14);
+                    Set(v, P.EnvRelease, 0.30);
+                    Set(v, P.EnvPeriod, 0.20);
+                    Set(v, P.VelDepth, 0.8);
+                });
+
+                int total = 16384;
+                var gainTrace = new float[total];
+                var blockTrace = new[] { new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock] };
+                e.GainTrace = blockTrace;
+                var bl = new float[ChipEngine.MaxBlock];
+                var br = new float[ChipEngine.MaxBlock];
+
+                e.NoteOn(1060, 60, 0.6f, 0);
+                int offAt = 4096;
+                int retrigAt = 5120; // 21.3 ms into release — still clearly audible (like MelodyLine gaps)
+                double phaseBefore = 0.0, phaseAfter = 0.0;
+
+                for (int pos = 0; pos < total; pos += ChipEngine.MaxBlock)
+                {
+                    if (pos == offAt) e.NoteOff(1060, 60, 0);
+                    if (pos == retrigAt)
+                    {
+                        phaseBefore = e.ChannelPulsePhase(0);
+                        e.NoteOn(1064, 64, 1.0f, 0);
+                        phaseAfter = e.ChannelPulsePhase(0);
+                    }
+                    int n = Math.Min(ChipEngine.MaxBlock, total - pos);
+                    e.Process(bl, br, n);
+                    Array.Copy(blockTrace[0], 0, gainTrace, pos, n);
+                }
+
+                Assert.That(phaseBefore, Is.GreaterThan(0.0), $"{envMode} (raw={raw}): voice was running before retrigger");
+                Assert.That(phaseAfter, Is.EqualTo(phaseBefore), $"{envMode} (raw={raw}): non-silent Mono retrigger must NOT reset pulse phase");
+
+                float minAroundRetrig = float.MaxValue;
+                for (int i = retrigAt; i < retrigAt + 512; i++)
+                    if (gainTrace[i] < minAroundRetrig) minAroundRetrig = gainTrace[i];
+                Assert.That(minAroundRetrig, Is.GreaterThan(0.10f), $"{envMode} (raw={raw}): non-silent Mono retrigger must NOT drop to zero via StealFade");
+
+                int gainClicks = NeoChipPack.DetectGainClicks(gainTrace, Measure.Rate);
+                Assert.That(gainClicks, Is.EqualTo(0), $"{envMode} (raw={raw}): continuous Mono retrigger gain trace has 0 clicks");
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void PolyVoiceStealFadesThroughZeroBeforePhaseResetWithZeroClicks(bool raw)
+        {
+            // Genuine 4th-note Poly voice steal must fade the stolen channel smoothly through exact 0
+            // (2 ms C1 steal fade) before resetting oscillator phase and starting the stolen note.
+            var (e, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Poly);
                 v.Set(P.Raw, raw ? 1 : 0);
                 v.Set(P.EnvMode, (int)ChipEnvMode.SawDown);
                 Set(v, P.EnvPeriod, 0.20);
@@ -411,27 +524,30 @@ namespace NeoBuzz.MachineTests
             var bl = new float[ChipEngine.MaxBlock];
             var br = new float[ChipEngine.MaxBlock];
 
+            // Fill all 3 pulse channels with a chord.
             e.NoteOn(1060, 60, 1f, 0);
-            int retrigAt = 2048;
+            e.NoteOn(1064, 64, 1f, 0);
+            e.NoteOn(1067, 67, 1f, 0);
+            int stealAt = 2048;
             for (int pos = 0; pos < total; pos += ChipEngine.MaxBlock)
             {
-                if (pos == retrigAt) e.NoteOn(1064, 64, 1f, 0);
+                if (pos == stealAt) e.NoteOn(1072, 72, 1f, 0); // 4th note steals oldest channel 0
                 int n = Math.Min(ChipEngine.MaxBlock, total - pos);
                 e.Process(bl, br, n);
                 Array.Copy(blockTrace[0], 0, gainTrace, pos, n);
             }
 
-            // Confirm the voice reaches exact 0 during the 2 ms steal fade before rising for the new note.
+            // Confirm stolen channel 0 reaches exact 0 during the 2 ms steal fade before rising for the new note.
             int zeroAt = -1;
-            for (int i = retrigAt; i < retrigAt + 256; i++)
+            for (int i = stealAt; i < stealAt + 256; i++)
             {
                 if (gainTrace[i] == 0f) { zeroAt = i; break; }
             }
-            Assert.That(zeroAt, Is.GreaterThanOrEqualTo(retrigAt + 90), "steal fade takes ~2 ms before reaching exact 0");
-            Assert.That(gainTrace[zeroAt + 128], Is.GreaterThan(0.5f), "new note rises after reaching silence");
+            Assert.That(zeroAt, Is.GreaterThanOrEqualTo(stealAt + 90), "Poly steal fade takes ~2 ms before reaching exact 0");
+            Assert.That(gainTrace[zeroAt + 128], Is.GreaterThan(0.5f), "stolen channel rises cleanly after reaching silence");
 
             int gainClicks = NeoChipPack.DetectGainClicks(gainTrace, Measure.Rate);
-            Assert.That(gainClicks, Is.EqualTo(0), "retrigger gain trace has 0 clicks");
+            Assert.That(gainClicks, Is.EqualTo(0), "Poly voice steal gain trace has 0 clicks");
         }
 
         // ------------------------------------------------------------------ 5. Timing gate (Arp, ADSR, HW Env)

@@ -34,7 +34,7 @@ Neo Chip is a clean-room four-channel sound-chip synth built on `NeoBuzz.Dsp` (`
     - **Poly:** persistent round-robin cursor across Pulse 1–3; prefers free, then oldest released, else steals the **oldest** held channel (monotonic `noteSeq++`) with a 2 ms C¹ cubic-Hermite (`3t² − 2t³`) `StealFade` to exact silence before starting the stolen note.
     - **Mono:** Pulse 1 with a 32-entry last-note priority stack.
     - **Unison:** all three pulse channels stacked with a last-note stack, detuned by `-Detune`, `0`, `+Detune` cents.
-  - **Phase reset & note edges:** pulse oscillator phase resets **only** when the voice was silent (`!Env.IsAudible`, including after a completed `StealFade` at exact zero). Note-on always fades in over ≥ 1 ms; hard note-off (`AllNotesOff(true)`) and minimum-release note-off always fade out over ≥ 2 ms.
+  - **Phase reset, pre-fill & note edges:** `ChipPulseOsc.Reset()` pre-fills `BlepBuffer` and `rawDelay` with `+1f` so a silent note-on has no step click at sample `BlepTable.Z` (24). Pulse oscillator phase resets **only** when the voice was silent (`!Env.IsAudible`, including after a Poly `StealFade` completes at exact zero). Same-channel non-silent retriggers (Mono, Unison, Noise, Tracker tracks) keep continuous oscillator phase, glide envelope smoothly from live `y2` (ADSR Attack starts from `level = y2`), and smooth velocity transitions via a 1.5 ms `Smoother`. Note-on always fades in over ≥ 1 ms; hard note-off (`AllNotesOff(true)`) and minimum-release note-off always fade out over ≥ 2 ms.
   - **Velocity depth (`0–100 %`):** linear amplitude scaling `(1 - depth) + depth * (vel / 127)`.
   - Real note-off with release, CC64 sustain pedal, and ±2 st pitch bend.
 

@@ -60,9 +60,12 @@ namespace NeoBuzz.Chip
         readonly float[] rawDelay = new float[DelayLen];
         int rawPos;
 
+        public double Phase => phase;
+
         public ChipPulseOsc()
         {
             blep.Init();
+            Reset();
         }
 
         public void Reset()
@@ -70,7 +73,8 @@ namespace NeoBuzz.Chip
             phase = 0.0;
             high = true;
             blep.Reset();
-            Array.Clear(rawDelay, 0, DelayLen);
+            for (int k = 0; k < BlepTable.Z; k++) blep.Next(1f);
+            Array.Fill(rawDelay, 1f);
             rawPos = 0;
         }
 
@@ -216,7 +220,7 @@ namespace NeoBuzz.Chip
             hardFading = false;
         }
 
-        public void NoteOn(ChipEnvMode mode)
+        public void NoteOn(ChipEnvMode mode, bool fromSilence = true)
         {
             hwMode = mode;
             hardFading = false;
@@ -224,8 +228,9 @@ namespace NeoBuzz.Chip
             if (mode == ChipEnvMode.Adsr)
             {
                 state = EnvState.Attack;
-                level = 0.0;
-                currentStep = 0;
+                level = fromSilence ? 0.0 : DspMath.Clamp(y2, 0.0, 1.0);
+                currentStep = fromSilence ? 0 : Math.Clamp((int)Math.Floor(level * 15.0 + 1e-9), 0, 15);
+                lastTargetStep = currentStep;
             }
             else
             {
@@ -543,6 +548,7 @@ namespace NeoBuzz.Chip
             public SmoothRamp PanL;
             public SmoothRamp PanR;
             public Smoother DetuneSmooth;
+            public Smoother VelSmooth;
 
             public ChannelState(bool isNoise, uint seed)
             {
@@ -557,6 +563,7 @@ namespace NeoBuzz.Chip
             {
                 BaseNote = note;
                 Velocity = vel;
+                VelSmooth.Target = vel;
                 Pending = false;
                 Steal.Cancel();
                 ArpSamples = 0;
@@ -569,13 +576,14 @@ namespace NeoBuzz.Chip
                 {
                     if (!IsNoise) Pulse.Reset();
                     Env.ResetGainToZero();
+                    VelSmooth.Reset(vel);
                 }
-                Env.NoteOn(envMode);
+                Env.NoteOn(envMode, fromSilence: wasSilent);
             }
 
             public void Trigger(int note, float vel, ChipEnvMode envMode, float sampleRate, bool stealFade)
             {
-                if (stealFade && Env.IsAudible)
+                if ((stealFade || Steal.Fading) && Env.IsAudible)
                 {
                     Pending = true;
                     PendingNote = note;
@@ -735,6 +743,7 @@ namespace NeoBuzz.Chip
         internal int ChannelOwnerKey(int ch) => channels[ch].OwnerKey;
         internal int ChannelEnvStep(int ch) => channels[ch].Env.CurrentStep;
         internal int ChannelArpOffset(int ch) => channels[ch].LastArpOffset;
+        internal double ChannelPulsePhase(int ch) => ch >= 0 && ch < PulseCount ? channels[ch].Pulse.Phase : 0.0;
 
         public void SetSampleRate(float sr)
         {
@@ -754,6 +763,8 @@ namespace NeoBuzz.Chip
                 channels[c].PanL.Setup(0.010, sampleRate);
                 channels[c].PanR.Setup(0.010, sampleRate);
                 channels[c].DetuneSmooth.Setup(0.010, sampleRate);
+                channels[c].VelSmooth.Setup(0.0015, sampleRate);
+                channels[c].VelSmooth.Reset(channels[c].Velocity);
             }
             initialized = false;
         }
@@ -773,7 +784,7 @@ namespace NeoBuzz.Chip
                 ch.Held = true;
                 ch.Sustained = false;
                 ch.NoteSeq = ++noteSeq;
-                ch.Trigger(note, velocity, CurrentEnvMode, (float)sampleRate, stealFade: ch.IsSounding);
+                ch.Trigger(note, velocity, CurrentEnvMode, (float)sampleRate, stealFade: false);
                 return;
             }
             if (key == 3)
@@ -783,7 +794,7 @@ namespace NeoBuzz.Chip
                 ch.Held = true;
                 ch.Sustained = false;
                 ch.NoteSeq = ++noteSeq;
-                ch.Trigger(note, velocity, CurrentEnvMode, (float)sampleRate, stealFade: ch.IsSounding);
+                ch.Trigger(note, velocity, CurrentEnvMode, (float)sampleRate, stealFade: false);
                 return;
             }
             // Fallback for callers invoking INoteSink with MIDI keys (>= 1000): channel 0.
@@ -817,7 +828,7 @@ namespace NeoBuzz.Chip
                 nch.Held = true;
                 nch.Sustained = false;
                 nch.NoteSeq = ++noteSeq;
-                nch.Trigger(note, velocity, CurrentEnvMode, (float)sampleRate, stealFade: nch.IsSounding);
+                nch.Trigger(note, velocity, CurrentEnvMode, (float)sampleRate, stealFade: false);
                 return;
             }
 
@@ -843,7 +854,7 @@ namespace NeoBuzz.Chip
                 ch.Held = true;
                 ch.Sustained = false;
                 ch.NoteSeq = ++noteSeq;
-                ch.Trigger(note, velocity, envMode, (float)sampleRate, stealFade: stolen || ch.IsSounding);
+                ch.Trigger(note, velocity, envMode, (float)sampleRate, stealFade: stolen);
                 rrCursor = (pick + 1) % PulseCount;
             }
             else if (vm == ChipVoiceMode.Mono)
@@ -854,7 +865,7 @@ namespace NeoBuzz.Chip
                 ch.Held = true;
                 ch.Sustained = false;
                 ch.NoteSeq = ++noteSeq;
-                ch.Trigger(note, velocity, envMode, (float)sampleRate, stealFade: ch.IsSounding);
+                ch.Trigger(note, velocity, envMode, (float)sampleRate, stealFade: false);
             }
             else // Unison
             {
@@ -867,7 +878,7 @@ namespace NeoBuzz.Chip
                     ch.Held = true;
                     ch.Sustained = false;
                     ch.NoteSeq = seq;
-                    ch.Trigger(note, velocity, envMode, (float)sampleRate, stealFade: ch.IsSounding);
+                    ch.Trigger(note, velocity, envMode, (float)sampleRate, stealFade: false);
                 }
             }
         }
@@ -887,7 +898,7 @@ namespace NeoBuzz.Chip
                         nch.Held = true;
                         nch.Sustained = false;
                         nch.NoteSeq = ++noteSeq;
-                        nch.Trigger(top.Note, top.Vel, CurrentEnvMode, (float)sampleRate, stealFade: true);
+                        nch.Trigger(top.Note, top.Vel, CurrentEnvMode, (float)sampleRate, stealFade: false);
                     }
                     else if (noiseStack.Count == 0 && nch.Held)
                     {
@@ -931,7 +942,7 @@ namespace NeoBuzz.Chip
                         ch.Held = true;
                         ch.Sustained = false;
                         ch.NoteSeq = seq;
-                        ch.Trigger(top.Note, top.Vel, envMode, (float)sampleRate, stealFade: ch.IsSounding);
+                        ch.Trigger(top.Note, top.Vel, envMode, (float)sampleRate, stealFade: false);
                     }
                 }
                 else if (pulseStack.Count > 0)
@@ -1262,6 +1273,7 @@ namespace NeoBuzz.Chip
                 {
                     channels[c].DutySmooth.Advance(n);
                     channels[c].DetuneSmooth.Advance(n);
+                    channels[c].VelSmooth.Advance(n);
                     for (int i = 0; i < n; i++) { channels[c].PanL.Next(); channels[c].PanR.Next(); }
                 }
                 if (GainTrace != null)
@@ -1297,6 +1309,7 @@ namespace NeoBuzz.Chip
                     float gL = ch.PanL.Next();
                     float gR = ch.PanR.Next();
                     float detCents = ch.DetuneSmooth.Next();
+                    float smoothedVel = ch.VelSmooth.Next();
                     float baseDuty = c < PulseCount ? ch.DutySmooth.Next() : 0.5f;
 
                     if (!ch.IsSounding)
@@ -1326,8 +1339,9 @@ namespace NeoBuzz.Chip
 
                     // 16-step envelope with per-step anti-click slew and note-edge fades.
                     float envGain = ch.Env.Next(envMode, envAttack, envDecay, envSustain, envRelease, envPeriod, sampleRate, isRaw);
+                    float velGain = (1f - velDepth) + velDepth * smoothedVel;
                     if (gainTrace != null && gainTrace[c] != null && i < gainTrace[c].Length)
-                        gainTrace[c][i] = envGain * stealGain;
+                        gainTrace[c][i] = envGain * velGain * stealGain;
                     if (!ch.Env.IsActive && !ch.Pending) continue;
 
                     // Per-track sample-accurate arpeggio.
@@ -1398,7 +1412,6 @@ namespace NeoBuzz.Chip
                         }
                     }
 
-                    float velGain = (1f - velDepth) + velDepth * ch.Velocity;
                     float chSample = oscOut * envGain * velGain * stealGain;
 
                     // Optional 4-bit per-channel DAC quantisation (exact 0 at silence, exact k/7 plateaus
@@ -1448,6 +1461,7 @@ namespace NeoBuzz.Chip
             {
                 channels[c].DutySmooth.Value = DspMath.Flush(channels[c].DutySmooth.Value);
                 channels[c].DetuneSmooth.Value = DspMath.Flush(channels[c].DetuneSmooth.Value);
+                channels[c].VelSmooth.Value = DspMath.Flush(channels[c].VelSmooth.Value);
             }
 
             OutMeter.Feed(left, right, n);
