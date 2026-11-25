@@ -651,6 +651,18 @@
     "tape"
    ],
    "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
+  },
+  "Neo Chop": {
+   "category": "Modulation",
+   "tags": [
+    "rhythmic",
+    "tempo-sync",
+    "gate",
+    "tape",
+    "notes"
+   ],
+   "use_for": "Cut up a track in time with the song: stutter, bar-end repeat, retrigger, tape stop and start, a 16-step gate and auto-pan, started by the beat grid or by notes, for fills, glitches and rhythmic chopping.",
+   "note_in": true
   }
  }
 }

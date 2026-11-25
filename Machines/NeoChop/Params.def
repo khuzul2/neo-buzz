@@ -1,0 +1,209 @@
+# Neo Chop parameters (docs/specs/neo-chop.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoChop
+namespace NeoBuzz.Chop
+class NeoChopMachine
+tracks 1
+summary Cuts up the audio on a track in time with the song: Stutter (repeats the last slice with pitch, decay and filter per repeat), Repeat (a bar-end loop of a grid slice, with chance and variation), Retrigger (jumps back to the start of the beat or bar on a grid), Tape stop and start, a 16-step Gate and an Auto-pan. The four cutting modes start in sync with the song, from a note (a note wire or the track's own note column) or both; the Gate and the Pan lock to the song or run free. Mix and Amount; every cut is crossfaded. Use it for stutters, glitches, drum fills, bar-end repeats, tape stops, trance-style gating and wide panning.
+
+group Stutter
+StutterOn       "Stutter"            0 1 1       switch                                       | The stutter mode: on or off
+    how Turns the stutter on or off.
+    sound On, the end of every period repeats the last slice of the audio.
+StutterTrig     "Stutter trigger"    0 2 0       enum Synced Note Both                        | What starts a stutter: the song (at the end of each period), a note, or both
+    how Chooses whether the song, a note or both start the stutter.
+    sound Synced stutters on the beat grid by themselves; Note stutters when you play a note.
+StutterEvery    "Stutter every"      0 5 2       enum 1_beat 2_beats 1_bar 2_bars 4_bars 8_bars | Synced: the period; each stutter ends on its end
+    how Sets how often a synced stutter happens, from every beat to every 8 bars.
+    sound Short periods make a constant glitch, long ones a fill at the end of a phrase.
+Slice           "Slice"              0 4 2       enum 1/4 1/8 1/16 1/32 1/64                  | Length of the slice that repeats (a quarter note is a beat)
+    how Sets the note value of the repeated slice.
+    sound Long slices repeat a piece of the groove, short ones turn into a buzz.
+SliceFeel       "Slice feel"         0 2 0       enum Straight Dotted Triplet                 | Straight, dotted (x1.5) or triplet (x2/3) slices
+    how Makes the slice straight, dotted or triplet.
+    sound Dotted slices lilt, triplet slices roll.
+Repeats         "Repeats"            0 16 3      enum 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 Hold | Number of times the slice plays (Hold: until the note ends, or half the period when synced)
+    how Sets how many times the slice plays, or Hold for as long as the note is down.
+    sound Few repeats make a short stammer, Hold a freeze.
+StutterPitch    "Pitch per repeat"   0 240 120   lin -12 12 st 1                              | Semitones each repeat is higher (or lower) than the one before
+    how Shifts the pitch of every repeat by this much more than the last.
+    sound Up gives a rising roll, down a falling one; 0 keeps the pitch.
+StutterDecay    "Decay per repeat"   0 120 0     lin 0 12 dB 1                                | Level each repeat loses against the one before
+    how Makes each repeat quieter by this many decibels.
+    sound A little decay fades the stutter out, none holds it level.
+StutterFilter   "Filter per repeat"  0 400 200   lin -2 2 oct 1                               | Octaves per repeat: below 0 a low-pass closes down, above 0 a high-pass opens up
+    how Moves a filter by this many octaves with each repeat: left of centre it darkens, right of centre it thins.
+    sound Darkening repeats sink into the mix; thinning ones fly away.
+group Repeat
+RepeatOn        "Repeat"             0 1 0       switch                                       | The repeat mode: on or off
+    how Turns the repeat on or off.
+    sound On, the end of the chosen bars loops a small grid slice.
+RepeatTrig      "Repeat trigger"     0 2 0       enum Synced Note Both                        | What starts a repeat: the song (at the end of each interval), a note, or both
+    how Chooses whether the song, a note or both start the repeat.
+    sound Synced repeats fill the end of the interval by themselves.
+RepeatInterval  "Interval"           0 7 0       enum 1_bar 2_bars 3_bars 4_bars 5_bars 6_bars 7_bars 8_bars | Synced: the period; each repeat ends on its end
+    how Sets how many bars pass between repeats.
+    sound One bar gives a fill in every bar, eight bars a rare one.
+RepeatChance    "Chance"             0 1000 1000 pct                                          | The chance that a repeat happens at an interval
+    how Sets how likely each interval is to get a repeat.
+    sound Below 100 % the repeat comes and goes at random, the same way on every play.
+RepeatLength    "Length"             0 6 2       enum 1/16 1/8 1/4 1/2 1_bar 2_bars 4_bars    | How long the repeat lasts, as a part of a bar (never longer than the interval)
+    how Sets how long the repeat runs, counted back from the end of the interval.
+    sound A short length is a quick fill, a long one loops a whole phrase.
+RepeatGrid      "Grid"               0 4 1       enum 1/4 1/8 1/16 1/32 1/64                  | Length of the slice that loops (a quarter note is a beat)
+    how Sets the note value of the looped slice.
+    sound Coarse grids loop a piece of the groove, fine grids buzz.
+RepeatFeel      "Grid feel"          0 2 0       enum Straight Dotted Triplet                 | Straight, dotted (x1.5) or triplet (x2/3) grid
+    how Makes the grid straight, dotted or triplet.
+    sound Dotted lilts, triplet rolls.
+Variation       "Variation"          0 1000 0    pct                                          | The chance that a loop of the slice is cut to half or a quarter of the grid (seeded)
+    how Makes some loops of the slice shorter at random.
+    sound More variation gives a busier, less predictable glitch; the same on every play.
+group Retrigger
+RetrigOn        "Retrigger"          0 1 0       switch                                       | The retrigger mode: on or off
+    how Turns the retrigger on or off.
+    sound On, the audio keeps jumping back to the start of the beat or bar.
+RetrigTrig      "Retrigger trigger"  0 2 0       enum Synced Note Both                        | What starts a retrigger: the song (at the start of its window), a note, or both
+    how Chooses whether the song, a note or both start the retrigger.
+    sound Synced retriggers happen at the end of each period.
+RetrigEvery     "Retrigger every"    0 5 2       enum 1_beat 2_beats 1_bar 2_bars 4_bars 8_bars | Synced: the period; each retrigger window ends on its end
+    how Sets how often a synced retrigger window comes.
+    sound Every bar makes a stammering end to each bar.
+RetrigLength    "Retrigger length"   0 6 3       enum 1/16 1/8 1/4 1/2 1_bar 2_bars 4_bars    | How long the retrigger window lasts, as a part of a bar (never longer than the period)
+    how Sets how long the retrigger runs, counted back from the end of the period.
+    sound Half a bar is a classic fill.
+RetrigGrid      "Retrigger grid"     0 3 1       enum 1/4 1/8 1/16 1/32                       | How often the audio jumps back (a quarter note is a beat)
+    how Sets the note value between jumps.
+    sound Fine grids stammer, coarse ones loop.
+RetrigFeel      "Retrigger feel"     0 2 0       enum Straight Dotted Triplet                 | Straight, dotted (x1.5) or triplet (x2/3) grid
+    how Makes the jumps straight, dotted or triplet.
+    sound Dotted lilts, triplet rolls.
+RetrigBack      "Back to"            0 1 0       enum Beat Bar                                | Where each jump goes back to: the start of the current beat or of the current bar
+    how Chooses whether the audio jumps back to the start of the beat or the bar.
+    sound Beat repeats a small piece, Bar replays the phrase from its start.
+group Tape
+TapeOn          "Tape"               0 1 0       switch                                       | The tape stop and start mode: on or off
+    how Turns the tape stop on or off.
+    sound On, the audio winds down to a stop and spins back up.
+TapeTrig        "Tape trigger"       0 2 0       enum Synced Note Both                        | What starts a tape stop: the song (so that it stops on the end of each period), a note (held until the note ends), or both
+    how Chooses whether the song, a note or both start the tape stop.
+    sound A note stops the tape and lets it go again when it ends.
+TapeEvery       "Tape every"         0 5 2       enum 1_beat 2_beats 1_bar 2_bars 4_bars 8_bars | Synced: the period; the tape is stopped on its end
+    how Sets how often a synced tape stop happens.
+    sound Every 4 bars gives a stop at the end of a phrase.
+StopSync        "Stop sync"          0 5 0       enum Free 1/16 1/8 1/4 1/2 1_bar             | The stop time as a note value of the song (Free: the Stop time in ms)
+    how Sets whether the stop time is in milliseconds or in note values.
+    sound Synced stops always last the same part of the beat.
+StopTime        "Stop time"          0 1000 642  exp 20 4000 ms 0                             | How long the slowdown to a stop takes, when Stop sync is Free
+    how Sets how long the tape takes to wind down.
+    sound Short stops are abrupt, long ones sink slowly.
+TapeCurve       "Stop curve"         0 2000 1000 bip                                          | Shape of the slowdown: left of centre it slows early and trails off, right of centre it keeps speed and stops late
+    how Bends the slowdown.
+    sound Left slows early and drags, right keeps going and then drops.
+StartSync       "Start sync"         0 5 0       enum Free 1/16 1/8 1/4 1/2 1_bar             | The start time as a note value of the song (Free: the Start time in ms)
+    how Sets whether the start time is in milliseconds or in note values.
+    sound Synced starts always last the same part of the beat.
+StartTime       "Start time"         0 4000 300  lin 0 4000 ms 0                              | How long the spin-up takes, when Start sync is Free (0: the sound returns at once)
+    how Sets how long the tape takes to spin back up.
+    sound Short starts snap back, long ones swoop up from below.
+group Gate
+GateOn          "Gate"               0 1 0       switch                                       | The step gate: on or off
+    how Turns the step gate on or off.
+    sound On, the 16 steps cut the sound into a rhythm.
+GateLock        "Gate lock"          0 1 0       enum Song Free                               | Song: the steps follow the song position; Free: they run on their own at the song tempo, even when stopped
+    how Chooses whether the gate follows the song or runs free.
+    sound Song keeps the gate on the grid; Free lets it drift against the beat.
+GateRate        "Gate rate"          0 4 2       enum 1/4 1/8 1/16 1/32 1/64                  | The length of one step (a quarter note is a beat)
+    how Sets the note value of one step.
+    sound Slow rates chop out beats, fast ones turn the sound into a stutter.
+GateAttack      "Gate attack"        0 1000 199  exp 2 200 ms 1                               | How long a step takes to open
+    how Sets how softly the gate opens.
+    sound Short is a hard cut-in, long a swell.
+GateRelease     "Gate release"       0 1000 565  exp 2 400 ms 1                               | How long a step takes to close
+    how Sets how softly the gate closes.
+    sound Short is chopped off, long rings on.
+GateDepth       "Gate depth"         0 1000 1000 pct                                          | How far an off step closes: 100 % is silence
+    how Sets how far the gate closes on the steps that are off.
+    sound Full depth is a hard rhythm, partial depth is a pulse.
+GateAccent      "Accent"             0 120 40    lin 0 12 dB 1                                | Extra level on accented steps
+    how Sets how much louder the accented steps are.
+    sound Accents push the rhythm forward.
+Step1           "Step 1"             0 2 2       enum Off On Accent                           | Step 1 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step2           "Step 2"             0 2 1       enum Off On Accent                           | Step 2 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step3           "Step 3"             0 2 0       enum Off On Accent                           | Step 3 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step4           "Step 4"             0 2 1       enum Off On Accent                           | Step 4 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step5           "Step 5"             0 2 1       enum Off On Accent                           | Step 5 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step6           "Step 6"             0 2 0       enum Off On Accent                           | Step 6 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step7           "Step 7"             0 2 1       enum Off On Accent                           | Step 7 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step8           "Step 8"             0 2 0       enum Off On Accent                           | Step 8 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step9           "Step 9"             0 2 2       enum Off On Accent                           | Step 9 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step10          "Step 10"            0 2 1       enum Off On Accent                           | Step 10 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step11          "Step 11"            0 2 0       enum Off On Accent                           | Step 11 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step12          "Step 12"            0 2 1       enum Off On Accent                           | Step 12 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step13          "Step 13"            0 2 1       enum Off On Accent                           | Step 13 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step14          "Step 14"            0 2 0       enum Off On Accent                           | Step 14 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step15          "Step 15"            0 2 1       enum Off On Accent                           | Step 15 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+Step16          "Step 16"            0 2 1       enum Off On Accent                           | Step 16 of the gate: off, on or accent
+    how Sets this step to closed, open or open and louder.
+    sound Off cuts the sound, On lets it through, Accent pushes it.
+group Pan
+PanOn           "Pan"                0 1 0       switch                                       | The auto-pan: on or off
+    how Turns the auto-pan on or off.
+    sound On, the sound swings between left and right.
+PanSync         "Pan sync"           0 8 3       enum Free 1/16 1/8 1/4 1/2 1_bar 2_bars 4_bars 8_bars | The pan cycle as a length in the song (Free: the Pan rate in Hz)
+    how Sets whether the pan follows a note length of the song or runs in Hz.
+    sound Synced pans lock to the beat, Free pans drift.
+PanRate         "Pan rate"           0 1000 500  exp 0.05 20 Hz 2                             | Cycles per second, when Pan sync is Free
+    how Sets how fast the pan swings.
+    sound Slow sweeps, fast flutters.
+PanDepth        "Pan depth"          0 1000 1000 pct                                          | How far the sound swings to each side: 100 % is hard left and right
+    how Sets how wide the pan swings.
+    sound Small depths sway, full depth throws it to the sides.
+PanShape        "Pan shape"          0 2 0       enum Sine Triangle Square                    | The shape of the swing; the square has its edges rounded over the Smoothness time
+    how Chooses the shape of the swing.
+    sound Sine is smooth, triangle steady, square jumps from side to side.
+PanPhase        "Pan phase"          0 360 0     lin 0 360 deg 0                              | Where in its cycle the swing starts, in degrees
+    how Shifts the swing in time.
+    sound 90 degrees starts it at the right, 180 at the other side.
+group Output
+Smoothness      "Smoothness"         0 1000 301  exp 2 20 ms 1                                | The crossfade at every slice, repeat, jump and step edge (at least 2 ms)
+    how Sets how long every cut is crossfaded.
+    sound Short is crisp and may tick, long is soft and rounds off the attack.
+NotePick        "Note picks slice"   0 1 0       switch                                       | A note chooses the slice or grid by its key (C = 1/4, up the twelve keys to 1/64 triplet) instead of the setting
+    how Lets the key of a note choose the slice length.
+    sound Play a different key for a different roll.
+Mix             "Mix"                0 1000 1000 pct                                          | Dry/wet (the dry signal is not delayed: there is no latency)
+    how Blends the cut sound with the dry input.
+    sound Lower values keep the original and lay the cuts on top.
+Amount          "Amount"             0 1000 500  lin 0 200 % 0                                | Effect strength: 100 % = the settings as they stand, 0 = clean (bit for bit the input), 200 % = exaggerated
+    how Scales the stutter pitch, decay and filter, the repeat chance and the depth of the gate and the pan together.
+    sound Turn it down to fade the chopping out without changing its rhythm, up to push it harder; at 0 the sound is clean.
