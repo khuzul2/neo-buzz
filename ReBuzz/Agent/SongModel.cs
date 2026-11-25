@@ -91,20 +91,11 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>
-        /// The pattern's notes as the agent reads them, in time order: its engine MIDI column's
-        /// note-ons, or its Note track columns for a machine that takes notes in tracks, with the
-        /// machine's pitch offset taken off (§12.2, MachineNotes).
+        /// The pattern's notes as the agent reads them, in time order: SongNotes' notes (the engine MIDI column's note-ons, or the Note
+        /// track lanes for a machine that takes notes in tracks), with the machine's pitch offset taken off (§12.2, MachineNotes).
         /// </summary>
         public static List<NoteEvent> Notes(IPattern p) =>
-            p.Machine is MachineCore m ? MachineNotes.Read(p, MachineNotes.For(m)) : MidiColumnNotes(p);
-
-        /// <summary>The note-ons in the pattern's engine MIDI column as stored (no pitch offset).</summary>
-        public static List<NoteEvent> MidiColumnNotes(IPattern p)
-        {
-            var column = SessionLayout.ColumnFor(p, ColumnKey.Midi, create: false);
-            if (column == null) return new List<NoteEvent>();
-            return NoteList.FromEvents(column.GetEvents(int.MinValue, int.MaxValue).Select(e => (e.Time, e.Value, e.Duration)));
-        }
+            p.Machine is MachineCore m ? MachineNotes.Read(p, MachineNotes.For(m)) : new List<NoteEvent>();
 
         /// <summary>Where the pattern is placed in the arrangement, in ticks.</summary>
         public static List<int> Placements(ReBuzzCore core, IPattern p) =>

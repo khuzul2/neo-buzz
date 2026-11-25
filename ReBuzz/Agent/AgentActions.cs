@@ -100,26 +100,6 @@ namespace ReBuzz.Agent
             Do(core, new DelegateAction(() => Set(on), () => Set(old)));
         }
 
-        /// <summary>Replaces notes in a pattern's engine MIDI column: <paramref name="removed"/> go, <paramref name="added"/> come.</summary>
-        public static void ReplaceNotes(ReBuzzCore core, IPattern pattern, IReadOnlyList<NoteEvent> removed, IReadOnlyList<NoteEvent> added)
-        {
-            string machine = pattern.Machine.Name, name = pattern.Name;
-            var take = removed.Select(ToEvent).ToArray();
-            var put = added.Select(ToEvent).ToArray();
-            void Apply(PatternEvent[] gone, PatternEvent[] come)
-            {
-                var p = Find(core, machine, name);
-                if (p == null) return;
-                var column = SessionLayout.ColumnFor(p, ColumnKey.Midi, create: come.Length > 0);
-                if (column == null) return;
-                if (gone.Length > 0) column.SetEvents(gone, false);
-                if (come.Length > 0) column.SetEvents(come, true);
-            }
-            Do(core, new DelegateAction(() => Apply(take, put), () => Apply(put, take)));
-        }
-
-        static PatternEvent ToEvent(NoteEvent n) => new PatternEvent(n.Time, n.Value, n.Duration);
-
         /// <summary>Replaces events in one of a pattern's engine columns (automation): <paramref name="removed"/> go, <paramref name="added"/> come.</summary>
         public static void ReplaceColumnEvents(ReBuzzCore core, IPattern pattern, ColumnKey key, IReadOnlyList<PatternEvent> removed, IReadOnlyList<PatternEvent> added)
         {

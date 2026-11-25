@@ -755,8 +755,7 @@ namespace ReBuzz.Studio.Tests
                 var notes = new[] { new ReBuzz.Core.Session.ClipNote(0, TB, 60, 100), new ReBuzz.Core.Session.ClipNote(4 * TB, TB, 64, 100),
                                     new ReBuzz.Core.Session.ClipNote(8 * TB, TB, 67, 100), new ReBuzz.Core.Session.ClipNote(12 * TB, 2 * TB, 72, 100) };
                 layout.EditNotes(a, null, notes);
-                Assert.That(layout.MoveNotesToPatternView(track, a), Is.Null, "the notes moved onto A's note lanes");
-                Assert.That(layout.PatternViewNotesOf(a).Count, Is.EqualTo(4), "the lanes have them");
+                Assert.That(layout.NotesOf(a).Count, Is.EqualTo(4), "the clip has them");
 
                 window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
                 window.Show();

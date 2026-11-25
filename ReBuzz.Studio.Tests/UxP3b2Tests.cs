@@ -219,7 +219,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(r.Page.Undo(), Is.True);              // the loop (the last gesture)
             Assert.That(r.Notes.Notes.Count, Is.EqualTo(1), "the note stays");
             Assert.That(r.Page.Undo(), Is.True);              // now the note
-            Assert.That(r.Column(), Is.Empty);
+            Assert.That(r.Stored(), Is.Empty);
         }
 
         // ------------------------------------------------------------------ the velocity lane

@@ -182,15 +182,6 @@ namespace ReBuzz.Studio.Views.Session
         internal PianoRollWindow EditNotes(ISequence track, IPattern pattern) =>
             PianoRollWindow.Show(TopLevel.GetTopLevel(this) as Window, buzz, layout, track, pattern);
 
-        /// <summary>Moves the clip's notes to its MIDI note lanes in the Pattern View, or back (0.7.1).</summary>
-        void MoveNotes(ISequence track, IPattern pattern, bool toPatternView)
-        {
-            var problem = toPatternView ? layout.MoveNotesToPatternView(track, pattern) : layout.MoveNotesFromPatternView(track, pattern);
-            if (problem != null)
-                _ = Dialogs.Info(problem, toPatternView ? "Move notes to the Pattern View" : "Move notes from the Pattern View");
-            RefreshState();
-        }
-
         // ------------------------------------------------------------------ recording (0.7)
 
         internal void ToggleArm(int track)
@@ -594,15 +585,6 @@ namespace ReBuzz.Studio.Views.Session
                 menu.Items.Add(Item("Clip settings", ShowClipPanel));
                 menu.Items.Add(Item("Edit pattern", () => EditPattern(pattern), "double-click"));
                 menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, pattern)));
-                if (layout.CanMoveNotes(pattern))
-                {
-                    int clipNotes = layout.NotesOf(pattern).Count;
-                    if (clipNotes > 0)
-                        menu.Items.Add(Item($"Move notes to the Pattern View ({clipNotes})", () => MoveNotes(cell.Sequence, pattern, toPatternView: true)));
-                    int laneNotes = layout.PatternViewNotesOf(pattern).Count;
-                    if (laneNotes > 0)
-                        menu.Items.Add(Item($"Move notes from the Pattern View ({laneNotes})", () => MoveNotes(cell.Sequence, pattern, toPatternView: false)));
-                }
                 menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), KeyOf("Cmd+R")));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
                 menu.Items.Add(Item("Send to Arrangement", () => SendToArrangement(cell), null, () => buzz.Arrangement != null));

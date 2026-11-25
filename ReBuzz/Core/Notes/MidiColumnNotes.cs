@@ -93,10 +93,7 @@ namespace ReBuzz.Core.Notes
         {
             var p = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(x => x.Name == name);
             if (p == null) return;
-            var column = SessionLayout.ColumnFor(p, key, create: put.Length > 0);
-            if (column == null) return;
-            if (take.Length > 0) column.SetEvents(take, false);
-            if (put.Length > 0) column.SetEvents(put, true);
+            StoreLanes.Change(p, key, take, put);
         }
     }
 }

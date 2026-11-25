@@ -1,6 +1,6 @@
-// Fork (docs/specs/ux-overhaul.md P3b, first step: decisions 40-44): the detail panel's Tracker | Piano roll switch, and the piano
-// roll on the Tracker's own Note column: draw, move, resize, delete and velocity, one undo step a gesture on the history the
-// Tracker has, the grid with Alt to bypass it, the keys, and a large pattern drawn by its visible part only.
+// Fork (docs/specs/ux-overhaul.md P3b, first step: decisions 40-44; clips.md §8, CU4): the detail panel's Tracker | Piano roll switch, and
+// the piano roll on the clip's notes (SongNotes, the one layer over the store): draw, move, resize, delete and velocity, one undo step
+// a gesture on the song's history, the grid with Alt to bypass it, the keys, and a large pattern drawn by its visible part only.
 
 using System;
 using System.Collections.Generic;
@@ -62,10 +62,9 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Page.Pattern, Is.EqualTo(Pattern));
             }
 
-            /// <summary>Shows the roll on the Tracker's Note column (the default here) or its MIDI lanes.</summary>
-            public void ShowRoll(TrackerLane lane = TrackerLane.NoteColumn)
+            /// <summary>Shows the roll.</summary>
+            public void ShowRoll()
             {
-                Page.Roll.UseLane(lane);
                 if (!Page.IsRollMode) Song.Click(Detail.RollButton);
                 Pump();
                 Assert.That(Page.IsRollMode, Is.True);
@@ -78,15 +77,15 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Page.IsRollMode, Is.False);
             }
 
-            /// <summary>Track 0's Note column in the Tracker (the editor's own store): (time, Buzz note).</summary>
-            public (int Time, int Value)[] Column(string parameter = "Note", int track = 0) => Events(Pattern, parameter, track);
+            /// <summary>The clip's notes as SongNotes reads them: (time, length, MIDI note).</summary>
+            public (int Time, int Duration, int Note)[] Stored(string route = null) => StoredOf(Song.Core, Pattern, route);
 
-            /// <summary>How many steps the editor's history can undo (it undoes them all, and redoes them again).</summary>
+            /// <summary>How many steps the song's history can undo (it undoes them all, and redoes them again).</summary>
             public int Undos
             {
                 get
                 {
-                    var stack = Page.EditContext.ActionStack;
+                    var stack = Song.Core.SongCore.ActionStack;
                     int n = 0;
                     while (stack.CanUndo && n < 1000) { stack.Undo(); n++; }
                     for (int i = 0; i < n; i++) stack.Redo();
@@ -113,17 +112,14 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        /// <summary>The editor's events of a parameter (by name) and track: (time, value).</summary>
+        internal static (int Time, int Duration, int Note)[] StoredOf(ReBuzzCore core, IPattern pattern, string route = null) =>
+            SongNotes.For(core, pattern, route).Notes().Select(n => (n.Time, n.Duration, n.Note)).ToArray();
+
+        /// <summary>The events of every lane of a parameter and track in the clip, in time order: (time, value).</summary>
         static (int Time, int Value)[] Events(IPattern pattern, string parameter, int track = 0)
         {
-            int found = 0;
-            foreach (var c in pattern.PatternEditorMachineEvents.ToList())
-            {
-                if (c.Parameter.Name != parameter) continue;
-                if (found++ == track)
-                    return c.Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
-            }
-            return null;
+            var key = pattern.Machine.ParameterGroups[2].Parameters.First(q => q.Name == parameter);
+            return StoreLanes.Events(pattern, new ColumnKey(2, key.IndexInGroup, track)).Select(e => (e.Time, e.Value)).ToArray();
         }
 
         internal static int Buzz(int midi) => BuzzNote.FromMIDINote(midi);
@@ -208,25 +204,25 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ editing, one undo step a gesture
 
         [AvaloniaTest]
-        public void DrawingANoteWritesTheTrackersNoteColumnAndOneUndoTakesItBack()
+        public void DrawingANoteWritesTheClipsNotesAndOneUndoTakesItBack()
         {
             using var r = new Rig();
             r.ShowRoll();
-            Assert.That(r.Column(), Is.Empty);
+            Assert.That(r.Stored(), Is.Empty);
             int undos = r.Undos;
 
             r.Notes.AddNote(2 * TB, 60);
-            Assert.That(r.Column(), Is.EqualTo(new[] { (2 * TB, Buzz(60)), (3 * TB, BuzzNote.Off) }), "a note-on and, a row later, its off: as the Tracker writes one");
-            Assert.That(r.Undos, Is.EqualTo(undos + 1), "one step on the editor's history");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "a note a row long");
+            Assert.That(r.Undos, Is.EqualTo(undos + 1), "one step on the song's history");
             Assert.That(r.Notes.Notes.Select(n => (n.Time, n.Duration, n.Note)), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
 
             r.ShowTracker();
-            Assert.That(r.Column(), Is.EqualTo(new[] { (2 * TB, Buzz(60)), (3 * TB, BuzzNote.Off) }), "the Tracker has the same notes");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "the Tracker's view of the clip holds the same notes");
 
             Assert.That(r.Page.Undo(), Is.True, "the Tracker's undo");
-            Assert.That(r.Column(), Is.Empty, "both events in one step");
+            Assert.That(r.Stored(), Is.Empty);
             Assert.That(r.Page.Redo(), Is.True);
-            Assert.That(r.Column(), Is.EqualTo(new[] { (2 * TB, Buzz(60)), (3 * TB, BuzzNote.Off) }));
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
         }
 
         [AvaloniaTest]
@@ -240,26 +236,26 @@ namespace ReBuzz.Studio.Tests
             // Draw: a double click on empty space.
             MachineViewTests.DoubleClick(r.Window, At(r, 4 * TB, 60));
             Pump();
-            Assert.That(r.Column(), Is.EqualTo(new[] { (4 * TB, Buzz(60)), (5 * TB, BuzzNote.Off) }), "drawn");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (4 * TB, TB, 60) }), "drawn");
             int undos = r.Undos;
 
             // Move: drag the note two rows right and two semitones up.
             var from = At(r, 4 * TB, 60);
             var to = new Point(from.X + 2 * roll.TickWidth, from.Y - 2 * roll.RowHeight);
             Drag(r, from, to);
-            Assert.That(r.Column(), Is.EqualTo(new[] { (6 * TB, Buzz(62)), (7 * TB, BuzzNote.Off) }), "moved on the grid");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (6 * TB, TB, 62) }), "moved on the grid");
             Assert.That(r.Undos, Is.EqualTo(undos + 1), "one undo step for the whole drag");
 
             // Resize: drag the note's end two rows right.
             var end = At(r, 7 * TB, 62);
             Drag(r, new Point(end.X - 4, end.Y), new Point(end.X - 4 + 2 * roll.TickWidth, end.Y));
-            Assert.That(r.Column(), Is.EqualTo(new[] { (6 * TB, Buzz(62)), (9 * TB, BuzzNote.Off) }), "three rows long now");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (6 * TB, 3 * TB, 62) }), "three rows long now");
             Assert.That(r.Undos, Is.EqualTo(undos + 2));
 
             // Delete: a double click on the note.
             MachineViewTests.DoubleClick(r.Window, At(r, 7 * TB, 62));
             Pump();
-            Assert.That(r.Column(), Is.Empty, "deleted with its off");
+            Assert.That(r.Stored(), Is.Empty, "deleted");
             Assert.That(r.Undos, Is.EqualTo(undos + 3));
         }
 
@@ -282,7 +278,7 @@ namespace ReBuzz.Studio.Tests
             // Alt: off the grid, though the tracker's rows still take the note on a row.
             Drag(r, from, to, RawInputModifiers.Alt);
             Assert.That(r.Notes.Notes[0].Time, Is.EqualTo(TB), "bypassed the beat grid: on the row at 1.5 ticks");
-            Assert.That(r.Column()[0].Time, Is.EqualTo(TB));
+            Assert.That(r.Stored()[0].Time, Is.EqualTo(TB));
         }
 
         [AvaloniaTest]
@@ -296,17 +292,17 @@ namespace ReBuzz.Studio.Tests
             int undos = r.Undos;
 
             Assert.That(roll.HandleKey(Key.Right, KeyModifiers.None), Is.True);
-            Assert.That(r.Column(), Is.EqualTo(new[] { (2 * TB, Buzz(60)), (3 * TB, BuzzNote.Off) }), "a grid step right");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "a grid step right");
             Assert.That(roll.HandleKey(Key.Right, KeyModifiers.Shift), Is.True);
-            Assert.That(r.Column(), Is.EqualTo(new[] { (2 * TB, Buzz(60)), (4 * TB, BuzzNote.Off) }), "Shift: a step longer");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, 2 * TB, 60) }), "Shift: a step longer");
             Assert.That(roll.HandleKey(Key.Left, KeyModifiers.Shift), Is.True);
-            Assert.That(r.Column().Last().Time, Is.EqualTo(3 * TB), "and shorter");
+            Assert.That(r.Stored()[0].Duration, Is.EqualTo(TB), "and shorter");
             Assert.That(roll.HandleKey(Key.Up, KeyModifiers.None), Is.True);
-            Assert.That(r.Column()[0].Value, Is.EqualTo(Buzz(61)), "a semitone up");
+            Assert.That(r.Stored()[0].Note, Is.EqualTo(61), "a semitone up");
             Assert.That(roll.HandleKey(Key.Up, KeyModifiers.Shift), Is.True);
-            Assert.That(r.Column()[0].Value, Is.EqualTo(Buzz(73)), "Shift: an octave");
+            Assert.That(r.Stored()[0].Note, Is.EqualTo(73), "Shift: an octave");
             Assert.That(roll.HandleKey(Key.Down, KeyModifiers.Shift), Is.True);
-            Assert.That(r.Column()[0].Value, Is.EqualTo(Buzz(61)));
+            Assert.That(r.Stored()[0].Note, Is.EqualTo(61));
             Assert.That(r.Undos, Is.EqualTo(undos + 6), "one undo step a key");
 
             // ⌘ on a Mac, Ctrl elsewhere (the roll normalises it): the same key, platform-correct.
@@ -320,52 +316,44 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ANoteStartingWhereTheNextEndsHasNoOffAndTheLastOneRunsToThePatternsEnd()
+        public void NotesSideBySideKeepTheirOwnLengthsAndTheLastOneRunsToThePatternsEnd()
         {
             using var r = new Rig();            // 16 ticks: 16 rows
             r.ShowRoll();
             var roll = r.Notes;
             roll.AddNote(0, 60);
             roll.AddNote(TB, 62);
-            Assert.That(r.Column(), Is.EqualTo(new[] { (0, Buzz(60)), (TB, Buzz(62)), (2 * TB, BuzzNote.Off) }), "the next note-on ends the first: no off between them");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (0, TB, 60), (TB, TB, 62) }), "the second starts where the first ends");
             roll.AddNote(15 * TB, 64);
-            var col = r.Column();
-            Assert.That(col.Last(), Is.EqualTo((15 * TB, Buzz(64))), "a note that runs to the end has no off (the Tracker's own way)");
-            Assert.That(roll.Notes.Select(n => (n.Time, n.End)).Last(), Is.EqualTo((15 * TB, 16 * TB)));
+            Assert.That(roll.Notes.Select(n => (n.Time, n.End)).Last(), Is.EqualTo((15 * TB, 16 * TB)), "the last runs to the end");
         }
 
         [AvaloniaTest]
-        public void WhatTheTrackerWritesTheRollShowsAndAnEditLeavesTheOtherNotesAlone()
+        public void WhatTheTrackerWritesInANoteColumnTheOneLayerReadsOnTheTracksRoute()
         {
             using var r = new Rig();
-            // Types C, E, G and a note off on track 0 from row 0, in the Tracker.
+            // Types C, E, G and a note off on track 0 from row 0, in the Tracker: the unmarked lane of the Note parameter.
             dynamic view = r.Page.EditorControl;
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
             void Type(PhysicalKey k) { r.Window.KeyPressQwerty(k, RawInputModifiers.None); r.Window.KeyReleaseQwerty(k, RawInputModifiers.None); Pump(); }
             foreach (var k in new[] { PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.Digit1 }) Type(k);
-            var typed = r.Column();
-            Assert.That(typed.Length, Is.EqualTo(4), "three notes and an off");
+            var typed = Events(r.Pattern, "Note");
+            Assert.That(typed.Length, Is.EqualTo(4), "three notes and an off, in the lane the Tracker made");
 
-            r.ShowRoll();
-            var notes = r.Notes.Notes;
-            Assert.That(notes.Count, Is.EqualTo(3), "the roll shows the three notes");
+            // SongNotes on the tracks route reads that lane (and any other lane of the Note parameter): the agent and the rolls see what was typed.
+            var notes = r.Stored("tracks");
+            Assert.That(notes.Length, Is.EqualTo(3));
             Assert.That(notes.Select(n => n.Time), Is.EqualTo(new[] { 0, TB, 2 * TB }));
             Assert.That(notes.Select(n => n.Duration), Is.EqualTo(new[] { TB, TB, TB }), "each lasts to the next, the last to the off");
-            int g = notes[2].Note;
 
-            // Move the last note an octave: the others' events are exactly what they were.
-            r.Notes.SelectAll();
-            r.Notes.DeselectAll();
-            var lastNote = notes[2];
-            var click = At(r, lastNote.Time, lastNote.Note);
-            r.Window.MouseDown(click, MouseButton.Left);
-            r.Window.MouseUp(click, MouseButton.Left);
-            Pump();
-            r.Notes.HandleKey(Key.Up, KeyModifiers.Shift);
-            var after = r.Column();
+            // Move the last note an octave through the layer: the others' events are exactly what they were.
+            var source = SongNotes.For(r.Song.Core, r.Pattern, "tracks")!;
+            var all = source.Notes();
+            Assert.That(source.Edit(new[] { all[2] }, new[] { all[2] with { Note = all[2].Note + 12 } }), Is.Null);
+            var after = Events(r.Pattern, "Note");
             Assert.That(after.Take(2), Is.EqualTo(typed.Take(2)), "the untouched notes' events are unchanged");
-            Assert.That(after[2].Value, Is.EqualTo(typed[2].Value + 12 * 16 / 16 * 0 + (BuzzNote.FromMIDINote(g + 12) - BuzzNote.FromMIDINote(g))));
+            Assert.That(after[2].Value, Is.EqualTo(typed[2].Value + (BuzzNote.FromMIDINote(all[2].Note + 12) - BuzzNote.FromMIDINote(all[2].Note))));
             Assert.That(after[3], Is.EqualTo(typed[3]), "the off stays");
         }
 
@@ -373,79 +361,67 @@ namespace ReBuzz.Studio.Tests
         public void AChordNeedsATrackEachAndIsRefusedWithTheReasonWhenTheMachineHasNone()
         {
             using var r = new Rig();
-            r.ShowRoll();
+            var source = SongNotes.For(r.Song.Core, r.Pattern, "tracks")!;
             int tracks = Math.Max(1, r.Lead.TrackCount);
-            var roll = r.Notes;
-            for (int i = 0; i < tracks; i++) roll.AddNote(0, 48 + 4 * i);
-            int count = roll.Notes.Count;
+            var chord = Enumerable.Range(0, tracks).Select(i => new ClipNote(0, TB, 48 + 4 * i, 100)).ToArray();
+            Assert.That(source.Edit(null, chord), Is.Null);
             int undos = r.Undos;
-            roll.AddNote(0, 48 + 4 * tracks);
-            Assert.That(roll.Refusal, Does.Contain("track"), "refused, with the reason");
-            Assert.That(r.Roll.SummaryText, Does.Contain("track"), "the summary says so");
-            Assert.That(roll.Notes.Count, Is.EqualTo(count), "nothing changed");
+            string why = source.Edit(null, new[] { new ClipNote(0, TB, 48 + 4 * tracks, 100) });
+            Assert.That(why, Does.Contain("track"), "refused, with the reason");
+            Assert.That(source.Notes().Count, Is.EqualTo(tracks), "nothing changed");
             Assert.That(r.Undos, Is.EqualTo(undos), "and no undo step was made");
         }
 
-        // ------------------------------------------------------------------ the MIDI lanes
-
-        static (int Time, int Duration, int Note)[] Lanes(Rig r) =>
-            TrackerNotes.Unpack(r.Song.Core.MachineManager.ExportClipNotes(r.Lead, r.Pattern)).Select(n => (n.Time, n.Duration, n.Midi)).ToArray();
+        // ------------------------------------------------------------------ one layer, one undo step an edit
 
         [AvaloniaTest]
-        public void TheMidiLanesOfTheTrackerAreEditedWithOneUndoStepAGesture()
+        public void EachGestureOfTheRollIsOneUndoStepOfTheSongAndUndoAndRedoShowInTheRoll()
         {
             using var r = new Rig();
-            r.ShowRoll(TrackerLane.MidiLanes);
-            Assert.That(r.Roll.Lane, Is.EqualTo(TrackerLane.MidiLanes));
-            Assert.That(r.Roll.LaneBox.IsVisible, Is.True, "a machine with a Note column and MIDI lanes can show either");
+            r.ShowRoll();
             int undos = r.Undos;
 
             r.Notes.AddNote(2 * TB, 60);
-            Assert.That(Lanes(r), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "the notes the editor reads from the lanes");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
             Assert.That(r.Undos, Is.EqualTo(undos + 1));
             r.Notes.SelectAll();
             r.Notes.HandleKey(Key.Up, KeyModifiers.Shift);
-            Assert.That(Lanes(r), Is.EqualTo(new[] { (2 * TB, TB, 72) }), "an octave up");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 72) }), "an octave up");
             r.Notes.HandleKey(Key.Right, KeyModifiers.None);
             r.Notes.HandleKey(Key.Right, KeyModifiers.Shift);
-            Assert.That(Lanes(r), Is.EqualTo(new[] { (3 * TB, 2 * TB, 72) }), "moved and lengthened");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (3 * TB, 2 * TB, 72) }), "moved and lengthened");
             Assert.That(r.Undos, Is.EqualTo(undos + 4), "a step each");
-            Assert.That(r.Column(), Is.Empty, "the Note column is another store");
 
             Assert.That(r.Page.Undo(), Is.True);
-            Assert.That(Lanes(r), Is.EqualTo(new[] { (3 * TB, TB, 72) }));
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (3 * TB, TB, 72) }));
             r.Page.Undo();
             r.Page.Undo();
-            Assert.That(Lanes(r), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }));
             r.Page.Undo();
-            Assert.That(Lanes(r), Is.Empty, "the lanes are as they were");
+            Assert.That(r.Stored(), Is.Empty, "the clip is as it was");
             Assert.That(r.Page.Redo(), Is.True);
-            Assert.That(Lanes(r), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "and redo brings the note back");
+            Assert.That(r.Stored(), Is.EqualTo(new[] { (2 * TB, TB, 60) }), "and redo brings the note back");
             r.Roll.Poll();
             Assert.That(r.Notes.Notes.Count, Is.EqualTo(1));
         }
 
         [AvaloniaTest]
-        public void TheRollShowsTheStoreThatHasNotesAndOffersTheOther()
+        public void NotesWrittenThroughTheLayerShowInTheRollAndTheTracksRouteSeesEveryLaneOfTheNoteParameter()
         {
             using var r = new Rig();
-            // Notes on the MIDI lanes only (what the Session View's "move into the Tracker" and the agent make).
-            Assert.That(r.Song.Core.MachineManager.ImportClipNotes(r.Lead, r.Pattern, TrackerNotes.Pack(new[] { new TrackerNote(0, TB, 64, 100) })), Is.True);
-            r.Roll.UseLane(TrackerLane.Auto);
+            // Notes written by another reader and writer of the layer (what the agent and the Session make) show in the roll.
+            var midi = SongNotes.For(r.Song.Core, r.Pattern)!;
+            Assert.That(midi.Edit(null, new[] { new ClipNote(0, TB, 64, 100) }), Is.Null);
             r.Window.ShowPianoRoll();
             Pump();
-            Assert.That(r.Roll.Lane, Is.EqualTo(TrackerLane.MidiLanes), "the lanes have the notes");
             Assert.That(r.Notes.Notes.Select(n => n.Note), Is.EqualTo(new[] { 64 }));
 
-            r.Roll.LaneBox.SelectedIndex = 0;       // the Note column, which is empty
-            Pump();
-            Assert.That(r.Roll.Lane, Is.EqualTo(TrackerLane.NoteColumn));
-            Assert.That(r.Notes.Notes, Is.Empty);
-            r.Notes.AddNote(0, 67);
-            Assert.That(r.Column()[0].Value, Is.EqualTo(Buzz(67)));
-            Assert.That(Lanes(r).Select(n => n.Note), Is.EqualTo(new[] { 64 }), "the lanes are not touched");
-            r.Roll.UseLane(TrackerLane.Auto);
-            Assert.That(r.Roll.Lane, Is.Not.Null);
+            // The tracks route writes the Note parameter's lane and does not touch the MIDI column.
+            var tracks = SongNotes.For(r.Song.Core, r.Pattern, "tracks")!;
+            Assert.That(tracks.Notes(), Is.Empty);
+            Assert.That(tracks.Edit(null, new[] { new ClipNote(0, TB, 67, 100) }), Is.Null);
+            Assert.That(Events(r.Pattern, "Note")[0].Value, Is.EqualTo(Buzz(67)));
+            Assert.That(r.Stored().Select(n => n.Note), Is.EqualTo(new[] { 64 }), "the MIDI column is not touched");
         }
 
         // ------------------------------------------------------------------ one clip, two views
@@ -463,8 +439,8 @@ namespace ReBuzz.Studio.Tests
             Assert.That(r.Page.Pattern, Is.EqualTo(other), "and in the Tracker's page");
             r.Notes.AddNote(0, 60);
             r.ShowTracker();
-            Assert.That(Events(other, "Note"), Is.Not.Empty);
-            Assert.That(Events(r.Pattern, "Note"), Is.Empty);
+            Assert.That(StoredOf(r.Song.Core, other), Is.Not.Empty);
+            Assert.That(r.Stored(), Is.Empty);
             PatternView.Edit(r.Pattern);
             Pump();
             Assert.That(StudioSelection.For(r.Song.Core).Pattern, Is.EqualTo(r.Pattern), "the page publishes what the user picks");
@@ -511,16 +487,15 @@ namespace ReBuzz.Studio.Tests
 
                 r.Notes.AddNote(TB, 60);
                 r.Notes.AddNote(4 * TB, 67);
-                var shown = r.Column();
+                var shown = r.Stored();
                 r.Song.Core.SaveSongCopy(c);
                 r.Song.Core.Modified = false;
                 r.Song.Core.OpenSongFile(c);
                 Pump();
                 var lead = r.Song.Core.SongCore.MachinesList.First(m => m.Name == "Lead");
                 var again = lead.PatternsList.First(p => p.Name == "00");
-                Assert.That(Events(again, "Note"), Is.EqualTo(shown), "the saved song holds the notes the Tracker shows");
-                var roll = ReBuzz.Core.Notes.EditorTrackerNotes.ForEditor(r.Song.Core, again);
-                Assert.That(roll.Notes().Select(n => (n.Time, n.Duration, n.Note)), Is.EqualTo(new[] { (TB, TB, 60), (4 * TB, TB, 67) }), "and so the roll");
+                Assert.That(StoredOf(r.Song.Core, again), Is.EqualTo(shown), "the saved song holds the notes the roll shows");
+                Assert.That(shown, Is.EqualTo(new[] { (TB, TB, 60), (4 * TB, TB, 67) }), "and the layer reads them back from the reopened song");
             }
             finally
             {
@@ -536,7 +511,7 @@ namespace ReBuzz.Studio.Tests
             using var r = new Rig(ticks: 1024);
             r.ShowRoll();
             var roll = r.Notes;
-            var source = EditorTrackerNotes.ForEditor(r.Song.Core, r.Pattern)!;
+            var source = SongNotes.For(r.Song.Core, r.Pattern)!;
             var many = Enumerable.Range(0, 400).Select(i => new ClipNote(i * 2 * TB, TB, 36 + i % 48, 100)).ToArray();
             Assert.That(source.Edit(null, many), Is.Null);
             r.Roll.Poll();
