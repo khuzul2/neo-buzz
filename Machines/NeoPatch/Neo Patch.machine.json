@@ -15,6 +15,7 @@
   "pad"
  ],
  "use_for": "Sounds the fixed synths cannot make: build your own routing from oscillators, envelopes, LFOs, filters, shapers and delays, with per-note and global modulation, MPE and sixteen macros.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

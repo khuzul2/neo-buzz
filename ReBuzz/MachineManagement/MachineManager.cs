@@ -485,6 +485,8 @@ namespace ReBuzz.MachineManagement
                 }
 
                 var mc = machine as MachineCore;
+                // Fork (note-wires.md): a track with note inserts hands its clip notes, live MIDI and keys to the first insert.
+                if (mc != null && Buzz?.NoteWires is { } nw && nw.RouteTrackInput(mc, data)) return;
                 if (managedMachines.ContainsKey(mc))
                 {
                     var mmh = managedMachines[mc];
@@ -774,6 +776,13 @@ namespace ReBuzz.MachineManagement
                 var machineHost = ManagedMachines[machine];
                 machineHost.MidiControlChange(ctrl, channel, value);
             }
+        }
+
+        /// <summary>Fork (note-wires.md): the clip player's note-off for a note it started: to the first insert of the track's note chain, else to the machine.</summary>
+        internal void SendTrackNoteOff(MachineCore machine, int channel, int note)
+        {
+            if (Buzz?.NoteWires is { } nw && nw.RouteTrackNoteOff(machine, channel, note)) return;
+            SendMIDINote(machine, channel, note, 0);
         }
 
         internal void SendMIDINote(MachineCore machine, int channel, int value, int velocity)

@@ -14,6 +14,7 @@
   "pluck"
  ],
  "use_for": "A teaching FM synth: electric-piano tines, glass bells and growling basses from an exact modulator ratio, depth and feedback.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

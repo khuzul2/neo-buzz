@@ -15,6 +15,7 @@
   "vintage"
  ],
  "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

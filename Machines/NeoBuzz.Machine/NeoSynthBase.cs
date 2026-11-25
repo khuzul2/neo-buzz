@@ -4,12 +4,14 @@
 // (or ReBuzz's Stop) releases every note, and Stop again once stopped silences everything (a
 // panic for sounds that ring on after release, such as DX7 patches whose level 4 isn't 0).
 
+using System;
 using Buzz.MachineInterface;
+using BuzzGUI.Interfaces;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
 {
-    public abstract class NeoSynthBase : NeoMachineBase
+    public abstract class NeoSynthBase : NeoMachineBase, INoteCapable, INoteReceiver
     {
         volatile bool stopRequested;
 
@@ -26,6 +28,12 @@ namespace NeoBuzz.Machine
 
         /// <summary>ReBuzz: a MIDI controller, pitch bend (0xE0/0xFF) or channel pressure (0xD0/0xFC).</summary>
         public void MidiControlChange(int ctrl, int channel, int value) => Notes.MidiControl(ctrl, channel, value);
+
+        // Note wires (docs/specs/note-wires.md): every Neo synth takes notes. What a wire carried this block is queued as MIDI is and applied with the
+        // rest at the start of the block (the offset inside the block is not used by the synths yet).
+        bool INoteCapable.AcceptsNotes => true;
+        bool INoteCapable.SendsNotes => false;
+        void INoteReceiver.ReceiveNotes(ReadOnlySpan<NoteMessage> events) => Notes.Receive(events);
 
         /// <summary>ReBuzz: stop (release everything at the next block; silence everything if already stopped).</summary>
         public void Stop() => stopRequested = true;

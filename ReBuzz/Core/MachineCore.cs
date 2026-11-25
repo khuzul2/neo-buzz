@@ -23,7 +23,7 @@ using System.Windows.Input;
 
 namespace ReBuzz.Core
 {
-    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget
+    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget, INoteEmitter
     {
         public static long machineHostId = 1;
         public readonly Lock workLock = new();
@@ -766,7 +766,28 @@ namespace ReBuzz.Core
             get => attributes;
             set { attributes = value; PropertyChanged.Raise(this, "Attributes"); }
         }
-        public bool Ready { get; internal set; }
+        bool ready;
+        public bool Ready
+        {
+            get => ready;
+            internal set
+            {
+                ready = value;
+                if (value) (graph?.Buzz as ReBuzzCore)?.NoteWires?.MachineReady();     // fork (note-wires.md): its note ports are known now
+            }
+        }
+
+        /// <summary>Fork (docs/specs/note-wires.md): this machine's note wires as the audio thread reads them (null: none). Swapped whole under the audio lock.</summary>
+        internal volatile ReBuzz.Core.NoteWires.NoteNode NoteNode;
+
+        /// <summary>INoteEmitter: sends the event down this machine's note wires, to arrive in the same block at the same offset (audio thread, from Work; allocates nothing).</summary>
+        public void EmitNote(in NoteMessage e)
+        {
+            var node = NoteNode;
+            if (node == null) return;
+            var outs = node.Out;
+            for (int i = 0; i < outs.Length; i++) outs[i].Add(e);
+        }
 
         /// <summary>
         /// Fork (machine keyboard): the notes the machine plays now, for the keyboards under its windows to

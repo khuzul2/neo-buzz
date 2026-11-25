@@ -48,6 +48,7 @@ FEATURES = [
     ("Machine view (P6b)", "Clone with patterns, and Copy / Paste of machines (P6c)", "ux-overhaul.md §9 rows 4 and 14", ["machine_clone", "machine_remove"], "a cut is a clone, then machine_remove"),
     ("Machine view (P6b)", "Machine groups: make, fill, empty, fold, rename, delete", "ux-overhaul.md §9 row 12", ["machine_group"], "moving a group is the view's drag only"),
     ("Machine view (MT1)", "Tracks: the song's tracks, groups and returns with their chains, and what is unrouted (the Machines view's Tracks mode)", "ux-overhaul.md §11 MT1", ["machine_tracks"], "a read; the model is worked out from the wires and never saved"),
+    ("Note wires (NW1)", "Notes from one machine to another in the same block: free wires, a track's insert chain, with the loop check", "note-wires.md", ["note_wires", "note_wire_connect", "note_wire_disconnect", "note_chain"], "the Machines view's ports, drags and menus are the studio's; the tools make the same wires directly"),
     ("MIDI mapping (MM1)", "Controllers, mappings of both scopes (parameters and commands), knob groups, and a track's control pages", "midi-mapping.md", ["controller_list", "midi_map_list", "midi_map_set", "midi_map_clear", "track_page_get", "track_page_set"], "map mode, the per-control MIDI button and listening are the studio's; the tools set the same maps directly"),
     ("Machine view (P6b)", "Latency window: override and clear", "ux-overhaul.md §9 row 5", ["machine_latency"], ""),
     ("Machine view (P6c)", "Attributes", "ux-overhaul.md §9 row 14", ["machine_attributes"], ""),
