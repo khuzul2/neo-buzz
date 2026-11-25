@@ -568,6 +568,15 @@ namespace NeoBuzz.Chop
             if (Blocked(m)) return;
             // Where the cut's first sample is: for a synced one its grid time, for a note the note's own sample.
             long w = synced ? t0 + (long)Math.Max(i, Math.Ceiling((startBeat - b0) / bps - Eps)) : t0 + i;
+            // A cut that would read from before the first sample the engine has seen would repeat silence: it waits for the next one.
+            double back;
+            if (m == ChopMode.Retrigger)
+            {
+                double unit = Ch(P.RetrigBack) == 0 ? 1.0 : ChopGrid.BeatsPerBar;
+                back = (startBeat - Math.Floor(startBeat / unit + 1e-9) * unit) / bps;
+            }
+            else back = m == ChopMode.Stutter ? StutterSlice(key) / bps : m == ChopMode.Repeat ? RepeatSlice(key) / bps : 0;
+            if (w - (long)Math.Ceiling(back - 1e-6) < 0) return;
             var releaseAt = t0 + i;
             for (int k = 0; k < voices.Length; k++)
             {

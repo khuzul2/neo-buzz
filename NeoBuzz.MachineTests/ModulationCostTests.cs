@@ -63,6 +63,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Audio to MIDI"] = (NeoBuzz.AudioToMidi.Params.Table, v => { var e = new NeoBuzz.AudioToMidi.AudioMidiEngine(v); e.SetSampleRate(Measure.Rate); var buf = new float[NeoBuzz.AudioToMidi.AudioMidiEngine.MaxBlock]; return (l, r, n) => { Array.Copy(l, buf, n); e.Process(buf, n); }; }),
             ["Neo Spectral"] = (NeoBuzz.Spectral.Params.Table, v => { var e = new NeoBuzz.Spectral.SpectralEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Lo-Fi"] = (NeoBuzz.LoFi.Params.Table, v => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
+            ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, v => ChopRig.CostCall(v)),
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, v => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Exciter"] = (NeoBuzz.Exciter.Params.Table, v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, v => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),

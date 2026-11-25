@@ -37,14 +37,14 @@ Decay per repeat = 1
 Filter per repeat = 0.4
 
 preset "Retrigger — Half-Bar Retrigger"
-comment "The second half of every bar keeps jumping back to the start of the bar every eighth note, so the downbeat is hammered four times before the next bar arrives."
+comment "The second half of every bar keeps jumping back to the start of the beat it is in every sixteenth note, so each beat is hammered into a machine-gun roll before the next bar arrives."
 Stutter = Off
 Retrigger = On
 Retrigger every = 1 bar
 Retrigger length = 1/2
-Retrigger grid = 1/8
+Retrigger grid = 1/16
 Retrigger feel = Straight
-Back to = Bar
+Back to = Beat
 
 preset "Tape — Tape Stop at the Bar"
 comment "Every fourth bar the sound winds down to a stop over the last 700 ms, stays silent for the bar line, and spins back up over 350 ms."

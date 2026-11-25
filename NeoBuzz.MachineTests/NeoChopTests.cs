@@ -295,7 +295,7 @@ namespace NeoBuzz.MachineTests
                     foreach (int b in bounds)
                     {
                         double ratio = BoundaryRatio(ol, b, out double near, out double outside);
-                        worst = Math.Max(worst, near > 1e-4 ? ratio : 0);
+                        if (outside >= 1e-4) worst = Math.Max(worst, ratio);
                         // A boundary in silence, or in a quiet tail, has nothing to compare with: the size itself must be tiny.
                         if (outside < 1e-4) Assert.That(near, Is.LessThan(2e-3), $"{Describe(v)} on {name} at {b}: quiet around it");
                         else Assert.That(ratio, Is.LessThanOrEqualTo(1.5), $"{Describe(v)} on {name} at {b} (sample): |second difference| {near:G3} against {outside:G3} around it");
@@ -753,6 +753,58 @@ namespace NeoBuzz.MachineTests
                 // The blend begins as many samples before the first slice sample as the Smoothness says.
                 Assert.That(s - first, Is.EqualTo(expect).Within(4), $"{ms} ms: the blend lasts {expect} samples");
             }
+        }
+
+        // ================================================================================== the presets
+
+        static List<(string Name, ParamValues V)> ChopPresets()
+        {
+            var list = new List<(string, ParamValues)>();
+            foreach (var (file, machine, name, values) in PresetTests.AllPresets())
+            {
+                if (machine != "Neo Chop") continue;
+                var v = new ParamValues(Params.Table);
+                foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                list.Add((name, v));
+            }
+            return list;
+        }
+
+        static double DiffDb(float[] a, float[] b, int from)
+        {
+            double d = 0, s = 0;
+            for (int i = from; i < a.Length; i++) { double e = a[i] - b[i]; d += e * e; s += (double)b[i] * b[i]; }
+            return 10 * Math.Log10(Math.Max(d, 1e-20) / Math.Max(s, 1e-20));
+        }
+
+        [Test]
+        public void EveryPresetIsClearlyAudibleDifferentFromTheOthersAndClickFreeOnFullScaleDrums()
+        {
+            var presets = ChopPresets();
+            Assert.That(presets.Count, Is.EqualTo(8));
+            double spb = Spb(120);
+            int length = (int)(spb * 16);
+            var (l, r) = DrumLoop(length, 120);
+            var outs = new List<float[]>();
+            foreach (var (name, v) in presets)
+            {
+                var (ol, _) = Render(Engine(v), l, r, Constant(120), 256);
+                outs.Add(ol);
+                double against = DiffDb(ol, l, (int)(spb * 4));
+                var clicks = NewClicks(l, ol).Where(c => c >= 4 * spb).ToList();
+                TestContext.Out.WriteLine($"{name}: differs from the dry by {against:0.0} dB (0 dB = as loud as the drums), {clicks.Count} clicks");
+                Assert.That(against, Is.GreaterThan(-12.0), $"{name}: audible at first listen");
+                Assert.That(clicks, Is.Empty, $"{name}: click detector");
+            }
+            double least = 99;
+            for (int a = 0; a < outs.Count; a++)
+                for (int b = a + 1; b < outs.Count; b++)
+                {
+                    double d = DiffDb(outs[a], outs[b], (int)(spb * 4));
+                    least = Math.Min(least, d);
+                    Assert.That(d, Is.GreaterThan(-12.0), $"{presets[a].Name} against {presets[b].Name}: clearly different");
+                }
+            TestContext.Out.WriteLine($"the two presets closest to each other differ by {least:0.0} dB");
         }
     }
 }

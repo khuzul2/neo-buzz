@@ -85,6 +85,26 @@ namespace NeoBuzz.MachineTests
             return Render(e, l, r, plan, block);
         }
 
+        /// <summary>The preset tests' one second of noise through the engine with the song running from beat 1 at 120 BPM (left channel).</summary>
+        public static float[] PresetRender(ParamValues v, float[] x)
+        {
+            var e = Engine(v);
+            return Render(e, x, (float[])x.Clone(), Constant(120, 1.0), 256).L;
+        }
+
+        /// <summary>The audio call of the modulation-cost guard: the song runs on from call to call.</summary>
+        public static Action<float[], float[], int> CostCall(ParamValues v)
+        {
+            var e = Engine(v);
+            double spb = Spb(120), beat = 0;
+            return (l, r, n) =>
+            {
+                e.SetTransport(true, beat, spb);
+                e.Process(l, r, n);
+                beat += n / spb;
+            };
+        }
+
         // ------------------------------------------------------------------------------------------------ signals
 
         /// <summary>A sine, 0.5 peak.</summary>
