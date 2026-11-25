@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3a): the inspector, the main window's panel on the right. It shows what is selected
-// (StudioSelection, one for every view): a machine, a clip or clip, or the song. The Session View's clip panel lives in it
+// (StudioSelection, one for every view): a machine, a clip, or the song. The Session View's clip panel lives in it
 // (the Clip and Scene sections), Song Notes are its Song tab. It collapses to a rail, remembers whether it is open and its
 // width, and is the same in every main view.
 
@@ -441,7 +441,7 @@ namespace ReBuzz.Studio.Views.Inspector
                     facts.Children.Add(label);
                     facts.Children.Add(value);
                 }
-                hint.Text = machine == null ? "Select a machine, a clip or a clip in any view to see its settings here." : "";
+                hint.Text = machine == null ? "Select a machine or a clip in any view to see its settings here." : "";
                 hint.IsVisible = machine == null;
                 bool audioClip = clip != null && core.SessionLayout?.IsAudioClip(clip) == true;
                 clipButton.IsVisible = clip != null && !audioClip;

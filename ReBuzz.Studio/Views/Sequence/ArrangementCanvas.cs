@@ -844,7 +844,7 @@ namespace ReBuzz.Studio.Views.Sequence
             if (IsAudioItem(item)) return AudioTip(item, part, p);
             var s = item.Spec;
             string text = $"{s.Clip.Name} · {BarBeat(item.Time)} · {item.End - item.Time} ticks";
-            if (UsesOf(s.Clip) > 1) text += $"\nShared by {UsesOf(s.Clip)} places: Make unique gives this clip a clip of its own";
+            if (UsesOf(s.Clip) > 1) text += $"\nShared by {UsesOf(s.Clip)} places: Make unique gives this place a clip of its own";
             text += part switch
             {
                 BlockPart.LeftEdge => "\nDrag: trim the start",

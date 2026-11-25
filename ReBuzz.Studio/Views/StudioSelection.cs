@@ -1,4 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P2c): one selection for every view. Selecting a machine, a track, a clip or a clip in
+// Fork (docs/specs/ux-overhaul.md P2c): one selection for every view. Selecting a machine, a track or a clip in
 // the Machines, Sequence, Session or Clip view selects that machine (and clip) in the others: the track of a machine
 // is the Sequence's row and the Session's column, so "select a track" and "select its machine" are one thing. A view
 // publishes what the user selects and follows what the others publish; what it only follows it doesn't publish again

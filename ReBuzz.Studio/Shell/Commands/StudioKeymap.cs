@@ -112,7 +112,7 @@ namespace ReBuzz.Studio.Shell.Commands
             C("view.pattern", "View", "_Tracker", "Cmd+4", help: "The detail panel's Tracker, docked under the view"),
             C("view.maximise", "View", "_Maximise Tracker", "Shift+Cmd+F|F2", help: "The detail panel's page (the Tracker, or the Mixer: Compact becomes Full) over the whole window, and back (F2 renames a clip in the Session View)"),
             C("view.notes", "View", "Song _Notes", "Cmd+5|F10", help: "The inspector's Song tab"),
-            C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine, clip or clip, and the song"),
+            C("view.inspector", "View", "_Inspector", "Ctrl+Alt+I", "Alt+Cmd+I", help: "Shows or hides the panel on the right: the selected machine or clip, and the song"),
             C("view.browser", "View", "_Browser", "Ctrl+Alt+B", "Alt+Cmd+B", help: "Shows or hides the panel on the left: the machines to add, and the clips of the selection"),
             C("view.detail", "View", "_Detail", "Ctrl+Alt+D", "Alt+Cmd+D", help: "Shows or hides the panel under the view: the Tracker and the piano roll"),
             C("view.pianoroll", "View", "_Piano Roll", "Ctrl+Alt+4", "Alt+Cmd+4", help: "The detail panel's piano roll: the Tracker's notes as a grid, edited in the same clip"),
