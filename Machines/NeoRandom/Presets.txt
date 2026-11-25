@@ -1,0 +1,148 @@
+# Neo Random factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoRandom
+# A preset that does not name a parameter takes its default (Random, 1 Hz, Free, Bipolar, Depth 100 %, Bias 0 %, Write glide 30 ms).
+machine "Neo Random"
+
+preset "Gentle drift"
+comment "Slow 1/f-like bounded wandering with soft smoothing and a long glide: subtle organic breathing on pads or filter cutoff."
+Mode = Drift
+Rate = 0.35
+Sync = Free
+Smooth = 45
+Depth = 65
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 101
+Retrigger = Free
+Write glide = 0.08
+
+preset "Random filter steps"
+comment "Crisp tempo-synced eighth-note uniform steps across the full span for punchy rhythmic filter movement."
+Mode = Random
+Sync = 1/8
+Feel = Straight
+Smooth = 0
+Depth = 100
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 102
+Retrigger = Free
+Write glide = 0.012
+
+preset "Sample and hold sync 1/16"
+comment "Classic rapid sixteenth-note sample-and-hold stepping locked to the grid with a tight write glide."
+Mode = Sample and hold
+Sync = 1/16
+Feel = Straight
+Probability = 100
+Smooth = 0
+Depth = 100
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 103
+Retrigger = Free
+Write glide = 0.008
+
+preset "Probability glitch"
+comment "Sparse sixteenth-note sample-and-hold at 28 % probability: holds steady then snaps unexpectedly for glitchy accents."
+Mode = Sample and hold
+Sync = 1/16
+Feel = Straight
+Probability = 28
+Smooth = 0
+Depth = 100
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 104
+Retrigger = Free
+Write glide = 0.005
+
+preset "Chaos wobble"
+comment "Fast chaotic Lorenz modulation at 4.5 Hz with 75 % smoothing: expressive, non-repeating filter wobble."
+Mode = Chaos
+Rate = 4.5
+Sync = Free
+Chaos = 82
+Smooth = 75
+Depth = 95
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 105
+Retrigger = Free
+Write glide = 0.01
+
+preset "Slow wander bar"
+comment "Bar-locked random waypoints joined by full 100 % raised-cosine curves and a lazy glide for evolving sweeps."
+Mode = Random
+Sync = 1 bar
+Feel = Straight
+Smooth = 100
+Depth = 85
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 106
+Retrigger = Free
+Write glide = 0.12
+
+preset "Humanise pan"
+comment "Narrow-depth 1/f drift centred at zero bias for gentle stereo pan or micro-parameter humanisation."
+Mode = Drift
+Rate = 1.8
+Sync = Free
+Smooth = 35
+Depth = 30
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 107
+Retrigger = Free
+Write glide = 0.04
+
+preset "Stepped pitch 12 steps"
+comment "Eighth-note triplet random steps snapped to 12 exact evenly spaced levels for chromatic-style stepped modulation."
+Mode = Random
+Sync = 1/8
+Feel = Triplet
+Smooth = 0
+Depth = 100
+Bias = 0
+Range = Bipolar
+Quantise = 12
+Seed = 108
+Retrigger = Free
+Write glide = 0.006
+
+preset "Random gate"
+comment "Dotted sixteenth-note unipolar binary sample-and-hold (2 quantised levels, 65 % probability) for rhythmic gating."
+Mode = Sample and hold
+Sync = 1/16
+Feel = Dotted
+Probability = 65
+Smooth = 0
+Depth = 100
+Bias = 0
+Range = Unipolar
+Quantise = 2
+Seed = 109
+Retrigger = Free
+Write glide = 0.004
+
+preset "Lorenz swirl"
+comment "Continuous double-scroll Lorenz attractor at 1.1 Hz with 100 % flow smoothing: fluid chaotic orbits across both wings."
+Mode = Chaos
+Rate = 1.1
+Sync = Free
+Chaos = 92
+Smooth = 100
+Depth = 100
+Bias = 0
+Range = Bipolar
+Quantise = 0
+Seed = 110
+Retrigger = Free
+Write glide = 0.02

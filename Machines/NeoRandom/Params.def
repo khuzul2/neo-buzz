@@ -1,0 +1,67 @@
+# Neo Random parameters (docs/specs/neo-random.md). The order changes only with a version (machines.md §3.2): songs and presets store values by position.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoRandom
+namespace NeoBuzz.RandomMachine
+class NeoRandomMachine
+summary A control modulator that moves other machines' parameters with random steps, sample-and-hold, 1/f-like drift or chaotic Lorenz trajectories: up to 8 targets (any parameter of any machine), each with its own depth, polarity, range and curve, written smoothly and never as an undo step. Free rate in Hz or tempo-synced from 8 bars to 1/64 (straight, dotted or triplet), probability, chaos amount, smoothing, depth, signed bias, unipolar or bipolar range, quantisation, reproducible seeds and beat, bar or note retriggering. Use it for evolving filter movement, glitchy stepped modulation, subtle humanisation and deterministic chaotic sweeps on any machine.
+
+group Source
+Mode      "Mode"        0 3 0    enum Random Sample_and_hold Drift Chaos | The modulation source: random, sample and hold, 1/f drift or Lorenz chaos
+    id mode
+    how Chooses which random or chaotic generator drives the output.
+    sound Random steps or glides between uniform values, sample and hold gates updates by probability, drift wanders slowly and chaos orbits a Lorenz attractor.
+Rate      "Rate"        0 1000 515 freq 0.02 40                | Steps or orbit speed per second when Sync is Free
+    id rate
+    how Sets the modulation speed from 0.02 to 40 Hz while Sync is Free.
+    sound Low rates create slow ambient motion, mid rates give rhythmic steps or wobble and high rates produce rapid flutter.
+Sync      "Sync"        0 10 0   enum Free 8_bars 4_bars 2_bars 1_bar 1/2 1/4 1/8 1/16 1/32 1/64 | Free: Rate in Hz. Otherwise one step lasts this long at the song's tempo
+    id sync
+    how Locks step timing and drift or chaos speed to the song's tempo, from 8 bars down to 1/64.
+    sound Synced steps land on the musical grid so random filter jumps and gates lock to the beat.
+Feel      "Feel"        0 2 0    enum Straight Dotted Triplet  | Straight, dotted (1.5 times longer) or triplet (two thirds as long) when Sync is on
+    id feel
+    how Stretches a synced step to 1.5 times (dotted) or shrinks it to two thirds (triplet) while Sync is on.
+    sound Dotted and triplet subdivisions give stepped modulation an off-beat lilt against straight grooves.
+Prob      "Probability" 0 1000 1000 pct                        | Chance that a Sample and hold step picks a new value (0 to 100 %)
+    id prob
+    how Sets the percentage chance that each step in Sample and hold mode draws a fresh value instead of holding.
+    sound At 100 % every step moves, while lower values hold notes longer and create sparse, glitchy jumps.
+Chaos     "Chaos"       0 1000 650 pct                         | Calm periodic orbit (0 %) to deep double-scroll Lorenz chaos (100 %)
+    id chaos
+    how Blends Chaos mode from a calm periodic orbit at 0 % into a deep double-scroll Lorenz attractor at 100 %.
+    sound Low values sway gently and predictably while high values flip unpredictably between bright and dark lobes.
+
+group Shape
+Smooth    "Smooth"      0 1000 0 pct                           | 0 %: crisp steps. 100 %: smooth curves through waypoints or continuous flow
+    id smooth
+    how Interpolates between consecutive random or sampled values with a raised-cosine glide, or smooths drift and chaos flow.
+    sound Zero produces sharp stair-steps while 100 % turns steps into fluid curves and continuous Lorenz swirls.
+Depth     "Depth"       0 1000 1000 pct                        | Scales the width of the modulation output (0 to 100 %)
+    id depth
+    how Scales how far the output swings around Bias before reaching the target slots.
+    sound Low depth gives subtle humanisation and high depth sweeps the full modulation span.
+Bias      "Bias"        0 1000 500 bip                         | Shifts the output centre or floor (-100 % to +100 %)
+    id bias
+    how Offsets the output centre in Bipolar mode or the floor in Unipolar mode before clamping to 0 to 100 %.
+    sound Positive bias keeps modulation toward brighter or higher values while negative bias pulls it lower.
+Range     "Range"       0 1 1    enum Unipolar Bipolar         | Unipolar swings upward from Bias; Bipolar centres symmetrically around 50 % + Bias
+    id range
+    how Selects whether the shaped output rises upward from Bias (Unipolar) or swings symmetrically around the middle (Bipolar).
+    sound Bipolar centres wandering around a target's setting while Unipolar pushes modulation in one direction from the floor.
+Quantise  "Quantise"    0 32 0   int 0                         | 0: off (continuous). 1 to 32: snaps the output to N evenly spaced levels
+    id quantise
+    how Snaps the generator output onto N evenly spaced discrete levels when set from 1 to 32 (0 turns quantisation off).
+    sound Two levels create binary random gates while twelve levels produce crisp chromatic-style stepped jumps.
+
+group Behaviour
+Seed      "Seed"        0 9999 1 int 0                         | 0: fresh sequence every run. 1 to 9999: repeats the exact same sequence
+    id seed
+    how Picks a deterministic starting seed from 1 to 9999 for bit-exact repeats, or 0 for a new sequence every time.
+    sound Fixed seeds make random modulation repeatable on every playback and render while 0 stays surprising on every take.
+Retrigger "Retrigger"   0 3 0    enum Free Beat Bar Note       | Free: runs on. Beat, Bar or Note: restarts phase and re-seeds (or steps) on the trigger
+    id retrigger
+    how Restarts the phase and deterministic seed (or forces a fresh step when Seed is 0) on each beat, bar or listened note.
+    sound Beat and bar retriggers lock fixed-seed random phrases into repeating loops while Note retrigger gives every note a fresh jump.
+Glide     "Write glide" 0 1000 492 time 0.001 1                | Least time a target takes to cross its whole range: no write moves further than this allows
+    id glide
+    how Limits how fast each target parameter may move so writes never step faster than this full-range travel time.
+    sound Short glides keep stepped jumps snappy and click-free while long glides turn sudden jumps into slow sweeps.
