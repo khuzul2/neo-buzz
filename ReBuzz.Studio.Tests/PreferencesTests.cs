@@ -36,6 +36,26 @@ namespace ReBuzz.Studio.Tests
             Dispatcher.UIThread.RunJobs();
         }
 
+        [AvaloniaTest]
+        public void TheAutoWarpPreferenceIsThreeWayAndShowsTheDefaultsForToGrid()
+        {
+            var was = ReBuzz.Core.Clips.AutoWarpPolicy.Mode;
+            try
+            {
+                var prefs = Open("Audio");
+                var page = prefs.Page<AudioPage>();
+                Assert.That(page.AutoWarpButtons.Select(b => (string)b.Content), Is.EqualTo(new[] { "Off", "Follow the beat", "To grid" }));
+                Assert.That(page.AutoWarpButtons.Select(b => b.IsChecked == true).Count(x => x), Is.EqualTo(1), "one mode is on");
+                page.AutoWarpButtons[2].RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Avalonia.Controls.Primitives.ToggleButton.ClickEvent));
+                Assert.That(ReBuzz.Core.Clips.AutoWarpPolicy.Mode, Is.EqualTo(ReBuzz.Core.Clips.AutoWarpMode.Grid));
+                Assert.That(page.AutoWarpButtons.Select(b => b.IsChecked == true), Is.EqualTo(new[] { false, false, true }));
+                page.AutoWarpButtons[0].RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Avalonia.Controls.Primitives.ToggleButton.ClickEvent));
+                Assert.That(ReBuzz.Core.Clips.AutoWarpPolicy.Mode, Is.EqualTo(ReBuzz.Core.Clips.AutoWarpMode.Off));
+                Close(prefs);
+            }
+            finally { ReBuzz.Core.Clips.AutoWarpPolicy.Mode = was; ReBuzz.Core.Clips.AutoWarpPolicy.Save(); }
+        }
+
         static PreferencesWindow Open(string page)
         {
             var prefs = PreferencesWindow.Open(Host, page);

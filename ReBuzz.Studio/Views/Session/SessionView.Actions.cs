@@ -591,6 +591,7 @@ namespace ReBuzz.Studio.Views.Session
                 if (layout.IsAudioClip(pattern))
                 {
                     menu.Items.Add(Item("Separate stems…", () => _ = ReBuzz.Studio.Shell.StemFlow.SeparateClip(pattern), tag: "Separate stems"));
+                    menu.Items.Add(ReBuzz.Studio.Shell.AutoWarpFlow.Menu(() => new[] { pattern }));     // Fork (neo-audio.md, AW5)
                     menu.Items.Add(ReBuzz.Studio.Shell.ConvertFlow.Menu(() => pattern));   // Fork (docs/specs/pitch.md section 9)
                     menu.Items.Add(ReBuzz.Studio.Shell.SliceFlow.Menu(() => pattern));     // Fork (docs/specs/audio-to-midi.md, SL1)
                 }

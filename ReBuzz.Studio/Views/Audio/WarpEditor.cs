@@ -4,7 +4,7 @@
 // to a beat; the audio between two markers is stretched to fit.
 //   Transients: hover one and a ghost marker shows; drag it to make a real marker there and warp, in one gesture.
 //   Markers: click selects, Shift- or Ctrl/Cmd-click extends; dragging empty waveform selects a time range (and the markers in it); Ctrl/Cmd+A selects all, Esc clears.
-//   Dragging a selected marker moves the whole selection, keeping its spacing; the audio before and after stretches. Alt (Option) + drag moves the marker along the audio, keeping its beat.
+//   Dragging a selected marker moves the whole selection, keeping its spacing; the audio before and after stretches. Shift + drag moves the marker along the audio, keeping its beat; Alt (Option) + drag is off the grid.
 //   Double-click: add a marker (on a transient when one is near) or remove the one under it. Del removes the selected ones. The right-click menu and the keys below are the page's
 //   other edits: each is one request, which the page hands to SessionLayout.WarpEdit (the call the agent's audio_warp_markers makes), so each is one undo step.
 //   Wheel or pinch: zoom around the pointer; Shift+wheel (or a sideways wheel): scroll; middle-button drag: scroll.
@@ -53,8 +53,10 @@ namespace ReBuzz.Studio.Views.Audio
 
         enum Gesture { None, Marker, Ghost, Range, Handle, Pan }
 
-        /// <summary>The key that moves a marker along the audio: Option on a Mac, Alt elsewhere.</summary>
+        /// <summary>The key that turns the snap to the grid (and to transients) off while dragging: Option on a Mac, Alt elsewhere.</summary>
         internal static string AltName => KeyText.IsMac ? "Option" : "Alt";
+        /// <summary>The key that moves a marker along the audio, keeping its beat (AW5: it was Alt).</summary>
+        internal static string SlideName => "Shift";
 
         AudioClipView view;
         AudioSource source;
@@ -104,7 +106,7 @@ namespace ReBuzz.Studio.Views.Audio
             ToolTip.SetTip(this,
                 "The audio along the clip's beats.\n" +
                 "Click a marker to select it (Shift- or " + (KeyText.IsMac ? "⌘" : "Ctrl") + "-click adds); drag empty waveform to select a time range; " + (KeyText.IsMac ? "⌘" : "Ctrl") + "+A selects all, Esc clears\n" +
-                "Drag a marker: warp (the selection moves together; snaps to the beat grid; Shift: free) · " + AltName + "+drag: move it along the audio, keeping its beat\n" +
+                "Drag a marker: warp (the selection moves together; snaps to the beat grid; " + AltName + ": free) · Shift+drag: move it along the audio, keeping its beat\n" +
                 "Hover a transient and drag: make a marker there and warp · double-click: add or remove a marker · Del: remove the selected ones\n" +
                 "Wheel or pinch: zoom · Shift+wheel: scroll · right-click: more");
             PointerTouchPadGestureMagnify += OnPinch;
@@ -142,6 +144,75 @@ namespace ReBuzz.Studio.Views.Audio
         /// <summary>Whether the view follows the playing position.</summary>
         public bool Follow { get; set; }
         public string Hint => hint;
+        /// <summary>The state the hint is about: "Over the audio", "Over an attack", "Over a marker", "Dragging" or "Range selected" (the toolbar's live hint, AW5).</summary>
+        public string HintLabel => hintLabel;
+        /// <summary>The clip's grid the drag hint names ("1/16").</summary>
+        public string GridName { get; set; } = "1/16";
+        /// <summary>The Alt key as the hints name it: Option's symbol on a Mac.</summary>
+        internal static string AltKey => KeyText.IsMac ? "⌥" : "Alt";
+        // ---- Auto-warp (AW5): what the markers are, as the Audio page's legend says
+        static readonly IBrush BeatMarkerBrush = StudioTokens.WarningBrush;
+        static readonly IBrush AttackBrush = StudioTokens.AccentBrush;
+        static readonly IBrush LeftAloneBrush = StudioTokens.TextSecondaryBrush;
+        double[] attacks = Array.Empty<double>();
+        double gridBeats = 0.25, reachShare = 0.4;
+
+        /// <summary>The attacks auto-warp to grid looks at (audio samples, sorted), the clip's grid in beats and its reach (a share of a step): they colour the markers and show the attacks left alone.</summary>
+        public void SetAttacks(IReadOnlyList<double> found, double grid, double reach)
+        {
+            attacks = (found ?? Array.Empty<double>()).OrderBy(t => t).ToArray();
+            gridBeats = grid > 0 ? grid : 0.25;
+            reachShare = reach;
+            InvalidateVisual();
+        }
+
+        const double AttackNearMs = 8;
+
+        bool NearAttack(double sample)
+        {
+            if (attacks.Length == 0 || source == null) return false;
+            int i = Array.BinarySearch(attacks, sample);
+            if (i < 0) i = ~i;
+            double within = AttackNearMs / 1000 * source.SampleRate;
+            return (i < attacks.Length && Math.Abs(attacks[i] - sample) <= within) || (i > 0 && Math.Abs(attacks[i - 1] - sample) <= within);
+        }
+
+        /// <summary>What a marker is: "beat" (amber: on a whole beat, put there by following the beat), "attack" (blue: on an attack of the audio) or "plain".</summary>
+        public string MarkerKind(int index)
+        {
+            if (index < 0 || index >= markers.Count) return "plain";
+            if (NearAttack(markers[index].Sample)) return "attack";
+            return Math.Abs(markers[index].Beat - Math.Round(markers[index].Beat)) < 1e-6 ? "beat" : "plain";
+        }
+
+        /// <summary>The attacks that have no marker and lie further from every grid line than the reach: auto-warp to grid left them alone (the hollow circles).</summary>
+        public IReadOnlyList<double> LeftAlone()
+        {
+            var list = new List<double>();
+            if (markers.Count < 2 || map == null) return list;
+            foreach (double t in attacks)
+            {
+                if (markers.Any(m => Math.Abs(m.Sample - t) <= AttackNearMs / 1000 * source.SampleRate)) continue;
+                double beat = map.BeatAt(t), d = Math.Abs(beat - Math.Round(beat / gridBeats) * gridBeats);
+                if (d > reachShare * gridBeats + 1e-9) list.Add(t);
+            }
+            return list;
+        }
+
+        /// <summary>The page's Auto-warp submenu for this waveform's right-click menu ("Auto-warp selection" when a range is selected).</summary>
+        public Func<MenuItem> AutoWarpMenu { get; set; }
+
+        /// <summary>The selected range as seconds of the audio (null when none, or the clip is reversed).</summary>
+        public (double From, double To)? RangeSeconds
+        {
+            get
+            {
+                if (range is not { } r || map == null || source == null || reverse) return null;
+                double a = map.SampleAt(Math.Min(r.A, r.B)) / source.SampleRate, b = map.SampleAt(Math.Max(r.A, r.B)) / source.SampleRate;
+                return b - a > 0.01 ? (Math.Max(0, a), Math.Min(source.Seconds, b)) : null;
+            }
+        }
+
         /// <summary>The sample of the transient a ghost marker shows on now, or NaN.</summary>
         public double Ghost => ghost;
         /// <summary>The context menu (built when it is opened).</summary>
@@ -294,6 +365,9 @@ namespace ReBuzz.Studio.Views.Audio
 
         /// <summary>The beat grid's step a drag snaps to at this zoom (the least that is at least 12 pixels wide, down to a sixteenth).</summary>
         public double SnapStep => pxPerBeat >= 192 ? 1.0 / 16 : pxPerBeat >= 48 ? 0.25 : pxPerBeat >= 24 ? 0.5 : 1;
+
+        /// <summary>The snap step as a note value (a beat is a quarter): what the hint of a drag in progress names.</summary>
+        public string SnapName => SnapStep >= 1 ? "1/4" : SnapStep >= 0.5 ? "1/8" : SnapStep >= 0.25 ? "1/16" : "1/64";
 
         double Snap(double beat, bool free) => free ? beat : Math.Round(beat / SnapStep) * SnapStep;
 
@@ -460,15 +534,54 @@ namespace ReBuzz.Studio.Views.Audio
                 bool on = selection.Contains(markers[i].Sample);
                 if (on) ctx.DrawLine(new Pen(new SolidColorBrush(Colors.White, 0.35), 8), new Point(x, TopBand), new Point(x, waveBottom));   // a halo: the selection shows at a glance
                 ctx.DrawLine(on ? new Pen(MarkerBrush, 2.5) : markerPen, new Point(x, TopBand), new Point(x, waveBottom));
-                var handle = new StreamGeometry();
-                using (var c = handle.Open())
+                string kind = attacks.Length > 0 ? MarkerKind(i) : "plain";
+                var outline = on ? new Pen(StudioTokens.TextPrimaryBrush, 1) : null;
+                if (kind == "attack") ctx.DrawEllipse(AttackBrush, outline, new Point(x, TopBand / 2 + 1), 5.5, 5.5);
+                else if (kind == "beat")
                 {
-                    c.BeginFigure(new Point(x - 5, 2), true);
-                    c.LineTo(new Point(x + 5, 2));
-                    c.LineTo(new Point(x, TopBand - 1));
-                    c.EndFigure(true);
+                    var d = new StreamGeometry();
+                    using (var c = d.Open())
+                    {
+                        c.BeginFigure(new Point(x, 0), true);
+                        c.LineTo(new Point(x + 6, TopBand / 2 + 1));
+                        c.LineTo(new Point(x, TopBand + 1));
+                        c.LineTo(new Point(x - 6, TopBand / 2 + 1));
+                        c.EndFigure(true);
+                    }
+                    ctx.DrawGeometry(BeatMarkerBrush, outline, d);
                 }
-                ctx.DrawGeometry(MarkerBrush, on ? new Pen(StudioTokens.TextPrimaryBrush, 1) : null, handle);
+                else
+                {
+                    var handle = new StreamGeometry();
+                    using (var c = handle.Open())
+                    {
+                        c.BeginFigure(new Point(x - 5, 2), true);
+                        c.LineTo(new Point(x + 5, 2));
+                        c.LineTo(new Point(x, TopBand - 1));
+                        c.EndFigure(true);
+                    }
+                    ctx.DrawGeometry(MarkerBrush, outline, handle);
+                }
+            }
+            // The attacks auto-warp to grid left alone (beyond its reach): hollow circles; and the long notes between attacks, with no marker.
+            if (attacks.Length > 0 && markers.Count >= 2)
+            {
+                foreach (double t in LeftAlone())
+                {
+                    double x = TransientX(t);
+                    if (x < -Grab || x > w + Grab) continue;
+                    ctx.DrawEllipse(null, new Pen(LeftAloneBrush, 2), new Point(x, TopBand / 2 + 1), 4, 4);
+                }
+                for (int k = 0; k + 1 < attacks.Length; k++)
+                {
+                    double b0 = map.BeatAt(attacks[k]), b1 = map.BeatAt(attacks[k + 1]);
+                    if (b1 - b0 < 2.0 || markers.Any(m => m.Sample > attacks[k] + 1 && m.Sample < attacks[k + 1] - 1 && Math.Abs(m.Beat - Math.Round(m.Beat)) > 1e-6)) continue;
+                    double x0 = X(Display(b0)) + 6, x1 = X(Display(b1)) - 6;
+                    if (reverse) (x0, x1) = (x1, x0);
+                    if (x1 < 0 || x0 > w || x1 - x0 < 90) continue;
+                    ctx.DrawLine(new Pen(LeftAloneBrush, 1, DashStyle.Dash), new Point(x0, TopBand + 6), new Point(x1, TopBand + 6));
+                    DrawText(ctx, "Long note: no markers", (x0 + x1) / 2 - 56, TopBand + 9, 11, LeftAloneBrush);
+                }
             }
 
             // The tempo of the segments either side of the marker clicked last.
@@ -708,6 +821,7 @@ namespace ReBuzz.Studio.Views.Audio
             m.Items.Add(Item("Warp from here", null, WarpFollowHere, any && !reverse));
             m.Items.Add(Item("Warp from here, straight", null, WarpStraightHere, any && !reverse));
             m.Items.Add(Item($"Warp as a loop of {(any ? LoopBarsNow() : 1)} bar{(any && LoopBarsNow() == 1 ? "" : "s")}", "Cmd+L", WarpAsLoop, any));
+            if (AutoWarpMenu?.Invoke() is { } autoWarp) { autoWarp.IsEnabled = any && !reverse; m.Items.Add(autoWarp); }
             m.Items.Add(new Separator());
             m.Items.Add(Item(hasRange ? "Insert markers at the transients in the selection" : "Insert markers at the transients", "Cmd+T", InsertAtTransients, any));
             m.Items.Add(Item("Insert a marker on every bar", "Shift+Cmd+B", InsertEveryBar, any));
@@ -729,26 +843,41 @@ namespace ReBuzz.Studio.Views.Audio
 
         // ------------------------------------------------------------------ the hint
 
-        void SetHint(string text = null)
+        string hintLabel = "Over the audio";
+
+        void SetHint(string text = null, string label = null)
         {
-            text ??= "Drag: select a time range · wheel: zoom · Shift+wheel: scroll · double-click: add a marker";
-            if (text == hint) return;
+            text ??= "Double-click to add a marker · drag to select a range";
+            label ??= "Over the audio";
+            if (text == hint && label == hintLabel) return;
             hint = text;
+            hintLabel = label;
             HintChanged?.Invoke(hint);
         }
 
-        string HintFor(Point p, KeyModifiers mods)
+        void SetHintFor(Point p, KeyModifiers mods)
         {
-            if (source == null) return "";
-            if (HandleAtPoint(p) != Handle.None) return "Drag: where the clip starts, or its loop starts and ends";
+            var (label, text) = HintFor(p, mods);
+            SetHint(text, label);
+        }
+
+        (string Label, string Text) HintFor(Point p, KeyModifiers mods)
+        {
+            if (source == null) return ("Over the audio", "");
+            if (HandleAtPoint(p) != Handle.None) return ("Over a handle", "Drag: where the clip starts, or its loop starts and ends");
             int hit = MarkerAtX(p.X);
-            string cmd = KeyText.IsMac ? "⌘" : "Ctrl";
+            string cmd = KeyText.IsMac ? "⌘" : "Ctrl", del = KeyText.IsMac ? "⌫" : "Delete";
             if (hit >= 0)
-                return mods.HasFlag(KeyModifiers.Alt)
-                    ? $"{AltName}+drag: move the marker along the audio, keeping its beat (Shift: no snap to transients)"
-                    : $"Drag: warp (Shift: no snap) · {AltName}+drag: move it along the audio, keeping its beat · Shift- or {cmd}-click: add to the selection · Del: remove";
-            if (!double.IsNaN(TransientNear(p.X))) return "Drag: make a marker on this transient and warp (Shift: no snap)";
-            return range != null || selection.Count > 0 ? $"Right-click: quantize, loop, bars… · {cmd}+U quantize · Esc: clear the selection" : "Drag: select a time range · double-click: add a marker · wheel: zoom · Shift+wheel: scroll";
+                return ("Over a marker", $"Drag to move it · {AltKey}: no snap · Shift: slide the audio · {del} removes it");
+            if (!double.IsNaN(TransientNear(p.X))) return ("Over an attack", $"Drag to place a marker here (snaps to the grid) · hold {AltKey} to drag freely");
+            if (range != null) return ("Range selected", $"Right-click: Auto-warp selection · {cmd}+U: quantize the range");
+            return ("Over the audio", "Double-click to add a marker · drag to select a range");
+        }
+
+        /// <summary>What a drag in progress says: the grid it snaps to, or that it is free, or that it slides the audio.</summary>
+        void SetDragHint(bool free, bool along)
+        {
+            SetHint(along ? "Sliding the audio under the marker, keeping its beat" : free ? "Moving freely (no snap)" : $"Snapping to {SnapName} · hold {AltKey} to move freely", "Dragging");
         }
 
         // ------------------------------------------------------------------ the mouse and keys
@@ -816,7 +945,7 @@ namespace ReBuzz.Studio.Views.Audio
                 grabSample = s;
                 if (extend)
                 {
-                    // Shift- or Ctrl/Cmd-click adds a marker, and takes a selected one out, but only when it is a click: a drag (Shift: no snap) moves the selection.
+                    // Shift- or Ctrl/Cmd-click adds a marker, and takes a selected one out, but only when it is a click: a drag (Alt: no snap) moves the selection.
                     if (wasIn) toggleOffOnRelease = true;
                     else { selection.Add(s); primary = s; }
                 }
@@ -844,7 +973,7 @@ namespace ReBuzz.Studio.Views.Audio
                 else
                 {
                     gesture = Gesture.Range;
-                    rangeFrom = Snap(BeatAt(p.X), e.KeyModifiers.HasFlag(KeyModifiers.Shift) && !extend);
+                    rangeFrom = Snap(BeatAt(p.X), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
                 }
                 Changed();
             }
@@ -857,8 +986,8 @@ namespace ReBuzz.Studio.Views.Audio
             base.OnPointerMoved(e);
             var p = e.GetPosition(this);
             hoverX = p.X;
-            bool free = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-            bool along = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+            bool free = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+            bool along = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
             switch (gesture)
             {
                 case Gesture.Ghost:
@@ -901,6 +1030,7 @@ namespace ReBuzz.Studio.Views.Audio
                     if (Math.Abs(p.X - pressX) >= DragStart || moved)
                     {
                         moved = true;
+                        SetDragHint(free, false);
                         SelectRange(rangeFrom, Snap(BeatAt(p.X), free), extend: Extends(e.KeyModifiers));
                     }
                     break;
@@ -915,7 +1045,7 @@ namespace ReBuzz.Studio.Views.Audio
                     bool over = HandleAtPoint(p) != Handle.None || MarkerAtX(p.X) >= 0 || !double.IsNaN(ghost);
                     Cursor = over ? (along && MarkerAtX(p.X) >= 0 ? Hand : SizeWE) : Arrow;
                     if (!ghost.Equals(was)) InvalidateVisual();
-                    SetHint(HintFor(p, e.KeyModifiers));
+                    SetHintFor(p, e.KeyModifiers);
                     break;
                 }
             }
@@ -938,7 +1068,7 @@ namespace ReBuzz.Studio.Views.Audio
             WarpResult r;
             if (along)
             {
-                // The marker takes the audio under the pointer (a nearby transient when not Shift) and keeps its beat.
+                // The marker takes the audio under the pointer (a nearby transient when not Alt) and keeps its beat.
                 var startMap = new WarpMap(startMarkers.Select(m => new WarpMarker(m.Sample, m.Beat)));
                 double sample = startMap.SampleAt(AudioBeat(BeatAt(x)));
                 if (!free)
@@ -963,7 +1093,7 @@ namespace ReBuzz.Studio.Views.Audio
             {
                 markers = r.Markers;
                 map = MapNow();
-                SetHint(along ? $"Moving along the audio ({AltName})" : "");
+                SetDragHint(free, along);
             }
             else SetHint(r.Error);
             InvalidateVisual();

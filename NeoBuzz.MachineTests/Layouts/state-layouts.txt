@@ -42,7 +42,10 @@ NeoBuzz.NeoAudio	0	2	a006a7ceaeea24e4
 NeoBuzz.Patch	0	20	bec0a8b17ee091b5
 NeoBuzz.Organ	0	32	830271717a1c8bf1
 NeoBuzz.Poly	0	91	dbaa32ac1ee1fb76
+NeoBuzz.Poly	1	98	a508931be3e215ca
+NeoBuzz.Poly	2	102	2ec93cb55f846197
 NeoBuzz.Sampler	0	325	190329edfb1c45d8
+NeoBuzz.Sampler	1	325	236bcd9389e20480
 NeoBuzz.Scope	0	11	518994d8cbae37f0
 NeoBuzz.Spectral	0	14	58894f78c44e8620
 NeoBuzz.StepMachine	0	38	bf0ec39eea1e2034

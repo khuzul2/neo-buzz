@@ -51,6 +51,8 @@ namespace ReBuzz.Studio.Views.Session
         Rect? box;
         int lastVelocity = 100;
         int lastDuration;
+        int lastSample;
+        bool chipDown;
 
         static readonly Cursor SizeWE = new Cursor(StandardCursorType.SizeWestEast);
         static readonly Cursor SizeAll = new Cursor(StandardCursorType.SizeAll);
@@ -77,6 +79,91 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         public ISequence Track { get; }
+
+        // ---- TM1: a machine that plays a sample per note (Neo Sampler's Tracker mode): a chip on each note, a picker, the Sample lane, colour by sample
+
+        NoteSampleContext samples;
+
+        /// <summary>The samples the notes can name, when the machine plays a sample per note (the host sets it); null: notes are as they always were.</summary>
+        internal NoteSampleContext Samples
+        {
+            get => samples;
+            set
+            {
+                samples = value;
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>Whether the notes carry a sample (chips, the picker and the Sample lane are on).</summary>
+        internal bool PerNoteSamples => samples != null;
+
+        /// <summary>Raised when a chip is clicked or S is pressed: the picker should open for the selection, near this rectangle (in the control's coordinates).</summary>
+        internal event Action<Control, Rect> PickerRequested;
+
+        /// <summary>Opens the picker for the selected notes (S).</summary>
+        internal bool RequestPicker()
+        {
+            if (samples == null || selected.Count == 0) return false;
+            int first = selected.Min();
+            var anchor = ChipRect(notes[first]) ?? RectOf(notes[first]);
+            PickerRequested?.Invoke(this, anchor);
+            return true;
+        }
+
+        /// <summary>Opens the picker for one note (a click on its chip in the Sample lane): the note is selected.</summary>
+        internal void RequestPickerFor(int index, Control from, Rect anchor)
+        {
+            if (samples == null || index < 0 || index >= notes.Count) return;
+            if (!selected.Contains(index)) SelectOnly(new[] { index });
+            PickerRequested?.Invoke(from, anchor);
+        }
+
+        /// <summary>Gives the selected notes a sample (0: none, the machine's own zones play them): one undo step.</summary>
+        internal void SetSample(int number)
+        {
+            var from = SelectedNotes();
+            if (samples == null || from.Count == 0) return;
+            if (number > 0) lastSample = number;
+            var to = from.Select(n => n.Sample == number ? n : n with { Sample = number, Offset = number == 0 ? 0 : n.Offset, Tune = number == 0 ? 0 : n.Tune }).ToList();
+            if (!from.SequenceEqual(to)) Commit(from, to);
+        }
+
+        /// <summary>Steps each selected note's own sample by <paramref name="delta"/> in the machine's list (one undo step).</summary>
+        internal void StepSelected(int delta) => StepNotes(SelectedNotes(), delta);
+
+        /// <summary>Steps one note's sample (Alt+wheel), or the selection's when the note is in it.</summary>
+        internal void StepSample(int index, int delta)
+        {
+            if (index < 0 || index >= notes.Count) return;
+            StepNotes(selected.Contains(index) ? SelectedNotes() : new List<ClipNote> { notes[index] }, delta);
+        }
+
+        void StepNotes(List<ClipNote> from, int delta)
+        {
+            if (samples == null || from.Count == 0) return;
+            var to = from.Select(n => { int next = samples.Step(n.Sample, delta); return next == n.Sample ? n : n with { Sample = next }; }).ToList();
+            if (to.Count > 0) lastSample = to[0].Sample > 0 ? to[0].Sample : lastSample;
+            if (!from.SequenceEqual(to)) Commit(from, to);
+        }
+
+        /// <summary>The note's chip, or null when the note is too small for one (it keeps its colour).</summary>
+        internal Rect? ChipRect(ClipNote n)
+        {
+            if (samples == null) return null;
+            var r = RectOf(n);
+            double h = Math.Min(20, r.Height - 6);
+            if (h < 10) return null;
+            double w = Math.Max(22, SampleColours.Label(n.Sample).Length * (h * 0.6) + 8);
+            if (r.Width < w + 6) return null;
+            return new Rect(r.X + 4, r.Y + (r.Height - h) / 2, w, h);
+        }
+
+        /// <summary>What the tooltip over a note says: its sample's number and name, and how to change it.</summary>
+        internal string NoteTip(ClipNote n) =>
+            samples == null ? null
+            : n.Sample > 0 ? $"{SampleColours.Label(n.Sample)}  {samples.NameOf(n.Sample)}\nAlt+wheel: next sample · S: menu"
+            : "Key map: the sampler's zones play this note by its pitch\nAlt+wheel: first sample · S: menu";
 
         /// <summary>Where the notes come from and go to (daw-modes.md S4).</summary>
         internal INoteSource Source { get; }
@@ -307,6 +394,8 @@ namespace ReBuzz.Studio.Views.Session
         void UpdateKeyTip(Point p)
         {
             string tip = p.X >= KeysLeft && p.X < KeysLeft + KeyColumn && !map.IsEmpty ? KeyTip(NoteAt(p.Y)) : null;
+            if (tip == null && samples != null && p.X >= KeysLeft + KeyColumn && ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y)) is int under and >= 0)
+                tip = NoteTip(notes[under]);
             if (tip == keyTip) return;
             keyTip = tip;
             ToolTip.SetTip(this, tip);
@@ -463,6 +552,7 @@ namespace ReBuzz.Studio.Views.Session
         {
             if (SnapToScale && scale != null) note = scale.Snap(note);
             var n = ClipNotes.Draw(time, note, lastVelocity, grid ?? Grid, Length, lastDuration);
+            if (samples != null) n = n with { Sample = lastSample > 0 ? lastSample : samples.Default };     // a new note plays the sample used last
             Commit(Array.Empty<ClipNote>(), new[] { n });
         }
 
@@ -788,13 +878,38 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>How many notes the last redraw would draw in the current view (tests: only the visible region is drawn).</summary>
         internal int NotesInView() => notes.Count(n => InView(n, Visible));
 
+        static readonly IPen SelectedRing = new Pen(Brushes.White, 2);
+        static readonly IBrush SelectedGlow = new ImmutableSolidColorBrush(Color.FromArgb(0x8C, 0x5B, 0x8D, 0xEF));
+        static readonly IBrush KeyMapInk = new ImmutableSolidColorBrush(Color.Parse("#8B929C"));
+
         void DrawNote(DrawingContext dc, ClipNote n, bool isSelected)
         {
             var r = RectOf(n);
-            var fill = isSelected ? NoteSelected : NoteFill;
-            using (dc.PushOpacity(0.45 + 0.55 * n.Velocity / 127.0))
-                dc.DrawRectangle(fill, NoteEdge, r);
+            // TM1: a note that names a sample takes its colour when the toolbar says so; a selected one keeps it, ringed.
+            bool coloured = samples != null && samples.ColourBySample && n.Sample > 0;
+            var fill = coloured ? SampleColours.BrushOf(n.Sample) : isSelected ? NoteSelected : NoteFill;
+            if (coloured && isSelected)
+            {
+                dc.DrawRectangle(SelectedGlow, null, r.Inflate(3), 6, 6);
+            }
+            using (dc.PushOpacity(coloured ? 0.55 + 0.45 * n.Velocity / 127.0 : 0.45 + 0.55 * n.Velocity / 127.0))
+                dc.DrawRectangle(fill, coloured ? null : NoteEdge, r, coloured ? 5 : 0, coloured ? 5 : 0);
+            if (coloured && isSelected) dc.DrawRectangle(null, SelectedRing, r.Inflate(1), 5, 5);
+            if (samples == null || ChipRect(n) is not Rect chip) return;
+            dc.DrawRectangle(SampleColours.ChipBack, null, chip, 4, 4);
+            var label = SampleColours.Text(SampleColours.Label(n.Sample), Math.Min(11, chip.Height - 5), n.Sample > 0 ? SampleColours.BrushOf(n.Sample) : KeyMapInk);
+            dc.DrawText(label, new Point(chip.X + (chip.Width - label.Width) / 2, chip.Y + (chip.Height - label.Height) / 2));
+            if (n.Sample > 0 && r.Width - (chip.Right - r.X) > 60)
+            {
+                var name = SampleColours.Text(samples.ShortName(n.Sample), Math.Min(11, chip.Height - 5), coloured ? SampleColours.Ink : NoteTextInk);
+                name.MaxTextWidth = Math.Max(10, r.Right - chip.Right - 10);
+                name.MaxLineCount = 1;
+                name.Trimming = TextTrimming.CharacterEllipsis;
+                dc.DrawText(name, new Point(chip.Right + 6, chip.Y + (chip.Height - name.Height) / 2));
+            }
         }
+
+        static readonly IBrush NoteTextInk = Brushes.White;
 
         // ------------------------------------------------------------------ pointer
 
@@ -854,6 +969,8 @@ namespace ReBuzz.Studio.Views.Session
                     selected.Add(hit);
                 }
                 var r = RectOf(notes[hit]);
+                chipDown = !additive && samples != null && ChipRect(notes[hit]) is Rect chip && chip.Contains(p);
+                if (notes[hit].Sample > 0) lastSample = notes[hit].Sample;
                 drag = mods.HasFlag(KeyModifiers.Alt) && !AltBypassesGrid ? Drag.Velocity
                      : p.X >= r.Right - EdgeGrab ? Drag.Resize
                      : Drag.Move;
@@ -960,6 +1077,8 @@ namespace ReBuzz.Studio.Views.Session
         {
             if (drag == Drag.None) return;
             var mode = drag;
+            bool clicked = !dragging && chipDown && commit && mode == Drag.Move;
+            chipDown = false;
             drag = Drag.None;
             dragging = false;
             if (keyNote >= 0 && (mode == Drag.Key || mode == Drag.Move))
@@ -970,6 +1089,14 @@ namespace ReBuzz.Studio.Views.Session
             dragFrom = null;
             dragTo = null;
             box = null;
+            if (clicked)
+            {
+                // A click on a chip (no drag): the picker, for the selection.
+                InvalidateVisual();
+                Changed?.Invoke();
+                RequestPicker();
+                return;
+            }
             if (commit && from != null && to != null && !from.SequenceEqual(to))
             {
                 if (mode == Drag.Velocity && to.Count > 0) lastVelocity = to[0].Velocity;
@@ -1003,6 +1130,20 @@ namespace ReBuzz.Studio.Views.Session
             }
             if (HandleKey(e.Key, SessionView.Normalize(e.KeyModifiers)))
                 e.Handled = true;
+        }
+
+        protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+        {
+            base.OnPointerWheelChanged(e);
+            // TM1: Alt+wheel on a note steps its sample to the next (wheel up) or the previous.
+            if (samples == null || !e.KeyModifiers.HasFlag(KeyModifiers.Alt)) return;
+            var p = e.GetPosition(this);
+            if (p.X < KeysLeft + KeyColumn) return;
+            int hit = ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y));
+            double d = e.Delta.Y != 0 ? e.Delta.Y : e.Delta.X;
+            if (hit < 0 || d == 0) return;
+            StepSample(hit, d > 0 ? 1 : -1);
+            e.Handled = true;
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
@@ -1070,6 +1211,9 @@ namespace ReBuzz.Studio.Views.Session
                 case Key.Q:
                     Quantize();
                     break;
+                case Key.S when mods == KeyModifiers.None && samples != null:
+                    // TM1: the sample picker for the selected notes.
+                    return RequestPicker();
                 case Key.X when mods == KeyModifiers.Control:
                     CutSelected();
                     break;

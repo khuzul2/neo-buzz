@@ -28,6 +28,18 @@ namespace NeoBuzz.Dsp
     }
 
     /// <summary>
+    /// A note sink whose notes can carry more than a pitch: a sample number, a start offset and a tune (Neo Sampler's Tracker mode). The track
+    /// notes that have them (and the machine's own preview) take this path; every other note takes <see cref="INoteSink.NoteOn"/>.
+    /// </summary>
+    internal interface ITrackNoteSink : INoteSink
+    {
+        /// <param name="sample">The wave to play (1 and up).</param>
+        /// <param name="offset">Where in the wave it starts, in the wave's frames.</param>
+        /// <param name="tuneCents">Cents added to the note's pitch.</param>
+        void NoteOnSample(int key, int note, float velocity, int sample, int offset, int tuneCents);
+    }
+
+    /// <summary>
     /// A note sink that also wants each MIDI event's channel (live MPE): notes, pitch bend, channel pressure and CC74 come
     /// with it; the rest takes the plain <see cref="INoteSink"/> path. Pattern notes stay on the plain path.
     /// </summary>
@@ -111,6 +123,12 @@ namespace NeoBuzz.Dsp
         public int Unison = 1;
         /// <summary>Glide between notes: off, always, or (poly/mono) only when notes overlap.</summary>
         public bool GlideAlways, GlideLegatoOnly;
+        /// <summary>
+        /// Slide (mono and legato): a note that overlaps the one before glides to its pitch without retriggering, whatever the glide mode;
+        /// while the voices are handed it, <see cref="SlideNow"/> is true so they glide in the slide time. Poly mode is not affected.
+        /// </summary>
+        public bool SlideOverlap;
+        public bool SlideNow { get; private set; }
 
         public int VoiceCount => voices.Length;
 
@@ -315,14 +333,17 @@ namespace NeoBuzz.Dsp
                 stackCount++;
             }
             int unison = Math.Clamp(Unison, 1, voices.Length);
-            bool glide = GlideAlways || (GlideLegatoOnly && wasHeld);
-            if (wasHeld && Mode == VoiceMode.Legato && AnyMonoVoiceHeld(unison))
+            bool slide = SlideOverlap && wasHeld && AnyMonoVoiceHeld(unison);
+            bool glide = GlideAlways || (GlideLegatoOnly && wasHeld) || slide;
+            if (wasHeld && (Mode == VoiceMode.Legato || slide) && AnyMonoVoiceHeld(unison))
             {
+                SlideNow = slide;
                 for (int u = 0; u < unison; u++)
                 {
                     voiceKey[u] = key;
                     voices[u].Legato(note, glide);
                 }
+                SlideNow = false;
             }
             else
             {
@@ -359,14 +380,17 @@ namespace NeoBuzz.Dsp
                 // Back to the previous held note.
                 int top = stackCount - 1;
                 float note = stackNote[top];
-                bool glide = GlideAlways || GlideLegatoOnly;
-                if (Mode == VoiceMode.Legato)
+                bool slide = SlideOverlap;
+                bool glide = GlideAlways || GlideLegatoOnly || slide;
+                if (Mode == VoiceMode.Legato || slide)
                 {
+                    SlideNow = slide;
                     for (int u = 0; u < unison; u++)
                     {
                         voiceKey[u] = stackKey[top];
                         voices[u].Legato(note, glide);
                     }
+                    SlideNow = false;
                 }
                 else
                 {

@@ -245,8 +245,10 @@ namespace ReBuzz.Studio.Shell.Commands
             yield return new ViewKey(AW, "Click · Shift or " + (mac ? "⌘" : "Ctrl") + " + click", "select a marker · add it to the selection (or take it out)");
             yield return new ViewKey(AW, "Drag on the waveform", "select a time range, and the markers in it (middle button, Shift+wheel or a sideways wheel: scroll)");
             yield return new ViewKey(AW, K("Cmd+A") + " · Esc · Delete", "select all markers · clear the selection · delete the selected markers (the two ends stay)");
-            yield return new ViewKey(AW, "Drag a selected marker", "move the whole selection, the spacing kept (Shift: off the grid and transients)");
-            yield return new ViewKey(AW, alt + " + drag a marker", "move it along the audio, keeping its beat (it snaps to a transient; Shift: free)");
+            yield return new ViewKey(AW, "Drag a selected marker", "move the whole selection, the spacing kept (" + alt + ": off the grid and transients)");
+            yield return new ViewKey(AW, "Shift + drag a marker", "move it along the audio, keeping its beat (it snaps to a transient; " + alt + ": free)");
+            yield return new ViewKey(AW, "Double-click the waveform", "add a marker there (before or after Auto-warp); drag it to warp, snapping to the grid (" + alt + ": no snap)");
+            yield return new ViewKey(AW, "Drag on the waveform, then right-click", "Auto-warp selection: follow the beat or to grid on the selected range only (its ends are pinned)");
             yield return new ViewKey(AW, K("Cmd+U"), "quantize the selected markers, or the range, to the grid by the strength");
             yield return new ViewKey(AW, K("Cmd+B") + " · " + K("Shift+Cmd+B"), "set bar 1 where the pointer is · a marker on every bar");
             yield return new ViewKey(AW, K("Cmd+T") + " · " + K("Cmd+L"), "markers at the transients · warp the range as a loop of 1, 2, 4, 8 or 16 bars");

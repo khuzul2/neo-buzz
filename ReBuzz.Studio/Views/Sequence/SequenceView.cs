@@ -996,6 +996,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Consolidate", () => a.ConsolidateSelected(), Gesture(Key.J), a.IsAudioSelected),
                     Item("Reverse", () => a.ReverseSelected(), new KeyGesture(Key.R), a.IsAudioSelected),
                     Item("Reset Gain", () => a.ResetGain(), null, a.IsAudioSelected),
+                    // Fork (neo-audio.md, AW5): auto-warp the selected audio clip: follow the beat, to grid, or with options.
+                    ReBuzz.Studio.Shell.AutoWarpFlow.Menu(() => a.Selected?.Pattern is { } ap ? new[] { ap } : System.Array.Empty<IPattern>(), null, a.IsAudioSelected),
                     new Separator(),
                     Item("Comp to Main Lane", () => a.CompAtCursor(), new KeyGesture(Key.C), clip && core.Arrangement.RoleOf(a.Selected.Sequence) == LaneRole.Take),
                     Item("Launch in Session", () => a.LaunchSelected(), null, clip),

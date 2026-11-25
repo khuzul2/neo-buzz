@@ -3,12 +3,16 @@
 namespace NeoBuzz.Sampler
 class NeoSamplerMachine
 tracks 16
+track Sample   "Sample"     1 254                | Tracker mode: the wave this note plays (1-200 the song's wavetable, 201 and up the built-ins; the Neo Sampler's Mode must be Tracker); empty: the note plays the zones as in Instrument mode
+track Offset   "Offset"     0 32767              | Tracker mode: where in the wave this note starts, in the wave's frames, the low part (frames = Offset + 32768 x Offset hi); empty: from the start
+track OffsetHi "Offset hi"  0 254                | Tracker mode: the high part of the start offset, in steps of 32768 frames (up to 8.3 million frames); empty: 0
+track Tune     "Tune"       0 4800               | Tracker mode: tune of this note in cents, 2400 = the note's own pitch (0 = 24 semitones down, 4800 = 24 up); empty: 2400
 summary Sampler that plays the song's waves (wavetable slots, from wave_import) and built-in samples: 16 zones by key and velocity range, each with its wave, root, tune, level, pan, start, end, loop with crossfade, gate or one-shot, reverse and a choke group; a wave slot's layers split its keys by root or alternate round robin; amp and filter envelopes, velocity to level and filter, pitch bend; Kit mode puts zone n on key Kit base + n − 1 as a one-shot drum. Use it for drum kits, sampled instruments and one-shots.
 
 group Play
-Mode        "Mode"          0 1    0    enum Instrument Kit             | Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)
-    how Chooses Instrument (zones play by key and velocity range, tuned from their root) or Kit (each zone gets its own key, one-shot).
-    sound Instrument mode plays a sample as a melodic instrument, and Kit mode turns zones into a drum pad set.
+Mode        "Mode"          0 2    0    enum Instrument Kit Tracker     | Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside); Tracker: a note with a Sample plays that wave (any of the song's 200 and the built-ins) from its Offset, tuned by its key (C-4 = the wave's own speed) and its Tune, and a note without one plays the zones as Instrument does
+    how Chooses Instrument (zones play by key and velocity range, tuned from their root), Kit (each zone gets its own key, one-shot) or Tracker (each note names its own sample).
+    sound Instrument mode plays a sample as a melodic instrument, Kit mode turns zones into a drum pad set, and Tracker mode lets every note pick its sample, as a tracker does.
 KitBase     "Kit base"      0 112  36   int 0 note                      | The key zone 1 plays in Kit mode (36 = C2, General MIDI's kick: zone 3 is D2 the snare, 7 F#2 the closed hat, 11 A#2 the open hat); the others follow a semitone apart
     how Sets the key that plays zone 1 in Kit mode, from 0 to 112; the other zones follow a semitone apart.
     sound Move it to line the kit up with the keys or pads you play it from.

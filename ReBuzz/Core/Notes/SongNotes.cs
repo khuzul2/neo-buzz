@@ -4,12 +4,14 @@
 //  - a machine that takes its notes in its tracks (a tracker, a native synth: its Note track parameter only, no MidiNote; the
 //    Pedal synths took notes that way until U6 gave them MIDI) has them in the pattern's engine-played Note columns
 //    (TrackerColumnNotes, D3 A);
+//  - a machine that plays a sample per note (INoteSampleProvider, in that mode) has them in its tracks too, with the sample, offset and tune;
 //  - any other generator, and a machine with a manifest note input, plays the engine MIDI column (MidiColumnNotes, D2 B).
 // Both put each edit on the song's history. Also here: the context ghosts (other clips' notes, placed in this pattern's time).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
 using ReBuzz.Agent;
 using ReBuzz.Core.Keyboards;
@@ -32,6 +34,9 @@ namespace ReBuzz.Core.Notes
             if (route == "tracks") return TrackerColumnNotes.For(buzz, pattern);
             // How the machine takes notes is what its keyboard decides (KeyboardRoute, the agent's rule): a managed machine with
             // MidiNote takes MIDI whatever an older manifest says; one that has a Note track parameter and no MIDI plays its tracks.
+            // A machine that plays a sample per note (Neo Sampler's Tracker mode, TM1) keeps its notes in its tracks: the sample, offset and tune are
+            // track parameters beside the note, and the MIDI column has no room for them.
+            if (machine.ManagedMachine is INoteSampleProvider { PlaysSamplePerNote: true } && TrackerColumnNotes.For(buzz, pattern) is { PerNoteSamples: true } samples) return samples;
             var kb = KeyboardRoute.For(machine);
             if (kb.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, pattern) is { } tracker) return tracker;
             if (kb.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, pattern);

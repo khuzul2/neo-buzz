@@ -12,6 +12,16 @@ namespace NeoBuzz.Machine
     internal sealed class NoteInput
     {
         public const int MidiKeyBase = 1000;
+        /// <summary>The key a sample preview (the picker's hover) plays on, apart from the tracks' (0 … 15) and the MIDI notes' (1000 …).</summary>
+        public const int PreviewKey = 2000;
+        /// <summary>The pitch a preview plays at: Buzz C-4, the tracker convention's own speed (Neo Sampler's TrackerRoot).</summary>
+        public const int PreviewNote = 48;
+
+        // What a track note can carry besides its pitch and velocity (a sample machine's Tracker mode): set by the machine's track parameters.
+        public const int ExtraSample = 0, ExtraOffset = 1, ExtraOffsetHi = 2, ExtraTune = 3, ExtraCount = 4;
+        /// <summary>The Tune parameter's value for the note's own pitch (cents are value − this).</summary>
+        public const int TuneCentre = 2400;
+        public const int OffsetStep = 32768;
         const int DefaultVelocity = 100;
 
         // Track notes: written by setters during ReBuzz's tick, read at the next Work (same thread
@@ -19,6 +29,7 @@ namespace NeoBuzz.Machine
         readonly byte[] pendingNote;
         readonly int[] pendingVelocity;
         readonly bool[] hasNote;
+        readonly int[] pendingExtra;          // [track * ExtraCount + kind]; -1: not set on this row
         bool anyTrack;
         readonly object trackLock = new object();
 
@@ -28,7 +39,7 @@ namespace NeoBuzz.Machine
         int ringWrite, ringRead;
         readonly object midiLock = new object();
 
-        const int KindNoteOn = 1, KindNoteOff = 2, KindControl = 3;
+        const int KindNoteOn = 1, KindNoteOff = 2, KindControl = 3, KindSample = 4;
 
         public NoteInput(int tracks)
         {
@@ -36,7 +47,9 @@ namespace NeoBuzz.Machine
             pendingNote = new byte[Tracks];
             pendingVelocity = new int[Tracks];
             hasNote = new bool[Tracks];
+            pendingExtra = new int[Tracks * ExtraCount];
             for (int t = 0; t < Tracks; t++) pendingVelocity[t] = -1;
+            Array.Fill(pendingExtra, -1);
         }
 
         public int Tracks { get; }
@@ -59,6 +72,16 @@ namespace NeoBuzz.Machine
             if ((uint)track >= (uint)Tracks) return;
             lock (trackLock) pendingVelocity[track] = Math.Clamp(value, 1, 127);
         }
+
+        /// <summary>A value a track parameter besides Note and Velocity gave this row (a sample number, an offset, a tune).</summary>
+        public void SetExtra(int track, int kind, int value)
+        {
+            if ((uint)track >= (uint)Tracks || (uint)kind >= ExtraCount) return;
+            lock (trackLock) pendingExtra[track * ExtraCount + kind] = value;
+        }
+
+        /// <summary>Starts (or ends) a sample at its own speed, for the picker's hover (any thread; applied at the next block).</summary>
+        public void PreviewSample(int sample, bool on) => Push(KindSample, sample, on ? 1 : 0, 0);
 
         /// <summary>MIDI note on/off from ReBuzz (MIDI thread). Velocity 0 is note off.</summary>
         public void MidiNote(int channel, int note, int velocity)
@@ -123,6 +146,7 @@ namespace NeoBuzz.Machine
             {
                 anyTrack = false;
                 for (int t = 0; t < Tracks; t++) { hasNote[t] = false; pendingVelocity[t] = -1; }
+                Array.Fill(pendingExtra, -1);
             }
             lock (midiLock) Volatile.Write(ref ringRead, Volatile.Read(ref ringWrite));
         }
@@ -137,9 +161,11 @@ namespace NeoBuzz.Machine
                     anyTrack = false;
                     for (int t = 0; t < Tracks; t++)
                     {
+                        int x = t * ExtraCount;
                         if (!hasNote[t])
                         {
                             pendingVelocity[t] = -1;
+                            for (int k = 0; k < ExtraCount; k++) pendingExtra[x + k] = -1;
                             continue;
                         }
                         hasNote[t] = false;
@@ -148,11 +174,18 @@ namespace NeoBuzz.Machine
                         pendingVelocity[t] = -1;
                         if (b == 255)
                         {
+                            for (int k = 0; k < ExtraCount; k++) pendingExtra[x + k] = -1;
                             sink.NoteOff(t);
                             continue;
                         }
+                        int sample = pendingExtra[x + ExtraSample];
+                        int offset = Math.Max(0, pendingExtra[x + ExtraOffset]) + OffsetStep * Math.Max(0, pendingExtra[x + ExtraOffsetHi]);
+                        int tune = pendingExtra[x + ExtraTune] < 0 ? 0 : pendingExtra[x + ExtraTune] - TuneCentre;
+                        for (int k = 0; k < ExtraCount; k++) pendingExtra[x + k] = -1;
                         int midi = BuzzToMidi(b);
-                        if (midi >= 0) sink.NoteOn(t, midi, vel / 127f);
+                        if (midi < 0) continue;
+                        if (sample > 0 && sink is ITrackNoteSink withSample) withSample.NoteOnSample(t, midi, vel / 127f, sample, offset, tune);
+                        else sink.NoteOn(t, midi, vel / 127f);
                     }
                 }
             }
@@ -172,6 +205,10 @@ namespace NeoBuzz.Machine
                     case KindNoteOff:
                         if (ch != null) ch.NoteOff(MidiKeyBase + a, a, Math.Clamp(c, 0, 15));
                         else sink.NoteOff(MidiKeyBase + a);
+                        break;
+                    case KindSample:
+                        if (b > 0 && sink is ITrackNoteSink previewing) previewing.NoteOnSample(PreviewKey, PreviewNote, 1f, a, 0, 0);
+                        else sink.NoteOff(PreviewKey);
                         break;
                     case KindControl:
                         if (ch == null || !ch.Control(Math.Clamp(c, 0, 15), a, b)) Control(sink, a, b);

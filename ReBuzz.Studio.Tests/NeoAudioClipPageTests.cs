@@ -548,12 +548,12 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(now, Is.GreaterThan(was + 1.5), "it moved along the beats");
                 Assert.That(Math.Abs(now / 0.5 - Math.Round(now / 0.5)), Is.LessThan(1e-9), "on the half beat grid, got " + now);
             });
-            // Shift: free.
+            // Alt (Option on a Mac): free. (Shift slides the audio under the marker since AW5.)
             double before = Audio(clip).Markers.OrderBy(m => m.Beat).ElementAt(1).Beat;
-            Steps(rig, clip, () => rig.Drag(WaveAt(rig, before, 0.3), WaveAt(rig, before + 0.13, 0.3), RawInputModifiers.Shift), save: false, check: _ =>
+            Steps(rig, clip, () => rig.Drag(WaveAt(rig, before, 0.3), WaveAt(rig, before + 0.13, 0.3), RawInputModifiers.Alt), save: false, check: _ =>
             {
                 double now = Audio(clip).Markers.OrderBy(m => m.Beat).ElementAt(1).Beat;
-                Assert.That(Math.Abs(now / 0.5 - Math.Round(now / 0.5)), Is.GreaterThan(0.05), "Shift: no snap, got " + now);
+                Assert.That(Math.Abs(now / 0.5 - Math.Round(now / 0.5)), Is.GreaterThan(0.05), "Alt: no snap, got " + now);
             });
             // The clip's length follows its markers (warp stretches the audio between them).
             // Double-click a marker: it goes.

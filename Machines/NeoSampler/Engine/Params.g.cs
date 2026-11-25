@@ -343,7 +343,7 @@ namespace NeoBuzz.Sampler
 
         public static readonly ParamDef[] Table =
         {
-            new ParamDef(P.Mode, "Mode", "Mode", 0, 1, 0, MapKind.Enum, names: new[] { "Instrument", "Kit" }, group: "Play", description: "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)", how: "Chooses Instrument (zones play by key and velocity range, tuned from their root) or Kit (each zone gets its own key, one-shot).", sound: "Instrument mode plays a sample as a melodic instrument, and Kit mode turns zones into a drum pad set."),
+            new ParamDef(P.Mode, "Mode", "Mode", 0, 2, 0, MapKind.Enum, names: new[] { "Instrument", "Kit", "Tracker" }, group: "Play", description: "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside); Tracker: a note with a Sample plays that wave (any of the song's 200 and the built-ins) from its Offset, tuned by its key (C-4 = the wave's own speed) and its Tune, and a note without one plays the zones as Instrument does", how: "Chooses Instrument (zones play by key and velocity range, tuned from their root), Kit (each zone gets its own key, one-shot) or Tracker (each note names its own sample).", sound: "Instrument mode plays a sample as a melodic instrument, Kit mode turns zones into a drum pad set, and Tracker mode lets every note pick its sample, as a tracker does."),
             new ParamDef(P.KitBase, "KitBase", "Kit base", 0, 112, 36, MapKind.Int, a: 0, b: 0, unit: "note", group: "Play", description: "The key zone 1 plays in Kit mode (36 = C2, General MIDI's kick: zone 3 is D2 the snare, 7 F#2 the closed hat, 11 A#2 the open hat); the others follow a semitone apart", how: "Sets the key that plays zone 1 in Kit mode, from 0 to 112; the other zones follow a semitone apart.", sound: "Move it to line the kit up with the keys or pads you play it from."),
             new ParamDef(P.Polyphony, "Polyphony", "Polyphony", 1, 32, 32, MapKind.Int, a: 0, b: 0, group: "Play", description: "Voices that sound at once (each zone a note plays takes one); past it a new voice takes the quietest released one, else the oldest, fading it out in 3 ms", how: "Sets how many voices can sound at once, from 1 to 32.", sound: "More voices let long samples and chords overlap, and fewer make new notes cut off the quietest older ones."),
             new ParamDef(P.BendRange, "BendRange", "Bend range", 0, 24, 2, MapKind.Int, a: 0, b: 0, unit: "st", group: "Play", description: "Pitch bend range", how: "Sets how far the pitch bend wheel moves the pitch, from 0 to 24 semitones.", sound: "A small range gives expressive nudges, and a large one gives big sweeps."),
@@ -669,5 +669,15 @@ namespace NeoBuzz.Sampler
             new ParamDef(P.Z16Rev, "Z16Rev", "Z16 reverse", 0, 1, 0, MapKind.Switch, group: "Zone 16", description: "Zone 16: plays backwards, from its end to its start", how: "Plays zone 16 backwards.", sound: "Reversed samples swell into the note, which is useful for risers and transitions."),
             new ParamDef(P.Z16Choke, "Z16Choke", "Z16 choke", 0, 8, 0, MapKind.Int, a: 0, b: 0, group: "Zone 16", description: "Zone 16: choke group 1–8 (0 off): a note in a group fades out, in 5 ms, every voice of the group still sounding (closed and open hats)", how: "Puts zone 16 in one of eight choke groups, or none; a new note fades out the others in its group.", sound: "Choke groups let a closed hat cut off an open hat, as on a real hat."),
         };
+    }
+
+    /// <summary>Track parameters after Note and Velocity, in declaration order (OnTrackParameter).</summary>
+    internal static class TP
+    {
+        public const int Sample = 0;
+        public const int Offset = 1;
+        public const int OffsetHi = 2;
+        public const int Tune = 3;
+        public const int Count = 4;
     }
 }

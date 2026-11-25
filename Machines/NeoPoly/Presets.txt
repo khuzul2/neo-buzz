@@ -879,3 +879,185 @@ Mod sustain = 0
 Volume = 1.8
 Noise = 100
 Noise colour = 100
+
+preset "Acid — Squelch"
+comment "Resonant diode bass with accents that bite and slides: play it in a line, hard notes accented."
+Voice mode = Legato
+Slide = On
+Slide time = 0.06
+O1 shape = 2
+O1 octave = -1
+F1 type = Diode 18
+F1 cutoff = 280
+F1 reso = 78
+F1 env = 62
+F1 drive = 6
+F1 key track = 20
+F1 velocity = 0
+Flt attack = 0.001
+Flt decay = 0.22
+Flt sustain = 0
+Accent threshold = 110
+Accent = 65
+Accent decay = 0.22
+Accent sweep = 1.2
+Accent level = 3
+Amp attack = 0.001
+Amp sustain = 100
+Amp release = 0.04
+Vel → amp = 30
+Drift = 5
+Volume = -2
+
+preset "Acid — Rubber"
+comment "A softer, stretchier acid: longer slides, a rounder filter and a gentle accent."
+Voice mode = Legato
+Slide = On
+Slide time = 0.12
+O1 shape = 2
+O1 octave = -1
+F1 type = Diode 18
+F1 cutoff = 380
+F1 reso = 62
+F1 env = 45
+F1 drive = 3
+F1 key track = 25
+F1 velocity = 0
+Flt attack = 0.002
+Flt decay = 0.35
+Flt sustain = 5
+Accent threshold = 110
+Accent = 35
+Accent decay = 0.22
+Accent sweep = 0.8
+Accent level = 3
+Amp attack = 0.002
+Amp sustain = 100
+Amp release = 0.08
+Vel → amp = 20
+Drift = 12
+Volume = -2
+
+preset "Acid — Screamer"
+comment "Near self-oscillation on a square wave: accents climb and squeal."
+Voice mode = Legato
+Slide = On
+Slide time = 0.045
+O1 shape = 3
+O1 PW = 50
+O1 octave = -1
+F1 type = Diode 18
+F1 cutoff = 650
+F1 reso = 92
+F1 env = 70
+F1 drive = 12
+F1 key track = 15
+F1 velocity = 0
+Flt attack = 0.001
+Flt decay = 0.28
+Flt sustain = 0
+Accent threshold = 110
+Accent = 70
+Accent decay = 0.14
+Accent sweep = 2.2
+Accent level = 4
+Amp attack = 0.001
+Amp sustain = 100
+Amp release = 0.03
+Vel → amp = 25
+Drift = 3
+Volume = -6
+
+preset "Acid — Deep"
+comment "A dark, heavy acid bass with a sub underneath."
+Voice mode = Legato
+Slide = On
+Slide time = 0.08
+O1 shape = 2
+O1 octave = -1
+O3 shape = 1
+O3 octave = -2
+O3 level = 60
+F1 type = Diode 18
+F1 cutoff = 170
+F1 reso = 60
+F1 env = 42
+F1 drive = 4
+F1 key track = 10
+F1 velocity = 0
+Flt attack = 0.002
+Flt decay = 0.3
+Flt sustain = 0
+Accent threshold = 110
+Accent = 55
+Accent decay = 0.25
+Accent sweep = 1
+Accent level = 3
+Amp attack = 0.002
+Amp sustain = 100
+Amp release = 0.06
+Vel → amp = 30
+Drift = 8
+Volume = -3
+
+preset "Acid — Plucky"
+comment "Short, snappy acid notes that die away quickly."
+Voice mode = Legato
+Slide = On
+Slide time = 0.035
+O1 shape = 2
+O1 octave = 0
+F1 type = Diode 18
+F1 cutoff = 420
+F1 reso = 60
+F1 env = 58
+F1 drive = 5
+F1 key track = 30
+F1 velocity = 0
+Flt attack = 0.001
+Flt decay = 0.15
+Flt sustain = 0
+Accent threshold = 110
+Accent = 72
+Accent decay = 0.12
+Accent sweep = 1.5
+Accent level = 3
+Amp attack = 0.001
+Amp decay = 0.22
+Amp sustain = 10
+Amp release = 0.05
+Vel → amp = 30
+Drift = 5
+Volume = -4
+
+preset "Acid — Sub"
+comment "A round, low acid line that stays mostly sub, with a little filter movement."
+Voice mode = Legato
+Slide = On
+Slide time = 0.09
+O1 shape = 1
+O1 octave = -1
+O2 shape = 2
+O2 octave = -1
+O2 level = 35
+F1 type = Diode 18
+F1 cutoff = 130
+F1 reso = 45
+F1 env = 30
+F1 drive = 3
+F1 key track = 10
+F1 velocity = 0
+Flt attack = 0.003
+Flt decay = 0.25
+Flt sustain = 10
+Accent threshold = 110
+Accent = 50
+Accent decay = 0.3
+Accent sweep = 0.6
+Accent level = 3
+Amp attack = 0.003
+Amp sustain = 100
+Amp release = 0.1
+Vel → amp = 20
+Drift = 6
+Volume = -2

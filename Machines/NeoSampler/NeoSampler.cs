@@ -7,15 +7,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Sampler
 {
     [MachineDecl(Name = "Neo Sampler", ShortName = "Sampler", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
-    public partial class NeoSamplerMachine : NeoSynthBase, IBuzzMachine, IDisposable
+    public partial class NeoSamplerMachine : NeoSynthBase, IBuzzMachine, IDisposable, INoteSampleProvider
     {
         readonly float[] left = new float[SamplerEngine.MaxBlock], right = new float[SamplerEngine.MaxBlock];
         int rate;
@@ -30,6 +32,106 @@ namespace NeoBuzz.Sampler
             // The built-in samples are made once per process, in the background, not when a note first asks.
             BuiltIns.StartBuilding();
         }
+
+        // ---- Tracker mode (TM1): a sample per note -----------------------------------------------------------------------------------
+
+        /// <summary>The track parameters after Note and Velocity (generated: Sample, Offset, Offset hi, Tune) go to the next note on their track.</summary>
+        void OnTrackParameter(int parameter, int track, int value)
+        {
+            int kind = parameter switch
+            {
+                TP.Sample => NoteInput.ExtraSample,
+                TP.Offset => NoteInput.ExtraOffset,
+                TP.OffsetHi => NoteInput.ExtraOffsetHi,
+                TP.Tune => NoteInput.ExtraTune,
+                _ => -1,
+            };
+            if (kind >= 0) Notes.SetExtra(track, kind, value);
+        }
+
+        /// <summary>Versioned state (machines.md §3.4): version 1 added the Tracker mode and the Sample, Offset, Offset hi and Tune track parameters, after the old ones, so a song saved before opens as it was.</summary>
+        internal override StateMigrations Migrations => migrations;
+
+        static readonly StateMigrations migrations = new StateMigrations(Params.Table)
+            .Step(Params.Table.Select(p => p.Id).ToArray(), step => { });
+
+        /// <summary>Whether the notes name their samples (Mode: Tracker): the roll then shows a chip on each note.</summary>
+        public bool PlaysSamplePerNote => Raw(P.Mode) == SamplerEngine.ModeTracker;
+
+        public int NoteSampleVersion
+        {
+            get
+            {
+                int h = NoteMapHash.Add(NoteMapHash.Seed, Raw(P.Mode));
+                try
+                {
+                    var waves = Wavetable?.Waves;
+                    if (waves != null)
+                        for (int i = 0; i < waves.Count && i < SampleBank.SongSlots; i++)
+                        {
+                            var w = waves[i];
+                            if (w == null || w.Layers.Count == 0) continue;
+                            h = NoteMapHash.Add(h, i + 1);
+                            h = NoteMapHash.Add(h, w.Name ?? "");
+                            h = NoteMapHash.Add(h, w.Layers[0].SampleCount);
+                            h = NoteMapHash.Add(h, Bank.Get(i + 1) != null ? 1 : 0);
+                        }
+                }
+                catch (Exception) { }
+                h = NoteMapHash.Add(h, BuiltIns.Ready ? 1 : 0);
+                return h;
+            }
+        }
+
+        const int PeakColumns = 64;
+
+        public IReadOnlyList<NoteSample> ReadNoteSamples()
+        {
+            var list = new List<NoteSample>();
+            try
+            {
+                var waves = Wavetable?.Waves;
+                if (waves != null)
+                    for (int i = 0; i < waves.Count && i < SampleBank.SongSlots; i++)
+                    {
+                        var w = waves[i];
+                        if (w == null || w.Layers.Count == 0 || w.Layers[0].SampleCount < 1) continue;
+                        string name = string.IsNullOrWhiteSpace(w.Name) ? "Slot " + (i + 1) : w.Name.Trim();
+                        var layer = Bank.Get(i + 1)?.Layers is { Length: > 0 } layers ? layers[0] : null;
+                        list.Add(new NoteSample(i + 1, name, w.Layers[0].SampleCount, w.Layers[0].SampleRate, Peaks(layer)));
+                    }
+            }
+            catch (Exception) { }
+            for (int n = 1; n <= BuiltIns.Count; n++)
+            {
+                var slot = BuiltIns.Get(n);
+                var layer = slot?.Layers.Length > 0 ? slot.Layers[0] : null;
+                list.Add(new NoteSample(SampleBank.SongSlots + n, BuiltIns.Names[n - 1], layer?.Length ?? 0, layer?.Rate ?? BuiltIns.Rate, Peaks(layer)));
+            }
+            return list;
+        }
+
+        /// <summary>The wave's outline: the largest absolute value in each of 64 parts, as a share of the largest.</summary>
+        static float[] Peaks(SampleLayer layer)
+        {
+            var peaks = new float[PeakColumns];
+            var ov = layer?.Overview;
+            if (ov == null) return peaks;
+            int per = SampleLayer.OverviewColumns / PeakColumns;
+            float top = 0;
+            for (int c = 0; c < PeakColumns; c++)
+            {
+                float m = 0;
+                for (int k = c * per; k < (c + 1) * per; k++) m = Math.Max(m, Math.Max(Math.Abs(ov[2 * k]), Math.Abs(ov[2 * k + 1])));
+                peaks[c] = m;
+                top = Math.Max(top, m);
+            }
+            if (top > 0)
+                for (int c = 0; c < PeakColumns; c++) peaks[c] /= top;
+            return peaks;
+        }
+
+        public void PreviewNoteSample(int number, bool on) => Notes.PreviewSample(number, on);
 
         internal SamplerEngine Engine { get; }
         internal SampleBank Bank { get; }
