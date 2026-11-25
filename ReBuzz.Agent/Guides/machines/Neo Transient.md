@@ -23,6 +23,8 @@ A transient shaper: two followers of the level find the onset of every hit and i
 | Mode | Attack_Sustain | Impact for four bands |
 | Mix | 100% | lower for a subtler effect |
 
+`Amount` (default 100 %) scales attack, sustain and the band impacts: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Drums — More Snap" (Attack +6, Sustain -2 dB, Punchy), "Drums — Tighter (Less Room)", "Drums — Bigger Tails", "Drums — Hit Harder, Keep the Tail".

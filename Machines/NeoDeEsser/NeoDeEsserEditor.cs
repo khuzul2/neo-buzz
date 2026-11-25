@@ -62,6 +62,7 @@ namespace NeoBuzz.DeEsser
             });
 
             var output = Layout.Column(
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
                 new ParamKnob(ctx, P.Output, diameter: 40),
                 new ParamChoice(ctx, P.Listen, "Listen", 40),
                 new ParamChoice(ctx, P.Delta, "Delta", 40),

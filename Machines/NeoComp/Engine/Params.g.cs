@@ -24,7 +24,8 @@ namespace NeoBuzz.Comp
         public const int Character = 13;
         public const int Mix = 14;
         public const int Output = 15;
-        public const int Count = 16;
+        public const int Amount = 16;
+        public const int Count = 17;
     }
 
     internal static class Params
@@ -50,6 +51,7 @@ namespace NeoBuzz.Comp
             new ParamDef(P.Character, "Character", "Character", 0, 1000, 0, MapKind.Percent, group: "Output", description: "Mode colour: Glue VCA, FET and Opto saturation (Clean ignores it)", how: "Sets how strongly the chosen mode adds its own colour: Glue VCA, FET and Opto saturation (Clean ignores it).", sound: "More character adds warmth and density to the compressed sound."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (parallel compression)", how: "Blends the compressed signal with the dry signal.", sound: "Mixing some dry back in keeps the punch and detail while adding density, known as parallel compression."),
             new ParamDef(P.Output, "Output", "Output", 0, 1000, 500, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output level", how: "Sets the final level in dB, from -24 to +24.", sound: "It makes the whole sound louder or quieter without changing its tone."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales how far the compressor moves the sound from neutral: the gain it takes off (the ratio's reduction), the makeup and the character. 0 % is bypass, 100 % your settings, 200 % twice as much.", sound: "Turn it down to ease the compression in without touching the other controls, up to squash harder than the ratio alone allows."),
         };
     }
 }

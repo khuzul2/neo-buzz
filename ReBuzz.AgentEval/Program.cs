@@ -7,7 +7,7 @@
 //            exits 1 when the gate (Results.cs) finds a regression.
 //   prepare  --exe NeoBuzzLive.exe --task NAME [--out agent-eval]
 //            A task's starting song, brief.md and mcp.json (the MCP config a client runs NeoBuzz Live with).
-//   score    --exe NeoBuzzLive.exe --task NAME [--out agent-eval] [--song result.bmxml] [--transcript t.jsonl]
+//   score    --exe NeoBuzzLive.exe --task NAME [--out agent-eval] [--song result.nbl] [--transcript t.jsonl]
 //            [--results agent-results.json]: scores the song an agent saved; appends to the results.
 //   report   --results agent-results.json [--title …]: the results as a markdown table.
 //   rebaseline --results eval-results.json [--baseline eval/baseline.json]
@@ -260,7 +260,7 @@ namespace ReBuzz.AgentEval
                 },
             };
             File.WriteAllText(ctx.File("mcp.json"), mcp.ToJsonString(EvalRun.Indented) + "\n");
-            Console.WriteLine($"Prepared {task.Name} in {ctx.Folder}: start.bmxml, brief.md, mcp.json");
+            Console.WriteLine($"Prepared {task.Name} in {ctx.Folder}: start.nbl, brief.md, mcp.json");
             return 0;
         }
 

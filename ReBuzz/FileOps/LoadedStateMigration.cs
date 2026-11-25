@@ -1,5 +1,5 @@
 // Fork (docs/specs/machines.md §3.4): a song saved by an older layout of one of our machines loads its global parameter values through
-// the machine's migrations, on the loader thread, instead of by position. Used by the BMX and BMXML loaders.
+// the machine's migrations, on the loader thread, instead of by position. Used by the core sections loader.
 
 using System;
 using Buzz.MachineInterface;

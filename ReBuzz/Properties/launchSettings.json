@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "ReBuzz": {
-      "commandName": "Executable",
-      "executablePath": "$(OutDir)NeoBuzzLive.exe",
-      "nativeDebugging": true
-    }
-  }
-}

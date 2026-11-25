@@ -1,5 +1,5 @@
 #nullable disable
-// Neo Gate (docs/specs/mastering-tools.md §5.13): the successor of Pedal Gate. Two inputs: 1 is the signal, 2 the
+// Neo Gate (docs/specs/mastering-tools.md §5.13). Two inputs: 1 is the signal, 2 the
 // external sidechain (connect a machine to the second input). DSP in Engine/, parameters generated from Params.def,
 // editor in NeoGateEditor.cs. Its latency is the lookahead, reported.
 
@@ -80,7 +80,7 @@ namespace NeoBuzz.Gate
                 {
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
-                        "Neo Gate — noise gate and downward expander, the successor of Pedal Gate: threshold with hysteresis, attack, hold " +
+                        "Neo Gate — noise gate and downward expander: threshold with hysteresis, attack, hold " +
                         "and release, a Range floor, an expansion ratio, a key filter, external sidechain (input 2) and lookahead.\n\n" +
                         "Part of neo-buzz (docs/specs/mastering-tools.md).", "Neo Gate"),
                 },
@@ -88,7 +88,7 @@ namespace NeoBuzz.Gate
         };
     }
 
-#if WINDOWS || AVALONIA   // the editor on WPF, or Avalonia in the studio (studio-mvp.md S1); none headless
+#if AVALONIA   // the editor: Avalonia in the studio (studio-mvp.md S1); none headless
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {

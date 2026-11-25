@@ -559,9 +559,39 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             e.Handled = true;
         }
 
+        /// <summary>
+        /// What the machine calls the note under a point, for the tooltip (docs/specs/daw-modes.md §8.9, NM1): "Kick · C2" on a note cell of a
+        /// machine that names its keys (Neo Sampler's kit, Neo Drums, a plug-in's drum names). Null: not a note cell, or no name.
+        /// </summary>
+        internal string NoteTipAt(Point p)
+        {
+            try
+            {
+                var layout = grid.Layout;
+                if (layout == null || layout.Pattern.ColumnSets.Count == 0 || p.Y < 0 || p.X < 0) return null;
+                var d = layout.GetDigitAtPoint(p);
+                var pcol = d.ParameterColumn;
+                if (pcol == null || pcol.Type != ColumnType.Note) return null;
+                var pattern = layout.Pattern;
+                if (pattern.GetValueType(d) == BeatValueType.NoValue) return null;
+                int v = pattern.GetValue(d);
+                if (v == BuzzGUI.Common.BuzzNote.Off) return null;
+                string name = pcol.NoteFullName(v);
+                return string.IsNullOrEmpty(name) ? null : name + " · " + BuzzGUI.Common.NoteNames.Name(BuzzGUI.Common.BuzzNote.ToMIDINote(v));
+            }
+            catch (Exception) { return null; }
+        }
+
+        string tip;
+
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
+            if (!dragging)
+            {
+                string now = NoteTipAt(e.GetPosition(this));
+                if (now != tip) { tip = now; ToolTip.SetTip(this, now); }
+            }
             if (!dragging || grid.Layout == null) return;
             var p = e.GetPosition(this);
             if (dragSelects)

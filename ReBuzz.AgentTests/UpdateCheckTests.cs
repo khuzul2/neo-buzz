@@ -1,8 +1,7 @@
 // Fork (NeoBuzz Live): no update check. Upstream's (ReBuzzGUI/BuzzGUI.BuzzUpdate) polls ReBuzz's latest release on
 // GitHub and offers upstream's installer, which would replace NeoBuzz Live. In the sources, where every CI job sees
 // them and an upstream merge that brings the check back fails here: no project references BuzzGUI.BuzzUpdate, no code
-// outside it calls it or names upstream's releases, the setting that turned it on is gone, and the project itself
-// stays off (UpdateService.Enabled) should anything call it.
+// outside it calls it or names upstream's releases, and the setting that turned it on is gone.
 using System.Text.RegularExpressions;
 
 namespace ReBuzz.AgentTests
@@ -68,20 +67,6 @@ namespace ReBuzz.AgentTests
             Assert.That(settings, Does.Contain("if (decl == null) continue;"));
         }
 
-        [Test]
-        public void TheUpdaterItselfStaysOff()
-        {
-            string updater = Updater(RepoRoot());
-            string service = File.ReadAllText(Path.Combine(updater, "UpdateService.cs"));
-            Assert.That(service, Does.Contain("public static bool Enabled => false;"));
-            Assert.That(Regex.IsMatch(service, @"CheckForUpdates\(IBuzz buzz\)\s*\{\s*if \(!Enabled\)"), Is.True, "the check returns first");
-            string window = File.ReadAllText(Path.Combine(updater, "UpdateWindow.xaml.cs"));
-            Assert.That(Regex.IsMatch(window, @"DownloadBuildCount\(IBuzz buzz\)\s*\{\s*if \(!UpdateService\.Enabled\) return;"), Is.True,
-                "no request to upstream's releases");
-            Assert.That(Regex.IsMatch(window, @"public UpdateWindow\(int latestBuild\)\s*\{\s*(//[^\n]*\n\s*)*if \(!UpdateService\.Enabled\) throw"), Is.True,
-                "the offer of upstream's installer is never shown");
-            Assert.That(Regex.Matches(window, @"new UpdateWindow\(").Count, Is.EqualTo(1), "one place makes the window, behind DownloadBuildCount's guard");
-        }
 
         static string RepoRoot()
         {

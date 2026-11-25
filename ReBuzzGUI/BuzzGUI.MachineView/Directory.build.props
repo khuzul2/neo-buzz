@@ -1,5 +1,0 @@
-<Project>
-    <PropertyGroup>
-        <MSBUildProjectExtensionsPath>$(SolutionDir)build\$(Configuration)\$(Platform)\BuzzGUI.MachineView\obj</MSBUildProjectExtensionsPath>
-    </PropertyGroup>
-</Project>

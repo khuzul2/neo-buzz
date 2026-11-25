@@ -332,8 +332,7 @@ namespace ReBuzz.Agent
             Render(host.Core, host.Dispatcher, from, to, tailSeconds, solo, mute, probes, c.Cancellation, (done, total, what) => c.Progress(done, total, what), warnings, cpu: cpu);
 
         /// <summary>
-        /// The render itself, for the agent's tools and for machine_replace's comparison from the machine menu (U5), which
-        /// has no agent host: <paramref name="progress"/> gets (seconds done, seconds in all, what).
+        /// The render itself, for the agent's tools, and for callers that have no agent host: <paramref name="progress"/> gets (seconds done, seconds in all, what).
         /// </summary>
         internal static (StereoAudio Master, List<(string Machine, StereoAudio Audio)> Probes) Render(ReBuzzCore core, IUiDispatcher dispatcher, int from, int to, double tailSeconds,
             HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, System.Threading.CancellationToken cancellation,
@@ -370,7 +369,7 @@ namespace ReBuzz.Agent
                 if (conn == null) { warnings.Add($"{m.Name} feeds nothing, so there's nothing to probe."); continue; }
                 taps.Add(new Probe(m.Name, conn));
             }
-            // U5: chosen connections, at a gain given in Buzz amp units (machine_replace taps a machine's inputs).
+            // U5: chosen connections, at a gain given in Buzz amp units (tapping a machine's inputs).
             foreach (var (label, conn, amp) in connections ?? System.Array.Empty<(string Label, IMachineConnection Connection, double Amp)>())
                 taps.Add(new Probe(label, conn, (float)(amp / Levels.UnityAmp / 32768.0)));
 

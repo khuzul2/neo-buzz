@@ -38,10 +38,6 @@ A step sequencer for values with no audio of its own: 1 to 32 steps, each a leve
 
 - Neo Filter, Neo Poly, Neo Delay and Neo Utility (pan) as targets; Neo LFO for a smooth layer on top.
 
-## Successor
-
-Nothing replaces it.
-
 ## Checklist
 
 - [ ] `modulation_list(machine="Step")` shows each target `active`.

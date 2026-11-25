@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-# Fork (docs/specs/clips.md §10, wave CU1): the clip goldens. Every song in the corpus renders to the same
-# bits as it did before the clip store moved, on each platform: SHA-256 of each render, per platform, in
-# eval/clip-goldens.json (hashes only: no audio is committed). Later waves (CU3 on) must keep every hash.
+# Fork (docs/specs/clips.md §10, wave CU1; clean-break.md CB1): the clip goldens. Every song in the corpus renders to the same
+# bits as it did before, on each platform: SHA-256 of each render, per platform, in eval/clip-goldens.json (hashes only: no
+# audio is committed).
 #
-# The corpus:
-#  - every song file in the repo (the Buzz-era demos under ExternalMachines, the two templates under Other);
-#  - one generated song for each feature a clip can hold (clips.md §3, §10): classic multi-track Note, velocity
-#    and command columns; ticks per beat 1, 4 and 8; patterns of 1 and 256 rows; 4 and 6 rows per beat and
-#    subdivided beats; MIDI lanes with delay and cut; an explicit Off and an Off with no note before it; a column
-#    of another machine's parameter; 8 tracks and a change of track count; a looped session clip with
-#    automation. They are written by this file, in a fresh process each: the engine's tools build the song
-#    (MCP, as null-test.py does), save it as BMXML, and the tracker's own data (the Modern Pattern Editor's
-#    blob, which the tools can't write) is put in the file here, from the editor's format code
-#    (song-roundtrip.py's build_mpe). Nothing but this file is checked in.
+# The corpus (after CB1, which removed the old song formats, the old machines and the songs built on them):
+#  - every .nbl under Other (the two song templates);
+#  - one generated song whose clips hold no tracker data: a session clip with loop on, its notes and automation, placed in the
+#    arrangement as a looped clip. It is written by this file, in a fresh process, with the engine's own tools (MCP, as
+#    null-test.py does), and saved as .nbl.
 #
 # A song is rendered the way a user hears it: opened, then rendered from the start to its end (at most 32 beats)
 # and one second of tail, 32-bit float, by a fresh process each (renders start on a tick boundary, so they
@@ -26,15 +21,11 @@
 #   python3 tools/clip-null.py merge    <observed.json>... --into eval/clip-goldens.json
 #   python3 tools/clip-null.py opentime <exe> <work-dir> [--baseline eval/clip-goldens.json] [--max-ratio 1.3]
 #
-# <exe> is NeoBuzzLive.exe (Windows: the real machines) or rebuzz-headless (Linux and macOS: every classic
-# machine is a placeholder, REBUZZ_NATIVE_MACHINES=off, so the old songs render what a placeholder does;
-# the generated songs use the Pedal and Neo machines, which are managed code and sound everywhere).
-# --twice renders the whole corpus twice in separate processes and fails a song whose two hashes differ:
-# that song isn't deterministic (it is named, and goes in EXCLUDED with the reason, or the test is fixed).
-# check renders, compares with the goldens of this platform and fails naming each song that differs; with no
-# goldens for the platform it fails too, and says where the observed hashes are (<work-dir>/observed.json).
+# <exe> is NeoBuzzLive.exe (Windows) or rebuzz-headless (Linux and macOS). --twice renders the whole corpus twice in separate
+# processes and fails a song whose two hashes differ: that song isn't deterministic (it is named, and goes in EXCLUDED with the
+# reason, or the test is fixed). check renders, compares with the goldens of this platform and fails naming each song that
+# differs; with no goldens for the platform it fails too, and says where the observed hashes are (<work-dir>/observed.json).
 
-import base64
 import hashlib
 import importlib.util
 import json
@@ -42,10 +33,8 @@ import math
 import os
 import platform
 import shutil
-import struct
 import sys
 import time
-import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -60,7 +49,6 @@ def load(name, file):
 
 
 nt = load("null_test", "null-test.py")           # the MCP client, the waves, the platform label
-rt = load("song_roundtrip", "song-roundtrip.py")   # the BMXML reader and the editor's format code
 
 TEMPO = 120
 BEATS_CAP = 32          # a render is at most this many beats (a long song is heard from its start)
@@ -74,25 +62,17 @@ EXCLUDED = {}
 # (the coordinator's decision of 2026-11-23: one engine plays everything, no emulation of the editor's old timing).
 ENGINE_ONLY = {"gen/session-loop"}
 
-TIME_BASE = rt.TIME_BASE        # pattern time per tick (240); the editor's beat is 4 ticks (960)
-BEAT = 4 * TIME_BASE
-OFF = rt.NOTE_OFF
-MIDI_NOTE, MIDI_VELOCITY, MIDI_DELAY, MIDI_CUT, MIDI_PITCH_WHEEL, MIDI_CC = -128, -129, -130, -131, -132, -133
-
-# Buzz notes (octave << 4 | 1..12): C-4 is 0x41.
-SCALE = [0x41, 0x44, 0x47, 0x4A, 0x51, 0x4A, 0x47, 0x44]
-
 
 # ---- the corpus: repo songs --------------------------------------------------------------------
 
 def repo_songs():
     """(name, path) of every song file in the repo, by name."""
     found = []
-    for base in ("ExternalMachines", "Other"):
+    for base in ("Other",):
         for folder, dirs, files in os.walk(os.path.join(ROOT, base)):
             dirs[:] = sorted(d for d in dirs if d not in ("bin", "obj", ".git"))
             for f in sorted(files):
-                if os.path.splitext(f)[1].lower() in (".bmx", ".bmw", ".nbl", ".bmxml"):
+                if os.path.splitext(f)[1].lower() == ".nbl":
                     found.append(os.path.join(folder, f))
     songs = {}
     for path in sorted(found):
@@ -134,120 +114,6 @@ class Build:
         self.client.close()
 
 
-def column(machine, index, track, events, beat_rows):
-    """One column of the editor's data: events are (time, value)."""
-    return {"machine": machine, "index": index, "track": track, "graphical": 0, "events": sorted(events), "beat_rows": list(beat_rows)}
-
-
-def row_times(beat_rows):
-    """The start of each row, in pattern time, for beats that hold the given rows each (the editor's beat is 960)."""
-    times = []
-    for b, rows in enumerate(beat_rows):
-        times += [b * BEAT + k * BEAT // rows for k in range(rows)]
-    return times
-
-
-def build_pxp(patterns):
-    """PatternXP's data, version 3 (PatternEditorUtils.ParsePatternXPData): rows, not pattern time. patterns: [{name, rpb, columns}], events (row, value)."""
-    out = bytearray(struct.pack("<i", len(patterns)))
-    for p in patterns:
-        out += p["name"].encode("ascii") + b"\0" + struct.pack("<ii", p["rpb"], len(p["columns"]))
-        for c in p["columns"]:
-            out += c["machine"].encode("ascii") + b"\0" + struct.pack("<iiBi", c["index"], c["track"], 0, len(c["events"]))
-            for row, value in c["events"]:
-                out += struct.pack("<ii", row, value)
-    return bytes([3]) + bytes(out)
-
-
-def patch_editor(path, machine, patterns, data=None):
-    """Put the editor's data (patterns: [{name, beats, rpb, columns}], or data as it is) in the song saved at path, as the editor of machine keeps it."""
-    tree = ET.parse(path)
-    root = tree.getroot()
-    model = {m["name"]: m for m in rt.parse_bmxml(path)["machines"]}
-    editor = model[machine]["editor"]
-    if not editor:
-        raise RuntimeError(f"{machine} has no pattern editor in {path}")
-    for me in root.find("Machines"):
-        if rt.model_name(me.findtext("Name")) == editor:
-            me.find("Data").text = base64.b64encode(data if data is not None else rt.build_mpe(patterns)).decode()
-            tree.write(path, encoding="utf-8", xml_declaration=True)
-            return
-    raise RuntimeError(f"{editor} is not in {path}")
-
-
-def param_index(path, machine, name):
-    """The editor's index of a machine's parameter: globals first, then the track parameters (MPEPattern's order)."""
-    m = {x["name"]: x for x in rt.parse_bmxml(path)["machines"]}[machine]
-    allp = []
-    for g in m["groups"][1:3]:
-        allp += [p["def"] for p in g["params"]]
-    for i, d in enumerate(allp):
-        if d[1] == name:
-            return i, d
-    raise RuntimeError(f"{machine} has no parameter {name!r}: {[d[1] for d in allp]}")
-
-
-def tracker_columns(path, machine, tracks, beat_rows, note_rows, off_rows=(), cmd=True, volume=True):
-    """
-    The classic tracker columns of a Pedal Tracker (Note, Volume, Cmd, Arg, Cmd2, Arg2, per track): on each track a
-    note every few rows (a different one each, by track), Offs on off_rows, volumes and commands between.
-    """
-    idx = {n: param_index(path, machine, n)[0] for n in ("Volume", "Cmd", "Arg", "Cmd2", "Arg2")}
-    note_col = param_index(path, machine, "Wave")[0] - 1        # the Note column comes first among the track parameters
-    times = row_times(beat_rows)
-    cols = []
-    for t in range(tracks):
-        notes, vols, cmds, args, cmds2, args2 = [], [], [], [], [], []
-        for k in note_rows:
-            if k < len(times):
-                notes.append((times[k], SCALE[(k // 2 + t) % len(SCALE)]))
-                vols.append((times[k], 96 + (13 * (k + t)) % 100))
-        for k in off_rows:
-            if k < len(times):
-                notes.append((times[k], OFF))
-        if cmd:
-            for j, k in enumerate(note_rows):
-                if k < len(times) and j % 2 == 1:
-                    cmds.append((times[k], 1 + (j + t) % 6))
-                    args.append((times[k], 8 + 4 * ((j + t) % 5)))
-                    cmds2.append((times[k], 2))
-                    args2.append((times[k], 3 + j % 4))
-        cols.append(column(machine, note_col, t, notes, beat_rows))
-        if volume:
-            cols.append(column(machine, idx["Volume"], t, vols, beat_rows))
-        if cmd:
-            cols += [column(machine, idx["Cmd"], t, cmds, beat_rows), column(machine, idx["Arg"], t, args, beat_rows),
-                     column(machine, idx["Cmd2"], t, cmds2, beat_rows), column(machine, idx["Arg2"], t, args2, beat_rows)]
-    return cols
-
-
-def tracker_song(b, path, *, tpb=4, rows=32, tracks=2, rpb=4, beat_rows=None, note_rows=None, off_rows=(), patterns=None, cmd=True):
-    """
-    A Pedal Tracker (classic Note, Wave, Volume and two command columns per track) playing one or more patterns
-    of the editor's data. patterns: [(name, rows, note_rows, off_rows)] (default one, "A").
-    """
-    patterns = patterns or [("A", rows, note_rows if note_rows is not None else list(range(0, rows, 4)), off_rows)]
-    b.call("song_set", tempo_bpm=TEMPO, ticks_per_beat=tpb)
-    b.call("machine_add", gear="Pedal Tracker", name="Trk")
-    b.wave()
-    if tracks != 1:
-        b.call("machine_set", machine="Trk", tracks=tracks)
-    at, total = 0, 0.0
-    for name, n, _, _ in patterns:
-        b.call("pattern_create", machine="Trk", name=name, length_beats=n / tpb)
-        b.call("arrangement_place", machine="Trk", pattern=name, at=[total])
-        total += n / tpb
-    b.call("song_set", song_end_beats=total)
-    b.save(path)
-    blobs = []
-    for name, n, nr, orows in patterns:
-        beats = max(1, -(-n // 4))
-        br = list(beat_rows) if beat_rows else [rpb] * beats
-        blobs.append({"name": name, "beats": beats, "rpb": rpb, "columns": tracker_columns(path, "Trk", tracks, br, nr, orows, cmd=cmd)})
-    patch_editor(path, "Trk", blobs)
-    return path
-
-
 GENERATED = {}
 
 
@@ -256,126 +122,6 @@ def generated(name, features):
         GENERATED[name] = {"features": features, "build": fn}
         return fn
     return add
-
-
-@generated("gen/classic-tracks", "classic multi-track Note, Volume and command columns (Cmd/Arg, Cmd2/Arg2), 3 tracks, 4 rows a beat")
-def _(b, path):
-    return tracker_song(b, path, tracks=3, rows=32)
-
-
-for _tpb in (1, 4, 8):
-    @generated(f"gen/tpb{_tpb}", f"ticks per beat {_tpb}: the editor's rows are ticks, so the same rows play at another speed")
-    def _(b, path, _tpb=_tpb):
-        return tracker_song(b, path, tpb=_tpb, rows=32, tracks=2)
-
-
-@generated("gen/rows1", "a pattern of one row between two of eight rows (the 1-row pattern plays on its own tick)")
-def _(b, path):
-    return tracker_song(b, path, tracks=2, patterns=[("A", 8, [0, 4], ()), ("One", 1, [0], ()), ("B", 8, [0, 2, 4, 6], ())])
-
-
-@generated("gen/rows256", "a pattern of 256 rows (64 beats), a note every 8 rows, on 2 tracks")
-def _(b, path):
-    return tracker_song(b, path, tracks=2, rows=256, note_rows=list(range(0, 256, 8)))
-
-
-@generated("gen/rpb6", "6 rows a beat: a row is 1/6 of the editor's beat (160 pattern time), between ticks")
-def _(b, path):
-    return tracker_song(b, path, tracks=2, rows=32, rpb=6, note_rows=list(range(0, 48, 3)))
-
-
-@generated("gen/subdivided", "beats of 4, 3, 6 and 4 rows (the editor's per-beat rows), notes on every row of some beats")
-def _(b, path):
-    return tracker_song(b, path, tracks=2, rows=16, beat_rows=[4, 3, 6, 4], note_rows=[0, 2, 4, 5, 7, 9, 10, 11, 13, 14, 16])
-
-
-@generated("gen/explicit-off", "a note ended by an explicit Off, and in the next pattern an Off with no note before it")
-def _(b, path):
-    return tracker_song(b, path, tracks=2, patterns=[("A", 16, [0, 8], [4]), ("B", 16, [4, 12], [0, 8])])
-
-
-def midi_lanes_song(b, path, rpb, rows_per_note, cut_every, label):
-    """A Neo Poly (MIDI) whose pattern is in the editor's MIDI note lanes: Note, Velocity, Delay and Cut on two tracks (voices)."""
-    b.call("song_set", tempo_bpm=TEMPO)
-    b.call("machine_add", gear="Neo Poly", name="Lead")
-    b.call("pattern_create", machine="Lead", name="A", length_beats=8)
-    b.call("arrangement_place", machine="Lead", pattern="A", at=[0])
-    b.call("song_set", song_end_beats=8)
-    b.save(path)
-    beat_rows = [rpb] * 8
-    times = row_times(beat_rows)
-    cols = []
-    for t in range(2):
-        notes, vels, delays, cuts = [], [], [], []
-        for j, k in enumerate(range(0, len(times), rows_per_note + t)):
-            notes.append((times[k], SCALE[(j + 3 * t) % len(SCALE)]))
-            vels.append((times[k], 40 + (29 * (j + t)) % 87))
-            delays.append((times[k], (7 * j + 11 * t) % 96))              # a fraction of the row: 0..95 of 96
-            if j % cut_every == cut_every - 1:
-                cuts.append((times[k], 55 + (13 * j) % 41))               # the note ends this far into the row
-        cols += [column("Lead", MIDI_NOTE, t, notes, beat_rows), column("Lead", MIDI_VELOCITY, t, vels, beat_rows),
-                 column("Lead", MIDI_DELAY, t, delays, beat_rows), column("Lead", MIDI_CUT, t, cuts, beat_rows)]
-    patch_editor(path, "Lead", [{"name": "A", "beats": 8, "rpb": rpb, "columns": cols}])
-    return path
-
-
-@generated("gen/midi-lanes", "MIDI note lanes with velocity, delay and cut on two tracks (voices), 2 rows a beat (a row is 2 ticks, so delay and cut reach the audio)")
-def _(b, path):
-    return midi_lanes_song(b, path, 2, 1, 2, "midi-lanes")
-
-
-@generated("gen/midi-lanes-rpb4", "the same at 4 rows a beat (a row is a tick: the editor fires a lane note on a tick, so a delay within the row is not heard and a cut within it ends the note at once)")
-def _(b, path):
-    return midi_lanes_song(b, path, 4, 3, 3, "midi-lanes-rpb4")
-
-
-@generated("gen/other-machine", "a pattern of one machine with columns of another machine's parameters (an effect's cutoff and a gain), and a MIDI lane")
-def _(b, path):
-    b.call("song_set", tempo_bpm=TEMPO)
-    b.call("machine_add", gear="Neo Poly", name="Lead")
-    b.call("machine_add", gear="Neo Filter", name="Filt", insert_after="Lead")
-    b.call("pattern_create", machine="Lead", name="A", length_beats=8)
-    b.call("arrangement_place", machine="Lead", pattern="A", at=[0])
-    b.call("song_set", song_end_beats=8)
-    b.save(path)
-    beat_rows = [4] * 8
-    times = row_times(beat_rows)
-    cutoff, d = param_index(path, "Filt", "Cutoff")
-    lo, hi = d[2], d[3]
-    notes = [(times[k], SCALE[j % len(SCALE)]) for j, k in enumerate(range(0, 32, 4))]
-    vels = [(times[k], 100) for k in range(0, 32, 4)]
-    cut_events = [(times[k], lo + (hi - lo) * (j % 8) // 8) for j, k in enumerate(range(0, 32, 2))]
-    cols = [column("Lead", MIDI_NOTE, 0, notes, beat_rows), column("Lead", MIDI_VELOCITY, 0, vels, beat_rows),
-            column("Filt", cutoff, 0, cut_events, beat_rows)]
-    patch_editor(path, "Lead", [{"name": "A", "beats": 8, "rpb": 4, "columns": cols}])
-    return path
-
-
-@generated("gen/tracks8", "8 tracks, a note on every one (Note, Volume, commands)")
-def _(b, path):
-    return tracker_song(b, path, tracks=8, rows=32, note_rows=[0, 4, 8, 12, 16, 20, 24, 28])
-
-
-@generated("gen/track-change", "the machine has 3 tracks but the editor's data holds columns for 6 (a track-count change), and engine columns on 6 written before it dropped to 3")
-def _(b, path):
-    b.call("song_set", tempo_bpm=TEMPO)
-    b.call("machine_add", gear="Pedal Tracker", name="Trk")
-    b.wave()
-    b.call("machine_set", machine="Trk", tracks=6)
-    b.call("pattern_create", machine="Trk", name="A", length_beats=8)
-    b.call("pattern_create", machine="Trk", name="E", length_beats=8)
-    # Engine columns (the agent's notes) on 6 tracks, then the machine goes down to 3.
-    b.call("notes_write", machine="Trk", pattern="E", input="tracks",
-           notes=[nt.n(p, i * 0.5, 0.5, 90) for i in range(6) for p in ("C4",)] + [nt.n(p, 3, 1, 100) for p in ("E4", "G4", "B4", "D5", "F5", "A5")])
-    b.call("arrangement_place", machine="Trk", pattern="A", at=[0])
-    b.call("arrangement_place", machine="Trk", pattern="E", at=[8])
-    b.call("song_set", song_end_beats=16)
-    b.call("machine_set", machine="Trk", tracks=3)
-    b.save(path)
-    beat_rows = [4] * 8
-    cols = tracker_columns(path, "Trk", 6, beat_rows, list(range(0, 32, 4)))
-    patch_editor(path, "Trk", [{"name": "A", "beats": 8, "rpb": 4, "columns": cols}, {"name": "E", "beats": 8, "rpb": 4, "columns": []}])
-    return path
 
 
 @generated("gen/session-loop", "a session clip with loop on, its notes and automation (a step and a ramp), placed in the arrangement as a looped clip over 4 bars")
@@ -397,49 +143,9 @@ def _(b, path):
     return path
 
 
-@generated("gen/chord4", "a chord of 4 notes on one row (4 tracks of a tracker), and 4 notes at one time on MIDI lanes (4 voices)")
-def _(b, path):
-    return tracker_song(b, path, tracks=4, rows=16, note_rows=[0, 8], cmd=False)
-
-
-@generated("gen/chord4-midi", "4 notes on one row of the editor's MIDI note lanes, 4 voices (a Neo Poly), with a cut on the last")
-def _(b, path):
-    b.call("song_set", tempo_bpm=TEMPO)
-    b.call("machine_add", gear="Neo Poly", name="Lead")
-    b.call("pattern_create", machine="Lead", name="A", length_beats=4)
-    b.call("arrangement_place", machine="Lead", pattern="A", at=[0])
-    b.call("song_set", song_end_beats=4)
-    b.save(path)
-    beat_rows = [2] * 4
-    times = row_times(beat_rows)
-    cols = []
-    for t, note in enumerate([0x41, 0x44, 0x47, 0x51]):
-        cols += [column("Lead", MIDI_NOTE, t, [(times[0], note), (times[4], note + 2)], beat_rows),
-                 column("Lead", MIDI_VELOCITY, t, [(times[0], 90 - 10 * t), (times[4], 100)], beat_rows)]
-    cols.append(column("Lead", MIDI_CUT, 3, [(times[0], 70)], beat_rows))
-    patch_editor(path, "Lead", [{"name": "A", "beats": 4, "rpb": 2, "columns": cols}])
-    return path
-
-
-@generated("gen/pxp-blob", "PatternXP's data (version 3, rows) on a tracker: ordinary columns, and its special columns (global and track Trigger, Effect, Effect Data) the editor can't place")
-def _(b, path):
-    tracker_song(b, path, tracks=2, rows=16, cmd=False)
-    idx = {n: param_index(path, "Trk", n)[0] for n in ("Wave", "Volume")}
-    note = idx["Wave"] - 1
-    cols = []
-    for t in range(2):
-        cols.append({"machine": "Trk", "index": note, "track": t, "events": [(0 + t, SCALE[t]), (4 + t, SCALE[t + 2]), (8, OFF), (10, SCALE[t + 4])]})
-        cols.append({"machine": "Trk", "index": idx["Volume"], "track": t, "events": [(0 + t, 120), (4 + t, 160)]})
-    # PatternXP's own columns (PatternEditorUtils.InternalParameter): global and track Trigger, Effect 1, Effect 1 Data.
-    for index, track in ((-10, 0), (-11, 0), (-12, 0), (-110, 0), (-111, 0), (-112, 0), (-110, 1)):
-        cols.append({"machine": "Trk", "index": index, "track": track, "events": [(2, 3), (6, 1)]})
-    patch_editor(path, "Trk", None, data=build_pxp([{"name": "A", "rpb": 4, "columns": cols}]))
-    return path
-
-
 def build_generated(exe, work, name):
     """The song file for a generated song, in work/songs, built by a fresh process (kept if it is there already)."""
-    path = os.path.abspath(os.path.join(work, "songs", name.split("/", 1)[1] + ".bmxml"))
+    path = os.path.abspath(os.path.join(work, "songs", name.split("/", 1)[1] + ".nbl"))
     b = Build(exe, work, name.replace("/", "-"))
     try:
         GENERATED[name]["build"](b, path)
@@ -459,9 +165,6 @@ def sha256(path):
     return h.hexdigest()
 
 
-AUDIO_DIR = None      # --audio DIR: keep each render's WAV there as <label>.wav (for tools/clip-change-report.py; never committed)
-
-
 def render_song(exe, path, work, label):
     """Opens the song in a fresh process and renders it; the entry for the goldens."""
     c = nt.Client(exe, os.path.join(work, "run", label), label)
@@ -477,9 +180,6 @@ def render_song(exe, path, work, label):
         if beats <= 0:
             return {"status": "no length", "why": "the song has no end to render to"}
         r = c.call("render", **{"from": 0, "to": beats, "tail_seconds": TAIL, "name": label[:40]})
-        if AUDIO_DIR:
-            os.makedirs(AUDIO_DIR, exist_ok=True)
-            shutil.copyfile(r["file"], os.path.join(AUDIO_DIR, label.replace("-again", "") + ".wav"))
         return {"sha256": sha256(r["file"]), "seconds": r["seconds"], "silent": bool((r.get("measure") or {}).get("silent")),
                 "rate": r["sample_rate"], "open_ms": round(opened * 1000)}
     finally:
@@ -616,9 +316,8 @@ def merge(files, into):
 
 # ---- the open-time measure (clips.md §10.1, the cost gate) -----------------------------------------
 
-# The largest songs: what the NF1 measures (native-format.md §10) take, and the longest generated one.
-OPEN_SONGS = ["repo/FSM_Infector_Demo.bmx", "repo/MadBrain_Dynamite6_Demo.bmx", "repo/FrequencyUnknown_O-Delay_delaytest.bmx",
-              "repo/Jeskola_NiNjA_dElaY.bmx", "repo/Bass House Template.nbl", "repo/Tech House Template.nbl", "gen/rows256", "gen/tracks8"]
+# The songs whose open time is measured (the cost gate).
+OPEN_SONGS = ["repo/Bass House Template.nbl", "repo/Tech House Template.nbl", "gen/session-loop"]
 
 
 def opentime(exe, work, baseline, max_ratio, runs=5):
@@ -686,12 +385,8 @@ def main(argv):
     out = option(argv, "--out")
     goldens = option(argv, "--goldens", os.path.join(ROOT, "eval", "clip-goldens.json"))
     into = option(argv, "--into")
-    global AUDIO_DIR
-    AUDIO_DIR = option(argv, "--audio")
     baseline = option(argv, "--baseline", os.path.join(ROOT, "eval", "clip-goldens.json"))
     max_ratio = option(argv, "--max-ratio")
-    if platform.system() != "Windows":
-        os.environ.setdefault("REBUZZ_NATIVE_MACHINES", "off")     # placeholders, as the goldens say
     if argv and argv[0] == "list":
         for name in repo_songs():
             print(name)

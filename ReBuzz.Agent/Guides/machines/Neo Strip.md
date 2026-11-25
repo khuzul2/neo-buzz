@@ -23,6 +23,8 @@ A channel strip in one machine: gate, EQ, compressor, drive, clipper and limiter
 | Drive | 4 dB | with Drive on; Drive mix sets the parallel share |
 | Ceiling | -1 dB | shared by the clipper and the limiter (the limiter stops at -12 dB) |
 
+`Amount` (default 100 %) scales gate range, comp ratio and makeup, drive, EQ gains and ceiling: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "Vocal — Up Front" (low cut 90 Hz, mud dip, presence, Opto, limiter), "Vocal — Spoken Word (Gate and Tidy)" (gate at -48 dB, 30 dB range, low cut 100 Hz).

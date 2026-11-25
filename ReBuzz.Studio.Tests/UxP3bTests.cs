@@ -23,7 +23,7 @@ using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views;
 using ReBuzz.Studio.Views.Detail;
 using ReBuzz.Studio.Views.Session;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -44,11 +44,11 @@ namespace ReBuzz.Studio.Tests
             public TrackerRoll Roll => Page.Roll;
             public PianoRoll Notes => Roll.Roll;
 
-            public Rig(int ticks = 16)
+            public Rig(int ticks = 16, string gear = "Neo Poly")
             {
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                Song = new SessionRig("Lead");
-                Lead = Song.Machine("Lead");
+                Song = gear == "Neo Poly" ? new SessionRig("Lead") : new SessionRig();
+                Lead = gear == "Neo Poly" ? Song.Machine("Lead") : Song.Add(gear, "Lead");
                 Lead.CreatePattern("00", ticks);
                 Pattern = Lead.PatternsList.Single(p => p.Name == "00");
                 StudioSelection.For(Song.Core).Clear(this);
@@ -500,7 +500,7 @@ namespace ReBuzz.Studio.Tests
             Directory.CreateDirectory(dir);
             try
             {
-                string a = Path.Combine(dir, "a.bmx"), b = Path.Combine(dir, "b.bmx"), c = Path.Combine(dir, "c.bmx");
+                string a = Path.Combine(dir, "a.nbl"), b = Path.Combine(dir, "b.nbl"), c = Path.Combine(dir, "c.nbl");
                 r.Song.Core.SaveSongCopy(a);
                 r.ShowRoll();
                 r.Notes.HandleKey(Key.A, KeyModifiers.Control);     // looking, selecting: no edit

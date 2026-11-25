@@ -24,7 +24,7 @@ using ReBuzz.Core.SongHistory;
 using ReBuzz.FileOps;
 using ReBuzz.FileOps.Nbl;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -236,7 +236,7 @@ namespace ReBuzz.Studio.Tests
             core.SaveSongCopy(path);
             Reopen(core, path);
             var back = core.SongCore.MachinesList.First(m => m.Name.StartsWith("L"));
-            Assert.That(back.Name, Is.EqualTo("Léad 音樂 €"), "a name with characters .bmx can't hold");
+            Assert.That(back.Name, Is.EqualTo("Léad 音樂 €"), "a name with characters the old formats can't hold");
             Assert.That(back.Patterns.Select(p => p.Name), Does.Contain("Pattern ☃"));
             var events = core.SongCore.SequencesList.First(s => s.Machine == back).Events;
             Assert.That(events.ContainsKey(100_000), Is.True, "an event past 65,535 ticks");
@@ -286,31 +286,20 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AnOldSongIsSavedAsANewNblAndTheOriginalIsNotTouched()
+        public void AnOldSongFileIsRefusedWithOneMessageAndIsNotTouched()
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = SnapshotTests.Song("Lead");
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { SongFiles.Picker = null; Dialogs.Responder = null; });
-            string old = Work("old.bmx");
-            core.SaveSongCopy(old);
-            byte[] original = File.ReadAllBytes(old);
-            Reopen(core, old);
-            Assert.That(core.LegacyOrigin, Is.EqualTo(old));
-            core.MarkerStore.Set("Edited", 8);                                    // a change to save
-
-            string target = Work("old-as-new.nbl");
-            int asked = 0;
-            SongFiles.Picker = saving => { asked++; return target; };
-            Assert.That(SongFiles.Save().Result, Is.True);
-            Assert.That(asked, Is.EqualTo(1), "Save asked for a name: it is Save As");
-            Assert.That(File.ReadAllBytes(old), Is.EqualTo(original), "the .bmx is as it was");
-            Assert.That(NblContainer.LooksLikeOne(target), Is.True);
-            Assert.That(core.SongCore.SongName, Is.EqualTo(target));
-            Assert.That(core.LegacyOrigin, Is.Null);
-            core.MarkerStore.Set("More", 16);
-            Assert.That(SongFiles.Save().Result, Is.True);
-            Assert.That(asked, Is.EqualTo(1), "and the next Save goes to the .nbl");
+            foreach (var name in new[] { "old.bmx", "old.bmw", "old.bmxml" })
+            {
+                string old = Work(name);
+                File.WriteAllBytes(old, new byte[] { 1, 2, 3, 4 });
+                Assert.That(core.TryOpenSongFile(old), Is.False, name);
+                Assert.That(File.ReadAllBytes(old), Is.EqualTo(new byte[] { 1, 2, 3, 4 }), name + " is as it was");
+            }
+            Assert.That(ReBuzzCore.OpenNblOnlyMessage, Is.EqualTo("NeoBuzz Live opens .nbl songs only."));
         }
 
         // ------------------------------------------------------------------ Neo Plug's Output (machines.md §3.2: key "output" after slot1 … slot64)
@@ -364,7 +353,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ANeoPlugWithAnOutputAndSlotsSetSurvivesNblAndBmx()
+        public void ANeoPlugWithAnOutputAndSlotsSetSurvivesNbl()
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = new SessionRig();
@@ -375,9 +364,8 @@ namespace ReBuzz.Studio.Tests
             foreach (var (slot, raw) in PlugSet) Assert.That(expected[slot], Is.EqualTo(raw));
             Assert.That(expected[PlugSlots], Is.EqualTo(3));
 
-            string nbl = Work("plug.nbl"), bmx = Work("plug.bmx");
+            string nbl = Work("plug.nbl");
             core.SaveSongCopy(nbl);
-            core.SaveSongCopy(bmx);
             var entry = ManifestOf(nbl)["machines"].AsArray().First(e => (string)e["name"] == "Plug");
             Assert.That((int)entry["params"]["output"], Is.EqualTo(3), "Output is saved under its key");
             Assert.That((int)entry["params"]["slot32"], Is.EqualTo(40000));
@@ -385,8 +373,6 @@ namespace ReBuzz.Studio.Tests
 
             Reopen(core, nbl);
             Assert.That(PlugGlobals(PlugIn(core)), Is.EqualTo(expected), ".nbl: every slot and Output the same after reopening");
-            Reopen(core, bmx);
-            Assert.That(PlugGlobals(PlugIn(core)), Is.EqualTo(expected), ".bmx: every slot and Output the same after reopening");
         }
 
         [AvaloniaTest]
@@ -439,7 +425,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheSongToolsSaveAndOpenNblAndNeverOverwriteAnOpenedOldSong()
+        public void TheSongToolsSaveAndOpenNblAndRefuseAnOldSong()
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = SnapshotTests.Song("Lead");
@@ -454,77 +440,77 @@ namespace ReBuzz.Studio.Tests
             var named = Tool("song_save", new JsonObject { ["path"] = bare, ["overwrite"] = true });
             Assert.That(named["isError"]?.GetValue<bool>() == true, Is.False, named.ToJsonString());
             Assert.That(NblContainer.LooksLikeOne(bare + ".nbl"), Is.True, "a path with no extension gets the format's (nbl by default)");
-            var xml = Tool("song_save", new JsonObject { ["path"] = Work("agent-x"), ["format"] = "bmxml", ["overwrite"] = true });
-            Assert.That(xml["isError"]?.GetValue<bool>() == true, Is.False);
-            Assert.That(File.Exists(Work("agent-x.bmxml")), Is.True);
+            var xml = Tool("song_save", new JsonObject { ["path"] = Work("agent-x.bmxml"), ["overwrite"] = true });
+            Assert.That(xml["isError"]?.GetValue<bool>() == true, Is.True, "only .nbl is saved");
+            Assert.That(File.Exists(Work("agent-x.bmxml")), Is.False);
 
             string old = Work("agent-old.bmx");
-            core.SaveSongCopy(old);
-            byte[] original = File.ReadAllBytes(old);
-            var opened = Tool("song_open", new JsonObject { ["path"] = old, ["discard_unsaved"] = true });
-            Assert.That(opened["isError"]?.GetValue<bool>() == true, Is.False, opened.ToJsonString());
+            File.WriteAllBytes(old, new byte[] { 1, 2, 3 });
+            var refused = Tool("song_open", new JsonObject { ["path"] = old, ["discard_unsaved"] = true });
+            Assert.That(refused["isError"]?.GetValue<bool>() == true, Is.True, refused.ToJsonString());
+            Assert.That(refused.ToJsonString(), Does.Contain(ReBuzzCore.OpenNblOnlyMessage));
+            Assert.That(File.ReadAllBytes(old), Is.EqualTo(new byte[] { 1, 2, 3 }), "the old file is untouched");
             core.MarkerStore.Set("agent", 4);
-            var beside = Tool("song_save");
-            Assert.That(beside["isError"]?.GetValue<bool>() == true, Is.False, beside.ToJsonString());
-            Assert.That(File.ReadAllBytes(old), Is.EqualTo(original), "the opened .bmx is untouched");
-            Assert.That(NblContainer.LooksLikeOne(Work("agent-old.nbl")), Is.True, "the new .nbl is beside it");
-            var again = Tool("song_open", new JsonObject { ["path"] = Work("agent-old.nbl"), ["discard_unsaved"] = true });
+            string b = Work("agent-b.nbl");
+            var saved2 = Tool("song_save", new JsonObject { ["path"] = b, ["overwrite"] = true });
+            Assert.That(saved2["isError"]?.GetValue<bool>() == true, Is.False, saved2.ToJsonString());
+            var again = Tool("song_open", new JsonObject { ["path"] = b, ["discard_unsaved"] = true });
             Assert.That(again["isError"]?.GetValue<bool>() == true, Is.False, again.ToJsonString());
             Assert.That(core.MarkerStore.All.Select(m => m.Name), Does.Contain("agent"));
         }
 
-        // ------------------------------------------------------------------ the demo songs
-
         static string RepoRoot()
         {
             for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir != null; dir = dir.Parent)
-                if (Directory.Exists(Path.Combine(dir.FullName, "ExternalMachines", "source"))) return dir.FullName;
+                if (File.Exists(Path.Combine(dir.FullName, "ReBuzz.sln"))) return dir.FullName;
             return null;
         }
 
-        /// <summary>The songs tools/song-roundtrip.py uses: the first 12 .bmx under ExternalMachines/source, in path order.</summary>
-        internal static List<string> DemoSongs()
+        /// <summary>
+        /// Mix and Amount (machines.md, "Mix and Amount"): the song templates were saved before every Neo effect gained the two
+        /// parameters (appended, version 0: their core holds fewer globals than the machines have now). They open, every value they
+        /// saved comes back, and the appended Amount and Mix stand at 100 %, so they sound as they did (FxGoldenTests: bit for bit).
+        /// </summary>
+        [AvaloniaTest]
+        public void SongsSavedBeforeMixAndAmountOpenWithTheirValuesAndBothAt100Percent()
         {
             string root = RepoRoot();
-            if (root == null) return new List<string>();
-            return Directory.GetFiles(Path.Combine(root, "ExternalMachines", "source"), "*.bmx", SearchOption.AllDirectories).OrderBy(p => p, StringComparer.Ordinal).Take(12).ToList();
-        }
-
-        [AvaloniaTest]
-        public void TheDemoSongsBecomeNblAndComeBackTheSame()
-        {
-            var songs = DemoSongs();
-            if (songs.Count == 0) Assert.Inconclusive("the demo songs aren't beside the tests");
+            if (root == null) Assert.Inconclusive("the repository isn't beside the tests");
             var core = Studio.Host.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
-            var table = new StringBuilder();
-            table.AppendLine("song | .bmx in | .bmx saved | .nbl | save .bmx ms | save .nbl ms | open .bmx ms | open .nbl ms");
-            int opened = 0;
-            foreach (var song in songs)
+            var templates = Directory.GetFiles(Path.Combine(root, "Other", "Templates", "Songs"), "*.nbl").OrderBy(p => p, StringComparer.Ordinal).ToList();
+            Assert.That(templates, Is.Not.Empty);
+            int effects = 0;
+            foreach (var path in templates)
             {
+                JsonArray saved;
+                using (var r = new NblContainer.Reader(path))
+                    saved = (JsonArray)((JsonObject)JsonNode.Parse(r.Manifest))["machines"];
                 core.Modified = false;
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                var sw = Stopwatch.StartNew();
-                if (!core.TryOpenSongFile(song)) continue;
-                double openBmx = sw.Elapsed.TotalMilliseconds;
-                opened++;
-                string name = Path.GetFileNameWithoutExtension(song);
-                string x = Work(name + ".x.bmx"), nbl = Work(name + ".nbl"), y = Work(name + ".y.bmx"), nbl2 = Work(name + ".2.nbl");
-                sw.Restart(); core.SaveSongCopy(x); double saveBmx = sw.Elapsed.TotalMilliseconds;
-                sw.Restart(); core.SaveSongCopy(nbl); double saveNbl = sw.Elapsed.TotalMilliseconds;
-
-                core.Modified = false;
-                sw.Restart();
-                Assert.That(core.TryOpenSongFile(nbl), Is.True, name);
-                double openNbl = sw.Elapsed.TotalMilliseconds;
-                core.SaveSongCopy(y);
-                Assert.That(File.ReadAllBytes(y), Is.EqualTo(File.ReadAllBytes(x)), $"{name}: the .nbl gives back the song the .bmx gave: the same .bmx when saved again");
-                core.SaveSongCopy(nbl2);
-                Assert.That(File.ReadAllBytes(nbl2), Is.EqualTo(File.ReadAllBytes(nbl)), $"{name}: and the same .nbl");
-                table.AppendLine($"{name} | {new FileInfo(song).Length:N0} | {new FileInfo(x).Length:N0} | {new FileInfo(nbl).Length:N0} | {saveBmx:F0} | {saveNbl:F0} | {openBmx:F0} | {openNbl:F0}");
+                Assert.That(core.TryOpenSongFile(path), Is.True, Path.GetFileName(path) + " opens");
+                foreach (var entry in saved)
+                {
+                    var m = core.SongCore.MachinesList.First(x => x.Name == (string)entry["name"]);
+                    var v = (IVersionedMachine)m.ManagedMachine;
+                    var globals = m.ParameterGroupsList[1].ParametersList;
+                    var keys = v.ParameterKeys;
+                    var values = (JsonObject)entry["params"];
+                    foreach (var kv in values)
+                    {
+                        int i = keys.ToList().IndexOf(kv.Key);
+                        Assert.That(i, Is.GreaterThanOrEqualTo(0), $"{m.Name}: {kv.Key} is a parameter");
+                        Assert.That(globals[i].GetValue(0), Is.EqualTo((int)kv.Value), $"{Path.GetFileName(path)}: {m.Name}'s {kv.Key} comes back");
+                    }
+                    string amount = keys.Contains("FxAmount") ? "FxAmount" : keys.Contains("Amount") && !values.ContainsKey("Amount") ? "Amount" : null;
+                    if (amount == null || m.DLL.Info.Type != MachineType.Effect) continue;
+                    effects++;
+                    Assert.That(globals[keys.ToList().IndexOf(amount)].GetValue(0), Is.EqualTo(1000), $"{m.Name}: Amount at 100 %");
+                    if (!values.ContainsKey("Mix")) Assert.That(globals[keys.ToList().IndexOf("Mix")].GetValue(0), Is.EqualTo(1000), $"{m.Name}: Mix at 100 %");
+                }
             }
-            TestContext.Progress.WriteLine(table.ToString());
-            Assert.That(opened, Is.GreaterThanOrEqualTo(Math.Min(6, songs.Count)), "most of the demo songs open here (the rest need machines this platform lacks)");
+            Assert.That(effects, Is.GreaterThanOrEqualTo(5), "the templates' Neo effects were checked");
+            TestContext.Out.WriteLine($"{templates.Count} templates, {effects} Neo effects with Amount and Mix at 100 % and every saved value back");
         }
     }
 }

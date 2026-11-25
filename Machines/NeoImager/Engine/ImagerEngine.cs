@@ -29,6 +29,7 @@ namespace NeoBuzz.Imager
         const int Steps = 30;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         LrBands bands;
         readonly QuadratureAllpass[] qm = new QuadratureAllpass[4], qs = new QuadratureAllpass[4];
@@ -53,9 +54,17 @@ namespace NeoBuzz.Imager
         readonly double[] pubWidth = new double[4], pubCorr = new double[4];
         double pubMatch = double.NaN;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Width1, 100), AmountRule.Lin(P.Width2, 100), AmountRule.Lin(P.Width3, 100), AmountRule.Lin(P.Width4, 100),
+            AmountRule.Lin(P.Stereo1, 0), AmountRule.Lin(P.Stereo2, 0), AmountRule.Lin(P.Stereo3, 0), AmountRule.Lin(P.Stereo4, 0),
+        };
+
         public ImagerEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             Delta = new DeltaListen(16, 48000);
             Match = new GainMatch(48000);
         }
@@ -64,6 +73,7 @@ namespace NeoBuzz.Imager
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             for (int k = 0; k < 4; k++)
             {
@@ -86,6 +96,7 @@ namespace NeoBuzz.Imager
 
         public void Reset()
         {
+            fx.Reset();
             bands.Reset();
             for (int k = 0; k < 4; k++) { qm[k].Reset(); qs[k].Reset(); }
             Delta.Reset();
@@ -132,6 +143,13 @@ namespace NeoBuzz.Imager
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

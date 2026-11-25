@@ -92,7 +92,9 @@ namespace NeoBuzz.Tune
                 Layout.Gap(1, 4),
                 new ParamChoice(ctx, P.Input, "Input", 44),
                 Layout.Gap(1, 4),
-                Layout.Row(new ParamChoice(ctx, P.Transients, "Transients", 0), Layout.Gap(4), new ParamKnob(ctx, P.Mix, diameter: 46)));
+                new ParamChoice(ctx, P.Transients, "Transients", 0),
+                Layout.Gap(1, 4),
+                Layout.Row(new ParamKnob(ctx, P.FxAmount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)));
 
             return Layout.Row(
                 new Section("Natural", AccentColor, Layout.Column(natural, Layout.Gap(1, 4), edited)),

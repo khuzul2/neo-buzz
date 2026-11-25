@@ -34,6 +34,7 @@ namespace NeoBuzz.Spectral
         const int Chunk = 4096;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         double rate = 48000;
         Core core;
         SmoothRamp output;
@@ -47,9 +48,16 @@ namespace NeoBuzz.Spectral
         double hold, pubRed, pubMean, pubMatch = double.NaN;
         int pubLatency;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Depth, 0), AmountRule.Lin(P.Lift, 0), AmountRule.Lin(P.Tilt, 0),
+        };
+
         public SpectralEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             Delta = new DeltaListen(4096 + 64, 48000);
             Match = new GainMatch(48000);
             Build(48000);
@@ -63,6 +71,7 @@ namespace NeoBuzz.Spectral
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             Build(sr);
             output.Setup(0.02, sr);
             InMeter.SetSampleRate(sr);
@@ -81,6 +90,7 @@ namespace NeoBuzz.Spectral
 
         public void Reset()
         {
+            fx.Reset();
             core.Reset();
             Delta.Reset();
             Match.Reset();
@@ -120,6 +130,13 @@ namespace NeoBuzz.Spectral
 
         /// <summary>Processes a stereo block in place.</summary>
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

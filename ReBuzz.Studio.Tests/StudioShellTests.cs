@@ -16,7 +16,7 @@ using BuzzGUI.Common;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Preferences;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -107,7 +107,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AMachineThatStopsWorkingIsToldByNameInTheStatusLine()
         {
-            // Gallery win-704: a native machine's host stopped answering; only the debug console said so,
+            // Gallery win-704: a machine stopped answering; only the debug console said so,
             // and its "Process hang" line named no machine.
             NewSong();
             var window = Open();
@@ -146,7 +146,7 @@ namespace ReBuzz.Studio.Tests
             var window = Open();
             Window dialog = null;
             using var opened = Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) => { if (w != window) dialog = w; });
-            string broken = Path.Combine(SongFolder, "Broken song.bmx");
+            string broken = Path.Combine(SongFolder, "Broken song.nbl");
             File.WriteAllBytes(broken, System.Text.Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
             try
             {
@@ -154,7 +154,7 @@ namespace ReBuzz.Studio.Tests
                 for (int i = 0; i < 40 && dialog == null; i++) Settle(window);
                 Assert.That(dialog, Is.Not.Null, "an error dialog");
                 var text = dialog!.GetVisualDescendants().OfType<TextBlock>().Single(t => (t.Tag as string) == "message");
-                Assert.That(text.Text, Is.EqualTo("\u201CBroken song.bmx\u201D couldn't be opened. The file is damaged or isn't a song this app can read."));
+                Assert.That(text.Text, Is.EqualTo("\u201CBroken song.nbl\u201D couldn't be opened. The file is damaged or isn't a song this app can read."));
                 var details = dialog.GetVisualDescendants().OfType<Expander>().Single();
                 Assert.That((details.Header as string, details.IsExpanded), Is.EqualTo(("Details", false)), "the exception under Details, closed");
                 details.IsExpanded = true;
@@ -166,9 +166,18 @@ namespace ReBuzz.Studio.Tests
                 for (int i = 0; i < 20 && !opening.IsCompleted; i++) Settle(window);
                 Assert.That(opening.IsCompleted && !opening.Result, Is.True, "it didn't open");
 
-                // A song that needs a machine that isn't installed says so (the loader's own reason, kept).
-                Assert.That(ReBuzzCore.OpenFailedMessage("/songs/Makk_M4.bmw", new System.Exception("To load this song, you need to have following machine in your Gear forlder: M4")),
-                    Is.EqualTo("\u201CMakk_M4.bmw\u201D couldn't be opened: it uses M4, a machine that isn't installed."));
+                // A file that is not a .nbl song is refused with one plain message (CB1).
+                string old = Path.Combine(SongFolder, "Old song.bmx");
+                File.WriteAllBytes(old, System.Text.Encoding.ASCII.GetBytes("Buzz\0an old song"));
+                dialog = null;
+                var refused = SongFiles.Open(old);
+                for (int i = 0; i < 40 && dialog == null; i++) Settle(window);
+                Assert.That(dialog, Is.Not.Null, "an error dialog");
+                Assert.That(dialog!.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text), Does.Contain("NeoBuzz Live opens .nbl songs only."));
+                Studio.Screenshot(dialog, "error-open-old-format");
+                dialog.GetVisualDescendants().OfType<Button>().Single().RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                for (int i = 0; i < 20 && !refused.IsCompleted; i++) Settle(window);
+                Assert.That(refused.IsCompleted && !refused.Result, Is.True, "it didn't open");
             }
             finally
             {
@@ -187,7 +196,7 @@ namespace ReBuzz.Studio.Tests
             var window = Open();
             try
             {
-                string a = Path.Combine(SongFolder, "first song.bmxml"), b = Path.Combine(SongFolder, "second_song.bmxml");
+                string a = Path.Combine(SongFolder, "first song.nbl"), b = Path.Combine(SongFolder, "second_song.nbl");
                 NewSong();
                 SongFiles.Picker = save => a;
                 Assert.That(SongFiles.SaveAs().Result, Is.True);
@@ -198,8 +207,8 @@ namespace ReBuzz.Studio.Tests
 
                 // The model both menus are made from, then the window's own menu (on a Mac: the menu bar).
                 var recent = AppMenu.Find(window.MenuModel(mac: false), "File/Open Recent").Items().ToList();
-                Assert.That(recent[0].Text, Is.EqualTo($"second_song.bmxml — {SongFolder}"), "an underscore is shown as one");
-                Assert.That(recent[1].Text, Is.EqualTo($"first song.bmxml — {SongFolder}"));
+                Assert.That(recent[0].Text, Is.EqualTo($"second_song.nbl — {SongFolder}"), "an underscore is shown as one");
+                Assert.That(recent[1].Text, Is.EqualTo($"first song.nbl — {SongFolder}"));
                 Assert.That(recent.Last().Text, Is.EqualTo("Clear Menu"));
                 if (window.WindowMenu != null)
                 {
@@ -240,7 +249,7 @@ namespace ReBuzz.Studio.Tests
             var window = Open();
             try
             {
-                string song = Path.Combine(SongFolder, "crashed song.bmxml");
+                string song = Path.Combine(SongFolder, "crashed song.nbl");
                 NewSong();
                 SongFiles.Picker = save => song;
                 Core.BPM = 121;
@@ -275,7 +284,7 @@ namespace ReBuzz.Studio.Tests
                 };
                 Assert.That(Autosave.OfferRecovery(Core).Result, Is.True);
                 Settle(window);
-                Assert.That(asked, Does.StartWith("NeoBuzz Live didn't close normally").And.Contain("'crashed song.bmxml'"));
+                Assert.That(asked, Does.StartWith("NeoBuzz Live didn't close normally").And.Contain("'crashed song.nbl'"));
                 Assert.That(Core.SongCore.SongName, Is.EqualTo(song));
                 Assert.That(Core.SongCore.MachinesList.Select(m => m.Name), Does.Contain("After Crash"));
                 Assert.That(Core.BPM, Is.EqualTo(133));
@@ -334,7 +343,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(appMenu.Items.OfType<NativeMenuItem>().First().Header, Is.EqualTo("About NeoBuzz Live"), "the macOS app menu");
                 Assert.That(AppMenu.Find(window.MenuModel(mac: false), "Help/About NeoBuzz Live"), Is.Not.Null, "Help elsewhere");
                 Assert.That(window.MenuModel(mac: false).SelectMany(e => e.IsSeparator ? Enumerable.Empty<MenuEntry>() : e.Items?.Invoke() ?? Enumerable.Empty<MenuEntry>())
-                                .Select(e => e.Text).Where(t => t != null && t.Contains("ReBuzz") && t != "Export for _Buzz/ReBuzz…" && t != "Export for Buzz/ReBuzz…"), Is.Empty, "no menu item says ReBuzz (but the export, which names the program it writes for)");
+                                .Select(e => e.Text).Where(t => t != null && t.Contains("ReBuzz")), Is.Empty, "no menu item says ReBuzz");
                 Assert.That(MainWindow.ShortcutsText(mac: true) + MainWindow.ShortcutsText(mac: false), Does.Not.Contain("ReBuzz"), "the shortcut list");
 
                 // Closing a changed song asks, under the app's name.
@@ -386,7 +395,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(bar.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
                 var fileMenu = bar.Items.OfType<NativeMenuItem>().First().Menu;
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Where(i => i is not NativeMenuItemSeparator).Select(i => i.Header),
-                    Is.EqualTo(new[] { "New", "Open…", "Open Recent", "Close Song", "Save", "Save As…", "Export Audio…", "Export for Buzz/ReBuzz…", "Separate Stems from Audio File…", "Revert to Saved" }), "Close (⌘W) and Revert (UX review mac-real-101)");
+                    Is.EqualTo(new[] { "New", "Open…", "Open Recent", "Close Song", "Save", "Save As…", "Export Audio…", "Separate Stems from Audio File…", "Revert to Saved" }), "Close (⌘W) and Revert (UX review mac-real-101)");
                 Assert.That(fileMenu.Items[3], Is.InstanceOf<NativeMenuItemSeparator>());
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;

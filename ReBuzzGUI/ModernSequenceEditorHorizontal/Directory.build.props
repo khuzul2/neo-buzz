@@ -1,5 +1,0 @@
-<Project>
-    <PropertyGroup>
-        <MSBUildProjectExtensionsPath>$(SolutionDir)build\$(Configuration)\$(Platform)\ModernSequenceEditorHorizontal\obj</MSBUildProjectExtensionsPath>
-    </PropertyGroup>
-</Project>

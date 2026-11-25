@@ -9,8 +9,7 @@
     "param_units": true,
     "render_bit_identical": true,
     "analyze_reference": true,
-    "undo_exact": true,
-    "machine_replace": true
+    "undo_exact": true
   },
   "tasks": {
     "beat": {
@@ -192,16 +191,6 @@
         "sounds": 1
       }
     },
-    "recipe_replace_a_classic": {
-      "total": 1,
-      "passed": true,
-      "criteria": {
-        "replaced": 1,
-        "no_classic": 1,
-        "same_place": 1,
-        "sounds": 1
-      }
-    },
     "recipe_check_the_load": {
       "total": 1,
       "passed": true,
@@ -301,16 +290,6 @@
         "toggle": 1,
         "bar": 1,
         "controller": 1
-      }
-    },
-    "guide_migrating_songs": {
-      "total": 1,
-      "passed": true,
-      "criteria": {
-        "no_classics": 1,
-        "successors": 1,
-        "order": 1,
-        "sounds": 1
       }
     },
     "guide_mixing_dynamics": {

@@ -112,19 +112,6 @@ One Dye Essence slot changed from the default engine to a struck bar, heard and 
 
 Result: the render is not silent, `analyze` reads a struck sound (very dynamic: a loud hit and a long, quiet ring) and `param_get` reads Modal and Bar.
 
-### replace-a-classic
-
-Needs: hear-a-bass. A classic reverb after the bass, moved onto its Neo successor: a dry run first, then the real move with the before and after renders compared, then undone.
-
-1. `machine_add(gear="Pedal Plate", name="Room", insert_after="Bass")`
-2. `machine_replace(machine="Room", dry_run=true)`
-3. `machine_replace(machine="Room", with="Neo Verb", from=0, to=4)`
-4. `machine_list()`
-5. `undo()`
-6. `machine_list()`
-
-Result: the dry run names Neo Verb and changes nothing; step 3 reports a `comparison` of the two renders against the pair's tolerance (within it or not, and why); step 4 lists Room as Neo Verb; after the undo it is Pedal Plate again.
-
 ### check-the-load
 
 Needs: hear-a-bass. Where the time goes: the device, the process, each machine.

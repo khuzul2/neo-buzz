@@ -39,8 +39,6 @@ namespace BuzzGUI.Common
     {
         public BlobFormat Format;
         public List<BlobPattern> Patterns = new List<BlobPattern>();
-        /// <summary>The stamp after the patterns (clips.md §7.2): 32 bytes of SHA-256 of the store content, or null.</summary>
-        public byte[] Stamp;
         /// <summary>Why the blob could not be read whole (nothing after that point is in <see cref="Patterns"/>), or null.</summary>
         public string Problem;
         /// <summary>The number of events in every column of every pattern.</summary>
@@ -52,7 +50,6 @@ namespace BuzzGUI.Common
         public const byte PxpVersion = 3;
         const byte NotPxp = 255;
         const byte MpeVersion = 1;
-        static readonly byte[] StampMagic = { (byte)'N', (byte)'B', (byte)'S', (byte)'T', 1 };
         public const int PxpTime = PatternEvent.TimeBase * 4;       // the pattern time of a beat: a PXP row is this over the rows per beat
 
         sealed class Reader
@@ -129,8 +126,6 @@ namespace BuzzGUI.Common
                 return result;
             }
             result.Problem = r.Problem;
-            if (r.Ok && r.Pos + StampMagic.Length + 32 <= data.Length && data.Skip(r.Pos).Take(StampMagic.Length).SequenceEqual(StampMagic))
-                result.Stamp = data.Skip(r.Pos + StampMagic.Length).Take(32).ToArray();
             return result;
         }
 
@@ -181,94 +176,5 @@ namespace BuzzGUI.Common
             }
             return p;
         }
-
-        static void Int(List<byte> d, int v) => d.AddRange(BitConverter.GetBytes(v));
-
-        static void Str(List<byte> d, string s)
-        {
-            foreach (char ch in s ?? "") d.Add(ch < 256 ? (byte)ch : (byte)'?');
-            d.Add(0);
-        }
-
-        /// <summary>The Modern Pattern Editor's data (PatternEditorUtils.CreateModernPatternEditorData): exact times, the rows of each beat.</summary>
-        public static byte[] WriteMpe(IEnumerable<BlobPattern> patterns, byte[] stamp = null)
-        {
-            var data = new List<byte> { NotPxp, MpeVersion };
-            var list = patterns.ToList();
-            Int(data, list.Count);
-            foreach (var p in list)
-            {
-                Str(data, p.Name);
-                Int(data, p.Beats);
-                Int(data, p.RowsPerBeat);
-                Int(data, p.Columns.Count);
-                foreach (var c in p.Columns)
-                {
-                    Str(data, c.Machine);
-                    Int(data, c.ParamIndex);
-                    Int(data, c.Track);
-                    data.Add(c.Graphical ? (byte)1 : (byte)0);
-                    Int(data, c.Events.Count);
-                    foreach (var e in c.Events) { Int(data, e.Time); Int(data, e.Value); }
-                    for (int b = 0; b < p.Beats; b++)
-                        Int(data, b < c.BeatRows.Count ? c.BeatRows[b] : p.RowsPerBeat);
-                }
-            }
-            int dataSize = data.Count + sizeof(int);
-            data.InsertRange(2, BitConverter.GetBytes(dataSize));
-            if (stamp != null) { data.AddRange(StampMagic); data.AddRange(stamp); }
-            return data.ToArray();
-        }
-
-        /// <summary>
-        /// PatternXP's data, version 3 (PatternEditorUtils.CreatePatternXPPatternData): events on rows. Each event goes to the start of its row,
-        /// as the editor's own save does (GetEventsQuantized, then a division by a row's length); <paramref name="moved"/> counts the events
-        /// whose time that changed.
-        /// </summary>
-        public static byte[] WritePxp(IEnumerable<BlobPattern> patterns, out int moved, byte[] stamp = null)
-        {
-            moved = 0;
-            var data = new List<byte> { PxpVersion };
-            var list = patterns.ToList();
-            Int(data, list.Count);
-            foreach (var p in list)
-            {
-                Str(data, p.Name);
-                int rpb = Math.Max(1, p.RowsPerBeat);
-                Int(data, rpb);
-                Int(data, p.Columns.Count);
-                foreach (var c in p.Columns)
-                {
-                    Str(data, c.Machine);
-                    Int(data, c.ParamIndex);
-                    Int(data, c.Track);
-                    data.Add(c.Graphical ? (byte)1 : (byte)0);
-                    var events = c.Events.OrderBy(e => e.Time).ToList();
-                    Int(data, events.Count);
-                    foreach (var e in events)
-                    {
-                        int q = Quantized(e.Time, rpb);
-                        if (q != e.Time) moved++;
-                        int rowLength = PxpTime / rpb;
-                        Int(data, q / Math.Max(1, rowLength));
-                        Int(data, e.Value);
-                    }
-                }
-            }
-            if (stamp != null) { data.AddRange(StampMagic); data.AddRange(stamp); }
-            return data.ToArray();
-        }
-
-        /// <summary>MPEPatternColumn.GetTimeQuantized(time, rpb): the start of the row a time is in, a row being an integer number of pattern time.</summary>
-        public static int Quantized(int time, int rpb)
-        {
-            int beat = time / PxpTime;
-            double rowTime = PxpTime / rpb;
-            int row = (int)((time - beat * PxpTime) / rowTime);
-            return (int)(beat * PxpTime + row * rowTime);
-        }
-
-        /// <summary>The stamp of a blob (clips.md §7.2), or null if it has none.</summary>
-        public static byte[] StampOf(byte[] blob) => Parse(blob).Stamp;
     }
 }

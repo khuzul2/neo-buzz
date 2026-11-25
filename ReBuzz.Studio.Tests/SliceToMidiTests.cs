@@ -1,6 +1,6 @@
 // Fork (docs/specs/audio-to-midi.md, "Slice to new MIDI track (SL1 as built)"): Slice to new MIDI track in the studio's host. The agent's audio_slice_to_midi on synthetic
 // loops (a click track with known hits, a drum loop, a warped clip at a song tempo that isn't the loop's): the slices' boundaries, the waves, the Neo Sampler in Kit mode, the
-// clip's notes on the right ticks, one undo step, save and reopen as .nbl and .bmx, the null test against the source clip's own render, and the menus and the dialog.
+// clip's notes on the right ticks, one undo step, save and reopen as .nbl, the null test against the source clip's own render, and the menus and the dialog.
 
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ using ReBuzz.Core.Clips;
 using ReBuzz.Core.Session;
 using ReBuzz.SessionTests.Convert;
 using ReBuzz.Studio.Shell;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -503,7 +503,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheSlicesSurviveSaveAndReopenAsNblAndAsBmx()
+        public void TheSlicesSurviveSaveAndReopenAsNbl()
         {
             using var untitled = SnapshotTests.Untitled(out _);
             using var rig = new SessionRig();
@@ -542,13 +542,6 @@ namespace ReBuzz.Studio.Tests
             core.SaveSongCopy(nbl);
             Reopen(core, nbl);
             Check(".nbl");
-
-            string bmx = Work("sliced.bmx");
-            var report = core.ExportForBuzz(bmx);
-            Assert.That(report, Is.Not.Null);
-            core.NewSong();
-            Reopen(core, bmx);
-            Check(".bmx");
         }
 
         // ------------------------------------------------------------------ the menus and the dialog

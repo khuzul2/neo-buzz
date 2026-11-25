@@ -1,0 +1,2885 @@
+﻿using BuzzGUI.Common;
+using BuzzGUI.Common.InterfaceExtensions;
+using BuzzGUI.Common.Settings;
+using BuzzGUI.Interfaces;
+using ReBuzz.Core;
+using ReBuzz.Core.Actions.GraphActions;
+using ReBuzz.MachineManagement;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+
+namespace ReBuzz.FileOps
+{
+    public enum FileEventType
+    {
+        Open,
+        StatusUpdate,
+        Close
+    }
+
+    internal class NblCoreSections : IReBuzzFile
+    {
+        /// <summary>The extension of the temporary file a history snapshot is restored from (the core sections alone, no container).</summary>
+        public const string SnapshotExtension = ".nbcore";
+
+        public static bool IsSnapshot(string path) => string.Equals(Path.GetExtension(path), SnapshotExtension, StringComparison.OrdinalIgnoreCase);
+
+
+        readonly int WaveFlagsEnvelope = 0x80;
+        public class Section
+        {
+            public uint Magic;
+            public uint Offset;
+            public uint Size;
+            public byte[] Data;
+        }
+
+        public class SubSection
+        {
+            public string Name;
+            public byte[] Data;
+        }
+
+        Stream fs;
+        string openName;
+
+        Dictionary<SectionType, Section> sections;
+        Dictionary<string, SubSection> subSections;
+        readonly List<MachineConnectionCore> connections;
+        readonly Dictionary<string, string> importDictionaryAll = new Dictionary<string, string>();
+        readonly Dictionary<string, string> importDictionaryNonHidden = new Dictionary<string, string>();
+        readonly Dictionary<string, bool> builtInPeDictionary = new Dictionary<string, bool>();
+
+        public event Action<FileEventType, string, object> FileEvent;
+
+        private readonly ReBuzzCore buzz;
+        List<MachineCore> machines;
+        private ImportSongAction importAction;
+        private int masterInputCount;
+        private Dictionary<int, int> remappedWaveReferences;
+        private readonly List<SequenceCore> bmxSequences;
+        private readonly string buzzPath;
+        private readonly IUiDispatcher dispatcher;
+        private readonly IKeyboard keyboard;
+        private readonly EngineSettings engineSettings;
+
+        internal enum SectionType
+        {
+            Buzz = 0x7a7a7542, // Ok
+            MACH = 0x4843414d, // Ok
+            CONN = 0x4E4E4F43, // Ok
+            PATT = 0x54544150, // Ok
+            SEQU = 0x55514553, // Ok
+            WAVT = 0x54564157, // Ok
+            CWAV = 0x56415743,
+            WAVE = 0x45564157, // Ok
+            BLAH = 0x48414c42, // Info text
+            PARA = 0x41524150, // Ok
+            MIDI = 0x4944494D, // Ok
+            CON2 = 0x324E4F43,
+            REVB = 0x52455642, // Buzz Build info
+            GLDP = 0x474C4450, // Dialog states?
+            XNOC = 0x584E4F43, // MultiIO Connections
+            XCAM = 0x5843414D, // Machine properties
+            XTAP = 0x58544150, // Link pattern to editor machine
+            TAP2 = 0x32544150, // Experimental pattern editor data. Dropped?
+            IUGB = 0x49554742, // Ok, SubSections
+            RBSG = 0x52425347, // ReBuzz Song Settings
+            XQES = 0x58514553, // Sequence properties
+            MGRP = 0x5052474D,  // Machine groups
+            YNOC = 0x7A7A7543,
+            MID2 = 0x3244494D,  // Fork: MIDI bindings with 16-bit track and parameter indices (CreateMIDI)
+            HIST = 0x54534948   // Fork (history-snapshots.md HS2): the song's snapshots, embedded on save; other Buzz versions ignore it
+        }
+
+        public NblCoreSections(ReBuzzCore buzz, string buzzPath, IUiDispatcher dispatcher, IKeyboard keyboard, EngineSettings engineSettings)
+        {
+            this.buzz = buzz;
+            machines = new List<MachineCore>();
+            connections = new List<MachineConnectionCore>();
+            bmxSequences = new List<SequenceCore>();
+            remappedWaveReferences = new Dictionary<int, int>();
+            this.buzzPath = buzzPath;
+            this.dispatcher = dispatcher;
+            this.keyboard = keyboard;
+            this.engineSettings = engineSettings;
+        }
+
+        public void Load(string path, float x = 0, float y = 0, ImportSongAction importAction = null)
+        {
+            Open(path, FileMode.Open);
+            LoadOpened(x, y, importAction);
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/native-format.md): loads a song whose sections are laid out in a BMX file's bytes, here in
+        /// <paramref name="stream"/> (the native reader assembles them from its blobs). <paramref name="name"/> is the file's name for the events.
+        /// </summary>
+        internal void LoadFrom(Stream stream, string name, float x, float y, ImportSongAction importAction)
+        {
+            fs = stream;
+            openName = name;
+            FileOpsEvent(FileEventType.Open, name);
+            LoadOpened(x, y, importAction);
+        }
+
+        /// <summary>Fork (native format): the native writer's start of a save, so the events match <see cref="Save"/>'s.</summary>
+        internal void BeginExternalSave(string name)
+        {
+            openName = name;
+            FileOpsEvent(FileEventType.Open, name);
+        }
+
+        void LoadOpened(float x, float y, ImportSongAction importAction)
+        {
+            bool import = importAction != null;
+            this.importAction = importAction;
+            masterInputCount = 0;
+            //lock (ReBuzzCore.AudioLock)
+            {
+                LoadSections();
+                LoadFileInfo();
+                LoadPara();
+                LoadSubSections();
+                LoadWaveTable();
+                LoadMachines(x, y, import);
+                LoadConnections();
+                LoadXNOC();
+                LoadYNOC();
+                LoadXTAP(import);
+                LoadPatterns(import);
+                LoadSequences(import);
+                LoadXCAM();
+                LoadWaves();
+                LoadInfoText();
+                LoadTAP2();
+                if (!import)
+                    LoadReBuzzSongSettings();
+                LoadDialogProperties();
+                LoadXQES();
+                LoadMGRP(x, y, import);
+                LoadMIDI();
+                if (!import)
+                    LoadHistory();
+
+                foreach (var machine in machines)
+                {
+                    if (machine.Ready)
+                    {
+                        // Assign editor to pattern before calling UpdateWaveReferences
+                        if (machine.EditorMachine != null)
+                        {
+                            buzz.MachineManager.SetPatternEditorPattern(machine.EditorMachine, machine.Patterns.FirstOrDefault());
+                            // Notify machines that waveReferences have changed due to import
+                            buzz.MachineManager.UpdateWaveReferences(machine.EditorMachine, machine, remappedWaveReferences);
+                        }
+                        else
+                        {
+                            buzz.MachineManager.UpdateWaveReferences(machine, machine, remappedWaveReferences);
+                        }
+
+                        // Notify import finished and machine name changes
+                        try
+                        {
+                            buzz.MachineManager.ImportFinished(machine, importDictionaryNonHidden);
+                        }
+                        catch (Exception e)
+                        {
+                            buzz.DCWriteLine("Exception calling ImportFinished for " + machine.DLL.Name + "\n" + e.Message, DCLogLevel.Error );
+                        }
+                    }
+                }
+
+                EndFileOperation(import);
+            }
+        }
+
+        void FileOpsEvent(FileEventType type, string text, object o = null)
+        {
+            buzz.DCWriteLine(text);
+            FileEvent?.Invoke(type, text, o);
+        }
+
+        public void Open(string path, FileMode mode)
+        {
+            fs = new FileStream(path, mode, mode == FileMode.Create ? FileAccess.Write : FileAccess.Read, mode == FileMode.Create ? FileShare.Write : FileShare.Read);
+            openName = path;
+            FileOpsEvent(FileEventType.Open, path);
+        }
+
+        public void EndFileOperation(bool import)
+        {
+            IEnumerable<MachineCore> loadedMachines = null;
+
+            if (import)
+            {
+                loadedMachines = machines.Where(m => !m.Hidden && m.DLL.Info.Type != MachineType.Master);
+            }
+            FileOpsEvent(FileEventType.Close, openName, loadedMachines);
+
+            bmxSequences.Clear();
+            machines.Clear();
+            connections.Clear();
+
+            fs?.Close();
+        }
+
+        public void LoadSections()
+        {
+            sections = new Dictionary<SectionType, Section>();
+
+            FileOpsEvent(FileEventType.StatusUpdate, "Load Sections...");
+
+            uint magic = ReadUInt(fs);
+            uint sectionCount = ReadUInt(fs);
+
+            if (magic != (uint)SectionType.Buzz)
+            {
+                throw new Exception("Not a valid Buzz file");
+            }
+
+            for (int i = 0; i < sectionCount; i++)
+            {
+                Section section = new Section();
+                section.Magic = ReadUInt(fs);
+                section.Offset = ReadUInt(fs);
+                section.Size = ReadUInt(fs);
+                sections[(SectionType)section.Magic] = section;
+            }
+        }
+
+        private void LoadFileInfo()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.REVB, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load File Info...");
+
+                fs.Position = section.Offset;
+                var fileInfo = ReadString(fs);
+                buzz.DCWriteLine(fileInfo);
+            }
+        }
+
+        private void LoadInfoText()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.BLAH, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Info Text...");
+
+                fs.Position = section.Offset;
+                uint lenght = ReadUInt(fs);
+                byte[] buffer = new byte[lenght];
+
+                for (int i = 0; i < lenght; i++)
+                {
+                    buffer[i] = (byte)ReadVal(fs, 1);
+                }
+
+                string s = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
+                buzz.InfoText = s;
+            }
+        }
+
+        public void LoadPara()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.PARA, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Parameters...");
+
+                fs.Position = section.Offset;
+
+                uint numMachines = ReadUInt(fs);
+                for (int i = 0; i < numMachines; i++)
+                {
+                    string machineName = ReadString(fs);
+                    string dllName = ReadString(fs);
+                    uint numGlobals = ReadUInt(fs);
+                    uint numTrackParams = ReadUInt(fs);
+
+                    MachineCore machine = GetMachine(machineName);
+                    machine.MachineDLL.Name = dllName;
+
+                    FileOpsEvent(FileEventType.StatusUpdate, "Load Parameters: " + machineName + "...");
+
+                    ParameterGroup groupGlobal = new ParameterGroup(machine, ParameterGroupType.Global);
+                    ParameterGroup groupTrack = new ParameterGroup(machine, ParameterGroupType.Track);
+
+                    for (int j = 0; j < numGlobals + numTrackParams; j++)
+                    {
+                        ParameterCore parameter = new ParameterCore(dispatcher);
+                        parameter.Type = (ParameterType)ReadByte(fs);
+                        parameter.Name = ReadString(fs);
+                        parameter.MinValue = ReadInt(fs);
+                        parameter.MaxValue = ReadInt(fs);
+                        parameter.NoValue = ReadInt(fs);
+                        parameter.Flags = (ParameterFlags)ReadInt(fs);
+                        parameter.DefValue = ReadInt(fs);
+
+                        if (j < numGlobals)
+                        {
+                            groupGlobal.AddParameter(parameter);
+                        }
+                        else
+                        {
+                            groupTrack.AddParameter(parameter);
+                        }
+                    }
+
+                    machine.AddParameterGroup(groupGlobal);
+                    machine.AddParameterGroup(groupTrack);
+                }
+            }
+        }
+
+        private void LoadMachines(float xOffset, float yOffset, bool import)
+        {
+            Section section;
+            if (!sections.TryGetValue(SectionType.MACH, out section))
+            {
+                throw new Exception("Error: Cannot find MACH section.");
+            }
+            FileOpsEvent(FileEventType.StatusUpdate, "Load Machines...");
+
+            fs.Position = section.Offset;
+
+
+            ushort machineCount = ReadUShort(fs);
+
+            for (int j = 0; j < machineCount; j++)
+            {
+                string name = ReadString(fs);
+                byte type;
+                string machineLibrary;
+                float x, y;
+                int dataSize;
+                ushort attributeCount, tracks;
+
+                MachineCore machineProto = j < machines.Count ? machines[j] : GetMachine(name);
+                machines.Remove(machineProto);
+                machines.Insert(j, machineProto); // Reposition these accoring to machine order in bmx
+                type = ReadByte(fs);
+
+                if (Encoding.ASCII.GetBytes(name)[0] == 1)
+                {
+                    // Editor etc
+                    machineProto.Hidden = true;
+                }
+                else
+                {
+                    FileOpsEvent(FileEventType.StatusUpdate, "Load Machine: " + name + "...");
+                }
+
+                MachineDLL machineDLL = new MachineDLL();
+                if (type != 0)
+                {
+                    machineLibrary = ReadString(fs);
+                    machineLibrary = MachineAliases.Resolve(buzz.MachineDLLs, machineLibrary, out bool aliasedLibrary);   // fork: renamed machines
+                    if (buzz.MachineDLLs.ContainsKey(machineLibrary))
+                    {
+                        machineDLL = buzz.MachineDLLs[machineLibrary] as MachineDLL;
+                        machineProto.MachineDLL = machineDLL;
+                        if (!aliasedLibrary)
+                            machineProto.MachineDLL.MachineInfo.Type = (MachineType)type;
+                    }
+                    else
+                    {
+                        machineDLL = new MachineDLL();
+                        machineDLL.Name = machineLibrary;
+                        machineDLL.IsMissing = true;
+                        machineProto.MachineDLL = machineDLL;
+                        machineProto.MachineDLL.MachineInfo.Type = (MachineType)type;
+                    }
+                }
+                else
+                {
+                    machineLibrary = "Master";
+                    machineProto = buzz.SongCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == MachineType.Master);
+                }
+
+                x = ReadFloat(fs); y = ReadFloat(fs);
+
+                if (import)
+                {
+                    x += xOffset;
+                    y += yOffset;
+                }
+
+                dataSize = ReadInt(fs);
+                byte[] data = ReadBytes(fs, dataSize);
+
+                attributeCount = ReadUShort(fs);
+
+                for (int k = 0; k < (short)attributeCount; k++)
+                {
+                    AttributeCore attribute = new AttributeCore(null);
+                    attribute.Name = ReadString(fs);
+                    attribute.Value = ReadInt(fs);
+                    machineProto.AttributesList.Add(attribute);
+                }
+
+                int globalParameterCount = machineProto.ParameterGroups[1].Parameters.Count;
+
+                for (int k = 0; k < globalParameterCount; k++)
+                {
+                    var parameter = machineProto.ParameterGroupsList[1].ParametersList[k];
+
+                    if (parameter.GetTypeSize() == 1)
+                    {
+                        parameter.SetValue(0, ReadByte(fs));
+                    }
+                    else if (parameter.GetTypeSize() == 2)
+                    {
+                        parameter.SetValue(0, ReadUShort(fs));
+                    }
+                }
+
+                tracks = ReadUShort(fs);
+
+                for (int l = 0; l < tracks; l++)
+                {
+                    int trackParamCount = machineProto.ParameterGroups[2].Parameters.Count;
+                    for (int k = 0; k < trackParamCount; k++)
+                    {
+                        var parameter = machineProto.ParameterGroupsList[2].ParametersList[k];
+
+                        if (parameter.GetTypeSize() == 1)
+                        {
+                            parameter.SetValue(l, ReadByte(fs));
+                        }
+                        else if (parameter.GetTypeSize() == 2)
+                        {
+                            parameter.SetValue(l, ReadUShort(fs));
+                        }
+                    }
+                }
+
+                // If editor and missing, replace with default
+                // Fork (mac-engine.md M2): unless there's no default either (rebuzz-headless off
+                // Windows). Then the editor stays as a placeholder that keeps its data.
+                if (machineDLL.IsMissing && machineProto.Hidden && HasDefaultPatternEditor(buzz))
+                {
+                    if (!buzz.Gear.HasSameDataFormat(machineLibrary, buzz.DefaultPatternEditor))
+                    {
+                        // Clear pattern editor data if not compatible with MPE
+                        data = null;
+                    }
+                    machineDLL = (MachineDLL)buzz.MachineDLLs[buzz.DefaultPatternEditor];
+                }
+
+                // Create machine instances and replace dummies
+                if (machineProto.DLL.Info.Type == MachineType.Master)
+                {
+                    if (!import)
+                    {
+                        // Update Position
+                        machineProto.Position = new Tuple<float, float>(x, y);
+
+                        // Update tpb & bpm immediately if machines read these during creation
+                        var masterGlobals = machineProto.ParameterGroups[1];
+                        buzz.MasterVolume = 1.0 - (masterGlobals.Parameters[0].GetValue(0) / (double)masterGlobals.Parameters[0].MaxValue);
+                        buzz.BPM = masterGlobals.Parameters[1].GetValue(0);
+                        buzz.TPB = masterGlobals.Parameters[2].GetValue(0);
+                    }
+                    machines[j] = machineProto;
+                }
+                else
+                {
+                    // Ignore?: Don't call Init for native machines yet. Wait until all machines are loaded and then call init. Control machines might need machine info.
+                    var machineNew = buzz.MachineManager.CreateMachine(machineDLL.Name, machineDLL.Path, null, data, tracks, x, y, machineProto.Hidden, name, false);
+
+                    // Saved machine parameter count/indexes might be a different from the machine that is currently available for ReBuzz. Create parameter mappings
+                    RemapLoadedMachineParameterIndex(machineNew, machineProto);
+
+                    // Copy stuff from proto to real. ToDo: Clean this up;
+                    CopyAttributes(machineProto, machineNew);
+
+                    if (machineNew.DLL.IsCrashed)
+                    {
+                        // Ensure parametergroup structures are as expected
+                        machineNew.ParameterGroupsList = new List<ParameterGroup>() { machineNew.ParameterGroupsList[0] };
+                        AddGroup(machineProto, machineNew, 1);
+                        AddGroup(machineProto, machineNew, 2);
+                        
+                    }
+                    else if (!machineNew.DLL.IsMissing)
+                    {
+                        // Copy parametervalues
+                        CopyParameters(machineProto, machineNew, 0, 0);
+                        var protoGlobals = machineProto.ParameterGroupsList[1].ParametersList;
+                        if (!LoadedStateMigration.CopyGlobals(machineNew, protoGlobals.Count, i => protoGlobals[i].GetValue(0), msg => buzz.DCWriteLine(msg, DCLogLevel.Error)))
+                            CopyParameters(machineProto, machineNew, 1, 0);
+                        for (int m = 0; m < tracks; m++)
+                        {
+                            CopyParameters(machineProto, machineNew, 2, m);
+                        }
+                    }
+                    else
+                    {
+                        AddGroup(machineProto, machineNew, 1);
+                        AddGroup(machineProto, machineNew, 2);
+                        machineNew.MachineDLL.MachineInfo.Type = (MachineType)type;
+
+                        // Fork (mac-engine.md M2): a placeholder keeps its tracks' values (the track
+                        // group came without its track count, so they saved as no tracks) and the
+                        // song's attributes (CopyAttributes copies only onto a machine's own).
+                        machineNew.ParameterGroupsList[2].TrackCount = tracks;
+                        KeepAttributes(machineProto.AttributesList.Select(a => (a.Name, a.Value)), machineNew);
+                    }
+                    machines[j] = machineNew;
+
+                    if (import)
+                    {
+                        // Imported machines might get new names, so machines need to update their data
+                        importDictionaryAll[name] = machineNew.Name;
+
+                        if (!machineNew.Hidden)
+                        {
+                            // Keep track of machines imported, so we can undo them
+                            importAction.AddMachine(machineNew);
+
+                            importDictionaryNonHidden[name] = machineNew.Name;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RemapLoadedMachineParameterIndex(MachineCore machine, MachineCore savedMachine)
+        {
+            Dictionary<int, int> paramMappings = new Dictionary<int, int>();
+
+            var machineParameters = machine.AllParameters().ToArray();
+            var savedParameters = savedMachine.AllParameters().ToArray();
+
+            for (int i = 0; i < savedParameters.Length; i++)
+            {
+                bool found = false;
+                for (int j = 0; j < machineParameters.Length; j++)
+                {
+                    if (savedParameters[i].Name == machineParameters[j].Name)
+                    {
+                        paramMappings[i] = j;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    // Machine loaded into ReBuzz does not have the same param
+                    paramMappings[i] = -1;
+                }
+            }
+
+            machine.remappedLoadedMachineParameterIndexes = paramMappings;
+        }
+        internal static void CopyAttributes(MachineCore machineFrom, MachineCore machineTo)
+        {
+            var aFrom = machineFrom.AttributesList;
+            var aTo = machineTo.AttributesList;
+            for (int i = 0; i < aTo.Count; i++)
+            {
+                var ma = aTo[i];
+                var at = i < aFrom.Count() ? aFrom[i] : null;
+                if (at != null)
+                {
+                    ma.Value = at.Value;
+                }
+            }
+        }
+
+        internal static void CopyParameters(MachineCore machineFrom, MachineCore machineTo, int group, int track)
+        {
+            var paramtersTo = machineTo.ParameterGroupsList[group].ParametersList;
+            var paramtersFrom = machineFrom.ParameterGroupsList[group].ParametersList;
+            // Fork: a song saved before a machine appended parameters (machines.md §3.2: a version-0 machine loads by position) has
+            // fewer than the machine: the appended ones keep their defaults, as BMXML's loader and Buzz do.
+            for (int i = 0; i < paramtersTo.Count && i < paramtersFrom.Count; i++)
+            {
+                // Set the defaul/saved state of parameters. Skip non-state, notes and input group
+                if (paramtersTo[i].Flags.HasFlag(ParameterFlags.State) && paramtersTo[i].Type != ParameterType.Note && group != 0)
+                {
+                    paramtersTo[i].SetValue(track, paramtersFrom[i].GetValue(track));
+                }
+            }
+        }
+
+        // Fork (mac-engine.md M2): whether the default pattern editor is installed. Off Windows it
+        // isn't (the Modern Pattern Editor is WPF).
+        internal static bool HasDefaultPatternEditor(ReBuzzCore buzz) =>
+            buzz.DefaultPatternEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultPatternEditor);
+
+        // Fork (mac-engine.md M2): a machine without an editor whose patterns kept the built-in
+        // editor's contents (a host without a pattern editor). All its patterns stay the built-in
+        // editor's when the song is saved.
+        internal static bool KeepsBuiltInPatterns(MachineCore machine) =>
+            machine.EditorMachine == null && machine.PlaceholderEditor == null && machine.PatternsList.Any(p => p.BuiltInData != null);
+
+        // Fork (mac-engine.md M2): links a machine to its pattern editor. One that isn't installed
+        // (only when there's no default to replace it) is a placeholder the engine mustn't drive,
+        // so it is kept as the machine's PlaceholderEditor instead.
+        internal static void SetEditor(MachineCore machine, MachineCore editor)
+        {
+            if (editor.DLL.IsMissing)
+                machine.PlaceholderEditor = editor;
+            else
+                machine.EditorMachine = editor;
+        }
+
+        // Fork (mac-engine.md M2): a placeholder (a missing machine) has no attributes of its own,
+        // so it takes the song's as they are.
+        internal static void KeepAttributes(IEnumerable<(string Name, int Value)> attributes, MachineCore placeholder)
+        {
+            foreach (var (name, value) in attributes)
+                placeholder.AttributesList.Add(new AttributeCore(placeholder) { Name = name, Value = value });
+        }
+
+        internal static void AddGroup(MachineCore machineFrom, MachineCore machineTo, int group)
+        {
+            machineTo.ParameterGroupsList.Add(machineFrom.ParameterGroupsList[group]);
+            var paramtersTo = machineTo.ParameterGroupsList[group].ParametersList;
+            machineTo.ParameterGroupsList[group].Machine = machineTo;
+
+            if (group == 1 && machineTo.ParameterGroupsList[group].Parameters.Count > 0)
+            {
+                machineTo.ParameterGroupsList[group].TrackCount = 1;
+            }
+        }
+
+        public void LoadSubSections()
+        {
+            subSections = new Dictionary<string, SubSection>();
+
+            Section section;
+            if (sections.TryGetValue(SectionType.IUGB, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load SubSections...");
+
+                fs.Position = section.Offset;
+
+                while (true)
+                {
+                    SubSection subSection = new SubSection();
+                    string name = ReadString(fs);
+                    if (name == "")
+                        break;
+
+                    subSection.Name = name;
+                    int length = ReadInt(fs);
+                    subSection.Data = ReadBytes(fs, length);
+
+                    subSections[subSection.Name] = subSection;
+                }
+            }
+        }
+
+        public void LoadXNOC()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.XNOC, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load MultiIO Connection Info...");
+
+                fs.Position = section.Offset;
+
+                ushort numConnections = ReadUShort(fs);
+                for (int i = 0; i < numConnections; i++)
+                {
+                    ushort fromIndex = ReadUShort(fs);
+                    ushort toIndex = ReadUShort(fs);
+                    int multiIO = ReadInt(fs);
+
+                    if (multiIO == 1)
+                    {
+                        var fromMachine = machines[fromIndex];
+                        var toMachine = machines[toIndex];
+                        var connection = fromMachine.AllOutputs.FirstOrDefault(c => c.Destination == toMachine) as MachineConnectionCore;
+                        if (connection != null)
+                        {
+                            int sourceChannel = ReadInt(fs); // Source channel
+                            int destinationChannel = ReadInt(fs); // Destination channel
+
+                            connection.SourceChannel = sourceChannel;
+                            connection.DestinationChannel = destinationChannel;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void LoadYNOC()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.YNOC, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load More MultiIO Connection Info...");
+
+                fs.Position = section.Offset;
+
+                int version = ReadInt(fs); // 
+
+                if (version != 1)
+                {
+                    return;
+                }
+
+                ushort numConnections = ReadUShort(fs);
+                for (int i = 0; i < numConnections; i++)
+                {
+                    ushort fromIndex = ReadUShort(fs);
+                    ushort toIndex = ReadUShort(fs);
+
+                    int numSourceChannels = ReadInt(fs);
+                    List<int> sourceChannels = new List<int>();
+
+                    for (int j = 0; j < numSourceChannels; j++)
+                    {
+                        int sourceChannel = ReadInt(fs);
+                        sourceChannels.Add(sourceChannel);
+                    }
+
+                    int numDestinationChannels = ReadInt(fs);
+                    List<int> destinationChannels = new List<int>();
+                    for (int j = 0; j < numDestinationChannels; j++)
+                    {
+                        int destinationChannel = ReadInt(fs);
+                        destinationChannels.Add(destinationChannel);
+                    }
+
+                    var fromMachine = machines[fromIndex];
+                    var toMachine = machines[toIndex];
+                    var connection = fromMachine.AllOutputs.FirstOrDefault(c => c.Destination == toMachine) as MachineConnectionCore;
+                    if (connection != null)
+                    {
+                        foreach (var sourceChannel in sourceChannels)
+                        {
+                            connection.SetSourceChannel(sourceChannel, true);
+                        }
+
+                        foreach (var destinationChannel in destinationChannels)
+                        {
+                            connection.SetDestinationChannel(destinationChannel, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void LoadConnections()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.CONN, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Connections...");
+
+                fs.Position = section.Offset;
+                ushort conns = ReadUShort(fs);
+
+                for (int i = 0; i < conns; i++)
+                {
+                    int index1 = ReadUShort(fs);
+                    int index2 = ReadUShort(fs);
+                    ushort amp, pan;
+                    amp = ReadUShort(fs);
+                    pan = ReadUShort(fs);
+
+                    MachineCore machineFrom = machines[index1]; // Ignore Master index
+                    MachineCore machineTo = machines[index2];
+
+                    if (index2 == 0 && !machineFrom.Hidden)
+                    {
+                        masterInputCount++;
+                    }
+
+                    MachineConnectionCore connection = new MachineConnectionCore(dispatcher, engineSettings);
+                    connection.Amp = amp;
+                    connection.Pan = pan;
+                    connection.Source = machineFrom;
+                    connection.Destination = machineTo;
+                    connection.HasPan = machineTo.HasStereoInput;
+
+                    connections.Add(connection);
+
+                    if (machineFrom.AllOutputs.FirstOrDefault(c => c.Destination == machineTo) == null)
+                    {
+                        // Ensure missing machine has outputs
+                        if (machineFrom.DLL.IsMissing && machineFrom.OutputChannelCount == 0)
+                        {
+                            machineFrom.OutputChannelCount = 1;
+                        }
+                        // Ensure missing machine has inputs
+                        if (machineTo.DLL.IsMissing && machineTo.InputChannelCount == 0)
+                        {
+                            machineTo.InputChannelCount = 1;
+                        }
+                        new ConnectMachinesAction(buzz, connection, dispatcher, engineSettings).Do();
+                    }
+                }
+            }
+        }
+
+        private bool LoadPatterns(bool import)
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.PATT, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Patterns...");
+                fs.Position = section.Offset;
+
+                foreach (MachineCore machine in machines)
+                {
+                    ushort patterns = ReadUShort(fs);
+                    ushort tracks = ReadUShort(fs);
+
+                    // Fork (mac-engine.md M2): each pattern's contents are read once (BuiltInPattern),
+                    // then converted to PXP for the pattern editor as before, or kept on the pattern
+                    // when there's no editor to take them.
+                    var contents = new List<(string Name, BuiltInPattern Data)>();
+                    Func<int, int> read = size => size == 1 ? ReadByte(fs) : size == 2 ? ReadUShort(fs) : 0;
+
+                    for (int j = 0; j < patterns; j++)
+                    {
+                        string name = ReadString(fs);
+                        ushort rows = ReadUShort(fs);
+                        var data = new BuiltInPattern();
+
+                        // ----
+                        // Rest of the code used by built in buzz PE. We convert the data to PXP format
+                        // ----
+
+                        // Read input columns. Input data gets lost in conversion (not supported by PXP format).
+                        int inputCount = machine.AllInputs.Where(input => !(input.Source as MachineCore).Hidden).Count();
+                        if (machine.DLL.Info.Type == MachineType.Master)
+                        {
+                            inputCount = masterInputCount;
+                        }
+
+                        for (int k = 0; k < inputCount; k++)
+                        {
+                            ushort sourceMachineIndex = ReadUShort(fs);
+
+                            if (sourceMachineIndex >= machines.Count)
+                            {
+                                return false;
+                            }
+
+                            var sourceMachine = machines[sourceMachineIndex];
+                            var conn = machine.AllInputs.FirstOrDefault(mc => mc.Source == sourceMachine);
+
+                            var ampPan = new ushort[rows * 2];
+                            for (int k1 = 0; k1 < rows * 2; k1++)
+                            {
+                                ampPan[k1] = ReadUShort(fs);
+                            }
+
+                            // If conn is null the connection was saved, but not successfully reconnected. Just skip it.
+                            if (conn != null)
+                            {
+                                data.Inputs.Add(new BuiltInPattern.Input { Source = sourceMachine, AmpPan = ampPan });
+                            }
+                        }
+
+                        // Global
+                        data.Global = BuiltInPattern.ReadRows(read, machine, 1, rows);
+
+                        // Tracks
+                        data.Tracks = new int[tracks][][];
+                        for (int l = 0; l < tracks; l++)
+                        {
+                            data.Tracks[l] = BuiltInPattern.ReadRows(read, machine, 2, rows);
+                        }
+
+                        contents.Add((name, data));
+                    }
+
+                    // Don't import Master patterns
+                    if (import && machine.DLL.Info.Type == MachineType.Master)
+                    {
+                        continue;
+                    }
+
+                    // Create patterns
+                    int first = machine.PatternsList.Count;
+                    bool builtIn = builtInPeDictionary.ContainsKey(machine.Name) && patterns > 0;
+                    buzz.PatternsAwaitingEditor = builtIn ? machine : null;     // fork (studio-mvp.md S6)
+                    try
+                    {
+                        foreach (var (name, data) in contents)
+                        {
+                            machine.CreatePattern(name, data.Global.Length);
+                        }
+                    }
+                    finally
+                    {
+                        buzz.PatternsAwaitingEditor = null;
+                    }
+
+                    // Does machine use built in editor?
+                    if (builtIn)
+                    {
+                        // Create PXP compatible editor and input converted data
+                        buzz.CreateEditor(machine, buzz.DefaultPatternEditor, BuiltInPattern.ToPXP(machine, contents));
+
+                        // Fork (mac-engine.md M2): no pattern editor here, so the patterns keep their contents.
+                        if (machine.EditorMachine == null)
+                        {
+                            for (int j = 0; j < contents.Count && first + j < machine.PatternsList.Count; j++)
+                            {
+                                machine.PatternsList[first + j].BuiltInData = contents[j].Data;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public void LoadXTAP(bool import)
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.XTAP, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Pattern Editor Connections...");
+                fs.Position = section.Offset;
+
+                byte version = ReadByte(fs);
+                MachineCore masterEditor = null;
+
+                if (version == 1)
+                {
+                    for (int i = 0; i < machines.Count; i++)
+                    {
+                        ushort numPatterns = ReadUShort(fs);
+                        var machine = machines[i];
+
+                        for (int j = 0; j < numPatterns; j++)
+                        {
+                            ushort patternEditorIndex = ReadUShort(fs);
+
+                            if (patternEditorIndex == 65535)    // If pattern is assigned to built in editor
+                            {
+                                // Don't do anything if master and builtin pattern data
+                                if (import && i == 0)
+                                {
+                                }
+                                else
+                                {
+                                    builtInPeDictionary[machine.Name] = true;
+                                }
+                            }
+                            else
+                            {
+                                // Don't import master editor. Remove the imported editor
+                                if (import && i == 0)
+                                {
+                                    masterEditor = machines[patternEditorIndex];
+                                }
+                                else
+                                {
+                                    var editor = machines[patternEditorIndex];
+                                    SetEditor(machine, editor);     // fork (mac-engine.md M2)
+                                }
+                            }
+                        }
+                    }
+
+                    if (import && masterEditor != null)
+                    {
+                        new DisconnectMachinesAction(buzz, masterEditor.AllOutputs[0], dispatcher, engineSettings).Do();
+                        buzz.RemoveMachine(masterEditor);
+                    }
+                }
+            }
+            // All machines use built in editor
+            else
+            {
+                for (int i = 0; i < machines.Count; i++)
+                {
+                    var machine = machines[i];
+                    builtInPeDictionary[machine.Name] = true;
+                }
+            }
+        }
+
+        public void LoadTAP2()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.TAP2, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load New Pattern Editor Data...");
+                fs.Position = section.Offset;
+
+                byte version = ReadByte(fs);
+
+                if (version != 2)
+                    return;
+
+                foreach (MachineCore machine in machines)
+                {
+                    ushort numPatterns = ReadUShort(fs);
+
+                    for (ushort i = 0; i < numPatterns; i++)
+                    {
+                        string patternName = ReadString(fs);
+                        var pattern = machine.Patterns.FirstOrDefault(p => p.Name == patternName);
+
+                        int parameterColumnCount = ReadInt(fs);
+                        for (int j = 0; j < parameterColumnCount; j++)
+                        {
+                            ushort pMachineIndex = ReadUShort(fs);
+                            var targetMachine = pMachineIndex != 0xFFFF ? machines[pMachineIndex] : null;
+                            int group = ReadInt(fs);
+                            int indexInGroup = ReadInt(fs);
+                            int track = ReadInt(fs);
+
+                            IParameter targetParameter = null;
+                            if (targetMachine != null)
+                            {
+                                // Negative group is Buzz midi column invisible to editors. Used by Note Matrix.
+                                try
+                                {
+                                    targetParameter = (group != -1 && indexInGroup != -1) ? targetMachine.ParameterGroups[group].Parameters[indexInGroup] : ParameterCore.GetMidiParameter(targetMachine, dispatcher);
+                                }
+                                catch
+                                {
+                                    buzz.DCWriteLine("Parameter mismatch for machine: " + machine.DLL.Name + " | Parameter Group: " + group + " | Parameter: " + indexInGroup, DCLogLevel.Error );
+                                }
+                            }
+
+                            IPatternColumn column = null;
+                            if (pattern != null && targetParameter != null)
+                            {
+                                // Fork (daw-modes.md AR0): in the order saved. Upstream clamped to Count - 1, which put a
+                                // pattern's second column before its first (a MIDI column and an automation column
+                                // swapped places on every open, so a saved song never saved back the same).
+                                int newIndex = Math.Clamp(j, 0, pattern.Columns.Count);
+                                pattern.InsertColumn(newIndex, targetParameter, track);
+                                column = pattern.Columns[newIndex];
+                            }
+
+                            int numberOfevents = ReadInt(fs);
+                            List<PatternEvent> events = new List<PatternEvent>();
+                            for (int k = 0; k < numberOfevents; k++)
+                            {
+                                PatternEvent pe = new PatternEvent
+                                {
+                                    Time = ReadInt(fs),
+                                    Value = ReadInt(fs),
+                                    Duration = ReadInt(fs)
+                                };
+                                events.Add(pe);
+                            }
+
+                            column?.SetEvents(events, true);
+
+                            int numberOfMetadata = ReadInt(fs);
+                            for (int k = 0; k < numberOfMetadata; k++)
+                            {
+                                string key = ReadString(fs);
+                                string value = ReadString(fs);
+                                if (column != null)
+                                {
+                                    column.Metadata[key] = value;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool LoadSequences(bool import)
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.SEQU, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Sequences...");
+                fs.Position = section.Offset;
+                int endSong = ReadInt(fs);
+                int beginLoop = ReadInt(fs);
+                int endLoop = ReadInt(fs);
+                ushort numSequences = ReadUShort(fs);
+
+                var song = buzz.SongCore;
+                if (!import)
+                {
+                    song.LoopStart = beginLoop;
+                    song.LoopEnd = endLoop;
+                    song.SongEnd = endSong;
+                }
+
+                int seqIndex = 0;
+
+                for (int i = 0; i < numSequences; i++)
+                {
+                    ushort machineIndex = ReadUShort(fs);
+                    MachineCore machine = machines[machineIndex];
+                    SequenceCore sequence;
+
+                    byte posSize = 0, eventSize = 0;
+                    uint events = ReadUInt(fs);
+                    if (events > 0)
+                    {
+                        posSize = ReadByte(fs);
+                        eventSize = ReadByte(fs);
+                    }
+
+                    // Don't import master sequence
+                    if (machine != null && !(machine.DLL.Info.Type == MachineType.Master && import))
+                    {
+                        song.AddSequence(machine, seqIndex);
+                        sequence = song.Sequences[seqIndex] as SequenceCore;
+                        bmxSequences.Add(sequence);
+                        seqIndex++;
+
+                        for (int j = 0; j < events; j++)
+                        {
+                            ulong pos = ReadVal(fs, posSize);
+                            ulong value = ReadVal(fs, eventSize);
+
+                            if (value == 0)
+                            {
+                                // Mute
+                                sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.Mute));
+                            }
+                            else if (value == 1)
+                            {
+                                // Break
+                                sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.Break));
+                            }
+                            else if (value == 2)
+                            {
+                                // Thru
+                                sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.Thru));
+                            }
+                            else if (value == 3)
+                            {
+                                // Off
+                                sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.Off));
+                            }
+                            else if (value >= 0x10)
+                            {
+                                // machine+value -> pattern id
+                                int ptnidx = (int)(value - 0x10);
+                                if (ptnidx >= 0 && ptnidx < machine.Patterns.Count)
+                                {
+                                    var mp = machine.PatternsList[ptnidx];
+                                    sequence.SetEvent((int)pos, new SequenceEvent(SequenceEventType.PlayPattern, mp, mp.Length));
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Ensure list has correct count of sequences
+                        bmxSequences.Add(null);
+
+                        // plugin does not exists; skip events
+                        for (int j = 0; j < events; j++)
+                        {
+                            ulong pos = ReadVal(fs, posSize);
+                            ulong value = ReadVal(fs, eventSize);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        private bool LoadXCAM()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.XCAM, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Machine Properties...");
+
+                fs.Position = section.Offset;
+                int machineCount = ReadUShort(fs);
+                for (int i = 0; i < machineCount; i++)
+                {
+                    string machineName = ReadString(fs);
+                    machineName = importDictionaryAll.ContainsKey(machineName) ? importDictionaryAll[machineName] : machineName;
+
+                    MachineCore machine = machines.FirstOrDefault(m => m.Name == machineName);
+
+                    int numberOfItems = ReadInt(fs);
+
+                    for (int j = 0; j < numberOfItems; j++)
+                    {
+                        string itemName = ReadString(fs);
+                        int itemSize = ReadInt(fs);
+                        int val = 0;
+                        if (itemSize == 1)
+                        {
+                            val = ReadByte(fs);
+                        }
+                        else if (itemSize == 4)
+                        {
+                            val = ReadInt(fs);
+                        }
+
+                        if (itemName == "Mute")
+                        {
+                            machine.IsMuted = val == 1;
+                        }
+                        if (itemName == "Bypass")
+                        {
+                            machine.IsBypassed = val == 1;
+                        }
+                        else if (itemName == "MIDIInputChannel")
+                        {
+                            machine.MIDIInputChannel = val;
+                        }
+                        else if (itemName == "OverrideDelay")
+                        {
+                            machine.OverrideLatency = val;
+                        }
+                        else if (itemName == "OversampleFactor ")
+                        {
+                            machine.OversampleFactor = val;
+                        }
+                        else if (itemName == "Wireless")
+                        {
+                            machine.IsWireless = val == 1;
+                        }
+                        else if (itemName == "BaseOctave")
+                        {
+                            machine.BaseOctave = val;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        private bool LoadMIDI()
+        {
+            Section section;
+            // Fork (docs/specs/dye-essence.md §5.2): MID2 has every binding with 16-bit indices, and
+            // is read instead of Buzz's MIDI section when a file has it. MIDI keeps a byte per index,
+            // so a binding of a machine's 257th state parameter or later was read as another one's.
+            bool wide = sections.TryGetValue(SectionType.MID2, out section);
+            if (wide || sections.TryGetValue(SectionType.MIDI, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load MIDI Properties...");
+
+                fs.Position = section.Offset;
+
+                while (true)
+                {
+                    string machineName = ReadString(fs);
+                    if (machineName.Length == 0)
+                        break;
+
+                    int group = ReadByte(fs);
+                    int track = wide ? ReadUShort(fs) : ReadByte(fs);
+                    int paramIndex = wide ? ReadUShort(fs) : ReadByte(fs);
+                    int midiChannel = ReadByte(fs);
+                    int midiController = ReadByte(fs);
+
+                    machineName = importDictionaryAll.ContainsKey(machineName) ? importDictionaryAll[machineName] : machineName;
+                    MachineCore machine = machines.FirstOrDefault(m => m.Name == machineName);
+
+                    if (machine != null)
+                    {
+                        var all = machine.AllParameters().Where(p => p.Flags.HasFlag(ParameterFlags.State));
+                        var param = all.ElementAtOrDefault(paramIndex);
+                        if (param != null)
+                            buzz.MidiControllerAssignments.BindParameter(param as ParameterCore, track, midiChannel, midiController);
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Call this after sequeces have been loaded
+        private bool LoadXQES()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.XQES, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Sequence Properties...");
+
+                fs.Position = section.Offset;
+
+                int numSequences = ReadInt(fs);
+
+                for (int i = 0; i < numSequences; i++)
+                {
+                    var seq = bmxSequences[i];
+                    int numberOfItems = ReadInt(fs);
+
+                    for (int j = 0; j < numberOfItems; j++)
+                    {
+                        string itemName = ReadString(fs);
+                        int itemSize = ReadInt(fs);
+                        int val = 0;
+                        if (itemSize == 1)
+                        {
+                            val = ReadByte(fs);
+                        }
+                        else if (itemSize == 4)
+                        {
+                            val = ReadInt(fs);
+                        }
+
+                        if (itemName == "IsDisabled")
+                        {
+                            seq?.IsDisabled = val == 1;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        void LoadMGRP(float xOffset, float yOffset, bool import)
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.MGRP, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Machine Groups...");
+
+                fs.Position = section.Offset;
+                var songCore = buzz.SongCore;
+
+                int version = ReadByte(fs);
+                if (version != 1)
+                    return;
+
+                int numGroups = ReadInt(fs);
+
+                for (int i = 0; i < numGroups; i++)
+                {
+                    string name = ReadString(fs);
+                    name = songCore.GetNewGroupName(name);
+                    float x = ReadFloat(fs) + xOffset;
+                    float y = ReadFloat(fs) + yOffset;
+                    bool isGrouped = ReadByte(fs) == 1;
+                    string inputMachineName = ReadString(fs);
+                    inputMachineName = importDictionaryNonHidden.ContainsKey(inputMachineName) ? importDictionaryNonHidden[inputMachineName] : inputMachineName;
+                    string outputMachineName = ReadString(fs);
+                    outputMachineName = importDictionaryNonHidden.ContainsKey(outputMachineName) ? importDictionaryNonHidden[outputMachineName] : outputMachineName;
+
+                    var group = buzz.CreateMachineGroup(name, x, y);
+                    group.IsGrouped = isGrouped;
+                    group.MainInputMachine = songCore.Machines.FirstOrDefault(m => m.Name == inputMachineName);
+                    group.MainOutputMachine = songCore.Machines.FirstOrDefault(m => m.Name == outputMachineName);
+
+                    int numMachinesInGroup = ReadInt(fs);
+
+                    for (int j = 0; j < numMachinesInGroup; j++)
+                    {
+                        name = ReadString(fs);
+                        if (importDictionaryNonHidden.ContainsKey(name))
+                            name = importDictionaryNonHidden[name];
+                        x = ReadFloat(fs) + xOffset;
+                        y = ReadFloat(fs) + yOffset;
+                        var machine = songCore.Machines.FirstOrDefault(m => m.Name == name);
+                        if (machine != null)
+                        {
+                            songCore.AddMachineToGroup(machine, group);
+                            songCore.UpdateGroupedMachinesPositions([new Tuple<IMachine, Tuple<float, float>>(machine, new Tuple<float, float>(x, y))]);
+                            songCore.InvokeImportGroupedMachinePositions(machine, x, y);
+                        }
+                    }
+
+                    if (import)
+                    {
+                        importAction.AddGroupMachine(group);
+                    }
+                }
+            }
+        }
+
+        void LoadReBuzzSongSettings()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.RBSG, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Song Settings...");
+
+                fs.Position = section.Offset;
+                int numberOfItems = ReadInt(fs);
+
+                for (int j = 0; j < numberOfItems; j++)
+                {
+                    string itemName = ReadString(fs);
+                    int itemSize = ReadInt(fs);
+                    int val = 0;
+                    if (itemSize == 1)
+                    {
+                        val = ReadByte(fs);
+                    }
+                    else if (itemSize == 4)
+                    {
+                        val = ReadInt(fs);
+                    }
+
+                    if (itemName == "Speed")
+                    {
+                        buzz.Speed = val;
+                    }
+                }
+            }
+        }
+
+        public bool LoadWaveTable()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.WAVT, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load WaveTable...");
+
+                fs.Position = section.Offset;
+                ushort waveCount = ReadUShort(fs);
+                for (int i = 0; i < waveCount; i++)
+                {
+                    ushort index = ReadUShort(fs);
+
+                    if (index >= 200)
+                    {
+                        break;
+                    }
+
+                    ushort newIndex = index;
+                    while (buzz.SongCore.WavetableCore.WavesList[newIndex] != null && newIndex < 200)
+                    {
+                        newIndex++;
+                    }
+
+                    // Can't fit imported waves to new slots
+                    if (newIndex >= 200)
+                    {
+                        break;
+                    }
+
+                    remappedWaveReferences[index] = newIndex;
+                    if (importAction != null)
+                        importAction.AddWaveIndex(newIndex);
+                    WaveCore wave = buzz.SongCore.WavetableCore.CreateWave(newIndex);
+
+                    wave.FileName = ReadString(fs);
+                    wave.Name = ReadString(fs);
+                    wave.Volume = ReadFloat(fs);
+                    wave.Flags = (WaveFlags)ReadByte(fs);
+                    wave.Index = newIndex;
+
+                    // Not doing anything with envelopes currently
+                    if (((int)wave.Flags & WaveFlagsEnvelope) != 0)
+                    {
+                        ushort numEnvelopes = ReadUShort(fs);
+
+                        for (int j = 0; j < numEnvelopes; j++)
+                        {
+                            ushort numPoints = 0;
+                            Envelope envelope = new Envelope();
+
+                            envelope.Attack = ReadUShort(fs);   // Attack time 
+                            envelope.Decay = ReadUShort(fs);    // Decay time
+                            envelope.Sustain = ReadUShort(fs);  // Sustain level
+                            envelope.Release = ReadUShort(fs);  // Release time
+                            envelope.SubDivide = ReadByte(fs);  // ADSR Subdivide
+                            envelope.Flags = ReadByte(fs);      // ADSR Flags
+                            numPoints = ReadUShort(fs);         // number of points (can be zero) (bit 15 set = envelope disabled)
+                            envelope.IsEnabled = (numPoints & 0x8000) == 0;
+                            numPoints &= 0x7FFF;
+
+                            for (int k = 0; k < numPoints; k++)
+                            {
+                                Tuple<int, int> point = new Tuple<int, int>(0, 0);
+                                int x = ReadUShort(fs);
+                                int y = ReadUShort(fs);
+                                int flags = ReadByte(fs); // Not used?
+                                envelope.PointsList.Add(point);
+                            }
+                            wave.envelopes.Add(envelope);
+                        }
+                    }
+
+                    byte waveLeyers = ReadByte(fs);
+
+                    for (int j = 0; j < waveLeyers; j++)
+                    {
+                        WaveLayerCore waveLayer = new WaveLayerCore();
+                        waveLayer.ChannelCount = wave.Flags.HasFlag(WaveFlags.Stereo) ? 2 : 1;
+                        waveLayer.SampleCount16Bit = ReadInt(fs);
+                        waveLayer.LoopStart16Bit = ReadInt(fs);
+                        waveLayer.LoopEnd16Bit = ReadInt(fs);
+                        waveLayer.SampleRate = ReadInt(fs);
+                        waveLayer.RootNote = ReadByte(fs);
+                        waveLayer.Wave = wave;
+                        wave.LayersList.Add(waveLayer);
+                    }
+                }
+            }
+            return true;
+        }
+
+        private bool LoadWaves()
+        {
+            Section section;
+            if (!sections.TryGetValue(SectionType.CWAV, out section))
+            {
+                sections.TryGetValue(SectionType.WAVE, out section);
+            }
+            if (section != null)
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Waves...");
+                fs.Position = section.Offset;
+
+                ushort waveCount = ReadUShort(fs);
+                for (int i = 0; i < waveCount; i++)
+                {
+                    ushort index = ReadUShort(fs);
+                    index = (ushort)remappedWaveReferences[index];
+                    if (index >= 200)
+                    {
+                        // Index error
+                        break;
+                    }
+                    FileOpsEvent(FileEventType.StatusUpdate, "Load Wave Index: " + index + "...");
+
+                    byte format = ReadByte(fs);
+                    WaveCore wave = buzz.SongCore.WavetableCore.WavesList[index];
+
+                    WaveFlags waveflags = wave.Flags;
+                    int numchannels = waveflags.HasFlag(WaveFlags.Stereo) ? 2 : 1;
+                    int numlevels = wave.Layers.Count;
+
+                    //Determine number of bytes 
+                    //This isn't used, so we don't really care about it!
+                    long totalBytes = 0;
+                    WaveUnpack unpacker = null;
+                    switch (format)
+                    {
+                        case 0: //Uncompressed
+                            totalBytes = ReadUInt(fs); // All bytes in all layers
+                            break;
+                        case 1: //Compressed
+                            //Total bytes not known.  Use file postion and size
+                            totalBytes = fs.Length - fs.Position;
+                            unpacker = new WaveUnpack(fs);
+                            break;
+                        default:
+                            throw new Exception("Unknown BMX format " + format);
+                    }
+
+                    for (int j = 0; j < numlevels; j++)
+                    {
+                        WaveLayerCore waveLayer = wave.LayersList[j];
+                        int buffersize = waveLayer.SampleCount16Bit * 2 * numchannels;
+
+                        byte[] buffer;
+                        WaveFormat waveFormat = WaveFormat.Int16;
+                        if (unpacker == null)
+                        {
+                            //uncompressed
+                            buffer = ReadBytes(fs, buffersize);
+                            if (waveflags.HasFlag(WaveFlags.Not16Bit))
+                            {
+                                waveLayer.extended = true;
+                                // Get the extended info (8 bytes). WaveFormat is the only data here?
+                                waveFormat = (WaveFormat)buffer[0];
+                            }
+                            else
+                            {
+                                waveLayer.extended = false;
+                            }
+                        }
+                        else
+                        {
+                            //Compressed
+                            buffer = unpacker.DecompressWave(waveLayer.SampleCount16Bit, (numchannels == 2));
+                        }
+
+                        waveLayer.Init(waveLayer.Path, waveFormat, waveLayer.RootNote, waveLayer.ChannelCount == 2, waveLayer.SampleCount16Bit);
+                        waveLayer.SetRawByteData(buffer);
+                    }
+
+                    //Tell the unpacker to rewind, giving back any data it over-consumed
+                    if (unpacker != null)
+                        unpacker.Rewind();
+
+                    wave.Invalidate();
+                }
+            }
+            return true;
+        }
+
+        private void LoadDialogProperties()
+        {
+            Section section;
+            if (sections.TryGetValue(SectionType.GLDP, out section))
+            {
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Dialog Info...");
+                fs.Position = section.Offset;
+
+                byte version = ReadByte(fs);
+                if (version == 1)
+                {
+                    while (true)
+                    {
+                        string name = ReadString(fs);
+                        if (name.Length == 0)
+                        {
+                            break;
+                        }
+
+                        name = importDictionaryAll.ContainsKey(name) ? importDictionaryAll[name] : name;
+
+                        int flags = ReadInt(fs);
+                        int value2 = ReadInt(fs);
+                        int value3 = ReadInt(fs);
+
+                        int leftPos = ReadInt(fs);                // Left
+                        int topPos = ReadInt(fs);                // Top?
+                        int RightPos = ReadInt(fs);                // Right?
+                        int bottomPos = ReadInt(fs);                // Bottom?
+
+                        if (leftPos != -1 && topPos != -1 && RightPos != -1 && bottomPos != -1)
+                        {
+                            var machine = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == name);
+                            if (machine != null)
+                            {
+                                machine.OpenWindowedGUI(new WindowPlacement(leftPos, topPos, RightPos - leftPos, bottomPos - topPos));
+                            }
+                        }
+
+                        leftPos = ReadInt(fs);                  // Left
+                        topPos = ReadInt(fs);                   // Top
+                        RightPos = ReadInt(fs);                 // Right
+                        bottomPos = ReadInt(fs);                // Bottom
+
+                        if (leftPos != -1 && topPos != -1 && RightPos != -1 && bottomPos != -1)
+                        {
+                            var machine = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == name);
+                            if (machine != null)
+                            {
+                                machine.OpenParameterWindow(new WindowPlacement(leftPos, topPos, RightPos - leftPos, bottomPos - topPos));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fork (history-snapshots.md HS2): the song's sections as a snapshot or a save holds them, in file order.
+        /// UI thread; no file is touched. <paramref name="includeHistory"/> adds the embedded history (a save, when the
+        /// option is on). Call <see cref="SetSubSections"/> first.
+        /// </summary>
+        internal List<(uint Magic, byte[] Data)> BuildSections(bool includeHistory)
+        {
+            sections = new Dictionary<SectionType, Section>();
+            machines = new List<MachineCore>();
+
+            CreateFileInfoSection();
+            CreateParaSection();
+            CreateWaveTableSection();
+            CreateSubSenctionsSection();
+            CreateMachinesSection();
+            CreateConnectionsSection();
+            CreateXNOC();
+            CreateYNOC();
+            CreatePatternsSection();
+            CreateXPATSection();
+            CreateSequencesSection();
+            CreateXCAMSection();
+            CreateWavesSection();
+            CreateInfoTextSection();
+            CreateReBuzzSongSettings();
+            CreateTAP2Section();
+            CreateDialogPropertiesSection();
+            CreateXQESSection();
+            CreateMGRPSection();
+            CreateMIDI();
+            if (includeHistory)
+            {
+                var hist = buzz.Snapshots?.BuildEmbedded();
+                if (hist != null)
+                    AddSection(hist, SectionType.HIST);
+            }
+            machines = new List<MachineCore>();
+            return sections.Values.Select(s => (s.Magic, s.Data)).ToList();
+        }
+
+        /// <summary>A song file's bytes from its sections (the layout <see cref="Save"/> writes).</summary>
+        internal static byte[] Assemble(IReadOnlyList<(uint Magic, byte[] Data)> parts)
+        {
+            var ms = new MemoryStream();
+            WriteUInt(ms, (uint)SectionType.Buzz);
+            WriteUInt(ms, (uint)parts.Count);
+            uint offset = 4 + 4 + (uint)parts.Count * 12;
+            foreach (var p in parts)
+            {
+                WriteUInt(ms, p.Magic);
+                WriteUInt(ms, offset);
+                WriteUInt(ms, (uint)p.Data.Length);
+                offset += (uint)p.Data.Length;
+            }
+            foreach (var p in parts)
+                ms.Write(p.Data, 0, p.Data.Length);
+            return ms.ToArray();
+        }
+
+        /// <summary>The embedded history section, if the song has one: handed to the snapshots (which keep the folder's own if it has any).</summary>
+        void LoadHistory()
+        {
+            if (sections.TryGetValue(SectionType.HIST, out var section))
+            {
+                fs.Position = section.Offset;
+                var data = ReadBytes(fs, (int)section.Size);
+                buzz.Snapshots?.ImportEmbedded(data);
+            }
+        }
+
+        public void Save(string path)
+        {
+            Open(path, FileMode.Create);
+            BuildSections(true);
+            machines = new List<MachineCore>();
+
+            uint offset = 4;                                // Buzz magic
+            offset += 4;                                    // Number of sections
+            offset += (uint)sections.Count * (4 + 4 + 4);   // reserve space for all sections: magic id + section offset + size
+
+            // Write header
+            MemoryStream ms = new MemoryStream();
+            WriteUInt(ms, (uint)SectionType.Buzz);
+            WriteUInt(ms, (uint)sections.Count);
+
+            foreach (var section in sections.Values)
+            {
+                WriteUInt(ms, section.Magic);
+                WriteUInt(ms, offset);
+                WriteUInt(ms, section.Size);
+
+                offset += section.Size;
+            }
+
+            byte[] headerData = ms.ToArray();
+            fs.Write(headerData, 0, headerData.Length);
+
+            // HEader done. Now write the actual sections
+            foreach (var section in sections.Values)
+            {
+                fs.Write(section.Data, 0, (int)section.Size);
+            }
+            EndFileOperation(false);
+        }
+
+        private void CreateReBuzzSongSettings()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            int numberOfItems = 1;
+            WriteInt(ms, numberOfItems);
+
+            WriteString(ms, "Speed"); // Name
+            WriteInt(ms, 4); // Size
+            WriteInt(ms, buzz.Speed); // Value
+
+            AddSection(ms.ToArray(), SectionType.RBSG);
+        }
+
+        void CreateParaSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            uint numMachines = (uint)buzz.SongCore.MachinesList.Count;
+            WriteUInt(ms, numMachines);
+
+            foreach (var imac in buzz.SongCore.MachinesList)
+            {
+                var machine = imac;
+                WritePara(ms, machine);
+            }
+
+            AddSection(ms.ToArray(), SectionType.PARA);
+        }
+
+        void WritePara(MemoryStream ms, MachineCore machine)
+        {
+            WriteString(ms, machine.Name);
+            WriteString(ms, machine.DLL.Name);
+
+            var gParams = machine.ParameterGroupsList[1].ParametersList;
+            uint numGlobals = (uint)gParams.Count;
+
+            var tParams = machine.ParameterGroupsList[2].ParametersList;
+            uint numTrackParams = (uint)tParams.Count;
+
+            WriteUInt(ms, numGlobals);
+            WriteUInt(ms, numTrackParams);
+
+            foreach (var parameter in gParams)
+            {
+                WriteByte(ms, (byte)parameter.Type);
+                WriteString(ms, parameter.Name);
+                WriteInt(ms, parameter.MinValue);
+                WriteInt(ms, parameter.MaxValue);
+                WriteInt(ms, parameter.NoValue);
+                WriteInt(ms, (int)parameter.Flags);
+                WriteInt(ms, parameter.DefValue);
+            }
+
+            foreach (var parameter in tParams)
+            {
+                WriteByte(ms, (byte)parameter.Type);
+                WriteString(ms, parameter.Name);
+                WriteInt(ms, parameter.MinValue);
+                WriteInt(ms, parameter.MaxValue);
+                WriteInt(ms, parameter.NoValue);
+                WriteInt(ms, (int)parameter.Flags);
+                WriteInt(ms, parameter.DefValue);
+            }
+        }
+
+        void CreateSubSenctionsSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            foreach (var sub in subSections.Values)
+            {
+                WriteString(ms, sub.Name);
+                WriteInt(ms, sub.Data.Length);
+                WriteBytes(ms, sub.Data);
+            }
+            WriteString(ms, "");
+            AddSection(ms.ToArray(), SectionType.IUGB);
+        }
+
+        // After call to CreateMachinesSection machines list contains the corrent indexes in file
+        void CreateMachinesSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            ushort machineCount = (ushort)buzz.SongCore.MachinesList.Count;
+
+            WriteUShort(ms, machineCount);
+            foreach (var machine in buzz.SongCore.MachinesList)
+            {
+                WriteMachine(ms, machine);
+                machines.Add(machine);
+            }
+            AddSection(ms.ToArray(), SectionType.MACH);
+        }
+
+        void WriteMachine(MemoryStream ms, MachineCore machine)
+        {
+            WriteString(ms, machine.Name);
+            WriteByte(ms, (byte)machine.MachineDLL.Info.Type);
+            if (machine.MachineDLL.Info.Type != MachineType.Master)
+            {
+                WriteString(ms, machine.DLL.Name);
+            }
+
+            WriteFloat(ms, machine.Position.Item1);
+            WriteFloat(ms, machine.Position.Item2);
+            var data = machine.Data;
+            if (data != null)
+            {
+                WriteInt(ms, data.Length);
+                WriteBytes(ms, data);
+            }
+            else
+            {
+                WriteInt(ms, 0);
+            }
+
+            WriteUShort(ms, (ushort)machine.Attributes.Count);
+            for (int k = 0; k < machine.Attributes.Count; k++)
+            {
+                AttributeCore attribute = machine.AttributesList[k];
+                WriteString(ms, attribute.Name);
+                WriteInt(ms, attribute.Value);
+            }
+
+            int globalParameterCount = machine.ParameterGroups[1].Parameters.Count;
+
+            for (int k = 0; k < globalParameterCount; k++)
+            {
+                var parameter = machine.ParameterGroupsList[1].ParametersList[k];
+
+                if (parameter.GetTypeSize() == 1)
+                {
+                    WriteByte(ms, (byte)parameter.GetValue(0));
+                }
+                else if (parameter.GetTypeSize() == 2)
+                {
+                    WriteUShort(ms, (ushort)parameter.GetValue(0));
+                }
+            }
+
+            ushort tracks = (ushort)machine.ParameterGroups[2].TrackCount;
+            WriteUShort(ms, tracks);
+
+            for (int l = 0; l < tracks; l++)
+            {
+                int trackParamCount = machine.ParameterGroups[2].Parameters.Count;
+                for (int k = 0; k < trackParamCount; k++)
+                {
+                    var parameter = machine.ParameterGroupsList[2].ParametersList[k];
+
+                    if (parameter.GetTypeSize() == 1)
+                    {
+                        WriteByte(ms, (byte)parameter.GetValue(l));
+                    }
+                    else if (parameter.GetTypeSize() == 2)
+                    {
+                        WriteUShort(ms, (ushort)parameter.GetValue(l));
+                    }
+                }
+            }
+        }
+
+        void CreateConnectionsSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            Dictionary<IMachineConnection, bool> machineConnectionsDict = new Dictionary<IMachineConnection, bool>();
+
+            // Collect all connections
+            foreach (var machine in buzz.SongCore.MachinesList)
+            {
+                foreach (var input in machine.AllInputs)
+                    machineConnectionsDict[input] = true;
+            }
+
+            ushort conns = (ushort)machineConnectionsDict.Count;
+            WriteUShort(ms, conns);
+
+            foreach (var conn in machineConnectionsDict.Keys)
+            {
+                var machineFrom = conn.Source as MachineCore;
+                ushort index1 = (ushort)buzz.SongCore.MachinesList.IndexOf(machineFrom);
+                WriteUShort(ms, index1);
+
+                var machineTo = conn.Destination as MachineCore;
+                ushort index2 = (ushort)buzz.SongCore.MachinesList.IndexOf(machineTo);
+                WriteUShort(ms, index2);
+
+                WriteUShort(ms, (ushort)conn.Amp);
+                WriteUShort(ms, (ushort)conn.Pan);
+            }
+            AddSection(ms.ToArray(), SectionType.CONN);
+        }
+
+        public void CreateXNOC()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            var song = buzz.SongCore;
+            var macs = song.MachinesList.Where(m => m.DLL.Info.Type != MachineType.Master);
+
+            List<IMachineConnection> connections = new List<IMachineConnection>();
+            song.MachinesList.Run(m => connections.AddRange(m.AllOutputs));
+            ushort numConnections = 0;
+            macs.Run(m => numConnections += (ushort)m.AllOutputs.Count);
+            WriteUShort(ms, numConnections);
+            foreach (var conn in connections)
+            {
+                var source = conn.Source as MachineCore;
+                var destinaltion = conn.Destination as MachineCore;
+                int fromIndex = song.MachinesList.IndexOf(source);
+                WriteUShort(ms, (ushort)fromIndex);
+                int toIndex = song.MachinesList.IndexOf(conn.Destination as MachineCore);
+                WriteUShort(ms, (ushort)toIndex);
+                int multiIO = source.MachineDLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO) | destinaltion.MachineDLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO) ? 1 : 0;
+                WriteInt(ms, multiIO);
+
+                if (multiIO == 1)
+                {
+                    WriteInt(ms, conn.SourceChannel);
+                    WriteInt(ms, conn.DestinationChannel);
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.XNOC);
+        }
+
+        public void CreateYNOC()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            var song = buzz.SongCore;
+            var macs = song.MachinesList.Where(m => m.DLL.Info.Type != MachineType.Master);
+
+            // Version
+            WriteInt(ms, 1);
+
+            List<IMachineConnection> connections = new List<IMachineConnection>();
+            song.MachinesList.Run(m => connections.AddRange(m.AllOutputs));
+            ushort numConnections = 0;
+            macs.Run(m => numConnections += (ushort)m.AllOutputs.Count);
+
+            WriteUShort(ms, numConnections);
+            foreach (var conn in connections)
+            {
+                var source = conn.Source as MachineCore;
+                var destinaltion = conn.Destination as MachineCore;
+                int fromIndex = song.MachinesList.IndexOf(source);
+                WriteUShort(ms, (ushort)fromIndex);
+                int toIndex = song.MachinesList.IndexOf(conn.Destination as MachineCore);
+                WriteUShort(ms, (ushort)toIndex);
+
+                // Write all source channles for the connection
+                int numSrcChannels = conn.SourceChannels.Count();
+                WriteInt(ms, numSrcChannels);
+
+                foreach (var srcChannel in conn.SourceChannels)
+                {
+                    WriteInt(ms, srcChannel);
+                }
+
+                // Write all destination channels for the connection
+                int numDestChannels = conn.DestinationChannels.Count();
+                WriteInt(ms, numDestChannels);
+                foreach (var destChannel in conn.DestinationChannels)
+                {
+                    WriteInt(ms, destChannel);
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.YNOC);
+        }
+
+        void CreatePatternsSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            foreach (MachineCore machine in machines)
+            {
+                ushort patterns = (ushort)machine.Patterns.Count;
+                ushort tracks = (ushort)machine.TrackCount;
+
+                WriteUShort(ms, patterns);
+                WriteUShort(ms, tracks);
+
+                foreach (var pattern in machine.PatternsList)
+                {
+                    WriteString(ms, pattern.Name);
+                    ushort rows = (ushort)pattern.Length;
+                    WriteUShort(ms, rows);
+
+                    var patternInputs = machine.AllInputs.Where(input => !(input.Source as MachineCore).Hidden).ToArray();
+                    int inputCount = patternInputs.Length;
+                    for (int k = 0; k < inputCount; k++)
+                    {
+                        var sourceMachine = patternInputs[k].Source as MachineCore;
+                        ushort sourceMachineIndex = (ushort)machines.IndexOf(sourceMachine);
+
+                        WriteUShort(ms, sourceMachineIndex);
+
+                        var conn = machine.AllInputs.FirstOrDefault(mc => mc.Source == sourceMachine);
+
+                        if (conn != null)
+                        {
+                            // Fork (mac-engine.md M2): a pattern that kept its built-in contents writes its input columns back.
+                            var builtIn = pattern.BuiltInData;
+                            for (int k1 = 0; k1 < rows; k1++)
+                            {
+                                WriteUShort(ms, builtIn != null ? builtIn.AmpPanAt(sourceMachine, 2 * k1) : (ushort)65535);
+                                WriteUShort(ms, builtIn != null ? builtIn.AmpPanAt(sourceMachine, 2 * k1 + 1) : (ushort)65535);
+                            }
+                        }
+                        else
+                        {
+                            // if we come here the connection was saved, but not successfully reconnected.
+                            // just skip it.
+                            for (int k1 = 0; k1 < rows; k1++)
+                            {
+                                WriteUShort(ms, 65535);
+                                WriteUShort(ms, 65535);
+                            }
+                        }
+                    }
+
+                    // Global
+                    WriteTrack(ms, machine, pattern, 1, 0, rows);
+
+                    // Tracks
+
+                    for (int l = 0; l < tracks; l++)
+                    {
+                        WriteTrack(ms, machine, pattern, 2, l, rows);
+                    }
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.PATT);
+        }
+
+        private bool WriteTrack(MemoryStream ms, MachineCore machine, PatternCore Pattern, int group, int track, int rows)
+        {
+            // We don't use these so write no values
+            // Fork (mac-engine.md M2): except a pattern's kept built-in contents (BuiltInData).
+            var builtIn = Pattern.BuiltInData;
+            for (int i = 0; i < rows; i++)
+            {
+                List<PatternEvent> events = new List<PatternEvent>();
+                for (int j = 0; j < machine.ParameterGroups[group].Parameters.Count; j++)
+                {
+                    ParameterCore param = machine.ParameterGroupsList[group].ParametersList[j];
+                    int value = builtIn != null ? builtIn.ValueAt(group, track, i, j, param) : param.NoValue;
+
+                    //int value = 0;
+                    int typeSize = param.GetTypeSize();
+                    if (typeSize == 1)
+                        WriteByte(ms, (byte)value);
+                    else if (typeSize == 2)
+                        WriteUShort(ms, (ushort)value);
+
+                    //if (value != param.NoValue)
+                    //    events.Add(new PatternEvent(i * PatternEvent.TimeBase, value));
+                    //if (result != 0 && value != zzub_parameter_get_value_none(param))
+                    //    insert_pattern_value(result, plugin.plugin, group, track, j, i, value);
+
+                }
+            }
+
+            return true;
+        }
+
+        public void CreateXPATSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            WriteByte(ms, 1); // version
+
+            for (int i = 0; i < buzz.SongCore.MachinesList.Count; i++)
+            {
+                var machine = machines[i];
+                ushort numPatterns = (ushort)machine.Patterns.Count;
+
+                // Fork (mac-engine.md M2): a placeholder editor is still the patterns' editor, and
+                // patterns that kept built-in contents stay the built-in editor's (65535), so a host
+                // with a pattern editor converts them as it does for an old song.
+                var editor = machine.EditorMachine ?? machine.PlaceholderEditor;
+                int editorIndex = buzz.SongCore.MachinesList.IndexOf(editor);
+                if (editorIndex == -1 && KeepsBuiltInPatterns(machine))
+                    editorIndex = 65535;
+                if (editorIndex == -1)
+                    numPatterns = 0; // Ensure editor is correct. Should not go here.
+
+                WriteUShort(ms, numPatterns);
+
+                for (int j = 0; j < numPatterns; j++)
+                {
+                    WriteUShort(ms, (ushort)editorIndex);
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.XTAP);
+        }
+
+        public void CreateTAP2Section()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            WriteByte(ms, 2);   // Version
+
+            foreach (MachineCore machine in buzz.SongCore.MachinesList)
+            {
+                ushort numPatterns = (ushort)machine.Patterns.Count;
+                WriteUShort(ms, numPatterns);
+
+                for (ushort i = 0; i < numPatterns; i++)
+                {
+                    var pattern = machine.Patterns[i];
+                    WriteString(ms, pattern.Name);
+
+                    int parameterColumnCount = pattern.Columns.Count;
+                    WriteInt(ms, parameterColumnCount);
+
+                    for (int j = 0; j < parameterColumnCount; j++)
+                    {
+                        var column = pattern.Columns[j];
+                        var parameter = column.Parameter as ParameterCore;
+                        var targetMachine = column.Parameter.Group != null ? column.Parameter.Group.Machine as MachineCore : null;
+                        if (targetMachine == null && parameter.Group.Machine != null)
+                        {
+                            targetMachine = parameter.Group.Machine as MachineCore;
+                        }
+                        ushort pMachineIndex = targetMachine != null ? (ushort)buzz.SongCore.MachinesList.IndexOf(targetMachine) : (ushort)0xFFFF;
+                        WriteUShort(ms, pMachineIndex);
+                        WriteInt(ms, parameter.Group != null ? (int)parameter.Group.Type : -1);
+                        WriteInt(ms, parameter.IndexInGroup >= 0 ? parameter.IndexInGroup : -1);
+                        WriteInt(ms, column.Track);
+
+                        var events = column.GetEvents(0, int.MaxValue);
+                        int numberOfEvents = events.Count();
+                        WriteInt(ms, numberOfEvents);
+                        foreach (var pe in events)
+                        {
+                            WriteInt(ms, pe.Time);
+                            WriteInt(ms, pe.Value);
+                            WriteInt(ms, pe.Duration);
+                        }
+
+                        var metadata = column.Metadata.ToArray();
+                        WriteInt(ms, metadata.Length);
+                        foreach (var mt in metadata)
+                        {
+                            WriteString(ms, mt.Key);
+                            WriteString(ms, mt.Value);
+                        }
+                    }
+                }
+            }
+            AddSection(ms.ToArray(), SectionType.TAP2);
+        }
+
+        void CreateSequencesSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            var song = buzz.SongCore;
+            WriteInt(ms, song.SongEnd);
+            WriteInt(ms, song.LoopStart);
+            WriteInt(ms, song.LoopEnd);
+
+            WriteUShort(ms, (ushort)song.SequencesList.Count);
+
+            foreach (var sequence in song.SequencesList)
+            {
+                ushort machineIndex = (ushort)machines.IndexOf(sequence.Machine as MachineCore);
+                WriteUShort(ms, machineIndex);
+                // Fork (0.6.1): events are collected first, so positions past 65,535 ticks get
+                // 4-byte positions (the loader reads either size; upstream always wrote 2 and
+                // truncated them), and an event whose pattern is gone is left out rather than
+                // written as an invalid index.
+                var written = new List<(int Pos, ulong Value)>(sequence.Events.Count);
+                foreach (var kv in sequence.Events)
+                {
+                    int pos = kv.Key;
+                    var sequenceEvent = kv.Value;
+                    ulong value;
+
+                    if (sequenceEvent.Type == SequenceEventType.Mute)
+                    {
+                        // Mute
+                        value = 0;
+                    }
+                    else if (sequenceEvent.Type == SequenceEventType.Break)
+                    {
+                        // Break
+                        value = 1;
+                    }
+                    else if (sequenceEvent.Type == SequenceEventType.Thru)
+                    {
+                        // Thru
+                        value = 2;
+                    }
+                    else if (sequenceEvent.Type == SequenceEventType.Off)
+                    {
+                        // Thru
+                        value = 3;
+                    }
+                    else
+                    {
+                        // machine+value -> pattern id
+                        int ptnidx = sequence.Machine.Patterns.IndexOf(sequenceEvent.Pattern);
+                        if (ptnidx < 0)
+                            continue;
+                        value = (ulong)ptnidx + 0x10;
+                    }
+                    written.Add((pos, value));
+                }
+
+                uint events = (uint)written.Count;
+                WriteUInt(ms, events);
+                byte posSize = written.Any(w => w.Pos > ushort.MaxValue || w.Pos < 0) ? (byte)4 : (byte)2;
+                byte eventSize = written.Any(w => w.Value > ushort.MaxValue) ? (byte)4 : (byte)2;
+                if (events > 0)
+                {
+                    WriteByte(ms, posSize);
+                    WriteByte(ms, eventSize);
+
+                    foreach (var (pos, value) in written)
+                    {
+                        if (posSize == 4) WriteUInt(ms, (uint)pos); else WriteUShort(ms, (ushort)pos);
+                        if (eventSize == 4) WriteUInt(ms, (uint)value); else WriteUShort(ms, (ushort)value);
+                    }
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.SEQU);
+        }
+
+        void CreateXCAMSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            var song = buzz.SongCore;
+
+            ushort machineCount = (ushort)song.Machines.Count;
+            WriteUShort(ms, machineCount);
+
+            for (int i = 0; i < machineCount; i++)
+            {
+                var machine = song.Machines[i];
+                WriteString(ms, machine.Name);
+
+                // Update the number of properties
+                int numberOfItems = 7;
+                WriteInt(ms, numberOfItems);
+
+                WriteString(ms, "Mute"); // Name
+                WriteInt(ms, 1); // Size
+                WriteBool(ms, machine.IsMuted); // Value
+
+                WriteString(ms, "Bypass");
+                WriteInt(ms, 1);
+                WriteBool(ms, machine.IsBypassed);
+
+                WriteString(ms, "MIDIInputChannel");
+                WriteInt(ms, 4);
+                WriteInt(ms, machine.MIDIInputChannel);
+
+                WriteString(ms, "OverrideDelay");
+                WriteInt(ms, 4);
+                WriteInt(ms, machine.OverrideLatency);
+
+                WriteString(ms, "OversampleFactor");
+                WriteInt(ms, 4);
+                WriteInt(ms, machine.OversampleFactor);
+
+                WriteString(ms, "Wireless");
+                WriteInt(ms, 1);
+                WriteBool(ms, machine.IsWireless);
+
+                WriteString(ms, "BaseOctave");
+                WriteInt(ms, 4);
+                WriteInt(ms, machine.BaseOctave);
+            }
+            AddSection(ms.ToArray(), SectionType.XCAM);
+        }
+
+        void CreateXQESSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            var song = buzz.SongCore;
+
+            int numSequences = song.Sequences.Count;
+            WriteInt(ms, numSequences);
+
+            for (int i = 0; i < numSequences; i++)
+            {
+                var seq = song.Sequences[i];
+                WriteInt(ms, 1);                    // Number of properties
+
+                WriteString(ms, "IsDisabled");
+                WriteInt(ms, 1);                    // Size
+                WriteBool(ms, seq.IsDisabled);
+            }
+            AddSection(ms.ToArray(), SectionType.XQES);
+        }
+
+        void CreateMGRPSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            var song = buzz.SongCore;
+
+            WriteByte(ms, 1);   // Version
+
+            // Number of groups
+            int numGroups = song.MachineGroups.Count;
+            WriteInt(ms, numGroups);
+
+            foreach (var g in song.MachineGroups)
+            {                
+                WriteString(ms, g.Name);
+                WriteFloat(ms, g.Position.Item1);   // X
+                WriteFloat(ms, g.Position.Item2);   // Y
+                WriteBool(ms, g.IsGrouped);
+                WriteString(ms, g.MainInputMachine != null ? g.MainInputMachine.Name : "");
+                WriteString(ms, g.MainOutputMachine != null ? g.MainOutputMachine.Name : "");
+
+                var kvMachinesInGroup = song.MachineToGroupDict.ToArray().Where(mg => mg.Value == g).ToArray();
+                int numMachines = kvMachinesInGroup.Count();
+                WriteInt(ms, numMachines);
+
+                for (int i = 0; i < numMachines; i++)
+                {
+                    var kvMachineGroup = kvMachinesInGroup[i];
+                    var machine = kvMachineGroup.Key;
+                    WriteString(ms, machine.Name);
+
+                    Tuple<float, float> pos = machine.Position;
+                    if (song.GroupedMachinePositions.ContainsKey(machine))
+                    {
+                        pos = song.GroupedMachinePositions[machine];
+                    }
+                    WriteFloat(ms, pos.Item1);   // X
+                    WriteFloat(ms, pos.Item2);   // Y
+                }
+            }
+            AddSection(ms.ToArray(), SectionType.MGRP);
+        }
+
+        private bool CreateMIDI()
+        {
+            MemoryStream ms = new MemoryStream();
+            MemoryStream wide = new MemoryStream();
+            var song = buzz.SongCore;
+
+            var controllers = buzz.MidiControllerAssignments.ContollerBindings;
+            if (controllers.Count == 0)
+                return true;
+
+            foreach (var controller in controllers)
+            {
+                var machine = controller.Parameter.Group.Machine;
+                var all = machine.AllParameters().Where(p => p.Flags.HasFlag(ParameterFlags.State));
+                int group = machine.ParameterGroups.IndexOf(controller.Parameter.Group);
+                int track = controller.Track;
+                int paramIndex = all.FindIndex(m => m == controller.Parameter);
+                int midiChannel = controller.MidiChannel;
+                int midiController = controller.MidiController;
+                if (paramIndex < 0)
+                    continue;
+
+                // Buzz's section, a byte each: the bindings that fit (Buzz and earlier versions read it).
+                if (group <= 255 && track <= 255 && paramIndex <= 255 && midiChannel <= 255 && midiController <= 255)
+                {
+                    WriteString(ms, machine.Name);
+                    WriteByte(ms, (byte)group);
+                    WriteByte(ms, (byte)track);
+                    WriteByte(ms, (byte)paramIndex);
+                    WriteByte(ms, (byte)midiChannel);
+                    WriteByte(ms, (byte)midiController);
+                }
+
+                // Fork (docs/specs/dye-essence.md §5.2): MID2, every binding, the track and the index
+                // in 16 bits (LoadMIDI reads it instead of MIDI).
+                WriteString(wide, machine.Name);
+                WriteByte(wide, (byte)group);
+                WriteUShort(wide, (ushort)track);
+                WriteUShort(wide, (ushort)paramIndex);
+                WriteByte(wide, (byte)midiChannel);
+                WriteByte(wide, (byte)midiController);
+            }
+
+            // Machine name == ""
+            WriteByte(ms, 0);
+            WriteByte(wide, 0);
+
+            AddSection(ms.ToArray(), SectionType.MIDI);
+            AddSection(wide.ToArray(), SectionType.MID2);
+            return true;
+        }
+
+        void CreateWaveTableSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            var wt = buzz.SongCore.WavetableCore;
+            ushort waveCount = (ushort)wt.Waves.Where(w => w != null).Count();
+            WriteUShort(ms, waveCount);
+            foreach (WaveCore wave in wt.WavesList.Where(w => w != null))
+            {
+                WriteUShort(ms, (ushort)wave.Index);
+                WriteString(ms, wave.FileName);
+                WriteString(ms, wave.Name);
+                WriteFloat(ms, wave.Volume);
+
+                WriteByte(ms, (byte)wave.Flags);
+
+                if (((int)wave.Flags & WaveFlagsEnvelope) != 0)
+                {
+                    // No envelope support atm
+                    // 0 envelopes
+                    WriteUShort(ms, 0);
+                }
+
+                byte waveLeyers = (byte)wave.LayersList.Count;
+                WriteByte(ms, waveLeyers);
+
+                for (int j = 0; j < waveLeyers; j++)
+                {
+                    WaveLayerCore waveLayer = wave.LayersList[j];
+
+                    WriteInt(ms, waveLayer.SampleCount16Bit);
+                    WriteInt(ms, waveLayer.LoopStart16Bit);
+                    WriteInt(ms, waveLayer.LoopEnd16Bit);
+                    WriteInt(ms, waveLayer.SampleRate);
+                    WriteByte(ms, (byte)waveLayer.RootNote);
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.WAVT);
+        }
+
+        void CreateWavesSection()
+        {
+            MemoryStream ms = new MemoryStream();
+
+            var wt = buzz.SongCore.WavetableCore;
+            var waves = wt.WavesList.Where(w => w != null);
+            ushort waveCount = (ushort)waves.Count();
+            WriteUShort(ms, waveCount);
+
+            foreach (var wave in waves)
+            {
+                // Write index
+                WriteUShort(ms, (ushort)wave.Index);
+
+                // Write Format. 0 == 16 bit uncompressed
+                WriteByte(ms, 0);
+
+                WaveFlags waveflags = wave.Flags;
+                int numchannels = waveflags.HasFlag(WaveFlags.Stereo) ? 2 : 1;
+                int numlevels = wave.Layers.Count;
+
+                uint totalBytes = 0;
+
+                foreach (var layer in wave.LayersList)
+                {
+                    totalBytes += (uint)(layer.SampleCount16Bit * 2 * layer.ChannelCount);
+                }
+
+                WriteUInt(ms, totalBytes);
+
+                for (int j = 0; j < numlevels; j++)
+                {
+                    WaveLayerCore waveLayer = wave.LayersList[j];
+                    byte[] buffer = waveLayer.GetRawByteData();
+
+                    if (waveflags.HasFlag(WaveFlags.Not16Bit) && waveLayer.LoopStart16Bit == 4)
+                    {
+                        buffer[0] = (byte)waveLayer.Format; // Extended wave --> Format byte
+                    }
+
+                    WriteBytes(ms, buffer);
+                }
+            }
+
+            AddSection(ms.ToArray(), SectionType.WAVE);
+        }
+
+        void CreateFileInfoSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            var txt = buzz.BuildString;
+            WriteString(ms, txt);
+
+            AddSection(ms.ToArray(), SectionType.REVB);
+        }
+
+        void CreateInfoTextSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            var txt = buzz.InfoText == null ? "" : buzz.InfoText;
+            byte[] buffer = Encoding.UTF8.GetBytes(txt);
+            uint lenght = (uint)buffer.Length;
+
+            WriteUInt(ms, lenght);
+            WriteBytes(ms, buffer);
+
+            AddSection(ms.ToArray(), SectionType.BLAH);
+        }
+
+        private void CreateDialogPropertiesSection()
+        {
+            MemoryStream ms = new MemoryStream();
+            WriteByte(ms, 1);           // Version
+
+            foreach (var m in buzz.Song.Machines)
+            {
+                var machine = m as MachineCore;
+                // Fork (engine-split.md S3): the UI host knows the windows.
+                var windows = machine.GetWindowState();
+                var pw = windows.ParameterWindow;
+                var mGUI = windows.GuiWindow;
+
+                bool parameterWindowVisible = windows.ParameterWindowVisible;
+                bool guiWindowVisible = windows.GuiWindowVisible;
+
+                if (parameterWindowVisible || guiWindowVisible)
+                {
+                    WriteString(ms, machine.Name);
+
+                    WriteInt(ms, 0x2c);                         // flags?
+                    WriteInt(ms, 0);                            // ?
+                    WriteInt(ms, 1);                            // ?
+
+                    if (guiWindowVisible)
+                    {
+                        WriteInt(ms, (int)mGUI.Left);                                     // Left
+                        WriteInt(ms, (int)mGUI.Top);                                      // Top
+                        WriteInt(ms, (int)(mGUI.Left + mGUI.Width));                        // Right
+                        WriteInt(ms, (int)(mGUI.Top + mGUI.Height));                        // Bottom
+                    }
+                    else
+                    {
+                        WriteInt(ms, -1);                           // Left?
+                        WriteInt(ms, -1);                           // Top?
+                        WriteInt(ms, -1);                           // Right?
+                        WriteInt(ms, -1);                           // Bottom?
+                    }
+
+                    if (parameterWindowVisible)
+                    {
+                        WriteInt(ms, (int)pw.Left);                                     // Left
+                        WriteInt(ms, (int)pw.Top);                                      // Top
+                        WriteInt(ms, (int)(pw.Left + pw.Width));                        // Right
+                        WriteInt(ms, (int)(pw.Top + pw.Height));                        // Bottom
+                    }
+                    else
+                    {
+                        WriteInt(ms, -1);                           // Left?
+                        WriteInt(ms, -1);                           // Top?
+                        WriteInt(ms, -1);                           // Right?
+                        WriteInt(ms, -1);                           // Bottom?
+                    }
+                }
+            }
+            WriteByte(ms, 0); // End
+
+            AddSection(ms.ToArray(), SectionType.GLDP);
+        }
+
+        void AddSection(byte[] data, SectionType magic)
+        {
+            Section section = new Section();
+            section.Data = data;
+            section.Magic = (uint)magic;
+            section.Size = (uint)section.Data.Length;
+            sections[magic] = section;
+        }
+
+        private MachineCore GetMachine(string name)
+        {
+            MachineCore machine = machines.FirstOrDefault(m => m.Name == name);
+            if (machine == null)
+            {
+                machine = new MachineCore(buzz.SongCore, buzzPath, dispatcher, engineSettings);
+                machine.Name = name;
+                machines.Add(machine);
+            }
+
+            return machine;
+        }
+
+        public static int ReadInt(Stream fs)
+        {
+            byte[] buffer = new byte[sizeof(int)];
+
+            fs.ReadExactly(buffer);
+            return BitConverter.ToInt32(buffer, 0);
+        }
+
+        public static uint ReadUInt(Stream fs)
+        {
+            byte[] buffer = new byte[sizeof(int)];
+
+            fs.ReadExactly(buffer);
+            return BitConverter.ToUInt32(buffer, 0);
+        }
+
+        public static ushort ReadUShort(Stream fs)
+        {
+            byte[] buffer = new byte[sizeof(ushort)];
+
+            fs.ReadExactly(buffer);
+            return BitConverter.ToUInt16(buffer, 0);
+        }
+
+        public static float ReadFloat(Stream fs)
+        {
+            byte[] buffer = new byte[sizeof(float)];
+
+            fs.ReadExactly(buffer);
+            return BitConverter.ToSingle(buffer, 0);
+        }
+
+        public static byte ReadByte(Stream fs)
+        {
+            byte[] buffer = new byte[sizeof(byte)];
+
+            fs.ReadExactly(buffer);
+            return buffer[0];
+        }
+
+        public static ulong ReadULong(Stream fs)
+        {
+            byte[] buffer = new byte[sizeof(ulong)];
+
+            fs.ReadExactly(buffer);
+            return BitConverter.ToUInt64(buffer, 0);
+        }
+
+        public static ulong ReadVal(Stream fs, int size)
+        {
+            switch (size)
+            {
+                case 1:
+                    return ReadByte(fs);
+                case 2:
+                    return ReadUShort(fs);
+                case 4:
+                    return ReadUInt(fs);
+                case 8:
+                    return ReadULong(fs);
+                default:
+                    return 0;
+            }
+        }
+
+        [ThreadStatic] static bool utf8Strings;
+
+        /// <summary>
+        /// Fork (native-format.md): inside this scope the section strings (machine, pattern and wave names…) are UTF-8, not
+        /// Latin-1. The native writer and reader use it; .bmx files keep Latin-1. Per thread, so a file operation on the UI
+        /// thread doesn't touch another thread's reads.
+        /// </summary>
+        internal static IDisposable Utf8Strings()
+        {
+            bool before = utf8Strings;
+            utf8Strings = true;
+            return new Scope(() => utf8Strings = before);
+        }
+
+        sealed class Scope : IDisposable
+        {
+            readonly Action end;
+            public Scope(Action end) { this.end = end; }
+            public void Dispose() => end();
+        }
+
+        public static string ReadString(Stream fs)
+        {
+            var bytes = new List<byte>();
+            while (true)
+            {
+                int b = fs.ReadByte();
+                if (b == 0) break;
+                if (b < 0) return null;
+                bytes.Add((byte)b);
+            }
+            return (utf8Strings ? Encoding.UTF8 : Encoding.Latin1).GetString(bytes.ToArray());
+        }
+
+        public static byte[] ReadBytes(Stream fs, int length)
+        {
+            byte[] buffer = new byte[length];
+
+            fs.ReadExactly(buffer);
+            return buffer;
+        }
+
+        public static void WriteUInt(MemoryStream ms, uint value)
+        {
+            byte[] buffer = null;
+            buffer = BitConverter.GetBytes(value);
+            ms.Write(buffer, 0, buffer.Length);
+        }
+
+        public static void WriteInt(MemoryStream ms, int value)
+        {
+            byte[] buffer = null;
+            buffer = BitConverter.GetBytes(value);
+            ms.Write(buffer, 0, buffer.Length);
+        }
+
+        public static void WriteUShort(MemoryStream ms, ushort value)
+        {
+            byte[] buffer = null;
+            buffer = BitConverter.GetBytes(value);
+            ms.Write(buffer, 0, buffer.Length);
+        }
+
+        public static void WriteBool(MemoryStream ms, bool value)
+        {
+            WriteByte(ms, value == true ? (byte)1 : (byte)0);
+        }
+
+        public static void WriteBytes(MemoryStream ms, byte[] buffer)
+        {
+            ms.Write(buffer, 0, buffer.Length);
+        }
+
+        public static void WriteFloat(MemoryStream ms, float value)
+        {
+            byte[] buffer = null;
+            buffer = BitConverter.GetBytes(value);
+            ms.Write(buffer, 0, buffer.Length);
+        }
+
+        public static void WriteByte(MemoryStream ms, byte value)
+        {
+            ms.WriteByte(value);
+        }
+
+        public static void WriteString(MemoryStream ms, string str)
+        {
+            // Fork (mac-engine.md M2): Latin-1, as ReadString reads a byte per character. ASCII
+            // wrote '?' for every byte above 127, so names such as "Attack time (µs)" changed.
+            WriteString(ms, str, utf8Strings ? Encoding.UTF8 : Encoding.Latin1);
+        }
+
+        /// <summary>A string in a given encoding (the pattern editor's data keeps Latin-1 whatever file it goes in).</summary>
+        public static void WriteString(MemoryStream ms, string str, Encoding encoding)
+        {
+            byte[] buffer = encoding.GetBytes(str);
+            ms.Write(buffer, 0, buffer.Length);
+            WriteByte(ms, 0);
+        }
+
+        /// <summary>The subsections as the IUGB section holds them (the native format keeps them as manifest fields instead).</summary>
+        internal static List<(string Name, byte[] Data)> ParseSubSections(byte[] iugb)
+        {
+            var list = new List<(string, byte[])>();
+            var s = new MemoryStream(iugb, false);
+            while (true)
+            {
+                string name = ReadString(s);
+                if (string.IsNullOrEmpty(name)) break;
+                list.Add((name, ReadBytes(s, ReadInt(s))));
+            }
+            return list;
+        }
+
+        internal static byte[] BuildSubSections(IEnumerable<(string Name, byte[] Data)> subs)
+        {
+            var ms = new MemoryStream();
+            foreach (var sub in subs)
+            {
+                WriteString(ms, sub.Name);
+                WriteInt(ms, sub.Data.Length);
+                WriteBytes(ms, sub.Data);
+            }
+            WriteString(ms, "");
+            return ms.ToArray();
+        }
+
+        public Dictionary<string, MemoryStream> GetSubSections()
+        {
+            return subSections.Values.Select(s => new { s.Name, Value = new MemoryStream(s.Data, false) }).ToDictionary(s => s.Name, s => s.Value);
+        }
+
+        public void SetSubSections(SaveSongCore ss)
+        {
+            subSections = new Dictionary<string, SubSection>();
+            foreach (var stream in ss.GetStreamsDict())
+            {
+                SubSection sect = new SubSection();
+                sect.Name = stream.Key;
+                sect.Data = stream.Value.ToArray();
+                subSections[stream.Key] = sect;
+            }
+        }
+    }
+}
+

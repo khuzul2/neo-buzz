@@ -65,7 +65,7 @@ namespace NeoBuzz.Ensemble
                 Layout.Row(new ParamKnob(ctx, P.Feedback), new ParamKnob(ctx, P.Tone)));
 
             var output = Layout.Row(
-                Layout.Column(new ParamKnob(ctx, P.Mix, diameter: 56), new ParamKnob(ctx, P.Output)),
+                Layout.Column(Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)), new ParamKnob(ctx, P.Output)),
                 Layout.Gap(6),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 196),
                 Layout.Gap(4),
@@ -81,14 +81,17 @@ namespace NeoBuzz.Ensemble
 
         void DrawSweep(INeoCanvas g, NeoRect r, EditorContext ctx, NeoEnsembleMachine machine)
         {
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
+            values.AllowPhysical();
             int key = 17;
             for (int i = 0; i < Params.Table.Length; i++)
             {
                 int raw = ctx.Raw(i);
-                values.Set(i, raw);
+                rawValues.Set(i, raw);
                 key = unchecked(key * 31 + raw);
             }
+            FxStage.Fill(rawValues, values, P.Amount, EnsembleEngine.AmountRules);
             double rate = 48000, tempo = ctx.SongTempo(machine?.Engine.Tempo ?? 120);
             key = unchecked(key * 31 + (int)Math.Round(tempo * 100));
             var s = EnsembleDesign.From(values, tempo, rate);

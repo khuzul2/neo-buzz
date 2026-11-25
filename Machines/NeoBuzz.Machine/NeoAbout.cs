@@ -8,9 +8,7 @@ namespace NeoBuzz.Machine
     {
         public static void Show(string text, string caption)
         {
-#if WINDOWS
-            System.Windows.MessageBox.Show(text, caption);
-#elif AVALONIA
+#if AVALONIA
             NeoBuzz.Editor.MessageBox.Show(text, caption);
 #else
             System.Console.Error.WriteLine(caption + ": " + text.Replace('\n', ' '));

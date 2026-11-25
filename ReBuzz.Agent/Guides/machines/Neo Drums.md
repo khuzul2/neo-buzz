@@ -47,10 +47,6 @@ Every control has a How and a Sound sentence in `machine_describe`; `param_set` 
 
 - Neo Comp on the drum bus (glue, 4:1, 3 ms attack), Neo Transient for punch, Neo Drive on the kick, Neo EQ, Neo Verb on a short room send; Neo Sampler's Kit mode for your own samples beside it.
 
-## Successor
-
-Neo Drums replaces Rout 909 and FSM KickXP: `machine_replace(machine="909")` maps the trigger columns to hit columns and the settings to the voices, and the reply says what differs.
-
 ## Checklist
 
 - [ ] `render(probes=["Drums"])`, then `analyze` loudness and spectrum: the kick has its weight near its `Kick tune`.

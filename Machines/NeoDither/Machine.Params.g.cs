@@ -21,5 +21,11 @@ namespace NeoBuzz.Dither
 
         [ParameterDecl(Name = "Blank after", Description = "How long the digital silence has to last before Auto blank silences the output (0.7 s by default)", MinValue = 0, MaxValue = 50, DefValue = 6)]
         public int BlankAfter { get => Values[P.BlankAfter]; set => Values.Set(P.BlankAfter, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
+
+        [ParameterDecl(Name = "Mix", Description = "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int Mix { get => Values[P.Mix]; set => Values.Set(P.Mix, value); }
     }
 }

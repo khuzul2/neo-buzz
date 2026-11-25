@@ -26,7 +26,8 @@ namespace NeoBuzz.Filter
         public const int LfoPhase = 15;
         public const int Mix = 16;
         public const int Output = 17;
-        public const int Count = 18;
+        public const int Amount = 18;
+        public const int Count = 19;
     }
 
     internal static class Params
@@ -54,6 +55,7 @@ namespace NeoBuzz.Filter
             new ParamDef(P.LfoPhase, "LfoPhase", "LFO phase", 0, 360, 0, MapKind.Linear, a: 0, b: 360, unit: "°", digits: 0, group: "LFO", description: "The LFO's phase at the song's start (Song) or where it restarts (Env)", how: "Sets the LFO's starting phase, from 0 to 360 degrees, at the start of the song or at each restart.", sound: "It decides where in the sweep each pass begins, for example starting dark or starting bright."),
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry against filtered (a crossfade): 100 % only the filter", how: "Blends the dry signal with the filtered signal.", sound: "Lower values keep the original sound and add the filter as an accent; 100 % is only the filter."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output gain, −24 … +24 dB in 0.1 dB steps", how: "Adds -24 to +24 dB of gain after the filter.", sound: "It restores the level lost to filtering, or keeps resonant peaks in check."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales how far the filter moves the sound: the cutoff in octaves from fully open, the band types' resonance, the drive, the envelope and the LFO depth. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to open the filter and calm its movement, up to close it further and sweep wider."),
         };
     }
 }

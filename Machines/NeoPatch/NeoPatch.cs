@@ -193,7 +193,7 @@ namespace NeoBuzz.Patch
         };
     }
 
-#if WINDOWS || AVALONIA   // the inner canvas on WPF, or Avalonia in the studio (the Neo editor kit); none headless
+#if AVALONIA   // the inner canvas: Avalonia in the studio (the Neo editor kit); none headless
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {

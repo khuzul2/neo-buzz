@@ -6,7 +6,6 @@ using ReBuzz.Common;
 using ReBuzz.Common.Interfaces;
 using ReBuzz.MachineManagement;
 using ReBuzz.ManagedMachine;
-using ReBuzz.NativeMachine;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -40,7 +39,6 @@ namespace ReBuzz.Core
         // value listeners for the last track only. Fork (engine hardening): preallocated bits, no
         // longer a ConcurrentDictionary that allocated on the audio thread for every change.
         internal ParameterChanges ParameterChanges { get; } = new ParameterChanges();
-        internal ConcurrentQueue<int> wavesEventsPending = new ConcurrentQueue<int>();   // fork (HS3): a queue; a ConcurrentBag allocated its thread list on the audio thread's first TryTake
 
         internal MachineDLL MachineDLL { get => machineDLL; set => machineDLL = value; }
 
@@ -779,7 +777,6 @@ namespace ReBuzz.Core
 
 
         public long CMachineHost { get; internal set; }
-        public List<CMachineEvent> CMachineEventType { get; internal set; }
 
         public event Action<IPattern> PatternAdded;
         public event Action<IPattern> PatternRemoved;
@@ -832,7 +829,6 @@ namespace ReBuzz.Core
             MachineDLL.Is64Bit = is64Bit;
             MachineDLL.IsOutOfProcess = (IntPtr.Size == 4 && is64Bit) || (IntPtr.Size == 8 && !is64Bit);
 
-            CMachineEventType = new List<CMachineEvent>();
             CMachineHost = machineHostId;
             machineHostId++;
 
@@ -967,49 +963,13 @@ namespace ReBuzz.Core
             }
 #endif
 
-            if (!DLL.IsManaged)
+            if (DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI)
             {
-                var me = CMachineEventType.FirstOrDefault(e => e.Type == BEventType.DoubleClickMachine);
-                if (me.Event_Handler != IntPtr.Zero)
-                {
-                    // Let native machine handle double click
-                    var buzzCore = (ReBuzzCore)graph.Buzz;
-
-                    bool handled = buzzCore.MachineManager.MachineEvent(this, me, 0);
-                    if (!handled)
-                    {
-                        // Open parameter windows
-                        OpenEditorOrParameterWindow();
-                    }
-                    else
-                    {
-                        // Fork (ux-overhaul.md P6c): the machine showed a window of its own, in its host process; a UI host may embed it.
-                        int pid = buzzCore.MachineManager.NativeHostProcessId(this);
-                        if (pid != 0) UiHostOf(graph)?.NativeGuiShown(this, pid);
-                    }
-                }
-                else
-                {
-                    if (DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI)
-                    {
-                        OpenWindowedGUI();
-                    }
-                    else
-                    {
-                        OpenEditorOrParameterWindow();
-                    }
-                }
+                OpenWindowedGUI();
             }
             else
             {
-                if (DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI)
-                {
-                    OpenWindowedGUI();
-                }
-                else
-                {
-                    OpenEditorOrParameterWindow();
-                }
+                OpenEditorOrParameterWindow();
             }
         }
 

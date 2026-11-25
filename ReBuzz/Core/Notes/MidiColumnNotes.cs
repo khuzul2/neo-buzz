@@ -33,7 +33,6 @@ namespace ReBuzz.Core.Notes
         public override string WhyNotEditable =>
             !IsLive ? "The pattern was deleted."
             : buzz.SessionLayout?.IsRecordingClip(pattern) == true ? "Recording: edits wait until it stops."
-            : !ClipEditPolicy.CanEdit(pattern.Machine, out var oldMachine) ? oldMachine          // clips.md §5.7: an old machine's clips are view only
             : null;
 
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)

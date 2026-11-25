@@ -260,7 +260,7 @@ compare(render("defaults"), "defaults")
 
 # 2. the same changed parameters on all. The song of the defaults is saved and opened first: every machine, the native one too, starts fresh
 # (a native machine that has just rendered carries its random streams, drift and tails into the next render; docs/specs/plugin-export.md §7).
-defaults_song = os.path.join(work, "px2-defaults.bmxml")
+defaults_song = os.path.join(work, "px2-defaults.nbl")
 check(call("song_save", path=defaults_song, overwrite=True)[0], "song_save (defaults)")
 check(call("song_open", path=defaults_song, discard_unsaved=True)[0], "song_open (defaults): fresh instances")
 time.sleep(3)
@@ -272,7 +272,7 @@ if spec["test"]["changes"]:
     param_check("changed")
     compare(render("changed"), "changed", skip=spec["test"].get("settle", 0.5))
 
-song = os.path.join(work, "px1.bmxml")
+song = os.path.join(work, "px1.nbl")
 check(call("song_save", path=song, overwrite=True)[0], "song_save")
 check(call("song_open", path=song, discard_unsaved=True)[0], "song_open")
 param_check("after reopen")
@@ -338,7 +338,7 @@ if cont and len(outs) > 1:
         time.sleep(1)
         # Like with like: every machine loads the song with its automation as a fresh instance (a native machine that has played carries
         # filter states, random streams and tails that a plug-in instance does not share; docs/specs/plugin-export.md section 7).
-        ap = os.path.join(work, f"px2-{label}.bmxml")
+        ap = os.path.join(work, f"px2-{label}.nbl")
         check(call("song_save", path=ap, overwrite=True)[0], f"{label}: song_save")
         check(call("song_open", path=ap, discard_unsaved=True)[0], f"{label}: song_open (fresh instances)")
         time.sleep(3)
@@ -352,16 +352,16 @@ if cont and len(outs) > 1:
         # one of "changed": a native machine loaded from a song glides from its defaults to the loaded values, a plug-in starts settled.
         compare(pf, label, skip=spec["test"].get("settle", 0.0), tol=spec["test"].get("automationTolerance", None))
 
-# 6. save and reopen as .nbl and as .bmx: every slot value and the plug-in's state come back. Compared like with like: a render of a fresh
-# instance before saving (the song written as bmxml and opened, so nothing has played) against a render of a fresh instance after saving
-# in the format and opening it. The two nulls at the tolerances of the plug-in's other renders.
+# 6. save and reopen as .nbl: every slot value and the plug-in's state come back. Compared like with like: a render of a fresh
+# instance before saving (the song written and opened, so nothing has played) against a render of a fresh instance after saving
+# it again and opening it. The two nulls at the tolerances of the plug-in's other renders.
 if len(outs) > 1:
     plug_outs = outs[1:]
     tol6 = spec["test"].get("tolerance", args.tolerance)
     skip6 = spec["test"].get("settle", 0.0)
-    for ext in (".nbl", ".bmx"):
-        base = os.path.join(work, "px2-before" + ext.replace(".", "-") + ".bmxml")
-        check(call("song_save", path=base, overwrite=True)[0], f"{ext}: song_save (bmxml, the fresh instance before)")
+    for ext in (".nbl",):
+        base = os.path.join(work, "px2-before" + ext.replace(".", "-") + ".nbl")
+        check(call("song_save", path=base, overwrite=True)[0], f"{ext}: song_save (the fresh instance before)")
         check(call("song_open", path=base, discard_unsaved=True)[0], f"{ext}: song_open (fresh instance before)")
         time.sleep(3)
         before = {nm: describe(nm) for nm in outs}

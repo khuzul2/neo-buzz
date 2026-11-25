@@ -150,6 +150,7 @@ public:
     const clap_plugin_tail_t* tailExt = nullptr;
     const clap_plugin_gui_t* gui = nullptr;
     const clap_plugin_render_t* render = nullptr;
+    const clap_plugin_note_name_t* noteNameExt = nullptr;      // ABI 5: what the plugin calls its keys
 
     bool active = false, processing = false, guiCreated = false;
     std::atomic<bool> callbackRequested{false}, restartRequested{false};
@@ -226,6 +227,7 @@ public:
         tailExt = (const clap_plugin_tail_t*)plugin->get_extension(plugin, CLAP_EXT_TAIL);
         gui = (const clap_plugin_gui_t*)plugin->get_extension(plugin, CLAP_EXT_GUI);
         render = (const clap_plugin_render_t*)plugin->get_extension(plugin, CLAP_EXT_RENDER);
+        noteNameExt = (const clap_plugin_note_name_t*)plugin->get_extension(plugin, CLAP_EXT_NOTE_NAME);
         if (notePorts && notePorts->count(plugin, true) > 0)
         {
             clap_note_port_info_t ni{};
@@ -696,6 +698,27 @@ public:
 
     double paramPlain(uint32_t, double v) override { return v; }
 
+    /// The plugin's note names (clap.note-name), main thread: every name with a key, for the first note port (or every port).
+    /// A name for every key (-1) says nothing about one key, so it is left out.
+    int noteNames(std::vector<np_note_name>& out) override
+    {
+        if (!plugin || !noteNameExt || !noteNameExt->count || !noteNameExt->get) return 0;
+        uint32_t n = noteNameExt->count(plugin);
+        for (uint32_t i = 0; i < n && out.size() < 4096; i++)
+        {
+            clap_note_name_t nn{};
+            if (!noteNameExt->get(plugin, i, &nn)) continue;
+            if (nn.key < 0 || nn.key > 127 || nn.name[0] == 0) continue;
+            if (nn.port > 0) continue;                       // the first note input's names (port -1: all of them)
+            np_note_name e{};
+            e.key = nn.key;
+            e.channel = nn.channel < 0 || nn.channel > 15 ? -1 : nn.channel;
+            copyStr(e.name, sizeof e.name, nn.name);
+            out.push_back(e);
+        }
+        return (int)out.size();
+    }
+
     void reset() override
     {
         if (!active) return;
@@ -839,6 +862,10 @@ static uint32_t hNoteDialects(const clap_host_t*) { return CLAP_NOTE_DIALECT_CLA
 static void hNoteRescan(const clap_host_t*, uint32_t) {}
 static const clap_host_note_ports_t hostNotePorts{hNoteDialects, hNoteRescan};
 
+// The plugin's note names changed (ABI 5): the host reads them again on its main thread (np_poll's NP_POLL_NOTE_NAMES).
+static void hNoteNamesChanged(const clap_host_t* h) { ClapPlugin::self(h)->pollFlags |= NP_POLL_NOTE_NAMES; }
+static const clap_host_note_name_t hostNoteName{hNoteNamesChanged};
+
 static void hGuiHints(const clap_host_t*) {}
 // The plugin asks for a size: the host's window takes it (np_gui_resize_cb); answering true says the host accepted.
 static bool hGuiResize(const clap_host_t* h, uint32_t w, uint32_t ht)
@@ -864,6 +891,7 @@ const void* ClapPlugin::getExtension(const clap_host_t*, const char* id)
     if (e == CLAP_EXT_TAIL) return &hostTail;
     if (e == CLAP_EXT_AUDIO_PORTS) return &hostAudioPorts;
     if (e == CLAP_EXT_NOTE_PORTS) return &hostNotePorts;
+    if (e == CLAP_EXT_NOTE_NAME) return &hostNoteName;
     if (e == CLAP_EXT_GUI) return &hostGui;
     return nullptr;
 }

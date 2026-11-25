@@ -170,7 +170,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(ids, Is.EquivalentTo(new[]
             {
                 "hear-a-bass", "movement-from-a-modulator", "safe-experiment", "arrange-a-section", "two-scenes",
-                "controller-for-the-cutoff", "explain-a-control", "engine-swap", "replace-a-classic", "check-the-load",
+                "controller-for-the-cutoff", "explain-a-control", "engine-swap", "check-the-load",
             }));
             foreach (var r in Recipes())
                 if (r.Needs.Length > 0) Assert.That(ids, Does.Contain(r.Needs), r.Id);
@@ -246,15 +246,6 @@ namespace ReBuzz.Studio.Tests
             NotSilent(Of(steps, "render"));
             Assert.That(Of(steps, "analyze").Text, Does.Contain("very dynamic"));
             Assert.That(Of(steps, "param_get").Text, Does.Contain("Modal").And.Contain("Bar"));
-        });
-
-        [AvaloniaTest]
-        public void ReplaceAClassic() => Check("replace-a-classic", steps =>
-        {
-            Assert.That(Of(steps, "machine_replace", 0).Data["to"]!.GetValue<string>(), Is.EqualTo("Neo Verb"));
-            Assert.That(Of(steps, "machine_replace", 1).Data["comparison"], Is.Not.Null, "the renders were compared: " + Of(steps, "machine_replace", 1).Text);
-            Assert.That(Of(steps, "machine_list", 0).Data.ToJsonString(), Does.Contain("Neo Verb"));
-            Assert.That(Of(steps, "machine_list", 1).Data.ToJsonString(), Does.Contain("Pedal Plate"));
         });
 
         [AvaloniaTest]

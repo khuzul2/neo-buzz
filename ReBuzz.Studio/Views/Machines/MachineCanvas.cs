@@ -1136,7 +1136,7 @@ namespace ReBuzz.Studio.Views.Machines
 
             // Missing or crashed (ErrorText): dark red at the bottom. Fork (machine-safety.md §3.2): diverged, in white on red.
             bool diverged = IsDiverged(m);
-            // Fork (ux-overhaul.md P1): plain words: a machine this computer can't run is "Windows only" off Windows, one
+            // Fork (ux-overhaul.md P1): plain words: a machine that is not installed says so, one
             // the guard muted "muted: blew up" ("missing" and "diverged" were the engine's words, gallery mac-500, mac-520).
             string error = m.DLL.IsMissing ? Shell.PlainWords.Missing : m.DLL.IsCrashed ? "stopped working" : diverged ? "muted: blew up" : null;
             if (error != null)

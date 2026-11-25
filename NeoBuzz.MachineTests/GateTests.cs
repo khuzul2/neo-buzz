@@ -222,7 +222,7 @@ namespace NeoBuzz.MachineTests
         [TestCase(1)]
         public void BothDetectorsReadASineAtItsPeakLevel(int detection)
         {
-            // Peak: the follower's reading of a sine. RMS: the power sum of both channels read on the peak scale (Pedal Gate's
+            // Peak: the follower's reading of a sine. RMS: the power sum of both channels read on the peak scale (a gate's
             // sqrt((l² + r²) / N) is a sine's amplitude when both channels carry it): a −28 dBFS tone is under a −25 dB threshold, −21 over (the peak follower reads a 1 kHz sine about a dB low).
             int n = Rate * 2;
             foreach (var (amp, opens) in new[] { (-28.0, false), (-21.0, true) })

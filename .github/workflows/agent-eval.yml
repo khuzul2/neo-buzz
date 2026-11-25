@@ -2,7 +2,7 @@ name: Agent evaluation (real agent)
 
 # The agent server's periodic evaluation with a real agent (docs/specs/mcp-server.md §10, A6).
 # For each task brief, Claude Code runs headless (claude -p) with only the app's MCP tools (the server
-# neobuzz-live), on the package's NeoBuzzLive.exe --agent; ReBuzz.AgentEval then scores the song it saved with the same scorers
+# neobuzz-live), on rebuzz-headless --agent; ReBuzz.AgentEval then scores the song it saved with the same scorers
 # as the scripted suite. Transcripts, songs and scores are uploaded; the step summary has the table.
 #
 # Needs the repository secret ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions). Without
@@ -101,27 +101,10 @@ jobs:
       with:
         node-version: '22'
 
-    # The engine's upstream bin64\dsplib.dll needs the x64 VC++ 2010 runtime (see fork-package.yml).
-    - name: Install VC++ 2010 runtime
+    # The agents work against rebuzz-headless (the engine and its Neo machines, MCP on stdio), as Fork CI's evaluation does.
+    - name: Build rebuzz-headless
       shell: pwsh
-      # Chocolatey's feed is sometimes down (503/504): three tries, then Microsoft's own installer.
-      run: |
-        $dll = "$env:WINDIR\System32\msvcr100.dll"
-        for ($i = 1; $i -le 3 -and -not (Test-Path $dll); $i++) {
-          choco install vcredist2010 -y --no-progress *> vcredist.log
-          if (-not (Test-Path $dll)) { Write-Host "choco try $i failed"; Start-Sleep -Seconds 20 }
-        }
-        if (-not (Test-Path $dll)) {
-          Write-Host 'Installing the VC++ 2010 SP1 x64 runtime from download.microsoft.com'
-          Invoke-WebRequest -Uri 'https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x64.exe' -OutFile vcredist_x64.exe
-          Start-Process -FilePath .\vcredist_x64.exe -ArgumentList '/q', '/norestart' -Wait
-        }
-        if (-not (Test-Path $dll)) { if (Test-Path vcredist.log) { Get-Content vcredist.log -Tail 20 }; throw 'msvcr100.dll (x64) not installed' }
-
-    # The solution with the Neo machines; no external machines or zip (as fork-package's quick mode).
-    - name: Build ReBuzz
-      shell: pwsh
-      run: ./build.ps1 -Version "agent-eval-${{ github.run_number }}" -SkipManagedMachines -SkipBinaries -NoZip *>&1 | Tee-Object -FilePath build.log
+      run: dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
 
     - name: Annotate build log
       if: failure()
@@ -154,7 +137,7 @@ jobs:
         K_MAX_BUDGET: ${{ inputs.knowledge_max_budget_usd || '1' }}
       run: |
         # Paths as D:/a/… : both bash and the Windows programs read them.
-        EXE="$(cygpath -m "$(find "$PWD/bin" -name NeoBuzzLive.exe -not -path '*/obj/*' | head -n 1)")"
+        EXE="$(cygpath -m "$PWD/ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.exe")"
         EVAL="dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll"
         OUT="$(cygpath -m "$PWD/agent-eval")"
         mkdir -p "$OUT" "$RUNNER_TEMP/agent-cwd"
@@ -207,6 +190,6 @@ jobs:
           agent-eval/**/*.jsonl
           agent-eval/**/*.md
           agent-eval/**/*.txt
-          agent-eval/**/*.bmxml
+          agent-eval/**/*.nbl
           agent-eval/**/*.wav
         if-no-files-found: warn

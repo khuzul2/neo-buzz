@@ -21,6 +21,8 @@ The last machine of a master when the target is a 16 or 24 bit file: it rounds t
 | Auto blank | On | silence stays silent between tracks |
 | Blank after | 0.7 s | how long digital silence must last before the output mutes |
 
+`Amount` (default 100 %) scales the dither level and noise-shaping depth: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "16 bit — TPDF (Standard)": Bits 16, TPDF, no shaping. "16 bit — TPDF, Light Shaping" and "16 bit — TPDF, Psychoacoustic Shaping" for quiet material.

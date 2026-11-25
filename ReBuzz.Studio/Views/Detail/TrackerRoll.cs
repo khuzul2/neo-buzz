@@ -112,7 +112,11 @@ namespace ReBuzz.Studio.Views.Detail
             keyBox = Combo("Key", 96, "Key: off", "Key: C", "Key: C#", "Key: D", "Key: D#", "Key: E", "Key: F", "Key: F#", "Key: G", "Key: G#", "Key: A", "Key: A#", "Key: B");
             scaleBox = Combo("Scale", 150, Scale.All.Select(sc => sc.Name).ToArray());
             scaleBox.SelectedIndex = 0;
-            foldBox = Combo("Fold", 110, "Fold: off", "Fold: used", "Fold: scale");
+            foldBox = Combo("Fold", 130, "Fold: off", "Fold: used", "Fold: scale");
+            // Fork (daw-modes.md §8.9, NM1): Fold: playable (the keys that make a sound on this machine); disabled while the machine reports none.
+            playableItem = new ComboBoxItem { Content = "Fold: playable", IsEnabled = false };
+            foldBox.Items.Add(playableItem);
+            UpdatePlayable();
             snapBox = StudioButtons.KeepFocus(new ToggleButton { Content = "Snap to scale", Margin = new Thickness(0, 0, 6, 0) });
             ToolTip.SetTip(snapBox, "New notes and moved ones land on the scale's pitches (needs a key)");
             AutomationProperties.SetName(snapBox, "Snap to scale");
@@ -292,6 +296,8 @@ namespace ReBuzz.Studio.Views.Detail
             roll = new PianoRoll(core, source, null) { Grid = rowTime, AltBypassesGrid = true, RowHeight = 13 };
             AutomationProperties.SetName(roll, songOnly ? "Arrangement piano roll notes" : "Piano roll");
             roll.Changed += UpdateSummary;
+            roll.MapChanged += OnMapChanged;
+            UpdatePlayable();
             roll.StepOctave = Math.Clamp(p.Machine?.BaseOctave ?? 4, 0, 9);
             roll.SnapToScale = snapBox.IsChecked == true;
             roll.StepInput = stepBox.IsChecked == true;
@@ -340,6 +346,34 @@ namespace ReBuzz.Studio.Views.Detail
 
         /// <summary>Whether the keyboard is in an envelope lane (Undo and Redo are the song's then).</summary>
         internal bool EnvelopesFocused => envelopes?.OwnsFocus == true;
+
+        readonly ComboBoxItem playableItem;
+
+        const string NoPlayableTip = "This machine reports no playable keys";
+        const string PlayableTip = "Show only the keys that make a sound on this machine (and any key that holds notes)";
+
+        /// <summary>Whether Fold: playable can be chosen: the machine reports its keys (a Neo machine, a hosted plug-in's note names, a manifest's map).</summary>
+        public bool CanFoldPlayable => roll?.Map is { IsEmpty: false };
+
+        /// <summary>The playable item follows the machine's note map: enabled with a map, with the reason in a tooltip when there is none.</summary>
+        void UpdatePlayable()
+        {
+            bool can = CanFoldPlayable;
+            playableItem.IsEnabled = can;
+            ToolTip.SetTip(playableItem, can ? PlayableTip : NoPlayableTip);
+            ToolTip.SetTip(foldBox, can ? null : NoPlayableTip);
+            if (!can && foldBox.SelectedIndex == (int)FoldMode.Playable) foldBox.SelectedIndex = 0;   // the machine changed: all the keys again
+        }
+
+        /// <summary>The machine's key names changed (or arrived): the fold choice, the key column and the lanes that follow it.</summary>
+        void OnMapChanged()
+        {
+            UpdatePlayable();
+            ApplyScale();
+            if (ruler != null) ruler.InvalidateVisual();
+            if (ctrl != null) ctrl.InvalidateVisual();
+            UpdateSummary();
+        }
 
         /// <summary>The key and scale the boxes name, and the fold, applied to the roll.</summary>
         void ApplyScale()
@@ -442,7 +476,7 @@ namespace ReBuzz.Studio.Views.Detail
 
         void DropRoll()
         {
-            if (roll != null) roll.Changed -= UpdateSummary;
+            if (roll != null) { roll.Changed -= UpdateSummary; roll.MapChanged -= OnMapChanged; }
             if (source != null) source.Changed -= OnSourceEdited;
             ClearFurniture();
             roll = null;
@@ -737,14 +771,15 @@ namespace ReBuzz.Studio.Views.Detail
         void Follow(int time)
         {
             double x = roll.X(time);
-            double left = scroll.Offset.X + PianoRoll.KeysWidth, right = scroll.Offset.X + scroll.Viewport.Width - 24;
+            double left = scroll.Offset.X + roll.KeyColumn, right = scroll.Offset.X + scroll.Viewport.Width - 24;
             if (scroll.Viewport.Width <= 0 || (x >= left && x <= right)) return;
-            scroll.Offset = new Vector(Math.Max(0, x - PianoRoll.KeysWidth - 24), scroll.Offset.Y);
+            scroll.Offset = new Vector(Math.Max(0, x - roll.KeyColumn - 24), scroll.Offset.Y);
         }
 
         void PlaceHead()
         {
             if (roll == null) { playhead.LineX = -1; return; }
+            playhead.Left = roll.KeyColumn;
             playhead.LineX = roll.PlayheadTime < 0 ? -1 : roll.X(roll.PlayheadTime) - scroll.Offset.X;
             playhead.InvalidateVisual();
         }
@@ -769,7 +804,7 @@ namespace ReBuzz.Studio.Views.Detail
 
             PianoRoll Roll => host.roll;
 
-            public double Gutter => PianoRoll.KeysWidth;
+            public double Gutter => Roll?.KeyColumn ?? PianoRoll.KeysWidth;
 
             public double X(int time) => Roll != null ? Roll.X(time) - host.scroll.Offset.X : Gutter + time / (double)ClipNotes.TimeBase * ownWidth - ownOffset;
 

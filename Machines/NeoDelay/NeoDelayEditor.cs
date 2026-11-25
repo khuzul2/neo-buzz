@@ -63,7 +63,7 @@ namespace NeoBuzz.Delay
                 new Meter("Ducking", () => 1 - (machine?.Engine.DuckMeter.Peak ?? 0), AccentColor, 214, reduction: true));
 
             var output = Layout.Row(
-                Layout.Column(new ParamKnob(ctx, P.Mix, diameter: 56), new ParamKnob(ctx, P.Width), new ParamKnob(ctx, P.Output)),
+                Layout.Column(Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)), new ParamKnob(ctx, P.Width), new ParamKnob(ctx, P.Output)),
                 Layout.Gap(6),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 214),
                 Layout.Gap(4),
@@ -79,8 +79,11 @@ namespace NeoBuzz.Delay
 
         void DrawEchoes(INeoCanvas g, NeoRect r, EditorContext ctx, NeoDelayMachine machine)
         {
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
-            for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
+            values.AllowPhysical();
+            for (int i = 0; i < Params.Table.Length; i++) rawValues.Set(i, ctx.Raw(i));
+            FxStage.Fill(rawValues, values, P.Amount, DelayEngine.AmountRules);
             double rate = 48000, tempo = ctx.SongTempo(machine?.Engine.Tempo ?? 120);
             var s = DelayDesign.From(values, tempo, rate);
             var grid = new NeoStroke(Palette.Grid, 1, false);

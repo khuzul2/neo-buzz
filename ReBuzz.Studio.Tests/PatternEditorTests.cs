@@ -18,7 +18,7 @@ using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -571,7 +571,7 @@ namespace ReBuzz.Studio.Tests
                 byte[] before = core.MachineManager.GetMachineData(s.Machine.EditorMachine);
                 SongFiles.Picker = save => null;
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
-                foreach (var ext in new[] { ".bmxml", ".bmx" })
+                foreach (var ext in new[] { ".nbl" })
                 {
                     string path = System.IO.Path.Combine(dir, "editor data" + ext);
                     SongFiles.Picker = save => path;

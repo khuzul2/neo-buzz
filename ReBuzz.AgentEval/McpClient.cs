@@ -1,5 +1,5 @@
 // Evaluation (docs/specs/mcp-server.md §10): an MCP client over stdio, as a real client runs the
-// server. Lifted from ReBuzzTests/AgentHeadlessTests.cs and made reusable: it starts
+// server. Made reusable: it starts
 // `ReBuzz.exe --agent [song]` (or talks to any pair of streams), initializes, lists tools and
 // calls them with structured results, isError and timeouts. It counts calls and errors, keeps a
 // transcript, and when something goes wrong reports ReBuzz's stderr and, on Windows, the

@@ -166,6 +166,8 @@ struct Plugin
     virtual void guiSetScale(double scale) { guiScale = scale > 0 ? scale : 1.0; }
     virtual int outCount() = 0;
     virtual bool outInfo(int index, std::string& name, int& channels) = 0;
+    /// The note names the plugin gives now (ABI 5): none by default. Main thread.
+    virtual int noteNames(std::vector<np_note_name>& out) { (void)out; return 0; }
 
     // Sandbox (H2). The in-process backends are placement 0; a RemotePlugin (np_remote.cpp) lives in a neoplug-server process.
     virtual int placement() { return 0; }                 // 0 in process, 1 sandbox per plug-in, 2 per instance, 3 shared

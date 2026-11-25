@@ -39,5 +39,8 @@ namespace NeoBuzz.Drive
 
         [ParameterDecl(Name = "Quality", Description = "Oversampling", MinValue = 0, MaxValue = 2, DefValue = 1)]
         public int Quality { get => Values[P.Quality]; set => Values.Set(P.Quality, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
     }
 }

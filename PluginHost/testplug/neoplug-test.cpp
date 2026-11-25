@@ -1,4 +1,4 @@
-// neoplug-test.clap: a minimal CLAP module with five plugins, written for the host's tests.
+// neoplug-test.clap: a minimal CLAP module with seven plugins, written for the host's tests.
 //  - neoplug.test.synth: 8-voice sine/saw/square synth; params Gain (1), Wave (2, stepped), Detune (3).
 //  - neoplug.test.gain:  stereo gain effect; param Gain dB (1); reports 64 samples of latency.
 //  - neoplug.test.duck:  a sidechain ducker: the main input is turned down by the level of the second
@@ -6,6 +6,9 @@
 //  - neoplug.test.octaver: a note effect: every note in comes out an octave up on its note output; no audio.
 //  - neoplug.test.crasher: a gain that misbehaves on command (param Crash: 1 crashes in process(), 2 hangs in process(), 3 crashes
 //                        while saving its state); used by the sandbox tests (H2). Crash is never saved: a reload starts clean.
+//  - neoplug.test.drums: the synth, with note names (clap.note-name): Test Kick on 36, Test Snare on 38, Test Hat on 42 (NM1).
+//  - neoplug.test.drums-morph: the same, whose Kit parameter (1) names the keys another way, and (2) none, and tells the host (the note-name
+//                        extension's changed), from the audio thread's value through the main thread's callback, as a plug-in does (NM1).
 // Both save and load their parameters as state. The GUI (macOS NSView, Windows HWND) is a solid
 // colour panel the GUI checks look for in screenshots. MIT.
 #include <clap/clap.h>
@@ -35,7 +38,8 @@ struct TestPlugin
     clap_plugin_t plugin{};
     const clap_host_t* host = nullptr;
     bool synth = true;
-    int kind = 0;                     // 0 synth, 1 gain, 2 duck, 3 octaver, 4 crasher
+    int kind = 0;                     // 0 synth, 1 gain, 2 duck, 3 octaver, 4 crasher, 5 drums (note names), 6 drums whose names change
+    std::atomic<bool> namesDirty{false};       // the Kit changed: tell the host on its main thread
     double auxEnv = 0;
     std::vector<ParamDesc> descs;
     std::vector<double> values;       // main-thread view
@@ -99,6 +103,11 @@ bool paramsToText(const clap_plugin_t* p, clap_id id, double v, char* buf, uint3
         static const char* names[] = {"Sine", "Saw", "Square"};
         snprintf(buf, size, "%s", names[std::clamp((int)std::lround(v), 0, 2)]);
     }
+    else if ((s->kind == 5 || s->kind == 6) && id == 3)
+    {
+        static const char* kits[] = {"Kit A", "Kit B", "No names"};
+        snprintf(buf, size, "%s", kits[std::clamp((int)std::lround(v), 0, 2)]);
+    }
     else if (s->synth && id == 3) snprintf(buf, size, "%.1f ct", v);
     else if (s->kind == 4 && id == 2)
     {
@@ -128,6 +137,47 @@ bool paramsFromText(const clap_plugin_t* p, clap_id id, const char* text, double
 
 void applyParamEvents(TestPlugin* s, const clap_input_events_t* in, uint32_t from, uint32_t to, uint32_t& next);
 
+// --- note names (clap.note-name): the drums' keys -------------------------------------------------
+
+struct KeyName { int key; const char* name; };
+
+const std::vector<KeyName>& kitNames(int kit)
+{
+    static const std::vector<KeyName> a{{36, "Test Kick"}, {38, "Test Snare"}, {42, "Test Hat"}};
+    static const std::vector<KeyName> b{{36, "Test Tom"}, {38, "Test Rim"}, {42, "Test Shaker"}, {46, "Test Bell"}};
+    static const std::vector<KeyName> none;
+    return kit == 0 ? a : kit == 1 ? b : none;
+}
+
+const std::vector<KeyName>& namesOf(TestPlugin* s)
+{
+    return kitNames(s->kind == 6 ? (int)std::lround(s->values[2]) : 0);
+}
+
+uint32_t nameCount(const clap_plugin_t* p) { return (uint32_t)namesOf(self(p)).size(); }
+
+bool nameGet(const clap_plugin_t* p, uint32_t index, clap_note_name_t* out)
+{
+    const auto& names = namesOf(self(p));
+    if (index >= names.size()) return false;
+    *out = clap_note_name_t{};
+    snprintf(out->name, sizeof out->name, "%s", names[index].name);
+    out->port = -1;
+    out->key = (int16_t)names[index].key;
+    out->channel = -1;
+    return true;
+}
+
+const clap_plugin_note_name_t noteNameExt{nameCount, nameGet};
+
+// The Kit changed (a value from the host, on the audio thread or in a flush): the host is told on its main thread, as the extension says.
+void kitChanged(TestPlugin* s, int index, double was)
+{
+    if (s->kind != 6 || index != 2 || std::lround(was) == std::lround(s->values[2])) return;
+    s->namesDirty = true;
+    if (s->host && s->host->request_callback) s->host->request_callback(s->host);
+}
+
 void paramsFlush(const clap_plugin_t* p, const clap_input_events_t* in, const clap_output_events_t*)
 {
     auto* s = self(p);
@@ -139,7 +189,7 @@ void paramsFlush(const clap_plugin_t* p, const clap_input_events_t* in, const cl
         {
             auto* e = (const clap_event_param_value_t*)h;
             int k = s->indexOf(e->param_id);
-            if (k >= 0) { s->values[k] = e->value; s->audioValues[k] = e->value; }
+            if (k >= 0) { double was = s->values[k]; s->values[k] = e->value; s->audioValues[k] = e->value; kitChanged(s, k, was); }
         }
     }
 }
@@ -175,7 +225,9 @@ bool stateLoad(const clap_plugin_t* p, const clap_istream_t* is)
     {
         double v;
         if (is->read(is, &v, 8) != 8) return false;
+        double was = s->values[i];
         s->values[i] = v;
+        kitChanged(s, (int)i, was);
     }
     s->dirtyToAudio = true;
     return true;
@@ -347,7 +399,7 @@ void handleEvent(TestPlugin* s, const clap_event_header_t* h)
     {
         auto* e = (const clap_event_param_value_t*)h;
         int k = s->indexOf(e->param_id);
-        if (k >= 0) { s->audioValues[k] = e->value; s->values[k] = e->value; }
+        if (k >= 0) { double was = s->values[k]; s->audioValues[k] = e->value; s->values[k] = e->value; kitChanged(s, k, was); }
         break;
     }
     default: break;
@@ -472,7 +524,7 @@ clap_process_status process(const clap_plugin_t* p, const clap_process_t* pr)
     return any ? CLAP_PROCESS_CONTINUE : CLAP_PROCESS_SLEEP;
 }
 
-const void* getExtension(const clap_plugin_t*, const char* id)
+const void* getExtension(const clap_plugin_t* p, const char* id)
 {
     if (!strcmp(id, CLAP_EXT_PARAMS)) return &paramsExt;
     if (!strcmp(id, CLAP_EXT_STATE)) return &stateExt;
@@ -480,10 +532,17 @@ const void* getExtension(const clap_plugin_t*, const char* id)
     if (!strcmp(id, CLAP_EXT_NOTE_PORTS)) return &noteExt;
     if (!strcmp(id, CLAP_EXT_LATENCY)) return &latencyExt;
     if (!strcmp(id, CLAP_EXT_GUI)) return &guiExt;
+    if (!strcmp(id, CLAP_EXT_NOTE_NAME) && (self(p)->kind == 5 || self(p)->kind == 6)) return &noteNameExt;
     return nullptr;
 }
 
-void onMainThread(const clap_plugin_t*) {}
+void onMainThread(const clap_plugin_t* p)
+{
+    auto* s = self(p);
+    if (!s->namesDirty.exchange(false) || !s->host) return;
+    auto* ext = (const clap_host_note_name_t*)s->host->get_extension(s->host, CLAP_EXT_NOTE_NAME);
+    if (ext && ext->changed) ext->changed(s->host);
+}
 
 const char* synthFeatures[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SYNTHESIZER, nullptr};
 const char* crashFeatures[] = {CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_UTILITY, nullptr};
@@ -502,15 +561,21 @@ const clap_plugin_descriptor_t gainDesc{CLAP_VERSION_INIT, "neoplug.test.gain", 
 
 const clap_plugin_descriptor_t crashDesc{CLAP_VERSION_INIT, "neoplug.test.crasher", "NeoPlug Test Crasher", "neo-buzz", "", "", "", "0.1.0",
                                          "A gain that crashes or hangs on command, for the sandbox tests", crashFeatures};
+const clap_plugin_descriptor_t drumsDesc{CLAP_VERSION_INIT, "neoplug.test.drums", "NeoPlug Test Drums", "neo-buzz", "", "", "", "0.1.0",
+                                         "The test synth with names on its keys (clap.note-name)", synthFeatures};
+const clap_plugin_descriptor_t morphDesc{CLAP_VERSION_INIT, "neoplug.test.drums-morph", "NeoPlug Test Drums Morph", "neo-buzz", "", "", "", "0.1.0",
+                                         "The test drums whose Kit parameter renames the keys and tells the host", synthFeatures};
 
 const clap_plugin_t* create(const clap_host_t* host, const clap_plugin_descriptor_t* desc, int kind)
 {
     auto* s = new TestPlugin();
     s->host = host;
     s->kind = kind;
-    bool synth = kind == 0;
+    bool synth = kind == 0 || kind == 5 || kind == 6;
     s->synth = synth;
-    if (synth)
+    if (kind == 5 || kind == 6)
+        s->descs = {{1, "Gain", "Output", 0, 1, 0.5, false}, {2, "Wave", "Oscillator", 0, 2, 0, true}, {3, "Kit", "Kit", 0, 2, 0, true}};
+    else if (synth)
         s->descs = {{1, "Gain", "Output", 0, 1, 0.5, false}, {2, "Wave", "Oscillator", 0, 2, 0, true}, {3, "Detune", "Oscillator", -50, 50, 0, false}};
     else if (kind == 1)
         s->descs = {{1, "Gain dB", "", -60, 12, 0, false}};
@@ -537,8 +602,8 @@ const clap_plugin_t* create(const clap_host_t* host, const clap_plugin_descripto
     return &s->plugin;
 }
 
-uint32_t factoryCount(const clap_plugin_factory_t*) { return 5; }
-const clap_plugin_descriptor_t* factoryDesc(const clap_plugin_factory_t*, uint32_t i) { return i == 0 ? &synthDesc : i == 1 ? &gainDesc : i == 2 ? &duckDesc : i == 3 ? &octDesc : i == 4 ? &crashDesc : nullptr; }
+uint32_t factoryCount(const clap_plugin_factory_t*) { return 7; }
+const clap_plugin_descriptor_t* factoryDesc(const clap_plugin_factory_t*, uint32_t i) { return i == 0 ? &synthDesc : i == 1 ? &gainDesc : i == 2 ? &duckDesc : i == 3 ? &octDesc : i == 4 ? &crashDesc : i == 5 ? &drumsDesc : i == 6 ? &morphDesc : nullptr; }
 const clap_plugin_t* factoryCreate(const clap_plugin_factory_t*, const clap_host_t* host, const char* id)
 {
     if (!clap_version_is_compatible(host->clap_version)) return nullptr;
@@ -547,6 +612,8 @@ const clap_plugin_t* factoryCreate(const clap_plugin_factory_t*, const clap_host
     if (!strcmp(id, duckDesc.id)) return create(host, &duckDesc, 2);
     if (!strcmp(id, octDesc.id)) return create(host, &octDesc, 3);
     if (!strcmp(id, crashDesc.id)) return create(host, &crashDesc, 4);
+    if (!strcmp(id, drumsDesc.id)) return create(host, &drumsDesc, 5);
+    if (!strcmp(id, morphDesc.id)) return create(host, &morphDesc, 6);
     return nullptr;
 }
 

@@ -9,7 +9,7 @@
 
 using System.Globalization;
 using NeoBuzz.Dsp;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {

@@ -53,6 +53,7 @@ namespace NeoBuzz.Clipper
         }
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         // [channel][band], and the second stage per channel.
         readonly Stage[][] bandStage = { new[] { new Stage(), new Stage(), new Stage() }, new[] { new Stage(), new Stage(), new Stage() } };
@@ -87,9 +88,17 @@ namespace NeoBuzz.Clipper
         int bentNow, countNow;
         volatile float clipDbNow;
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules =
+        {
+            AmountRule.Lin(P.Drive, 0), AmountRule.Lin(P.Ceiling, 0),
+            AmountRule.Lin(P.LowDrive, 0), AmountRule.Lin(P.MidDrive, 0), AmountRule.Lin(P.HighDrive, 0),
+        };
+
         public ClipperEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, -1, AmountRules, deltaIndex: P.Delta);
+            this.values = fx.Effective;
             Delta = new DeltaListen(Ring - 2, 48000);
             Match = new GainMatch(48000);
             SetSampleRate(48000);
@@ -104,6 +113,7 @@ namespace NeoBuzz.Clipper
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             drive.Setup(GlideSeconds, sr);
             ceiling.Setup(GlideSeconds, sr);
@@ -126,6 +136,7 @@ namespace NeoBuzz.Clipper
 
         public void Reset()
         {
+            fx.Reset();
             for (int c = 0; c < 2; c++)
             {
                 foreach (var s in bandStage[c]) s.Reset();
@@ -227,6 +238,13 @@ namespace NeoBuzz.Clipper
         /// <summary>Processes a stereo block in place.</summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] left, float[] right, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

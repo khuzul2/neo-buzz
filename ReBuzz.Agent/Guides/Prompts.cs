@@ -1,6 +1,6 @@
 #nullable disable
-// Agent server (docs/specs/mcp-server.md §6, phase A5; K4 added arrange, perform, teach and migrate): the prompts (slash commands in Claude
-// Code): compose, design-sound, mix, master, critique, arrange, perform, teach, migrate. Each expands to a step plan built from the
+// Agent server (docs/specs/mcp-server.md §6, phase A5; K4 added arrange, perform and teach): the prompts (slash commands in Claude
+// Code): compose, design-sound, mix, master, critique, arrange, perform, teach. Each expands to a step plan built from the
 // tools, with the brief's numbers worked out (bars from a length, a loudness target from a
 // platform), followed by the relevant guides in full.
 
@@ -132,18 +132,6 @@ namespace ReBuzz.Agent.Guides
                 },
                 Render = RenderTeach,
             },
-            new PromptDef
-            {
-                Name = "migrate",
-                Title = "Migrate a song to Neo machines",
-                Description = "Moves the song's classic machines onto their Neo successors one at a time: a dry run, the move with a before-and-after comparison, a decision with the person, and a whole-song check. Includes the migrating-songs guide.",
-                Arguments = new[]
-                {
-                    new PromptArgument { Name = "machines", Description = "Which machines to move, e.g. \"Reverb, Bass\" (default: every machine that has a Neo successor)" },
-                    new PromptArgument { Name = "keep_old", Description = "yes: keep each old machine muted beside its successor for an A/B (default: replace it; undo brings it back)" },
-                },
-                Render = RenderMigrate,
-            },
         };
 
         static string Arg(IReadOnlyDictionary<string, string> args, string name) =>
@@ -199,7 +187,7 @@ Plan. Say each step in a sentence before doing it; render and measure before you
 7. Arrangement: patterns per section, placed with `arrangement_place(machine=…, pattern=…, at=…, repeat_every_beats=…, times=…)`, following the energy table (add or remove layers every 8 bars); builds and fills with `automation_write`.
 8. Listen: `render(section=…)` for each section as you go, then the whole song with `render()`; `analyze(source=…, metrics=[""loudness"", ""peaks"", ""key"", ""tempo"", ""spectrum""])`. The key and tempo must read back as written; the drop or chorus 2–6 LU louder than the breakdown or verse.
 9. Quick balance: probe every part (`render(probes=[…])`), set levels with `connection_set` so no part clips and the master peaks at or below -6 dBTP (the mixing guide has the numbers).
-10. Save: `song_save(path=…)` as .bmxml.
+10. Save: `song_save(path=…)` as .nbl.
 Report the form (sections and bars), key, tempo, the sounds, and the measured loudness, peak, key and tempo.
 ");
             AppendGuides(sb, "workflow", "composition", "genres");
@@ -441,37 +429,6 @@ At beginner level use plain words and no numbers beyond the ones you play; at in
                     sb.Append("\n\n---\n\n<!-- machine page: ").Append(gear).Append(" (").Append(MachineManual.UriFor(gear)).Append(") -->\n\n# ")
                       .Append(gear).Append("\n\n").Append(curated.Trim()).Append('\n');
             }
-            return sb.ToString();
-        }
-
-        // ---- migrate ---------------------------------------------------------------------------
-
-        static string RenderMigrate(IReadOnlyDictionary<string, string> args)
-        {
-            string machines = Arg(args, "machines");
-            bool keepOld = string.Equals(Arg(args, "keep_old"), "yes", StringComparison.OrdinalIgnoreCase) || string.Equals(Arg(args, "keep_old"), "true", StringComparison.OrdinalIgnoreCase);
-            var sb = new StringBuilder();
-            sb.Append($"Move the current song's classic machines onto their Neo successors in {Product.Name}");
-            sb.Append(machines != null ? $": {machines}.\n\n" : ", every machine that has one.\n\n");
-            sb.Append(@"A successor sounds like itself, not like the original. Tell the person what you will move before you move it, and let them decide on anything that changes the sound beyond its tolerance.
-Plan.
-1. Inventory: `studio_status`, `machine_list`; ");
-            sb.Append(machines != null ? $"find the machines named (\"{machines}\") and check each has a successor: `gear_list(search=…)` rows carry `successor`." : "`gear_list(search=…)` rows carry `successor` for the gear that has one; list which machines can move and which cannot (those stay as they are).");
-            sb.Append(@"
-2. Reference: `render()` the song and keep its id; `snapshot_save(name=""before migration"")`.
-3. In signal order, sources first and the master chain last, for each machine:
-   a. `machine_replace(machine=…, dry_run=true)`: read the mapping, the tolerance and what has no counterpart.
-   b. `machine_replace(machine=…");
-            sb.Append(keepOld ? ", keep_old=true" : "");
-            sb.Append(@")`: read the `comparison` and the `notes`.
-   c. If it is outside its tolerance or the notes name something lost: tell the person, then keep it, retune the successor with `param_set`, or `undo`.
-4. Machines with no successor stay; say which, and name the Neo machine to build the sound on by ear if the person wants it (`guide(machine=…)` has the note).
-5. Whole song: `render()` again and `compare(a=<reference>, b=<new render>)`; `analyze(source=…, metrics=[""loudness"", ""peaks""])`: the master's true peak must not have moved by more than the comparison allows.
-6. `song_save(path=…)` under a new name; the original file stays as it was.
-");
-            if (keepOld) sb.Append("Each old machine is left muted beside its successor: listen to both, then remove the one the person does not want (`machine_remove`).\n");
-            sb.Append("Report each move with its comparison result, what stayed, and the whole-song check.\n");
-            AppendGuides(sb, "migrating-songs");
             return sb.ToString();
         }
 

@@ -17,7 +17,7 @@ using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Shell.Preferences;
 using static ReBuzz.Studio.Tests.MachineViewTests;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {
@@ -259,7 +259,7 @@ namespace ReBuzz.Studio.Tests
             opened.Add(matrix);
             Settle();
             yield return new Surface("modulation", matrix);
-            Call("machine_add", Args(("gear", "Pedal Gain"), ("name", "Plain")));
+            Call("machine_add", Args(("gear", "Neo Utility"), ("name", "Plain")));
             Core.UiHost.OpenParameterWindow(Core.SongCore.MachinesList.First(m => m.Name == "Plain"), null);
             var parameters = ReBuzz.Studio.Platform.StudioMachineUiHost.ParameterWindowOf(Core.SongCore.MachinesList.First(m => m.Name == "Plain"));
             if (parameters != null)

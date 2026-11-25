@@ -474,16 +474,6 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        /// <summary>The editor data of the song as it saves: where the editor views the store, the blob derived from the lanes (older builds read it).</summary>
-        byte[] DerivedEditorData()
-        {
-#if !WINDOWS
-            if (StoreAttached && TargetMachine != null && ClipDerived.Provider != null)
-                return ClipDerived.Provider(TargetMachine) ?? Array.Empty<byte>();
-#endif
-            return null;
-        }
-
         byte[] patternEditorData;
         // From native
         public void SetPatternEditorData(byte[] data)
@@ -502,8 +492,6 @@ namespace WDE.ModernPatternEditor
         // From native
         public byte[] GetPatternEditorData()
         {
-            var derived = DerivedEditorData();
-            if (derived != null) return derived;
             if (Settings.PXPDataFormat)
                 return PatternEditorUtils.CreatePatternXPPatternData(MPEPatternsDB.GetPatterns());
             else
@@ -898,9 +886,6 @@ namespace WDE.ModernPatternEditor
                 {
                     if (Global.Buzz.Playing && TargetMachine != null)
                     {
-#if WINDOWS
-                        playRecordManager.Play(songTime);
-#endif
                     }
                 }
 

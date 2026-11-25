@@ -43,6 +43,7 @@ namespace NeoBuzz.Eq
         public const int ScopeLength = 4096;
 
         readonly ParamValues values;
+        readonly FxStage fx;
         float sampleRate = 48000;
         double glideA;
         LinearRamp output;
@@ -128,9 +129,22 @@ namespace NeoBuzz.Eq
             }
         }
 
+        /// <summary>What Amount scales (docs/specs/machines.md, "Mix and Amount").</summary>
+        public static readonly AmountRule[] AmountRules = MakeAmountRules();
+
+        static AmountRule[] MakeAmountRules()
+        {
+            int[] gains = { P.B1Gain, P.B2Gain, P.B3Gain, P.B4Gain, P.B5Gain, P.B6Gain, P.B7Gain, P.B8Gain };
+            var rules = new AmountRule[gains.Length + GraphicDesign.Bands];
+            for (int i = 0; i < gains.Length; i++) rules[i] = AmountRule.Lin(gains[i], 0);
+            for (int k = 0; k < GraphicDesign.Bands; k++) rules[gains.Length + k] = AmountRule.Lin(GraphicDesign.Slider(k), 0);
+            return rules;
+        }
+
         public EqEngine(ParamValues values)
         {
-            this.values = values;
+            fx = new FxStage(values, P.Amount, P.Mix, AmountRules);
+            this.values = fx.Effective;
             for (int b = 0; b < bands.Length; b++) bands[b] = new Band();
             Delta = new DeltaListen(EqLinearDesign.MaxLatency, 48000);
             Match = new GainMatch(48000);
@@ -156,6 +170,7 @@ namespace NeoBuzz.Eq
 
         public void SetSampleRate(float sr)
         {
+            fx.SetSampleRate(sr);
             sampleRate = sr;
             glideA = 1 - PortableMath.Exp(-1 / (GlideSeconds * sr));
             output.Setup(GlideSeconds, sr);
@@ -188,6 +203,7 @@ namespace NeoBuzz.Eq
 
         public void Reset()
         {
+            fx.Reset();
             foreach (var b in bands)
             {
                 b.Reset();
@@ -392,6 +408,13 @@ namespace NeoBuzz.Eq
 
         /// <summary>Processes a stereo block in place; <paramref name="keyLeft"/>, <paramref name="keyRight"/>: the sidechain (input 2), or null.</summary>
         public void Process(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
+        {
+            fx.Begin(left, right, n);
+            ProcessCore(left, right, keyLeft, keyRight, n);
+            fx.End(left, right, n, Latency);
+        }
+
+        void ProcessCore(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);

@@ -591,5 +591,11 @@ namespace NeoBuzz.Eq
 
         [ParameterDecl(Name = "Curve 32", Description = "Curve layer point 32 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)", MinValue = 0, MaxValue = 480, DefValue = 240)]
         public int Curve32 { get => Values[P.Curve32]; set => Values.Set(P.Curve32, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
+
+        [ParameterDecl(Name = "Mix", Description = "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int Mix { get => Values[P.Mix]; set => Values.Set(P.Mix, value); }
     }
 }

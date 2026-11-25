@@ -39,5 +39,11 @@ namespace NeoBuzz.Utility
 
         [ParameterDecl(Name = "Matrix", Description = "Mid/side for the machines between two Utilities. Encode M/S: after the other stages, the output carries mid (L + R)/2 on the left and side (L − R)/2 on the right. Decode M/S: before them, the input is read as mid and side and turned back into L = M + S, R = M − S. Off: left and right as they are", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int Matrix { get => Values[P.Matrix]; set => Values.Set(P.Matrix, value); }
+
+        [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
+        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
+
+        [ParameterDecl(Name = "Mix", Description = "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int Mix { get => Values[P.Mix]; set => Values.Set(P.Mix, value); }
     }
 }

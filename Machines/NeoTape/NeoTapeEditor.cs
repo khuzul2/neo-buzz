@@ -68,7 +68,7 @@ namespace NeoBuzz.Tape
 
             var output = Layout.Column(
                 new ParamChoice(ctx, P.Quality, "Quality", 40),
-                new ParamKnob(ctx, P.Mix, diameter: 40),
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)),
                 new ParamKnob(ctx, P.Output, diameter: 40),
                 new ParamChoice(ctx, P.Delta, "Delta", 40),
                 Layout.Gap(1, 4),

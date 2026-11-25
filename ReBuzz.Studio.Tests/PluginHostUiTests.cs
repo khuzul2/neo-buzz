@@ -18,7 +18,7 @@ using BuzzGUI.Interfaces;
 using NeoBuzz.Plug;
 using NUnit.Framework;
 using ReBuzz.Core;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using Avalonia.Threading;
 using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell.Preferences;
