@@ -43,7 +43,7 @@ namespace NeoBuzz.Poly
                 Build.Knobs(ctx, 3, D, P.F2Cutoff, P.F2Reso, P.F2Env)));
             var voice = S("Voice", Layout.Column(
                 Layout.Row(new ParamChoice(ctx, P.VoiceMode, cellWidth: 50), Layout.Gap(6), new ParamChoice(ctx, P.GlideMode, cellWidth: 50)),
-                Build.Knobs(ctx, 5, D, P.Polyphony, P.Unison, P.UniDetune, P.UniSpread, P.Glide, P.BendRange, P.Drift, P.VelAmp, P.Volume)));
+                Build.Knobs(ctx, 5, D, P.Polyphony, P.Unison, P.UniDetune, P.UniSpread, P.Glide, P.BendRange, P.Drift, P.VelAmp, P.Volume, P.Accent)));
 
             UIElement MakeEnv(string title, int a, int d, int s, int r) => S(title, Layout.Column(
                 Build.Envelope(ctx, a, d, s, r, 4 * 64, 46),
@@ -80,6 +80,33 @@ namespace NeoBuzz.Poly
 
             var ampEnv = MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR);
             var fltEnv = MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR);
+            // Acid: accent and slide in their own small section beside the two envelopes they belong to. The studio page's third row has the
+            // room (its width is set by the filter row), so the page stays as wide and as tall as it was.
+            var acid = S("Accent · Slide", Layout.Column(
+                Build.Knobs(ctx, 3, D, P.AccentThr, P.AccentDecay, P.AccentSweep, P.AccentLevel, P.SlideTime, P.AcidRange, P.AcidSweepMax, P.AcidSoft),
+                Layout.Row(new ParamChoice(ctx, P.Slide, "Slide", 40), Layout.Gap(8), new ParamChoice(ctx, P.AcidQuality, "Filter quality", 52))));
+            // The Acid view (AC3): six big knobs in the order of a hand-played bass line's front panel, the oscillator's waveform, the slide, and
+            // the four limits beneath. The same parameters as the Full view's (no copies), so every knob has the same right-click menu, MIDI
+            // map and automation.
+            const double Big = 88;
+            var acidKnobs = Layout.Row(
+                new ParamKnob(ctx, P.O1Fine, "Tuning", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.F1Cutoff, "Cutoff", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.F1Reso, "Resonance", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.F1Env, "Env mod", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.FltD, "Decay", Big), Layout.Gap(18),
+                new ParamKnob(ctx, P.Accent, "Accent", Big));
+            var acidLine = Layout.Row(
+                new ParamChoice(ctx, P.O1Shape, "Waveform", 62, false, new[] { "Saw", "Square" }, new[] { 667, 1000 }), Layout.Gap(18),
+                new ParamKnob(ctx, P.SlideTime, "Slide time", 56), Layout.Gap(14),
+                new ParamChoice(ctx, P.Slide, "Slide", 56));
+            var acidLimits = Layout.Row(
+                new ParamKnob(ctx, P.AcidRange, "Filter range", 52), Layout.Gap(14),
+                new ParamKnob(ctx, P.AcidSweepMax, "Sweep limit", 52), Layout.Gap(14),
+                new ParamKnob(ctx, P.AcidSoft, "Soft start", 52), Layout.Gap(18),
+                new ParamChoice(ctx, P.AcidQuality, "Filter quality", 62));
+            var acidView = Layout.Column(S("Acid", Layout.Column(acidKnobs, Layout.Gap(1, 8), acidLine)), S("Limits", acidLimits));
+            bool acidDefault = machine?.Engine.S.Acid ?? false;
             var modEnv = MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR);
             var lfo1 = MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
             var lfo2 = MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
@@ -89,7 +116,7 @@ namespace NeoBuzz.Poly
             var synth = Layout.Column(
                 Layout.Row(osc1, osc2, osc3),
                 Layout.Row(f1, f2, voice, S("Out", meter)),
-                Layout.Row(ampEnv, fltEnv));
+                Layout.Row(ampEnv, fltEnv, acid));
             var modulation = Layout.Column(
                 Layout.Row(modEnv, lfo1, lfo2),
                 Layout.Row(S("Modulation matrix", matrix)));
@@ -99,13 +126,25 @@ namespace NeoBuzz.Poly
                 System.Math.Ceiling(System.Math.Max(synth.DesiredSize.Height, modulation.DesiredSize.Height)), "Neo Poly");
             pages.Add("Synth", synth);
             pages.Add("Modulation", modulation);
-            return pages;
+            // Full | Acid: the full editor's two pages, or the Acid view, which a patch that uses the acid controls opens with.
+            pages.Measure(Avalonia.Size.Infinity);
+            var views = new Pages(AccentColor, System.Math.Ceiling(pages.DesiredSize.Width), System.Math.Ceiling(pages.DesiredSize.Height), null);
+            views.Add("Full", pages);
+            views.Add("Acid", acidView);
+            views.Selected = acidDefault ? 1 : 0;
+            return views;
 #else
-            return Layout.Column(
+            var full = Layout.Column(
                 Layout.Row(osc1, osc2, osc3),
                 Layout.Row(f1, f2, voice, S("Out", meter)),
-                Layout.Row(ampEnv, fltEnv, modEnv),
+                Layout.Row(ampEnv, fltEnv, modEnv, acid),
                 Layout.Row(lfo1, lfo2, S("Modulation matrix", matrix)));
+            full.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var views = new Pages(AccentColor, System.Math.Ceiling(full.DesiredSize.Width), System.Math.Ceiling(full.DesiredSize.Height), null);
+            views.Add("Full", full);
+            views.Add("Acid", acidView);
+            views.Selected = acidDefault ? 1 : 0;
+            return views;
 #endif
         }
     }

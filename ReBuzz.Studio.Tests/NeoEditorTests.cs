@@ -34,7 +34,7 @@ namespace ReBuzz.Studio.Tests
         static readonly (string Machine, string Editor, string Shot, int WpfWidth, int WpfHeight)[] Editors =
         {
             ("Neo Organ", "NeoOrganEditor", "neo-organ-editor", 982, 496),
-            ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 703),   // P5a: two pages in the studio (the classic editor's one screen is 950 x 972)
+            ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 315),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (880 x 294 before)
@@ -2109,8 +2109,8 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var window = OpenEditor(m);
-                pages = Controls(window, "Pages").Single();
-                var tabs = Controls(window, "PageTabs").Single();
+                pages = Controls(window, "Pages").Last();
+                var tabs = Controls(window, "PageTabs").Last();
                 Assert.That((IReadOnlyList<string>)Get(pages, "Names"), Is.EqualTo(new[] { "Synth", "Modulation" }));
                 Assert.That(AutomationProperties.GetName(tabs), Is.EqualTo("Page tabs"));
                 int Shown() => (int)Get(pages, "Selected");

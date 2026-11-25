@@ -106,13 +106,13 @@ namespace NeoBuzz.Poly
         [ParameterDecl(Name = "Noise colour", Description = "White → pink", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int NoiseColor { get => Values[P.NoiseColor]; set => Values.Set(P.NoiseColor, value); }
 
-        [ParameterDecl(Name = "F1 type", Description = "Filter 1 model", MinValue = 0, MaxValue = 5, DefValue = 0)]
+        [ParameterDecl(Name = "F1 type", Description = "Filter 1 model", MinValue = 0, MaxValue = 6, DefValue = 0)]
         public int F1Type { get => Values[P.F1Type]; set => Values.Set(P.F1Type, value); }
 
         [ParameterDecl(Name = "F1 cutoff", Description = "Cutoff", MinValue = 0, MaxValue = 1000, DefValue = 700)]
         public int F1Cutoff { get => Values[P.F1Cutoff]; set => Values.Set(P.F1Cutoff, value); }
 
-        [ParameterDecl(Name = "F1 reso", Description = "Resonance (the ladder self-oscillates at the top)", MinValue = 0, MaxValue = 1000, DefValue = 150)]
+        [ParameterDecl(Name = "F1 reso", Description = "Resonance (the ladders self-oscillate at the top)", MinValue = 0, MaxValue = 1000, DefValue = 150)]
         public int F1Reso { get => Values[P.F1Reso]; set => Values.Set(P.F1Reso, value); }
 
         [ParameterDecl(Name = "F1 drive", Description = "Drive into the filter", MinValue = 0, MaxValue = 1000, DefValue = 0)]
@@ -279,6 +279,39 @@ namespace NeoBuzz.Poly
 
         [ParameterDecl(Name = "M8 amount", Description = "Amount", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int M8Amt { get => Values[P.M8Amt]; set => Values.Set(P.M8Amt, value); }
+
+        [ParameterDecl(Name = "Accent threshold", Description = "Notes at or above this velocity are accented", MinValue = 0, MaxValue = 126, DefValue = 109)]
+        public int AccentThr { get => Values[P.AccentThr]; set => Values.Set(P.AccentThr, value); }
+
+        [ParameterDecl(Name = "Accent", Description = "Extra filter envelope depth on accented notes", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int Accent { get => Values[P.Accent]; set => Values.Set(P.Accent, value); }
+
+        [ParameterDecl(Name = "Slide", Description = "Overlapping notes glide at the slide time", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Slide { get => Values[P.Slide]; set => Values.Set(P.Slide, value); }
+
+        [ParameterDecl(Name = "Slide time", Description = "How long a slide takes", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int SlideTime { get => Values[P.SlideTime]; set => Values.Set(P.SlideTime, value); }
+
+        [ParameterDecl(Name = "Accent decay", Description = "Filter decay on accented notes (never longer than the filter decay)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int AccentDecay { get => Values[P.AccentDecay]; set => Values.Set(P.AccentDecay, value); }
+
+        [ParameterDecl(Name = "Accent sweep", Description = "Accents in quick succession swell the filter, up to this much", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AccentSweep { get => Values[P.AccentSweep]; set => Values.Set(P.AccentSweep, value); }
+
+        [ParameterDecl(Name = "Accent level", Description = "Extra level on accented notes", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AccentLevel { get => Values[P.AccentLevel]; set => Values.Set(P.AccentLevel, value); }
+
+        [ParameterDecl(Name = "Filter range", Description = "The highest cutoff an acid patch's filter 1 reaches (a soft ceiling)", MinValue = 0, MaxValue = 1000, DefValue = 797)]
+        public int AcidRange { get => Values[P.AcidRange]; set => Values.Set(P.AcidRange, value); }
+
+        [ParameterDecl(Name = "Sweep limit", Description = "The most a run of accents can swell the filter, as a share of 3 octaves", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AcidSweepMax { get => Values[P.AcidSweepMax]; set => Values.Set(P.AcidSweepMax, value); }
+
+        [ParameterDecl(Name = "Filter quality", Description = "Oversampling of an acid patch's filter 1", MinValue = 0, MaxValue = 2, DefValue = 1)]
+        public int AcidQuality { get => Values[P.AcidQuality]; set => Values.Set(P.AcidQuality, value); }
+
+        [ParameterDecl(Name = "Soft start", Description = "How smoothly an acid patch's notes start and end", MinValue = 0, MaxValue = 1000, DefValue = 650)]
+        public int AcidSoft { get => Values[P.AcidSoft]; set => Values.Set(P.AcidSoft, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

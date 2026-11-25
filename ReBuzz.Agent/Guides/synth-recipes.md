@@ -134,14 +134,21 @@ Write it E1–E2. Check `analyze(metrics=["pitch"])` reads within ±5 cents and 
 
 ### Acid bass
 
-Start from the preset "Bass — Acid" (Legato, Ladder 24 with resonance 80 %, drive 9 dB). Then:
+Start from the preset "Acid — Squelch" (Legato, Diode 18 with resonance 78 %, `Accent` 55 %, `Slide` on at 60 ms). The old recipe on the 24 dB ladder, the preset "Bass — Acid", still works; this one is the acid sound proper:
 
 | Parameter | Value | Why |
 |---|---|---|
-| F1 velocity | 60% | accents (velocity 120 against 80) open the filter more |
-| Glide | 80 ms | slides |
+| F1 type | Diode 18 | three poles, squelchy, keeps its bass |
+| F1 reso | 78% | 100 % rings by itself |
+| Accent | 55% | accented notes open the filter 3.3 octaves further |
+| Accent threshold | 110 | notes at velocity 110 or more are accented; a note written without a velocity (100) is plain |
+| Accent decay | 70 ms | an accented note's filter closes faster |
+| Accent sweep | 1.2 oct | a run of accents climbs by up to this much |
+| Accent level | +3 dB | accents are louder |
+| Slide | On | a note that overlaps the one before slides to it |
+| Slide time | 60 ms | the same for any interval |
 
-Play 16ths in A1–A3. Accents: velocity 120 on 3–5 notes a bar, 80 elsewhere. Slides: let a note overlap the next (length 0.3 on a 0.25 step); Legato mode glides instead of retriggering. Sweep `F1 cutoff` from 200 Hz to 1.2 kHz over 16 bars with `automation_write`.
+Play 16ths in A1–A3. Accents: velocity 127 on 3–5 notes a bar, 90 elsewhere (the threshold is 100: a note with no velocity plays at 100 and is accented). Slides: let a note overlap the next (length 0.3 on a 0.25 step); the slid note does not retrigger the envelopes. Sweep `F1 cutoff` from 200 Hz to 1.2 kHz over 16 bars with `automation_write`.
 
 ### Square pluck and arp (synthwave)
 
