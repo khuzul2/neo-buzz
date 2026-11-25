@@ -103,6 +103,20 @@ namespace NeoBuzz.MachineTests
             ["Neo Voice to MIDI"] = (NeoBuzz.VoiceToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.VoiceToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
             // audio-to-midi.md: Neo Audio to MIDI passes its input through at the Monitor level too.
             ["Neo Audio to MIDI"] = (NeoBuzz.AudioToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.AudioToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
+            // neo-random.md: Neo Random is a control modulator; drive RandomEngine per 64-sample block and scale x cleanly inside [0.35, 1.0].
+            ["Neo Random"] = (NeoBuzz.RandomMachine.Params.Table, (v, x) =>
+            {
+                var e = new NeoBuzz.RandomMachine.RandomEngine(v);
+                var y = new float[x.Length];
+                double dt = 64.0 / Measure.Rate;
+                float g = 0.7f;
+                for (int i = 0; i < x.Length; i++)
+                {
+                    if ((i & 63) == 0) g = 0.35f + 0.65f * e.Step(dt, i / (double)Measure.Rate * 2.0, true, 120.0);
+                    y[i] = x[i] * g;
+                }
+                return y;
+            }),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>

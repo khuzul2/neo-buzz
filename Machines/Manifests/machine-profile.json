@@ -7672,6 +7672,41 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Random": {
+   "gear": "Neo Random",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.1,
+   "gear_info": {
+    "file": "Generators/Neo Random.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "control": true,
+    "takes_midi": false
+   },
+   "parameters": 14,
+   "track_parameters": 0,
+   "inferred": 14,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 14,
+    "of": 14
+   },
+   "type": "control",
+   "seconds": 0.1,
+   "platform": "linux",
+   "date": "2026-11-25",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a control machine (moves other machines' parameters): no audio test"
+   ],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Limiter": {
    "gear": "Neo Limiter",
    "kind": "effect",

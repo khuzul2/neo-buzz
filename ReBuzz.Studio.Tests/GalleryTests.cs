@@ -2308,6 +2308,31 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "650-neo-organ-editor", "Neo Organ: the nine drawbars with their footage labels (set to a full registration), then Percussion, Key, Vibrato, Drive, Rotary (the Speed switch at Fast, with the two rotors' live speeds) and Output.", "Add Neo Organ, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                Try("651-neo-random-editor", () =>
+                {
+                    var poly = Add("Neo Poly", "Rnd Poly");
+                    var rnd = Add("Neo Random", "Random");
+                    void Set(string name, int raw) => rnd.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Load Lorenz swirl settings and attach Neo Poly's F1 cutoff target before opening the editor.
+                    Set("Mode", 3);          // Chaos
+                    Set("Rate", 528);        // ~1.10 Hz
+                    Set("Chaos", 920);       // 92 %
+                    Set("Smooth", 1000);     // 100 %
+                    Set("Seed", 110);
+                    Set("Write glide", 435); // ~20 ms
+                    var mod = ModulationBoard.Of(rnd)!;
+                    var cutoff = poly.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "F1 cutoff");
+                    Assert.That(ReBuzz.Agent.ModulationEdits.Add(Core, mod, poly, cutoff, 0, 65, bipolar: true), Is.Null);
+                    // Render a few ticks offline so the live scope draws an active Lorenz trajectory.
+                    RunTicks(24);
+                    Core.UiHost.OpenGui(rnd, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(rnd);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "651-neo-random-editor", "Neo Random: Source (Mode Chaos, Sync, Feel, Rate, Probability, Chaos), Shape (Range, Smooth, Depth, Bias, Quantise) and Behaviour (Retrigger, Seed, Write glide) beside the live Output scope and Retrigger picker, above the Targets table with Neo Poly's F1 cutoff assigned.", "Add Neo Random, load Lorenz swirl, assign a target, open its editor");
+                    Core.UiHost.CloseWindows(rnd);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {
