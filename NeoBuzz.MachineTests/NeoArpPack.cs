@@ -46,7 +46,7 @@ namespace NeoBuzz.MachineTests
         static string Row(Dictionary<int, int> values)
         {
             var t = Params.Table;
-            if (!values.ContainsKey(P.S1)) return null;
+            if (!values.TryGetValue(P.Pattern, out int pattern) || pattern != 11) return null;                   // the row shapes the Steps pattern only
             int len = values.TryGetValue(P.StepLen, out int l) ? l : 16;
             var sb = new StringBuilder();
             for (int i = 0; i < len; i++)

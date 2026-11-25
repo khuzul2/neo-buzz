@@ -36,7 +36,7 @@ namespace NeoBuzz.MachineTests
             {
                 var d = new Dictionary<int, int>();
                 foreach (var p in item.Element("Preset")!.Element("Parameters")!.Elements("Parameter")) d[(int)p.Attribute("Index")!] = (int)p.Attribute("Value")!;
-                list.Add(((string)item.Attribute("Key")!, (string)item.Element("Preset")!.Attribute("Comment") ?? "", d));
+                list.Add(((string)item.Attribute("Key")!, (string)item.Element("Preset")!.Element("Comment") ?? "", d));
             }
             return list;
         }
