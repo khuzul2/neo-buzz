@@ -103,7 +103,7 @@
    ],
    "settle": 0.5
   },
-  "paramCount": 16,
+  "paramCount": 17,
   "params": [
    "Mode|0|3|0|enum",
    "Threshold|0|1000|700|lin",
@@ -120,7 +120,8 @@
    "Auto makeup|0|1|0|switch",
    "Character|0|1000|0|pct",
    "Mix|0|1000|1000|pct",
-   "Output|0|1000|500|db"
+   "Output|0|1000|500|db",
+   "Amount|0|2000|1000|lin"
   ],
   "latencyDependsOnParams": false
  },
@@ -146,7 +147,7 @@
    ],
    "settle": 0.5
   },
-  "paramCount": 17,
+  "paramCount": 18,
   "params": [
    "Mode|0|2|0|enum",
    "Sync|0|8|4|enum",
@@ -164,7 +165,8 @@
    "Duck release|0|1000|548|time",
    "Width|0|200|100|lin",
    "Mix|0|1000|300|pct",
-   "Output|0|240|120|db"
+   "Output|0|240|120|db",
+   "Amount|0|2000|1000|lin"
   ],
   "latencyDependsOnParams": false
  },
@@ -277,7 +279,7 @@
    ],
    "settle": 0.5
   },
-  "paramCount": 195,
+  "paramCount": 197,
   "params": [
    "B1 on|0|1|0|switch",
    "B1 type|0|5|3|enum",
@@ -373,7 +375,7 @@
    ],
    "settle": 0.5
   },
-  "paramCount": 18,
+  "paramCount": 19,
   "params": [
    "Type|0|6|0|enum",
    "Slope|0|1|0|enum",
@@ -392,7 +394,8 @@
    "LFO retrig|0|2|1|enum",
    "LFO phase|0|360|0|lin",
    "Mix|0|1000|1000|pct",
-   "Output|0|480|240|db"
+   "Output|0|480|240|db",
+   "Amount|0|2000|1000|lin"
   ],
   "latencyDependsOnParams": false
  },
@@ -1048,7 +1051,7 @@
     "automation"
    ]
   },
-  "paramCount": 17,
+  "paramCount": 18,
   "params": [
    "Mode|0|3|0|enum",
    "Pre-delay|0|1000|80|lin",
@@ -1066,7 +1069,8 @@
    "Width|0|1000|667|lin",
    "Low cut|0|1000|389|freq",
    "High cut|0|1000|804|freq",
-   "Mix|0|1000|300|pct"
+   "Mix|0|1000|300|pct",
+   "Amount|0|2000|1000|lin"
   ],
   "latencyDependsOnParams": false
  }

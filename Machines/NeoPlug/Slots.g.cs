@@ -202,5 +202,10 @@ namespace NeoBuzz.Plug
         [ParameterDecl(Name = "Output", Description = "Which output bus of the plug-in feeds this machine (0 is its main output)", MinValue = 0, MaxValue = 15, DefValue = 0)]
         public int Output { get => core.OutBus; set => core.SetOutBus(value); }
 
+#if FX
+        [ParameterDecl(Name = "Mix", Description = "Dry/wet: 100 % is only the plug-in, 0 % only the input (delayed by the plug-in's latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int Mix { get => core.MixRaw; set => core.MixRaw = value; }
+#endif
+
     }
 }

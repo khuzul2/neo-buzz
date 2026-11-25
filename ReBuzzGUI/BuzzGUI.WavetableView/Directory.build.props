@@ -1,5 +1,0 @@
-<Project>
-    <PropertyGroup>
-        <MSBUildProjectExtensionsPath>$(SolutionDir)build\$(Configuration)\$(Platform)\BuzzGUI.WavetableView\obj</MSBUildProjectExtensionsPath>
-    </PropertyGroup>
-</Project>

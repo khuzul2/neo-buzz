@@ -23,7 +23,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             if (associations != null)
             {
                 Heading("File types");
-                Note("Open .nbl, .bmx, .bmw and .bmxml songs with NeoBuzz Live when they are double-clicked. Saved for this Windows user only; Restore gives back " +
+                Note("Open .nbl songs with NeoBuzz Live when they are double-clicked. Saved for this Windows user only; Restore gives back " +
                      "the program they opened with before.");
                 assocButton.Click += (_, _) => ToggleAssociation();
                 Row("Default program", assocButton, null, assocState);
@@ -57,10 +57,10 @@ namespace ReBuzz.Studio.Shell.Preferences
         void RefreshAssociation()
         {
             bool isDefault = associations.IsDefault;
-            assocButton.Content = isDefault ? "Restore the previous default for .nbl/.bmx/.bmw" : "Make NeoBuzz Live the default for .nbl/.bmx/.bmw";
-            if (isDefault) { assocState.Text = "NeoBuzz Live opens .nbl, .bmx, .bmw and .bmxml songs."; return; }
-            string now = associations.CurrentFor(".bmx");
-            assocState.Text = now == null ? "No program is set for .bmx songs." : "Now opened by: " + now + ".";
+            assocButton.Content = isDefault ? "Restore the previous default for .nbl" : "Make NeoBuzz Live the default for .nbl";
+            if (isDefault) { assocState.Text = "NeoBuzz Live opens .nbl songs."; return; }
+            string now = associations.CurrentFor(".nbl");
+            assocState.Text = now == null ? "No program is set for .nbl songs." : "Now opened by: " + now + ".";
         }
 
         public override string Title => "General";

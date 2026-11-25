@@ -28,18 +28,10 @@
 
   <ItemGroup>
     <Compile Include="$(MpeSource)**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)"
-             Exclude="$(MpeSource)obj\**;$(MpeSource)bin\**;
-                      $(MpeSource)PatternEditor.xaml.cs;$(MpeSource)PatternControl.xaml.cs;
-                      $(MpeSource)PatternPropertiesWindow.xaml.cs;$(MpeSource)Help.xaml.cs;
-                      $(MpeSource)Chords\**;
-                      $(MpeSource)ColumnRenderer\ColumnSetElement.cs;$(MpeSource)ColumnRenderer\BeatVisual.cs;
-                      $(MpeSource)ColumnRenderer\BeatVisualCache.cs;$(MpeSource)ColumnRenderer\BeatVisualCacheKey.cs;
-                      $(MpeSource)ColumnRenderer\BeatVisualAllocator.cs;$(MpeSource)ColumnRenderer\Font.cs;
-                      $(MpeSource)CursorElement.cs;$(MpeSource)SelectionLayer.cs;
-                      $(MpeSource)NoteEvent.cs;$(MpeSource)INativePattern.cs" />
+             Exclude="$(MpeSource)obj\**;$(MpeSource)bin\**" />
     <Compile Include="$(MSBuildThisFileDirectory)*.cs" Link="Portable\%(Filename)%(Extension)" />
     <!-- ReBuzz's keyboard mappings, read when no PEKeys.xml is beside the app. -->
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)..\..\RunTime\PEKeys.xml" LogicalName="PEKeys.xml" Link="PEKeys.xml" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)PEKeys.xml" LogicalName="PEKeys.xml" Link="PEKeys.xml" />
   </ItemGroup>
 
   <ItemGroup>

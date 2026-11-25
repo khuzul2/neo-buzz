@@ -1,6 +1,6 @@
 #nullable disable
 // Fork (docs/specs/mcp-server.md §12.2, U1): notes for machines that take them only in their Note
-// track parameter, as trackers do (the Pedal synths, many native machines), not as MIDI. Notes are
+// track parameter, as trackers do, not as MIDI. Notes are
 // given voices (one track each), and become per-track Note events (Buzz notes: octave << 4 | 1…12,
 // 255 = off) in the pattern's engine-played parameter columns, and are read back from them. Also
 // the pitch offset a profiled manifest records, so the written pitch is the pitch heard. Pure.

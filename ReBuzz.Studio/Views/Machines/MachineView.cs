@@ -37,7 +37,7 @@ namespace ReBuzz.Studio.Views.Machines
 
         readonly Views.Browser.MachineBrowserPopup popup;
         readonly Border starters;
-        readonly Button tracksButton;
+        readonly Button tracksButton, noteWiresButton;
         readonly TrackBar trackBar;
         readonly TrackCard card;
 
@@ -56,6 +56,10 @@ namespace ReBuzz.Studio.Views.Machines
             Avalonia.Automation.AutomationProperties.SetName(tracksButton, "Tracks");
             ToolTip.SetTip(tracksButton, "Colour the machines by track: a generator and what only it feeds, up to the Master or a shared machine. Hover or click a chip to light one track");
             tracksButton.Click += (s, e) => MachineTracksPreference.On = !MachineTracksPreference.On;
+            noteWiresButton = Shell.Design.StudioButtons.KeepFocus(new Button { Content = "Note wires", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1), Padding = new Thickness(10, 3), FontSize = Shell.Design.StudioTokens.FontBody });
+            Avalonia.Automation.AutomationProperties.SetName(noteWiresButton, "Note wires");
+            ToolTip.SetTip(noteWiresButton, "Show or hide the dotted note wires (the note ports stay)");
+            noteWiresButton.Click += (s, e) => NoteWiresPreference.On = !NoteWiresPreference.On;
             trackBar = new TrackBar(core, Canvas);
             card = new TrackCard(core, Canvas);
             Canvas.LitChanged += UpdateCard;
@@ -68,7 +72,7 @@ namespace ReBuzz.Studio.Views.Machines
                 Height = 32,
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 BorderBrush = Shell.Design.StudioTokens.SurfaceBorderBrush,
-                Child = new DockPanel { LastChildFill = false, Children = { Left(tracksButton), Right(zoom) } },
+                Child = new DockPanel { LastChildFill = false, Children = { Left(tracksButton), Left(noteWiresButton), Right(zoom) } },
             };
             SetDock(bar, Dock.Top);
             Children.Add(bar);
@@ -272,6 +276,8 @@ namespace ReBuzz.Studio.Views.Machines
             popup.Attach();
             UpdateStarters();
             MachineTracksPreference.Changed += ApplyTracks;
+            NoteWiresPreference.Changed += ApplyNoteWires;
+            ApplyNoteWires(NoteWiresPreference.On);
             ApplyTracks(MachineTracksPreference.On);
         }
 
@@ -281,6 +287,15 @@ namespace ReBuzz.Studio.Views.Machines
             Model.Changed -= UpdateStarters;
             popup.Detach();
             MachineTracksPreference.Changed -= ApplyTracks;
+            NoteWiresPreference.Changed -= ApplyNoteWires;
+        }
+
+        void ApplyNoteWires(bool on)
+        {
+            Canvas.NoteWiresShown = on;
+            noteWiresButton.Background = on ? Shell.Design.StudioTokens.SelectionFillBrush : Avalonia.Media.Brushes.Transparent;
+            noteWiresButton.BorderBrush = on ? Shell.Design.StudioTokens.AccentBrush : Avalonia.Media.Brushes.Transparent;
+            noteWiresButton.Foreground = on ? Shell.Design.StudioTokens.TextPrimaryBrush : Shell.Design.StudioTokens.TextSecondaryBrush;
         }
 
         // ------------------------------------------------------------------ Tracks (MT1)

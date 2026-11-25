@@ -540,8 +540,6 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase(".nbl")]
-        [TestCase(".bmx")]
-        [TestCase(".bmxml")]
         public void PagesAndTheSongsGlobalCopySaveAndReopenAndTheComputersMapStays(string extension)
         {
             using var setup = Setup(out var rig, out var mm);

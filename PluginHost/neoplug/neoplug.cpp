@@ -293,6 +293,15 @@ NP_API int np_out_info(np_plugin* p, int index, char* name, int len, int* channe
 
 NP_API void np_out_select(np_plugin* p, int index) { p->impl->outSel.store(index < 0 ? 0 : index); }
 
+NP_API int np_note_names(np_plugin* p, np_note_name* out, int cap)
+{
+    std::vector<np_note_name> names;
+    int n = p->impl->noteNames(names);
+    if (n < 0) n = 0;
+    for (int i = 0; out && i < cap && i < (int)names.size(); i++) out[i] = names[(size_t)i];
+    return (int)names.size();
+}
+
 } // extern "C"
 
 #if !defined(__APPLE__) && !defined(_WIN32)

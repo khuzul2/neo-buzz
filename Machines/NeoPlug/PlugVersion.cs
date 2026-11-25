@@ -16,8 +16,16 @@ namespace NeoBuzz.Plug
     {
         const string OutputKey = "output";
         const int OutputDefault = 0;
-
+#if FX
+        // An effect's Mix, the global after Output (index 65; appended, so a song saved without it loads at 100 %).
+        const string MixKey = "mix";
+        const int MixDefault = 1000;
+        static readonly string[] slotKeys = Enumerable.Range(1, PlugCore.Slots).Select(i => "slot" + i).Append(OutputKey).Append(MixKey).ToArray();
+#else
+        const string MixKey = "mix";
+        const int MixDefault = 1000;
         static readonly string[] slotKeys = Enumerable.Range(1, PlugCore.Slots).Select(i => "slot" + i).Append(OutputKey).ToArray();
+#endif
 
         public int StateVersion => 0;
 
@@ -28,12 +36,12 @@ namespace NeoBuzz.Plug
             if (fromVersion != 0) return null;
             var r = new int[slotKeys.Length];
             for (int i = 0; i < r.Length; i++)
-                r[i] = saved != null && i < saved.Length && saved[i] != int.MinValue ? saved[i] : i == PlugCore.Slots ? OutputDefault : 0;
+                r[i] = saved != null && i < saved.Length && saved[i] != int.MinValue ? saved[i] : i == PlugCore.Slots ? OutputDefault : i == PlugCore.Slots + 1 ? MixDefault : 0;
             return r;
         }
 
         public IReadOnlyDictionary<string, int> MigrateKeyed(int fromVersion, IReadOnlyDictionary<string, int> saved) =>
-            fromVersion == 0 ? slotKeys.ToDictionary(k => k, k => saved != null && saved.TryGetValue(k, out int v) ? v : k == OutputKey ? OutputDefault : 0) : null;
+            fromVersion == 0 ? slotKeys.ToDictionary(k => k, k => saved != null && saved.TryGetValue(k, out int v) ? v : k == OutputKey ? OutputDefault : k == MixKey ? MixDefault : 0) : null;
 
         public byte[] MigrateData(int fromVersion, byte[] data) => fromVersion == 0 ? data : null;
 

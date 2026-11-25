@@ -110,8 +110,6 @@ namespace ReBuzz.AgentTests
                         yield return (file, Lines(File.ReadAllText(file)));
                 }
             }
-            foreach (var file in Directory.GetFiles(Path.Combine(root, "Other", "Templates"), "*.xml", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal))
-                yield return (file, Lines(File.ReadAllText(file)));
             foreach (var rel in new[] { "README.md", "build.ps1", Path.Combine("tools", "mac-bundle.sh"), Path.Combine("tools", "mac-dmg.sh") })
             {
                 string file = Path.Combine(root, rel);

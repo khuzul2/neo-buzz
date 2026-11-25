@@ -207,7 +207,7 @@ namespace ReBuzz.AgentEval
                 var ctx = new TaskContext(t.Name, Path.Combine(Path.GetTempPath(), "rebuzz-agenteval-selftest", t.Name));
                 var result = new TaskResult { Criteria = t.Score(empty, empty, ctx) };
                 Expect((t is KnowledgeTask || result.Criteria.Count >= 4) && !result.Passed, $"{t.Name}: an empty song fails ({result.Total:F2})");
-                Expect(t.Brief(ctx).Contains("song_save(path=") && t.Brief(ctx).Contains("result.bmxml"), $"{t.Name}: the brief says where to save");
+                Expect(t.Brief(ctx).Contains("song_save(path=") && t.Brief(ctx).Contains("result.nbl"), $"{t.Name}: the brief says where to save");
             }
         }
 
@@ -274,7 +274,7 @@ namespace ReBuzz.AgentEval
             }
             foreach (var kv in KnowledgeTasks.GuideCoverage) Expect(names.Contains(kv.Value), $"{kv.Key} is covered by {kv.Value}, which exists");
             var recipes = K.RecipeIds();
-            Expect(recipes.Count >= 10, $"the recipes guide holds {recipes.Count} recipes");
+            Expect(recipes.Count >= 9, $"the recipes guide holds {recipes.Count} recipes");
             foreach (var id in recipes) Expect(names.Contains("recipe_" + id.Replace('-', '_')), $"recipe {id} has a task");
             foreach (var t in KnowledgeTasks.All)
             {

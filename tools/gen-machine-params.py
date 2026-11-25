@@ -18,12 +18,18 @@ Params.def lines:
   track Id "Name" switch | what    cell does nothing), passed to the machine's OnTrackParameter(TP.Id, track, value)
   summary What it is. Use it for…   optional: the machine in a sentence or two (the manifest's summary)
   import kind .ext[,.ext] | what     optional: a data file the machine loads (machine_data_import)
+  notekey 36 "Kick" [Group]        optional: a key that makes a sound, with its name (and group): the manifest's note_map, the piano
+  notekey 48 60 [Group]            roll's key names and Fold: playable (docs/specs/daw-modes.md §8.9); a second number makes a range of
+                                   unnamed keys. For a machine with a fixed map and no code for it
   group Shape                      group shown in the editor for the following parameters
   reading key unit | what           optional: a value the machine measures (its public Readings, machine_readings)
   Id  "Name"  min max def  kind args...  | description
     id snake_case_id                 optional, indented, after a parameter: the id the agent and the manifest use (default: Id)
     how One sentence: how the control changes the sound      Explain text (neo-learn.md §5.3); the description defaults to it
     sound One sentence: what you hear
+    was "Old name"                   optional, indented, once per former name: the name the parameter had before a rename. A user
+                                     preset saved before presets stored ids names it so (BuzzGUI.Common's Preset matches it while the
+                                     preset doesn't know the current name); the id, the index and saved state never change with a rename
 
 Kinds and their arguments:
   lin A B [unit] [digits]          A + t(B-A)
@@ -66,17 +72,20 @@ def num(x):
 
 
 def parse(path):
-    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': [], 'track_params': []}
+    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': [], 'track_params': [], 'note_map': []}
     group = ''
     with open(path, encoding='utf-8') as f:
         for lineno, line in enumerate(f, 1):
             line = line.rstrip('\n')
             if not line.strip() or line.lstrip().startswith('#'):
                 continue
-            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound'):
+            if line[0] in ' \t' and line.split(None, 1)[0] in ('id', 'how', 'sound', 'was'):
                 if not spec['params']:
                     sys.exit(f'{path}:{lineno}: {line.split(None, 1)[0]} needs a parameter before it')
                 key, _, rest = line.strip().partition(' ')
+                if key == 'was':
+                    spec['params'][-1].setdefault('was', []).extend(shlex.split(rest))
+                    continue
                 spec['params'][-1]['pubid' if key == 'id' else key] = rest.strip()
                 continue
             if line.lstrip().startswith('summary '):
@@ -87,6 +96,24 @@ def parse(path):
                 parts = head.split()
                 spec['imports'].append({'kind': parts[0], 'extensions': [e.lower() for e in (parts[1].split(',') if len(parts) > 1 else [])],
                                         'description': what.strip()})
+                continue
+            if line.lstrip().startswith('notekey '):
+                toks = shlex.split(line, comments=True)[1:]
+                if len(toks) < 1 or not toks[0].isdigit() or not 0 <= int(toks[0]) <= 127:
+                    sys.exit(f'{path}:{lineno}: expected notekey KEY "Name" [Group], or notekey FROM TO [Group] (keys 0 to 127)')
+                entry = {'key': int(toks[0])}
+                rest = toks[1:]
+                if rest and rest[0].isdigit():
+                    entry['to'] = int(rest[0])
+                    if not entry['key'] <= entry['to'] <= 127:
+                        sys.exit(f'{path}:{lineno}: a note range runs up from its first key to at most 127')
+                    rest = rest[1:]
+                elif rest:
+                    entry['name'] = rest[0]
+                    rest = rest[1:]
+                if rest:
+                    entry['group'] = rest[0]
+                spec['note_map'].append(entry)
                 continue
             desc = ''
             if '|' in line:
@@ -219,6 +246,8 @@ def table_entry(p):
         named.append(f"how: {cs_string(p['how'])}")
     if p.get('sound'):
         named.append(f"sound: {cs_string(p['sound'])}")
+    if p.get('was'):
+        named.append('formerNames: new[] { ' + ', '.join(cs_string(n) for n in p['was']) + ' }')
     args = [f"P.{p['id']}", cs_string(p.get('pubid', p['id'])), cs_string(p['name']), str(p['min']), str(p['max']), str(p['def']),
             f"MapKind.{KINDS[kind]}"]
     if pos:
@@ -294,7 +323,6 @@ def write_manifest(folder, spec, rel):
         'format': 'rebuzz-machine-manifest/1',
         'gear': gear,
         'kind': kind,
-        'clipEdit': True,        # clips.md §5.7: a Neo machine's clips are editable (the flag is data, LM changes it by editing a manifest)
         'source': f'generated by tools/gen-machine-params.py from {rel}',
         'summary': spec['summary'],
         'tracks': spec['tracks'],
@@ -304,6 +332,8 @@ def write_manifest(folder, spec, rel):
     }
     if spec['imports']:
         doc['imports'] = spec['imports']
+    if spec['note_map']:
+        doc['note_map'] = spec['note_map']
     mc.apply(doc)
     out = os.path.join(folder, gear + '.machine.json')
     with open(out, 'w', encoding='utf-8', newline='\n') as f:

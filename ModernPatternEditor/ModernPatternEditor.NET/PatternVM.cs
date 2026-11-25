@@ -23,9 +23,7 @@ namespace WDE.ModernPatternEditor
                     pattern.Machine.PropertyChanged -= Machine_PropertyChanged;
 
                     ReleaseColumnSets();
-#if !WINDOWS
                     ReleaseNoteLanes();
-#endif
                 }
 
                 pattern = value;
@@ -39,9 +37,7 @@ namespace WDE.ModernPatternEditor
                     rowNumberColumnSet = new RowNumberColumnSet(DefaultRPB);
                     RowNumberColumnSet.BeatCount = BeatCount;
                     PatternData pd = new PatternData();
-#if !WINDOWS
                     AttachNoteLanes();
-#endif
                     CreateColumnSets();
                 }
 
@@ -109,19 +105,15 @@ namespace WDE.ModernPatternEditor
             //    return;
 
             var parameterSets = Editor.MPEPatternsDB.GetMPEPattern(pattern).GetParameterSets();
-#if !WINDOWS
             // Fork (ux-overhaul.md P3c): the sets with notes first, the empty automation columns hidden.
             BeginPlan();
             parameterSets = ColumnPlan.OrderSets(parameterSets);
             AddNoteLaneSets();
-#endif
             foreach (var pSet in parameterSets)
             {
                 CreateColumnSet(pSet);
             }
-#if !WINDOWS
             EndPlan();
-#endif
 
             PropertyChanged.Raise(this, "ColumnSets");
 
@@ -138,10 +130,8 @@ namespace WDE.ModernPatternEditor
             if (parameters.Count == 0) return;
 
             var mpePattern = Editor.MPEPatternsDB.GetMPEPattern(pattern);
-#if !WINDOWS
             parameters = PlanSet(pSet, mpePattern);
             if (parameters.Count == 0) return;
-#endif
 
             var cl = new List<IPatternColumn>();
 
@@ -197,15 +187,12 @@ namespace WDE.ModernPatternEditor
 
         void ReleaseColumnSets()
         {
-#if !WINDOWS
             ReleaseHidden();
-#endif
             if (columnSets == null) return;
             foreach (var cs in columnSets) cs.Release();
             columnSets = null;
         }
 
-#if !WINDOWS
         // ------------------------------------------------------------------ Fork (ux-overhaul.md P3c): the columns shown
 
         /// <summary>Parameters the user asked for with + Automation (kept while the editor lives); a column that is shown for its data joins them.</summary>
@@ -307,9 +294,7 @@ namespace WDE.ModernPatternEditor
                         return;
                     }
         }
-#endif
 
-#if !WINDOWS
         // ------------------------------------------------------------------ Fork (daw-modes.md AR3): the Notes lanes
 
         NoteLaneHost noteLanes;
@@ -369,7 +354,6 @@ namespace WDE.ModernPatternEditor
 
         /// <summary>Whether the pattern's MIDI column holds notes (so the lanes show by themselves).</summary>
         public bool HasMidiNotes => noteLanes != null && noteLanes.Lanes.NoteCount > 0;
-#endif
 
         public int BeatCount
         {

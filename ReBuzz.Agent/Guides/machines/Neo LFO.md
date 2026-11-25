@@ -41,10 +41,6 @@ A low-frequency oscillator with no audio of its own: it moves up to 8 parameters
 
 - Neo Filter, Neo Poly, Neo Wave and Neo Delay as targets; Neo Envelope for per-note movement, Neo Step for rhythmic movement.
 
-## Successor
-
-Neo LFO replaces Pedal LFO: `machine_replace(machine="LFO")` carries the wave and the phase over; its target, period in ticks, depth and centre do not (Neo LFO has its own targets, each with its depth), so point it again with `modulate`.
-
 ## Checklist
 
 - [ ] `modulation_list(machine="LFO")` shows each target `active` with the range it reaches.

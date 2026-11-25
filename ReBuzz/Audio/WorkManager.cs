@@ -97,11 +97,9 @@ namespace ReBuzz.Audio
         internal static volatile bool MasterInfoCopied;
 
         /// <summary>
-        /// The engine's master info (tempo, rate, tick length, position) into what native machines are sent: each tick, and,
-        /// Fork, for a native machine's Init before the engine has ticked (UIMessage.UIInit). Without it a machine set up
-        /// before the first tick computed its state for 0 Hz: Jeskola Delay's and Cross Delay's lines were 0 samples long, and
-        /// their first Work looped for ever (its host stopped answering, the UI gallery's "Jeskola Delay stopped working"), and
-        /// FSM Infector played silence until the song was opened again (a process's first render, native-songs' warm-up).
+        /// The engine's master info (tempo, rate, tick length, position) into what machines are sent: each tick, and,
+        /// Fork, for a machine's Init before the engine has ticked. Without it a machine set up
+        /// before the first tick computed its state for 0 Hz (delay lines 0 samples long, whose first Work looped for ever).
         /// </summary>
         internal static void CopyEngineMasterInfo()
         {
@@ -460,7 +458,6 @@ namespace ReBuzz.Audio
                 buzzCore.BPM = bpm;
                 buzzCore.TPB = tpb;
                 buzzCore.UpdateMasterInfo();
-                buzzCore.MachineManager.RefreshMachineParams();
             }
         }
         internal void UpdateSubTickLength()
@@ -693,7 +690,7 @@ namespace ReBuzz.Audio
                     {
                         var pes = playingEvents[i];
                         var machine = pes.Machine;
-                        buzzCore.MachineManager.SendMIDINote(machine, pes.Channel, pes.MidiNote, 0);
+                        buzzCore.MachineManager.SendTrackNoteOff(machine, pes.Channel, pes.MidiNote);
                         playingEvents.RemoveAt(i);
                     }
                 }
@@ -721,7 +718,7 @@ namespace ReBuzz.Audio
                 int pos = pes.Pattern.PlayPosition;
                 if (pos == int.MinValue || pe.Time > pos + windowTicks || pe.Time + pe.Duration < pos + windowTicks)
                 {
-                    buzzCore.MachineManager.SendMIDINote(machine, pes.Channel, pes.MidiNote, 0);
+                    buzzCore.MachineManager.SendTrackNoteOff(machine, pes.Channel, pes.MidiNote);
                     playingEvents.RemoveAt(i);
                 }
             }
@@ -986,7 +983,7 @@ namespace ReBuzz.Audio
             var machines = buzzCore.SongCore.MachinesList;
             int n = machines.Count + 1;
             for (int i = 0; i < machines.Count; i++)
-                n += machines[i].AllInputs.Count;
+                n += machines[i].AllInputs.Count + (machines[i].NoteNode?.Sources.Length ?? 0);
             return n;
         }
 
@@ -1096,7 +1093,9 @@ namespace ReBuzz.Audio
                 // was). Fork (audio hygiene): into the machine's own scratch, each input's branch
                 // a job made once (RenderJobs), not a Task, a closure and LINQ's sorter per input.
                 var inputs = machine.AllInputs;
-                int count = inputs.Count;
+                int audioCount = inputs.Count;
+                var noteSources = machine.NoteNode?.Sources ?? ReBuzz.Core.NoteWires.NoteNode.None;     // fork (note-wires.md): a note source works before its targets
+                int count = audioCount + noteSources.Length;
                 if (machine.workInputs.Length < count)
                 {
                     int size = Math.Max(count, machine.workInputs.Length * 2);
@@ -1108,7 +1107,7 @@ namespace ReBuzz.Audio
                 var keys = machine.workInputKeys;
                 for (int i = 0; i < count; i++)
                 {
-                    var source = inputs[i].Source as MachineCore;
+                    var source = i < audioCount ? inputs[i].Source as MachineCore : noteSources[i - audioCount];
                     long key = source.performanceBranchCount;
                     int b = i - 1;
                     while (b >= 0 && keys[b] < key)
@@ -1157,6 +1156,8 @@ namespace ReBuzz.Audio
                 {
                     machine.performanceBranchCount += (input.Source as MachineCore).performanceBranchCount;
                 }
+                for (int i = 0; i < noteSources.Length; i++)
+                    machine.performanceBranchCount += noteSources[i].performanceBranchCount;
 
                 machine.workDone = true;
             }
@@ -1552,6 +1553,19 @@ namespace ReBuzz.Audio
                     CollectMachinesThatCanWork(sourceMachine);
                 }
             }
+
+            // Fork (note-wires.md): the machines that send it notes work first, whatever the audio graph alone says.
+            var noteSources = machine.NoteNode?.Sources;
+            if (noteSources != null)
+                for (int i = 0; i < noteSources.Length; i++)
+                {
+                    var src = noteSources[i];
+                    if (!src.workDone)
+                    {
+                        machineCanWork = false;
+                        CollectMachinesThatCanWork(src);
+                    }
+                }
 
             if (machineCanWork)
             {

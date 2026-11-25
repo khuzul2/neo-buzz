@@ -199,3 +199,7 @@ reading b4_gr_peak_db dB | Band 4's largest gain change over the last 3 s (posit
 reading b4_level_db dBFS | Band 4's peak level over the last 3 s, as its detector reads it (set the threshold against it)
 reading bands | 3 or 4
 reading latency_samples samples | The latency NeoBuzz Live compensates: 4607 at 44.1 and 48 kHz in linear phase, 0 in minimum phase
+group Output
+Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
+    how Scales the gain reduction in every band (the ratios, upward ratios and range) and each band's makeup. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down for gentler dynamics in every band, up for tighter control.

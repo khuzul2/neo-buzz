@@ -21,6 +21,8 @@ A stereo imager in four bands. In each band the signal is split into its mid (wh
 | Recover sides | On | keeps the level when a band is narrowed |
 | Output | 0 dB | lower it, or use Match, if widening made it louder |
 
+`Amount` (default 100 %) scales width and stereo distance from 100 %: 0 % is the bypassed dry, 200 % exaggerates. `Mix` (default 100 %) blends in the dry, delayed by the latency so it never combs.
+
 ## Starting points
 
 - "Mastering — Widen the Highs" (Width 3 115 %, Width 4 135 %), "Mastering — Focus the Lows (Mono Below 150 Hz)", "Mastering — Air and Width", "Mastering — Stereoize the Top".

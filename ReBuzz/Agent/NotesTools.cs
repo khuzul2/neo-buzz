@@ -27,7 +27,7 @@ namespace ReBuzz.Agent
                 Description =
                     "The song's notes, as the studio's Song Notes tab shows them: Markdown (**bold**, *italic*, <u>underline</u>, # headings, " +
                     "- and 1. lists, [links](https://…); a line break is a line break). They hold what the person wrote about the song: ideas, " +
-                    "lyrics, to-dos, credits. Songs with Info machines (WDE's notes machine) or Buzz info text bring that text in when they open " +
+                    "lyrics, to-dos, credits. Songs with info text bring that text in when they open " +
                     "(imported). format=\"text\" gives plain text. Example: song_notes_read().",
                 Input = Object(null, Opt("format", String("markdown (default) or plain text", "markdown", "text"))),
                 Output = NotesSchema(),
@@ -96,7 +96,7 @@ namespace ReBuzz.Agent
 
         static JsonObject Source(SongNotesStore.Source s)
         {
-            var o = new JsonObject { ["from"] = s.Kind == SongNotesStore.Source.InfoMachine ? "info_machine" : "song_info" };
+            var o = new JsonObject { ["from"] = "song_info" };
             if (s.Machine != null) o["machine"] = s.Machine;
             return o;
         }
@@ -105,9 +105,7 @@ namespace ReBuzz.Agent
             Req("notes", String("The notes (Markdown, or plain text with format=text)")),
             Req("format", String("markdown or text", "markdown", "text")),
             Req("length", Integer("Characters of Markdown")),
-            Req("imported", Array(Object("A source of text in the notes", Req("from", String("info_machine or song_info", "info_machine", "song_info")),
-                Opt("machine", String("The Info machine"))), "Text the notes took in from Info machines or the song's info text")),
-            Req("imported_on_open", Array(Object("A source", Req("from", String("info_machine or song_info", "info_machine", "song_info")),
-                Opt("machine", String("The Info machine"))), "What opening this song brought in (the Song Notes tab marks it)")));
+            Req("imported", Array(Object("A source of text in the notes", Req("from", String("song_info", "song_info"))), "Text the notes took in from the song's info text")),
+            Req("imported_on_open", Array(Object("A source", Req("from", String("song_info", "song_info"))), "What opening this song brought in (the Song Notes tab marks it)")));
     }
 }

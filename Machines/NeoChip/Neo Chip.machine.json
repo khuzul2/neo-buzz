@@ -7,10 +7,10 @@
  "summary": "Four-channel sound-chip instrument: three pulse channels with selectable duty and PWM, a 15-bit/7-bit LFSR noise channel, 16-step ADSR and hardware-style envelopes, per-track arpeggio, pitch sweep, vibrato and an optional 4-bit DAC stage. Use it for retro leads, basses, rapid chord arpeggios, metallic percussion and sound effects.",
  "category": "Synths",
  "tags": [
-  "chiptune",
+  "vintage",
   "lead",
   "bass",
-  "arpeggio",
+  "rhythmic",
   "percussion",
   "noise",
   "polyphonic"

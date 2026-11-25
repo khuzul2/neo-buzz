@@ -30,7 +30,9 @@ namespace NeoBuzz.Limiter
 
             var drive = Layout.Column(
                 new ParamKnob(ctx, P.InputGain, diameter: 58),
-                new ParamKnob(ctx, P.Ceiling, diameter: 58));
+                new ParamKnob(ctx, P.Ceiling, diameter: 58),
+                Layout.Gap(1, 4),
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)));
 
             var graph = new GraphView(330, 196, (g, r) => DrawHistory(g, r, ctx, machine, history), animate: true);
 

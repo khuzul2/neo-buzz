@@ -19,7 +19,9 @@ namespace NeoBuzz.Utility
         public const int Swap = 8;
         public const int DcRemove = 9;
         public const int Matrix = 10;
-        public const int Count = 11;
+        public const int Amount = 11;
+        public const int Mix = 12;
+        public const int Count = 13;
     }
 
     internal static class Params
@@ -40,6 +42,8 @@ namespace NeoBuzz.Utility
             new ParamDef(P.Swap, "Swap", "Swap", 0, 1, 0, MapKind.Switch, group: "Channels", description: "Swaps left and right", how: "Swaps the left and right channels.", sound: "Left and right trade places in the stereo image."),
             new ParamDef(P.DcRemove, "DcRemove", "DC removal", 0, 1, 0, MapKind.Switch, group: "Channels", description: "Removes DC offset: 2nd-order high-pass at 5 Hz (20 Hz passes within 0.02 dB)", how: "Removes any constant offset with a gentle 5 Hz high-pass.", sound: "Clicks and wasted headroom caused by DC offset disappear; the audible sound is unchanged."),
             new ParamDef(P.Matrix, "Matrix", "Matrix", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Encode M/S", "Decode M/S" }, group: "Matrix", description: "Mid/side for the machines between two Utilities. Encode M/S: after the other stages, the output carries mid (L + R)/2 on the left and side (L − R)/2 on the right. Decode M/S: before them, the input is read as mid and side and turned back into L = M + S, R = M − S. Off: left and right as they are", how: "Turns left/right into mid/side (Encode) or back (Decode), for processing between two Utilities.", sound: "Between an encode and a decode, a machine in the chain works on the centre and the sides separately."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the gain and the pan away from 0 and the width away from 100 %. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down to bring the signal back to unity, up to push the gain, pan and width further."),
+            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: 100 % = only the effect, 0 % = only the dry signal (delayed by the effect's latency)", how: "Blends the processed signal with the dry signal, which is delayed to match the effect's latency.", sound: "Lower values keep more of the original sound, so the effect works as a parallel layer."),
         };
     }
 }

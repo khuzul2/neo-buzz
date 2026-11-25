@@ -127,7 +127,7 @@ namespace ReBuzz.Studio
             {
                 var clock = System.Diagnostics.Stopwatch.StartNew();
                 Buzz.MachineInterface.PluginMainThread.Current ??= new Platform.StudioPluginMainThread();   // the UI thread is the plug-ins' main thread
-                // Windows: the main window is the parent the native machine hosts ask for (EngineHost step 2).
+                // Windows: the main window's handle (EngineHost step 2).
                 host.Services.ParentWindow = () => window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
                 host.Start(step =>
                 {

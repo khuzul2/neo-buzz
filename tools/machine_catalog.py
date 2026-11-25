@@ -19,6 +19,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH = os.path.join(ROOT, "Machines", "Manifests", "machine-catalog.json")
 FIELDS = ("category", "tags", "use_for")
+# Note wires (docs/specs/note-wires.md): optional capability flags, true only when set. note_in: a note-in port (takes notes from note wires); note_out: a
+# note-out port (sends notes down note wires). The machine's managed class says the same at run time (INoteCapable); a test checks the two agree.
+NOTE_FIELDS = ("note_in", "note_out")
 
 _cache = None
 
@@ -34,18 +37,24 @@ def load():
 def fields(gear):
     """{"category", "tags", "use_for"} for a machine, or None when the catalogue doesn't know it."""
     m = load()["machines"].get(gear)
-    return None if m is None else {"category": m["category"], "tags": list(m["tags"]), "use_for": m["use_for"]}
+    if m is None:
+        return None
+    out = {"category": m["category"], "tags": list(m["tags"]), "use_for": m["use_for"]}
+    for k in NOTE_FIELDS:
+        if m.get(k) is True:
+            out[k] = True
+    return out
 
 
 def apply(manifest):
-    """The manifest dict with the three fields written straight after its summary (or at the end without one)."""
+    """The manifest dict with the three fields (and the note flags that are true) written straight after its summary (or at the end without one)."""
     f = fields(manifest["gear"])
     if f is None:
         raise SystemExit(f"{manifest['gear']}: not in {os.path.relpath(PATH, ROOT)}; add it (category, tags, use_for)")
     out = {}
     placed = False
     for k, v in manifest.items():
-        if k in FIELDS:
+        if k in FIELDS or k in NOTE_FIELDS:
             continue
         out[k] = v
         if k == "summary":
@@ -76,6 +85,9 @@ def problems():
             out.append(f"{gear}: a tag twice")
         if not m["use_for"].strip() or "\n" in m["use_for"]:
             out.append(f"{gear}: use_for must be one non-empty line")
+        for k in NOTE_FIELDS:
+            if k in m and m[k] is not True:
+                out.append(f"{gear}: {k} is true or absent")
     out += [f"tag \"{t}\" is in the vocabulary but no machine has it" for t in c["tags"] if t not in used]
     return out
 
@@ -106,7 +118,7 @@ def main(argv):
         want = fields(m["gear"])
         if want is None:
             continue
-        if all(m.get(k) == want[k] for k in FIELDS) and list(m).index("category") == list(m).index("summary") + 1 if "summary" in m and "category" in m else False:
+        if all(m.get(k) == want.get(k) for k in FIELDS + NOTE_FIELDS) and list(m).index("category") == list(m).index("summary") + 1 if "summary" in m and "category" in m else False:
             continue
         if write:
             apply(m)

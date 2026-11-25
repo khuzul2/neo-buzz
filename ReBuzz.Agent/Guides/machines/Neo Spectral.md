@@ -25,6 +25,8 @@ A resonance suppressor that works on a short-time spectrum: every frame (2048 sa
 | Low limit | 150 Hz | keep the body of the sound out of it |
 | High limit | 12000 Hz | keep the air out of it |
 
+`Amount` (default 100 %) scales depth, lift and tilt: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Vocal — Gentle Resonance Control" (Suppress, 40 %, 150 Hz - 12 kHz), "Vocal — Tame Harshness (2 - 8 kHz)" (70 %, only 2 - 8 kHz), "Vocal — Even Tone (Fills Dips)" (Lift 3 dB).

@@ -1,5 +1,5 @@
 #nullable disable
-// Neo Drums (docs/specs/machines.md §5): a synthesised drum kit, the successor of Rout 909 and FSM KickXP
+// Neo Drums (docs/specs/machines.md §5): a synthesised drum kit
 // (docs/specs/mcp-server.md §12.5). Twelve voices on the General MIDI drum keys from C2 (as Neo Sampler's Kit mode),
 // or per-track hit columns (BD, SD, … with a velocity) and an Accent column, as Buzz drum machines play. 16 tracks of
 // Note, Velocity, Accent and the hit columns, plus MIDI. One stereo output: the voices' buses mix into it in the engine
@@ -54,6 +54,31 @@ namespace NeoBuzz.Drums
         /// key plays, General MIDI's drum keys with the TR-909's pairs (DrumsEngine.VoiceOfKey); keys not listed play nothing.
         /// </summary>
         public IReadOnlyDictionary<int, string> KeyNames => keyNames;
+
+        // ---- Note map (docs/specs/daw-modes.md §8.9, NM1): the keys that play a voice, by the voice's name ---------------------------
+
+        static readonly string[] voiceGroups = { "Kick", "Snare and clap", "Snare and clap", "Snare and clap", "Hats", "Hats", "Toms", "Toms", "Toms", "Percussion", "Cymbals", "Cymbals" };
+        static readonly uint[] voiceColors =
+        {
+            0xFFE0457B, 0xFFF0A040, 0xFFF0A040, 0xFFF0A040, 0xFF4FC3F7, 0xFF4FC3F7, 0xFF8BC34A, 0xFF8BC34A, 0xFF8BC34A, 0xFFBA68C8, 0xFFFFD54F, 0xFFFFD54F,
+        };
+
+        static readonly IReadOnlyList<NoteMapEntry> noteMap = BuildKeys();
+
+        static IReadOnlyList<NoteMapEntry> BuildKeys()
+        {
+            var entries = new List<NoteMapEntry>();
+            for (int key = 0; key < 128; key++)
+                if (DrumsEngine.VoiceOfKey(key) is int voice and >= 0)
+                    entries.Add(new NoteMapEntry(key, DrumsEngine.Names[voice], voiceGroups[voice], voiceColors[voice]));
+            return entries;
+        }
+
+        /// <summary>Every key that plays a voice (General MIDI's drum keys with the TR-909's pairs), by the voice's name; the same for every channel.</summary>
+        internal override IReadOnlyList<NoteMapEntry> BuildNoteMap(int channel) => noteMap;
+
+        /// <summary>The kit's keys never change.</summary>
+        internal override int NoteMapSignature() => 1;
 
         static readonly IReadOnlyDictionary<int, string> keyShortNames = KeysByShortName();
 
@@ -112,7 +137,7 @@ namespace NeoBuzz.Drums
         };
     }
 
-#if WINDOWS || AVALONIA   // fork: the editor on WPF, or Avalonia in the studio (studio-mvp.md S1); none headless
+#if AVALONIA   // fork: the editor: Avalonia in the studio (studio-mvp.md S1); none headless
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {

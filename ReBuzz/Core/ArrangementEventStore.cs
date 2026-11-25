@@ -38,76 +38,8 @@ namespace ReBuzz.Core
             buzz.OpenSong += OnOpenSong;
         }
 
-        /// <summary>
-        /// Fork (native-format.md NF2): an export for upstream writes take lanes (and events past tick 65,535) out of the core
-        /// sequence data and keeps them here: per lane (by index), its events by time with the pattern's index. Read first on
-        /// open, so a song exported and reopened has them back before the other stores give them their trims and clips.
-        /// </summary>
-        public const string ExportedLanesName = "ExportedLanes";
-
-        internal static XElement ExportedLanesToXml(IReadOnlyList<SequenceCore> lanes)
-        {
-            var root = new XElement("ExportedLanes", new XAttribute("version", 1));
-            for (int i = 0; i < lanes.Count; i++)
-            {
-                var lane = lanes[i];
-                var events = new List<XElement>();
-                foreach (var kv in lane.EventsList)
-                {
-                    if (!BuzzExport.Omits(lane, kv.Key)) continue;
-                    var e = kv.Value;
-                    var x = new XElement("E", new XAttribute("time", kv.Key), new XAttribute("kind", e.Type.ToString().ToLowerInvariant()));
-                    if (e.Type == SequenceEventType.PlayPattern)
-                    {
-                        int pattern = e.Pattern is PatternCore pc ? lane.MachineCore.PatternsList.IndexOf(pc) : -1;
-                        if (pattern < 0) continue;
-                        x.SetAttributeValue("pattern", pattern);
-                    }
-                    events.Add(x);
-                }
-                if (events.Count > 0)
-                    root.Add(new XElement("Lane", new XAttribute("index", i), events));
-            }
-            return root.HasElements ? root : null;
-        }
-
-        internal static void ApplyExportedLanes(XElement root, IReadOnlyList<SequenceCore> lanes)
-        {
-            if (root == null || root.Name.LocalName != ExportedLanesName) return;
-            foreach (var l in root.Elements("Lane"))
-            {
-                if (!int.TryParse((string)l.Attribute("index"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int index) || index < 0 || index >= lanes.Count) continue;
-                var lane = lanes[index];
-                foreach (var x in l.Elements("E"))
-                {
-                    if (!int.TryParse((string)x.Attribute("time"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int time)) continue;
-                    if (!Enum.TryParse<SequenceEventType>((string)x.Attribute("kind"), true, out var kind)) continue;
-                    if (kind == SequenceEventType.PlayPattern)
-                    {
-                        int p = Int(x, "pattern", -1);
-                        if (p < 0 || p >= lane.MachineCore.PatternsList.Count) continue;
-                        var pattern = lane.MachineCore.PatternsList[p];
-                        lane.SetEvent(time, new SequenceEvent(SequenceEventType.PlayPattern, pattern, pattern.Length));
-                    }
-                    else
-                        lane.SetEvent(time, new SequenceEvent(kind));
-                }
-            }
-        }
-
         void OnSaveSong(ISaveSong save)
         {
-            if (BuzzExport.Current != null)
-            {
-                var lanes = ExportedLanesToXml(buzz.SongCore.SequencesList);
-                var exported = lanes == null ? null : save.CreateSubSection(ExportedLanesName);
-                if (exported != null)
-                {
-                    var data = new UTF8Encoding(false).GetBytes(lanes.ToString(SaveOptions.DisableFormatting));
-                    exported.Write(data, 0, data.Length);
-                    exported.Flush();
-                }
-            }
             var xml = ToXml(buzz.SongCore.Sequences, buzz.Clips);
             if (xml == null) return;      // nothing upstream can't hold: no subsection
             var stream = save.CreateSubSection(SubSectionName);
@@ -121,9 +53,6 @@ namespace ReBuzz.Core
         {
             try
             {
-                var lanes = open.GetSubSection(ExportedLanesName);
-                if (lanes != null)
-                    ApplyExportedLanes(XDocument.Load(lanes).Root, buzz.SongCore.SequencesList);
                 var stream = open.GetSubSection(SubSectionName);
                 if (stream == null) return;
                 var root = XDocument.Load(stream).Root;

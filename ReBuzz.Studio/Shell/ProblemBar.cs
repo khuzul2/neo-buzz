@@ -27,8 +27,8 @@ namespace ReBuzz.Studio.Shell
             return reason.EndsWith("dBFS", StringComparison.Ordinal) ? $"got far too loud ({reason})" : $"made broken sound ({reason})";
         }
 
-        /// <summary>What a machine that can't load is, here: "Windows only" off Windows (a native machine), "not installed" on it.</summary>
-        public static string Missing => OperatingSystem.IsWindows() ? "not installed" : "Windows only";
+        /// <summary>What a machine that can't load is: "not installed".</summary>
+        public const string Missing = "not installed";
 
         public static string Count(int n, string one, string many) => n == 1 ? $"1 {one}" : $"{n} {many}";
 
@@ -158,9 +158,7 @@ namespace ReBuzz.Studio.Shell
             var missing = machines.Where(m => m.DLL?.IsMissing == true).ToList();
             if (missing.Count > 0)
             {
-                string what = OperatingSystem.IsWindows()
-                    ? $"{PlainWords.Count(missing.Count, "machine", "machines")} in this song {(missing.Count == 1 ? "isn't" : "aren't")} installed ({PlainWords.Names(missing.Select(m => m.DLL.Name).Distinct())}), "
-                    : $"{PlainWords.Count(missing.Count, "machine", "machines")} in this song {(missing.Count == 1 ? "is" : "are")} Windows-only ({PlainWords.Names(missing.Select(m => m.DLL.Name).Distinct())}), ";
+                string what = $"{PlainWords.Count(missing.Count, "machine", "machines")} in this song {(missing.Count == 1 ? "isn't" : "aren't")} installed ({PlainWords.Names(missing.Select(m => m.DLL.Name).Distinct())}), ";
                 list.Add(new StudioProblem("missing:" + missing.Count,
                     what + $"so {(missing.Count == 1 ? "it stays" : "they stay")} silent here. {(missing.Count == 1 ? "It is" : "They are")} kept and saved unchanged; " +
                     "right-click one to replace it.",

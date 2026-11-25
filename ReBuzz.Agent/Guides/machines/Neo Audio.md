@@ -41,7 +41,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (W
 
 - Silent with no clip playing (the profile's health warn); that is not a fault.
 - A streamed clip that underruns plays silence for what is missing and goes on; nothing waits for the disk. The starts of every streamed asset, of each clip's start and loop start, and of each warp marker are kept in memory, so launches are instant, and a queued launch reads ahead during the quantization wait; a jump to somewhere else with no warning (scrubbing) can underrun once. If the cache file is removed or damaged it is written again from the song file (save the song once so that file has the audio).
-- The audio belongs to the song, not to the wavetable: an old song's wave-based clips are moved into the song on load, and the wave stays as it was. Saving as .bmx writes the audio into free waves; what does not fit is listed in the export report.
+- The audio belongs to the song, not to the wavetable: the clip's audio is saved inside the .nbl.
 - Input master records everything the song plays, including this track: mute it first to avoid doubling.
 - Beats mode on sustained material smears; use Complex or Pro for pads and voices, Repitch for a deliberate speed change.
 - Pro costs more CPU than Complex (see the CPU figures in docs/specs/neo-audio.md section 11) and softens the attack of drums a little, which Beats keeps. It is lined up with the other modes (a Pro clip's hits land where a Repitch clip's do). Where its native library is missing a Pro clip plays as Complex.
@@ -49,11 +49,7 @@ The audio track of the Session View and the arrangement: it plays audio clips (W
 
 ## Pairs well with
 
-- ReBuzz Audio In or any instrument connected to it for takes; the Session View's mixer for levels and sends.
-
-## Successor
-
-None needed: it is the Session Clip Player renamed. A song that names Session Clip Player loads it as Neo Audio, and Classic keeps playing the old name.
+- Any instrument connected to it for takes; the Session View's mixer for levels and sends.
 
 ## Checklist
 

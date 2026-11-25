@@ -10,7 +10,7 @@
 // sends MIDI clock, and other apps reach it through its virtual "NeoBuzz Live" ports. --link joins
 // Ableton Link through the ReBuzzLink helper beside the app.
 //
-//   rebuzz-headless --agent [song.bmxml] [--settings <folder>]
+//   rebuzz-headless --agent [song.nbl] [--settings <folder>]
 //                   [--audio [--device <name>] [--input <name|default>] [--buffer <frames>] [--rate <hz>]]
 //                   [--midi-in <name|all|none>]… [--midi-out <name|all|none>]… [--clock-out <name|none>]… [--link|--no-link]
 //   rebuzz-headless --list-devices
@@ -32,7 +32,7 @@ namespace ReBuzz.Headless
     {
         static readonly string Usage =
             $"rebuzz-headless: {Product.Name}'s engine with its MCP server on stdio (docs/specs/mcp-server.md).\n" +
-            "  rebuzz-headless --agent [song.bmxml] [--settings <folder>]\n" +
+            "  rebuzz-headless --agent [song.nbl] [--settings <folder>]\n" +
             "      [--audio [--device <name>] [--input <name|default>] [--buffer <frames>] [--rate <hz>]]\n" +
             "      [--midi-in <name|all|none>]... [--midi-out <name|all|none>]... [--clock-out <name|none>]... [--link|--no-link]\n" +
             "  rebuzz-headless --list-devices\n" +

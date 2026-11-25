@@ -18,7 +18,7 @@ using BuzzGUI.Interfaces;
 using NUnit.Framework;
 using ReBuzz.Audio;
 using ReBuzz.Core;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using ReBuzz.Core.Session;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Sequence;
@@ -177,7 +177,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void LaneRolesAndFoldsAreSavedWithTheSongAndOldSongsHaveNone([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void LaneRolesAndFoldsAreSavedWithTheSongAndOldSongsHaveNone([Values(".nbl")] string extension)
         {
             using var rig = new Rig("Lead", "Bass");
             Assert.That(Core.Arrangement.ToXml(), Is.Null, "nothing differs from the default: no subsection");

@@ -112,6 +112,8 @@ Copy before you vary: `pattern_duplicate`, then transform the copy. Check the re
 
 **Pitches for drums.** Drum machines that follow General MIDI: kick 36 (C2), rim 37, snare 38, clap 39, closed hat 42, open hat 46, crash 49, ride 51. Synth drums built on Neo Poly (synth-recipes guide) play the pitch written: the kick at A1 (33) or in key, snare G3, hats any pitch. Give each drum voice its own machine and pattern when it needs its own sound or level.
 
+**Which keys play.** A drum kit, sampler or plug-in with named keys shows a `note_map` in `machine_describe`: write drum notes on those keys; others are silent.
+
 **Grids** (16 steps per bar, `x` = hit, `.` = rest; step s is beat (s − 1) × 0.25):
 
 | Genre | Voice | Steps 1–16 | Velocity |

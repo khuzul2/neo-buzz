@@ -1,7 +1,7 @@
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
 using NeoBuzz.Learn;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using DyeP = NeoBuzz.DyeEssence.P;
 using LP = NeoBuzz.LearnSub.P;
 using LParams = NeoBuzz.LearnSub.Params;

@@ -1,16 +1,16 @@
 // The machines' zero-allocation tests, measured one block at a time so that a failure says what allocated. Their
 // audio paths allocate nothing, and the tests have always measured them in one stretch after a warm-up; on CI one
 // failed now and then (Neo Delay on the Mac runner: 5768 bytes, then 5736, in a single stretch; never in isolation),
-// and a total can't say where or why. Each block is measured by ReBuzzTests' AllocationWindow (compiled in): the bytes
+// and a total can't say where or why. Each block is measured by the AllocationWindow (compiled in): the bytes
 // this thread allocated in it, the methods the JIT compiled on it, the GCs, and the runtime's own events on the thread
 // (JIT with each method and its tier, type loads, exceptions, contention, waits, the GC's allocation ticks) placed in
 // their blocks. A failure lists the blocks that allocated, each with what happened in it. The assertion is unchanged:
-// 0 bytes, under GuardPolicy (ReBuzzTests/Automation/GuardPolicy.cs): the path is warmed up twice, and a stretch that
+// 0 bytes, under GuardPolicy (GuardPolicy.cs): the path is warmed up twice, and a stretch that
 // allocated is measured again, up to 3 attempts, and fails only if every attempt allocates.
 
 using System.Reflection;
 using System.Threading;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace NeoBuzz.MachineTests
 {
@@ -23,7 +23,7 @@ namespace NeoBuzz.MachineTests
         static void Nothing() { }
 
         /// <summary>
-        /// What the runtime does the first time a collection suspends this thread is not the machine's: Pedal EQ failed with 968
+        /// What the runtime does the first time a collection suspends this thread is not the machine's: an EQ failed with 968
         /// bytes in one block of its stretch (runs 43239764974 and one before), the block a collection from another thread
         /// (the finalizer thread, running finalizers of earlier tests' objects) had suspended, whose only event on this thread
         /// was R2RGetEntryPoint for System.Threading.Thread.PollGC, the runtime's first use of it in the process. So before a

@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (dst.DLL.Info.Type == MachineType.Generator) return dst.Name + " is an instrument: it has no input";
             if (src.Outputs.Any(o => o.Destination == dst)) return "Already connected";
             if (dst.Outputs.Any(o => o.Destination == src)) return dst.Name + " already feeds " + src.Name + ": that would make a loop";
-            return "That would make a loop";
+            return core.NoteWires?.CheckAudio(src.Name, dst.Name) ?? "That would make a loop";
         }
 
         public static void Disconnect(ReBuzzCore core, IMachineConnection c) => core.SongCore.DisconnectMachines(c);
@@ -229,13 +229,6 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>A double click: the machine's own GUI (its parameter window when it has none here).</summary>
         public static void OpenGui(ReBuzzCore core, IMachine machine) => core.UiHost?.OpenGui(machine, null);
-
-        /// <summary>
-        /// U5 (mcp-server.md §12.5): the machine onto its Neo successor, as machine_replace does it (settings in units, patterns,
-        /// arrangement, Session View), one undo step; the comparison of before and after in a message. Returns that text, or null.
-        /// </summary>
-        public static string ReplaceWithSuccessor(ReBuzzCore core, MachineCore machine, string gear) =>
-            MachineReplace.FromMenu(core, machine, gear);
 
         /// <summary>Duplicate (⌘D): each machine cloned with its settings, one undo step (ReBuzz.Core.MachineEditing, as the agent's machine_clone).</summary>
         public static List<IMachine> Duplicate(ReBuzzCore core, IReadOnlyList<IMachine> machines) => MachineEditing.Duplicate(core, machines);

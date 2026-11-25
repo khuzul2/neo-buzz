@@ -25,7 +25,7 @@ using ReBuzz.Studio.Parameters;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views.Device;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
 using static ReBuzz.Studio.Tests.DeviceTestKit;
 using Mode = ReBuzz.Studio.Views.Device.DeviceView.DeviceMode;
@@ -429,8 +429,6 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase(".nbl")]
-        [TestCase(".bmx")]
-        [TestCase(".bmxml")]
         public void LocksAndPinsSurviveASaveAndAnOpen(string extension)
         {
             NewSong();

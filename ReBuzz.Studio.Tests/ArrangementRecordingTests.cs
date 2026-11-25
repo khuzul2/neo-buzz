@@ -685,7 +685,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ old songs, and the saved takes
 
         [AvaloniaTest]
-        public void TakeLanesSurviveASaveAndStayUnplayedAndASongWithoutAnyRendersTheSameAfterTheRecorderWasUsed([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void TakeLanesSurviveASaveAndStayUnplayedAndASongWithoutAnyRendersTheSameAfterTheRecorderWasUsed([Values(".nbl")] string extension)
         {
             using var rig = new Rig("Lead");
             var lead = rig.Lane("Lead");

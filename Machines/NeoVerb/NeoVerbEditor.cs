@@ -40,14 +40,14 @@ namespace NeoBuzz.Verb
 
             var motion = Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.ModDepth), new ParamKnob(ctx, P.ModRate)),
-                new ParamKnob(ctx, P.Shimmer),
+                Layout.Row(new ParamKnob(ctx, P.Shimmer), new ParamKnob(ctx, P.Width)),
                 new ParamChoice(ctx, P.Freeze, "Freeze", 36));
 
             var output = Layout.Row(
                 Layout.Column(
                     Layout.Row(new ParamKnob(ctx, P.Early), new ParamKnob(ctx, P.Late)),
                     Layout.Row(new ParamKnob(ctx, P.LowCut), new ParamKnob(ctx, P.HighCut)),
-                    Layout.Row(new ParamKnob(ctx, P.Width), new ParamKnob(ctx, P.Mix))),
+                    Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40))),
                 Layout.Gap(6),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 200),
                 Layout.Gap(4),
@@ -62,8 +62,11 @@ namespace NeoBuzz.Verb
 
         static void DrawResponse(INeoCanvas g, NeoRect r, EditorContext ctx)
         {
+            var rawValues = new ParamValues(Params.Table);
             var values = new ParamValues(Params.Table);
-            for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
+            values.AllowPhysical();
+            for (int i = 0; i < Params.Table.Length; i++) rawValues.Set(i, ctx.Raw(i));
+            FxStage.Fill(rawValues, values, P.Amount, VerbEngine.AmountRules);
             double t60 = values.Value(P.Decay);
             double pre = values.Value(P.PreDelay) / 1000;
             bool freeze = values.On(P.Freeze);

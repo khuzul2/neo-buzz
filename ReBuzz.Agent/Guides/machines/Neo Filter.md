@@ -31,6 +31,8 @@ Neo Poly's filters as an effect: the transistor ladder and the state-variable fi
 | LFO sync | Free | a note value (1/4 to 8 bars) locks the sweep to the tempo |
 | Mix | 100% | below it the dry signal is crossfaded in |
 
+`Amount` (default 100 %) scales cutoff distance from open, resonance, drive, envelope and LFO depth: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet.
+
 ## Starting points
 
 - "Auto-Wah — Funky (Band-Pass)": SVF BP, Cutoff 420 Hz, Resonance 4, Env amount 3 oct, Env sensitivity 12 dB, Env attack 3 ms, Env release 120 ms. "Auto-Wah — Bass (Ladder 12)", "Auto-Wah — Closing (Low-Pass, Envelope Down)".
@@ -51,10 +53,6 @@ Neo Poly's filters as an effect: the transistor ladder and the state-variable fi
 ## Pairs well with
 
 - Neo Drive before it for fuzz into a filter; Neo Ensemble or Neo Delay after it for movement; Neo Poly and Neo Wave as the source.
-
-## Successor
-
-Neo Filter replaces Pedal Filter, Jeskola Filter, Jeskola Filter 2 and FSM WahMan: `machine_replace(machine="Filter")` carries their settings over.
 
 ## Checklist
 

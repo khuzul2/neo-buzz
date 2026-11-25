@@ -22,7 +22,8 @@ namespace NeoBuzz.Spectral
         public const int Mix = 11;
         public const int Output = 12;
         public const int Delta = 13;
-        public const int Count = 14;
+        public const int Amount = 14;
+        public const int Count = 15;
     }
 
     internal static class Params
@@ -46,6 +47,7 @@ namespace NeoBuzz.Spectral
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Wet against dry; at 0 % the output is the delayed input, bit for bit", how: "Blends the processed signal with the dry one (delayed to match).", sound: "Parallel use keeps the character of the source while the suppression still smooths it."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the suppressor, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Adds -24 to +24 dB of gain after the suppressor.", sound: "It matches the loudness to the untreated signal so you can judge the tone fairly."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the suppressor takes out: the output minus the input, delayed to match (glides over 10 ms)", how: "Plays only the difference between the output and the input.", sound: "You hear exactly what is being removed, so you can check it is resonance and not the body of the sound."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the depth, the lift and the tilt. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a lighter touch on resonances, up to smooth them harder."),
         };
     }
 }

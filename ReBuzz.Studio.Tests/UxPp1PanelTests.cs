@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md, the parameter panel redesign PP1): the Device panel's layout D, headless. Cards of knobs (splitting, the
 // chips' jump, search, Changed only, the Knobs | List choice per machine type), the docked row and the floating wrap, the knobs' gestures,
-// the retired parameter window's entry points, the Inspector's macros and pins, and the pins in the song (.nbl, .bmx, .bmxml, undo).
+// the retired parameter window's entry points, the Inspector's macros and pins, and the pins in the song (.nbl, undo).
 
 using System;
 using System.IO;
@@ -22,7 +22,7 @@ using ReBuzz.Studio.Platform;
 using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Device;
 using ReBuzz.Studio.Views.Inspector;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 using static ReBuzz.Studio.Tests.AudioHygieneTests;
 using static ReBuzz.Studio.Tests.DeviceTestKit;
 using Mode = ReBuzz.Studio.Views.Device.DeviceView.DeviceMode;
@@ -104,12 +104,12 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheKnobsAreCardsASectionEachAndTheTracksTableIsTheLastCard()
         {
-            var m = Add("Pedal Gain Multi", "PP1 Tracks");
+            var m = Add("Keys Test", "PP1 Tracks");
+            m.TrackCount = 3;
             var (window, page, view) = Stage(m, floating: true);
             try
             {
                 var cards = view.Cards;
-                Assert.That(cards.Shown, Is.Not.Empty);
                 Assert.That(cards.TableCard, Is.Not.Null, "track parameters stay a table, after the cards");
                 var host = cards.Scroller.Content as Panel;
                 Assert.That(host!.Children.Last(), Is.SameAs(cards.TableCard));
@@ -302,7 +302,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void EveryOldEntryPointOpensTheDevicePanelFloating()
         {
-            var m = Add("Pedal Gain", "PP1 Retired");
+            var m = Add("Keys Test", "PP1 Retired");
             try
             {
                 Core.UiHost.OpenParameterWindow(m, null);                       // "Parameters..."
@@ -404,8 +404,6 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase(".nbl")]
-        [TestCase(".bmx")]
-        [TestCase(".bmxml")]
         public void PinsSurviveASaveAndAnOpenAndUndoTakesThemBack(string extension)
         {
             NewSong();

@@ -69,9 +69,6 @@ namespace ReBuzz.Studio.Shell
         public MainWindow(StudioHost host)
         {
             this.host = host;
-            // The tracker refused an edit of an old machine's clips (clips.md §5.7): the status line says why, in one line.
-            var weakSelf = new WeakReference<MainWindow>(this);       // a static hook must not keep a closed window alive
-            BuzzGUI.Common.ClipDerived.Refused = why => Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (weakSelf.TryGetTarget(out var w)) w.Notice(why); });
             Title = StudioHost.AppTitle;
             Width = 1280;
             Height = 820;
@@ -486,7 +483,6 @@ namespace ReBuzz.Studio.Shell
             yield return Command("file.save", mac, () => _ = SongFiles.Save(), running);
             yield return Command("file.saveas", mac, () => _ = SongFiles.SaveAs(), running);
             yield return Command("file.export", mac, () => _ = ExportSheet.Open(host.Core), running);
-            yield return Command("file.exportbuzz", mac, () => _ = BuzzExportFlow.Run(), running);
             // Fork (docs/specs/stem-separation.md): an audio file into stems on new Neo Audio tracks.
             yield return new MenuEntry { Header = "Separate _Stems from Audio File…", Run = () => _ = StemFlow.SeparateFile(), CanRun = running };
             yield return Command("file.revert", mac, () => _ = RevertToSaved(), () => running() && host.Core.SongCore.SongName != null && host.Core.Modified);

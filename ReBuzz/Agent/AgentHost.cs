@@ -59,9 +59,9 @@ namespace ReBuzz.Agent
             MachineTools.Register(tools, this);
             MachineEditTools.Register(tools, this); // K3b: machine_clone, machine_group, machine_latency, machine_attributes, machine_command
             TrackTools.Register(tools, this);       // MT1 (ux-overhaul.md §11): machine_tracks
+            NoteWireTools.Register(tools, this);    // NW1 (docs/specs/note-wires.md §7): note_wires, note_wire_connect, note_wire_disconnect, note_chain
             MidiMapTools.Register(tools, this);     // MM1 (docs/specs/midi-mapping.md): controller_list, midi_map_*, track_page_*
-            ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
-            ReplaceTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
+            SwapTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
             ParamTools.Register(tools, this);
             ModulationTools.Register(tools, this);
             PatternTools.Register(tools, this);

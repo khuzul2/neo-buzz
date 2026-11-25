@@ -23,7 +23,8 @@ namespace NeoBuzz.Tape
         public const int Mix = 12;
         public const int Output = 13;
         public const int Delta = 14;
-        public const int Count = 15;
+        public const int Amount = 15;
+        public const int Count = 16;
     }
 
     internal static class Params
@@ -48,6 +49,7 @@ namespace NeoBuzz.Tape
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet (parallel tape)", how: "Blends the dry sound with the taped sound from 0 to 100 %.", sound: "Lower values give parallel tape saturation that keeps the transients of the dry signal."),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Gain after the tape, 0.1 dB steps (the editor's Match sets it from the gain-match reading)", how: "Sets the gain after the tape, from minus 24 to plus 24 dB.", sound: "Use it to match the level with the input so you judge the colour, not the loudness."),
             new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Output", description: "Hear only what the tape adds: the output minus the input, delayed to match (glides over 10 ms)", how: "Plays only what the tape adds to the signal.", sound: "It lets you hear the exact colour and distortion the tape is contributing."),
+            new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the saturation, emphasis, head bump, HF loss, electronics, wow and flutter. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a cleaner tape, up for more of its colour and wobble."),
         };
     }
 }

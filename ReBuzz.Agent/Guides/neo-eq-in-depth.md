@@ -10,7 +10,6 @@ The parts of Neo EQ that come after the everyday bands: the 31-band graphic mode
 - **A slider is about a third of an octave wide**: one slider at +6 dB leaves its neighbours' centres at 0 dB. For a wider move, set the neighbours too, in steps.
 - **Below 20 Hz and above 20 kHz** the response settles at the sliders' median (the median is applied as a plain gain), not at 0 dB.
 - Constant-Q, minimum phase, zero latency; the 16 and 20 kHz bands keep their shape at 44.1 and 48 kHz.
-- It succeeds Joachims Hyperion: `machine_replace` on a Hyperion reads Hyperion's curve (its 30 bands overlap and add) at these 31 centres, with the rest in `Output`.
 - Use it for a curve given band by band (matching a target spectrum, a loudness contour, a telephone or radio band) or to follow `analyze`'s third-octave bands one for one. For a single precise move (a resonance, a notch, a shelf with a set Q), the parametric bands are better.
 
 | Parameter | Value | Why |

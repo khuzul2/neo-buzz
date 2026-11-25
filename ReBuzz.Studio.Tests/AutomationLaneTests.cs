@@ -263,7 +263,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ lanes
 
         [AvaloniaTest]
-        public void ALaneForAParameterIsAddedFromTheTracksListShowsUnderTheTrackAndIsSavedWithTheSong([Values(".bmx", ".bmxml", ".nbl")] string extension)
+        public void ALaneForAParameterIsAddedFromTheTracksListShowsUnderTheTrackAndIsSavedWithTheSong([Values(".nbl")] string extension)
         {
             using var rig = new Rig("Lead", "Bass");
             Assert.That(Core.Arrangement.ToXml(), Is.Null, "no lanes, nothing differs from the default: no subsection");

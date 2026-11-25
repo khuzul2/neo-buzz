@@ -16,7 +16,7 @@ using NeoBuzz.Editor;
 using NUnit.Framework;
 using ReBuzz.Core;
 using ReBuzz.Core.Actions;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

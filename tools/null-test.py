@@ -416,7 +416,7 @@ CASES = [
     fx("deesser-bell-abs", "Neo De-esser", "Mastering — Tame a Bright Master", [("Threshold", "-30 dB")]),
     fx("gate-snare", "Neo Gate", "Drums — Snare, Tight"),
     fx("gate-expander", "Neo Gate", "Drums — Toms, Gentle Expander", [("Detection", "RMS")]),
-    fx("gate-pedal-same", "Neo Gate", "Pedal Gate — Same Settings"),
+    fx("gate-pedal-same", "Neo Gate", "Gate — Reference Settings"),
     # Neo Spectral (docs/specs/mastering-tools.md §5.16, M7): Suppress on a vocal, Balance on the master, Stabilize at half mix with Delta switched on.
     fx("spectral-vocal", "Neo Spectral", "Vocal — Gentle Resonance Control"),
     fx("spectral-balance", "Neo Spectral", "Master — Gentle Balance"),

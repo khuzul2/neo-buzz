@@ -4,11 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Model;
 
 namespace ReBuzz.Core.Notes
 {
-    internal enum FoldMode { Off, Used, Scale }
+    /// <summary>Playable (daw-modes.md §8.9, NM1): the keys the machine's note map says make a sound, and those used.</summary>
+    internal enum FoldMode { Off, Used, Scale, Playable }
 
     internal sealed class NoteScale
     {
@@ -44,9 +46,11 @@ namespace ReBuzz.Core.Notes
 
         /// <summary>
         /// The pitches a roll shows, highest first, or null for all 128: <see cref="FoldMode.Used"/> keeps the pitches in
-        /// <paramref name="used"/> (none used: all), <see cref="FoldMode.Scale"/> the scale's pitches and those used.
+        /// <paramref name="used"/> (none used: all), <see cref="FoldMode.Scale"/> the scale's pitches and those used,
+        /// <see cref="FoldMode.Playable"/> the keys <paramref name="map"/> says make a sound and those used (a note never disappears;
+        /// without a map: all).
         /// </summary>
-        public static int[] Rows(FoldMode mode, IEnumerable<int> used, NoteScale scale)
+        public static int[] Rows(FoldMode mode, IEnumerable<int> used, NoteScale scale, NoteMap map = null)
         {
             var keep = new SortedSet<int>(used ?? Array.Empty<int>());
             switch (mode)
@@ -56,6 +60,9 @@ namespace ReBuzz.Core.Notes
                 case FoldMode.Scale when scale != null:
                     for (int n = 0; n < 128; n++)
                         if (scale.Contains(n)) keep.Add(n);
+                    return keep.Reverse().ToArray();
+                case FoldMode.Playable when map != null && !map.IsEmpty:
+                    foreach (int k in map.PlayableKeys) keep.Add(k);
                     return keep.Reverse().ToArray();
                 default:
                     return null;

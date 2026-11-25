@@ -33,7 +33,9 @@ namespace NeoBuzz.Dither
             var noise = Layout.Column(
                 new ParamDropdown(ctx, P.Dither, "Dither", 96),
                 Layout.Gap(1, 4),
-                new ParamDropdown(ctx, P.Shaping, "Shaping", 96));
+                new ParamDropdown(ctx, P.Shaping, "Shaping", 96),
+                Layout.Gap(1, 4),
+                Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)));
 
             var graph = new GraphView(260, 196, (g, r) => DrawNoise(g, r, ctx), animate: false);
 

@@ -15,16 +15,9 @@ namespace ReBuzz.Core.Notes
     /// write them (song_notes_read, song_notes_write); every change is a step on the song's undo
     /// history and marks the song modified.
     ///
-    /// Saved in a "SongNotes" subsection, in .bmx and .bmxml alike; upstream ReBuzz skips it.
-    /// Opening a song brings in the notes it had elsewhere, marked as imported, and leaves where
-    /// they came from as it is, so the song saves back unchanged but for this subsection:
-    /// <list type="bullet">
-    /// <item>each Info machine's text (WDE's rich-text notes machine, <see cref="InfoMachineState"/>):
-    /// read from the placeholder's kept data off Windows, from the machine's state on Windows;</item>
-    /// <item>the song's own info text (Buzz's "BLAH" section, ReBuzz's Info view), as plain text.</item>
-    /// </list>
-    /// What was imported is remembered (a hash of each text, as Markdown) in the subsection, so it comes
-    /// in once; a text changed since (in ReBuzz on Windows) comes in again, below the notes.
+    /// Saved in a "SongNotes" subsection of the .nbl song. Opening a song brings in the song's own
+    /// info text (the "BLAH" core section), as plain text, marked as imported, and leaves it as it is.
+    /// What was imported is remembered (a hash of the text, as Markdown) in the subsection, so it comes in once.
     /// </summary>
     internal sealed class SongNotesStore
     {
@@ -246,42 +239,13 @@ namespace ReBuzz.Core.Notes
             text = sb.ToString();
         }
 
-        /// <summary>The song's notes kept elsewhere: its info text, then each Info machine's, in machine order.</summary>
+        /// <summary>The song's notes kept elsewhere: its info text.</summary>
         internal List<(Source Source, string Markdown)> Sources()
         {
             var list = new List<(Source, string)>();
             string info = Normalize(buzz.InfoText ?? "").Trim('\n');
             if (info.Trim().Length > 0)
                 list.Add((new Source(Source.SongInfo, null, Hash(info), "Song info"), PlainToMarkdown(info)));
-            foreach (var m in buzz.SongCore.MachinesList)
-            {
-                if (m.Hidden || m.DLL?.Name != InfoMachineState.Gear) continue;
-                byte[] data;
-                try
-                {
-                    data = m.Data;
-                }
-                catch (Exception e)
-                {
-                    buzz.DCWriteLine($"Song notes: the Info machine {m.Name}'s data: {e.Message}", DCLogLevel.Warning);
-                    continue;
-                }
-                var state = InfoMachineState.Read(data);
-                if (state == null || string.IsNullOrWhiteSpace(state.Rtf)) continue;
-                string markdown;
-                try
-                {
-                    markdown = state.ToMarkdown();
-                }
-                catch (Exception e)
-                {
-                    buzz.DCWriteLine($"Song notes: the Info machine {m.Name}'s text: {e.Message}", DCLogLevel.Warning);
-                    continue;
-                }
-                // Known by its text as Markdown: Info's box may write the same notes as RTF a little differently
-                // each time ReBuzz on Windows saves it, and that mustn't bring them in again.
-                list.Add((new Source(Source.InfoMachine, m.Name, Hash(markdown), $"Info machine “{m.Name}”"), markdown));
-            }
             return list;
         }
 

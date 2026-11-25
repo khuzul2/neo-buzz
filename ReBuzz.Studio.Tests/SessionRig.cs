@@ -1,6 +1,6 @@
 // Fork (docs/specs/studio-mvp.md S5): a song for the Session View's tests on the shared engine:
 // Neo machines as tracks, the view in a window, simulated input, and the engine's ticks driven
-// as ReBuzzTests drives them (a WorkManager filling buffers; no audio device runs here).
+// as the engine drives them (a WorkManager filling buffers; no audio device runs here).
 
 using Avalonia;
 using Avalonia.Controls;
@@ -41,7 +41,7 @@ namespace ReBuzz.Studio.Tests
             Core = Studio.Host.Core;
             // Launches are timed to what is heard: the rendered position plus the wall-clock time
             // since that render. Rendering here isn't in real time, so time stands still between
-            // renders (as ReBuzzTests' FreezeClock), and quantization lands where the ticks say.
+            // renders (as FreezeClock), and quantization lands where the ticks say.
             SessionCore.Timestamp = () => 1_000_000;
             NewSong();
             masterVolume = Core.MasterVolume;

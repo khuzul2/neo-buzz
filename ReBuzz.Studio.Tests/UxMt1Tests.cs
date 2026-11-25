@@ -284,7 +284,6 @@ namespace ReBuzz.Studio.Tests
 
                 var files = new List<string>();
                 files.AddRange(Directory.GetFiles(Path.Combine(RepoRoot(), "Other", "Templates", "Songs"), "*.nbl"));
-                files.AddRange(Directory.EnumerateFiles(Path.Combine(RepoRoot(), "ExternalMachines", "source"), "*.bmx", SearchOption.AllDirectories));
                 foreach (var file in files.OrderBy(f => f))
                 {
                     Core.Modified = false;

@@ -27,7 +27,7 @@ namespace NeoBuzz.AudioToMidi
     }
 
     [MachineDecl(Name = "Neo Audio to MIDI", ShortName = "Audio MIDI", Author = "neo-buzz", MaxTracks = 0, InputCount = 1, OutputCount = 1)]
-    public partial class NeoAudioToMidiMachine : NeoMachineBase, IBuzzMachine, IMachineMidiSource
+    public partial class NeoAudioToMidiMachine : NeoMachineBase, IBuzzMachine, IMachineMidiSource, INoteCapable, INoteLegacyTarget
     {
         public static readonly string[] DrumNames = { "Kick", "Snare", "Hat" };
 
@@ -57,7 +57,7 @@ namespace NeoBuzz.AudioToMidi
         {
             get
             {
-                state.Target = router.TargetName;
+                state.Target = "";      // the target is a note wire now (docs/specs/note-wires.md); songs saved before carry it, and the host turns it into a wire once
                 state.Device = router.DeviceName;
                 state.Training = Engine.Classifier.Count > 0 ? Engine.Classifier.Serialize() : "";
                 return state;
@@ -66,13 +66,18 @@ namespace NeoBuzz.AudioToMidi
             {
                 state = value ?? new NeoAudioToMidiState();
                 // A preset carries the calibration, not where the MIDI goes: an empty Target or Device leaves the routing as it is.
-                if (!string.IsNullOrEmpty(state.Target)) SetTarget(state.Target);
+                router.SetLegacyTarget(state.Target);
                 if (!string.IsNullOrEmpty(state.Device)) SetDevice(state.Device);
                 if (string.IsNullOrEmpty(state.Training)) Engine.Classifier.Clear();
                 else if (!Engine.Classifier.Deserialize(state.Training)) Engine.Classifier.Clear();
                 StateChanged?.Invoke();
             }
         }
+
+        // Note wires: this machine sends notes, takes none.
+        bool INoteCapable.AcceptsNotes => false;
+        bool INoteCapable.SendsNotes => true;
+        public string TakeLegacyTarget() => router.TakeLegacyTarget();
 
         public string TargetName => router.TargetName;
         public string DeviceName => router.DeviceName;
@@ -237,7 +242,7 @@ namespace NeoBuzz.AudioToMidi
         }
     }
 
-#if WINDOWS || AVALONIA   // the editor on WPF, or Avalonia in the studio (studio-mvp.md S1); none headless
+#if AVALONIA   // the editor: Avalonia in the studio (studio-mvp.md S1); none headless
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {

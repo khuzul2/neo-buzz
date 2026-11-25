@@ -3,7 +3,7 @@ using NeoBuzz.Analysis;
 using NeoBuzz.Eq;
 using ReBuzz.Agent.Audio;
 using static ReBuzz.AgentTests.Signals;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {

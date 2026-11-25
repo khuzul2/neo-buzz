@@ -21,6 +21,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="270" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -47,6 +48,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -73,6 +75,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -99,6 +102,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -125,6 +129,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -151,6 +156,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -177,6 +183,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -203,6 +210,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -229,6 +237,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -255,6 +264,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="270" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -281,6 +291,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -307,6 +318,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -333,6 +345,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -359,6 +372,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -385,6 +399,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="300" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -411,6 +426,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -437,6 +453,7 @@
         <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="180" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

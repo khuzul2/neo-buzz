@@ -26,7 +26,7 @@ using ReBuzz.Studio.Shell;
 using ReBuzz.Studio.Views.Device;
 using ReBuzz.Studio.Views.Modulation;
 using ReBuzz.Studio.Views.Samples;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.Studio.Tests
 {

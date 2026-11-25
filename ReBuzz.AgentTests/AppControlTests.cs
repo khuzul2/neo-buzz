@@ -5,7 +5,7 @@ using ReBuzz.Agent.Audio;
 using ReBuzz.Agent.Guides;
 using ReBuzz.Agent.Mcp;
 using static ReBuzz.Agent.Mcp.Schema;
-using ReBuzzTests.Automation;
+using NeoBuzz.TestSupport;
 
 namespace ReBuzz.AgentTests
 {
@@ -184,7 +184,7 @@ namespace ReBuzz.AgentTests
             public string SettingsHistoryFile => Path.Combine(Folder, "settings-history.jsonl");
             public IMidiBindings Midi => MidiFake;
             public IReadOnlyList<string> RecentSongs() => Recent;
-            public AppFacts Facts() => new("0.8 (K3)", Mode, "Test OS x64", 99, "demo.bmxml", true, 120, false);
+            public AppFacts Facts() => new("0.8 (K3)", Mode, "Test OS x64", 99, "demo.nbl", true, 120, false);
             public IViewControl? View => ViewFake;
             public IAudioControl? Audio => AudioFake;
         }
@@ -668,15 +668,15 @@ namespace ReBuzz.AgentTests
         {
             var (s, app) = Make();
             Assert.That(Call(s, "song_recent").Text, Does.Contain("No recent"));
-            string here = Path.Combine(app.Folder, "here.bmxml");
+            string here = Path.Combine(app.Folder, "here.nbl");
             File.WriteAllText(here, "x");
-            app.Recent = new List<string> { here, Path.Combine(app.Folder, "gone.bmxml") };
+            app.Recent = new List<string> { here, Path.Combine(app.Folder, "gone.nbl") };
             var r = Call(s, "song_recent");
             var songs = r.Data["songs"]!.AsArray();
             Assert.That(songs[0]!["exists"]!.GetValue<bool>(), Is.True);
             Assert.That(songs[0]!["modified"], Is.Not.Null);
             Assert.That(songs[1]!["exists"]!.GetValue<bool>(), Is.False);
-            Assert.That(songs[1]!["name"]!.GetValue<string>(), Is.EqualTo("gone.bmxml"));
+            Assert.That(songs[1]!["name"]!.GetValue<string>(), Is.EqualTo("gone.nbl"));
             Assert.That(Call(s, "song_recent", Args(("limit", 1))).Data["songs"]!.AsArray().Count, Is.EqualTo(1));
         }
 

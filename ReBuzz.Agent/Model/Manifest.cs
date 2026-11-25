@@ -14,7 +14,7 @@
 // evidence it rests on, and per parameter a plain-English name, a role (ManifestRoles) and a mapping
 // that is exact (no unit read from a description alone). It lives where the draft did and replaces it.
 // U6 (§12.13): a manifest generated from a machine's source ("status": "generated", tools/source_manifests.py)
-// for the Pedal effects and ReBuzz's own machines: names, ranges and texts from its [ParameterDecl]s, units and
+// for the studio's own machines: names, ranges and texts from its [ParameterDecl]s, units and
 // mappings from the code that uses them, exact; it keeps the profile's measurements as a curated one does.
 
 using System;
@@ -62,7 +62,7 @@ namespace ReBuzz.Agent.Model
         /// <summary>What the profiler measured behind <see cref="SuggestedRole"/> ("min → max: the −3 dB corner 120 Hz → 9.8 kHz").</summary>
         public string RoleEvidence { get; init; } = "";
         /// <summary>
-        /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0.1 ms" for
+        /// False when the machine's own value texts don't say what it does (an Attack that reads "0.1 ms" for
         /// 10 ms: a descriptor that scales the raw value): its values are read and written through the mapping only.
         /// </summary>
         public bool OwnTexts { get; init; } = true;
@@ -71,7 +71,7 @@ namespace ReBuzz.Agent.Model
     /// <summary>
     /// The roles a curated manifest gives its parameters (mcp-server.md §12.2, §12.9): what a parameter does,
     /// the same word on every machine, so a cutoff maps to a cutoff and a wet level to a wet level
-    /// (machine_replace, U5). Dotted: area, then what.
+    /// (the manifests, U5). Dotted: area, then what.
     /// </summary>
     public static class ManifestRoles
     {
@@ -211,6 +211,49 @@ namespace ReBuzz.Agent.Model
     }
 
     /// <summary>
+    /// One playable key a manifest declares (<c>note_map</c>, docs/specs/daw-modes.md §8.9): a key and an optional name and group, as
+    /// <c>{"key": 36, "name": "Kick", "group": "Drums"}</c>; <c>"key": "C2"</c> names a pitch the way the agent writes one, and
+    /// <c>"to": 48</c> makes it a range (36 to 48, all playable, unnamed unless a name is given).
+    /// </summary>
+    public sealed class ManifestNoteKey
+    {
+        public int Key { get; init; }
+        public string Name { get; init; } = "";
+        public string Group { get; init; } = "";
+        /// <summary>A colour hint as ARGB; 0: none ("color": "#E0457B").</summary>
+        public uint Color { get; init; }
+
+        /// <summary>The keys a <c>note_map</c> array lists, in order, ranges expanded; entries that name no valid key are left out.</summary>
+        internal static IReadOnlyList<ManifestNoteKey> ParseList(JsonNode node)
+        {
+            var keys = new List<ManifestNoteKey>();
+            if (node is not JsonArray list) return keys;
+            foreach (var item in list)
+            {
+                if (item is not JsonObject o) continue;
+                int from = KeyOf(o["key"]);
+                if (from < 0 || from > 127) continue;
+                int to = o["to"] == null ? from : KeyOf(o["to"]);
+                if (to < from || to > 127) to = from;
+                string name = ((string)o["name"] ?? "").Trim(), group = ((string)o["group"] ?? "").Trim();
+                uint color = 0;
+                string hex = ((string)o["color"] ?? "").TrimStart('#');
+                if (hex.Length == 6 && uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out uint rgb)) color = 0xFF000000u | rgb;
+                for (int k = from; k <= to; k++)
+                    keys.Add(new ManifestNoteKey { Key = k, Name = to == from ? name : "", Group = group, Color = color });
+            }
+            return keys;
+        }
+
+        static int KeyOf(JsonNode v)
+        {
+            if (v is JsonValue n && n.TryGetValue<int>(out int i)) return i;
+            if (v is JsonValue s && s.TryGetValue<string>(out string text) && Pitch.TryParse(text, out int parsed, out _)) return parsed;
+            return -1;
+        }
+    }
+
+    /// <summary>
     /// What the profiler found wrong (drafts): "ok", "warn", "unhealthy" or "needs_window", with the
     /// problems. machine-safety.md §3.1: unhealthy machines that diverge (NaN, infinity, a runaway
     /// level) say so; hot ones (loud but steady) are warnings; a managed machine that can't be built
@@ -267,6 +310,12 @@ namespace ReBuzz.Agent.Model
         public string Type { get; init; } = "";
         /// <summary>Note input and pitch convention (generators); null when the manifest doesn't say (Neo: MIDI, A4 = 440 Hz).</summary>
         public ManifestNotes Notes { get; init; }
+        /// <summary>
+        /// The keys that make a sound, declared in the manifest (<c>note_map</c>, docs/specs/daw-modes.md §8.9): a machine with a fixed
+        /// map says it here instead of in code. A profiled drum map (<c>notes.map</c>) counts as one when there is no <c>note_map</c>.
+        /// Empty: it declares none.
+        /// </summary>
+        public IReadOnlyList<ManifestNoteKey> NoteMap { get; init; } = Array.Empty<ManifestNoteKey>();
         /// <summary>The profiler's health verdict; null when not profiled.</summary>
         public ManifestHealth Health { get; init; }
         /// <summary>Curated: what to know before using it ("track 0 only", "needs a wave", "stereo in, mono out").</summary>
@@ -274,8 +323,6 @@ namespace ReBuzz.Agent.Model
         /// <summary>Curated: what its claims rest on (its source files, documentation, the profile, its value texts).</summary>
         public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
         public bool IsCurated => Status == "curated";
-        /// <summary>Fork (docs/specs/clips.md §5.7, CU3): the machine's clips can be edited in the Studio. Absent: an old machine, whose clips are view only (they keep playing).</summary>
-        public bool ClipEdit { get; init; }
         /// <summary>U6: generated from the machine's source (its parameter declarations and the code that uses them), not profiled guesswork.</summary>
         public bool IsGeneratedFromSource => Status == "generated";
 
@@ -287,7 +334,7 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// The entry for the machine's parameter at <paramref name="index"/> in its group, named <paramref name="name"/>:
-        /// by name, and among parameters that share a name (FSM Infector's " - Decay"), the one at that index.
+        /// by name, and among parameters that share a name (a " - Decay"), the one at that index.
         /// </summary>
         public ManifestParameter FindAt(bool track, int index, string name)
         {
@@ -336,6 +383,10 @@ namespace ReBuzz.Agent.Model
                     Polyphony = (int?)n["polyphony"] ?? 0,
                     Map = ManifestNotes.ParseMap(n["map"]),
                 };
+            // A declared note_map, else the profiled drum map (notes.map) as names on keys.
+            IReadOnlyList<ManifestNoteKey> noteMap = ManifestNoteKey.ParseList(root["note_map"]);
+            if (noteMap.Count == 0 && notes?.Map.Count > 0)
+                noteMap = notes.Map.Select(m => new ManifestNoteKey { Key = m.Key, Name = m.Name }).ToList();
             ManifestHealth health = null;
             if (root["health"] is JsonObject h)
                 health = new ManifestHealth
@@ -359,9 +410,9 @@ namespace ReBuzz.Agent.Model
                 Parameters = parameters,
                 TrackParameters = trackParameters,
                 Status = (string)root["status"] ?? "",
-                ClipEdit = (bool?)root["clipEdit"] ?? false,
                 Type = (string)root["type"] ?? "",
                 Notes = notes,
+                NoteMap = noteMap,
                 Health = health,
                 Quirks = Strings(root["quirks"]),
                 Evidence = Strings(root["evidence"]),
