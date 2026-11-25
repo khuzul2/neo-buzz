@@ -20,6 +20,10 @@ namespace NeoBuzz.Chord
         static readonly bool[] IsBlack = { false, true, false, true, false, false, true, false, true, false, true, false };
         static readonly string[] Names = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
+        static readonly NeoColor LabelOnLit = NeoColor.FromRgb(0x14, 0x16, 0x1C), LabelOnKey = NeoColor.FromRgb(0x44, 0x4A, 0x58);
+        // The keys are ivory and ebony in both themes.
+        static NeoChordEditor() => Tokens.KeepAsIs(WhiteKey, BlackKey, KeyEdge, LabelOnLit, LabelOnKey);
+
         const int Octaves = 3, WhiteKeys = 7 * Octaves;
         const double KeyW = 19, KeyboardHeight = 74, BlackH = 44;
 
@@ -51,7 +55,7 @@ namespace NeoBuzz.Chord
             var board = S("Chord sent", keys);
 
             var voicing = S("Voicing", Layout.Column(
-                Layout.Row(new ParamChoice(ctx, P.Spread, "Spread", 54), Layout.Gap(10), new ParamChoice(ctx, P.Bass, "Bass note", 70)),
+                Layout.Row(new ParamChoice(ctx, P.Spread, "Spread", 54), Layout.Gap(10), new ParamChoice(ctx, P.Bass, "Bass note", 88)),
                 Layout.Gap(1, 6),
                 Layout.Row(new ParamKnob(ctx, P.Inversion, diameter: 44), new ParamKnob(ctx, P.Octave, diameter: 44), new ParamKnob(ctx, P.Voices, diameter: 44))));
             var velocity = S("Velocity", Layout.Row(
@@ -97,7 +101,7 @@ namespace NeoBuzz.Chord
                 var cell = new NeoRect(r.X + 1 + index * KeyW, top, KeyW - 1, KeyboardHeight);
                 bool on = e != null && Lit(e, note), ring = e != null && e.IsSounding(note);
                 g.Rect(cell, on ? (ring ? sounding : lit) : WhiteKey, new NeoStroke(KeyEdge, 1, false), 2);
-                if (pc == 0) g.Text("C" + (note / 12 - 1), cell.X + KeyW / 2, cell.Bottom - 14, 8, on ? NeoColor.FromRgb(0x14, 0x16, 0x1C) : NeoColor.FromRgb(0x44, 0x4A, 0x58), false, NeoAlign.Center);
+                if (pc == 0) g.Text("C" + (note / 12 - 1), cell.X + KeyW / 2, cell.Bottom - 14, 8, on ? LabelOnLit : LabelOnKey, false, NeoAlign.Center);
                 index++;
             }
             // Then the black ones across them.
