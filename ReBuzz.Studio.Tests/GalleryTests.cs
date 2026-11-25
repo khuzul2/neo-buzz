@@ -1660,7 +1660,11 @@ namespace ReBuzz.Studio.Tests
                     prefs.ShowPage("Audio");
                     Settle();
                     var audio = prefs.Page<AudioPage>();
-                    audio.AutoWarpButtons[0].BringIntoView();
+                    if (prefs.Selected is ScrollViewer sv && sv.Content is Visual content)
+                    {
+                        var at = audio.AutoWarpButtons[0].TranslatePoint(new Point(0, 0), content);
+                        if (at != null) sv.Offset = new Vector(0, System.Math.Max(0, at.Value.Y - 260));
+                    }
                     Settle();
                     Shot(prefs, "304-prefs-autowarp", "Preferences ▸ Audio ▸ Warping (AW5): what a long file gets on import (Off, Follow the beat, To grid) and the defaults To grid starts from; any clip can be auto-warped later from its right-click menu.", $"{Product.Name} ▸ Preferences… (⌘,) ▸ Audio ▸ Warping.", notes: Devices);
                 });
@@ -2747,18 +2751,13 @@ namespace ReBuzz.Studio.Tests
                     CloseAllPopups();
                     var page = (ReBuzz.Studio.Views.Audio.AudioClipPage)window.Detail.AudioPage;
                     var wave = page.Wave;
-                    Point Px(double x) => Centre(wave, window, 0, 0.6) + new Vector(x - wave.Bounds.Width / 2 * 0, 0);
-                    var busy = Enumerable.Range(0, wave.Markers.Count).Select(k => wave.MarkerX(k)).Concat(layout.TransientsOf(inSession).Select(t => wave.TransientX(t))).ToList();
-                    var clear = Enumerable.Range(40, (int)wave.Bounds.Width - 80).Where(x => busy.All(m => Math.Abs(m - x) > 14)).ToList();
-                    Assert.That(clear.Count, Is.GreaterThan(2), "free places on the waveform");
-                    double x1 = clear[0], x2 = clear.Last(x => x > x1 + 120 || x == clear[^1]);
-                    var from = Px(x1);
-                    window.MouseMove(from); window.MouseDown(from, MouseButton.Left);
-                    for (int i = 1; i <= 4; i++) window.MouseMove(from + (Px(x2) - from) * (i / 4.0), RawInputModifiers.LeftMouseButton);
-                    window.MouseUp(Px(x2), MouseButton.Left);
+                    wave.SelectRange(1.6, 5.2);
                     Settle();
+                    var busy = Enumerable.Range(0, wave.Markers.Count).Select(k => wave.MarkerX(k)).ToList();
+                    double rx = Enumerable.Range((int)wave.X(2.0), (int)(wave.X(5.0) - wave.X(2.0))).Select(x => (double)x).Where(x => busy.All(m => Math.Abs(m - x) > 8)).DefaultIfEmpty(wave.X(3.0)).First();
+                    Point Px(double x) => Centre(wave, window, 0, 0.6) + new Vector(x, 0);
                     Assert.That(wave.Range, Is.Not.Null, "a range is selected");
-                    Click(window, Px(x2), MouseButton.Right);
+                    Click(window, Px(rx), MouseButton.Right);
                     menus.Add(wave.LastMenu!);
                     Hover(ItemOf(wave.LastMenu!, "Auto-warp selection"));
                     Shot(window, "469-autowarp-range-menu", "A range selected on the waveform (AW5): the menu reads Auto-warp selection ▸ Follow the beat, To grid, Options…; only the markers inside the range change, its two ends are pinned, one undo step. The toolbar hint says what the selection offers.", "Drag on the waveform to select a range, then right-click it.");
