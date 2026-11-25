@@ -141,7 +141,7 @@ namespace NeoBuzz.MachineTests
         public void StepsWithTiesAndAccentsHaveTheRightLengthsAndVelocities()
         {
             // A row of eight steps at 1/8: On, Tie, Off, Accent(+7), On(-12), Tie, Tie, Off. Gate 80 %.
-            var rig = Make(11, rateIndex: 3).Set(P.Gate, 80).Set(P.VelMode, 2).Set(P.Velocity, 81).Set(P.AccentLevel, 50);
+            var rig = Make(11, rateIndex: 3).Set(P.Gate, 80).Set(P.VelMode, 2).Set(P.FixedVel, 81).Set(P.AccentLevel, 50);
             rig.Row("NTOANTTO", new[] { 0, 0, 0, 7, -12, 0, 0, 0 });
             rig.NoteOn(0, 48);
             rig.RunTo(4 * 4 * 2 + 1);
@@ -165,7 +165,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void StepsTransposeAndAccentLevelsFollowTheirSettings()
         {
-            var rig = Make(11).Set(P.VelMode, 1).Set(P.Velocity, 70);
+            var rig = Make(11).Set(P.VelMode, 1).Set(P.FixedVel, 70);
             rig.Row("AN", new[] { 0, 0 });
             rig.NoteOn(0, 60);
             rig.RunTo(8);
@@ -175,7 +175,7 @@ namespace NeoBuzz.MachineTests
             asPlayed.NoteOn(0, 60, 33);
             asPlayed.RunTo(8);
             Assert.That(asPlayed.Ons.Take(2).Select(r => r.Vel), Is.EqualTo(new[] { 33, 33 }), "As played keeps the played velocity");
-            var full = Make(11).Set(P.VelMode, 2).Set(P.Velocity, 60).Set(P.AccentLevel, 100);
+            var full = Make(11).Set(P.VelMode, 2).Set(P.FixedVel, 60).Set(P.AccentLevel, 100);
             full.Row("AN");
             full.NoteOn(0, 60);
             full.RunTo(8);
@@ -645,7 +645,7 @@ namespace NeoBuzz.MachineTests
             Assert.That((t[P.FreeMs].Min, t[P.FreeMs].Max), Is.EqualTo((20, 2000)));
             Assert.That((t[P.Swing].Min, t[P.Swing].Max), Is.EqualTo((0, 75)));
             Assert.That((t[P.Gate].Min, t[P.Gate].Max), Is.EqualTo((5, 200)));
-            Assert.That((t[P.Velocity].Min, t[P.Velocity].Max), Is.EqualTo((1, 127)));
+            Assert.That((t[P.FixedVel].Min, t[P.FixedVel].Max), Is.EqualTo((1, 127)));
             Assert.That((t[P.HumTime].Min, t[P.HumTime].Max), Is.EqualTo((0, 20)));
             Assert.That((t[P.HumVel].Min, t[P.HumVel].Max), Is.EqualTo((0, 30)));
             Assert.That(t[P.Transpose].Value(t[P.Transpose].Min), Is.EqualTo(-24));

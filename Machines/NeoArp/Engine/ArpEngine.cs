@@ -250,7 +250,7 @@ namespace NeoBuzz.Arp
             repeats = Math.Clamp((int)v.Value(P.Repeats), 1, 4);
             transpose = (int)v.Value(P.Transpose);
             velMode = Math.Clamp(v.Choice(P.VelMode), 0, 2);
-            fixedVel = Math.Clamp((int)v.Value(P.Velocity), 1, 127);
+            fixedVel = Math.Clamp((int)v.Value(P.FixedVel), 1, 127);
             accentLevel = Math.Clamp((int)v.Value(P.AccentLevel), 0, 100);
             retrig = Math.Clamp(v.Choice(P.Retrigger), 0, 2);
             stepCount = Math.Clamp((int)v.Value(P.StepLen), 1, Steps);

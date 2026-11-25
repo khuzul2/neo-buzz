@@ -20,7 +20,7 @@ namespace NeoBuzz.Arp
         public const int Swing = 9;
         public const int Gate = 10;
         public const int VelMode = 11;
-        public const int Velocity = 12;
+        public const int FixedVel = 12;
         public const int AccentLevel = 13;
         public const int HumTime = 14;
         public const int HumVel = 15;
@@ -81,7 +81,7 @@ namespace NeoBuzz.Arp
             new ParamDef(P.Swing, "swing", "Swing", 0, 75, 0, MapKind.Int, a: 0, b: 0, unit: "%", group: "Rate", description: "Delays every second step by up to 75 % of a step", how: "Delays every second step by a share of a step, up to 75 %.", sound: "The arpeggio takes a shuffled, off-beat lilt."),
             new ParamDef(P.Gate, "gate", "Gate", 5, 200, 80, MapKind.Int, a: 0, b: 0, unit: "%", group: "Gate", description: "How long each note lasts, as a share of a step (5 … 200 %)", how: "Sets how long each note sounds as a share of one step; above 100 % the notes overlap.", sound: "Low values are short and detached; 100 % just touches the next note; higher values run together, legato."),
             new ParamDef(P.VelMode, "velocity_mode", "Velocity", 0, 2, 0, MapKind.Enum, names: new[] { "As played", "Fixed", "Accent" }, group: "Velocity", description: "Where the velocity of each note comes from", how: "Chooses the velocity: as you played each key, one fixed value, or a fixed value with the accented steps louder.", sound: "As played keeps your touch; Fixed makes every note equally loud; Accent makes the marked steps stand out."),
-            new ParamDef(P.Velocity, "fixed_velocity", "Fixed velocity", 1, 127, 100, MapKind.Int, a: 0, b: 0, group: "Velocity", description: "The velocity of Fixed and Accent modes (1 … 127)", how: "Sets the velocity used by the Fixed and Accent modes.", sound: "Higher values play every note harder and brighter on most instruments."),
+            new ParamDef(P.FixedVel, "fixed_velocity", "Fixed velocity", 1, 127, 100, MapKind.Int, a: 0, b: 0, group: "Velocity", description: "The velocity of Fixed and Accent modes (1 … 127)", how: "Sets the velocity used by the Fixed and Accent modes.", sound: "Higher values play every note harder and brighter on most instruments."),
             new ParamDef(P.AccentLevel, "accent_level", "Accent", 0, 100, 60, MapKind.Int, a: 0, b: 0, unit: "%", group: "Velocity", description: "How far an accented step rises above the fixed velocity, toward 127", how: "Sets how far an accented step lifts the velocity from the fixed value toward 127 (Accent mode, Steps pattern).", sound: "Higher values make the accented steps hit harder."),
             new ParamDef(P.HumTime, "humanize_time", "Humanize time", 0, 20, 0, MapKind.Int, a: 0, b: 0, unit: "ms", group: "Velocity", description: "Random lateness of each note, up to this many milliseconds", how: "Delays each note by a random time up to this many milliseconds, the same every time the song is played.", sound: "A little looseness takes the machine-like edge off the pattern."),
             new ParamDef(P.HumVel, "humanize_velocity", "Humanize velocity", 0, 30, 0, MapKind.Int, a: 0, b: 0, unit: "%", group: "Velocity", description: "Random change of each note's velocity, up to this share", how: "Changes each note's velocity by a random amount up to this share, the same every time the song is played.", sound: "A little variation makes repeated notes feel played, not stamped."),

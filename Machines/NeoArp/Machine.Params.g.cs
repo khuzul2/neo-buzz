@@ -44,7 +44,7 @@ namespace NeoBuzz.Arp
         public int VelMode { get => Values[P.VelMode]; set => Values.Set(P.VelMode, value); }
 
         [ParameterDecl(Name = "Fixed velocity", Description = "The velocity of Fixed and Accent modes (1 … 127)", MinValue = 1, MaxValue = 127, DefValue = 100)]
-        public int Velocity { get => Values[P.Velocity]; set => Values.Set(P.Velocity, value); }
+        public int FixedVel { get => Values[P.FixedVel]; set => Values.Set(P.FixedVel, value); }
 
         [ParameterDecl(Name = "Accent", Description = "How far an accented step rises above the fixed velocity, toward 127", MinValue = 0, MaxValue = 100, DefValue = 60)]
         public int AccentLevel { get => Values[P.AccentLevel]; set => Values.Set(P.AccentLevel, value); }
