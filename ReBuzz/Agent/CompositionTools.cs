@@ -234,7 +234,7 @@ namespace ReBuzz.Agent
                         return result;
                     }, c.Cancellation);
                     var probs = r["problems"]!.AsArray();
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["param"]} automation now {r["events"]} events" +
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\": {r["param"]} automation now {r["events"]} events" +
                                          (r["from"] != null ? $", {r["from"]} → {r["to"]}" : "") + "." +
                                          (probs.Count > 0 ? " " + string.Join(" ", probs.Select(x => x!.GetValue<string>())) : ""), r);
                 },
@@ -289,7 +289,7 @@ namespace ReBuzz.Agent
                         return new JsonObject { ["machine"] = m.Name, ["clip"] = p.Name, ["automation"] = list };
                     }, c.Cancellation);
                     var a = r["automation"]!.AsArray();
-                    return ToolResult.Ok(a.Count == 0 ? $"{r["machine"]} \"{r["pattern"]}\" has no automation." :
+                    return ToolResult.Ok(a.Count == 0 ? $"{r["machine"]} \"{r["clip"]}\" has no automation." :
                         string.Join("; ", a.Select(x => $"{x!["param"]}: " + string.Join(" → ", x["points"]!.AsArray().Take(8).Select(pt => $"{pt!["value"]} at {pt["at"]}")))), r);
                 },
             });

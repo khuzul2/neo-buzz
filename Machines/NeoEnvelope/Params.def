@@ -35,10 +35,10 @@ Curve     "Curve"       0 1000 500 bip                         | Bends the outpu
     sound Negative curves make the movement jump then settle; positive curves hold back then rush.
 
 group Control
-Gate      "Gate"        0 1 0    switch                        | A manual gate in Note mode: on starts the envelope, off releases it (patterns can write it)
+Gate      "Gate"        0 1 0    switch                        | A manual gate in Note mode: on starts the envelope, off releases it (clips can write it)
     id gate
     how Starts the envelope when switched on and releases it when switched off, with no notes needed (Note mode).
-    sound A pattern writing this switch triggers the envelope on its own steps.
+    sound A clip writing this switch triggers the envelope on its own steps.
 Glide     "Write glide" 0 1000 408 time 0.001 1                | Time a target takes to cross its whole range: no write moves further than this allows
     id glide
     how Limits how fast a target may move: it takes at least this long to cross its whole range.

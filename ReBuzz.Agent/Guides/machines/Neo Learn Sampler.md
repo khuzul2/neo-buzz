@@ -40,6 +40,6 @@ Neo Verb for space, Neo EQ to shape a recording, Neo Comp on loops, Neo Delay on
 ## Checklist
 
 - [ ] Read each control's id, range and how/sound with `machine_describe` (ids are snake_case and also taken by `param_set`).
-- [ ] Change one control at a time with `param_set`, play a pattern (`notes_write`), then `render` with probes and check `machine_readings`.
+- [ ] Change one control at a time with `param_set`, play a clip (`notes_write`), then `render` with probes and check `machine_readings`.
 - [ ] `plot` a spectrum to see `Tone` tilt the highs, and `compare` `Vintage Grit` at 0 % and 70 %.
 - [ ] Writes via `param_set` show on the Explain strip with the Agent badge.

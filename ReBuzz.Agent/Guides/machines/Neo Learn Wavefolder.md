@@ -40,6 +40,6 @@ Neo EQ to tame the harmonics, Neo Comp on bass lines, Neo Delay and Neo Verb on 
 ## Checklist
 
 - [ ] Read each control's id, range and how/sound with `machine_describe` (ids are snake_case and also taken by `param_set`).
-- [ ] Change one control at a time with `param_set`, play a pattern (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
+- [ ] Change one control at a time with `param_set`, play a clip (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
 - [ ] `plot` a spectrum of the render to see harmonics grow with `Wavefold`, and `compare` two settings.
 - [ ] Writes via `param_set` show on the Explain strip with the Agent badge.

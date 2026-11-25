@@ -54,7 +54,7 @@ namespace ReBuzz.Agent
                 {
                     var r = await host.Engine("clip_get", false, _ => Get(core, c), c.Cancellation);
                     int lanes = r["lanes"]!.AsArray().Count, notes = r["notes"]!.AsArray().Count;
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\" ({r["length_beats"]} beats): {notes} note(s), {lanes} lane(s).", r);
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\" ({r["length_beats"]} beats): {notes} note(s), {lanes} lane(s).", r);
                 },
             });
         }

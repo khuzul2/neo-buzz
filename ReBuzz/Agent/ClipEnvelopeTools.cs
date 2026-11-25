@@ -71,11 +71,11 @@ namespace ReBuzz.Agent
                     var list = r["envelopes"]!.AsArray();
                     string text = op switch
                     {
-                        "read" => list.Count == 0 ? $"\"{r["pattern"]}\" has no envelopes." :
+                        "read" => list.Count == 0 ? $"\"{r["clip"]}\" has no envelopes." :
                             string.Join("; ", list.Select(e => $"{e!["param"]}: {e["points"]!.AsArray().Count} point(s)" + (e["tracker"] != null ? " + tracker" : ""))),
-                        "write" => $"\"{r["pattern"]}\": {list[0]!["param"]} now {list[0]!["points"]!.AsArray().Count} point(s)." +
+                        "write" => $"\"{r["clip"]}\": {list[0]!["param"]} now {list[0]!["points"]!.AsArray().Count} point(s)." +
                                    (r["problems"]!.AsArray().Count > 0 ? " " + string.Join(" ", r["problems"]!.AsArray().Select(x => x!.GetValue<string>())) : ""),
-                        _ => $"\"{r["pattern"]}\": {(list.Count > 0 ? list[0]!["param"] + " now " + list[0]["points"]!.AsArray().Count + " point(s)" : "cleared")}.",
+                        _ => $"\"{r["clip"]}\": {(list.Count > 0 ? list[0]!["param"] + " now " + list[0]["points"]!.AsArray().Count + " point(s)" : "cleared")}.",
                     };
                     return ToolResult.Ok(text, r);
                 },

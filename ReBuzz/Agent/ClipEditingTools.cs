@@ -97,7 +97,7 @@ namespace ReBuzz.Agent
                         var p = m.Clips.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create the clip \"{name}\".");
                         return new JsonObject { ["machine"] = m.Name, ["clip"] = ClipJson(core, p) };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"Created {r["machine"]}'s clip \"{r["pattern"]!["name"]}\", {r["pattern"]!["length_beats"]} beats.", r);
+                    return ToolResult.Ok($"Created {r["machine"]}'s clip \"{r["clip"]!["name"]}\", {r["clip"]!["length_beats"]} beats.", r);
                 },
             });
 
@@ -157,7 +157,7 @@ namespace ReBuzz.Agent
                         }
                         return new JsonObject { ["machine"] = m.Name, ["clip"] = ClipJson(core, p) };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]}'s clip is now \"{r["pattern"]!["name"]}\".", r);
+                    return ToolResult.Ok($"{r["machine"]}'s clip is now \"{r["clip"]!["name"]}\".", r);
                 },
             });
 
@@ -185,7 +185,7 @@ namespace ReBuzz.Agent
                         var copy = m.Clips.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create \"{name}\".");
                         return new JsonObject { ["machine"] = m.Name, ["from"] = p.Name, ["clip"] = ClipJson(core, copy) };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"Copied {r["machine"]}'s \"{r["from"]}\" to \"{r["pattern"]!["name"]}\" ({r["pattern"]!["notes"]} notes).", r);
+                    return ToolResult.Ok($"Copied {r["machine"]}'s \"{r["from"]}\" to \"{r["clip"]!["name"]}\" ({r["clip"]!["notes"]} notes).", r);
                 },
             });
 
@@ -280,7 +280,7 @@ namespace ReBuzz.Agent
                         };
                     }, c.Cancellation);
                     var probs = r["problems"]!.AsArray();
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": wrote {r["written"]}, cleared {r["removed"]}; now {r["summary"]}." + InputText(r) +
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\": wrote {r["written"]}, cleared {r["removed"]}; now {r["summary"]}." + InputText(r) +
                                          (probs.Count > 0 ? " Problems: " + string.Join(" ", probs.Select(x => x!.GetValue<string>())) : ""), r);
                 },
             });
@@ -335,7 +335,7 @@ namespace ReBuzz.Agent
                             ["notes"] = new JsonArray(notes.Select(n => (JsonNode)NoteList.ToJson(n, tpb)).ToArray()),
                         };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\" ({r["length_beats"]} beats): {r["summary"]}." + InputText(r), r);
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\" ({r["length_beats"]} beats): {r["summary"]}." + InputText(r), r);
                 },
             });
 
@@ -445,7 +445,7 @@ namespace ReBuzz.Agent
                         };
                     }, c.Cancellation);
                     var lines = r["lanes"]!.AsArray().Select(l => $"{l!["machine"]}: " + (l["events"]!.AsArray().Count == 0 ? "empty"
-                        : string.Join(", ", l["events"]!.AsArray().Select(e => $"{e!["pattern"] ?? e["event"]} at {e["at"]}"))));
+                        : string.Join(", ", l["events"]!.AsArray().Select(e => $"{e!["clip"] ?? e["event"]} at {e["at"]}"))));
                     var bars = r["meter"]!.AsArray();
                     string meterText = bars.Count <= 1 ? "" : " Bars: " + string.Join(", ", bars.Select(b => $"{b!["bar_beats"]} beats from beat {b["from_beats"]}")) + ".";
                     return ToolResult.Ok($"Song end at beat {r["song_end_beats"]}.{meterText} " + (r["lanes"]!.AsArray().Count == 0 ? "No lanes yet." : string.Join("; ", lines)), r);
@@ -527,7 +527,7 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var placed = r["placed_at"]!.AsArray().Select(x => x!.GetValue<double>()).ToList();
                     var notesText = r["notes"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
-                    return ToolResult.Ok($"Placed {r["machine"]}'s \"{r["pattern"]}\" at beat{(placed.Count > 1 ? "s" : "")} " +
+                    return ToolResult.Ok($"Placed {r["machine"]}'s \"{r["clip"]}\" at beat{(placed.Count > 1 ? "s" : "")} " +
                                          string.Join(", ", placed.Take(16).Select(NoteList.Fmt)) + (placed.Count > 16 ? ", …" : "") +
                                          $". Song end: beat {r["song_end_beats"]}." + (notesText.Count > 0 ? " Note: " + string.Join("; ", notesText) + "." : ""), r);
                 },

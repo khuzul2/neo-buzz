@@ -28,7 +28,7 @@ namespace NeoBuzz.EnvelopeMachine
         [ParameterDecl(Name = "Curve", Description = "Bends the output: negative eases out (fast start), positive eases in (slow start)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Curve { get => Values[P.Curve]; set => Values.Set(P.Curve, value); }
 
-        [ParameterDecl(Name = "Gate", Description = "A manual gate in Note mode: on starts the envelope, off releases it (patterns can write it)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "Gate", Description = "A manual gate in Note mode: on starts the envelope, off releases it (clips can write it)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Gate { get => Values[P.Gate]; set => Values.Set(P.Gate, value); }
 
         [ParameterDecl(Name = "Write glide", Description = "Time a target takes to cross its whole range: no write moves further than this allows", MinValue = 0, MaxValue = 1000, DefValue = 408)]

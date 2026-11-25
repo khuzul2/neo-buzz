@@ -213,7 +213,7 @@ namespace ReBuzz.Agent
                         return o;
                     }, c.Cancellation);
                     var clipJson = (JsonObject)r["settings"]!;
-                    return ToolResult.Ok($"Imported {Path.GetFileName(path)} as \"{r["pattern"]}\" on {r["machine"]}" +
+                    return ToolResult.Ok($"Imported {Path.GetFileName(path)} as \"{r["clip"]}\" on {r["machine"]}" +
                         (r["slot"] != null ? $", scene {r["slot"]}" : "") + (r["at_beats"] != null ? $", arrangement beat {r["at_beats"]}" : "") +
                         $": {clipJson["audio"]?["seconds"]} s, {clipJson["tempo_bpm"]} BPM, {clipJson["length_beats"]} beats, {clipJson["warp"]}.", r);
                 },
@@ -241,7 +241,7 @@ namespace ReBuzz.Agent
                         var p = SongModel.Clip(m, c.RequiredString("clip"));
                         return ClipJson(core, Layout(core), m, p);
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, " +
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, " +
                         $"loop {r["loop"]}, {r["length_beats"]} beats.", r);
                 },
             });
@@ -350,7 +350,7 @@ namespace ReBuzz.Agent
                             result["to_grid"] = new JsonObject { ["markers_made"] = g.Made, ["out_of_reach"] = g.OutOfReach, ["quiet_or_sustained"] = g.Gated, ["skipped"] = g.Skipped, ["beats_found"] = g.BeatsFound };
                         return result;
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, {r["length_beats"]} beats." +
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\": {r["warp"]}, {r["tempo_bpm"]} BPM, {r["transpose"]} st {r["detune"]} ct, {r["gain_db"]} dB, {r["length_beats"]} beats." +
                         (r["to_grid"] is JsonObject tg ? $" To grid: {tg["markers_made"]} markers on transients, {tg["out_of_reach"]} out of reach, {tg["quiet_or_sustained"]} in quiet or sustained parts." : ""), r);
                 },
             });

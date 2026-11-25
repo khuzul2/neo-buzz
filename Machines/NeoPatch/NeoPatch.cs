@@ -187,7 +187,7 @@ namespace NeoBuzz.Patch
                     ExecuteDelegate = _ => NeoAbout.Show(
                         "Neo Patch — a modular synth inside one machine: oscillators (band-limited, wavetable, sample, noise), envelopes, LFOs, filters, shapers, delays, " +
                         "mixers and math nodes wired together (up to 128 nodes), sixteen voices that each run their own copy of the patch, global nodes that run once, " +
-                        "and sixteen macros. The patch is saved with the song. Notes from patterns, MIDI and MPE.\n\nPart of neo-buzz (docs/specs/neo-patch.md).", "Neo Patch"),
+                        "and sixteen macros. The patch is saved with the song. Notes from clips, MIDI and MPE.\n\nPart of neo-buzz (docs/specs/neo-patch.md).", "Neo Patch"),
                 },
             },
         };

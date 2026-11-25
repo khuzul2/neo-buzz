@@ -312,7 +312,7 @@ namespace NeoBuzz.Patch
             cv.Rect(m, Palette.Panel, NeoStroke.None);
             cv.Line(m.X, m.Y, m.Right, m.Y, new NeoStroke(Palette.PanelEdge, 1));
             cv.Text("MACROS", 12, m.Y + 6, 10, accent, true);
-            cv.Text("Patterns, automation and MIDI move these; each moves the node controls mapped to it. Click one to see its mappings.", 74, m.Y + 6, 10, Palette.DimText, maxWidth: w - 90);
+            cv.Text("Clips, automation and MIDI move these; each moves the node controls mapped to it. Click one to see its mappings.", 74, m.Y + 6, 10, Palette.DimText, maxWidth: w - 90);
             var g = model.Graph;
             for (int i = 0; i < 16; i++)
             {

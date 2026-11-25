@@ -390,7 +390,7 @@ namespace ReBuzz.Agent
                     {
                         "start" => $"Take {r["take"]} started in scene {r["scene"]}. ",
                         "stop" when r["take"] != null => $"Take {r["take"]} ended with {r["notes"]} notes. ",
-                        "capture" => "Captured: " + string.Join(", ", r["clips"]!.AsArray().Select(x => $"{x!["pattern"]} on {x["machine"]}")) + ". ",
+                        "capture" => "Captured: " + string.Join(", ", r["clips"]!.AsArray().Select(x => $"{x!["clip"]} on {x["machine"]}")) + ". ",
                         _ => "",
                     };
                     return ToolResult.Ok(line + StateLine(r["state"]!.AsObject()), r);

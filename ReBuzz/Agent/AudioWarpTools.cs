@@ -137,7 +137,7 @@ namespace ReBuzz.Agent
                         if (request.Action == WarpRequest.RemoveAll && result != null) o["count"] = result.Count;
                         return o;
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {action}, {((JsonArray)r["markers"]!).Count} markers" + (r["straight"]!.GetValue<bool>() ? " (straight)" : "") + ".", r);
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\": {action}, {((JsonArray)r["markers"]!).Count} markers" + (r["straight"]!.GetValue<bool>() ? " (straight)" : "") + ".", r);
                 },
             });
         }

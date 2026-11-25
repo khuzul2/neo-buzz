@@ -4,7 +4,7 @@
 namespace NeoBuzz.Patch
 class NeoPatchMachine
 tracks 16
-summary Modular synth you build inside one machine: nodes (oscillators, wavetable and sample sources, noise, envelopes, LFOs, filters, shapers, delays, mixers, math) wired together, up to 128 per patch, with 16 voices of polyphony that each run their own copy of the patch and global nodes that run once. Notes come from patterns, MIDI and MPE; sixteen macros move any node setting. Use it for sounds the fixed-architecture synths cannot make: your own FM routings, filter feedback, per-note modulation, a global delay after the voice sum.
+summary Modular synth you build inside one machine: nodes (oscillators, wavetable and sample sources, noise, envelopes, LFOs, filters, shapers, delays, mixers, math) wired together, up to 128 per patch, with 16 voices of polyphony that each run their own copy of the patch and global nodes that run once. Notes come from clips, MIDI and MPE; sixteen macros move any node setting. Use it for sounds the fixed-architecture synths cannot make: your own FM routings, filter feedback, per-note modulation, a global delay after the voice sum.
 import patch .txt | A patch as one line of text (what the machine saves with the song): "neopatch 1;n 1 Keys ...;w ...". It replaces the machine's patch; the parameters stay as they are.
 import sample .wav | A WAV sample (mono or stereo, up to 20 s, kept in the machine state). Sample nodes whose Source is "user" play it.
 
