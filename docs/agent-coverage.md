@@ -131,7 +131,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 
 | Tool | Guides | Calls | Example |
 |---|---|---|---|
-| analyze | 52 | 107 | yes |
+| analyze | 53 | 108 | yes |
 | analyze_mix | 9 | 7 | yes |
 | app_status | 4 | 1 | yes |
 | arrangement_automation | 1 | 0 | yes |
@@ -158,7 +158,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | browser_search | 1 | 1 | yes |
 | clip_envelope | 1 | 0 | yes |
 | clip_get | 2 | 1 | yes |
-| compare | 26 | 12 | yes |
+| compare | 27 | 12 | yes |
 | connect | 8 | 8 | yes |
 | connection_set | 5 | 1 | yes |
 | controller_list | 1 | 1 | yes |
@@ -175,7 +175,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_clone | 1 | 1 | yes |
 | machine_command | 1 | 1 | yes |
 | machine_data_import | 12 | 15 | yes |
-| machine_describe | 38 | 25 | yes |
+| machine_describe | 39 | 26 | yes |
 | machine_find | 2 | 2 | yes |
 | machine_group | 1 | 2 | yes |
 | machine_latency | 2 | 1 | yes |
@@ -184,7 +184,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_pin | 1 | 2 | yes |
 | machine_readings | 50 | 43 | yes |
 | machine_remove | 2 | 0 | yes |
-| machine_set | 9 | 11 | yes |
+| machine_set | 10 | 12 | yes |
 | machine_swap | 1 | 1 | yes |
 | machine_tracks | 2 | 1 | yes |
 | master_record | 2 | 4 | yes |
@@ -231,7 +231,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | preset_load | 20 | 20 | yes |
 | preset_save | 2 | 3 | yes |
 | redo | 0 | 0 | yes |
-| render | 52 | 74 | yes |
+| render | 53 | 74 | yes |
 | select | 3 | 3 | yes |
 | session_clip_set | 5 | 4 | yes |
 | session_get | 5 | 1 | yes |
