@@ -388,10 +388,21 @@ namespace ReBuzz.Core.Session
             if (why != null) return why;
             // Auto-warp (AW1): the beats first, nothing is changed when there are none.
             AutoWarpResult warp = null;
+            List<double> gridTransients = null;
+            GridWarpReport gridReport = null;
             if (edit.AutoWarp)
             {
                 warp = AnalyseAutoWarp(pattern, edit.FromSeconds ?? 0, out why);
-                if (warp == null) return why;
+                if (warp == null && !edit.ToGrid) return why;
+                if (edit.ToGrid)
+                {
+                    // AW5: the beats first (a clip with none found keeps its own line), then the transients, with the sensitivity this edit sets or the clip has.
+                    var src = AudioSourceOf(pattern);
+                    if (src == null) return "The clip's audio is not there.";
+                    gridReport = new GridWarpReport();
+                    gridTransients = AudioAnalysis.GridOnsets(src, edit.AutoSensitivity ?? AudioOf(pattern).AutoSensitivity, out int gated);
+                    gridReport.Gated = gated;
+                }
             }
             string result = null;
             UndoStack.BeginActionGroup();
@@ -401,6 +412,7 @@ namespace ReBuzz.Core.Session
                 var settings = ClipOf(pattern).Clone();
                 edit.ApplyTo(settings);
                 if (warp != null) ApplyAutoWarp(settings.Audio, AudioSourceOf(pattern), warp, edit.FromSeconds ?? 0);
+                if (gridTransients != null) ApplyToGrid(settings.Audio, AudioSourceOf(pattern), gridTransients, gridReport, edit.FromSeconds ?? 0, warp != null);
                 SetAudio(pattern, settings.Audio);
                 SetClipSettings(pattern, settings);
                 if (edit.DetectTempo) DetectTempo(pattern);

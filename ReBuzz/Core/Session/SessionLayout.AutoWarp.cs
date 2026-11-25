@@ -51,10 +51,27 @@ namespace ReBuzz.Core.Session
             audio.Markers = markers;
         }
 
-        /// <summary>Auto-warps a clip (undoable as one step); the tempo it found, or 0 and a reason in <paramref name="error"/>.</summary>
-        public double AutoWarp(IPattern pattern, double fromSeconds, out string error)
+        /// <summary>What the last "to grid" did (the page's message and the agent's answer read it right after the edit); null before the first.</summary>
+        internal GridWarpReport LastGridReport { get; private set; }
+
+        /// <summary>
+        /// "To grid" (AW5): a marker on each transient, pulled toward the clip's grid by the song's Quantize strength. The markers are the clip's now (auto-warp has put
+        /// its beats in them, or the clip's own line when it found none).
+        /// </summary>
+        internal void ApplyToGrid(SessionDocument.AudioSettings audio, AudioSource source, List<double> transients, GridWarpReport report, double fromSeconds, bool beatsFound)
         {
-            error = EditAudio(pattern, new AudioClipEdit { AutoWarp = true, FromSeconds = fromSeconds }, null, "Auto-warp");
+            LastGridReport = report;
+            report.BeatsFound = beatsFound;
+            var m = WarpMath.Effective(audio.Markers, source.Length, source.SampleRate, audio.Bpm);
+            var r = WarpMath.ToGrid(m, transients, audio.AutoGridBeats, QuantizeStrength / 100.0, audio.AutoReach / 100.0, fromSeconds * source.SampleRate, source.Length, report);
+            if (r.Ok) audio.Markers = r.Markers;
+            else report.Made = 0;
+        }
+
+        /// <summary>Auto-warps a clip (undoable as one step); the tempo it found, or 0 and a reason in <paramref name="error"/>.</summary>
+        public double AutoWarp(IPattern pattern, double fromSeconds, out string error, bool toGrid = false)
+        {
+            error = EditAudio(pattern, new AudioClipEdit { AutoWarp = true, ToGrid = toGrid, FromSeconds = fromSeconds }, null, toGrid ? "Auto-warp to grid" : "Auto-warp");
             return error == null ? AudioOf(pattern)?.Bpm ?? 0 : 0;
         }
 
@@ -66,8 +83,15 @@ namespace ReBuzz.Core.Session
         {
             if (!AutoWarpPolicy.Enabled || beats <= AutoWarpPolicy.LongBars * Math.Max(1, Session.BeatsPerBar)) return false;
             var found = AudioAnalysis.AutoWarp(source, Session.BeatsPerBar);
-            if (!found.Found) return false;
-            ApplyAutoWarp(settings, source, found, 0);
+            bool grid = AutoWarpPolicy.Mode == AutoWarpMode.Grid;
+            if (!found.Found && !grid) return false;
+            if (found.Found) ApplyAutoWarp(settings, source, found, 0);
+            if (grid)
+            {
+                var onsets = AudioAnalysis.GridOnsets(source, settings.AutoSensitivity, out int gated);
+                ApplyToGrid(settings, source, onsets, new GridWarpReport { Gated = gated }, 0, found.Found);
+                if (!found.Found && settings.Markers.Count < 2) return false;
+            }
             return true;
         }
     }

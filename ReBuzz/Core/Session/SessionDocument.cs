@@ -224,6 +224,20 @@ namespace ReBuzz.Core.Session
             /// <summary>The audio plays backwards.</summary>
             public bool Reverse { get; set; }
 
+            /// <summary>The grids "Auto-warp to grid" (AW5) puts transients on, with their length in beats.</summary>
+            public static readonly (string Name, double Beats)[] AutoGrids =
+                { ("1/4", 1), ("1/8", 0.5), ("1/16", 0.25), ("1/32", 0.125), ("1/4T", 2.0 / 3), ("1/8T", 1.0 / 3), ("1/16T", 1.0 / 6) };
+            public const string DefaultAutoGrid = "1/16";
+            public const int DefaultAutoSensitivity = 50, DefaultAutoReach = 40;
+            /// <summary>The grid of Auto-warp to grid (one of <see cref="AutoGrids"/>); saved with the clip.</summary>
+            public string AutoGrid { get; set; } = DefaultAutoGrid;
+            /// <summary>Its transient detection's sensitivity, 0 to 100 (50: the detector as it is for slicing).</summary>
+            public int AutoSensitivity { get; set; } = DefaultAutoSensitivity;
+            /// <summary>Its reach, 0 to 50 %: a transient further than this share of a grid step from every line is left alone.</summary>
+            public int AutoReach { get; set; } = DefaultAutoReach;
+            /// <summary>The grid in beats (a name that is none of the grids counts as 1/16).</summary>
+            public double AutoGridBeats => AutoGrids.FirstOrDefault(g => g.Name == AutoGrid) is var f && f.Name != null ? f.Beats : 0.25;
+
             public double Semitones => Transpose + Detune / 100.0;
             public float Gain => (float)Math.Pow(10, GainDb / 20);
 
@@ -255,6 +269,9 @@ namespace ReBuzz.Core.Session
                 if (Tail != 0) e.SetAttributeValue("tail", Num(Tail));
                 if (CrossIn) e.SetAttributeValue("crossIn", "true");
                 if (Reverse) e.SetAttributeValue("reverse", "true");
+                if (AutoGrid != DefaultAutoGrid) e.SetAttributeValue("autoGrid", AutoGrid);
+                if (AutoSensitivity != DefaultAutoSensitivity) e.SetAttributeValue("autoSens", AutoSensitivity);
+                if (AutoReach != DefaultAutoReach) e.SetAttributeValue("autoReach", AutoReach);
                 foreach (var (sample, beat) in Markers ?? new List<(double, double)>())
                     e.Add(new XElement("Marker", new XAttribute("sample", Num(sample)), new XAttribute("beat", Num(beat))));
                 return e;
@@ -281,7 +298,11 @@ namespace ReBuzz.Core.Session
                     Tail = Math.Clamp(DoubleAttr(e, "tail", 0), 0, 1e6),
                     CrossIn = (string)e.Attribute("crossIn") == "true",
                     Reverse = (string)e.Attribute("reverse") == "true",
+                    AutoSensitivity = Math.Clamp(IntAttr(e, "autoSens", DefaultAutoSensitivity), 0, 100),
+                    AutoReach = Math.Clamp(IntAttr(e, "autoReach", DefaultAutoReach), 0, 50),
                 };
+                string grid = (string)e.Attribute("autoGrid");
+                if (grid != null && AutoGrids.Any(g => g.Name == grid)) a.AutoGrid = grid;
                 foreach (var m in e.Elements("Marker"))
                 {
                     double sample = DoubleAttr(m, "sample", double.NaN), beat = DoubleAttr(m, "beat", double.NaN);

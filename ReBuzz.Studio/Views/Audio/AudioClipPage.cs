@@ -63,7 +63,11 @@ namespace ReBuzz.Studio.Views.Audio
         readonly ComboBox warp, preserve;
         readonly Control preserveRow;
         readonly TextBox tempo, transpose, detune, gain, fadeIn, fadeOut, start, loopStart, loopEnd;
-        readonly Button halve, doubleIt, detect, clear, fit, convert, slice;
+        readonly Button halve, doubleIt, detect, detectMore, clear, fit, convert, slice;
+        // Fork (AW5): auto-warp to grid and its options, saved with the clip.
+        readonly ComboBox gridBox;
+        readonly TextBox sensitivity, reach;
+        string gridNote = "";
         // Fork (WM1): segment tempo, quantize and follow.
         readonly TextBox segBefore, segAfter, strength;
         readonly Button segHalve, segDouble, quantize;
@@ -111,6 +115,22 @@ namespace ReBuzz.Studio.Views.Audio
             halve = Btn("÷2", "Half the tempo (the clip twice as long)", () => ScaleTempo(0.5), "Halve tempo");
             doubleIt = Btn("×2", "Double the tempo (the clip half as long)", () => ScaleTempo(2), "Double tempo");
             detect = Btn("Auto-warp", "Find the beats in the audio and follow its tempo where it moves: the warp markers and the tempo are replaced (one undo step). A steady tempo gives one tempo and the first downbeat; a tempo that drifts gives a marker on every bar.", () => Apply(new AudioClipEdit { AutoWarp = true }, "Auto-warp"), "Auto-warp");
+            // Fork (AW5): the other mode of the command, in the menu beside the button; the options of "to grid" are under Tempo and saved with the clip.
+            var detectMenu = new ContextMenu();
+            var beatItem = new MenuItem { Header = "Auto-warp: follow the beat", Tag = "Auto-warp beat" };
+            beatItem.Click += (_, _) => Apply(new AudioClipEdit { AutoWarp = true }, "Auto-warp");
+            var gridItem = new MenuItem { Header = "Auto-warp to grid", Tag = "Auto-warp to grid" };
+            gridItem.Click += (_, _) => RunToGrid();
+            detectMenu.Items.Add(beatItem);
+            detectMenu.Items.Add(gridItem);
+            detectMore = Btn("▾", "More: Auto-warp to grid puts a marker on every transient and pulls it to the grid (the strength beside Quantize)", () => detectMenu.Open(detectMore), "Auto-warp mode");
+            detectMore.MinWidth = 22;
+            gridBox = Combo(SessionDocument.AudioSettings.AutoGrids.Select(g => g.Name), i => Apply(new AudioClipEdit { AutoGrid = SessionDocument.AudioSettings.AutoGrids[i].Name }, "Auto-warp grid"),
+                "The grid Auto-warp to grid pulls transients to: 1/4, 1/8, 1/16, 1/32 of a beat, or triplets (T). Saved with the clip. The strength is the one beside Quantize.", "Auto-warp grid");
+            gridBox.Width = 70;
+            sensitivity = Box("How readily transients are found, 0 to 100 (50: as slicing finds them). Higher finds softer ones.", () => CommitGridNumber(sensitivity, 0, 100, true), "Auto-warp sensitivity");
+            reach = Box("A transient further than this share of a grid step from every line is left alone, 0 to 50 % (default 40).", () => CommitGridNumber(reach, 0, 50, false), "Auto-warp reach");
+            sensitivity.Width = reach.Width = 44;
             // Fork (docs/specs/pitch.md section 9): the clip's notes as MIDI on a new track; the page's right-click menu offers the same.
             var convertMenu = ConvertFlow.ButtonMenu(() => shown);
             convert = Btn("Convert to MIDI ▾", "Find the melody, the harmony or the drums in the audio and put them on a new MIDI track, in a clip where this one is", () => convertMenu.Open(convert), "Convert to MIDI");
@@ -134,6 +154,7 @@ namespace ReBuzz.Studio.Views.Audio
             wave.RegionCommitted += (s, ls, le) => CommitRegionTicks(s, ls, le);
             wave.ActionRequested += (request, label) => ApplyWarp(request, label);
             wave.SelectionChanged += UpdateSegments;
+            wave.ToGridRequested = RunToGrid;
             fit = Btn("Fit", "Zoom to show the whole clip", () => wave.Fit(), "Fit");
             follow = Check("Follow", "Scroll the waveform to keep the playing position in view", () => wave.Follow = follow.IsChecked == true);
             follow.Margin = new Thickness(4, 0, 4, 0);
@@ -172,7 +193,10 @@ namespace ReBuzz.Studio.Views.Audio
                 {
                     Section("Audio"),
                     Row("Warp", warp), preserveRow,
-                    Row("Tempo", new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Children = { new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt } }, detect } }),
+                    Row("Tempo", new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Children = { new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { tempo, halve, doubleIt } }, new StackPanel { Orientation = Orientation.Horizontal, Spacing = 1, Children = { detect, detectMore } } } }),
+                    Row("To grid", gridBox),
+                    Row("Sensitivity", sensitivity),
+                    Row("Reach", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { reach, Unit("% of a step") } }),
                     Row("Transpose", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { transpose, Unit("semitones") } }),
                     Row("Detune", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { detune, Unit("cents") } }),
                     Row("Gain", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { gain, Unit("dB") } }),
@@ -278,6 +302,12 @@ namespace ReBuzz.Studio.Views.Audio
         internal TextBox SegmentAfterBox => segAfter;
         internal Button SegmentHalveButton => segHalve;
         internal Button SegmentDoubleButton => segDouble;
+        internal Button DetectMoreButton => detectMore;
+        internal ComboBox GridBox => gridBox;
+        internal TextBox SensitivityBox => sensitivity;
+        internal TextBox ReachBox => reach;
+        /// <summary>Auto-warp to grid (the menu's item and the right-click menu's).</summary>
+        internal void ToGrid() => RunToGrid();
         internal Button QuantizeButton => quantize;
         internal TextBox StrengthBox => strength;
         internal CheckBox FollowBox => follow;
@@ -318,6 +348,8 @@ namespace ReBuzz.Studio.Views.Audio
             else if (ReferenceEquals(box, gain)) CommitGain();
             else if (ReferenceEquals(box, fadeIn) || ReferenceEquals(box, fadeOut)) CommitFades();
             else if (ReferenceEquals(box, strength)) CommitStrength();
+            else if (ReferenceEquals(box, sensitivity)) CommitGridNumber(sensitivity, 0, 100, true);
+            else if (ReferenceEquals(box, reach)) CommitGridNumber(reach, 0, 50, false);
             else if (ReferenceEquals(box, segAfter)) CommitSegment(true);
             else if (ReferenceEquals(box, segBefore)) CommitSegment(false);
             else CommitRegion();
@@ -448,7 +480,10 @@ namespace ReBuzz.Studio.Views.Audio
                 fadeIn.IsEnabled = fadeOut.IsEnabled = arranged;
                 ToolTip.SetTip(fadeIn, arranged ? "Fade in, beats from the clip's start" : "Fades play on the Arrangement: they don't apply to a slot of the Session");
                 ToolTip.SetTip(fadeOut, arranged ? "Fade out, beats to the clip's end" : "Fades play on the Arrangement: they don't apply to a slot of the Session");
-                halve.IsEnabled = doubleIt.IsEnabled = detect.IsEnabled = true;
+                halve.IsEnabled = doubleIt.IsEnabled = detect.IsEnabled = detectMore.IsEnabled = true;
+                gridBox.SelectedIndex = Math.Max(0, Array.FindIndex(SessionDocument.AudioSettings.AutoGrids, g => g.Name == audio.AutoGrid));
+                sensitivity.Text = audio.AutoSensitivity.ToString(CultureInfo.InvariantCulture);
+                reach.Text = audio.AutoReach.ToString(CultureInfo.InvariantCulture);
                 reverse.IsChecked = audio.Reverse;
 
                 var r = RegionOf(settings);
@@ -465,7 +500,7 @@ namespace ReBuzz.Studio.Views.Audio
                 if (where == Where.Arrangement) regionText.Text += " On the Arrangement.";
 
                 int markers = audio.Markers?.Count ?? 0;
-                markerInfo.Text = markers >= 2 ? $"{markers} warp markers" : $"straight at {audio.Bpm:0.##} BPM";
+                markerInfo.Text = (markers >= 2 ? $"{markers} warp markers" : $"straight at {audio.Bpm:0.##} BPM") + gridNote;
                 clear.IsEnabled = markers >= 2;
                 strength.Text = Layout.QuantizeStrength.ToString(CultureInfo.InvariantCulture);
                 wave.Load(view, Layout.TransientsOf(shown), TicksPerBeat, BeatsPerBar, length, (r.Start, r.LoopStart, r.LoopEnd, r.Loop));
@@ -557,10 +592,35 @@ namespace ReBuzz.Studio.Views.Audio
 
         // ------------------------------------------------------------------ edits
 
+        /// <summary>Auto-warp to grid: auto-warp, then a marker on every transient pulled toward the grid by the strength; one undo step. What it did is said beside the markers.</summary>
+        void RunToGrid()
+        {
+            if (loading || shown == null) return;
+            Apply(new AudioClipEdit { AutoWarp = true, ToGrid = true }, "Auto-warp to grid");
+            var r = Layout.LastGridReport;
+            if (status.Text.Length == 0 && r != null)
+            {
+                gridNote = $" · {r.Made} on the grid" + (r.OutOfReach > 0 ? $", {r.OutOfReach} out of reach" : "") + (r.Gated > 0 ? $", {r.Gated} in quiet or sustained parts" : "") + (r.BeatsFound ? "" : " · no beats found: the clip's own tempo");
+                Refresh(force: true);
+            }
+        }
+
+        void CommitGridNumber(TextBox box, int min, int max, bool isSensitivity)
+        {
+            if (loading || shown == null || Layout.AudioOf(shown) is not { } a) return;
+            int now = isSensitivity ? a.AutoSensitivity : a.AutoReach;
+            if (!int.TryParse(box.Text?.Trim().TrimEnd('%'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)) { box.Text = now.ToString(CultureInfo.InvariantCulture); return; }
+            v = Math.Clamp(v, min, max);
+            box.Text = v.ToString(CultureInfo.InvariantCulture);
+            if (v == now) return;
+            Apply(isSensitivity ? new AudioClipEdit { AutoSensitivity = v } : new AudioClipEdit { AutoReach = v }, isSensitivity ? "Auto-warp sensitivity" : "Auto-warp reach");
+        }
+
         void Apply(AudioClipEdit edit, string label)
         {
             if (loading || shown == null) return;
             status.Text = "";
+            gridNote = "";
             string why = Layout.EditAudio(shown, edit, editor, label);
             if (why != null) status.Text = why;
             Refresh(force: true);                  // the controls show what the model now holds (the layout's Changed event does it too)

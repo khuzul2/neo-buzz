@@ -24,6 +24,14 @@ namespace ReBuzz.Core
         /// (<see cref="FromSeconds"/> from later in the audio: the markers before stay). Nothing is changed when no beats are found.
         /// </summary>
         public bool AutoWarp;
+        /// <summary>
+        /// With <see cref="AutoWarp"/> (AW5): then a warp marker on every transient, pulled to the nearest grid line by the song's Quantize strength (the clip's grid,
+        /// sensitivity and reach). When no beats are found the clip's own tempo and markers are the line the transients are put on.
+        /// </summary>
+        public bool ToGrid;
+        /// <summary>The clip's options of Auto-warp to grid (AW5), saved with the clip whether or not it is run now: a grid of <see cref="SessionDocument.AudioSettings.AutoGrids"/>, the sensitivity 0 to 100, the reach 0 to 50 %.</summary>
+        public string AutoGrid;
+        public int? AutoSensitivity, AutoReach;
         /// <summary>Auto-warp from this many seconds into the audio (default: from its start).</summary>
         public double? FromSeconds;
         public int? Transpose, Detune;
@@ -42,6 +50,11 @@ namespace ReBuzz.Core
         {
             if (Warp != null && Find(SessionDocument.AudioSettings.WarpModes, Warp) == null) return $"warp: one of {string.Join(", ", SessionDocument.AudioSettings.WarpModes)}.";
             if (Preserve != null && Find(SessionDocument.AudioSettings.PreserveModes, Preserve) == null) return $"preserve: one of {string.Join(", ", SessionDocument.AudioSettings.PreserveModes)}.";
+            if (AutoGrid != null && !SessionDocument.AudioSettings.AutoGrids.Any(g => string.Equals(g.Name, AutoGrid, StringComparison.OrdinalIgnoreCase)))
+                return $"grid: one of {string.Join(", ", SessionDocument.AudioSettings.AutoGrids.Select(g => g.Name))}.";
+            if (AutoSensitivity is int sn && (sn < 0 || sn > 100)) return "grid_sensitivity: 0 to 100.";
+            if (AutoReach is int rc && (rc < 0 || rc > 50)) return "grid_reach: 0 to 50 (percent of a grid step).";
+            if (ToGrid && !AutoWarp) return "to grid needs auto-warp.";
             if (FromSeconds is double from && (!double.IsFinite(from) || from < 0)) return "from_seconds: 0 or more.";
             if (Markers != null && Markers.Count(x => double.IsFinite(x.Sample) && double.IsFinite(x.Beat)) == 1) return "warp_markers needs at least 2 markers (or [] for none).";
             return null;
@@ -61,6 +74,9 @@ namespace ReBuzz.Core
                 if (a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
             }
             if ((DetectTempo || AutoWarp) && a.Warp == "Off" && Warp == null) a.Warp = SessionDocument.AudioSettings.DefaultWarp;
+            if (AutoGrid != null) a.AutoGrid = SessionDocument.AudioSettings.AutoGrids.First(g => string.Equals(g.Name, AutoGrid, StringComparison.OrdinalIgnoreCase)).Name;
+            if (AutoSensitivity is int sens) a.AutoSensitivity = Math.Clamp(sens, 0, 100);
+            if (AutoReach is int reach) a.AutoReach = Math.Clamp(reach, 0, 50);
             if (FadeIn is double fi) { a.FadeIn = Math.Max(0, fi); if (fi <= 0) a.CrossIn = false; }
             if (FadeOut is double fo) a.FadeOut = Math.Max(0, fo);
             if (Transpose is int tr) a.Transpose = Math.Clamp(tr, -48, 48);

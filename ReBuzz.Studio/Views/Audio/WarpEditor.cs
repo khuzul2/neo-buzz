@@ -147,6 +147,9 @@ namespace ReBuzz.Studio.Views.Audio
         /// <summary>The context menu (built when it is opened).</summary>
         internal ContextMenu LastMenu => menu;
 
+        /// <summary>The page's Auto-warp to grid (the waveform's right-click menu offers it): auto-warp, then every transient pulled to the grid.</summary>
+        public Action ToGridRequested { get; set; }
+
         /// <summary>The selected marker latest in the clip (what the segment tempos are shown for when the one clicked last is gone), or NaN.</summary>
         double LastSelected() => markers.Where(m => selection.Contains(m.Sample)).Select(m => m.Sample).DefaultIfEmpty(double.NaN).Last();
 
@@ -707,6 +710,7 @@ namespace ReBuzz.Studio.Views.Audio
             m.Items.Add(Item("Set bar 1 here", "Cmd+B", SetBarOneHere, any && !reverse));
             m.Items.Add(Item("Warp from here", null, WarpFollowHere, any && !reverse));
             m.Items.Add(Item("Warp from here, straight", null, WarpStraightHere, any && !reverse));
+            m.Items.Add(Item("Auto-warp to grid", null, () => ToGridRequested?.Invoke(), any && !reverse && ToGridRequested != null));
             m.Items.Add(Item($"Warp as a loop of {(any ? LoopBarsNow() : 1)} bar{(any && LoopBarsNow() == 1 ? "" : "s")}", "Cmd+L", WarpAsLoop, any));
             m.Items.Add(new Separator());
             m.Items.Add(Item(hasRange ? "Insert markers at the transients in the selection" : "Insert markers at the transients", "Cmd+T", InsertAtTransients, any));
