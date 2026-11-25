@@ -13,6 +13,7 @@
   "polyphonic"
  ],
  "use_for": "Drawbar tonewheel organ with percussion, key click, vibrato and chorus, overdrive and a rotary speaker: gospel, jazz, blues and rock organ, church sounds, flutes and stabs.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

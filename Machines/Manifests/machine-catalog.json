@@ -638,7 +638,8 @@
     "warm",
     "polyphonic"
    ],
-   "use_for": "Drawbar tonewheel organ with percussion, key click, vibrato and chorus, overdrive and a rotary speaker: gospel, jazz, blues and rock organ, church sounds, flutes and stabs."
+   "use_for": "Drawbar tonewheel organ with percussion, key click, vibrato and chorus, overdrive and a rotary speaker: gospel, jazz, blues and rock organ, church sounds, flutes and stabs.",
+   "note_in": true
   },
   "Neo Lo-Fi": {
    "category": "Distortion",
