@@ -135,16 +135,19 @@ namespace NeoBuzz.Chop
         long voiceSerial;
 
         // ---- gate
+        // The gate's "open" value o moves between 0 (an off step), 1 (on) and 2 (accent) along a smoothstep that lasts the attack (rising) or
+        // the release (falling): no corner at either end of a transition. The gain is 1 - depth (1 - o) up to on, then up to the accent level.
         SmoothRamp gateDepthR, gateOnR;
-        float gateGain = 1f;
         bool gateInit;
         double gateBeats = 0.25;
         double gateNextBeat;
         long gateNextAbs = long.MaxValue;
-        int gateStep, gateState = 1;
+        int gateStep;
         double gateFreePos;
         double gateAttackSamples = 100, gateReleaseSamples = 1000;
+        double gateO, gateFrom, gateTo, gateU = 1, gateInv;
         float gateAccent = 1.5f;
+        float gateGain = 1f;
 
         // ---- pan
         SmoothRamp panDepthR;
@@ -215,7 +218,7 @@ namespace NeoBuzz.Chop
             havePos = false;
             wasPlaying = false;
             gateInit = false;
-            gateGain = 1f;
+            gateGain = 1f; gateO = gateFrom = gateTo = 1; gateU = 1;
             gateDepthR.Reset(0f); gateOnR.Reset(0f); panDepthR.Reset(0f);
             noteCount = 0;
             LogCount = 0;
@@ -251,7 +254,7 @@ namespace NeoBuzz.Chop
         }
 
         /// <summary>The gate or the pan is doing something to the sound.</summary>
-        public bool Shaping => gateOnR.Value > 0f || gateGain != 1f || panDepthR.Value > 0f;
+        public bool Shaping => gateOnR.Value > 0f || gateGain != 1f || panDepthR.Value > 0f || panDepthR.Target > 0f;
 
         /// <summary>Mix at 0 or Amount at 0: the stage passes the input untouched.</summary>
         public bool Idle => !AnyVoice && !Shaping;
@@ -1057,13 +1060,11 @@ namespace NeoBuzz.Chop
             {
                 if (!gateInit)
                 {
-                    double pos = b0 / gateBeats;
-                    long idx = (long)Math.Floor(pos + 1e-9);
+                    long idx = (long)Math.Floor(b0 / gateBeats + 1e-9);
                     gateStep = (int)(idx & 15);
                     gateNextBeat = (idx + 1) * gateBeats;
                     gateInit = true;
-                    gateGain = Level(gateStep);
-                    gateState = 1;
+                    SnapGate(gateStep);
                 }
                 else if (gateNextBeat - b0 > gateBeats * 1.0001 || gateNextBeat <= b0 - 1e-9)
                 {
@@ -1071,21 +1072,38 @@ namespace NeoBuzz.Chop
                     long idx = (long)Math.Floor(b0 / gateBeats + 1e-9);
                     gateStep = (int)(idx & 15);
                     gateNextBeat = (idx + 1) * gateBeats;
+                    GoGate(gateStep);
                 }
                 gateNextAbs = t0 + (long)Math.Ceiling((gateNextBeat - b0) / bps - Eps);
             }
             else
             {
-                if (!gateInit) { gateInit = true; gateStep = 0; gateFreePos = 0; gateGain = Level(0); }
+                if (!gateInit) { gateInit = true; gateStep = 0; gateFreePos = 0; SnapGate(0); }
                 gateNextAbs = long.MaxValue;
             }
         }
 
-        float Level(int step)
+        double StepTarget(int step)
         {
             int st = Ch(P.Step1 + (step & 15));
-            double depth = gateDepthR.Value;
-            return st == 0 ? (float)(1.0 - depth) : st == 1 ? 1f : gateAccent;
+            return st == 0 ? 0.0 : st == 1 ? 1.0 : 2.0;
+        }
+
+        void SnapGate(int step)
+        {
+            gateO = gateFrom = gateTo = StepTarget(step);
+            gateU = 1;
+        }
+
+        /// <summary>A step begins: the open value starts its smooth move to the step's level.</summary>
+        void GoGate(int step)
+        {
+            double to = StepTarget(step);
+            if (to == gateTo && gateU >= 1) return;
+            gateFrom = gateO;
+            gateTo = to;
+            gateU = 0;
+            gateInv = 1.0 / (to > gateFrom ? gateAttackSamples : gateReleaseSamples);
         }
 
         void GateSample(int i, long t, ref float ol, ref float or)
@@ -1098,6 +1116,7 @@ namespace NeoBuzz.Chop
                     long idx = (long)Math.Round(gateNextBeat / gateBeats);
                     gateStep = (int)(idx & 15);
                     if (Log != null) AddLog(ChopEventKind.GateStep, gateNextAbs, gateNextBeat, gateStep);
+                    GoGate(gateStep);
                     gateNextBeat += gateBeats;
                     gateNextAbs = t0 + (long)Math.Ceiling((gateNextBeat - b0) / bps - Eps);
                     if (gateNextAbs <= t) gateNextAbs = t + 1;
@@ -1111,23 +1130,20 @@ namespace NeoBuzz.Chop
                 {
                     gateFreePos -= len;
                     gateStep = (gateStep + 1) & 15;
+                    GoGate(gateStep);
                 }
+            }
+            if (gateU < 1)
+            {
+                gateU += gateInv;
+                if (gateU > 1) gateU = 1;
+                double s = gateU * gateU * (3 - 2 * gateU);
+                gateO = gateFrom + (gateTo - gateFrom) * s;
             }
             float w = gateOnR.Next();
             float depth = gateDepthR.Next();
-            int st = Ch(P.Step1 + gateStep);
-            float lvl = st == 0 ? 1f - depth : st == 1 ? 1f : gateAccent;
-            float goal = 1f + (lvl - 1f) * w;
-            if (goal > gateGain)
-            {
-                gateGain += (float)(1.0 / gateAttackSamples);
-                if (gateGain > goal) gateGain = goal;
-            }
-            else if (goal < gateGain)
-            {
-                gateGain -= (float)(1.0 / gateReleaseSamples);
-                if (gateGain < goal) gateGain = goal;
-            }
+            double g = gateO <= 1.0 ? 1.0 - depth * (1.0 - gateO) : 1.0 + (gateAccent - 1.0) * (gateO - 1.0);
+            gateGain = (float)(1.0 + (g - 1.0) * w);
             if (gateGain != 1f) { ol *= gateGain; or *= gateGain; }
         }
 
@@ -1165,7 +1181,8 @@ namespace NeoBuzz.Chop
                     // A square whose edges take the Smoothness time: sin(phase) scaled up and clamped.
                     double edge = Math.Max(1e-4, 2 * Math.PI * (panSynced ? 1.0 / (panCycleBeats * spb) : panRate / sampleRate) * F);
                     double k = Math.Max(1.0, 2.0 / edge);
-                    p = Math.Clamp(PortableMath.Sin(2 * Math.PI * ph) * k, -1.0, 1.0);
+                    double y = Math.Clamp(PortableMath.Sin(2 * Math.PI * ph) * k, -1.0, 1.0);
+                    p = 1.5 * y - 0.5 * y * y * y;
                     break;
                 }
                 default:

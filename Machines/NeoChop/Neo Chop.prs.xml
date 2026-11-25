@@ -1,0 +1,587 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Stutter — Sixteenth Stutter">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="7" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="5" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="170" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="199" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="565" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="1" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="0" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="1" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="3" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>The last half of every bar stammers: the sixteenth note before it repeats eight times, each repeat a little quieter and darker, then the next bar starts clean.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Repeat — Bar-End Repeat">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="199" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="565" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="1" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="0" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="1" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="3" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>The end of every bar loops an eighth-note slice for half a bar, like a record skipping into the next bar; the loop is the same slice every time.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Stutter — Triplet Glitch">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="2" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="5" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="140" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="10" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="240" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="199" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="565" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="1" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="0" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="1" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="3" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>The last beat of every two beats rolls a triplet sixteenth six times, each repeat two semitones higher and thinner: a rising, glitchy burst that sits across the beat.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Retrigger — Half-Bar Retrigger">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="1" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="1" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="199" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="565" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="1" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="0" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="1" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="3" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>The second half of every bar keeps jumping back to the start of the bar every eighth note, so the downbeat is hammered four times before the next bar arrives.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tape — Tape Stop at the Bar">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="1" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="4" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="671" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="350" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="199" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="565" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="1" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="0" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="1" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="3" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every fourth bar the sound winds down to a stop over the last 700 ms, stays silent for the bar line, and spins back up over 350 ms.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Gate — Pumping Step Gate">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="1" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="1" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="88" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="511" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="0" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="1" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="0" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="2" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="0" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="1" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="0" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="2" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="2" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="0" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="3" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A sixteen-step eighth-note gate that pumps the whole sound: accented beats, open off-beats and gaps between, with a fast attack and a short release.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pan — Wide Auto-Pan">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="0" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="199" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="565" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="1000" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="40" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="1" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="0" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="0" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="2" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="0" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="1" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="0" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="1" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="1" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="5" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="1000" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="0" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>The sound swings from the far left to the far right and back once every bar, locked to the song.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Fill — Chopped Vocal Feel">
+    <Preset Machine="Neo Chop">
+      <Parameters>
+        <Parameter Name="Stutter" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Stutter trigger" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Stutter every" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Slice" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Slice feel" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Pitch per repeat" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Decay per repeat" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Filter per repeat" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Repeat" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Repeat trigger" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Interval" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Chance" Group="1" Index="12" Track="0" Value="700" />
+        <Parameter Name="Length" Group="1" Index="13" Track="0" Value="2" />
+        <Parameter Name="Grid" Group="1" Index="14" Track="0" Value="2" />
+        <Parameter Name="Grid feel" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Variation" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Retrigger" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Retrigger trigger" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Retrigger every" Group="1" Index="19" Track="0" Value="2" />
+        <Parameter Name="Retrigger length" Group="1" Index="20" Track="0" Value="3" />
+        <Parameter Name="Retrigger grid" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Retrigger feel" Group="1" Index="22" Track="0" Value="0" />
+        <Parameter Name="Back to" Group="1" Index="23" Track="0" Value="0" />
+        <Parameter Name="Tape" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Tape trigger" Group="1" Index="25" Track="0" Value="0" />
+        <Parameter Name="Tape every" Group="1" Index="26" Track="0" Value="2" />
+        <Parameter Name="Stop sync" Group="1" Index="27" Track="0" Value="0" />
+        <Parameter Name="Stop time" Group="1" Index="28" Track="0" Value="642" />
+        <Parameter Name="Stop curve" Group="1" Index="29" Track="0" Value="1000" />
+        <Parameter Name="Start sync" Group="1" Index="30" Track="0" Value="0" />
+        <Parameter Name="Start time" Group="1" Index="31" Track="0" Value="300" />
+        <Parameter Name="Gate" Group="1" Index="32" Track="0" Value="1" />
+        <Parameter Name="Gate lock" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Gate rate" Group="1" Index="34" Track="0" Value="2" />
+        <Parameter Name="Gate attack" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Gate release" Group="1" Index="36" Track="0" Value="435" />
+        <Parameter Name="Gate depth" Group="1" Index="37" Track="0" Value="700" />
+        <Parameter Name="Accent" Group="1" Index="38" Track="0" Value="30" />
+        <Parameter Name="Step 1" Group="1" Index="39" Track="0" Value="2" />
+        <Parameter Name="Step 2" Group="1" Index="40" Track="0" Value="1" />
+        <Parameter Name="Step 3" Group="1" Index="41" Track="0" Value="0" />
+        <Parameter Name="Step 4" Group="1" Index="42" Track="0" Value="1" />
+        <Parameter Name="Step 5" Group="1" Index="43" Track="0" Value="2" />
+        <Parameter Name="Step 6" Group="1" Index="44" Track="0" Value="1" />
+        <Parameter Name="Step 7" Group="1" Index="45" Track="0" Value="1" />
+        <Parameter Name="Step 8" Group="1" Index="46" Track="0" Value="1" />
+        <Parameter Name="Step 9" Group="1" Index="47" Track="0" Value="0" />
+        <Parameter Name="Step 10" Group="1" Index="48" Track="0" Value="1" />
+        <Parameter Name="Step 11" Group="1" Index="49" Track="0" Value="2" />
+        <Parameter Name="Step 12" Group="1" Index="50" Track="0" Value="1" />
+        <Parameter Name="Step 13" Group="1" Index="51" Track="0" Value="0" />
+        <Parameter Name="Step 14" Group="1" Index="52" Track="0" Value="1" />
+        <Parameter Name="Step 15" Group="1" Index="53" Track="0" Value="2" />
+        <Parameter Name="Step 16" Group="1" Index="54" Track="0" Value="1" />
+        <Parameter Name="Pan" Group="1" Index="55" Track="0" Value="1" />
+        <Parameter Name="Pan sync" Group="1" Index="56" Track="0" Value="4" />
+        <Parameter Name="Pan rate" Group="1" Index="57" Track="0" Value="500" />
+        <Parameter Name="Pan depth" Group="1" Index="58" Track="0" Value="450" />
+        <Parameter Name="Pan shape" Group="1" Index="59" Track="0" Value="1" />
+        <Parameter Name="Pan phase" Group="1" Index="60" Track="0" Value="0" />
+        <Parameter Name="Smoothness" Group="1" Index="61" Track="0" Value="301" />
+        <Parameter Name="Note picks slice" Group="1" Index="62" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="63" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="64" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A busy, human chop: random sixteenth loops at the end of every bar (they come and go, the same way each play), a soft sixteenth gate with accents and a gentle triangle pan.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
