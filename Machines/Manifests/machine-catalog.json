@@ -119,7 +119,8 @@
     "noise",
     "polyphonic"
    ],
-   "use_for": "Retro sound-chip synth with three pulse channels, 15-bit and 7-bit LFSR noise, 16-step and hardware envelopes, per-track arpeggio, pitch sweep and 4-bit DAC grit."
+   "use_for": "Retro sound-chip synth with three pulse channels, 15-bit and 7-bit LFSR noise, 16-step and hardware envelopes, per-track arpeggio, pitch sweep and 4-bit DAC grit.",
+   "note_in": true
   },
   "Neo Clipper": {
    "category": "Distortion",
