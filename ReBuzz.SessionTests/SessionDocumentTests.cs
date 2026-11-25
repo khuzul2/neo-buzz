@@ -288,7 +288,7 @@ namespace ReBuzz.SessionTests
                 <Session>
                   <Scenes><Scene tempo="9999" beatsPerBar="-3"/></Scenes>
                   <Tracks/>
-                  <Clips><Clip machine="m" clip="p" start="-5" velocity="400"/><Clip clip="no machine"/></Clips>
+                  <Clips><Clip machine="m" pattern="p" start="-5" velocity="400"/><Clip pattern="no machine"/></Clips>
                 </Session>
                 """;
             var d = Load(new MemoryStream(Encoding.UTF8.GetBytes(xml)))!;
@@ -455,7 +455,7 @@ namespace ReBuzz.SessionTests
         public void DamagedLayoutsLoadWithoutHarm()
         {
             string xml = "<Session version=\"1\"><Tracks><Track sequence=\"0\" machine=\"m\">" +
-                         "<Slot scene=\"99999999\" clip=\"a\" /><Slot scene=\"2\" clip=\"b\" /></Track></Tracks>" +
+                         "<Slot scene=\"99999999\" pattern=\"a\" /><Slot scene=\"2\" pattern=\"b\" /></Track></Tracks>" +
                          "<Mixer><Crossfader position=\"NaN\" /></Mixer></Session>";
             var d = SessionDocument.Load(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)));
             Assert.That(d != null, Is.True);
@@ -503,7 +503,7 @@ namespace ReBuzz.SessionTests
             const string xml = """
                 <Session version="7" futureThing="x">
                   <Tracks>
-                    <Track machine="drums"><Slot scene="2" clip="a" mood="happy"/><Slot clip="lost"/></Track>
+                    <Track machine="drums"><Slot scene="2" pattern="a" mood="happy"/><Slot pattern="lost"/></Track>
                   </Tracks>
                   <Mixer/>
                 </Session>
