@@ -137,8 +137,8 @@ def parse(path):
                     lo, hi, switch = int(toks[3]), int(toks[4]), False
                 else:
                     sys.exit(f'{path}:{lineno}: expected track Id "Name" min max, or track Id "Name" switch')
-                if not (0 <= lo <= hi <= 254):
-                    sys.exit(f'{path}:{lineno}: need 0 <= min <= max <= 254')
+                if not (0 <= lo <= hi <= 65534):
+                    sys.exit(f'{path}:{lineno}: need 0 <= min <= max <= 65534 (a maximum over 254 makes a word parameter)')
                 spec['track_params'].append({'id': toks[1], 'name': toks[2], 'min': lo, 'max': hi, 'switch': switch, 'desc': desc or toks[2]})
                 continue
             if head == 'group':

@@ -28,6 +28,18 @@ namespace NeoBuzz.Dsp
     }
 
     /// <summary>
+    /// A note sink whose notes can carry more than a pitch: a sample number, a start offset and a tune (Neo Sampler's Tracker mode). The track
+    /// notes that have them (and the machine's own preview) take this path; every other note takes <see cref="INoteSink.NoteOn"/>.
+    /// </summary>
+    internal interface ITrackNoteSink : INoteSink
+    {
+        /// <param name="sample">The wave to play (1 and up).</param>
+        /// <param name="offset">Where in the wave it starts, in the wave's frames.</param>
+        /// <param name="tuneCents">Cents added to the note's pitch.</param>
+        void NoteOnSample(int key, int note, float velocity, int sample, int offset, int tuneCents);
+    }
+
+    /// <summary>
     /// A note sink that also wants each MIDI event's channel (live MPE): notes, pitch bend, channel pressure and CC74 come
     /// with it; the rest takes the plain <see cref="INoteSink"/> path. Pattern notes stay on the plain path.
     /// </summary>

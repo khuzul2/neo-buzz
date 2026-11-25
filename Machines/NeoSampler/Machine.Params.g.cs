@@ -7,7 +7,7 @@ namespace NeoBuzz.Sampler
 {
     public partial class NeoSamplerMachine
     {
-        [ParameterDecl(Name = "Mode", Description = "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "Mode", Description = "Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside); Tracker: a note with a Sample plays that wave (any of the song's 200 and the built-ins) from its Offset, tuned by its key (C-4 = the wave's own speed) and its Tune, and a note without one plays the zones as Instrument does", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int Mode { get => Values[P.Mode]; set => Values.Set(P.Mode, value); }
 
         [ParameterDecl(Name = "Kit base", Description = "The key zone 1 plays in Kit mode (36 = C2, General MIDI's kick: zone 3 is D2 the snare, 7 F#2 the closed hat, 11 A#2 the open hat); the others follow a semitone apart", MinValue = 0, MaxValue = 112, DefValue = 36)]
@@ -987,5 +987,17 @@ namespace NeoBuzz.Sampler
 
         [ParameterDecl(Name = "Velocity", IsStateless = true, MinValue = 1, MaxValue = 127, Description = "Velocity of the note on the same row (100 when empty)")]
         public void SetVelocity(int value, int track) => Notes.SetVelocity(track, value);
+
+        [ParameterDecl(Name = "Sample", IsStateless = true, MinValue = 1, MaxValue = 254, Description = "Tracker mode: the wave this note plays (1-200 the song's wavetable, 201 and up the built-ins; the Neo Sampler's Mode must be Tracker); empty: the note plays the zones as in Instrument mode")]
+        public void SetSample(int value, int track) => OnTrackParameter(TP.Sample, track, value);
+
+        [ParameterDecl(Name = "Offset", IsStateless = true, MinValue = 0, MaxValue = 32767, Description = "Tracker mode: where in the wave this note starts, in the wave's frames, the low part (frames = Offset + 32768 x Offset hi); empty: from the start")]
+        public void SetOffset(int value, int track) => OnTrackParameter(TP.Offset, track, value);
+
+        [ParameterDecl(Name = "Offset hi", IsStateless = true, MinValue = 0, MaxValue = 254, Description = "Tracker mode: the high part of the start offset, in steps of 32768 frames (up to 8.3 million frames); empty: 0")]
+        public void SetOffsetHi(int value, int track) => OnTrackParameter(TP.OffsetHi, track, value);
+
+        [ParameterDecl(Name = "Tune", IsStateless = true, MinValue = 0, MaxValue = 4800, Description = "Tracker mode: tune of this note in cents, 2400 = the note's own pitch (0 = 24 semitones down, 4800 = 24 up); empty: 2400")]
+        public void SetTune(int value, int track) => OnTrackParameter(TP.Tune, track, value);
     }
 }
