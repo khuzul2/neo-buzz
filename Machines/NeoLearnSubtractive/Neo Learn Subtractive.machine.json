@@ -14,6 +14,7 @@
   "pad"
  ],
  "use_for": "Learn subtractive synthesis: one oscillator, a sub and a resonant filter, every control explained.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

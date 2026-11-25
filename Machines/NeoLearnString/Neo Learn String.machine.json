@@ -13,6 +13,7 @@
   "keys"
  ],
  "use_for": "A teaching plucked-string synth (Karplus-Strong): harps, guitars, harpsichords and bells from a pick position, damping, a decay time that holds at any note, stiffness and sympathetic strings.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

@@ -141,6 +141,19 @@ namespace ReBuzz.Audio
                     stack.Push(src);
                     cone.Add(src);
                 }
+                // Fork (note-wires.md): the machines that send a cone machine notes are in the cone too.
+                var noteSources = cur.NoteNode?.Sources;
+                if (noteSources != null)
+                    for (int ns = 0; ns < noteSources.Length; ns++)
+                    {
+                        var src = noteSources[ns];
+                        if (!seen.Add(src))
+                            continue;
+                        if (IsControlOrEditor(src))
+                            continue;
+                        stack.Push(src);
+                        cone.Add(src);
+                    }
             }
 
             // --- 2. Kahn layering over the cone ---
@@ -158,6 +171,11 @@ namespace ReBuzz.Audio
                     if (input.Source is MachineCore src && cone.Contains(src))
                         d++;
                 }
+                var ns0 = m.NoteNode?.Sources;
+                if (ns0 != null)
+                    for (int k = 0; k < ns0.Length; k++)
+                        if (cone.Contains(ns0[k]))
+                            d++;
                 indeg[m] = d;
             }
 
@@ -191,6 +209,16 @@ namespace ReBuzz.Audio
                         if (--indeg[dst] == 0)
                             next.Add(dst);
                     }
+                    var nt = m.NoteNode?.Targets;
+                    if (nt != null)
+                        for (int k = 0; k < nt.Length; k++)
+                        {
+                            var dst = nt[k];
+                            if (!cone.Contains(dst))
+                                continue;
+                            if (--indeg[dst] == 0)
+                                next.Add(dst);
+                        }
                 }
                 frontier = next;
             }
@@ -247,6 +275,11 @@ namespace ReBuzz.Audio
                         continue;
                     succTmp.Add(coneIndex[cdst]);
                 }
+                var cnt = cm.NoteNode?.Targets;
+                if (cnt != null)
+                    for (int k = 0; k < cnt.Length; k++)
+                        if (cone.Contains(cnt[k]))
+                            succTmp.Add(coneIndex[cnt[k]]);
                 succArr[ii] = succTmp.ToArray();
             }
 

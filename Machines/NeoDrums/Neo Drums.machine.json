@@ -12,6 +12,7 @@
   "punchy"
  ],
  "use_for": "A complete synthesised drum kit: kick, snare, clap, rim and hats with a pattern-friendly keymap.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

@@ -4,6 +4,7 @@
 
 using System;
 using System.Threading;
+using BuzzGUI.Interfaces;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
@@ -86,6 +87,23 @@ namespace NeoBuzz.Machine
                 ringB[ringWrite] = b;
                 ringC[ringWrite] = channel;
                 Volatile.Write(ref ringWrite, next);
+            }
+        }
+
+        /// <summary>Events a note wire carried this block (audio thread, just before Work): queued as the MIDI events are.</summary>
+        public void Receive(ReadOnlySpan<NoteMessage> events)
+        {
+            for (int i = 0; i < events.Length; i++)
+            {
+                ref readonly var e = ref events[i];
+                switch (e.Kind)
+                {
+                    case NoteMessageKind.NoteOn: MidiNote(e.Channel, e.Data1, Math.Max(1, e.Data2)); break;
+                    case NoteMessageKind.NoteOff: MidiNote(e.Channel, e.Data1, 0); break;
+                    case NoteMessageKind.Controller: MidiControl(e.Data1, e.Channel, e.Data2); break;
+                    case NoteMessageKind.PitchBend: MidiControl(0xE0, e.Channel, e.Data2); break;
+                    case NoteMessageKind.Pressure: MidiControl(0xD0, e.Channel, e.Data2); break;
+                }
             }
         }
 

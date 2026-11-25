@@ -861,6 +861,41 @@ namespace ReBuzz.Studio.Tests
                     }
                 });
 
+                Try("040-machines-note-wires", () =>
+                {
+                    // NW1 (note-wires.md §6): the note ports (a diamond on the top edge of a machine that takes notes, on the bottom edge of one that
+                    // sends them) and the dotted note wires in the source's colour; the same in Tracks mode; and with "Note wires" off (the ports stay).
+                    var song = Core.SongCore;
+                    song.CreateMachine("Neo Voice to MIDI", null, "Voice", null, null, null, -1, -0.82f, -0.93f);
+                    var voice = song.MachinesList.First(m => m.Name == "Voice");
+                    song.CreateMachine("Neo Audio to MIDI", null, "Pitch", null, null, null, -1, -0.5f, 0.36f);
+                    var pitch = song.MachinesList.First(m => m.Name == "Pitch");
+                    try
+                    {
+                        Assert.That(Core.NoteWires.Connect("Voice", "Drums"), Is.Null);
+                        Assert.That(Core.NoteWires.Connect("Pitch", "Pad"), Is.Null);
+                        ReBuzz.Studio.Views.Machines.NoteWiresPreference.On = true;
+                        Settle();
+                        Shot(window, "040-machines-note-wires", "Machines with note wires (NW1): Neo Voice to MIDI sends notes to Drums and Neo Audio to MIDI to Pad; each machine that takes notes has a diamond on its top edge, the sender one on its bottom edge, and a dotted wire with an arrowhead joins them in the sender's colour.", "Drag from a note-out diamond to a machine, or right-click a machine and choose Send notes to.");
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = true;
+                        Settle();
+                        Shot(window, "040-machines-note-wires-tracks", "The same song with Tracks on: the note wires take their track's colour.", "Tracks, in the top bar of the Machines view.");
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        ReBuzz.Studio.Views.Machines.NoteWiresPreference.On = false;
+                        Settle();
+                        Shot(window, "040-machines-note-wires-hidden", "Note wires hidden (the Note wires button in the top bar): the wires are gone and the diamond ports stay.", "Note wires, in the top bar of the Machines view.");
+                    }
+                    finally
+                    {
+                        ReBuzz.Studio.Views.Machines.NoteWiresPreference.On = true;
+                        ReBuzz.Studio.Views.Machines.MachineTracksPreference.On = false;
+                        Core.UiHost.ReleaseMachine(voice);
+                        Core.UiHost.ReleaseMachine(pitch);
+                        song.DeleteMachines(new[] { voice, pitch });
+                        Settle();
+                    }
+                });
+
                 Try("036-mixer-compact", () =>
                 {
                     // MX1 (ux-overhaul.md §11): the one mixer. Compact below a view (Detail > Mixer), Full over the window.
@@ -2169,7 +2204,7 @@ namespace ReBuzz.Studio.Tests
                 }
                 //                            Bits Dith Rate AA  Jit Hiss Fol Crk  CrkL Wow WowR Flu Dri Tone Mix  Out  Amount
                 LoFiShot("640-neo-lofi-editor", "LoFi", new[] { 1300, 1, 1000, 0, 0, 360, 0, 240, 380, 70, 202, 0, 0, 375, 1000, 500, 500 },
-                    "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount first and Mix under it).");
+                    "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
                 Try("456-device-list-mode", () =>

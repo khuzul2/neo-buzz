@@ -68,7 +68,7 @@ namespace ReBuzz.Core
     /// The class is large because it brings together many subsystems; comments
     /// are added to explain high-level responsibilities and key public methods.
     /// </summary>
-    public class ReBuzzCore : IBuzz, IMachineMidiBus, INotifyPropertyChanged, ISessionHost, UiEventQueue.ITarget
+    public class ReBuzzCore : IBuzz, IMachineMidiBus, INoteWireHost, INotifyPropertyChanged, ISessionHost, UiEventQueue.ITarget
     {
         // Build and runtime info
         public static int buildNumber = int.Parse(BuildInfo.Number);
@@ -134,6 +134,13 @@ namespace ReBuzz.Core
         internal SongMarkerStore MarkerStore { get; set; }
         internal MachinePinStore PinStore { get; set; }         // fork (ux-overhaul.md, the parameter panel): the Inspector's pinned parameters
         internal TrackColourStore TrackColours { get; set; }    // fork (ux-overhaul.md, MX1): a colour per track
+        internal ReBuzz.Core.NoteWires.NoteWireStore NoteWires { get; set; }    // fork (note-wires.md): the note wires and insert chains
+
+        IReadOnlyList<string> INoteWireHost.NoteTargetsOf(IMachine source) => NoteWires?.NoteTargetsOf(source) ?? Array.Empty<string>();
+        IReadOnlyList<string> INoteWireHost.NoteTargetCandidates(IMachine source) => NoteWires?.NoteTargetCandidates(source) ?? Array.Empty<string>();
+        string INoteWireHost.ConnectNotes(IMachine source, string target) => NoteWires?.ConnectNotes(source, target) ?? "This song has no note wires.";
+        string INoteWireHost.SetNoteTarget(IMachine source, string target) => NoteWires?.SetNoteTarget(source, target) ?? "This song has no note wires.";
+        bool INoteWireHost.DisconnectNotes(IMachine source, string target) => NoteWires?.DisconnectNotes(source, target) ?? false;
 
         // Fork (daw-modes.md S5): the arrangement's lane roles and folds, saved in song files.
         internal ArrangementStore Arrangement { get; set; }
@@ -2531,6 +2538,7 @@ namespace ReBuzz.Core
                         PinStore?.Rename(oldName, machine.Name);     // fork (ux-overhaul.md): pins and locks follow a renamed machine
                         MidiMapping?.RenameMachine(oldName, machine.Name);     // fork (midi-mapping.md): so do its mappings and its track's pages
                         TrackColours?.Rename(oldName, machine.Name);   // fork (ux-overhaul.md, MX1): and so does its track colour
+                        NoteWires?.Rename(oldName, machine.Name);      // fork (note-wires.md): and its note wires and inserts
                     }
                     Modified = true;
 
@@ -2710,6 +2718,7 @@ namespace ReBuzz.Core
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
             PinStore?.Clear();                  // fork (ux-overhaul.md, the parameter panel)
             TrackColours?.Clear();              // fork (ux-overhaul.md, MX1)
+            NoteWires?.Clear();                 // fork (note-wires.md)
             MidiMapping?.Clear();               // fork (midi-mapping.md, MM1)
             Arrangement?.Clear();               // fork (daw-modes.md S5)
             Clips.Reset();                      // fork (daw-modes.md S2)

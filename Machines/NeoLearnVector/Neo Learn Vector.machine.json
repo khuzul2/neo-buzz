@@ -12,6 +12,7 @@
   "lush"
  ],
  "use_for": "A teaching vector synth: evolving pads and textures from four sources at the corners of a diamond, a cursor that mixes them and an orbit that moves it by itself.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",

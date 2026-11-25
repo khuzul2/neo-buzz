@@ -40,7 +40,7 @@ namespace NeoBuzz.Dsp
     {
         public ParamDef(int index, string id, string name, int min, int max, int def, MapKind kind,
             double a = 0, double b = 1, double exponent = 1, string unit = "", int digits = -1,
-            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "", double detent = 0)
+            string[] names = null, bool flag = false, string group = "", string description = "", string how = "", string sound = "", double detent = 0, string[] formerNames = null)
         {
             Index = index;
             Id = id;
@@ -61,6 +61,7 @@ namespace NeoBuzz.Dsp
             How = how ?? "";
             Sound = sound ?? "";
             Detent = detent;
+            FormerNames = formerNames ?? Array.Empty<string>();
         }
 
         public int Index { get; }
@@ -89,6 +90,11 @@ namespace NeoBuzz.Dsp
         /// (a ratio's whole and half numbers) reads as that multiple (see <see cref="DetentWindow"/>), so the knob rests on it; 0: none.
         /// </summary>
         public double Detent { get; }
+        /// <summary>
+        /// The names the parameter was shown under before a rename (Params.def `was`), newest first: a user preset saved before
+        /// presets stored ids names the parameter by one of them (BuzzGUI.Common's Preset, IRenamedParameters).
+        /// </summary>
+        public string[] FormerNames { get; }
         /// <summary>How near a detent a value must be to rest on it, as a fraction of the value, at most 12 % of the detent spacing either way (so at high values free ratios remain between detents).</summary>
         public const double DetentWindow = 0.015, DetentWindowMax = 0.12;
         /// <summary>Whether the control has Explain text (How or Sound).</summary>

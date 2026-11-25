@@ -28,7 +28,7 @@ namespace ReBuzz.Agent.Guides
             ("Session View and live play", new[] { "session_*", "transport", "midi_play", "track_input", "meters_read", "machine_readings" }),
             ("Render and analysis", new[] { "render", "analyze", "analyze_mix", "compare", "plot", "target_build", "eq_fit" }),
             ("Waves", new[] { "wave_*" }),
-            ("App control", new[] { "settings_*", "controller_list", "midi_map_*", "track_page_*", "midi_bind", "midi_bindings_list", "midi_unbind", "midi_learn", "audio_*", "export_audio", "master_record", "app_status", "view_show", "machine_open_editor", "select", "panel_set", "window_layout", "browser_search", "browser_places", "drop_item" }),
+            ("App control", new[] { "note_wires", "note_wire_connect", "note_wire_disconnect", "note_chain", "settings_*", "controller_list", "midi_map_*", "track_page_*", "midi_bind", "midi_bindings_list", "midi_unbind", "midi_learn", "audio_*", "export_audio", "master_record", "app_status", "view_show", "machine_open_editor", "select", "panel_set", "window_layout", "browser_search", "browser_places", "drop_item" }),
         };
 
         /// <summary>The area a tool belongs to ("Other" when none names it).</summary>

@@ -11,6 +11,7 @@
   "keys"
  ],
  "use_for": "Play the song's waves across the keyboard with key zones, loops and filters.",
+ "note_in": true,
  "tracks": 16,
  "track_parameters": [
   "Note",
