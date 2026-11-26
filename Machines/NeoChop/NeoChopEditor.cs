@@ -17,6 +17,8 @@ namespace NeoBuzz.Chop
         // Fork (ux-overhaul.md P2a): the Modulation identity in the studio, its own colour in the classic app.
         static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Modulation, NeoColor.FromRgb(0x4F, 0xC3, 0xA1));
 
+        static readonly string[] StepNames = { "Off", "On", "Acc" };   // short enough for a 30 px cell
+
         protected override string Title => "Neo Chop";
         protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
@@ -107,7 +109,7 @@ namespace NeoBuzz.Chop
             var stepRow = new UIElement[31];
             for (int i = 0; i < 16; i++)
             {
-                stepRow[i * 2] = new ParamChoice(ctx, P.Step1 + i, (i + 1).ToString(), 30, vertical: true);
+                stepRow[i * 2] = new ParamChoice(ctx, P.Step1 + i, (i + 1).ToString(), 30, vertical: true, names: StepNames);
                 if (i < 15) stepRow[i * 2 + 1] = Layout.Gap(2);
             }
             var steps = Layout.Row(stepRow);
