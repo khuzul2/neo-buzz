@@ -1,0 +1,132 @@
+# Neo Chop factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoChop
+# A preset that does not name a parameter takes its default (Stutter on, every bar, 1/16 slices, four repeats; everything else off, Mix and Amount 100 %), so every preset
+# says which modes it wants on. Every preset needs the song playing: the cutting modes and the synced gate and pan follow its position.
+machine "Neo Chop"
+
+preset "Stutter — Sixteenth Stutter"
+comment "The last half of every bar stammers: the sixteenth note before it repeats eight times, each repeat a little quieter and darker, then the next bar starts clean."
+Stutter = On
+Stutter every = 1 bar
+Slice = 1/16
+Slice feel = Straight
+Repeats = 8
+Pitch per repeat = 0
+Decay per repeat = 0.5
+Filter per repeat = -0.3
+
+preset "Repeat — Bar-End Repeat"
+comment "The end of every bar loops an eighth-note slice for half a bar, like a record skipping into the next bar; the loop is the same slice every time."
+Stutter = Off
+Repeat = On
+Interval = 1 bar
+Chance = 100
+Length = 1/2
+Grid = 1/8
+Grid feel = Straight
+Variation = 0
+
+preset "Stutter — Triplet Glitch"
+comment "The last beat of every two beats rolls a triplet sixteenth six times, each repeat two semitones higher and thinner: a rising, glitchy burst that sits across the beat."
+Stutter = On
+Stutter every = 2 beats
+Slice = 1/16
+Slice feel = Triplet
+Repeats = 6
+Pitch per repeat = 2
+Decay per repeat = 1
+Filter per repeat = 0.4
+
+preset "Retrigger — Half-Bar Retrigger"
+comment "The second half of every bar keeps jumping back to the start of the beat it is in every sixteenth note, so each beat is hammered into a machine-gun roll before the next bar arrives."
+Stutter = Off
+Retrigger = On
+Retrigger every = 1 bar
+Retrigger length = 1/2
+Retrigger grid = 1/16
+Retrigger feel = Straight
+Back to = Beat
+
+preset "Tape — Tape Stop at the Bar"
+comment "Every fourth bar the sound winds down to a stop over the last 700 ms, stays silent for the bar line, and spins back up over 350 ms."
+Stutter = Off
+Tape = On
+Tape every = 4 bars
+Stop sync = Free
+Stop time = 700
+Stop curve = 0
+Start sync = Free
+Start time = 350
+
+preset "Gate — Pumping Step Gate"
+comment "A sixteen-step eighth-note gate that pumps the whole sound: accented beats, open off-beats and gaps between, with a fast attack and a short release."
+Stutter = Off
+Gate = On
+Gate lock = Song
+Gate rate = 1/8
+Gate attack = 3
+Gate release = 30
+Gate depth = 100
+Accent = 2.5
+Step 1 = Accent
+Step 2 = Off
+Step 3 = On
+Step 4 = Off
+Step 5 = Accent
+Step 6 = Off
+Step 7 = On
+Step 8 = Off
+Step 9 = Accent
+Step 10 = Off
+Step 11 = On
+Step 12 = Off
+Step 13 = Accent
+Step 14 = Off
+Step 15 = On
+Step 16 = Accent
+
+preset "Pan — Wide Auto-Pan"
+comment "The sound swings from the far left to the far right and back once every bar, locked to the song."
+Stutter = Off
+Pan = On
+Pan sync = 1 bar
+Pan depth = 100
+Pan shape = Sine
+Pan phase = 0
+
+preset "Fill — Chopped Vocal Feel"
+comment "A busy, human chop: random sixteenth loops at the end of every bar (they come and go, the same way each play), a soft sixteenth gate with accents and a gentle triangle pan."
+Stutter = Off
+Repeat = On
+Interval = 1 bar
+Chance = 70
+Length = 1/4
+Grid = 1/16
+Grid feel = Straight
+Variation = 50
+Gate = On
+Gate lock = Song
+Gate rate = 1/16
+Gate attack = 2
+Gate release = 20
+Gate depth = 70
+Accent = 3
+Pan = On
+Pan sync = 1/2
+Pan depth = 45
+Pan shape = Triangle
+Step 1 = Accent
+Step 2 = On
+Step 3 = Off
+Step 4 = On
+Step 5 = Accent
+Step 6 = On
+Step 7 = On
+Step 8 = On
+Step 9 = Off
+Step 10 = On
+Step 11 = Accent
+Step 12 = On
+Step 13 = Off
+Step 14 = On
+Step 15 = Accent
+Step 16 = On
