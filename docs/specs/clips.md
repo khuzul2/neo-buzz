@@ -576,6 +576,14 @@ Direct engine (D3) changes the first gate: for data the engine now plays differe
 
 ---
 
+### T2 as built: tracker parameter lanes
+
+- **What:** each parameter column's header has a toggle (not note columns) that opens a vertical lane strip (56 px at 100 %) right of the column. It draws the column's own events at the grid's row scale, scrolls with the grid and shows the play position. Click adds a point, a drag moves it (snaps to the column's rows; Alt = no snap), a drag on empty space selects, R switches ramp and step, Delete removes. Each gesture is one step of the song's history. Ctrl+Z with the lane focused undoes on the song's history; a typed value in a cell is undone on the editor's own stack.
+- **Which lane:** the column's own (unmarked) lane, written through `ColumnEventsAction(own: true)`. EV1's Detail lane keeps writing the marked automation lane and shows the tracker lane read only as dashed steps and ramps (now with ramps). A Detail edit is therefore not mirrored into the tracker's cells: the reverse direction of "one curve" is covered by a typed value showing in the strip and the Detail model. Decide with EV1 whether the Detail lane should write the unmarked lane once the "tracker columns" read-only source goes away (§8).
+- **Shared code:** `LaneController` (Studio, `Views/Detail`) holds the points, hit-test, selection and edit gestures for `EnvelopeLane` (horizontal) and `TrackerLane` (vertical). The editor is a separately loaded machine, so the seam is `BuzzGUI.Common.ClipLaneHost` (`IClipRowAxis`, `IClipLaneProvider`), additive.
+- **Saved view:** `Lane` = `1` in the store lane's metadata (beside `Grid`, `Mute`), saved in `.nbl` with the lane; a song from before has no `Lane` and opens with every lane closed. An open lane keeps its column shown even when empty.
+- **Allocation:** the strip's geometry is cached and rebuilt only when its data, width, extent or row scale change; scrolling and the play line draw from the cache. Steady-state `Prepare` allocates 0 bytes (test); a rebuild after an edit allocates the new geometry.
+
 ## 11. Risks and loose ends
 
 | Risk | Handling |

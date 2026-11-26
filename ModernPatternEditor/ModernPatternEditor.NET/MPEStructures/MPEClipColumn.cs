@@ -55,6 +55,9 @@ namespace WDE.ModernPatternEditor.MPEStructures
         /// <summary>This column's parameter is a machine's (not one of the editor's own lanes): its events are a lane's in the store.</summary>
         internal bool Bound => MPEClip?.Editor != null && Parameter != null && Parameter is not MPEInternalParameter;
 
+        /// <summary>T2: the column is one of a machine's parameters in a clip of the store (as <see cref="Bound"/>, but before the editor has attached to the store, which the plan of the columns can come before).</summary>
+        internal bool ParameterOfStore => MPEClip?.Editor != null && Parameter != null && Parameter is not MPEInternalParameter;
+
         IClipColumn store;
         Action<IEnumerable<ClipEvent>, bool> storeChanged;
 
@@ -117,6 +120,36 @@ namespace WDE.ModernPatternEditor.MPEStructures
                 int beats = Math.Max(1, (MPEClip.Clip.Length + BUZZ_TICKS_PER_BEAT - 1) / BUZZ_TICKS_PER_BEAT);
                 BeatRowsList = ClipGrid.BeatRows(grid, beats, rpb);
             }
+        }
+
+        /// <summary>
+        /// Fork (clips.md §5.2, T2): whether the column's vertical envelope lane is open. View state kept with the store's lane (its Lane metadata, as
+        /// Grid and Mute are), so it is saved with the song and a song from before has it closed. False for a column with no lane in the store yet.
+        /// </summary>
+        internal bool LaneOpen
+        {
+            get
+            {
+                // Read from the clip's own lane without attaching to it: the plan of the columns asks before the editor has attached to the store.
+                var clip = MPEClip.Clip;
+                if (clip == null || Parameter == null || Parameter is MPEInternalParameter) return false;
+                foreach (var c in clip.Columns)
+                    if (c.Type == ClipColumnType.Parameter && ReferenceEquals(c.Parameter, Parameter) && c.Track == ParamTrack && !c.Metadata.ContainsKey(ClipMeta.SessionAutomation))
+                        return c.Metadata.TryGetValue(ClipMeta.Lane, out var v) && v == "1";
+                return false;
+            }
+        }
+
+        /// <summary>Opens or closes the lane. Opening makes the store's lane if the column has none (an empty lane, which holds the view state).</summary>
+        internal void SetLaneOpen(bool open)
+        {
+            if (!Bound) return;
+            var lane = StoreLane(open);
+            if (lane == null) return;
+            if (open == (lane.Metadata.TryGetValue(ClipMeta.Lane, out var v) && v == "1")) return;
+            if (open) lane.Metadata[ClipMeta.Lane] = "1";
+            else lane.Metadata.Remove(ClipMeta.Lane);
+            Global.Buzz?.SetModifiedFlag();
         }
 
         /// <summary>Fork (ux-overhaul.md P3c): whether the column holds any event (the editor hides columns that hold none).</summary>

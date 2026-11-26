@@ -26,8 +26,8 @@ namespace ReBuzz.Agent
                 Title = "Read a clip",
                 Description =
                     "Everything a MIDI clip holds: its lanes (the Notes lane and one lane per parameter and track, each with its event count, who made it: " +
-                    "editor = the clip editor's lane, automation = a take's or automation_write's, and its row grid and mute), its notes (as notes_read gives them) and its view " +
-                    "(rows per beat, muted lanes, where the clip is placed). Say which clip: clip=<its name>, or scene=<Session scene, from 1>, or lane with placement=<id> or at=<a position inside it>. " +
+                    "editor = the clip editor's lane, automation = a take's or automation_write's, and its row grid, mute and whether the Tracker shows its envelope strip), its notes (as notes_read gives them) and its view " +
+                    "(rows per beat, muted lanes, open envelope strips, where the clip is placed). Say which clip: clip=<its name>, or scene=<Session scene, from 1>, or lane with placement=<id> or at=<a position inside it>. " +
                     "automation_read gives the points of the parameter lanes. Example: clip_get(machine=\"Bass\", clip=\"Verse\").",
                 Input = Object(null,
                     Req("machine", String("The machine")),
@@ -44,10 +44,12 @@ namespace ReBuzz.Agent
                         Req("kind", String("notes or parameter", "notes", "parameter")), Opt("param", String("Parameter")), Opt("machine", String("Another machine's parameter")),
                         Opt("track", Integer("Track")), Req("events", Integer("Events in the lane")),
                         Req("source", String("editor, automation or notes", "editor", "automation", "notes")),
-                        Opt("grid", String("The lane's rows (rows per beat, and the beats whose rows differ)")), Opt("muted", Boolean("Muted in the tracker"))), "The lanes")),
+                        Opt("grid", String("The lane's rows (rows per beat, and the beats whose rows differ)")), Opt("muted", Boolean("Muted in the tracker")),
+                        Opt("envelope_lane", Boolean("The Tracker shows this lane as an envelope strip beside its column"))), "The lanes")),
                     Req("view", Object(null,
                         Req("rows_per_beat", Integer("Rows per beat the tracker shows (the lanes' grid, else the song's ticks per beat)")),
                         Req("muted_lanes", Integer("Lanes muted")),
+                        Req("open_lanes", Integer("Lanes the Tracker shows as envelope strips")),
                         Req("placements", Integer("Times the clip is placed in the arrangement"))))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -75,7 +77,7 @@ namespace ReBuzz.Agent
             result["notes"] = notes;
 
             var lanes = new JsonArray();
-            int muted = 0, rpb = 0;
+            int muted = 0, rpb = 0, open = 0;
             foreach (var col in p.Columns)
             {
                 var o = new JsonObject();
@@ -102,7 +104,8 @@ namespace ReBuzz.Agent
                     if (rpb == 0 && ClipGrid.TryParse(grid, out int g, out _)) rpb = g;
                 }
                 if (col.Metadata.TryGetValue(ClipMeta.Mute, out var mute) && mute == "1") { o["muted"] = true; muted++; }
-                if (count == 0 && !o.ContainsKey("grid") && !o.ContainsKey("muted")) continue;       // an empty lane with no view of its own is not worth a line
+                if (col.Metadata.TryGetValue(ClipMeta.Lane, out var strip) && strip == "1") { o["envelope_lane"] = true; open++; }
+                if (count == 0 && !o.ContainsKey("grid") && !o.ContainsKey("muted") && !o.ContainsKey("envelope_lane")) continue;       // an empty lane with no view of its own is not worth a line
                 lanes.Add(o);
             }
             result["lanes"] = lanes;
@@ -110,6 +113,7 @@ namespace ReBuzz.Agent
             {
                 ["rows_per_beat"] = rpb > 0 ? rpb : tpb,
                 ["muted_lanes"] = muted,
+                ["open_lanes"] = open,
                 ["placements"] = SongModel.Placements(core, p).Count,
             };
             return result;
