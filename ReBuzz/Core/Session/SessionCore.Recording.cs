@@ -189,7 +189,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Audio thread: a clip stopped on a track at a clock (exclusive end).</summary>
-        static void NoteStopped(SequenceCore seq, PatternCore clip, long clock)
+        static void NoteStopped(SequenceCore seq, ClipCore clip, long clock)
         {
             Volatile.Write(ref seq.SessionStoppedAt, clock);
             seq.SessionStoppedClip = clip;
@@ -215,7 +215,7 @@ namespace ReBuzz.Core.Session
         /// UI thread (Capture MIDI): launches a clip on the next tick in phase with a grid point
         /// already passed: it plays from where it would be had it started at <paramref name="originClock"/>.
         /// </summary>
-        internal void LaunchInPhase(SequenceCore seq, PatternCore clip, long originClock)
+        internal void LaunchInPhase(SequenceCore seq, ClipCore clip, long originClock)
         {
             if (seq == null || clip == null || clip.IsDeleted || seq.IsRemoved) return;
             lock (gate)
@@ -239,7 +239,7 @@ namespace ReBuzz.Core.Session
         /// </summary>
         internal sealed class RecordWindow
         {
-            public RecordWindow(SequenceCore track, PatternCore take, int firstPassTicks, long from, long until, bool thenOverdub = false)
+            public RecordWindow(SequenceCore track, ClipCore take, int firstPassTicks, long from, long until, bool thenOverdub = false)
             {
                 Track = track;
                 Take = take;
@@ -250,7 +250,7 @@ namespace ReBuzz.Core.Session
             }
 
             public SequenceCore Track { get; }
-            public PatternCore Take { get; }
+            public ClipCore Take { get; }
             public int FirstPassTicks { get; }
             public long From { get; }
             public long Until { get; }
@@ -271,7 +271,7 @@ namespace ReBuzz.Core.Session
         internal struct TakeInput
         {
             public SequenceCore Track;
-            public PatternCore Clip;
+            public ClipCore Clip;
             public long ClipStart;
             public TakeStamp Stamp;
             /// <summary>Automation: the parameter moved (the stamp's data is its value); null for MIDI.</summary>
@@ -550,7 +550,7 @@ namespace ReBuzz.Core.Session
         /// transport runs; from a stopped transport after <paramref name="countInTicks"/>, which
         /// the metronome counts in. Starts the transport if needed.
         /// </summary>
-        internal void LaunchTake(SequenceCore seq, PatternCore take, int countInTicks)
+        internal void LaunchTake(SequenceCore seq, ClipCore take, int countInTicks)
         {
             if (seq == null || take == null || take.IsDeleted || seq.IsRemoved) return;
             lock (gate)
@@ -595,7 +595,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>UI thread: the clock the clip counts from on the track, if it plays there now; else -1.</summary>
-        internal long StartOf(SequenceCore seq, PatternCore clip)
+        internal long StartOf(SequenceCore seq, ClipCore clip)
         {
             lock (gate)
             {
@@ -604,7 +604,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>UI thread: whether the clip plays or waits to on the track.</summary>
-        internal bool IsPlayingOrQueued(SequenceCore seq, PatternCore clip)
+        internal bool IsPlayingOrQueued(SequenceCore seq, ClipCore clip)
         {
             lock (gate)
             {

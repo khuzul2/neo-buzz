@@ -7,7 +7,7 @@ namespace ReBuzz.Core.Session
     /// <summary>
     /// Fork (docs/specs/daw-modes.md AR5, S6): MIDI recorded into the arrangement. The session's record
     /// windows count in session time against the clip a track plays; an arrangement window counts in song
-    /// ticks against a take target (a pattern to be, and the song tick its time zero is). The MIDI thread
+    /// ticks against a take target (a clip to be, and the song tick its time zero is). The MIDI thread
     /// stamps each message the way <see cref="SessionCore.OnMidiInput"/> stamps a session take's (heard
     /// time, from the audio thread's rendered position), and the UI thread's <see cref="ArrangementRecorder"/>
     /// drains them.

@@ -4,51 +4,51 @@ using System.Linq;
 using WDE.ModernPatternEditor;
 using WDE.ModernPatternEditor.MPEStructures;
 
-namespace BuzzGUI.Common.Actions.PatternActions
+namespace BuzzGUI.Common.Actions.ClipActions
 {
-    public class MPESetBeatSubdivisionAction : PatternAction
+    public class MPESetBeatSubdivisionAction : ClipAction
     {
-        Tuple<MPEPatternColumnBeatRef, int>[] newSubdiv;
+        Tuple<MPEClipColumnBeatRef, int>[] newSubdiv;
         int[] oldSubdiv;
-        MPEPattern mpePattern;
+        MPEClip mpeClip;
 
-        public MPESetBeatSubdivisionAction(MPEPattern pattern, IEnumerable<Tuple<MPEPatternColumnBeatRef, int>> subdiv)
-            : base(pattern.Pattern)
+        public MPESetBeatSubdivisionAction(MPEClip clip, IEnumerable<Tuple<MPEClipColumnBeatRef, int>> subdiv)
+            : base(clip.Clip)
         {
-            mpePattern = pattern;
+            mpeClip = clip;
             this.newSubdiv = subdiv.ToArray();
             oldSubdiv = newSubdiv
-                .Select(s => s.Item1.GetColumn(mpePattern).BeatSubdivision.ContainsKey(s.Item1.Beat)
-                ? s.Item1.GetColumn(mpePattern).BeatSubdivision[s.Item1.Beat] : mpePattern.RowsPerBeat).ToArray();
+                .Select(s => s.Item1.GetColumn(mpeClip).BeatSubdivision.ContainsKey(s.Item1.Beat)
+                ? s.Item1.GetColumn(mpeClip).BeatSubdivision[s.Item1.Beat] : mpeClip.RowsPerBeat).ToArray();
         }
 
         protected override void DoAction()
         {
             foreach (var subdiv in newSubdiv)
             {
-                var mpeColumn = mpePattern.GetColumn(subdiv.Item1.GetColumn(mpePattern));
+                var mpeColumn = mpeClip.GetColumn(subdiv.Item1.GetColumn(mpeClip));
                 mpeColumn.BeatRowsList[subdiv.Item1.Beat] = subdiv.Item2;
             }
-            var p = Pattern;
-            newSubdiv.Run(s => s.Item1.GetColumn(mpePattern).SetBeatSubdivision(s.Item1.Beat, s.Item2));
+            var p = Clip;
+            newSubdiv.Run(s => s.Item1.GetColumn(mpeClip).SetBeatSubdivision(s.Item1.Beat, s.Item2));
 
-            mpePattern.Editor.patternControl.MoveCursorDelta(0, 0);
+            mpeClip.Editor.clipControl.MoveCursorDelta(0, 0);
         }
 
         protected override void UndoAction()
         {
-            var p = Pattern;
+            var p = Clip;
             newSubdiv.Run((s, i) =>
             {
                 if (oldSubdiv[i] >= 0)
                 {
-                    s.Item1.GetColumn(mpePattern).SetBeatSubdivision(s.Item1.Beat, oldSubdiv[i]);
-                    var mpeColumn = mpePattern.GetColumn(s.Item1.GetColumn(mpePattern));
+                    s.Item1.GetColumn(mpeClip).SetBeatSubdivision(s.Item1.Beat, oldSubdiv[i]);
+                    var mpeColumn = mpeClip.GetColumn(s.Item1.GetColumn(mpeClip));
                     mpeColumn.BeatRowsList[s.Item1.Beat] = oldSubdiv[i];
                 }
             });
 
-            mpePattern.Editor.patternControl.MoveCursorDelta(0, 0);
+            mpeClip.Editor.clipControl.MoveCursorDelta(0, 0);
         }
 
     }

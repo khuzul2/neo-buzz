@@ -1,27 +1,27 @@
 ﻿using BuzzGUI.Interfaces;
 
-namespace BuzzGUI.Common.Actions.PatternActions
+namespace BuzzGUI.Common.Actions.ClipActions
 {
-    public class SetLengthAction : PatternAction
+    public class SetLengthAction : ClipAction
     {
         readonly int newLength;
         readonly int oldLength;
 
-        public SetLengthAction(IPattern pattern, int length)
-            : base(pattern)
+        public SetLengthAction(IClip clip, int length)
+            : base(clip)
         {
             this.newLength = length;
-            this.oldLength = pattern.Length;
+            this.oldLength = clip.Length;
         }
 
         protected override void DoAction()
         {
-            Pattern.Length = newLength;
+            Clip.Length = newLength;
         }
 
         protected override void UndoAction()
         {
-            Pattern.Length = oldLength;
+            Clip.Length = oldLength;
         }
 
     }

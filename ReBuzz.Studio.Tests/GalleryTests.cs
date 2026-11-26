@@ -270,20 +270,20 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Takes a shot, or lists why not and goes on.</summary>
-        /// <summary>A machine of the gear with a pattern of notes, shown in the piano roll maximised, Fold: playable chosen (the note-map shots).</summary>
+        /// <summary>A machine of the gear with a clip of notes, shown in the piano roll maximised, Fold: playable chosen (the note-map shots).</summary>
         static object NoteMapShot(MainWindow window, string gear, string name, System.Action<MachineCore, System.Action<MachineCore, string, int>> setup, (int Tick, int Key)[] notes, int extra = -1)
         {
             Core.SongCore.CreateMachine(gear, null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
             setup(machine, (m, p, v) => m.ParameterGroups[1].Parameters.First(x => x.Name == p).SetValue(0, v));
-            machine.CreatePattern(name + " beat", 16);
+            machine.CreateClip(name + " beat", 16);
             window.Detail.ShowPage(true, true);
-            PatternView.Edit(machine.PatternsList.First(p => p.Name == name + " beat"));
+            ClipView.Edit(machine.ClipsList.First(p => p.Name == name + " beat"));
             Wait(250);
-            var roll = PatternView.Page.Roll;
+            var roll = ClipView.Page.Roll;
             roll.Poll();
-            foreach (var (tick, key) in notes) roll.Roll.AddNote(tick * PatternEvent.TimeBase, key);
-            if (extra >= 0) roll.Roll.AddNote(12 * PatternEvent.TimeBase, extra);
+            foreach (var (tick, key) in notes) roll.Roll.AddNote(tick * ClipEvent.TimeBase, key);
+            if (extra >= 0) roll.Roll.AddNote(12 * ClipEvent.TimeBase, extra);
             Wait(150);
             roll.FoldBox.SelectedIndex = 3;
             Wait(250);
@@ -304,35 +304,35 @@ namespace ReBuzz.Studio.Tests
             Core.SongCore.CreateMachine("Neo Sampler", null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
             machine.ParameterGroups[1].Parameters.First(x => x.Name == "Mode").SetValue(0, 2);
-            machine.CreatePattern("Jungle", 16);
+            machine.CreateClip("Jungle", 16);
             window.Detail.ShowPage(true, true);
-            PatternView.Edit(machine.PatternsList.First(p => p.Name == "Jungle"));
+            ClipView.Edit(machine.ClipsList.First(p => p.Name == "Jungle"));
             Wait(250);
-            var roll = PatternView.Page.Roll;
+            var roll = ClipView.Page.Roll;
             roll.Poll();
             var busy = machine.ManagedMachine?.GetType().GetProperty("Busy");
             var clock = System.Diagnostics.Stopwatch.StartNew();
             while (busy?.GetValue(machine.ManagedMachine) is true && clock.ElapsedMilliseconds < 5000) Thread.Sleep(20);
-            const int TB = PatternEvent.TimeBase;
+            const int TB = ClipEvent.TimeBase;
             var line = new ClipNote[]
             {
                 new(0, TB * 2, 48, 112, 0, 1), new(TB * 2, TB, 48, 100, 0, 4), new(TB * 3, TB, 48, 100, 0, 4), new(TB * 4, TB * 2, 50, 110, 0, 2),
                 new(TB * 6, TB, 48, 90, 0, 8), new(TB * 7, TB, 48, 100, 0, 3), new(TB * 8, TB * 2, 48, 112, 0, 5), new(TB * 10, TB, 53, 100, 0, 4),
                 new(TB * 11, TB, 53, 96, 0, 6), new(TB * 12, TB * 2, 55, 110, 0, 7), new(TB * 14, TB, 48, 100, 0, 9), new(TB * 15, TB, 48, 100, 0, 2),
             };
-            ReBuzz.Core.Notes.SongNotes.For(Core, machine.PatternsList.First(p => p.Name == "Jungle")).Edit(null, line);
+            ReBuzz.Core.Notes.SongNotes.For(Core, machine.ClipsList.First(p => p.Name == "Jungle")).Edit(null, line);
             Wait(150);
             roll.Poll();
             roll.FoldBox.SelectedIndex = 1;
             Wait(250);
-            string text = "Neo Sampler in Tracker mode, the Jungle pattern: a chip on every note names its sample, and the colour follows the sample.";
+            string text = "Neo Sampler in Tracker mode, the Jungle clip: a chip on every note names its sample, and the colour follows the sample.";
             if (what == 0) { }
             else if (what == 1) { roll.Roll.SelectOnly(new[] { 1 }); roll.Roll.RequestPicker(); text += " The picker is open on the snare."; }
             else if (what == 2) { roll.Roll.SelectOnly(new[] { 0, 1, 2, 3 }); roll.Roll.RequestPicker(); text += " The picker over a mixed selection: it applies to four notes with different samples."; }
             else if (what == 3) { roll.LowerBox.SelectedIndex = roll.LowerBox.Items.Cast<object>().ToList().FindIndex(o => o.ToString() == "Sample"); text += " The Sample lane under the roll."; }
             else { roll.Roll.TickWidth = 3; text += " Zoomed out: the notes are too short for a chip and keep their colour."; }
             Wait(300);
-            Shot(window, id, text, "Open a Neo Sampler's pattern in the Piano roll with the sampler's Mode set to Tracker; S opens the picker, the lane box picks the Sample lane.");
+            Shot(window, id, text, "Open a Neo Sampler's clip in the Piano roll with the sampler's Mode set to Tracker; S opens the picker, the lane box picks the Sample lane.");
         }
 
         static void Try(string id, System.Action shot)
@@ -384,10 +384,10 @@ namespace ReBuzz.Studio.Tests
         {
             var layout = Core.SessionLayout;
             var doc = layout.Ensure();
-            var patterns = Core.SongCore.Machines.SelectMany(m => m.Patterns).ToList();
-            var clips = patterns.ToDictionary(p => p, p => ReBuzz.Core.Session.PatternColors.Get(p));
+            var clips = Core.SongCore.Machines.SelectMany(m => m.Clips).ToList();
+            var colours = clips.ToDictionary(p => p, p => ReBuzz.Core.Session.ClipColors.Get(p));
             var tracks = Enumerable.Range(0, doc.Tracks.Count).Select(t => doc.Tracks[t].ColorIndex).ToList();
-            foreach (var p in patterns) layout.SetClipColor(p, -1);
+            foreach (var p in clips) layout.SetClipColor(p, -1);
             for (int t = 0; t < tracks.Count; t++) layout.SetTrackColor(t, -1);
             Settle();
             try
@@ -396,7 +396,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                foreach (var (p, c) in clips) layout.SetClipColor(p, c);
+                foreach (var (p, c) in colours) layout.SetClipColor(p, c);
                 for (int t = 0; t < tracks.Count; t++) layout.SetTrackColor(t, tracks[t]);
                 Settle();
             }
@@ -544,7 +544,7 @@ namespace ReBuzz.Studio.Tests
 
         /// <summary>
         /// The demo song, built in a new song and saved as "Night Drive.nbl" (the title names it). Not opened again: the
-        /// notes moved onto the note lanes show in the Pattern View as they are written (they showed only once the song was
+        /// notes moved onto the note lanes show in the Clip View as they are written (they showed only once the song was
         /// opened again before; ui-gallery.md).
         /// </summary>
         static GallerySong.Song LoadDemo()
@@ -654,10 +654,10 @@ namespace ReBuzz.Studio.Tests
             throw new AssertionException("the window didn't open");
         }
 
-        /// <summary>The pattern grid focused and its cursor on the first note lane (Tab), which scrolls the lanes into view.</summary>
+        /// <summary>The clip grid focused and its cursor on the first note lane (Tab), which scrolls the lanes into view.</summary>
         static void ToNotes(MainWindow window)
         {
-            dynamic view = PatternView.Page.EditorControl;
+            dynamic view = ClipView.Page.EditorControl;
             ((Control)view.TrackerGrid.Body).Focus();
             Settle();
             Key(window, PhysicalKey.Tab);
@@ -679,10 +679,10 @@ namespace ReBuzz.Studio.Tests
                     $"Start {Product.Name} (or File ▸ New, ⌘N).", song: "none (new song)", notes: Headless));
                 Try("011-start-sequence-empty", () => { window.ShowView("Sequence"); Shot(window, "011-start-sequence-empty", "The Sequence tab on a new song: no tracks yet.", "F4, or the Sequence tab.", song: "none (new song)"); });
                 Try("012-start-session-empty", () => { window.ShowView("Session"); Shot(window, "012-start-session-empty", "The Session tab on a new song: an empty launch grid with its toolbar and mixer.", "Ctrl+Tab, or the Session tab.", song: "none (new song)"); });
-                Try("013-start-pattern-empty", () => { window.ShowView("Pattern"); Shot(window, "013-start-pattern-empty", "The Tracker docked in the detail panel on a new song: no machine with patterns yet (P3a).", "Cmd+4, Alt+Cmd+D, or the Tracker button under the view.", song: "none (new song)"); });
+                Try("013-start-clip-empty", () => { window.ShowView("Clip"); Shot(window, "013-start-clip-empty", "The Tracker docked in the detail panel on a new song: no machine with clips yet (P3a).", "Cmd+4, Alt+Cmd+D, or the Tracker button under the view.", song: "none (new song)"); });
                 Try("015-start-tracker-maximised", () => { window.Detail.Show(true); Shot(window, "015-start-tracker-maximised", "The Tracker maximised over the window (P3a).", "F2, Shift+Cmd+F, or the button in the detail bar.", song: "none (new song)"); });
                 Try("017-start-machine-starters", () => { window.ShowView("Machines"); Shot(window, "017-start-machine-starters", "The Machine View on a new song (P3d): the starters Neo Poly, Neo Drums and Neo Wave one click each, and the hint to double-click or press the Add Machine key to search.", "Open a new song.", song: "none (new song)"); });
-                Try("016-start-browser", () => { window.Detail.Close(); window.ShowView("Machines"); window.Browser.Open(); Shot(window, "016-start-browser", "The browser on the left (P3a): a search box over the installed machines, the patterns of the selection first.", "Alt+Cmd+B, or the rail's button.", song: "none (new song)"); window.Browser.Close(); });
+                Try("016-start-browser", () => { window.Detail.Close(); window.ShowView("Machines"); window.Browser.Open(); Shot(window, "016-start-browser", "The browser on the left (P3a): a search box over the installed machines, the clips of the selection first.", "Alt+Cmd+B, or the rail's button.", song: "none (new song)"); window.Browser.Close(); });
                 Try("014-start-notes-empty", () => { window.ShowView("Song Notes"); Shot(window, "014-start-notes-empty", "The Song Notes tab on a new song: the empty notes editor and its toolbar.", "F10, or the Song Notes tab.", song: "none (new song)"); });
 
                 // P3i: every view of an empty song shows a next step; then the views of a song with a track and nothing in it.
@@ -691,19 +691,19 @@ namespace ReBuzz.Studio.Tests
                 Try("029-start-history-empty", () => { window.Detail.Close(); window.Inspector.Open(); window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.HistoryTabName); Shot(window, "029-start-history-empty", "The inspector's History on a new song (P3i): nothing done yet, and the first step to make.", "Alt+Cmd+I, then History.", song: "none (new song)"); window.Inspector.ShowTab(ReBuzz.Studio.Views.Inspector.InspectorPanel.SelectionTab); });
                 Try("034-start-sequence-nothing-arranged", () =>
                 {
-                    // A starter comes with its first pattern, placed on its track; this shot (and 044 and 046) show the states their names say, so
-                    // the pattern goes (undoable: it is the "nothing arranged", "no clips" and "no patterns" a person reaches by deleting it).
+                    // A starter comes with its first clip, placed on its track; this shot (and 044 and 046) show the states their names say, so
+                    // the clip goes (undoable: it is the "nothing arranged", "no clips" and "no clips" a person reaches by deleting it).
                     var poly = ReBuzz.Studio.Shell.EmptyStates.AddStarter(Core, "Neo Poly");
                     Settle();
-                    poly.DeletePattern(poly.Patterns[0]);
+                    poly.DeleteClip(poly.Clips[0]);
                     Settle();
                     window.ShowView("Sequence");
                     window.Tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<ReBuzz.Studio.Views.Sequence.SequenceView>().First().RefreshEmpty();
                     Settle();
-                    Shot(window, "034-start-sequence-nothing-arranged", "The Sequence tab after the Neo Poly starter and its pattern deleted (P3i): it has its track and nothing placed on it; the step is a new pattern on the track.", "Click the Neo Poly starter, then the Sequence tab.", song: "new song with Neo Poly");
+                    Shot(window, "034-start-sequence-nothing-arranged", "The Sequence tab after the Neo Poly starter and its clip deleted (P3i): it has its track and nothing placed on it; the step is a new clip on the track.", "Click the Neo Poly starter, then the Sequence tab.", song: "new song with Neo Poly");
                 });
                 Try("044-start-session-no-clips", () => { window.ShowView("Session"); Shot(window, "044-start-session-no-clips", "The Session tab after the Neo Poly starter (P3i): a track and no clip; the step is Create a clip, or a double click on a slot.", "Click the Neo Poly starter, then the Session tab.", song: "new song with Neo Poly"); });
-                Try("046-start-tracker-no-patterns", () => { window.Detail.ShowPage(false, false); Shot(window, "046-start-tracker-no-patterns", "The Tracker on a machine with no patterns (P3i): New pattern is the next step.", "Select a machine that has no pattern, then the Tracker.", song: "new song with Neo Poly"); });
+                Try("046-start-tracker-no-clips", () => { window.Detail.ShowPage(false, false); Shot(window, "046-start-tracker-no-clips", "The Tracker on a machine with no clips (P3i): New clip is the next step.", "Select a machine that has no clip, then the Tracker.", song: "new song with Neo Poly"); });
             }
             finally
             {
@@ -1055,14 +1055,14 @@ namespace ReBuzz.Studio.Tests
                 Try("030-sequence", () =>
                 {
                     window.ShowView("Sequence");
-                    Shot(window, "030-sequence", "Sequence: the 16-bar arrangement of the demo song, one track a generator, coloured pattern boxes, the pattern list on the right.", "F4, or the Sequence tab.");
+                    Shot(window, "030-sequence", "Sequence: the 16-bar arrangement of the demo song, one track a generator, coloured clip boxes, the clip list on the right.", "F4, or the Sequence tab.");
                 });
                 Try("031-sequence-cursor", () =>
                 {
                     var seq = Tab<SequenceView>(window, "Arrangement");
                     var geo = seq.Canvas.Geometry;
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(8 * 16) + 6, geo.YOf(2) + geo.TrackHeight * 0.6), window)!.Value);
-                    Shot(window, "031-sequence-cursor", "Sequence with the cursor on Lead's Hook at bar 9 (selected pattern, the pattern list follows).", "Click a pattern box.");
+                    Shot(window, "031-sequence-cursor", "Sequence with the cursor on Lead's Hook at bar 9 (selected clip, the clip list follows).", "Click a clip box.");
                 });
                 Try("032-sequence-arrangement", () =>
                 {
@@ -1075,7 +1075,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     var seq = Tab<SequenceView>(window, "Arrangement");
                     seq.SetArrangementMode(true);
-                    var hook = Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead").Patterns.First(p => p.Name == "Hook");
+                    var hook = Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead").Clips.First(p => p.Name == "Hook");
                     seq.OpenPianoRoll(hook);
                     Shot(window, "033-arrangement-piano-roll", "A clip opened in the Arrangement mode (daw-modes.md AR2): its notes in the piano roll under the timeline, with the velocity lane (or a CC or pitch bend lane), key and scale, fold, step input and the ghosts of other clips.", "Double-click a clip, or P.");
                     seq.RollPanel.Close();
@@ -1157,7 +1157,7 @@ namespace ReBuzz.Studio.Tests
                 Try("346-sequence-machine-colours", () => WithMachineColours(() =>
                 {
                     window.ShowView("Sequence");
-                    Shot(window, "346-sequence-machine-colours", "The Arrangement with no colour picked on any pattern (P3h): the blocks and the track headers' left strips take the machine's identity colour.", "Right-click a block ▸ Color ▸ Default.");
+                    Shot(window, "346-sequence-machine-colours", "The Arrangement with no colour picked on any clip (P3h): the blocks and the track headers' left strips take the machine's identity colour.", "Right-click a block ▸ Color ▸ Default.");
                     window.ShowView("Session");
                 }));
                 Try("341-machines-meters-playing", () =>
@@ -1246,76 +1246,76 @@ namespace ReBuzz.Studio.Tests
 
                 Core.BPM = 124;                 // the Drop scene's tempo, put back
                 Core.SongCore.PlayPosition = 0;
-                Try("050-pattern", () =>
+                Try("050-clip", () =>
                 {
                     window.Detail.Show(true);       // the Tracker over the window, as the tab was
-                    PatternView.Edit(demo.LineA);
-                    window.ShowView("Pattern");
+                    ClipView.Edit(demo.LineA);
+                    window.ShowView("Clip");
                     Wait(200);
                     ToNotes(window);
-                    Shot(window, "050-pattern", "Pattern: Bass's Line A in the Modern Pattern Editor (machine and pattern choosers, toolbar, the global columns, the notes on the MIDI note lanes on the right).",
-                        "F2 (the Tracker over the window), or double-click a pattern in the Sequence View.");
+                    Shot(window, "050-clip", "Clip: Bass's Line A in the Modern Pattern Editor (machine and clip choosers, toolbar, the global columns, the notes on the MIDI note lanes on the right).",
+                        "F2 (the Tracker over the window), or double-click a clip in the Sequence View.");
                 });
-                Try("051-pattern-drums", () =>
+                Try("051-clip-drums", () =>
                 {
-                    PatternView.Edit(demo.Beat);
+                    ClipView.Edit(demo.Beat);
                     Wait(200);
                     ToNotes(window);
-                    Shot(window, "051-pattern-drums", "Pattern: Drums' Beat (kick, snare, clap and hats on Neo Drums' MIDI note lanes).", "Choose Drums and Beat in the Pattern tab's choosers.");
+                    Shot(window, "051-clip-drums", "Clip: Drums' Beat (kick, snare, clap and hats on Neo Drums' MIDI note lanes).", "Choose Drums and Beat in the Clip tab's choosers.");
                 });
-                Try("052-pattern-selection", () =>
+                Try("052-clip-selection", () =>
                 {
-                    PatternView.Edit(demo.Chords);
+                    ClipView.Edit(demo.Chords);
                     Wait(200);
                     ToNotes(window);
                     for (int i = 0; i < 6; i++) Key(window, PhysicalKey.ArrowDown, RawInputModifiers.Shift);
                     for (int i = 0; i < 2; i++) Key(window, PhysicalKey.ArrowRight, RawInputModifiers.Shift);
-                    Shot(window, "052-pattern-selection", "Pattern: Pad's Chords with a block selected (Shift + arrows).", "Shift + arrow keys (or a drag) in the pattern grid.");
+                    Shot(window, "052-clip-selection", "Clip: Pad's Chords with a block selected (Shift + arrows).", "Shift + arrow keys (or a drag) in the clip grid.");
                 });
-                Try("053-pattern-long-scrolled", () =>
+                Try("053-clip-long-scrolled", () =>
                 {
-                    PatternView.Edit(demo.Arp);
+                    ClipView.Edit(demo.Arp);
                     Wait(200);
                     ToNotes(window);
                     for (int i = 0; i < 4; i++) Key(window, PhysicalKey.PageDown);
                     Wait(150);
-                    Shot(window, "053-pattern-long-scrolled", "Pattern: Lead's 8-bar Arp (128 rows), scrolled down with the cursor past the middle.", "Page Down in a long pattern.");
+                    Shot(window, "053-clip-long-scrolled", "Clip: Lead's 8-bar Arp (128 rows), scrolled down with the cursor past the middle.", "Page Down in a long clip.");
                 });
-                Try("054-pattern-notes-lanes", () =>
+                Try("054-clip-notes-lanes", () =>
                 {
-                    // A take as a session records it: notes in the pattern's MIDI column, seen in the tracker as lanes (daw-modes.md AR3).
+                    // A take as a session records it: notes in the clip's MIDI column, seen in the tracker as lanes (daw-modes.md AR3).
                     var lead = (MachineCore)Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead");
-                    lead.CreatePattern("Take", 16);
-                    var take = lead.Patterns.First(p => p.Name == "Take");
-                    PatternEvent N(int row, int rows, int midi, int vel, int shift = 0) => new PatternEvent(row * 240 + shift, 0x90 | (midi << 8) | (vel << 16), rows * 240);
+                    lead.CreateClip("Take", 16);
+                    var take = lead.Clips.First(p => p.Name == "Take");
+                    ClipEvent N(int row, int rows, int midi, int vel, int shift = 0) => new ClipEvent(row * 240 + shift, 0x90 | (midi << 8) | (vel << 16), rows * 240);
                     ReBuzz.Core.Session.SessionLayout.EnsureMidiColumn(take).SetEvents(new[]
                     {
                         N(0, 2, 60, 100), N(0, 4, 64, 90, 0), N(2, 2, 67, 100, 61), N(4, 4, 62, 80), N(4, 4, 65, 70), N(4, 4, 69, 60), N(8, 3, 60, 110), N(10, 6, 55, 95), N(12, 2, 72, 127, 100),
                     }, true);
                     try
                     {
-                        PatternView.Edit(take);
+                        ClipView.Edit(take);
                         Wait(200);
-                        dynamic v = PatternView.Page.EditorControl;
+                        dynamic v = ClipView.Page.EditorControl;
                         ((Control)v.TrackerGrid.Body).Focus();
                         Settle();
-                        Shot(window, "054-pattern-notes-lanes", "Pattern: a take recorded in the session shows in the tracker at once (daw-modes.md AR3): the pattern's MIDI column as Notes lanes, a voice for each overlapping note with its note, velocity, delay and cut, edited with the keys as a step of the song's history.", "Record a take in the Session View, or draw notes in a piano roll, then open the pattern in the Tracker.");
+                        Shot(window, "054-clip-notes-lanes", "Clip: a take recorded in the session shows in the tracker at once (daw-modes.md AR3): the clip's MIDI column as Notes lanes, a voice for each overlapping note with its note, velocity, delay and cut, edited with the keys as a step of the song's history.", "Record a take in the Session View, or draw notes in a piano roll, then open the clip in the Tracker.");
                     }
                     finally
                     {
-                        var other = lead.Patterns.FirstOrDefault(p => p != take);
-                        if (other != null) { PatternView.Edit(other); Wait(100); }
-                        lead.DeletePattern(take);
+                        var other = lead.Clips.FirstOrDefault(p => p != take);
+                        if (other != null) { ClipView.Edit(other); Wait(100); }
+                        lead.DeleteClip(take);
                         Settle();
                     }
                 });
 
-                Control Grid() => (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid.Body;
+                Control Grid() => (Control)((dynamic)ClipView.Page.EditorControl).TrackerGrid.Body;
                 ContextMenu GridMenu()
                 {
                     // In the grid's view (the body is as wide as all its columns, most of them scrolled away).
                     var body = Grid();
-                    var view = (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid;
+                    var view = (Control)((dynamic)ClipView.Page.EditorControl).TrackerGrid;
                     Click(window, Centre(view, window, 0.45, 0.4), MouseButton.Right);
                     var menu = body.ContextMenu;
                     Assert.That(menu, Is.Not.Null, "the grid has a menu");
@@ -1325,43 +1325,43 @@ namespace ReBuzz.Studio.Tests
                     menus.Add(menu!);
                     return menu!;
                 }
-                Try("054-pattern-menu", () =>
+                Try("054-clip-menu", () =>
                 {
                     GridMenu();
-                    Shot(window, "054-pattern-menu", "Pattern: the grid's context menu (Edit ▸, Select All, Unselect, Pattern Properties…).", "Right-click in the pattern grid.");
+                    Shot(window, "054-clip-menu", "Clip: the grid's context menu (Edit ▸, Select All, Unselect, Clip Properties…).", "Right-click in the clip grid.");
                 });
-                Try("055-pattern-menu-edit", () =>
+                Try("055-clip-menu-edit", () =>
                 {
                     Hover(ItemOf(GridMenu(), "Edit"));
-                    Shot(window, "055-pattern-menu-edit", "Pattern: the grid menu's Edit ▸ (increase, interpolate, randomize, rotate, write state, undo, clipboard).", "Right-click in the pattern grid ▸ Edit.");
+                    Shot(window, "055-clip-menu-edit", "Clip: the grid menu's Edit ▸ (increase, interpolate, randomize, rotate, write state, undo, clipboard).", "Right-click in the clip grid ▸ Edit.");
                 });
-                Try("056-pattern-properties", () =>
+                Try("056-clip-properties", () =>
                 {
-                    var item = GridMenu().Items.OfType<MenuItem>().First(i => (i.Header as string)?.StartsWith("Pattern Properties") == true);
-                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "056-pattern-properties", "Pattern Properties: name, length, rows per beat, the columns shown (the MIDI lanes among them).",
-                        "Right-click in the pattern grid ▸ Pattern Properties… (Ctrl+Backspace).");
+                    var item = GridMenu().Items.OfType<MenuItem>().First(i => (i.Header as string)?.StartsWith("Clip Properties") == true);
+                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "056-clip-properties", "Clip Properties: name, length, rows per beat, the columns shown (the MIDI lanes among them).",
+                        "Right-click in the clip grid ▸ Clip Properties… (Ctrl+Backspace).");
                 });
-                Try("057-pattern-help", () =>
+                Try("057-clip-help", () =>
                 {
                     var help = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().First(b => b.Content as string == "Help");
                     Click(window, Centre(help, window));
                     Wait(150);
-                    Shot(window, "057-pattern-help", "Pattern: the editor's help panel (its keys).", "The pattern toolbar's Help button (F1).");
+                    Shot(window, "057-clip-help", "Clip: the editor's help panel (its keys).", "The clip toolbar's Help button (F1).");
                     Click(window, Centre(help, window));
                 });
 
-                // The piano roll in the detail panel (ux-overhaul.md P3b): the same pattern as the Tracker above, as a note grid.
+                // The piano roll in the detail panel (ux-overhaul.md P3b): the same clip as the Tracker above, as a note grid.
                 Try("058-piano-roll", () =>
                 {
                     window.Detail.ShowPage(true, true);
-                    PatternView.Edit(demo.LineA);
+                    ClipView.Edit(demo.LineA);
                     Wait(250);
-                    var roll = PatternView.Page.Roll;
+                    var roll = ClipView.Page.Roll;
                     roll.Poll();
                     roll.Roll?.SelectAll();
                     Wait(100);
-                    Shot(window, "058-piano-roll", "Piano roll: Bass's Line A, the same pattern as the Tracker (the notes of its MIDI lanes), maximised over the window, all notes selected.",
-                        "The Piano roll button in the detail bar (Alt+Cmd+4), after choosing a pattern.");
+                    Shot(window, "058-piano-roll", "Piano roll: Bass's Line A, the same clip as the Tracker (the notes of its MIDI lanes), maximised over the window, all notes selected.",
+                        "The Piano roll button in the detail bar (Alt+Cmd+4), after choosing a clip.");
                     window.Detail.SetPage(false);
                 });
 
@@ -1377,7 +1377,7 @@ namespace ReBuzz.Studio.Tests
                         for (int z = 0; z < 16; z++) set(m, $"Z{z + 1} wave", z < waves.Length ? waves[z] : 0);
                     }, new (int, int)[] { (0, 36), (4, 41), (8, 36), (8, 37), (12, 39), (14, 39), (2, 39), (6, 39), (10, 39), (10, 41) }, extra: 61);
                     Shot(window, "059-piano-roll-note-map-kit", "Piano roll on a Neo Sampler kit of six zones (Kick, Snare, Clap, Closed hat, Open hat, Rim): the key column names each row with its key, and Fold: playable shows the six keys that make a sound plus the one row that holds a note on a key with no sound (dimmed, 61).",
-                        "Open a Neo Sampler's pattern in the Piano roll; the fold box ▸ Fold: playable.");
+                        "Open a Neo Sampler's clip in the Piano roll; the fold box ▸ Fold: playable.");
                     window.Detail.SetPage(false);
                 });
                 Try("061-piano-roll-note-map-drums", () =>
@@ -1385,7 +1385,7 @@ namespace ReBuzz.Studio.Tests
                     NoteMapShot(window, "Neo Drums", "Drums", (m, set) => { },
                         new (int, int)[] { (0, 36), (4, 38), (8, 36), (12, 38), (0, 42), (2, 42), (4, 42), (6, 42), (8, 42), (10, 42), (12, 42), (14, 46), (15, 49) });
                     Shot(window, "061-piano-roll-note-map-drums", "Piano roll on Neo Drums: its voices by name on their keys (kick, snare, hats, toms, cymbals), Fold: playable showing only the keys the drum machine plays.",
-                        "Open a Neo Drums pattern in the Piano roll; the fold box ▸ Fold: playable.");
+                        "Open a Neo Drums clip in the Piano roll; the fold box ▸ Fold: playable.");
                     window.Detail.SetPage(false);
                 });
 
@@ -1603,7 +1603,7 @@ namespace ReBuzz.Studio.Tests
                     Click(window, p, MouseButton.Right);
                     Assert.That(seq.OpenMenu?.IsOpen, Is.True);
                     menus.Add(seq.OpenMenu!);
-                    Shot(window, "210-sequence-menu", "Sequence: the context menu on a pattern (Add Track ▸, Delete/Move Track, Set Start/End, Time Signature…, Insert/Delete, Color ▸, Rename Machine…, Quick Create Patterns ▸, Cut/Copy/Paste).", "Right-click in the Sequence View (or Ctrl+Enter).");
+                    Shot(window, "210-sequence-menu", "Sequence: the context menu on a clip (Add Track ▸, Delete/Move Track, Set Start/End, Time Signature…, Insert/Delete, Color ▸, Rename Machine…, Quick Create Clips ▸, Cut/Copy/Paste).", "Right-click in the Sequence View (or Ctrl+Enter).");
                 });
                 Try("211-sequence-menu-colour", () =>
                 {
@@ -1612,7 +1612,7 @@ namespace ReBuzz.Studio.Tests
                     Click(window, p, MouseButton.Right);
                     menus.Add(seq.OpenMenu!);
                     Hover(ItemOf(seq.OpenMenu!, "Color"));
-                    Shot(window, "211-sequence-menu-colour", "Sequence: Color ▸, the pattern colours.", "Right-click a pattern ▸ Color.");
+                    Shot(window, "211-sequence-menu-colour", "Sequence: Color ▸, the clip colours.", "Right-click a clip ▸ Color.");
                 });
                 Try("212-sequence-add-track", () =>
                 {
@@ -1644,9 +1644,9 @@ namespace ReBuzz.Studio.Tests
                         Shot(window, id, what, how);
                     });
                 }
-                SessionMenu("220-session-menu-clip", session.SlotAt(1, 1), 0.6, "Session: a clip's menu (Launch, Stop, Edit notes…, Rename…, Duplicate, Delete, Colour ▸, Assign pattern ▸, MIDI learn…, Pattern View moves).", "Right-click a clip.");
+                SessionMenu("220-session-menu-clip", session.SlotAt(1, 1), 0.6, "Session: a clip's menu (Launch, Stop, Edit notes…, Rename…, Duplicate, Delete, Colour ▸, Assign clip ▸, MIDI learn…, Clip View moves).", "Right-click a clip.");
                 SessionMenu("221-session-menu-clip-colour", session.SlotAt(1, 1), 0.6, "Session: a clip's Colour ▸ palette.", "Right-click a clip ▸ Colour.", "Colour");
-                SessionMenu("222-session-menu-empty-slot", session.SlotAt(1, 3), 0.6, "Session: an empty slot's menu (Create clip, Assign pattern ▸, MIDI learn…).", "Right-click an empty slot.");
+                SessionMenu("222-session-menu-empty-slot", session.SlotAt(1, 3), 0.6, "Session: an empty slot's menu (Create clip, Assign clip ▸, MIDI learn…).", "Right-click an empty slot.");
                 SessionMenu("223-session-menu-scene", session.Scenes[2], 0.5, "Session: a scene's menu (Launch, Rename…, Tempo…, Time signature…, Colour ▸, Insert/Duplicate/Delete scene, Insert into arrangement…, Follow action).", "Right-click a scene's button.");
                 SessionMenu("224-session-menu-track", session.Headers[0], 0.5, "Session: a track header's menu (colour, rename, arm, stop, remove the track…).", "Right-click a track's header.");
                 Try("225-session-menu-settings", () =>
@@ -2381,6 +2381,29 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "660-neo-chord-editor", "Neo Chord: the chord type and Mode on top (Diatonic, in C major with seventh chords), the keyboard lit with the chord sent for a held G (G7 voiced Drop 2 over a bass G), then Voicing, Velocity and Strum (up over 200 ms).", "Add Neo Chord, set Mode to Diatonic, play a note into it, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                // CHP1: Neo Chop's editor with a preset loaded (the values are set before the editor opens): the mode row with the stutter lit,
+                // the stutter's page, the sixteen steps and Output.
+                void ChopShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Chop", machineName);
+                        string[] names = { "Stutter", "Stutter trigger", "Stutter every", "Slice", "Slice feel", "Repeats", "Pitch per repeat", "Decay per repeat", "Filter per repeat", "Repeat", "Repeat trigger", "Interval", "Chance", "Length", "Grid", "Grid feel", "Variation", "Retrigger", "Retrigger trigger", "Retrigger every", "Retrigger length", "Retrigger grid", "Retrigger feel", "Back to", "Tape", "Tape trigger", "Tape every", "Stop sync", "Stop time", "Stop curve", "Start sync", "Start time", "Gate", "Gate lock", "Gate rate", "Gate attack", "Gate release", "Gate depth", "Accent", "Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6", "Step 7", "Step 8", "Step 9", "Step 10", "Step 11", "Step 12", "Step 13", "Step 14", "Step 15", "Step 16", "Pan", "Pan sync", "Pan rate", "Pan depth", "Pan shape", "Pan phase", "Smoothness", "Note picks slice", "Mix", "Amount" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Chop; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                ChopShot("660-neo-chop-editor", "Chop", new[] { 1, 0, 2, 2, 0, 7, 120, 5, 170, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 0, 0, 2, 199, 565, 1000, 40, 2, 1, 0, 1, 1, 0, 1, 0, 2, 1, 0, 1, 1, 0, 1, 1, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
+                    "Neo Chop with the preset \"Stutter — Sixteenth Stutter\" loaded: the mode row (Stutter lit, the other five dark), the Stutter page below it (Trigger, Every, Repeats, Slice and Feel, Pitch, Decay and Filter per repeat), the sixteen gate steps, and Output with Amount and Mix side by side, Smoothness, Note picks slice and the meters.");
+                ChopShot("661-neo-chop-gate", "Chop 2", new[] { 0, 0, 2, 2, 0, 3, 120, 0, 200, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 1, 0, 1, 88, 511, 1000, 25, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
+                    "Neo Chop with the preset \"Gate — Pumping Step Gate\" loaded: the Gate lit in the mode row and the sixteen steps as the preset sets them (accents on the beats).");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
@@ -2471,7 +2494,7 @@ namespace ReBuzz.Studio.Tests
                     {
                         for (int i = 0; i < 4; i++) kb.Poll();
                         Wait(100);
-                        Shot(w, "470-keyboard-playing", "Bass's editor (Neo Poly) with its keyboard playing: A4 held with the pointer low on the key (loud: the readout names the note and its velocity, the fill shows it), and C3, G3 and E4 lit from a MIDI keyboard. Keys light whatever plays them (a pointer, MIDI, the machine's own patterns).",
+                        Shot(w, "470-keyboard-playing", "Bass's editor (Neo Poly) with its keyboard playing: A4 held with the pointer low on the key (loud: the readout names the note and its velocity, the fill shows it), and C3, G3 and E4 lit from a MIDI keyboard. Keys light whatever plays them (a pointer, MIDI, the machine's own clips).",
                             "Click and hold a key under a machine's window; drag across the keys to glide. Lower on a key plays louder.");
                     }
                     finally
@@ -2553,11 +2576,11 @@ namespace ReBuzz.Studio.Tests
                     var laneV = Core.Song.Sequences.First(s => s.Machine == vox);
                     var editor = new ClipEditor(Core);
                     string file = DrumLoop("drum-loop.wav");
-                    IPattern Import(IMachine m)
+                    IClip Import(IMachine m)
                     {
-                        var pattern = layout.ImportAudio(layout.FirstTrackOf(m), 0, file, out string error);
-                        Assert.That(pattern, Is.Not.Null, error);
-                        return pattern;
+                        var clip = layout.ImportAudio(layout.FirstTrackOf(m), 0, file, out string error);
+                        Assert.That(clip, Is.Not.Null, error);
+                        return clip;
                     }
                     ClipItem At(ISequence lane, int time) => editor.Read(lane).First(i => i.Time == time);
                     // Drums: a loop with fades, a second one crossfaded under it, the last turned down.
@@ -2606,11 +2629,11 @@ namespace ReBuzz.Studio.Tests
                 var drums = layout.NewAudioTrack("Drum Loop");
                 var vox = layout.NewAudioTrack("Chops");
                 string file = DrumLoop("page-loop.wav");
-                IPattern Import(IMachine m, int scene)
+                IClip Import(IMachine m, int scene)
                 {
-                    var pattern = layout.ImportAudio(layout.FirstTrackOf(m), scene, file, out string error);
-                    Assert.That(pattern, Is.Not.Null, error);
-                    return pattern;
+                    var clip = layout.ImportAudio(layout.FirstTrackOf(m), scene, file, out string error);
+                    Assert.That(clip, Is.Not.Null, error);
+                    return clip;
                 }
                 var inSession = Import(drums, 0);
                 Import(drums, 1);
@@ -3175,9 +3198,9 @@ namespace ReBuzz.Studio.Tests
                     var rng = new System.Random(5);
                     // Two bars of a beat at 120 bpm: kick, hat, snare, hat (a kick as a falling sine, a snare as noise over a shell tone, a hat as high noise).
                     int total = (int)(44100 * 2.0), hit = 0;
-                    var pattern = new (double T, int Cls)[] { (0.0, 0), (0.25, 2), (0.5, 1), (0.75, 2), (1.0, 0), (1.25, 2), (1.5, 1), (1.75, 2), (1.875, 2) };
+                    var clip = new (double T, int Cls)[] { (0.0, 0), (0.25, 2), (0.5, 1), (0.75, 2), (1.0, 0), (1.25, 2), (1.5, 1), (1.75, 2), (1.875, 2) };
                     var signal = new float[total + 44100];
-                    foreach (var (t0, cls) in pattern)
+                    foreach (var (t0, cls) in clip)
                     {
                         int at = (int)(t0 * 44100) + 4410;
                         for (int i = 0; i < 9000 && at + i < signal.Length; i++)
@@ -3224,7 +3247,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var lead = (MachineCore)Core.Song.Machines.First(m => m.Name == "Bass");
-                var hook = lead.Patterns.First(p => p.Name == "Line A");
+                var hook = lead.Clips.First(p => p.Name == "Line A");
                 var param = AutomationParams.List(lead).First(p => p.Name == "F1 cutoff");
                 var env = ReBuzz.Core.ClipEnvelopes.Read(hook, param.Key);
                 int span = param.Max - param.Min;
@@ -3244,7 +3267,7 @@ namespace ReBuzz.Studio.Tests
                     Settle();
                     Assert.That(ReBuzz.Studio.Views.Detail.EnvelopeOpener.Open(hook, param.Key), Is.True);
                     Wait(250);
-                    var lane = PatternView.Page.Roll.Envelopes.LaneFor(param.Key);
+                    var lane = ClipView.Page.Roll.Envelopes.LaneFor(param.Key);
                     Assert.That(lane, Is.Not.Null);
                     lane.SelectTimes(new[] { 16 * 240, 22 * 240 });
                     Settle();

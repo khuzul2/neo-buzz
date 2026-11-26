@@ -1,5 +1,5 @@
 // Fork (docs/specs/history-snapshots.md HS2): what a snapshot lists about the song, kept in its manifest so a
-// diff needs no loading: machines, wires, parameters, patterns (by content hash), sequences (by hash), waves.
+// diff needs no loading: machines, wires, parameters, clips (by content hash), sequences (by hash), waves.
 // Taken on the UI thread from live objects (small values only; no audio data is walked).
 
 using System;
@@ -23,7 +23,7 @@ namespace ReBuzz.Core.SongHistory
             public int V { get; set; }
         }
 
-        public sealed class PatternInfo
+        public sealed class ClipInfo
         {
             public string Name { get; set; }
             public int Length { get; set; }
@@ -37,7 +37,7 @@ namespace ReBuzz.Core.SongHistory
             public bool Muted { get; set; }
             public bool Bypassed { get; set; }
             public List<ParamValue> Params { get; set; } = new();
-            public List<PatternInfo> Patterns { get; set; } = new();
+            public List<ClipInfo> Clips { get; set; } = new();
         }
 
         public int Bpm { get; set; }
@@ -74,7 +74,7 @@ namespace ReBuzz.Core.SongHistory
                             if ((p.Flags & ParameterFlags.State) != 0 && p.Type != ParameterType.Internal)
                                 ms.Params.Add(new ParamValue { G = g, I = p.IndexInGroup, T = t, N = p.Name, V = p.GetValue(t) });
                 }
-                foreach (var pat in m.PatternsList)
+                foreach (var pat in m.ClipsList)
                 {
                     string hash = Hash(h =>
                     {
@@ -82,11 +82,11 @@ namespace ReBuzz.Core.SongHistory
                         {
                             h.AppendData(System.Text.Encoding.UTF8.GetBytes(col.Parameter?.Name ?? "midi"));
                             Add(h, col.Track);
-                            foreach (var e in col.GetEvents(0, Math.Max(1, pat.Length) * PatternEvent.TimeBase)) { Add(h, e.Time); Add(h, e.Value); Add(h, e.Duration); }
+                            foreach (var e in col.GetEvents(0, Math.Max(1, pat.Length) * ClipEvent.TimeBase)) { Add(h, e.Time); Add(h, e.Value); Add(h, e.Duration); }
                         }
                         if (pat.Data != null) h.AppendData(pat.Data);
                     });
-                    ms.Patterns.Add(new PatternInfo { Name = pat.Name, Length = pat.Length, Hash = hash });
+                    ms.Clips.Add(new ClipInfo { Name = pat.Name, Length = pat.Length, Hash = hash });
                 }
                 s.Machines.Add(ms);
                 foreach (var o in m.Outputs.Where(o => !((MachineCore)o.Destination).Hidden))
@@ -100,7 +100,7 @@ namespace ReBuzz.Core.SongHistory
                     foreach (var kv in seq.Events)
                     {
                         Add(h, kv.Key); Add(h, (int)kv.Value.Type); Add(h, kv.Value.Span); Add(h, kv.Value.Offset);
-                        h.AppendData(System.Text.Encoding.UTF8.GetBytes(kv.Value.Pattern?.Name ?? ""));
+                        h.AppendData(System.Text.Encoding.UTF8.GetBytes(kv.Value.Clip?.Name ?? ""));
                     }
                 });
                 string mname = seq.Machine?.Name ?? "";
@@ -147,15 +147,15 @@ namespace ReBuzz.Core.SongHistory
                 foreach (var p in x.Params)
                     if (yp.TryGetValue((p.G, p.I, p.T), out var q) && q.V != p.V)
                         list.Add(new Change("parameters", name, $"{p.N}{(p.G == 2 ? $" [track {p.T}]" : "")}: {Show(p, p.V)} → {Show(q, q.V)}"));
-                var xpat = x.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
-                var ypat = y.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
+                var xpat = x.Clips.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
+                var ypat = y.Clips.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
                 foreach (var pn in xpat.Keys.Union(ypat.Keys).OrderBy(k => k, StringComparer.Ordinal))
                 {
                     xpat.TryGetValue(pn, out var p1);
                     ypat.TryGetValue(pn, out var p2);
-                    if (p1 == null) list.Add(new Change("patterns", name, $"pattern {pn} added"));
-                    else if (p2 == null) list.Add(new Change("patterns", name, $"pattern {pn} removed"));
-                    else if (p1.Hash != p2.Hash || p1.Length != p2.Length) list.Add(new Change("patterns", name, $"pattern {pn} edited"));
+                    if (p1 == null) list.Add(new Change("clips", name, $"clip {pn} added"));
+                    else if (p2 == null) list.Add(new Change("clips", name, $"clip {pn} removed"));
+                    else if (p1.Hash != p2.Hash || p1.Length != p2.Length) list.Add(new Change("clips", name, $"clip {pn} edited"));
                 }
             }
             foreach (var w in a.Wires.Except(b.Wires).Concat(b.Wires.Except(a.Wires)).Select(Wire).Distinct().OrderBy(k => k, StringComparer.Ordinal))

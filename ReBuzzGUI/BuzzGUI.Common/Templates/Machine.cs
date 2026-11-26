@@ -21,8 +21,8 @@ namespace BuzzGUI.Common.Templates
         [XmlAttribute]
         public int TrackCount;
 
-        [XmlAttribute]
-        public string PatternEditor;
+        [XmlAttribute("PatternEditor")]
+        public string ClipEditor;
 
         [XmlAttribute]
         public int OversampleFactor;
@@ -37,8 +37,11 @@ namespace BuzzGUI.Common.Templates
 
         public byte[] CompressedData;
 
-        public List<Pattern> Patterns;
-        public byte[] CompressedPatternEditorData;
+        // The names a saved template stores (the file format keeps Clip: docs/specs/clips.md section 9).
+        [XmlArray("Patterns")]
+        public List<Clip> Clips;
+        [XmlElement("CompressedPatternEditorData")]
+        public byte[] CompressedClipEditorData;
 
 
         [XmlIgnore]
@@ -49,14 +52,14 @@ namespace BuzzGUI.Common.Templates
         }
 
         [XmlIgnore]
-        public byte[] PatternEditorData
+        public byte[] ClipEditorData
         {
-            get { return CompressedPatternEditorData != null ? SevenZipHelper.Decompress(CompressedPatternEditorData) : null; }
-            set { CompressedPatternEditorData = value != null ? SevenZipHelper.Compress(value) : null; }
+            get { return CompressedClipEditorData != null ? SevenZipHelper.Decompress(CompressedClipEditorData) : null; }
+            set { CompressedClipEditorData = value != null ? SevenZipHelper.Compress(value) : null; }
         }
 
         public Machine() { }
-        public Machine(IMachine m, bool includepatterns)
+        public Machine(IMachine m, bool includeclips)
         {
             Name = m.Name;
             PositionX = m.Position.Item1;
@@ -65,17 +68,17 @@ namespace BuzzGUI.Common.Templates
             var tpg = m.ParameterGroups.Where(pg => pg.Type == ParameterGroupType.Track).FirstOrDefault();
             if (tpg != null) TrackCount = tpg.TrackCount;
 
-            PatternEditor = m.PatternEditorDLL != null ? m.PatternEditorDLL.Name : null;
+            ClipEditor = m.ClipEditorDLL != null ? m.ClipEditorDLL.Name : null;
             OversampleFactor = m.OversampleFactor;
             MIDIInputChannel = m.MIDIInputChannel;
             Preset = new Preset(m, false, false);
             Data = m.Data;
             IsWireless = m.IsWireless;
 
-            if (includepatterns)
+            if (includeclips)
             {
-                Patterns = new List<Pattern>(m.Patterns.Select(p => new Pattern(p)));
-                if (m.PatternEditorDLL != null) PatternEditorData = m.PatternEditorData;
+                Clips = new List<Clip>(m.Clips.Select(p => new Clip(p)));
+                if (m.ClipEditorDLL != null) ClipEditorData = m.ClipEditorData;
             }
 
         }

@@ -113,9 +113,9 @@ namespace ReBuzz.Core
                 if (!a.Loops)
                 {
                     int ticks = Math.Max(1, (int)Math.Ceiling(left.Length / framesPerTick - 1e-6));
-                    var pattern = MakeTake(layout, a, left, right, 1);
-                    if (pattern == null) continue;
-                    Status = editor.Place(a.Lane, pattern, a.Origin, ticks);
+                    var clip = MakeTake(layout, a, left, right, 1);
+                    if (clip == null) continue;
+                    Status = editor.Place(a.Lane, clip, a.Origin, ticks);
                     if (Status == null) count++;
                     continue;
                 }
@@ -140,7 +140,7 @@ namespace ReBuzz.Core
             bounds.Add((previous, left.Length));
             long lead = (long)Math.Round((a.StartTick - a.LoopStart) * framesPerTick);      // a recording that began inside the loop: the first pass starts late
             int made = 0;
-            IPattern newest = null;
+            IClip newest = null;
             int newestTicks = loopTicks;
             for (int p = 0; p < bounds.Count; p++)
             {
@@ -161,14 +161,14 @@ namespace ReBuzz.Core
                 var r = new float[length];
                 Array.Copy(left, from, l, pad, Math.Min(to - from, length - pad));
                 Array.Copy(right, from, r, pad, Math.Min(to - from, length - pad));
-                var pattern = MakeTake(layout, a, l, r, p + 1);
-                if (pattern == null) continue;
+                var clip = MakeTake(layout, a, l, r, p + 1);
+                if (clip == null) continue;
                 var lane = FreeTakeLane(a.Machine, editor, a.Origin, a.Origin + ticks);
                 if (lane == null) continue;
-                Status = editor.Place(lane, pattern, a.Origin, ticks);
+                Status = editor.Place(lane, clip, a.Origin, ticks);
                 if (Status != null) continue;
                 made++;
-                newest = pattern;
+                newest = clip;
                 newestTicks = ticks;
             }
             // The newest take plays: a copy of it on the main lane (an audio clip is never shared between places).
@@ -213,10 +213,10 @@ namespace ReBuzz.Core
                     double bpm = take.Bpm > 0 ? take.Bpm : Math.Max(1, buzz.BPM);
                     var asset = layout.AddAsset(new AudioAsset(take.Name, "", null, new AudioSource(left, right, take.SampleRate), 2));
                     var audio = new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = Math.Clamp(bpm, 1, 999), Warp = "Off" };
-                    var pattern = layout.CreateAudioPattern(machine, $"Recovered {made + 1}", audio);
-                    if (pattern == null) continue;
+                    var clip = layout.CreateAudioClip(machine, $"Recovered {made + 1}", audio);
+                    if (clip == null) continue;
                     int ticks = Math.Max(1, (int)Math.Ceiling(left.Length / (take.SampleRate * 60.0 / (Math.Max(1, buzz.BPM) * Math.Max(1, buzz.TPB))) - 1e-6));
-                    if (editor.Place(lane, pattern, tick, ticks) != null) continue;
+                    if (editor.Place(lane, clip, tick, ticks) != null) continue;
                     tick += ticks;
                     made++;
                     recovered.Add(take);
@@ -231,12 +231,12 @@ namespace ReBuzz.Core
             return made;
         }
 
-        IPattern MakeTake(SessionLayout layout, AudioRec a, float[] left, float[] right, int number)
+        IClip MakeTake(SessionLayout layout, AudioRec a, float[] left, float[] right, int number)
         {
             string name = number > 1 || a.Loops ? $"{a.Machine.Name} take {number}" : $"{a.Machine.Name} rec";
             var asset = layout.AddAsset(new AudioAsset(name, "", null, new AudioSource(left, right, a.Capture.SampleRate), 2));
             var audio = new SessionDocument.AudioSettings { Asset = asset.Id, Bpm = Math.Clamp(a.Bpm, 1, 999), Warp = "Off" };
-            return layout.CreateAudioPattern(a.Machine, name, audio);
+            return layout.CreateAudioClip(a.Machine, name, audio);
         }
     }
 }

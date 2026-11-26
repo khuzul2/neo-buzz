@@ -3,19 +3,19 @@ using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor.Actions
 {
-    public class MPEInsertOrDeleteAction : PatternAction
+    public class MPEInsertOrDeleteAction : ClipAction
     {
         int oldValue = -1;
         Digit cursorPos;
-        MPEPattern mpePattern;
+        MPEClip mpeClip;
         bool delete;
 
 
-        public MPEInsertOrDeleteAction(MPEPattern mpePattern, Digit cursorPos, bool delete)
-            : base(mpePattern.Pattern)
+        public MPEInsertOrDeleteAction(MPEClip mpeClip, Digit cursorPos, bool delete)
+            : base(mpeClip.Clip)
         {
-            this.mpePattern = mpePattern;
-            this.cursorPos = new Digit(cursorPos.PatternVM, cursorPos.ColumnSet, cursorPos.Column, cursorPos.Beat, cursorPos.RowInBeat, cursorPos.Index);
+            this.mpeClip = mpeClip;
+            this.cursorPos = new Digit(cursorPos.ClipVM, cursorPos.ColumnSet, cursorPos.Column, cursorPos.Beat, cursorPos.RowInBeat, cursorPos.Index);
             this.delete = delete;
         }
 
@@ -26,7 +26,7 @@ namespace WDE.ModernPatternEditor.Actions
                 var backupBeat = cursorPos.ParameterColumn.FetchBeat(cursorPos.Beat);
                 oldValue = backupBeat.Rows[cursorPos.RowInBeat].Type == ColumnRenderer.BeatValueType.NoValue ? -1 : backupBeat.Rows[cursorPos.RowInBeat].Value;
 
-                var iterator = new Digit(cursorPos.PatternVM, cursorPos.ColumnSet, cursorPos.Column, cursorPos.Beat, cursorPos.RowInBeat, cursorPos.Index);
+                var iterator = new Digit(cursorPos.ClipVM, cursorPos.ColumnSet, cursorPos.Column, cursorPos.Beat, cursorPos.RowInBeat, cursorPos.Index);
 
                 while (true)
                 {
@@ -91,7 +91,7 @@ namespace WDE.ModernPatternEditor.Actions
             }
             else // Insert
             {
-                var iterator = new Digit(cursorPos.PatternVM, cursorPos.ColumnSet, cursorPos.Column, cursorPos.Beat, cursorPos.RowInBeat, cursorPos.Index);
+                var iterator = new Digit(cursorPos.ClipVM, cursorPos.ColumnSet, cursorPos.Column, cursorPos.Beat, cursorPos.RowInBeat, cursorPos.Index);
 
                 while (true)
                 {

@@ -3,7 +3,7 @@
 // Dye Essence's will be (704 parameters, Params.def by make-params.py, code by gen-machine-params.py),
 // 16 tracks of Note and Velocity and MIDI through the Neo glue, and a machine state of megabytes: the
 // tables as base64 floats (as Neo Wave keeps its user table) and the modulation routes as text. It
-// plays a sine per note at Volume, the first slot's octave and Amp level, so a song, a pattern or a
+// plays a sine per note at Volume, the first slot's octave and Amp level, so a song, a clip or a
 // preset that reaches the machine is heard. Built into the studio tests' Gear (DyeStress.csproj); not
 // shipped.
 

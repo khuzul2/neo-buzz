@@ -1,6 +1,6 @@
 // Agent server (docs/specs/mcp-server.md §5.5, phase A3): composition tools that need no song.
 // theory is complete here (read-only; nothing in the song changes). notes_transform's schema and
-// engine live in Transforms.cs; the ReBuzz glue passes the handler that reads and writes the pattern.
+// engine live in Transforms.cs; the ReBuzz glue passes the handler that reads and writes the clip.
 
 using System;
 using System.Collections.Generic;

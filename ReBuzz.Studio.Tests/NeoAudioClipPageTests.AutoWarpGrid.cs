@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Tests
             var a = rig.SessionClip;
             var b = rig.ArrangedClip;
             string before = State("A", a.Name) + State("B", b.Name);
-            Assert.That(Layout.AutoWarpClips(new IPattern[] { a, b }, true), Is.Null);
+            Assert.That(Layout.AutoWarpClips(new IClip[] { a, b }, true), Is.Null);
             Assert.That(Audio(a).Markers.Count, Is.GreaterThan(4));
             Assert.That(Audio(b).Markers.Count, Is.GreaterThan(4));
             Assert.That(Layout.LastGridReports.Count, Is.EqualTo(2));
@@ -104,15 +104,15 @@ namespace ReBuzz.Studio.Tests
             Layout.AutoWarp(rig.SessionClip, 0, out _, toGrid: true);
             var byLayout = Audio(rig.SessionClip).Markers.ToList();
             Assert.That(byLayout.Count, Is.GreaterThan(4));
-            var answer = Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = rig.ArrangedClip.Name, ["auto_warp"] = true, ["mode"] = "grid", ["grid"] = "1/16", ["strength_percent"] = 100 });
+            var answer = Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = rig.ArrangedClip.Name, ["auto_warp"] = true, ["mode"] = "grid", ["grid"] = "1/16", ["strength_percent"] = 100 });
             var structured = Ok(answer);
             var byAgent = Audio(rig.ArrangedClip).Markers.ToList();
             Assert.That(byAgent.Count, Is.EqualTo(byLayout.Count));
             Assert.That(byAgent.Zip(byLayout, (x, y) => Math.Abs(x.Sample - y.Sample)).Max(), Is.LessThan(1.0));
             Assert.That(structured["to_grid"]?["markers_made"]?.GetValue<int>() ?? 0, Is.GreaterThan(0), "the answer says what it did");
             Assert.That(structured["auto_warp_grid"]?["grid"]?.GetValue<string>(), Is.EqualTo("1/16"));
-            Assert.That(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = rig.ArrangedClip.Name, ["grid"] = "1/3" })["isError"]?.GetValue<bool>() ?? false, Is.True);
-            Assert.That(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = rig.ArrangedClip.Name, ["mode"] = "grid" })["isError"]?.GetValue<bool>() ?? false, Is.True, "mode needs auto_warp");
+            Assert.That(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = rig.ArrangedClip.Name, ["grid"] = "1/3" })["isError"]?.GetValue<bool>() ?? false, Is.True);
+            Assert.That(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = rig.ArrangedClip.Name, ["mode"] = "grid" })["isError"]?.GetValue<bool>() ?? false, Is.True, "mode needs auto_warp");
         }
 
         [AvaloniaTest]

@@ -63,41 +63,41 @@ namespace ReBuzz.Studio.Tests
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             var machine = Sampler(rig, "Breaks", 2);
-            var pattern = rig.Pattern(machine, "Jungle", 16);
-            var source = SongNotes.For(core, pattern);
+            var clip = rig.Clip(machine, "Jungle", 16);
+            var source = SongNotes.For(core, clip);
             Assert.That(source, Is.InstanceOf<TrackerColumnNotes>(), "Tracker mode keeps its notes in the tracks");
             Assert.That(((TrackerColumnNotes)source).PerNoteSamples, Is.True);
 
             int steps = core.SongCore.ActionStack.Actions.Count();
             Assert.That(source.Edit(null, Breaks()), Is.Null);
             Assert.That(core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step for the six notes");
-            AssertSame(SongNotes.For(core, pattern).Notes(), Breaks());
+            AssertSame(SongNotes.For(core, clip).Notes(), Breaks());
 
             // The values are the track parameters beside the note (what the machine plays, and the Tracker shows).
             var track = machine.ParameterGroups[2].Parameters;
             Assert.That(track.Select(p => p.Name), Is.EqualTo(new[] { "Note", "Velocity", "Sample", "Offset", "Offset hi", "Tune" }));
-            var sampleColumn = pattern.Columns.Single(c => c.Parameter?.Name == "Sample");
+            var sampleColumn = clip.Columns.Single(c => c.Parameter?.Name == "Sample");
             Assert.That(sampleColumn.GetEvents(int.MinValue, int.MaxValue).Select(e => e.Value).OrderBy(v => v), Is.EqualTo(new[] { 1, 2, 3, 201, 250 }));
 
             // Editing one note's sample is one more step, and the others stay.
-            var all = SongNotes.For(core, pattern).Notes();
+            var all = SongNotes.For(core, clip).Notes();
             var second = all.Single(n => n.Time == TB);
-            Assert.That(SongNotes.For(core, pattern).Edit(new[] { second }, new[] { second with { Sample = 9, Offset = 5, Tune = 50 } }), Is.Null);
+            Assert.That(SongNotes.For(core, clip).Edit(new[] { second }, new[] { second with { Sample = 9, Offset = 5, Tune = 50 } }), Is.Null);
             Assert.That(core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 2));
             core.SongCore.ActionStack.Undo();
-            AssertSame(SongNotes.For(core, pattern).Notes(), Breaks());
+            AssertSame(SongNotes.For(core, clip).Notes(), Breaks());
             core.SongCore.ActionStack.Redo();
-            Assert.That(SongNotes.For(core, pattern).Notes().Single(n => n.Time == TB).Sample, Is.EqualTo(9));
+            Assert.That(SongNotes.For(core, clip).Notes().Single(n => n.Time == TB).Sample, Is.EqualTo(9));
             core.SongCore.ActionStack.Undo();
             core.SongCore.ActionStack.Undo();
-            Assert.That(SongNotes.For(core, pattern).Notes(), Is.Empty, "undone to the empty clip");
+            Assert.That(SongNotes.For(core, clip).Notes(), Is.Empty, "undone to the empty clip");
             core.SongCore.ActionStack.Redo();
-            AssertSame(SongNotes.For(core, pattern).Notes(), Breaks());
+            AssertSame(SongNotes.For(core, clip).Notes(), Breaks());
 
             // A note that moves takes its values with it.
             var moved = ClipNotes.Move(new[] { Breaks()[3] }, 3 * TB, 0, TB, 16 * TB);
-            Assert.That(SongNotes.For(core, pattern).Edit(new[] { Breaks()[3] }, moved), Is.Null);
-            var now = SongNotes.For(core, pattern).Notes().Single(n => n.Time == 7 * TB);
+            Assert.That(SongNotes.For(core, clip).Edit(new[] { Breaks()[3] }, moved), Is.Null);
+            var now = SongNotes.For(core, clip).Notes().Single(n => n.Time == 7 * TB);
             Assert.That((now.Sample, now.Offset, now.Tune, now.Velocity), Is.EqualTo((201, 40000, -37, 64)));
             core.SongCore.ActionStack.Undo();
 
@@ -110,7 +110,7 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
             var reopened = core.SongCore.MachinesList.Single(m => m.Name == "Breaks");
             Assert.That(reopened.ParameterGroups[1].Parameters.First(p => p.Name == "Mode").GetValue(0), Is.EqualTo(2), "Tracker mode is saved with the song");
-            var again = SongNotes.For(core, reopened.PatternsList.Single(p => p.Name == "Jungle"));
+            var again = SongNotes.For(core, reopened.ClipsList.Single(p => p.Name == "Jungle"));
             Assert.That(again, Is.InstanceOf<TrackerColumnNotes>());
             AssertSame(again.Notes(), Breaks());
         }
@@ -123,8 +123,8 @@ namespace ReBuzz.Studio.Tests
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             var keys = Sampler(rig, "Keys", 0);
-            var pattern = rig.Pattern(keys, "Riff", 16, (0, 48), (1, 50), (2, 52));
-            var before = SongNotes.For(core, pattern);
+            var clip = rig.Clip(keys, "Riff", 16, (0, 48), (1, 50), (2, 52));
+            var before = SongNotes.For(core, clip);
             Assert.That(before, Is.InstanceOf<MidiColumnNotes>(), "Instrument mode plays its MIDI column, as it always did");
             var notes = before.Notes();
             Assert.That(notes.Select(n => (n.Note, n.Sample, n.Offset, n.Tune)), Is.EqualTo(new[] { (48, 0, 0, 0), (50, 0, 0, 0), (52, 0, 0, 0) }));
@@ -148,7 +148,7 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
             var reopened = core.SongCore.MachinesList.Single(m => m.Name == "Keys");
             Assert.That(reopened.ParameterGroups[1].Parameters.First(p => p.Name == "Mode").GetValue(0), Is.EqualTo(0));
-            var source = SongNotes.For(core, reopened.PatternsList.Single(p => p.Name == "Riff"));
+            var source = SongNotes.For(core, reopened.ClipsList.Single(p => p.Name == "Riff"));
             Assert.That(source, Is.InstanceOf<MidiColumnNotes>());
             Assert.That(source.Notes(), Is.EqualTo(notes), "the notes are as they were");
         }
@@ -181,10 +181,10 @@ namespace ReBuzz.Studio.Tests
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             var machine = Sampler(rig, "Breaks", 2);
-            rig.Pattern(machine, "Jungle", 16);
+            rig.Clip(machine, "Jungle", 16);
             var written = Tool("notes_write", new JsonObject
             {
-                ["machine"] = "Breaks", ["pattern"] = "Jungle",
+                ["machine"] = "Breaks", ["clip"] = "Jungle",
                 ["notes"] = new JsonArray
                 {
                     new JsonObject { ["pitch"] = 48, ["start"] = 0, ["length"] = 0.25, ["velocity"] = 90, ["sample"] = 2 },
@@ -193,7 +193,7 @@ namespace ReBuzz.Studio.Tests
                 },
             });
             Assert.That(written["isError"]?.GetValue<bool>() == true, Is.False, written.ToJsonString());
-            var read = Tool("notes_read", new JsonObject { ["machine"] = "Breaks", ["pattern"] = "Jungle" });
+            var read = Tool("notes_read", new JsonObject { ["machine"] = "Breaks", ["clip"] = "Jungle" });
             var notes = read["structuredContent"]!["notes"]!.AsArray().Select(n => n!.AsObject()).OrderBy(n => (double)n["start"]!).ToList();
             Assert.That(read["structuredContent"]!["input"]!.GetValue<string>(), Is.EqualTo("tracks"));
             Assert.That(notes.Select(n => (int?)n["sample"]), Is.EqualTo(new int?[] { 2, 7, null }));
@@ -206,7 +206,7 @@ namespace ReBuzz.Studio.Tests
             Set(machine, "Mode", 0);
             var refused = Tool("notes_write", new JsonObject
             {
-                ["machine"] = "Breaks", ["pattern"] = "Jungle", ["mode"] = "replace",
+                ["machine"] = "Breaks", ["clip"] = "Jungle", ["mode"] = "replace",
                 ["notes"] = new JsonArray { new JsonObject { ["pitch"] = 48, ["start"] = 0, ["length"] = 1, ["sample"] = 2 } },
             });
             Assert.That(refused["isError"]?.GetValue<bool>(), Is.True);

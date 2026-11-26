@@ -28,14 +28,14 @@ namespace WDE.ModernPatternEditor
                 {
                     rows[i].Type = ColumnRenderer.BeatValueType.RowNumber;
                     rows[i].Value = index * RowsPerBeat + i;
-                    rows[i].ValueString = rows[i].Value.ToString(PatternEditor.Settings.HexRowNumbers ? "X4" : "D");
-                    rows[i].VisualTime = i * RowsPerBeat * PatternEvent.TimeBase;
-                    rows[i].Time = i * RowsPerBeat * PatternEvent.TimeBase * Global.Buzz.TPB / RowsPerBeat;
+                    rows[i].ValueString = rows[i].Value.ToString(ClipEditor.Settings.HexRowNumbers ? "X4" : "D");
+                    rows[i].VisualTime = i * RowsPerBeat * ClipEvent.TimeBase;
+                    rows[i].Time = i * RowsPerBeat * ClipEvent.TimeBase * Global.Buzz.TPB / RowsPerBeat;
                 }
             }
         }
 
-        public ColumnRenderer.ColumnType Type { get { return PatternEditor.Settings.HexRowNumbers ? ColumnRenderer.ColumnType.HexValue : ColumnRenderer.ColumnType.DecValue; } }
+        public ColumnRenderer.ColumnType Type { get { return ClipEditor.Settings.HexRowNumbers ? ColumnRenderer.ColumnType.HexValue : ColumnRenderer.ColumnType.DecValue; } }
         public int DigitCount { get { return Math.Max(MinWidth, (int)Math.Log10(set.BeatCount * RowsPerBeat - 1) + 1); } }
         public bool TiedToNext { get { return false; } }
         public string Label { get { return null; } }

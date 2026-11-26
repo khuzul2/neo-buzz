@@ -1,7 +1,7 @@
 // Fork (audio hygiene, docs/specs/daw-modes.md §8.1): events from the audio thread to the UI thread
 // without the audio thread allocating. Upstream posted a closure (and the dispatcher made its
 // operation) for each: every value a tick sent to a parameter with a listener (a parameter
-// window's rows, the studio's parameter rows, the pattern editor's columns, ConnectionMixer, the
+// window's rows, the studio's parameter rows, the clip editor's columns, ConnectionMixer, the
 // master volume), every tick's play position, every change of a machine's activity (twice a
 // buffer for some machines with the default work algorithm). And a description listener added a
 // closure to its parameter's timer on every change, where they piled up.

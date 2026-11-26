@@ -2,26 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BuzzGUI.Common.Actions.PatternActions
+namespace BuzzGUI.Common.Actions.ClipActions
 {
-    public class SetOrClearEventsAction : PatternAction
+    public class SetOrClearEventsAction : ClipAction
     {
-        readonly PatternEvent[] newevents;
-        PatternEvent[] oldevents;
+        readonly ClipEvent[] newevents;
+        ClipEvent[] oldevents;
         readonly bool set;
         readonly int columnIndex;
 
-        public SetOrClearEventsAction(IPatternColumn column, IEnumerable<PatternEvent> events, bool set)
-            : base(column.Pattern)
+        public SetOrClearEventsAction(IClipColumn column, IEnumerable<ClipEvent> events, bool set)
+            : base(column.Clip)
         {
             this.newevents = events.ToArray();
             this.set = set;
-            columnIndex = column.Pattern.Columns.IndexOf(column);
+            columnIndex = column.Clip.Columns.IndexOf(column);
         }
 
         protected override void DoAction()
         {
-            var col = Pattern.Columns[columnIndex];
+            var col = Clip.Columns[columnIndex];
 
             if (set)
             {
@@ -38,7 +38,7 @@ namespace BuzzGUI.Common.Actions.PatternActions
 
         protected override void UndoAction()
         {
-            var col = Pattern.Columns[columnIndex];
+            var col = Clip.Columns[columnIndex];
 
             if (set)
             {

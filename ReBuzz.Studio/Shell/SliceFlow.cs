@@ -39,7 +39,7 @@ namespace ReBuzz.Studio.Shell
         static ReBuzzCore Core => StudioHost.Current?.Core;
 
         /// <summary>"Slice to new MIDI track…" for the audio clip <paramref name="clip"/> gives (menus of the Session and the Arrangement).</summary>
-        public static MenuItem Menu(Func<IPattern> clip, bool enabled = true)
+        public static MenuItem Menu(Func<IClip> clip, bool enabled = true)
         {
             var item = new MenuItem { Header = MenuLabel, Tag = "Slice to new MIDI track", IsEnabled = enabled };
             item.Click += (_, _) => _ = SliceClip(clip());
@@ -47,13 +47,13 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>The same entry for a context menu (the Audio page).</summary>
-        public static void AddTo(ContextMenu menu, Func<IPattern> clip)
+        public static void AddTo(ContextMenu menu, Func<IClip> clip)
         {
             menu.Items.Add(new Separator());
             menu.Items.Add(Menu(clip));
         }
 
-        public static async Task SliceClip(IPattern clip)
+        public static async Task SliceClip(IClip clip)
         {
             var layout = Core?.SessionLayout;
             if (layout == null || clip == null) return;

@@ -1,6 +1,6 @@
 // Fork (docs/specs/clips.md §7.1, CU3): migration on open. After a song is loaded (machines, then the engine columns), every machine that has
-// patterns has its clips moved into the store: the built-in rows (PATT), PatternXP's data and the Modern Pattern Editor's blob become lanes
-// (ClipMigration), what does not convert is dropped with a log line, the machine's pattern editor is told to view the store, and the song is
+// clips has its clips moved into the store: the built-in rows (PATT), PatternXP's data and the Modern Pattern Editor's blob become lanes
+// (ClipMigration), what does not convert is dropped with a log line, the machine's clip editor is told to view the store, and the song is
 // marked as migrated, in memory. The file is never written here. A song that already holds its lanes in the store (a .nbl of format 3)
 // is not migrated again: the store is the truth.
 
@@ -49,7 +49,7 @@ namespace ReBuzz.Core
             var report = new ClipOpenReport();
             foreach (var machine in song.MachinesList.ToList())
             {
-                if (machine.PatternsList.Count == 0 || machine.DLL?.IsMissing == true) continue;       // a placeholder keeps its data as the file gave it
+                if (machine.ClipsList.Count == 0 || machine.DLL?.IsMissing == true) continue;       // a placeholder keeps its data as the file gave it
                 try
                 {
                     Migrate(buzz, song, machine, lanesInStore, report);
@@ -75,15 +75,15 @@ namespace ReBuzz.Core
                 var log = new ClipLog();
                 var result = ClipStore.MigrateForOpen(machine, song, log, data);
                 int lanes = 0;
-                foreach (var clip in result.Clips)
+                foreach (var content in result.Clips)
                 {
-                    var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == clip.Name);
-                    if (pattern == null)
+                    var clip = machine.ClipsList.FirstOrDefault(p => p.Name == content.Name);
+                    if (clip == null)
                     {
-                        log.Loss(ClipTags.PatternMissing, machine.Name, clip.Name, null, clip.Lanes.Sum(l => l.Events.Count), "no such pattern in the song");
+                        log.Loss(ClipTags.ClipMissing, machine.Name, content.Name, null, content.Lanes.Sum(l => l.Events.Count), "no such clip in the song");
                         continue;
                     }
-                    lanes += ClipStore.Write(pattern, clip, song, log, mergeNotes: true);
+                    lanes += ClipStore.Write(clip, content, song, log, mergeNotes: true);
                     report.ClipsMigrated++;
                 }
                 report.LanesWritten += lanes;

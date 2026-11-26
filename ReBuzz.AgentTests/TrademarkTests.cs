@@ -92,7 +92,7 @@ namespace ReBuzz.AgentTests
             "ReBuzz", "ReBuzz.Studio", "ReBuzz.Host", "ReBuzz.Headless", "ReBuzz.Agent", "ReBuzz.Engine", "ReBuzzGUI", "Machines", "ModernPatternEditor",
         };
 
-        static IEnumerable<(string File, IEnumerable<(int Line, string Text)> Texts)> UserFacingTexts(string root)
+        internal static IEnumerable<(string File, IEnumerable<(int Line, string Text)> Texts)> UserFacingTexts(string root)
         {
             string sep = Path.DirectorySeparatorChar.ToString();
             bool Skip(string f) => f.Contains(sep + "obj" + sep) || f.Contains(sep + "bin" + sep) || f.Contains("Tests" + sep) || f.Contains(".Tests" + sep);

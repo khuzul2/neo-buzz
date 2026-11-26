@@ -74,15 +74,15 @@ namespace ReBuzz.Studio.Tests
             window.Show();
             Settle();
             Call("machine_add", Args(("gear", gear), ("name", "Voice")));
-            Call("pattern_create", Args(("machine", "Voice"), ("name", "P"), ("length_beats", beats)));
+            Call("clip_create", Args(("machine", "Voice"), ("name", "P"), ("length_beats", beats)));
             var notes = new JsonArray();
             for (int b = 0; b < beats; b += 2)
             {
                 notes.Add(new JsonObject { ["pitch"] = 48 + (b / 2) % 5 * 2, ["start"] = (double)b, ["length"] = 1.5, ["velocity"] = 100 });
                 notes.Add(new JsonObject { ["pitch"] = 55 + (b / 2) % 3 * 3, ["start"] = (double)b + 0.5, ["length"] = 1.0, ["velocity"] = 80 });
             }
-            Call("notes_write", Args(("machine", "Voice"), ("pattern", "P"), ("notes", notes)));
-            Call("arrangement_place", Args(("machine", "Voice"), ("pattern", "P"), ("at", 0)));
+            Call("notes_write", Args(("machine", "Voice"), ("clip", "P"), ("notes", notes)));
+            Call("arrangement_place", Args(("machine", "Voice"), ("clip", "P"), ("at", 0)));
             Settle();
             return window;
         }
@@ -186,7 +186,7 @@ namespace ReBuzz.Studio.Tests
         internal static IEnumerable<Surface> Surfaces(MainWindow window, List<Avalonia.Controls.Window> opened)
         {
             window.Width = 1500; window.Height = 950;
-            foreach (var view in new[] { "Machines", "Arrangement", "Session", "Pattern", "Song Notes" })
+            foreach (var view in new[] { "Machines", "Arrangement", "Session", "Clip", "Song Notes" })
             {
                 window.ShowView(view);
                 Settle();
@@ -478,7 +478,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ focus order and keyboard reach
 
         /// <summary>The controls that keep Tab for themselves (Buzz's tracker: Tab is the next column; a text box that takes tabs), each with the way out.</summary>
-        static readonly string[] TabHolders = { "PatternBody", "the window", "SongHistoryTextBox" };
+        static readonly string[] TabHolders = { "ClipBody", "the window", "SongHistoryTextBox" };
 
         static bool IsInteractive(Avalonia.Controls.Control c) =>
             c.IsEnabled && c.IsEffectivelyVisible && c.Bounds.Width > 0 && c.Bounds.Height > 0

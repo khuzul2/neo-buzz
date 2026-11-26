@@ -23,26 +23,26 @@ namespace WDE.ModernPatternEditor
         public bool Muted { get; set; }
 
         public string Label { get; set; }
-        public Color Color { get { return Pattern.Pattern.Machine.GetThemeColor(); } }
+        public Color Color { get { return Clip.Clip.Machine.GetThemeColor(); } }
 
-        public readonly PatternVM Pattern;
+        public readonly ClipVM Clip;
         protected ParameterColumn[] columns;
         protected readonly int track;
         public IList<ColumnRenderer.IColumn> Columns { get { return columns; } }
 
         /// <summary>Fork (daw-modes.md AR3): a set whose columns the subclass makes (the Notes lanes).</summary>
-        protected ParameterColumnSet(PatternVM pattern, int track)
+        protected ParameterColumnSet(ClipVM clip, int track)
         {
-            this.Pattern = pattern;
+            this.Clip = clip;
             this.track = track;
             columns = new ParameterColumn[0];
         }
 
-        public ParameterColumnSet(PatternVM pattern, IEnumerable<IPatternColumn> ic, int track)
+        public ParameterColumnSet(ClipVM clip, IEnumerable<IClipColumn> ic, int track)
         {
-            this.Pattern = pattern;
+            this.Clip = clip;
             this.track = track;
-            columns = ic.Select(c => new ParameterColumn(this, c, track, pattern.DefaultRPB)).ToArray();
+            columns = ic.Select(c => new ParameterColumn(this, c, track, clip.DefaultRPB)).ToArray();
         }
 
         public virtual void Release()
@@ -61,7 +61,7 @@ namespace WDE.ModernPatternEditor
             {
                 c.SendCCAtTime(time);
             }
-            columns[0].PatternColumn.Machine.SendControlChanges();
+            columns[0].ClipColumn.Machine.SendControlChanges();
         }
 
         public event Action<HashSet<int>> BeatsInvalidated;

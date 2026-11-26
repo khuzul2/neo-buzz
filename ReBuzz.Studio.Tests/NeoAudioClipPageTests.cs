@@ -58,8 +58,8 @@ namespace ReBuzz.Studio.Tests
             public IMachine A { get; }
             public IMachine B { get; }
             public ISequence LaneB { get; }
-            public IPattern SessionClip { get; }
-            public IPattern ArrangedClip { get; }
+            public IClip SessionClip { get; }
+            public IClip ArrangedClip { get; }
             public ClipEditor Editor { get; } = new ClipEditor(Core);
             readonly bool looping;
 
@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Tests
                 file ??= NeoAudioArrangementTests.Tones("page-tones.wav");
                 SessionClip = Layout.ImportAudio(Layout.FirstTrackOf(A), 0, file, out string error);
                 Assert.That(SessionClip, Is.Not.Null, error);
-                // The Arrangement's clip is in no slot: its pattern is made in a slot and the slot emptied (as audio_import with at_beats does).
+                // The Arrangement's clip is in no slot: its clip is made in a slot and the slot emptied (as audio_import with at_beats does).
                 ArrangedClip = Layout.ImportAudio(Layout.FirstTrackOf(B), 0, file, out error);
                 Assert.That(ArrangedClip, Is.Not.Null, error);
                 Layout.SetSlot(Layout.FirstTrackOf(B), 0, null);
@@ -170,7 +170,7 @@ namespace ReBuzz.Studio.Tests
             }
 
             /// <summary>Waits for the background peak cache of the clip's audio, then redraws.</summary>
-            public void WaitPeaks(IPattern clip)
+            public void WaitPeaks(IClip clip)
             {
                 var asset = Layout.ViewOf(clip)!.Asset;
                 for (int i = 0; i < 500 && asset.Peaks == null; i++)
@@ -201,10 +201,10 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>A clip's settings as text, found by name (it survives a reopened song): audio, loop and region, length.</summary>
-        internal static string State(string machine, string pattern)
+        internal static string State(string machine, string clip)
         {
             var m = Core.SongCore.MachinesList.First(x => x.Name == machine);
-            var p = m.PatternsList.First(x => x.Name == pattern);
+            var p = m.ClipsList.First(x => x.Name == clip);
             var c = Layout.ClipOf(p);
             string arranged = string.Join(",", new ClipEditor(Core).ClipsOf(p).Select(i => $"{i.Time}+{i.Spec.Length}@{i.Spec.Start}/{i.Spec.LoopStart}-{i.Spec.LoopEnd}{(i.Spec.Loop ? "L" : "")}"));
             return $"{c.Audio?.ToXml()}|loop {c.Loop} {c.Start} {c.LoopStart} {c.LoopEnd}|len {p.Length}|{arranged}";
@@ -219,17 +219,17 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
-        internal static string Saved(string machine, string pattern)
+        internal static string Saved(string machine, string clip)
         {
             string file = Work("saved.nbl");
             if (File.Exists(file)) File.Delete(file);
             Core.SaveSongCopy(file);
             Reopen(file);
-            return State(machine, pattern);
+            return State(machine, clip);
         }
 
         /// <summary>The control's change: it did something, one undo takes it all back, redo does it again, and the saved song keeps it.</summary>
-        internal static string Steps(Rig rig, IPattern clip, Action gesture, bool save = true, Action<string> check = null)
+        internal static string Steps(Rig rig, IClip clip, Action gesture, bool save = true, Action<string> check = null)
         {
             string machine = clip.Machine.Name, name = clip.Name;
             string before = State(machine, name);
@@ -279,7 +279,7 @@ namespace ReBuzz.Studio.Tests
             foreach (float f in stereo) w.Write(f);
         }
 
-        internal static SessionDocument.AudioSettings Audio(IPattern p) => Layout.AudioOf(p);
+        internal static SessionDocument.AudioSettings Audio(IClip p) => Layout.AudioOf(p);
 
         // ------------------------------------------------------------------ the page follows the selection
 
@@ -288,11 +288,11 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig();
             var page = rig.OpenPage();
-            Assert.That(page.Pattern, Is.Null, "nothing selected: no clip");
+            Assert.That(page.Clip, Is.Null, "nothing selected: no clip");
             Assert.That(page.EmptyShown, Is.True);
 
             rig.SelectInSession();
-            Assert.That(page.Pattern, Is.SameAs(rig.SessionClip), "a Session slot's clip");
+            Assert.That(page.Clip, Is.SameAs(rig.SessionClip), "a Session slot's clip");
             Assert.That(page.Context, Is.EqualTo(AudioClipPage.Where.Session));
             Assert.That(page.EmptyShown, Is.False);
             Assert.That(page.TitleText, Is.EqualTo(rig.SessionClip.Name));
@@ -300,7 +300,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Window.Detail.IsAudio, Is.True);
 
             rig.SelectInArrangement();
-            Assert.That(page.Pattern, Is.SameAs(rig.ArrangedClip), "an Arrangement clip");
+            Assert.That(page.Clip, Is.SameAs(rig.ArrangedClip), "an Arrangement clip");
             Assert.That(page.Context, Is.EqualTo(AudioClipPage.Where.Arrangement));
             Assert.That(page.Arranged, Is.Not.Null);
             Assert.That(page.InfoText, Does.Contain("Arrangement"));
@@ -329,7 +329,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Window.Detail.IsOpen, Is.False, "a click only selects it");
             rig.DoubleClick(rig.In(rig.Session.SlotAt(Layout.FirstTrackOf(rig.A), 0), 0.6, 0.5));
             Assert.That(rig.Window.Detail.IsOpen && rig.Window.Detail.IsAudio, Is.True, "a double click on a Session audio clip");
-            Assert.That(rig.Page.Pattern, Is.SameAs(rig.SessionClip));
+            Assert.That(rig.Page.Clip, Is.SameAs(rig.SessionClip));
 
             rig.Window.Detail.Close();
             rig.Show("Arrangement");
@@ -337,7 +337,7 @@ namespace ReBuzz.Studio.Tests
             var r = rig.Sequence.Arrangement.ClipRect(item);
             rig.DoubleClick(rig.Sequence.Arrangement.TranslatePoint(new Point(r.X + r.Width * 0.5, r.Y + r.Height * 0.8), rig.Window)!.Value);
             Assert.That(rig.Window.Detail.IsOpen && rig.Window.Detail.IsAudio, Is.True, "a double click on an Arrangement audio clip");
-            Assert.That(rig.Page.Pattern, Is.SameAs(rig.ArrangedClip));
+            Assert.That(rig.Page.Clip, Is.SameAs(rig.ArrangedClip));
         }
 
         [AvaloniaTest]
@@ -351,7 +351,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(inspector.ClipPanel.IsVisible, Is.False, "an Arrangement audio clip has no launch settings, and no 'Select a clip' card");
             Assert.That(inspector.Facts.Select(f => f.Label), Does.Contain("Warp").And.Contain("Tempo"));
             Assert.That(inspector.Facts.First(f => f.Label == "Warp").Value, Is.EqualTo("Pro"), "the Inspector shows the default a new clip starts in");
-            Assert.That(inspector.PatternButton.IsVisible, Is.False, "the Tracker has nothing for an audio clip");
+            Assert.That(inspector.ClipButton.IsVisible, Is.False, "the Tracker has nothing for an audio clip");
 
             rig.SelectInSession();
             Assert.That(inspector.SubtitleText, Is.EqualTo("Generator"));
@@ -480,7 +480,7 @@ namespace ReBuzz.Studio.Tests
 
             // The loop switch is the arranged clip's, as the L key on the canvas.
             Steps(rig, clip, () => rig.Click(rig.Of(page.LoopBox)), save: false, check: _ => Assert.That(rig.Editor.ClipsOf(clip).Single().Spec.Loop, Is.Not.EqualTo(arrangedLoop)));
-            Assert.That(Layout.ClipOf(clip).Loop, Is.EqualTo(slotLoop), "and the pattern's own loop stays as it was");
+            Assert.That(Layout.ClipOf(clip).Loop, Is.EqualTo(slotLoop), "and the clip's own loop stays as it was");
             // Its region: where in the audio the clip starts.
             Steps(rig, clip, () => page.Type(page.StartBox, "1.2.1"), save: true, check: _ =>
             {
@@ -673,7 +673,7 @@ namespace ReBuzz.Studio.Tests
             // The agent, on the other clip, the same four changes.
             Ok(Tool("audio_clip_set", new JsonObject
             {
-                ["machine"] = "B", ["pattern"] = rig.ArrangedClip.Name, ["warp"] = "Complex", ["tempo_bpm"] = 100, ["transpose"] = 3, ["gain_db"] = -4,
+                ["machine"] = "B", ["clip"] = rig.ArrangedClip.Name, ["warp"] = "Complex", ["tempo_bpm"] = 100, ["transpose"] = 3, ["gain_db"] = -4,
             }));
             var a = Audio(clip);
             var b = Audio(rig.ArrangedClip);

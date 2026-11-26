@@ -112,7 +112,7 @@ namespace ReBuzz.Agent.Guides
             // U6: a manifest generated from a machine's source keeps its profile (health, how it takes notes), as a curated one does.
             bool profiled = manifest.IsDraft || manifest.IsCurated || manifest.IsGeneratedFromSource;
             if (manifest.Tracks > 0)
-                facts.Add(!profiled ? $"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from patterns as MIDI"
+                facts.Add(!profiled ? $"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from clips as MIDI"
                     : manifest.Tracks == 1 ? "1 track"
                     : manifest.TrackParameters.Count > 0 ? $"up to {manifest.Tracks} tracks, each with its own track parameters" : $"up to {manifest.Tracks} tracks");
             facts.Add(presets.Count == 1 ? "1 preset" : $"{presets.Count} presets");
@@ -209,7 +209,7 @@ namespace ReBuzz.Agent.Guides
             sb.Append(notes.Input switch
             {
                 "tracks" => "- Takes notes in its Note track parameter, one voice per track: `notes_write` puts each note on a free track (adding tracks when a chord needs them). It ignores MIDI notes, so `midi_play` doesn't reach it.\n",
-                "midi" => "- Takes MIDI notes: `notes_write` writes them into the pattern's MIDI column.\n",
+                "midi" => "- Takes MIDI notes: `notes_write` writes them into the clip's MIDI column.\n",
                 "none" => "- Doesn't play notes (no Note parameter): it sounds from its own parameters or triggers.\n",
                 _ => "",
             });

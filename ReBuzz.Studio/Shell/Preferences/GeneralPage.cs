@@ -1,5 +1,5 @@
 // Fork (docs/specs/studio-mvp.md S7, ux-overhaul.md P3f): Preferences ▸ General: the general settings (BuzzGUI's GeneralSettings: note names,
-// pattern length, song loading...), shown from the agent's list (section "general"), without the ones only the Windows app reads.
+// clip length, song loading...), shown from the agent's list (section "general"), without the ones only the Windows app reads.
 
 using System;
 using Avalonia.Controls;

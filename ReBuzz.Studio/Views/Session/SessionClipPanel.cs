@@ -77,7 +77,7 @@ namespace ReBuzz.Studio.Views.Session
 
             (int Track, int Scene)? shownSlot;
             ISequence shownSequence;
-            IPattern shownPattern;
+            IClip shownClip;
             int shownLength;
             int shownNotes;              // 0.7: notes recorded into the clip's engine MIDI column
 
@@ -153,8 +153,8 @@ namespace ReBuzz.Studio.Views.Session
                     HorizontalAlignment = HorizontalAlignment.Left
                 };
 
-                // The piano roll: until the pattern editor comes (S6), where the studio writes notes.
-                notesButton = new FlatButton("Notes…", () => { if (shownPattern != null) view.EditNotes(shownSequence, shownPattern); },
+                // The piano roll: until the clip editor comes (S6), where the studio writes notes.
+                notesButton = new FlatButton("Notes…", () => { if (shownClip != null) view.EditNotes(shownSequence, shownClip); },
                     $"Edit the clip's notes in the piano roll ({ModName}+double-click the slot)")
                 {
                     Margin = new Thickness(0, 4, 0, 2),
@@ -207,7 +207,7 @@ namespace ReBuzz.Studio.Views.Session
             }
 
             /// <summary>The clip shown, or null.</summary>
-            public IPattern Pattern => shownPattern;
+            public IClip Clip => shownClip;
 
             /// <summary>
             /// Fork (ux-overhaul.md P3a): in the window's inspector the panel takes the inspector's width and surface, and
@@ -253,13 +253,13 @@ namespace ReBuzz.Studio.Views.Session
             {
                 var layout = view.layout;
                 var seq = slot is { } s ? layout.SequenceOf(s.Track) : null;
-                var pattern = slot is { } p && seq != null ? layout.PatternAt(p.Track, p.Scene) : null;
-                if (force || slot != shownSlot || !ReferenceEquals(seq, shownSequence) || !ReferenceEquals(pattern, shownPattern) ||
-                    (pattern != null && (pattern.Length != shownLength || layout.RecordedNoteCount(pattern) != shownNotes)))
+                var clip = slot is { } p && seq != null ? layout.ClipAt(p.Track, p.Scene) : null;
+                if (force || slot != shownSlot || !ReferenceEquals(seq, shownSequence) || !ReferenceEquals(clip, shownClip) ||
+                    (clip != null && (clip.Length != shownLength || layout.RecordedNoteCount(clip) != shownNotes)))
                 {
                     shownSlot = slot;
                     shownSequence = seq;
-                    shownPattern = pattern;
+                    shownClip = clip;
                     Load();
                 }
                 UpdateStatus();
@@ -271,7 +271,7 @@ namespace ReBuzz.Studio.Views.Session
                 try
                 {
                     LoadScene();
-                    if (shownPattern == null)
+                    if (shownClip == null)
                     {
                         title.Text = "Clip";
                         info.Text = "";
@@ -284,12 +284,12 @@ namespace ReBuzz.Studio.Views.Session
                         return;
                     }
 
-                    var c = view.layout.ClipOf(shownPattern);
-                    shownLength = Math.Max(1, shownPattern.Length);
-                    shownNotes = view.layout.RecordedNoteCount(shownPattern);
-                    int moves = view.layout.RecordedAutomationCount(shownPattern);
-                    title.Text = shownPattern.Name;
-                    info.Text = $"{shownPattern.Machine?.Name} · {Describe(shownLength)}" +
+                    var c = view.layout.ClipOf(shownClip);
+                    shownLength = Math.Max(1, shownClip.Length);
+                    shownNotes = view.layout.RecordedNoteCount(shownClip);
+                    int moves = view.layout.RecordedAutomationCount(shownClip);
+                    title.Text = shownClip.Name;
+                    info.Text = $"{shownClip.Machine?.Name} · {Describe(shownLength)}" +
                                 (shownNotes > 0 ? $" · {shownNotes} recorded note{(shownNotes == 1 ? "" : "s")}" : "") +
                                 (moves > 0 ? $" · {moves} automation point{(moves == 1 ? "" : "s")}" : "");
                     ToolTip.SetTip(info, shownNotes > 0 || moves > 0
@@ -298,7 +298,7 @@ namespace ReBuzz.Studio.Views.Session
                         : null);
                     hint.IsVisible = false;
                     body.IsVisible = true;
-                    bool audioClip = view.layout.IsAudioClip(shownPattern);
+                    bool audioClip = view.layout.IsAudioClip(shownClip);
                     foreach (var part in regionParts) part.IsVisible = !audioClip;
                     notesButton.IsVisible = !audioClip;
 
@@ -311,7 +311,7 @@ namespace ReBuzz.Studio.Views.Session
                     start.Text = Place(c.Start);
                     loopStart.Text = Place(c.LoopStart);
                     // The end it plays to, the clip's own end when the setting is 0 (as the text below says);
-                    // committed unchanged, the clip's end stays 0 and follows the pattern's length.
+                    // committed unchanged, the clip's end stays 0 and follows the clip's length.
                     var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
                     loopEnd.Text = Place(end);
                     loopStartLabel.Opacity = c.Loop ? 1 : 0.4;
@@ -386,13 +386,13 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>Playing state and position (called on every refresh).</summary>
             public void UpdateStatus()
             {
-                if (shownPattern == null || shownSequence == null)
+                if (shownClip == null || shownSequence == null)
                 {
                     status.Text = "";
                     return;
                 }
                 var session = view.session;
-                var state = shownSlot is { } at ? view.layout.SlotState(shownSequence, shownPattern, at.Track, at.Scene) : session.GetState(shownSequence, shownPattern);
+                var state = shownSlot is { } at ? view.layout.SlotState(shownSequence, shownClip, at.Track, at.Scene) : session.GetState(shownSequence, shownClip);
                 string text = state switch
                 {
                     ClipState.Playing => "▶ playing",
@@ -411,16 +411,16 @@ namespace ReBuzz.Studio.Views.Session
                         if (followAt >= 0 && session.Clock >= 0) text += $"  follow in {Length((int)Math.Max(0, followAt - session.Clock))}";
                     }
                 }
-                if (view.layout.IsRecordingInto(shownSequence, shownPattern)) text += "  ● recording";
+                if (view.layout.IsRecordingInto(shownSequence, shownClip)) text += "  ● recording";
                 if (status.Text != text) status.Text = text;
             }
 
             void Commit(Action<SessionDocument.ClipSettings> change)
             {
-                if (loading || shownPattern == null) return;
-                var c = view.layout.ClipOf(shownPattern);
+                if (loading || shownClip == null) return;
+                var c = view.layout.ClipOf(shownClip);
                 change(c);
-                view.layout.SetClipSettings(shownPattern, c);
+                view.layout.SetClipSettings(shownClip, c);
                 // The layout's Changed event rebuilds the view, which reloads the panel.
             }
 
@@ -428,7 +428,7 @@ namespace ReBuzz.Studio.Views.Session
 
             void CommitMarkers()
             {
-                if (loading || shownPattern == null) return;
+                if (loading || shownClip == null) return;
                 if (!TryPlace(start.Text, out int s) || !TryPlace(loopStart.Text, out int ls) || !TryPlace(loopEnd.Text, out int le))
                 {
                     Load();       // not a number: back to what it was

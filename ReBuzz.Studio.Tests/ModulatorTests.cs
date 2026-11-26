@@ -35,7 +35,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class ModulatorTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         static ReBuzzCore Core => AudioHygieneTests.Core;
 
@@ -50,14 +50,14 @@ namespace ReBuzz.Studio.Tests
 
         static IModulator Mod(IMachine m) => ModulationBoard.Of(m) ?? throw new AssertionException(m.Name + " is not a modulator");
 
-        /// <summary>A Neo Poly playing a pattern (so the song has sound and the transport runs), a Neo Filter after it.</summary>
+        /// <summary>A Neo Poly playing a clip (so the song has sound and the transport runs), a Neo Filter after it.</summary>
         static (MachineCore Poly, MachineCore Filter) PlayingFilter()
         {
             var poly = AddPoly("Mod Poly");
-            poly.CreatePattern("00", 16);
-            var pattern = (PatternCore)poly.Patterns.First();
-            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
-            Arrange(poly, pattern);
+            poly.CreateClip("00", 16);
+            var clip = (ClipCore)poly.Clips.First();
+            Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+            Arrange(poly, clip);
             var filter = InsertFilter(poly, "Mod Filter");
             return (poly, filter);
         }
@@ -307,10 +307,10 @@ namespace ReBuzz.Studio.Tests
                 for (int i = 0; i < 8; i++)
                 {
                     var poly = AddPoly("Mod Poly " + i);
-                    poly.CreatePattern("00", 16);
-                    var pattern = (PatternCore)poly.Patterns.First();
-                    Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(k => new ClipNote(k * TB, TB / 2, 48 + (k * 5 + i) % 12, 60 + k * 4)).ToArray());
-                    Arrange(poly, pattern);
+                    poly.CreateClip("00", 16);
+                    var clip = (ClipCore)poly.Clips.First();
+                    Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(k => new ClipNote(k * TB, TB / 2, 48 + (k * 5 + i) % 12, 60 + k * 4)).ToArray());
+                    Arrange(poly, clip);
                     polys.Add(poly);
                 }
                 var mods = new[] { Add("Neo LFO", "Mod LFO"), Add("Neo Envelope", "Mod Env"), Add("Neo Step", "Mod Step"), Add("Neo Macro", "Mod Macro") };

@@ -1,4 +1,4 @@
-// Fork (docs/specs/daw-modes.md AR3, seam S7): the tracker sees the notes, headless. The Modern Pattern Editor draws the pattern's
+// Fork (docs/specs/daw-modes.md AR3, seam S7): the tracker sees the notes, headless. The Modern Pattern Editor draws the clip's
 // engine MIDI column as lanes of its own ("Notes / Voice n": Note, Vel, Dly, Cut): a take written to the column shows at once,
 // a typed row changes only that note (a step of the song's history), and the editor's own data and the song's bytes are as they were.
 
@@ -27,16 +27,16 @@ namespace ReBuzz.Studio.Tests
 
     public class TrackerNotesViewTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
         const int Row = TB;                    // a row at 4 rows a beat
 
         sealed class Setup
         {
             public MainWindow Window;
             public MachineCore Machine;
-            public IPattern Pattern;
+            public IClip Clip;
             public dynamic View;
-            public dynamic Vm => View.Editor.SelectedMachine.SelectedPattern;
+            public dynamic Vm => View.Editor.SelectedMachine.SelectedClip;
         }
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -57,19 +57,19 @@ namespace ReBuzz.Studio.Tests
             ValueDisplay.Base = ValueBase.Hex;      // the keys below type hex digits
             Core.SongCore.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
-            machine.CreatePattern("00", ticks);
-            var pattern = machine.Patterns.First(p => p.Name == "00");
+            machine.CreateClip("00", ticks);
+            var clip = machine.Clips.First(p => p.Name == "00");
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Pump();
             window.Detail.Show(true);
-            PatternView.Edit(pattern);
+            ClipView.Edit(clip);
             Pump();
-            dynamic view = PatternView.Page.EditorControl;
+            dynamic view = ClipView.Page.EditorControl;
             Assert.That((object)view, Is.Not.Null);
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
-            return new Setup { Window = window, Machine = machine, Pattern = pattern, View = view };
+            return new Setup { Window = window, Machine = machine, Clip = clip, View = view };
         }
 
         static void Close(Setup s)
@@ -88,15 +88,15 @@ namespace ReBuzz.Studio.Tests
             Pump();
         }
 
-        /// <summary>Writes events to the pattern's MIDI column as a session take does when it ends.</summary>
-        static void Take(IPattern pattern, params LaneEvent[] events) =>
-            SessionLayout.EnsureMidiColumn(pattern).SetEvents(events.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
+        /// <summary>Writes events to the clip's MIDI column as a session take does when it ends.</summary>
+        static void Take(IClip clip, params LaneEvent[] events) =>
+            SessionLayout.EnsureMidiColumn(clip).SetEvents(events.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
 
         static LaneEvent Note(int time, int duration, int midi, int velocity = 100, int channel = 0) =>
             new LaneEvent(time, 0x90 | channel | (midi << 8) | (velocity << 16), duration);
 
-        static List<LaneEvent> Column(IPattern pattern) =>
-            (SessionLayout.EnsureMidiColumn(pattern)?.GetEvents(int.MinValue, int.MaxValue) ?? Enumerable.Empty<PatternEvent>())
+        static List<LaneEvent> Column(IClip clip) =>
+            (SessionLayout.EnsureMidiColumn(clip)?.GetEvents(int.MinValue, int.MaxValue) ?? Enumerable.Empty<ClipEvent>())
                 .Select(e => new LaneEvent(e.Time, e.Value, e.Duration)).OrderBy(e => e.Time).ThenBy(e => e.Value).ToList();
 
         /// <summary>The cursor on a lane of voice 0 (0 Note, 1 Vel, 2 Dly, 3 Cut) in a row, at the first digit.</summary>
@@ -143,7 +143,7 @@ namespace ReBuzz.Studio.Tests
             {
                 Assert.That((bool)s.Vm.HasNoteLanes, Is.False, "an empty MIDI column shows no lanes");
                 int sets = s.Vm.ColumnSets.Count;
-                Take(s.Pattern, ATake());
+                Take(s.Clip, ATake());
                 Pump();
                 Assert.That((bool)s.Vm.HasNoteLanes, Is.True, "the take is in the tracker without asking");
                 Assert.That((string)s.Vm.ColumnSets[0].Label, Does.StartWith("Notes"));
@@ -160,7 +160,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Text(s, 2, r1, set: v1), Is.EqualTo(((int)Math.Round(61 * 95.0 / 240)).ToString("X2")), "the delay of the off-grid note");
                 Studio.Screenshot(s.Window, "tracker-notes-lanes");
                 // More notes arriving (another take, the piano roll, the agent) show too.
-                Take(s.Pattern, Note(14 * Row, Row, 72));
+                Take(s.Clip, Note(14 * Row, Row, 72));
                 Pump();
                 var more = take.Append(Note(14 * Row, Row, 72)).ToArray();
                 var (v2, r2) = Where(more, more[^1]);
@@ -175,9 +175,9 @@ namespace ReBuzz.Studio.Tests
             var s = Open("AR3 Edit");
             try
             {
-                Take(s.Pattern, ATake());
+                Take(s.Clip, ATake());
                 Pump();
-                var before = Column(s.Pattern);
+                var before = Column(s.Clip);
                 int undos = Core.SongCore.ActionStack.Actions.Count();
 
                 // A key on the Note column of the third note: another pitch for it.
@@ -185,7 +185,7 @@ namespace ReBuzz.Studio.Tests
                 var (tv, tr) = Where(before, third);
                 At(s, 0, tr, set: tv);
                 Key(s, PhysicalKey.Z);
-                var after = Column(s.Pattern);
+                var after = Column(s.Clip);
                 Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(undos + 1), "one step of the song's history");
                 var gone = before.Except(after).ToList();
                 var came = after.Except(before).ToList();
@@ -203,7 +203,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.Digit3);                     // the high digit; the cursor steps down a row
                 At(s, 1, orow, set: ov, index: 1);
                 Key(s, PhysicalKey.Digit3);                     // the low one
-                var typed = Column(s.Pattern);
+                var typed = Column(s.Clip);
                 Assert.That(typed.Except(after).Count(), Is.EqualTo(1));
                 var changed = typed.Except(after).Single();
                 Assert.That((changed.Time, changed.Duration, changed.Midi, changed.Channel), Is.EqualTo((offGrid.Time, offGrid.Duration, 64, 2)));
@@ -211,11 +211,11 @@ namespace ReBuzz.Studio.Tests
 
                 // The song's Undo (Ctrl+Z) takes them back, one by one.
                 for (int i = 0; i < 3; i++) Key(s, PhysicalKey.Z, Cmd);       // the pitch, and the two digits
-                Assert.That(Column(s.Pattern), Is.EqualTo(before), "undone to the very events of the take");
+                Assert.That(Column(s.Clip), Is.EqualTo(before), "undone to the very events of the take");
                 for (int i = 0; i < 3; i++)
                     if (OperatingSystem.IsMacOS()) Key(s, PhysicalKey.Z, Cmd | RawInputModifiers.Shift);
                     else Key(s, PhysicalKey.Y, Cmd);
-                Assert.That(Column(s.Pattern), Is.EqualTo(typed), "and redone");
+                Assert.That(Column(s.Clip), Is.EqualTo(typed), "and redone");
             }
             finally { Close(s); }
         }
@@ -231,13 +231,13 @@ namespace ReBuzz.Studio.Tests
                 Assert.That((bool)s.Vm.HasNoteLanes, Is.True, "the Notes button shows the lanes of an empty column");
                 At(s, 0, 2);
                 Key(s, PhysicalKey.Z);
-                var column = Column(s.Pattern);
+                var column = Column(s.Clip);
                 Assert.That(column.Count, Is.EqualTo(1));
-                Assert.That((column[0].Time, column[0].Duration), Is.EqualTo((2 * Row, 16 * TB - 2 * Row)), "from the row to the end of the pattern");
+                Assert.That((column[0].Time, column[0].Duration), Is.EqualTo((2 * Row, 16 * TB - 2 * Row)), "from the row to the end of the clip");
                 // An off two rows on ends it.
                 At(s, 0, 5);
                 Key(s, PhysicalKey.Digit1);
-                column = Column(s.Pattern);
+                column = Column(s.Clip);
                 Assert.That(column.Count, Is.EqualTo(1));
                 Assert.That((column[0].Time, column[0].Duration), Is.EqualTo((2 * Row, 3 * Row)));
             }
@@ -259,17 +259,17 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.Tab);
                 Key(s, PhysicalKey.Z);
                 var editorBefore = NoStamp(Core.MachineManager.GetMachineData(s.Machine.EditorMachine));
-                var editorEvents = s.Pattern.PatternEditorMachineEvents.Select(c => (c.Parameter.Name, Events: c.Events.Select(e => (e.Time, e.Value, e.Duration)).OrderBy(e => e).ToArray())).ToList();
+                var editorEvents = s.Clip.ClipEditorMachineEvents.Select(c => (c.Parameter.Name, Events: c.Events.Select(e => (e.Time, e.Value, e.Duration)).OrderBy(e => e).ToArray())).ToList();
 
-                Take(s.Pattern, ATake());
+                Take(s.Clip, ATake());
                 Pump();
                 var (bv, br) = Where(ATake(), ATake()[2]);
                 At(s, 0, br, set: bv);
                 Key(s, PhysicalKey.X);                  // an edit in the lanes
                 Assert.That(NoStamp(Core.MachineManager.GetMachineData(s.Machine.EditorMachine)), Is.EqualTo(editorBefore), "the lanes aren't in the editor's data (the derived blob's stamp is the store's hash, which they do change)");
-                Assert.That(s.Pattern.PatternEditorMachineEvents.Select(c => (c.Parameter.Name, Events: c.Events.Select(e => (e.Time, e.Value, e.Duration)).OrderBy(e => e).ToArray())).ToList(), Is.EqualTo(editorEvents));
+                Assert.That(s.Clip.ClipEditorMachineEvents.Select(c => (c.Parameter.Name, Events: c.Events.Select(e => (e.Time, e.Value, e.Duration)).OrderBy(e => e).ToArray())).ToList(), Is.EqualTo(editorEvents));
 
-                var notes = Column(s.Pattern);
+                var notes = Column(s.Clip);
                 SongFiles.Picker = save => null;
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
                 foreach (var ext in new[] { ".nbl" })
@@ -281,14 +281,14 @@ namespace ReBuzz.Studio.Tests
                     Pump();
                     var machine = Core.SongCore.MachinesList.First(m => m.Name == "AR3 Bytes");
                     s.Machine = machine;
-                    s.Pattern = machine.Patterns.First();
+                    s.Clip = machine.Clips.First();
                     Assert.That(NoStamp(Core.MachineManager.GetMachineData(machine.EditorMachine)), Is.EqualTo(editorBefore), ext + ": the editor's data, byte for byte");
-                    Assert.That(Column(s.Pattern), Is.EqualTo(notes), ext + ": the MIDI column's notes, exactly");
+                    Assert.That(Column(s.Clip), Is.EqualTo(notes), ext + ": the MIDI column's notes, exactly");
                 }
-                PatternView.Edit(s.Pattern);
+                ClipView.Edit(s.Clip);
                 Pump();
-                dynamic view = PatternView.Page.EditorControl;
-                Assert.That((bool)view.Editor.SelectedMachine.SelectedPattern.HasNoteLanes, Is.True, "reopened, the lanes are there again");
+                dynamic view = ClipView.Page.EditorControl;
+                Assert.That((bool)view.Editor.SelectedMachine.SelectedClip.HasNoteLanes, Is.True, "reopened, the lanes are there again");
             }
             finally
             {
@@ -305,21 +305,21 @@ namespace ReBuzz.Studio.Tests
             var s = Open("AR3 Kit");
             try
             {
-                Take(s.Pattern, ATake());
+                Take(s.Clip, ATake());
                 Pump();
                 Assert.That(s.View.NotesToggle.IsChecked, Is.True);
                 Assert.That(Avalonia.Automation.AutomationProperties.GetName((Control)s.View.NotesToggle), Is.Not.Empty);
                 // Transpose (Shift + and Ctrl+Shift +) moves the note under the cursor; the rest of the column stays.
-                var before = Column(s.Pattern);
+                var before = Column(s.Clip);
                 var (cv, cr) = Where(before, ATake()[2]);
                 At(s, 0, cr, set: cv);
                 Key(s, PhysicalKey.NumPadAdd, RawInputModifiers.Shift);
-                var after = Column(s.Pattern);
+                var after = Column(s.Clip);
                 Assert.That(before.Except(after).Single().Midi, Is.EqualTo(67));
                 Assert.That(after.Except(before).Single().Midi, Is.EqualTo(68));
                 // Insert/Delete rows is the editor's own columns' command: not in the lanes, and nothing changes.
                 Key(s, PhysicalKey.Insert);
-                Assert.That(Column(s.Pattern), Is.EqualTo(after));
+                Assert.That(Column(s.Clip), Is.EqualTo(after));
             }
             finally { Close(s); }
         }
@@ -327,7 +327,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AThousandNotesThroughKeyboardEditsKeepTheUntouchedOnesExact()
         {
-            // 1,000 notes in a 64-beat pattern (the pattern's own length), seeded, off the grid and overlapping, with controllers beside.
+            // 1,000 notes in a 64-beat clip (the clip's own length), seeded, off the grid and overlapping, with controllers beside.
             var s = Open("AR3 Random", ticks: 256);
             try
             {
@@ -337,10 +337,10 @@ namespace ReBuzz.Studio.Tests
                 for (int i = 0; i < 1000; i++)
                     original.Add(Note(rng.Next(0, length - 1), rng.Next(1, 3 * 4 * TB), rng.Next(24, 108), rng.Next(1, 128), rng.Next(0, 3)));
                 for (int i = 0; i < 12; i++) original.Add(new LaneEvent(rng.Next(0, length - 1), 0xB0 | (rng.Next(0, 120) << 8) | (rng.Next(0, 128) << 16), 0));
-                Take(s.Pattern, original.ToArray());
+                Take(s.Clip, original.ToArray());
                 Pump();
                 Assert.That((bool)s.Vm.HasNoteLanes, Is.True);
-                Assert.That(Column(s.Pattern).Count, Is.EqualTo(1012));
+                Assert.That(Column(s.Clip).Count, Is.EqualTo(1012));
 
                 var noteKeys = new[] { PhysicalKey.Z, PhysicalKey.S, PhysicalKey.X, PhysicalKey.D, PhysicalKey.C, PhysicalKey.V, PhysicalKey.G, PhysicalKey.B };
                 var digitKeys = new[] { PhysicalKey.Digit0, PhysicalKey.Digit1, PhysicalKey.Digit2, PhysicalKey.Digit3, PhysicalKey.Digit4, PhysicalKey.Digit5 };
@@ -348,7 +348,7 @@ namespace ReBuzz.Studio.Tests
                 int edits = 0;
                 for (int n = 0; n < 45; n++)
                 {
-                    var now = Column(s.Pattern);
+                    var now = Column(s.Clip);
                     var cells = new NoteLanes(now, RowGrid.Beats(new[] { 4 }), length).Cells.Where(c => !c.IsOff).ToList();
                     var c = cells[rng.Next(cells.Count)];
                     int kind = rng.Next(4);
@@ -358,7 +358,7 @@ namespace ReBuzz.Studio.Tests
                         case 0: Key(s, rng.Next(6) == 0 ? PhysicalKey.Period : noteKeys[rng.Next(noteKeys.Length)]); break;
                         default: Key(s, digitKeys[rng.Next(digitKeys.Length)]); break;
                     }
-                    var after = Column(s.Pattern);
+                    var after = Column(s.Clip);
                     var gone = now.Except(after).ToList();
                     var came = after.Except(now).ToList();
                     Assert.That(gone.Count, Is.LessThanOrEqualTo(1), $"edit {n}: at most the cell's note goes");
@@ -367,7 +367,7 @@ namespace ReBuzz.Studio.Tests
                     if (gone.Count > 0) { touched.AddRange(gone); edits++; }
                 }
                 Assert.That(edits, Is.GreaterThan(20), "the run did edit");
-                var final = Column(s.Pattern);
+                var final = Column(s.Clip);
                 foreach (var e in original.Where(e => !touched.Contains(e)))
                     Assert.That(final, Does.Contain(e), "an untouched note is exactly as it was: " + e);
                 Assert.That(final.Where(e => !e.IsNote).ToList(), Is.EqualTo(original.Where(e => !e.IsNote).OrderBy(e => e.Time).ThenBy(e => e.Value).ToList()), "the controllers too");
@@ -382,7 +382,7 @@ namespace ReBuzz.Studio.Tests
             var kind = StudioTheme.Kind;
             try
             {
-                Take(s.Pattern, ATake());
+                Take(s.Clip, ATake());
                 Pump();
                 var all = ((Control)s.View).GetVisualDescendants().OfType<Control>().ToList();
                 var notes = (ToggleButton)s.View.NotesToggle;
@@ -409,16 +409,16 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void LeavingAPatternLetsGoOfItsColumn()
+        public void LeavingAClipLetsGoOfItsColumn()
         {
-            // The lanes follow the pattern's MIDI column; a pattern the editor no longer shows has no handler left on it.
+            // The lanes follow the clip's MIDI column; a clip the editor no longer shows has no handler left on it.
             var s = Open("AR3 Leak");
             try
             {
-                Take(s.Pattern, ATake());
+                Take(s.Clip, ATake());
                 Pump();
-                var column = SessionLayout.EnsureMidiColumn(s.Pattern);
-                int Handlers() => ((Delegate)typeof(PatternColumnCore).GetField("EventsChanged", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.GetValue(column))?.GetInvocationList().Length ?? 0;
+                var column = SessionLayout.EnsureMidiColumn(s.Clip);
+                int Handlers() => ((Delegate)typeof(ClipColumnCore).GetField("EventsChanged", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.GetValue(column))?.GetInvocationList().Length ?? 0;
                 int shown = Handlers();
                 Assert.That(shown, Is.GreaterThan(0), "the lanes follow it");
                 Core.Modified = false;

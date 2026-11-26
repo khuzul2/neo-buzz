@@ -112,7 +112,7 @@ namespace ReBuzz.ManagedMachine
                 nmi.Type = ((WorkFunctionType == WorkFunctionTypes.Generator || WorkFunctionType == WorkFunctionTypes.GeneratorBlock) ? MachineType.Generator : MachineType.Effect);
             }
 
-            MethodInfo method = machineType.GetMethod("PatternEditorControl");
+            MethodInfo method = machineType.GetMethod("ClipEditorControl");
             if (method != null)
             {
                 nmi.Flags |= MachineInfoFlags.PATTERN_EDITOR;

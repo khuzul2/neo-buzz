@@ -43,8 +43,8 @@
         [BuzzSetting(4, Minimum = 2, Maximum = 6, Description = "Default machine base octave.")]
         public int DefaultMachineBaseOctave { get; set; }
 
-        [BuzzSetting(16, Minimum = 1, Maximum = 512, Description = "Default Pattern Length.")]
-        public int PatternLength { get; internal set; }
+        [BuzzSetting(16, Minimum = 1, Maximum = 512, Description = "Default Clip Length.", StoredName = "PatternLength")]
+        public int ClipLength { get; internal set; }
 
         [BuzzSetting(false, Description = "Make PianoKeyboard topmost.")]
         public bool PianoKeyboardTopmost { get; internal set; }
@@ -55,12 +55,12 @@
 
         // Fork (docs/specs/ux-overhaul.md §3.5): how notes are named on screen. NoteNames holds it, for the displays that
         // can't read settings (and the tests that link them); a new key, display only.
-        [BuzzSetting(BuzzGUI.Common.NoteNames.Default, Description = "How notes are named on screen, by what middle C (MIDI note 60) is called: in the pattern editor (always three characters, as C-3), the piano roll, the keyboards under machine windows and MIDI mappings. Songs don't change.")]
+        [BuzzSetting(BuzzGUI.Common.NoteNames.Default, Description = "How notes are named on screen, by what middle C (MIDI note 60) is called: in the clip editor (always three characters, as C-3), the piano roll, the keyboards under machine windows and MIDI mappings. Songs don't change.")]
         public NoteNaming NoteNames { get => BuzzGUI.Common.NoteNames.Naming; set => BuzzGUI.Common.NoteNames.Naming = value; }
 
-        // Fork (docs/specs/ux-overhaul.md P3c): the base the pattern editor writes parameter values in; ValueDisplay holds it.
-        [BuzzSetting(BuzzGUI.Common.ValueDisplay.Default, Description = "The base the studio's pattern editor writes byte and word values in, and takes typed digits in: decimal (zero padded, 064) or hex (40). Notes and songs don't change.")]
-        public ValueBase PatternValues { get => BuzzGUI.Common.ValueDisplay.Base; set => BuzzGUI.Common.ValueDisplay.Base = value; }
+        // Fork (docs/specs/ux-overhaul.md P3c): the base the clip editor writes parameter values in; ValueDisplay holds it.
+        [BuzzSetting(BuzzGUI.Common.ValueDisplay.Default, Description = "The base the studio's clip editor writes byte and word values in, and takes typed digits in: decimal (zero padded, 064) or hex (40). Notes and songs don't change.", StoredName = "PatternValues")]
+        public ValueBase ClipValues { get => BuzzGUI.Common.ValueDisplay.Base; set => BuzzGUI.Common.ValueDisplay.Base = value; }
 
         [BuzzSetting(DpiScalingType.System, Description = "DPI scaling.")]
         public DpiScalingType DpiScaling { get; internal set; }

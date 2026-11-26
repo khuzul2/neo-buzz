@@ -11,6 +11,8 @@ namespace BuzzGUI.Common.Settings
         public object DefaultValue { get; private set; }
 
         public string Description { get; set; }
+        /// <summary>The key a saved settings file holds when it is not the property's name (a renamed setting keeps reading and writing its old key).</summary>
+        public string StoredName { get; set; }
         public BuzzSettingType Type { get; set; }
         public int Minimum { get; set; }
         public int Maximum { get; set; }

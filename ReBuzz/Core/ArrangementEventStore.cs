@@ -12,7 +12,7 @@ namespace ReBuzz.Core
 {
     /// <summary>
     /// Fork (docs/specs/session-view.md 0.5.1): keeps what a Buzz sequence event can't hold in
-    /// the song file: the part of its pattern it plays (<see cref="SequenceEvent.Offset"/>,
+    /// the song file: the part of its clip it plays (<see cref="SequenceEvent.Offset"/>,
     /// <see cref="SequenceEvent.End"/>) and its volume (<see cref="SequenceEvent.Gain"/>), as
     /// the Session View played and recorded them. Stored in an "ArrangementEvents" subsection,
     /// in .bmx and .bmxml alike; upstream ReBuzz skips it and plays those events whole at full
@@ -80,17 +80,17 @@ namespace ReBuzz.Core
             foreach (var seq in sequences)
             {
                 var events = seq.Events
-                    .Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern != null && (!e.Value.IsPlain || e.Value.Clip != 0))
+                    .Where(e => e.Value.Type == SequenceEventType.PlayClip && e.Value.Clip != null && (!e.Value.IsPlain || e.Value.PlacementId != 0))
                     .Select(e =>
                     {
                         var x = new XElement("Event", new XAttribute("time", e.Key));
                         if (e.Value.Offset != 0) x.SetAttributeValue("offset", e.Value.Offset);
                         if (e.Value.End != 0) x.SetAttributeValue("end", e.Value.End);
                         if (e.Value.Gain != 1.0) x.SetAttributeValue("gain", e.Value.Gain.ToString("R", CultureInfo.InvariantCulture));
-                        if (e.Value.Clip != 0)
+                        if (e.Value.PlacementId != 0)
                         {
-                            x.SetAttributeValue("clip", e.Value.Clip);
-                            ids.Add(e.Value.Clip);
+                            x.SetAttributeValue("clip", e.Value.PlacementId);
+                            ids.Add(e.Value.PlacementId);
                         }
                         return x;
                     })
@@ -133,12 +133,12 @@ namespace ReBuzz.Core
                 foreach (var x in s.Elements("Event"))
                 {
                     if (!int.TryParse((string)x.Attribute("time"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int time)) continue;
-                    if (!seq.EventsList.TryGetValue(time, out var e) || e.Type != SequenceEventType.PlayPattern || e.Pattern == null) continue;
+                    if (!seq.EventsList.TryGetValue(time, out var e) || e.Type != SequenceEventType.PlayClip || e.Clip == null) continue;
                     e.Offset = Math.Max(0, Int(x, "offset", 0));
                     e.End = Math.Max(0, Int(x, "end", 0));
                     e.Gain = double.TryParse((string)x.Attribute("gain"), NumberStyles.Float, CultureInfo.InvariantCulture, out double g) && !double.IsNaN(g)
                         ? Math.Clamp(g, 0, 1) : 1.0;
-                    e.Clip = Math.Max(0, Int(x, "clip", 0));
+                    e.PlacementId = Math.Max(0, Int(x, "clip", 0));
                     any = true;
                     changed++;
                 }

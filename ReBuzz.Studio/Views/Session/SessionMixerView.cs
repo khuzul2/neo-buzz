@@ -438,7 +438,7 @@ namespace ReBuzz.Studio.Views.Session
                 Scene = scene;
                 Margin = new Thickness(0, 0, Gap, Gap);
                 BorderThickness = new Thickness(1);
-                var names = members.Select(t => view.layout.PatternAt(t, scene)?.Name).Where(n => n != null).ToList();
+                var names = members.Select(t => view.layout.ClipAt(t, scene)?.Name).Where(n => n != null).ToList();
                 HasClips = names.Count > 0;
                 ToolTip.SetTip(this, HasClips ? $"Group clips in scene {scene + 1}: {string.Join(", ", names)}\nclick launches them together" : "No clips of this group in this scene");
 
@@ -481,9 +481,9 @@ namespace ReBuzz.Studio.Views.Session
                 foreach (int t in Members)
                 {
                     var seq = view.layout.SequenceOf(t);
-                    var pattern = view.layout.PatternAt(t, Scene);
-                    if (seq == null || pattern == null) continue;
-                    var state = view.layout.SlotState(seq, pattern, t, Scene);
+                    var clip = view.layout.ClipAt(t, Scene);
+                    if (seq == null || clip == null) continue;
+                    var state = view.layout.SlotState(seq, clip, t, Scene);
                     playing |= state == ClipState.Playing || state == ClipState.Stopping;
                     queued |= state == ClipState.Queued;
                 }

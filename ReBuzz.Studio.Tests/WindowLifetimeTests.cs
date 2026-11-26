@@ -3,7 +3,7 @@
 // not: their subscriptions to the engine are gone, and so are their timers (a running DispatcherTimer is
 // held by the dispatcher and holds its view, so a view that is released has none running). Two views used
 // to subscribe as they were made and let go only once shown and hidden again (Song Notes) or once their
-// window closed after their tab was shown (Pattern): every main window whose tabs weren't all shown stayed
+// window closed after their tab was shown (Clip): every main window whose tabs weren't all shown stayed
 // alive, its views following the engine, for as long as the process ran. A song's Modern Pattern Editor
 // lets go of the engine's song when it is released (it took the song again on the next machine added, and
 // stayed). And the double clicks and the clicks the tests make are what they say, however long a press
@@ -68,7 +68,7 @@ namespace ReBuzz.Studio.Tests
         /// used to stay subscribed to the engine's song, which outlives songs, so every editor of a run stayed.
         /// </summary>
         [AvaloniaTest]
-        public void ANewSongReleasesThePatternEditorOfTheLastOne()
+        public void ANewSongReleasesTheClipEditorOfTheLastOne()
         {
             Dialogs.Responder = (m, c, b) => UserAnswer.No;
             try
@@ -76,7 +76,7 @@ namespace ReBuzz.Studio.Tests
                 SongFiles.New().Wait();
                 Settle();
                 int before = EditorsOnTheSong();
-                var (editor, view) = EditAPatternThenNewSong();
+                var (editor, view) = EditAClipThenNewSong();
                 for (int i = 0; i < 4; i++)
                 {
                     Settle();
@@ -84,7 +84,7 @@ namespace ReBuzz.Studio.Tests
                     System.GC.WaitForPendingFinalizers();
                 }
                 Assert.That(EditorsOnTheSong(), Is.EqualTo(before), "the old song's editor no longer listens to the song");
-                Assert.That(editor.TryGetTarget(out _), Is.False, "the old song's pattern editor is released");
+                Assert.That(editor.TryGetTarget(out _), Is.False, "the old song's clip editor is released");
                 Assert.That(view.TryGetTarget(out _), Is.False, "and its view");
             }
             finally
@@ -93,22 +93,22 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        /// <summary>A pattern shown in the Modern Pattern Editor in a main window; the window closed, a new song; weakly held.</summary>
+        /// <summary>A clip shown in the Modern Pattern Editor in a main window; the window closed, a new song; weakly held.</summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static (System.WeakReference<object> Editor, System.WeakReference<object> View) EditAPatternThenNewSong()
+        static (System.WeakReference<object> Editor, System.WeakReference<object> View) EditAClipThenNewSong()
         {
             Core.SongCore.CreateMachine("Neo Poly", null, "Lifetime Poly", null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == "Lifetime Poly");
-            machine.CreatePattern("00", 16);
+            machine.CreateClip("00", 16);
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Settle();
-            Views.PatternView.Edit(machine.Patterns.First());
+            Views.ClipView.Edit(machine.Clips.First());
             Settle();
-            object view = Views.PatternView.Page.EditorControl;
-            Assert.That(view, Is.Not.Null, "the Pattern tab shows the Modern Pattern Editor");
+            object view = Views.ClipView.Page.EditorControl;
+            Assert.That(view, Is.Not.Null, "the Clip tab shows the Modern Pattern Editor");
             object editor = ((dynamic)view).Editor;
-            Assert.That(editor?.GetType().FullName, Is.EqualTo("WDE.ModernPatternEditor.PatternEditor"));
+            Assert.That(editor?.GetType().FullName, Is.EqualTo("WDE.ModernPatternEditor.ClipEditor"));
             window.Close();
             Settle();
             SongFiles.New().Wait();
@@ -122,7 +122,7 @@ namespace ReBuzz.Studio.Tests
             var f = typeof(SongCore).GetField("MachineAdded", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             var d = f?.GetValue(Core.SongCore) as System.Delegate;
             Assert.That(f, Is.Not.Null, "SongCore.MachineAdded is a field-like event");
-            return d?.GetInvocationList().Count(x => x.Target?.GetType().FullName == "WDE.ModernPatternEditor.PatternEditor") ?? 0;
+            return d?.GetInvocationList().Count(x => x.Target?.GetType().FullName == "WDE.ModernPatternEditor.ClipEditor") ?? 0;
         }
 
         /// <summary>A main window on the song, its tabs shown (or only the first), closed; weakly held.</summary>
@@ -142,7 +142,7 @@ namespace ReBuzz.Studio.Tests
                 }
             if (showEveryTab)
             {
-                window.ShowView("Pattern");     // the Tracker, in the detail panel
+                window.ShowView("Clip");     // the Tracker, in the detail panel
                 window.Browser.Open();
                 Settle();
             }
@@ -161,7 +161,7 @@ namespace ReBuzz.Studio.Tests
 
         /// <summary>
         /// The studio's subscriptions to the engine: delegates held by the engine's objects (the engine, the song,
-        /// its machines, patterns and sequences, the Session View's layout, session and MIDI, the song's notes)
+        /// its machines, clips and sequences, the Session View's layout, session and MIDI, the song's notes)
         /// and by the statics of the engine, BuzzGUI.Common and the studio, whose target is the studio's.
         /// </summary>
         static int StudioSubscribers(out List<string> where)
@@ -184,7 +184,7 @@ namespace ReBuzz.Studio.Tests
             foreach (var m in song.MachinesList)
             {
                 objects.Add(m);
-                objects.AddRange(m.PatternsList);
+                objects.AddRange(m.ClipsList);
             }
             objects.AddRange(song.SequencesList);
             foreach (var o in objects.Where(o => o != null))

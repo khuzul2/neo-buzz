@@ -1,6 +1,6 @@
-// Fork (docs/specs/ux-overhaul.md P3c, decision 50): which columns the studio's pattern editor shows, and in what
-// order. Display only: the pattern's columns and every event in them are as they were (a hidden column is not removed from
-// the pattern, as the Parameters dialog's removal does). The WPF build shows every column as before (PatternVM calls this
+// Fork (docs/specs/ux-overhaul.md P3c, decision 50): which columns the studio's clip editor shows, and in what
+// order. Display only: the clip's columns and every event in them are as they were (a hidden column is not removed from
+// the clip, as the Parameters dialog's removal does). The WPF build shows every column as before (ClipVM calls this
 // under #if !WINDOWS).
 //
 //  - Order. A set (a track's, or the globals) that has a Note column comes before those that don't; inside a set the Note
@@ -11,7 +11,7 @@
 
 using BuzzGUI.Interfaces;
 using WDE.ModernPatternEditor.MPEStructures;
-using static WDE.ModernPatternEditor.MPEStructures.MPEPattern;
+using static WDE.ModernPatternEditor.MPEStructures.MPEClip;
 
 namespace WDE.ModernPatternEditor
 {

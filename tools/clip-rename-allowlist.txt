@@ -1,0 +1,40 @@
+# Texts that still say pattern after the rename of patterns to clips (CU5). Format: path fragment TAB text fragment TAB reason.
+# Used by ReBuzz.AgentTests/ClipWordTests.cs. A text that means the content of a clip says clip; these do not.
+ReBuzzCore.cs	Modern Pattern Editor	the machine's name: a song stores it (the editor machine is looked up by this name)
+MachineManager.cs	Modern Pattern Editor	the machine's name: a song stores it
+ModernPatternEditorMachine.cs	Modern Pattern Editor	the machine's name: a song stores it
+ClipEditorSettings.cs	PatternXP	PatternXP is a third-party file format's name
+ClipEditorView.cs	Pattern values	the text of a stored preference's page in the old settings dialog, named as the setting is
+ShortcutsWindow.cs	ModernPatternEditor	a type name shown in a diagnostic: the editor's namespace, which a saved song's machine state refers to
+ModernPatternEditor/README.md	# ModernPatternEditor	the editor project's name (the project and machine keep the name; the clip editor inside it says clip)
+SessionDocument.cs	pattern	the XML attribute name of the stored session document (.nbl): a stored name stays
+StudioKeymap.cs	view.pattern	a command id that a user's saved key map stores
+MainWindow.cs	view.pattern	a command id that a user's saved key map stores
+DetailPanel.cs	view.pattern	a command id that a user's saved key map stores
+ClipLanes.cs	pattern-missing	the stored name of a lane diagnostic in saved songs
+ClipMigration.cs	PatternXP	PatternXP is a third-party file format's name
+PowerCollections	pattern	third-party source (Wintellect PowerCollections): a search pattern, not a clip
+GeneralSettings.cs	PatternLength	the stored name of a setting (settings file)
+GeneralSettings.cs	PatternValues	the stored name of a setting (settings file)
+Templates/	Pattern	XmlSerializer element names of the template files: stored names stay
+IClipColumn.cs	PatternEvent	the stored name of the column's event type in saved data
+ISequence.cs	PlayPattern	the stored name of a sequence event in saved data
+ClipXMLImportExport.cs	Pattern	the MPE XML export's element names: files on disk keep them
+Guides/composition.md	accent patterns	a rhythmic accent pattern, not a clip
+dye-essence-in-depth.md	pattern	an arpeggio or step pattern, not a clip
+live-performance.md	step pattern	Neo Step's step pattern, not a clip
+Neo Step.md	pattern	Neo Step is a step pattern machine: its steps are a pattern, not a clip
+Neo Learn Additive.md	repeating pattern	a spectral pattern, not a clip
+sound-design.md	pattern	a step or modulation pattern, not a clip
+Dye Essence	pattern	an arpeggio or step pattern: the machine's sequencer, not a clip
+DyeEssence	pattern	an arpeggio or step pattern: the machine's sequencer, not a clip
+NeoDelay/	pattern	an echo pattern, not a clip
+NeoDrums/	pattern	a rhythm pattern, not a clip
+NeoLearnVector/	pattern	a rhythmic pattern of crossfades, not a clip
+NeoStep/	pattern	Neo Step is a step pattern machine: its steps are a pattern, not a clip (its parameter group is named Pattern, which a saved preset can store)
+build.ps1	Modern Pattern Editor	the machine's name: a song stores it
+NeoStep/	Pattern	Neo Step's parameter group is named Pattern (a step pattern)
+NeoArp/	pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+NeoArp/	Pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+Neo Arp	pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+Neo Arp	Pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips

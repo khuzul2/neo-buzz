@@ -87,7 +87,7 @@ namespace ReBuzz.Studio.Tests
             var page = rig.OpenPage();
             rig.Click(rig.Of(page.DetectButton));
             var byPage = Audio(rig.SessionClip);
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = rig.ArrangedClip.Name, ["auto_warp"] = true }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = rig.ArrangedClip.Name, ["auto_warp"] = true }));
             var byAgent = Audio(rig.ArrangedClip);
             Assert.That(byAgent.Markers.Count, Is.EqualTo(byPage.Markers.Count));
             Assert.That(byAgent.Bpm, Is.EqualTo(byPage.Bpm).Within(1e-9));
@@ -100,10 +100,10 @@ namespace ReBuzz.Studio.Tests
             using var off = new WarpPolicyScope(false);
             using var rig = new Rig(WarpFile("from-drift.wav", WarpSignals.Tempo.Drift, 48));
             var clip = rig.SessionClip;
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "A", ["pattern"] = clip.Name, ["auto_warp"] = true }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "A", ["clip"] = clip.Name, ["auto_warp"] = true }));
             var all = Audio(clip).Markers.ToList();
             double rate = Layout.ViewOf(clip)!.Asset.Source.SampleRate;
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "A", ["pattern"] = clip.Name, ["auto_warp"] = true, ["from_seconds"] = 20 }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "A", ["clip"] = clip.Name, ["auto_warp"] = true, ["from_seconds"] = 20 }));
             var from = Audio(clip).Markers;
             Assert.That(from.Count(m => m.Sample < 20 * rate), Is.EqualTo(all.Count(m => m.Sample < 20 * rate)), "the markers before 20 s are kept");
 
@@ -115,7 +115,7 @@ namespace ReBuzz.Studio.Tests
             var other = Layout.ImportAudio(Layout.FirstTrackOf(rig.B), 2, tones, out string error);
             Assert.That(other, Is.Not.Null, error);
             string before = State("B", other.Name);
-            var refused = Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = other.Name, ["auto_warp"] = true });
+            var refused = Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = other.Name, ["auto_warp"] = true });
             Assert.That(refused["isError"]?.GetValue<bool>() ?? false, Is.True, "no beats found is an error the agent can read");
             Assert.That(State("B", other.Name), Is.EqualTo(before));
         }

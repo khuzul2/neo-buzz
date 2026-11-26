@@ -1,6 +1,6 @@
 // Fork (docs/specs/daw-modes.md EV1, §8.8): the Envelopes control of the Detail panel: a header (the label, the parameter chooser, + Envelope, Ramp
 // and Step for the selection, the selection count) over a stack of lanes, one for each parameter of the clip's machine that holds data in the clip
-// or that was added. It is one control that knows only a time axis (IEnvelopeAxis) and the clip (a pattern): the piano roll page and the Audio
+// or that was added. It is one control that knows only a time axis (IEnvelopeAxis) and the clip (a clip): the piano roll page and the Audio
 // page host it under their own time axis, and the Tracker can host it later with its rows as the axis.
 //
 // The parameters that hold data in the clip show by default; a lane's × takes it away from the view (its points stay in the clip) and its ▾
@@ -50,7 +50,7 @@ namespace ReBuzz.Studio.Views.Detail
             double w = Bounds.Width, h = Bounds.Height, g = axis.Gutter;
             dc.FillRectangle(StudioTokens.SurfacePanelBrush, new Rect(0, 0, w, h));
             dc.DrawLine(new Pen(StudioTokens.SurfaceBorderBrush, 1), new Point(0, h - 0.5), new Point(w, h - 0.5));
-            int unit = PatternEvent.TimeBase;
+            int unit = ClipEvent.TimeBase;
             double tw = Math.Abs(axis.X(unit) - axis.X(0));
             if (tw <= 0) return;
             int tpb = Math.Max(1, axis.BeatUnits / unit), bar = Math.Max(1, axis.BarUnits / unit);
@@ -87,7 +87,7 @@ namespace ReBuzz.Studio.Views.Detail
             public TextBlock Title;
         }
 
-        static readonly ConditionalWeakTable<IPattern, ViewState> states = new();
+        static readonly ConditionalWeakTable<IClip, ViewState> states = new();
 
         public const string Hint = "Click: add a point · drag: move · drag on empty space: select · Shift: no snap · R: ramp or step · Delete · each edit is one undo step";
 
@@ -102,7 +102,7 @@ namespace ReBuzz.Studio.Views.Detail
         readonly Dictionary<ColumnKey, Row> rows = new();
         readonly List<Row> order = new();
         readonly Flyout flyout;
-        IPattern pattern;
+        IClip clip;
         AutoParam chosen;
         bool updating;
 
@@ -162,7 +162,7 @@ namespace ReBuzz.Studio.Views.Detail
 
         // ------------------------------------------------------------------ for the host, the window and the tests
 
-        public IPattern Pattern => pattern;
+        public IClip Clip => clip;
 
         public IReadOnlyList<EnvelopeLane> Lanes => order.Select(r => r.Lane).ToList();
 
@@ -195,16 +195,16 @@ namespace ReBuzz.Studio.Views.Detail
         // ------------------------------------------------------------------ the clip
 
         /// <summary>Shows a clip's envelopes: the parameters that hold data in it, those added, and <paramref name="focus"/>. Null hides the stack.</summary>
-        public void Show(IPattern clip, ColumnKey? focus = null)
+        public void Show(IClip shown, ColumnKey? focus = null)
         {
-            if (!ReferenceEquals(clip, pattern))
+            if (!ReferenceEquals(shown, clip))
             {
-                pattern = clip;
+                clip = shown;
                 if (chosen != null && !ReferenceEquals(chosen.Machine, clip?.Machine)) SetChosen(null);
             }
             if (clip?.Machine == null || AutomationParams.List(clip.Machine).Count == 0)
             {
-                pattern = null;
+                clip = null;
                 IsVisible = false;
                 Rebuild(new List<ColumnKey>());
                 return;
@@ -221,21 +221,21 @@ namespace ReBuzz.Studio.Views.Detail
             UpdateSelection();
         }
 
-        static ViewState StateOf(IPattern clip) => states.GetValue(clip, _ => new ViewState());
+        static ViewState StateOf(IClip clip) => states.GetValue(clip, _ => new ViewState());
 
         List<ColumnKey> Keys()
         {
-            var st = StateOf(pattern);
-            var keys = ClipEnvelopes.KeysWithData(pattern).Where(k => !st.Removed.Contains(k)).ToList();
+            var st = StateOf(clip);
+            var keys = ClipEnvelopes.KeysWithData(clip).Where(k => !st.Removed.Contains(k)).ToList();
             foreach (var k in st.Added)
-                if (!keys.Contains(k) && AutomationParams.Find(pattern.Machine, k) != null) keys.Add(k);
+                if (!keys.Contains(k) && AutomationParams.Find(clip.Machine, k) != null) keys.Add(k);
             return keys;
         }
 
         /// <summary>Reads the clip again (an undo, the agent, the recorder or another view changed it); the host calls it from its timer.</summary>
         public void Refresh()
         {
-            if (pattern == null || !IsVisible) return;
+            if (clip == null || !IsVisible) return;
             if (rows.Values.Any(r => r.Lane.IsDragging)) return;
             var keys = Keys();
             if (!keys.SequenceEqual(order.Select(r => r.Key))) Rebuild(keys);
@@ -285,9 +285,9 @@ namespace ReBuzz.Studio.Views.Detail
 
         Row MakeRow(ColumnKey key)
         {
-            var lane = new EnvelopeLane(core, axis, pattern, key);
+            var lane = new EnvelopeLane(core, axis, clip, key);
             var row = new Row { Key = key, Lane = lane };
-            string name = lane.Param == null ? "Envelope" : $"{pattern.Machine.Name} ▸ {lane.Param.Name}";
+            string name = lane.Param == null ? "Envelope" : $"{clip.Machine.Name} ▸ {lane.Param.Name}";
             row.Title = new TextBlock { Text = name, FontSize = StudioTokens.FontBody, FontWeight = FontWeight.SemiBold, Foreground = StudioTokens.TextPrimaryBrush, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(2, 0) };
             row.Fold = StudioButtons.KeepFocus(StudioButtons.Icon(new Button { Content = "▾", Width = 22, Height = 20, VerticalAlignment = VerticalAlignment.Center }, $"Collapse {name}", "Collapse or expand this lane"));
             row.Remove = StudioButtons.KeepFocus(StudioButtons.Icon(new Button { Content = "×", Width = 22, Height = 20, VerticalAlignment = VerticalAlignment.Center }, $"Remove envelope {name}", "Take this lane away (the points stay in the clip)"));
@@ -309,20 +309,20 @@ namespace ReBuzz.Studio.Views.Detail
 
         void ApplyFold(Row row)
         {
-            bool folded = pattern != null && StateOf(pattern).Collapsed.Contains(row.Key);
+            bool folded = clip != null && StateOf(clip).Collapsed.Contains(row.Key);
             row.Lane.IsVisible = !folded;
             row.Fold.Content = folded ? "▸" : "▾";
         }
 
         void ToggleFold(Row row)
         {
-            var st = StateOf(pattern);
+            var st = StateOf(clip);
             if (!st.Collapsed.Remove(row.Key)) st.Collapsed.Add(row.Key);
             ApplyFold(row);
         }
 
         /// <summary>Whether a lane is collapsed to its title.</summary>
-        public bool IsCollapsed(ColumnKey key) => pattern != null && StateOf(pattern).Collapsed.Contains(key);
+        public bool IsCollapsed(ColumnKey key) => clip != null && StateOf(clip).Collapsed.Contains(key);
 
         public void ToggleCollapsed(ColumnKey key)
         {
@@ -334,8 +334,8 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Shows the lane of a parameter (a lane that was taken away comes back).</summary>
         public EnvelopeLane AddLane(ColumnKey key)
         {
-            if (pattern == null || AutomationParams.Find(pattern.Machine, key) == null) return null;
-            Show(pattern, key);
+            if (clip == null || AutomationParams.Find(clip.Machine, key) == null) return null;
+            Show(clip, key);
             var lane = LaneFor(key);
             lane?.Focus();
             return lane;
@@ -344,8 +344,8 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Takes a lane away from the view; its points stay in the clip (and show again if it is added).</summary>
         public void RemoveLane(ColumnKey key)
         {
-            if (pattern == null) return;
-            var st = StateOf(pattern);
+            if (clip == null) return;
+            var st = StateOf(clip);
             st.Added.Remove(key);
             st.Removed.Add(key);
             Rebuild(Keys());
@@ -364,8 +364,8 @@ namespace ReBuzz.Studio.Views.Detail
 
         void OpenPicker()
         {
-            if (pattern?.Machine == null) return;
-            var picker = new ParameterPicker(pattern.Machine, "Choose");
+            if (clip?.Machine == null) return;
+            var picker = new ParameterPicker(clip.Machine, "Choose");
             picker.Chosen += param =>
             {
                 SetChosen(param);

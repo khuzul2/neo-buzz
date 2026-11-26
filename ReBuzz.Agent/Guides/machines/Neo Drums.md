@@ -32,7 +32,7 @@ Every control has a How and a Sound sentence in `machine_describe`; `param_set` 
 ## Starting points
 
 - "909 — Classic" (the defaults), "909 — Techno", "808 — Classic", "808 — Electro Boom", "Lo-Fi — Dusty", "Minimal — Tight".
-- A beat: `notes_write(machine="Drums", pattern="Beat", notes=[{"pitch": "C2", "start": 0, "length": 0.25, "velocity": 120}, {"pitch": "F#2", "start": 0.5, "length": 0.25, "velocity": 90}])`; vary the hats' velocities for a groove.
+- A beat: `notes_write(machine="Drums", clip="Beat", notes=[{"pitch": "C2", "start": 0, "length": 0.25, "velocity": 120}, {"pitch": "F#2", "start": 0.5, "length": 0.25, "velocity": 90}])`; vary the hats' velocities for a groove.
 - Tracker way: hit columns BD to RC take a velocity (1-127), and Accent accents every hit of its tick; `machine_describe` lists them under `played_parameters`.
 
 ## Pitfalls
@@ -51,5 +51,5 @@ Every control has a How and a Sound sentence in `machine_describe`; `param_set` 
 
 - [ ] `render(probes=["Drums"])`, then `analyze` loudness and spectrum: the kick has its weight near its `Kick tune`.
 - [ ] `machine_readings(machine="Drums")` gives `rms_db` and `peak_db`: `peak_db` under 0 dBFS with all voices.
-- [ ] `notes_read(machine="Drums", pattern="Beat")` shows the keys you intended.
+- [ ] `notes_read(machine="Drums", clip="Beat")` shows the keys you intended.
 - [ ] `param_set(machine="Drums", changes=[{"param": "Kick decay", "value": "0.8 s"}])` applies, and the next render shows it.

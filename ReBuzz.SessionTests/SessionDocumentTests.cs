@@ -7,14 +7,14 @@ namespace ReBuzz.SessionTests
     [TestFixture]
     public class SessionDocumentTests
     {
-        static SongTrack T(string machine, params string[] patterns) => new SongTrack(machine, patterns);
+        static SongTrack T(string machine, params string[] clips) => new SongTrack(machine, clips);
 
         static Dictionary<int, string> Slots(SessionDocument d, int track) => d.Tracks[track].Slots.ToDictionary(k => k.Key, v => v.Value);
 
         // ------------------------------------------------------------------ auto-fill
 
         [Test]
-        public void AutoFillPutsEachMachinesPatternsDownTheScenes()
+        public void AutoFillPutsEachMachinesClipsDownTheScenes()
         {
             var d = AutoFill(new[] { T("drums", "00", "01", "02"), T("bass", "00") });
 
@@ -26,7 +26,7 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void AutoFillAddsScenesForLongPatternLists()
+        public void AutoFillAddsScenesForLongClipLists()
         {
             var many = Enumerable.Range(0, 12).Select(i => i.ToString("00")).ToArray();
             var d = AutoFill(new[] { T("drums", many) });
@@ -76,7 +76,7 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void ReconcileDropsSlotsOfDeletedPatterns()
+        public void ReconcileDropsSlotsOfDeletedClips()
         {
             var d = AutoFill(new[] { T("drums", "a", "b", "c") });
             d.Reconcile(new[] { T("drums", "a", "c") });
@@ -132,10 +132,10 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void RenamePatternOnlyTouchesThatMachine()
+        public void RenameClipOnlyTouchesThatMachine()
         {
             var d = AutoFill(new[] { T("drums", "00"), T("bass", "00") });
-            d.RenamePattern("drums", "00", "kick");
+            d.RenameClip("drums", "00", "kick");
             Assert.That(d.GetSlot(0, 0), Is.EqualTo("kick"));
             Assert.That(d.GetSlot(1, 0), Is.EqualTo("00"));
         }
@@ -249,14 +249,14 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void ClipSettingsFollowRenamesAndDeletedPatterns()
+        public void ClipSettingsFollowRenamesAndDeletedClips()
         {
             var d = AutoFill(new[] { T("drums", "a", "b") });
             d.SetClip("drums", "a", new ClipSettings { Legato = true });
             d.SetClip("drums", "b", new ClipSettings { Velocity = 10 });
             d.SetClip("gone", "x", new ClipSettings { Velocity = 20 });
 
-            d.RenamePattern("drums", "a", "intro");
+            d.RenameClip("drums", "a", "intro");
             d.RenameMachine("drums", "beats");
             Assert.That(d.GetClip("beats", "intro").Legato, Is.True);
             Assert.That(d.GetClip("drums", "a").IsDefault, Is.True);
@@ -369,7 +369,7 @@ namespace ReBuzz.SessionTests
             d.SetClip("drums", "a", new SessionDocument.ClipSettings { Mode = "Gate" });
             d.Crossfade["drums"] = "A";
             string gone = SessionDocument.Retire("a", 7);
-            d.RenamePattern("drums", "a", gone);
+            d.RenameClip("drums", "a", gone);
             Assert.That(SessionDocument.IsRetired(gone), Is.True);
             Assert.That(SessionDocument.IsRetired("a"), Is.False);
 
@@ -394,12 +394,12 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void ARetiredPatternKeepsItsPlaceButLooksEmpty()
+        public void ARetiredClipKeepsItsPlaceButLooksEmpty()
         {
             var d = AutoFill(new[] { T("drums", "a", "b") });
             d.SetClip("drums", "a", new SessionDocument.ClipSettings { Mode = "Gate" });
             string gone = SessionDocument.Retire("a", 3);
-            d.RenamePattern("drums", "a", gone);
+            d.RenameClip("drums", "a", gone);
 
             Assert.That(d.GetSlot(0, 0), Is.Null, "an empty slot to everyone");
             Assert.That(d.SceneSlots(0).Any(), Is.False);
@@ -409,11 +409,11 @@ namespace ReBuzz.SessionTests
             Assert.That(d.GetClip("drums", gone).Mode, Is.EqualTo("Gate"));
 
             d.InsertScene(0);                                    // edits move it like any slot
-            d.RenamePattern("drums", gone, "a2");                // brought back under another name
+            d.RenameClip("drums", gone, "a2");                // brought back under another name
             Assert.That(d.GetSlot(0, 1), Is.EqualTo("a2"));
             Assert.That(d.GetClip("drums", "a2").Mode, Is.EqualTo("Gate"));
 
-            d.RenamePattern("drums", "a2", gone);
+            d.RenameClip("drums", "a2", gone);
             d.PurgeRetired(gone);                                // forgotten for good
             Assert.That(d.Tracks[0].Slots.ContainsKey(1), Is.False);
             Assert.That(d.Clips.Count, Is.Zero);

@@ -18,10 +18,10 @@ namespace WDE.ModernPatternEditor
         public event PropertyChangedEventHandler PropertyChanged;
 
         IBuzzMachineHost host;
-        PatternEditor ModernPatternEditor { get; set; }
+        ClipEditor ModernPatternEditor { get; set; }
         public ModernPatternEditorMachine(IBuzzMachineHost host)
         {
-            ModernPatternEditor = new PatternEditor(this);
+            ModernPatternEditor = new ClipEditor(this);
             ModernPatternEditor.Song = Global.Buzz.Song;
             this.host = host;
         }
@@ -42,7 +42,7 @@ namespace WDE.ModernPatternEditor
 
         public void ImportFinished(IDictionary<string, string> machineNameMap)
         {
-            PatternEditorUtils.MachineNameMap = machineNameMap;
+            ClipEditorUtils.MachineNameMap = machineNameMap;
 
             // Redo everyting for this machine in case machine names have been changed after import
             
@@ -55,18 +55,18 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        // Add this if Pattern Editor Machine
+        // Add this if Clip Editor Machine
         // Fork (docs/specs/studio-mvp.md S6): off Windows the control is an object, so the machine
         // loads without a UI toolkit: the Avalonia view in the studio's build, null in rebuzz-headless's.
-        public object PatternEditorControl()
+        public object ClipEditorControl()
         {
             return ModernPatternEditor.View;
         }
 
-        public void SetEditorPattern(IPattern pattern)
+        public void SetEditorClip(IClip clip)
         {
-            SetTargetMachine(pattern.Machine);
-            ModernPatternEditor.SetEditorPattern(pattern);
+            SetTargetMachine(clip.Machine);
+            ModernPatternEditor.SetEditorClip(clip);
         }
 
         public void RecordControlChange(IParameter parameter, int track, int value)
@@ -83,30 +83,30 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.SetTargetMachine(machine);
         }
 
-        public void SetPatternName(string machine, string oldName, string newName)
+        public void SetClipName(string machine, string oldName, string newName)
         {
             var mac = Global.Buzz.Song.Machines.FirstOrDefault(m => m.Name == machine);
             if (mac != null)
             {
-                var pattern = mac.Patterns.FirstOrDefault(p => p.Name == oldName);
-                if (pattern != null)
+                var clip = mac.Clips.FirstOrDefault(p => p.Name == oldName);
+                if (clip != null)
                 {
-                    mac.RenamePattern(pattern, newName);
+                    mac.RenameClip(clip, newName);
                 }
             }
         }
 
-        public int GetTicksPerBeatDelegate(IPattern pattern, int playPosition)
+        public int GetTicksPerBeatDelegate(IClip clip, int playPosition)
         {
-            // We need column to get the specific RPB. Return the defaul for the pattern
-            var p = ModernPatternEditor.MPEPatternsDB.GetMPEPattern(pattern);
+            // We need column to get the specific RPB. Return the defaul for the clip
+            var p = ModernPatternEditor.MPEClipsDB.GetMPEClip(clip);
             if (p != null)
             {
-                return ModernPatternEditor.MPEPatternsDB.GetMPEPattern(pattern).RowsPerBeat;
+                return ModernPatternEditor.MPEClipsDB.GetMPEClip(clip).RowsPerBeat;
             }
             else
             {
-                return MPEPatternColumn.BUZZ_TICKS_PER_BEAT;
+                return MPEClipColumn.BUZZ_TICKS_PER_BEAT;
             }
         }
 
@@ -127,9 +127,9 @@ namespace WDE.ModernPatternEditor
             public event PropertyChangedEventHandler PropertyChanged;
         }
 
-        public void SetPatternEditorData(byte[] data)
+        public void SetClipEditorData(byte[] data)
         {
-            ModernPatternEditor.SetPatternEditorData(data);
+            ModernPatternEditor.SetClipEditorData(data);
         }
 
         // Fork (clips.md §6, CU3): the song's clips are in the store; the editor views them (found by name by the host).
@@ -138,9 +138,9 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.AttachClipStore();
         }
 
-        public byte[] GetPatternEditorData()
+        public byte[] GetClipEditorData()
         {
-            return ModernPatternEditor.GetPatternEditorData();
+            return ModernPatternEditor.GetClipEditorData();
         }
 
         State machineState = new State();
@@ -174,19 +174,19 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.MidiControlChange(ctrl, channel, value);
         }
 
-        public int[] GetPatternEditorMachineMIDIEvents(IPattern pattern)
+        public int[] GetClipEditorMachineMIDIEvents(IClip clip)
         {
-            return ModernPatternEditor.ExportMidiEvents(pattern);
+            return ModernPatternEditor.ExportMidiEvents(clip);
         }
 
-        public void SetPatternEditorMachineMIDIEvents(IPattern pattern, int[] data)
+        public void SetClipEditorMachineMIDIEvents(IClip clip, int[] data)
         {
-            ModernPatternEditor.ImportMidiEvents(pattern, data);
+            ModernPatternEditor.ImportMidiEvents(clip, data);
         }
 
-        public IEnumerable<IPatternEditorColumn> GetPatternEditorEvents(IPattern pattern, int tbegin, int tend)
+        public IEnumerable<IClipEditorColumn> GetClipEditorEvents(IClip clip, int tbegin, int tend)
         {
-            return ModernPatternEditor.GetPatternColumnEvents(pattern, tbegin, tend);
+            return ModernPatternEditor.GetClipColumnEvents(clip, tbegin, tend);
         }
 
         public void Activate()
@@ -199,21 +199,21 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.Release();
         }
 
-        public void CreatePatternCopy(IPattern pnew, IPattern p)
+        public void CreateClipCopy(IClip pnew, IClip p)
         {
-            ModernPatternEditor.CreatePatternCopy(pnew.Name, p.Name);
+            ModernPatternEditor.CreateClipCopy(pnew.Name, p.Name);
         }
 
         // Update wave references if song/template was imported
-        public void UpdateWaveReferences(IPattern pattern, IDictionary<int, int> remap)
+        public void UpdateWaveReferences(IClip clip, IDictionary<int, int> remap)
         {
-            var mpePattern = ModernPatternEditor.MPEPatternsDB.GetMPEPattern(pattern);
-            foreach (var column in mpePattern.MPEPatternColumns)
+            var mpeClip = ModernPatternEditor.MPEClipsDB.GetMPEClip(clip);
+            foreach (var column in mpeClip.MPEClipColumns)
             {
                 if (column.Parameter.Flags.HasFlag(ParameterFlags.Wave))
                 {
                     var events = column.GetEvents(0, int.MaxValue).ToArray();
-                    List<PatternEvent> newEvents = new List<PatternEvent>();
+                    List<ClipEvent> newEvents = new List<ClipEvent>();
                     for (int i = 0; i < events.Count(); i++)
                     {
                         var e = events[i];
@@ -231,15 +231,15 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public int GetEditorPatternPosition()
+        public int GetEditorClipPosition()
         {
             int pos = 0;
-            var pattern = ModernPatternEditor.patternControl.Pattern;
-            var mpePattern = ModernPatternEditor.MPEPatternsDB.GetMPEPattern(pattern.Pattern);
+            var clip = ModernPatternEditor.clipControl.Clip;
+            var mpeClip = ModernPatternEditor.MPEClipsDB.GetMPEClip(clip.Clip);
 
-            if (pattern != null && mpePattern != null)
+            if (clip != null && mpeClip != null)
             {
-                pos = (pattern.CursorPosition.Beat * mpePattern.RowsPerBeat + pattern.CursorPosition.RowInBeat) * PatternControl.BUZZ_TICKS_PER_BEAT / mpePattern.RowsPerBeat;
+                pos = (clip.CursorPosition.Beat * mpeClip.RowsPerBeat + clip.CursorPosition.RowInBeat) * ClipControl.BUZZ_TICKS_PER_BEAT / mpeClip.RowsPerBeat;
             }
             return pos;
         }

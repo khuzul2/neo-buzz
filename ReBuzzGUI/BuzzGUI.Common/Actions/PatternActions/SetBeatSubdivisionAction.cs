@@ -3,31 +3,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BuzzGUI.Common.Actions.PatternActions
+namespace BuzzGUI.Common.Actions.ClipActions
 {
-    public class SetBeatSubdivisionAction : PatternAction
+    public class SetBeatSubdivisionAction : ClipAction
     {
-        readonly Tuple<PatternColumnBeatRef, int>[] newSubdiv;
+        readonly Tuple<ClipColumnBeatRef, int>[] newSubdiv;
         readonly int[] oldSubdiv;
 
-        public SetBeatSubdivisionAction(IPattern pattern, IEnumerable<Tuple<PatternColumnBeatRef, int>> subdiv)
-            : base(pattern)
+        public SetBeatSubdivisionAction(IClip clip, IEnumerable<Tuple<ClipColumnBeatRef, int>> subdiv)
+            : base(clip)
         {
             this.newSubdiv = subdiv.ToArray();
             oldSubdiv = newSubdiv
-                .Select(s => s.Item1.GetColumn(pattern).BeatSubdivision.ContainsKey(s.Item1.Beat)
-                ? s.Item1.GetColumn(pattern).BeatSubdivision[s.Item1.Beat] : -1).ToArray();
+                .Select(s => s.Item1.GetColumn(clip).BeatSubdivision.ContainsKey(s.Item1.Beat)
+                ? s.Item1.GetColumn(clip).BeatSubdivision[s.Item1.Beat] : -1).ToArray();
         }
 
         protected override void DoAction()
         {
-            var p = Pattern;
+            var p = Clip;
             newSubdiv.Run(s => s.Item1.GetColumn(p).SetBeatSubdivision(s.Item1.Beat, s.Item2));
         }
 
         protected override void UndoAction()
         {
-            var p = Pattern;
+            var p = Clip;
             newSubdiv.Run((s, i) => { if (oldSubdiv[i] >= 0) s.Item1.GetColumn(p).SetBeatSubdivision(s.Item1.Beat, oldSubdiv[i]); });
         }
 

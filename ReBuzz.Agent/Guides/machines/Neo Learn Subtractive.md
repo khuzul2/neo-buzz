@@ -47,4 +47,4 @@ A teaching subtractive synth: one Dye Essence patch driven by 12 controls, so ev
 
 - [ ] `machine_describe(machine="Learn")` lists each control's `how` and `sound`; read the one you are changing.
 - [ ] `param_set(machine="Learn", changes=[{"param": "Cutoff", "value": "800 Hz"}])`, then `machine_readings(machine="Learn")`: `rms_db` near -22 dB, `peak_db` under 0.
-- [ ] `midi_play(machine="Learn", notes=[...])` or a pattern, then `analyze(source="Learn", metrics=["spectrum"])` shows the brightness you meant.
+- [ ] `midi_play(machine="Learn", notes=[...])` or a clip, then `analyze(source="Learn", metrics=["spectrum"])` shows the brightness you meant.

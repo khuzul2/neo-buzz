@@ -1,6 +1,6 @@
 ## How it sounds
 
-One knob that moves up to 8 parameters of other machines at once, with no audio of its own. Turn `Value` from 0 to 100 % and every target moves by its own depth, range and curve, so one move changes the cutoff, the reverb and the drive together: a build, a filter-and-wet sweep, a performance control. `Value` is an ordinary parameter, so a pattern can automate it, the agent can set it and a MIDI controller can be bound to it.
+One knob that moves up to 8 parameters of other machines at once, with no audio of its own. Turn `Value` from 0 to 100 % and every target moves by its own depth, range and curve, so one move changes the cutoff, the reverb and the drive together: a build, a filter-and-wet sweep, a performance control. `Value` is an ordinary parameter, so a clip can automate it, the agent can set it and a MIDI controller can be bound to it.
 
 - Per target: depth −100 … +100 % (a negative depth moves it the other way), polarity (uni by default: 0 % leaves the base, 100 % adds the depth), an optional range and a curve (bends the response).
 - `Write glide` limits how fast any target moves, so a jump of the knob becomes a smooth move.

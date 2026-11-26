@@ -2,7 +2,7 @@
 // Fork addition (neo-buzz, docs/specs/session-view.md 1.0): how the Neo Audio machine (once the Session Clip Player)
 // (Machines/SessionClipPlayer, the audio tracks' machine) reaches ReBuzz. The machine is a
 // separate DLL, as every managed machine is (they are loaded with Assembly.LoadFile); its Work
-// hands the block to ReBuzz here, which plays the audio clips of its patterns and records.
+// hands the block to ReBuzz here, which plays the audio clips of its clips and records.
 
 using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;

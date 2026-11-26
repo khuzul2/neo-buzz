@@ -424,7 +424,7 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void ATakeLaunchedLateStartsIntoItsPattern()
+        public void ATakeLaunchedLateStartsIntoItsClip()
         {
             var cap = new AudioCapture(1000, 10, 2000, 10_000, framesPerBeat: 500);
             cap.StartAt(0.25);                                         // a tick in at 4 per beat

@@ -4,52 +4,52 @@ using System.Linq;
 using WDE.ModernPatternEditor;
 using WDE.ModernPatternEditor.MPEStructures;
 
-namespace BuzzGUI.Common.Actions.PatternActions
+namespace BuzzGUI.Common.Actions.ClipActions
 {
-    public class MPEAddOrRemoveColumnsAction : PatternAction
+    public class MPEAddOrRemoveColumnsAction : ClipAction
     {
         // <Position, Column>
-        List<MPEPatternColumn> removedColumns = new List<MPEPatternColumn>();
-        List<MPEPatternColumn> addedColumns = new List<MPEPatternColumn>();
+        List<MPEClipColumn> removedColumns = new List<MPEClipColumn>();
+        List<MPEClipColumn> addedColumns = new List<MPEClipColumn>();
 
         IEnumerable<IParameter> parameters;
 
-        MPEPattern mpePattern;
-        PatternVM patternVM;
+        MPEClip mpeClip;
+        ClipVM clipVM;
 
-        public MPEAddOrRemoveColumnsAction(MPEPattern pattern, PatternVM patternVM, IEnumerable<IParameter> parameters)
-            : base(pattern.Pattern)
+        public MPEAddOrRemoveColumnsAction(MPEClip clip, ClipVM clipVM, IEnumerable<IParameter> parameters)
+            : base(clip.Clip)
         {
-            mpePattern = pattern;
-            this.patternVM = patternVM;
+            mpeClip = clip;
+            this.clipVM = clipVM;
             this.parameters = parameters;
         }
 
         protected override void DoAction()
         {
             // 1. Removed colunms
-            var rc = mpePattern.MPEPatternColumns.Where(x => parameters.All(p => p != x.Parameter && x.GroupType == ParameterGroupType.Track)).ToList();
+            var rc = mpeClip.MPEClipColumns.Where(x => parameters.All(p => p != x.Parameter && x.GroupType == ParameterGroupType.Track)).ToList();
             for (int i = 0; i < rc.Count(); i++)
             {
                 var column = rc.ElementAt(i);
                 removedColumns.Add(column);
-                mpePattern.MPEPatternColumns.Remove(column);
+                mpeClip.MPEClipColumns.Remove(column);
             }
 
             // 2. Insert added columns
-            var ip = parameters.Where(p => mpePattern.MPEPatternColumns.All(x => p != x.Parameter));
+            var ip = parameters.Where(p => mpeClip.MPEClipColumns.All(x => p != x.Parameter));
 
             foreach (var param in ip)
             {
-                var mpeColumns = mpePattern.AddColumnToGroup(param);
+                var mpeColumns = mpeClip.AddColumnToGroup(param);
                 foreach (var column in mpeColumns)
                 {
                     addedColumns.Add(column);
                 }
             }
 
-            mpePattern.UpdateData();
-            patternVM.Pattern = Pattern; //Update
+            mpeClip.UpdateData();
+            clipVM.Clip = Clip; //Update
         }
 
 
@@ -57,18 +57,18 @@ namespace BuzzGUI.Common.Actions.PatternActions
         {
             foreach (var column in removedColumns)
             {
-                mpePattern.MPEPatternColumns.Add(column);
+                mpeClip.MPEClipColumns.Add(column);
             }
 
             foreach (var column in addedColumns)
             {
-                mpePattern.MPEPatternColumns.Remove(column);
+                mpeClip.MPEClipColumns.Remove(column);
             }
 
             removedColumns.Clear();
             addedColumns.Clear();
-            mpePattern.UpdateData();
-            patternVM.Pattern = Pattern; //Update
+            mpeClip.UpdateData();
+            clipVM.Clip = Clip; //Update
         }
     }
 }

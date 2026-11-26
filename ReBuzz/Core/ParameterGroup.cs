@@ -23,7 +23,7 @@ namespace ReBuzz.Core
         }
 
         // Fork (engine hardening): the copy is kept while the list holds the same parameters (it
-        // was made on every call). Pattern editors set values through it, on the audio thread
+        // was made on every call). Clip editors set values through it, on the audio thread
         // (machine.ParameterGroups[group].Parameters[index].SetValue, for each value they play).
         ReadOnlyCollection<IParameter> parametersView;
         public ReadOnlyCollection<IParameter> Parameters { get => ViewOf(ref parametersView, parameters); }

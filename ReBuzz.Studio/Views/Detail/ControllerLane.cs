@@ -1,4 +1,4 @@
-// Fork (docs/specs/daw-modes.md AR2): a controller lane under the piano roll: one control change (or the pitch bend) of the pattern's
+// Fork (docs/specs/daw-modes.md AR2): a controller lane under the piano roll: one control change (or the pitch bend) of the clip's
 // MIDI column, drawn as points that hold their value to the next one. Click on empty space to add a point, drag a point to move it
 // (its value, and its time on the grid), double-click a point to delete it. Each gesture is one undo step of the song's history.
 

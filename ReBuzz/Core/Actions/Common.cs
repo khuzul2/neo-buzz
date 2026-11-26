@@ -8,41 +8,41 @@ namespace ReBuzz.Core.Actions
 {
     public class MachineInfoRef
     {
-        public IMachineDLL PatternEditorDLL { get; internal set; }
-        public byte[] PatternEditorData { get; internal set; }
+        public IMachineDLL ClipEditorDLL { get; internal set; }
+        public byte[] ClipEditorData { get; internal set; }
         public string Name { get; set; }
         public Tuple<float, float> Pos { get; set; }
         public byte[] Data { get; set; }
-        public string PatternEditorMachineName { get; }
-        public string PatternEditorDllName { get; internal set; }
+        public string ClipEditorMachineName { get; }
+        public string ClipEditorDllName { get; internal set; }
         public string MachineLib { get; internal set; }
         public string Instrument { get; internal set; }
         public int TrackCount { get; internal set; }
         internal List<AttributeCore> Attributes { get; set; }
 
         public Dictionary<int, IEnumerable<KeyValuePair<int, SequenceEventRef>>> sequences = new Dictionary<int, IEnumerable<KeyValuePair<int, SequenceEventRef>>>();
-        public Dictionary<string, int> patternAssociations = new Dictionary<string, int>();
+        public Dictionary<string, int> clipAssociations = new Dictionary<string, int>();
         public List<ConnectionInfoRef> connections = new List<ConnectionInfoRef>();
         internal List<ParameterGroup> parameterGroups = new List<ParameterGroup>();
-        internal List<PatternInfoRef> patterns = new List<PatternInfoRef>();
+        internal List<ClipInfoRef> clips = new List<ClipInfoRef>();
         internal List<DisconnectMachinesAction> disconnectActions = new List<DisconnectMachinesAction>();
 
         public MachineInfoRef(MachineCore machine)
         {
             Name = machine.Name;
-            if (machine.PatternEditorDLL != null)
+            if (machine.ClipEditorDLL != null)
             {
-                PatternEditorDllName = machine.PatternEditorDLL.Name;
+                ClipEditorDllName = machine.ClipEditorDLL.Name;
             }
             if (machine.EditorMachine != null)
             {
-                PatternEditorMachineName = machine.EditorMachine.Name;
+                ClipEditorMachineName = machine.EditorMachine.Name;
             }
             Pos = new Tuple<float, float>(machine.Position.Item1, machine.Position.Item2);
             MachineLib = machine.DLL.Name;
             Instrument = machine.InstrumentName;
             TrackCount = machine.TrackCount;
-            PatternEditorData = machine.PatternEditorData;
+            ClipEditorData = machine.ClipEditorData;
             Data = machine.Data;
 
             // Save Attributes
@@ -60,10 +60,10 @@ namespace ReBuzz.Core.Actions
                 parameterGroups.Add(pg);
             }
 
-            // Save Patterns
-            foreach (var pattern in machine.PatternsList)
+            // Save Clips
+            foreach (var clip in machine.ClipsList)
             {
-                patterns.Add(new PatternInfoRef(pattern.Name, pattern.Length));
+                clips.Add(new ClipInfoRef(clip.Name, clip.Length));
             }
         }
 
@@ -113,11 +113,11 @@ namespace ReBuzz.Core.Actions
         }
     }
 
-    public class PatternInfoRef
+    public class ClipInfoRef
     {
         public string Name { get; }
         public int Lenght { get; }
-        public PatternInfoRef(string name, int lenght)
+        public ClipInfoRef(string name, int lenght)
         {
             Name = name;
             Lenght = lenght;
@@ -128,35 +128,35 @@ namespace ReBuzz.Core.Actions
     {
         public SequenceEventType Type { get; private set; }
 
-        public string PatternName { get; private set; }
+        public string ClipName { get; private set; }
 
         public int Span { get; set; }
 
-        // Fork (0.5.1): the part of the pattern the event plays, and its volume.
+        // Fork (0.5.1): the part of the clip the event plays, and its volume.
         public int Offset { get; private set; }
         public int End { get; private set; }
         public double Gain { get; private set; } = 1.0;
         // Fork (daw-modes.md S2): the arrangement clip it belongs to (0: none).
-        public int Clip { get; private set; }
+        public int PlacementId { get; private set; }
 
-        public SequenceEventRef(SequenceEventType type, string pattern, int span)
+        public SequenceEventRef(SequenceEventType type, string clip, int span)
         {
             Type = type;
-            PatternName = pattern;
+            ClipName = clip;
             Span = span;
         }
 
-        public SequenceEventRef(SequenceEvent e) : this(e.Type, e.Pattern?.Name, e.Span)
+        public SequenceEventRef(SequenceEvent e) : this(e.Type, e.Clip?.Name, e.Span)
         {
             Offset = e.Offset;
             End = e.End;
             Gain = e.Gain;
-            Clip = e.Clip;
+            PlacementId = e.PlacementId;
         }
 
-        /// <summary>The event for a pattern (found by name by the caller).</summary>
-        public SequenceEvent ToEvent(IPattern pattern) =>
-            new SequenceEvent(Type, pattern, Span) { Offset = Offset, End = End, Gain = Gain, Clip = Clip };
+        /// <summary>The event for a clip (found by name by the caller).</summary>
+        public SequenceEvent ToEvent(IClip clip) =>
+            new SequenceEvent(Type, clip, Span) { Offset = Offset, End = End, Gain = Gain, PlacementId = PlacementId };
     }
 
     public class ConnectionInfoRef

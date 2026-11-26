@@ -56,7 +56,7 @@ namespace ReBuzz.Agent.Audio
             var reads = new JsonArray();
             bool silent = a.Silent;
             var result = new JsonObject { ["seconds"] = Math.Round(audio.Seconds, 3), ["silent"] = silent };
-            if (silent) reads.Add("Silent: nothing above -90 dBFS. Check that the patterns are placed in the range (arrangement_get), have notes (notes_read), " +
+            if (silent) reads.Add("Silent: nothing above -90 dBFS. Check that the clips are placed in the range (arrangement_get), have notes (notes_read), " +
                                   "and that their machines reach Master (machine_list).");
             void Add(IEnumerable<string> lines)
             {

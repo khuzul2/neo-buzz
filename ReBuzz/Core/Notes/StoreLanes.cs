@@ -13,10 +13,10 @@ namespace ReBuzz.Core.Notes
 {
     internal static class StoreLanes
     {
-        public static bool IsMarked(IPatternColumn c) => c.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey);
+        public static bool IsMarked(IClipColumn c) => c.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey);
 
         /// <summary>The parameter a key names in the clip's machine, or null.</summary>
-        public static IParameter ParameterOf(IPattern clip, ColumnKey key)
+        public static IParameter ParameterOf(IClip clip, ColumnKey key)
         {
             var groups = clip?.Machine?.ParameterGroups;
             if (groups == null || key.Group < 0 || key.Group >= groups.Count || key.Index < 0 || key.Index >= groups[key.Group].Parameters.Count) return null;
@@ -24,9 +24,9 @@ namespace ReBuzz.Core.Notes
         }
 
         /// <summary>Every lane of the key: the unmarked one first, then the marked. The MIDI key is the Notes lane alone.</summary>
-        public static List<IPatternColumn> All(IPattern clip, ColumnKey key)
+        public static List<IClipColumn> All(IClip clip, ColumnKey key)
         {
-            var lanes = new List<IPatternColumn>();
+            var lanes = new List<IClipColumn>();
             if (clip == null) return lanes;
             if (key.IsMidi)
             {
@@ -35,37 +35,37 @@ namespace ReBuzz.Core.Notes
             }
             var parameter = ParameterOf(clip, key);
             if (parameter == null) return lanes;
-            bool Same(IPatternColumn c) => c.Type == PatternColumnType.Parameter && ReferenceEquals(c.Parameter, parameter) && c.Track == key.Track;
+            bool Same(IClipColumn c) => c.Type == ClipColumnType.Parameter && ReferenceEquals(c.Parameter, parameter) && c.Track == key.Track;
             lanes.AddRange(clip.Columns.Where(c => Same(c) && !IsMarked(c)));
             lanes.AddRange(clip.Columns.Where(c => Same(c) && IsMarked(c)));
             return lanes;
         }
 
         /// <summary>The events of every lane of the key, in time order.</summary>
-        public static List<PatternEvent> Events(IPattern clip, ColumnKey key)
+        public static List<ClipEvent> Events(IClip clip, ColumnKey key)
         {
-            var events = new List<PatternEvent>();
+            var events = new List<ClipEvent>();
             foreach (var lane in All(clip, key)) events.AddRange(lane.GetEvents(int.MinValue, int.MaxValue));
             return events.OrderBy(e => e.Time).ToList();
         }
 
         /// <summary>The lane new events go to: the first there is, else (when asked) a new one. Null when there is none and none is made.</summary>
-        public static IPatternColumn Home(IPattern clip, ColumnKey key, bool create, bool automation = false)
+        public static IClipColumn Home(IClip clip, ColumnKey key, bool create, bool automation = false)
         {
             // An automation edit (an arrangement or clip envelope) lives in the marked lane, as before: the tracker's lane is the tracker's.
             if (automation && !key.IsMidi)
                 return All(clip, key).FirstOrDefault(IsMarked) ?? (create ? SessionLayout.ColumnFor(clip, key, create: true) : null);
             if (All(clip, key).FirstOrDefault() is { } lane) return lane;
             if (!create) return null;
-            if (key.IsMidi || !PatternColumnCore.PlaysEveryLane) return SessionLayout.ColumnFor(clip, key, create: true);
+            if (key.IsMidi || !ClipColumnCore.PlaysEveryLane) return SessionLayout.ColumnFor(clip, key, create: true);
             var parameter = ParameterOf(clip, key);
-            if (parameter == null || clip is not PatternCore core) return null;
+            if (parameter == null || clip is not ClipCore core) return null;
             core.InsertColumn(clip.Columns.Count, parameter, key.Track);
             return All(clip, key).FirstOrDefault();
         }
 
         /// <summary>One change: <paramref name="take"/> go out of every lane that holds them, <paramref name="put"/> come into the home lane.</summary>
-        public static void Change(IPattern clip, ColumnKey key, IReadOnlyCollection<PatternEvent> take, IReadOnlyCollection<PatternEvent> put, bool automation = false)
+        public static void Change(IClip clip, ColumnKey key, IReadOnlyCollection<ClipEvent> take, IReadOnlyCollection<ClipEvent> put, bool automation = false)
         {
             if (take.Count > 0)
                 foreach (var lane in All(clip, key))

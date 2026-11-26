@@ -44,9 +44,9 @@ namespace ReBuzz.Studio.Tests
                 device.Run(rig, Math.Min(2048, frames - done), Signal);
         }
 
-        static float[] Take(SessionRig rig, IPattern pattern, bool right = false)
+        static float[] Take(SessionRig rig, IClip clip, bool right = false)
         {
-            var source = rig.Layout.AudioSourceOf(pattern)!;
+            var source = rig.Layout.AudioSourceOf(clip)!;
             return (right ? source.Right : source.Left).ToArray();
         }
 
@@ -124,7 +124,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(entry.MarkCount, Is.EqualTo(passes));
             Assert.That(rec.Stop(), Is.Null);
             Assert.That(rec.Status, Is.Null.Or.Empty);
-            return BeganAt(Take(rig, TakeLanes(rig, track)[0].Events.Single().Value.Pattern));
+            return BeganAt(Take(rig, TakeLanes(rig, track)[0].Events.Single().Value.Clip));
         }
 
         // ------------------------------------------------------------------ Session
@@ -147,7 +147,7 @@ namespace ReBuzz.Studio.Tests
             // What is played at render frame t comes back on In 1 at t + round trip: a click every spacing frames.
             float Click(long f, int c) => c == 0 && f >= round && (f - round) % spacing == 0 ? 0.9f : 0f;
             long start = 0;
-            var cap = ((PatternCore)take).SessionAudio.Capture;
+            var cap = ((ClipCore)take).SessionAudio.Capture;
             var started = typeof(AudioCapture).GetField("started", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
             while (!(bool)started.GetValue(cap)! && start < 20000) { device.Run(rig, 1, Click); start++; }
             for (int i = 0; i < 40 && (i < 4 || rig.Layout.IsRecordingClip(take)); i++) { device.Run(rig, 4410, Click); rig.Layout.PollTakes(); }
@@ -179,8 +179,8 @@ namespace ReBuzz.Studio.Tests
             {
                 var clip = lanes[pass].Events.Single();
                 Assert.That(clip.Key, Is.EqualTo(0), "a take is placed where the loop starts");
-                var left = Take(rig, clip.Value.Pattern);
-                var right = Take(rig, clip.Value.Pattern, right: true);
+                var left = Take(rig, clip.Value.Clip);
+                var right = Take(rig, clip.Value.Clip, right: true);
                 Assert.That(left.Length, Is.EqualTo(BarFrames), "take " + (pass + 1) + " is the exact length of the loop");
                 for (int j = 0; j < left.Length; j += 7)
                 {
@@ -190,7 +190,7 @@ namespace ReBuzz.Studio.Tests
                 }
             }
             var main = MainLane(rig, track).Events.Single();
-            Assert.That(rig.Layout.AudioOf(main.Value.Pattern)!.Asset, Is.EqualTo(rig.Layout.AudioOf(lanes[2].Events.Single().Value.Pattern)!.Asset), "the newest take plays on the main lane");
+            Assert.That(rig.Layout.AudioOf(main.Value.Clip)!.Asset, Is.EqualTo(rig.Layout.AudioOf(lanes[2].Events.Single().Value.Clip)!.Asset), "the newest take plays on the main lane");
             Assert.That(Directory.Exists(setup.Folder) ? Directory.GetFiles(setup.Folder) : Array.Empty<string>(), Is.Empty, "committed takes leave no temp file");
 
             // One undo step brought them in.
@@ -216,19 +216,19 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rec.Start(false), Is.Null);
             for (int i = 0; i < 3; i++) Play(device, rig, BarFrames);
             Assert.That(rec.Stop(), Is.Null);
-            long begin = BeganAt(Take(rig, MainLane(rig, a).Events.Single().Value.Pattern));
+            long begin = BeganAt(Take(rig, MainLane(rig, a).Events.Single().Value.Clip));
 
             foreach (var (machine, ch, stereo) in new[] { (a, 0, true), (b, 1, false) })
             {
                 var clip = MainLane(rig, machine).Events.Single();
                 Assert.That(clip.Key, Is.EqualTo(0));
-                var left = Take(rig, clip.Value.Pattern);
+                var left = Take(rig, clip.Value.Clip);
                 Assert.That(left.Length, Is.InRange(2 * BarFrames, 4 * BarFrames), "about what was played");
                 Assert.That(BeganAt(left, ch), Is.EqualTo(begin), machine.Name + " began with the other track");
                 for (int j = 0; j < 2 * BarFrames; j += 11)
                 {
                     Assert.That(left[j], Is.EqualTo(V(begin + j, ch)), machine.Name + " left " + j);
-                    Assert.That(Take(rig, clip.Value.Pattern, true)[j], Is.EqualTo(V(begin + j, stereo ? 1 : ch)), machine.Name + " right " + j);
+                    Assert.That(Take(rig, clip.Value.Clip, true)[j], Is.EqualTo(V(begin + j, stereo ? 1 : ch)), machine.Name + " right " + j);
                 }
             }
         }
@@ -326,7 +326,7 @@ namespace ReBuzz.Studio.Tests
             var (device, track) = Rig(rig, 2);
             RecordLoop(rig, device, track, 3, 2);
             var editor = new ClipEditor(rig.Core);
-            string Snap() => string.Join(";", editor.Read(MainLane(rig, track)).Select(i => $"{i.Time}-{i.End}:{rig.Layout.AudioOf(i.Pattern)?.Asset}")) + "|" +
+            string Snap() => string.Join(";", editor.Read(MainLane(rig, track)).Select(i => $"{i.Time}-{i.End}:{rig.Layout.AudioOf(i.Clip)?.Asset}")) + "|" +
                              string.Join(";", TakeLanes(rig, track).Select(l => string.Join(",", editor.Read(l).Select(i => $"{i.Time}-{i.End}"))));
             string before = Snap();
             Assert.That(editor.CompRanges(track, new[] { (1, 0, Bar), (3, Bar, 2 * Bar) }), Is.Null);
@@ -362,7 +362,7 @@ namespace ReBuzz.Studio.Tests
             var takes = reopened.TakesOf(machine);
             Assert.That(takes.Count, Is.EqualTo(3));
             Assert.That(takes.Select(t => t.Used).ToArray(), Is.EqualTo(new[] { true, false, true }), "take 2 is the one the comp doesn't use");
-            var tail = reopened.Read(MainLane(rig, machine)).Select(i => rig.Layout.AudioOf(i.Pattern)!).ToList();
+            var tail = reopened.Read(MainLane(rig, machine)).Select(i => rig.Layout.AudioOf(i.Clip)!).ToList();
             Assert.That(tail[0].Tail, Is.GreaterThan(0), "the crossfade is saved");
             Assert.That(tail[1].CrossIn, Is.True);
         }
@@ -404,7 +404,7 @@ namespace ReBuzz.Studio.Tests
             File.Copy(files[0], crashed);
             File.Copy(files[0] + ".json", crashed + ".json");
             rec.Stop();                                           // (the dead run's recording ends)
-            long begin = BeganAt(Take(rig, MainLane(rig, track).Events.Single().Value.Pattern));
+            long begin = BeganAt(Take(rig, MainLane(rig, track).Events.Single().Value.Clip));
             // The next launch finds it, and a take of the run that is still alive isn't offered.
             foreach (var f in Directory.GetFiles(setup.Folder, "take-*.nbtake.wav").Where(f => f != crashed)) { }
             var found = rec.LeftoverTakes().Where(t => t.Path == crashed).ToList();
@@ -415,7 +415,7 @@ namespace ReBuzz.Studio.Tests
             var recovered = rig.Core.SongCore.MachinesList.First(m => m.Name == "Recovered");
             var clip = MainLane(rig, recovered).Events.Single();
             Assert.That(clip.Key, Is.EqualTo(0));
-            var left = Take(rig, clip.Value.Pattern);
+            var left = Take(rig, clip.Value.Clip);
             Assert.That(left.Length, Is.EqualTo(found[0].Frames));
             for (int j = 0; j < left.Length; j += 13)
                 Assert.That(left[j], Is.EqualTo(V(begin + j)), "recovered frame " + j);

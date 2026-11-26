@@ -15,8 +15,8 @@ namespace BuzzGUI.Common.Templates
             [XmlAttribute]
             public SequenceEventType Type;
 
-            [XmlAttribute]
-            public string Pattern;
+            [XmlAttribute("Pattern")]
+            public string Clip;
 
 
             public Event() { }
@@ -24,7 +24,7 @@ namespace BuzzGUI.Common.Templates
             {
                 Time = t;
                 Type = e.Type;
-                Pattern = e.Pattern != null ? e.Pattern.Name : null;
+                Clip = e.Clip != null ? e.Clip.Name : null;
             }
         }
 

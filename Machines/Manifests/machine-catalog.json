@@ -174,7 +174,7 @@
     "percussion",
     "punchy"
    ],
-   "use_for": "A complete synthesised drum kit: kick, snare, clap, rim and hats with a pattern-friendly keymap.",
+   "use_for": "A complete synthesised drum kit: kick, snare, clap, rim and hats with a clip-friendly keymap.",
    "note_in": true
   },
   "Neo Ensemble": {
@@ -675,6 +675,18 @@
    "use_for": "Turn held notes into an arpeggio or a stepped line before any synth: 12 patterns, 1/1 to 1/64 or ms rates, swing, gate, octaves, latch and a 16-step row with ties and accents.",
    "note_in": true,
    "note_out": true
+  },
+  "Neo Chop": {
+   "category": "Modulation",
+   "tags": [
+    "rhythmic",
+    "tempo-sync",
+    "gate",
+    "tape",
+    "notes"
+   ],
+   "use_for": "Cut up a track in time with the song: stutter, bar-end repeat, retrigger, tape stop and start, a 16-step gate and auto-pan, started by the beat or by notes, for fills, glitches and chopping.",
+   "note_in": true
   }
  }
 }

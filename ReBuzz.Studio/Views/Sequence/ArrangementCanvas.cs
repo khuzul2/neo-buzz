@@ -1,8 +1,8 @@
 // Fork (docs/specs/daw-modes.md AR1, §4): the Sequence tab's Arrangement mode. The same timeline as
 // the tracker mode's canvas (ruler, bars, zoom, play position) with a track for each machine and a
 // lane for each of its sequences, and clips on the lanes (ReBuzz.Core.ClipEditor): draw (double
-// click), move, copy (Ctrl/Cmd: an independent copy with a pattern of its own; Alt/Option: linked,
-// the same pattern), trim by the edges, repeat by the right edge when the clip loops, split, join,
+// click), move, copy (Ctrl/Cmd: an independent copy with a clip of its own; Alt/Option: linked,
+// the same clip), trim by the edges, repeat by the right edge when the clip loops, split, join,
 // make unique, the shared badge. The Master's tempo and markers are on top; lanes the Session
 // View has taken over are greyed. Edits are steps of the song's history (ClipEditAction).
 
@@ -35,11 +35,11 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly SequenceSongState state;
         readonly SequenceGeometry geo = new SequenceGeometry();
         readonly ClipEditor editor;
-        readonly Dictionary<IPattern, PreviewMark[]> previews = new();
-        readonly HashSet<IPattern> watchedPatterns = new();
+        readonly Dictionary<IClip, PreviewMark[]> previews = new();
+        readonly HashSet<IClip> watchedClips = new();
         readonly List<ISequence> watchedSequences = new();
         readonly Dictionary<ISequence, List<ClipItem>> items = new();
-        readonly Dictionary<IPattern, int> uses = new();
+        readonly Dictionary<IClip, int> uses = new();
         List<ArrangementRow> rows = new();
         ISong song;
         bool active;
@@ -88,9 +88,9 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public event Action ViewChanged;
         public event Action SelectionChanged;
-        public event Action<IPattern> PatternDoubleClicked;
+        public event Action<IClip> ClipDoubleClicked;
         /// <summary>Fork (daw-modes.md AR2): a clip was opened for its notes (a double click, P): the view's piano roll shows it.</summary>
-        public event Action<IPattern> ClipOpened;
+        public event Action<IClip> ClipOpened;
         public event Action<Point> MenuRequested;
         public event Action StatusChanged;
 
@@ -114,8 +114,8 @@ namespace ReBuzz.Studio.Views.Sequence
             return new Rect(x, YOf(row) + ClipInset, w, row.Height - 2 * ClipInset);
         }
 
-        /// <summary>The number of places a pattern is used in (clips on the lanes and slots of the session), for the shared badge.</summary>
-        public int UsesOf(IPattern pattern) => pattern != null && uses.TryGetValue(pattern, out int n) ? n : 0;
+        /// <summary>The number of places a clip is used in (clips on the lanes and slots of the session), for the shared badge.</summary>
+        public int UsesOf(IClip clip) => clip != null && uses.TryGetValue(clip, out int n) ? n : 0;
 
         (ClipItem Item, BlockPart Part) ClipAt(Point p)
         {
@@ -128,7 +128,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     var r = ClipRect(item);
                     var part = SequenceGeometry.PartAt(r, p, true);
                     if (part == BlockPart.None) continue;
-                    // The edges are narrower on a short clip, and a clip that doesn't loop can't be made longer by its right edge past its pattern.
+                    // The edges are narrower on a short clip, and a clip that doesn't loop can't be made longer by its right edge past its clip.
                     double edge = Math.Min(EdgeWidth, r.Width / 4);
                     part = p.X < r.X + edge ? BlockPart.LeftEdge : p.X >= r.Right - edge ? BlockPart.RightEdge : BlockPart.Body;
                     return (item, part);
@@ -162,7 +162,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 session.TrackStateChanged += OnTrackState;
                 session.PropertyChanged += OnSessionChanged;
             }
-            ReBuzz.Core.Session.PatternColors.Changed += OnPatternColourChanged;
+            ReBuzz.Core.Session.ClipColors.Changed += OnClipColourChanged;
             if (core.TrackColours is { } trackColours) trackColours.Changed += OnTrackColoursChanged;
             WatchSequences();
             geo.TickWidth = state.Zoom;
@@ -187,10 +187,10 @@ namespace ReBuzz.Studio.Views.Sequence
                 session.TrackStateChanged -= OnTrackState;
                 session.PropertyChanged -= OnSessionChanged;
             }
-            ReBuzz.Core.Session.PatternColors.Changed -= OnPatternColourChanged;
+            ReBuzz.Core.Session.ClipColors.Changed -= OnClipColourChanged;
             if (core.TrackColours is { } trackColours) trackColours.Changed -= OnTrackColoursChanged;
             UnwatchSequences();
-            UnwatchPatterns();
+            UnwatchClips();
             song = null;
             base.OnDetachedFromVisualTree(e);
         }
@@ -205,7 +205,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             WatchSequences();
             if (index < 0 || !Song.Sequences.Contains(s)) clipboard = null;
-            UnwatchPatterns();
+            UnwatchClips();
             Changed();
         });
 
@@ -240,7 +240,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnStoreChanged() => OnUi(() => { ClearCurves(); Changed(); });
         void OnTrackState(ISequence s) => OnUi(InvalidateVisual);
         void OnSessionChanged(object sender, PropertyChangedEventArgs e) => OnUi(InvalidateVisual);
-        void OnPatternColourChanged(IPattern p) => OnUi(InvalidateVisual);
+        void OnClipColourChanged(IClip p) => OnUi(InvalidateVisual);
         void OnTrackColoursChanged() => OnUi(InvalidateVisual);
 
         void WatchSequences()
@@ -271,31 +271,31 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnEventChanged(int time) => OnUi(Changed);
         void OnSpan(int time, int span) => OnUi(Changed);
 
-        void Watch(IPattern p)
+        void Watch(IClip p)
         {
-            if (!watchedPatterns.Add(p)) return;
-            p.PatternChanged += OnPatternContentChanged;
-            p.PropertyChanged += OnPatternPropertyChanged;
-            p.ColumnAdded += OnPatternContentChanged;
-            p.ColumnRemoved += OnPatternContentChanged;
+            if (!watchedClips.Add(p)) return;
+            p.ClipChanged += OnClipContentChanged;
+            p.PropertyChanged += OnClipPropertyChanged;
+            p.ColumnAdded += OnClipContentChanged;
+            p.ColumnRemoved += OnClipContentChanged;
         }
 
-        void UnwatchPatterns()
+        void UnwatchClips()
         {
-            foreach (var p in watchedPatterns)
+            foreach (var p in watchedClips)
             {
-                p.PatternChanged -= OnPatternContentChanged;
-                p.PropertyChanged -= OnPatternPropertyChanged;
-                p.ColumnAdded -= OnPatternContentChanged;
-                p.ColumnRemoved -= OnPatternContentChanged;
+                p.ClipChanged -= OnClipContentChanged;
+                p.PropertyChanged -= OnClipPropertyChanged;
+                p.ColumnAdded -= OnClipContentChanged;
+                p.ColumnRemoved -= OnClipContentChanged;
             }
-            watchedPatterns.Clear();
+            watchedClips.Clear();
             UnwatchColumns();
             previews.Clear();
             ClearCurves();
         }
 
-        void OnPatternContentChanged(IPatternColumn c) => OnUi(() =>
+        void OnClipContentChanged(IClipColumn c) => OnUi(() =>
         {
             if (c != null) WatchColumn(c);
             previews.Clear();
@@ -304,12 +304,12 @@ namespace ReBuzz.Studio.Views.Sequence
             InvalidateVisual();
         });
 
-        void OnPatternPropertyChanged(object sender, PropertyChangedEventArgs e)
+        void OnClipPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != "Name" && e.PropertyName != "Length") return;
             OnUi(() =>
             {
-                if (sender is IPattern p) previews.Remove(p);
+                if (sender is IClip p) previews.Remove(p);
                 Changed();
             });
         }
@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 rows = new List<ArrangementRow>();
                 selected = null;
                 clipboard = null;
-                UnwatchPatterns();
+                UnwatchClips();
                 return;
             }
             rows = ArrangementLayout.Build(Song, core.Arrangement);
@@ -338,13 +338,13 @@ namespace ReBuzz.Studio.Views.Sequence
                 foreach (var lane in row.Lanes)
                     if (!items.ContainsKey(lane)) items[lane] = editor.Read(lane);
             foreach (var item in items.Values.SelectMany(l => l))
-                uses[item.Pattern] = uses.GetValueOrDefault(item.Pattern) + 1;
+                uses[item.Clip] = uses.GetValueOrDefault(item.Clip) + 1;
             var doc = core.SessionLayout?.Document;
             if (doc != null)
                 foreach (var track in doc.Tracks)
                     foreach (var name in track.Slots.Values)
-                        if (Song.Machines.FirstOrDefault(m => m.Name == track.Machine)?.Patterns.FirstOrDefault(p => p.Name == name) is { } pattern)
-                            uses[pattern] = uses.GetValueOrDefault(pattern) + 1;
+                        if (Song.Machines.FirstOrDefault(m => m.Name == track.Machine)?.Clips.FirstOrDefault(p => p.Name == name) is { } clip)
+                            uses[clip] = uses.GetValueOrDefault(clip) + 1;
             if (selected != null) selected = items.Values.SelectMany(l => l).FirstOrDefault(i => i.Equals(selected));
             ReadLanes();
             if (cursorLane != null && !Song.Sequences.Contains(cursorLane)) cursorLane = null;
@@ -479,13 +479,13 @@ namespace ReBuzz.Studio.Views.Sequence
         static Color Blend(Color a, Color b, double f) => Color.FromArgb(
             (byte)(a.A + (b.A - a.A) * f), (byte)(a.R + (b.R - a.R) * f), (byte)(a.G + (b.G - a.G) * f), (byte)(a.B + (b.B - a.B) * f));
 
-        /// <summary>A clip's fill: its pattern's colour, as the tracker mode's blocks (SequenceCanvas.BlockColour).</summary>
-        internal Color ColourOf(IPattern pattern)
+        /// <summary>A clip's fill: its clip's colour, as the tracker mode's blocks (SequenceCanvas.BlockColour).</summary>
+        internal Color ColourOf(IClip clip)
         {
             var palette = SequenceSongState.Palette;
-            int ci = pattern != null ? state.ColourIndexOf(pattern) : -1;
-            bool hasOwn = pattern != null && state.TryGet(pattern, out int saved) && saved >= 0;
-            if (!hasOwn && !Look.IsClassic && pattern?.Machine != null && Mixer.TrackColour.Of(pattern.Machine) is { } identity) return identity;
+            int ci = clip != null ? state.ColourIndexOf(clip) : -1;
+            bool hasOwn = clip != null && state.TryGet(clip, out int saved) && saved >= 0;
+            if (!hasOwn && !Look.IsClassic && clip?.Machine != null && Mixer.TrackColour.Of(clip.Machine) is { } identity) return identity;
             return ci >= 0 && ci < palette.Count
                 ? Color.FromUInt32(palette[ci].Argb)
                 : Look.BoxColours is { } own ? own[0] : (Color)StudioTokens.Accent;
@@ -607,7 +607,7 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             foreach (var kv in row.Lane.Events)
             {
-                if (kv.Value.Type == SequenceEventType.PlayPattern) continue;
+                if (kv.Value.Type == SequenceEventType.PlayClip) continue;
                 double x = geo.XOf(kv.Key);
                 if (x < area.X - 8 || x > area.Right) continue;
                 ctx.FillRectangle(Look.Off, new Rect(Math.Floor(x), y + ClipInset, 3, row.Height - 2 * ClipInset));
@@ -661,13 +661,13 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             double x0 = geo.XOf(item.Time), x1 = geo.XOf(item.End);
             if (x1 < area.X || x0 > area.Right) return;
-            ctx.FillRectangle(new SolidColorBrush(ColourOf(item.Pattern)), new Rect(x0, y + 8, Math.Max(2, x1 - x0), h - 16));
+            ctx.FillRectangle(new SolidColorBrush(ColourOf(item.Clip)), new Rect(x0, y + 8, Math.Max(2, x1 - x0), h - 16));
         }
 
         void DrawClip(DrawingContext ctx, Rect r, ClipItem item)
         {
             var spec = item.Spec;
-            var colour = ColourOf(spec.Pattern);
+            var colour = ColourOf(spec.Clip);
             var fill = new SolidColorBrush(colour);
             var highlight = new SolidColorBrush(Blend(colour, Colors.White, 0.5));
             var shadow = new SolidColorBrush(Blend(colour, Colors.Black, 0.66));
@@ -692,19 +692,19 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (r.X + sx > Bounds.Width || r.X + sx + sw < 0) continue;
                 if (i > 0) ctx.DrawLine(new Pen(shadow, 1, DashStyle.Dash), new Point(sx, 1), new Point(sx, h - 1));
                 if (audio != null) DrawWaveform(ctx, audio, item, s, sx, sw, h, shadow);
-                else if (core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Automation) DrawAutomationLine(ctx, spec.Pattern, s, sx, sw, h);
-                else DrawPreview(ctx, spec.Pattern, s, sx, sw, h);
+                else if (core.Arrangement?.RoleOf(item.Sequence) == LaneRole.Automation) DrawAutomationLine(ctx, spec.Clip, s, sx, sw, h);
+                else DrawPreview(ctx, spec.Clip, s, sx, sw, h);
             }
             if (envelopesOn && core.Arrangement?.RoleOf(item.Sequence) != LaneRole.Automation) DrawEnvelopes(ctx, item, segments, h);
 
             // The name, the loop and the shared badge, in a strip above the preview.
             var textBrush = Look.BlockText ?? Brushes.Black;
-            string name = spec.Pattern.Name + (segments.Count > 1 ? $" ×{segments.Count}" : "") + (spec.Gain < 1.0 ? $" {Math.Round(spec.Gain * 100)}%" : "");
+            string name = spec.Clip.Name + (segments.Count > 1 ? $" ×{segments.Count}" : "") + (spec.Gain < 1.0 ? $" {Math.Round(spec.Gain * 100)}%" : "");
             // PL1: the name gets the room first; a badge that does not fit beside it shrinks to a small icon, and goes if even that does not fit.
             double badges = 0;
             double nameWidth = Math.Min(Text(name, textBrush, 12).Width, Math.Max(1, w - 12));
             double room = w - 12 - nameWidth;
-            int n = UsesOf(spec.Pattern);
+            int n = UsesOf(spec.Clip);
             if (n > 1) badges += DrawBadge(ctx, w - 4 - badges, 3, $"{n}", $"{n}", Look.Param, textBrush, room - badges);
             if (spec.Loop) badges += DrawBadge(ctx, w - 4 - badges, 3, "loop", "\u21BB", Look.Note, textBrush, room - badges);
             if (audio != null && audio.Reverse) badges += DrawBadge(ctx, w - 4 - badges, 3, "rev", "\u25C0", Look.Param, textBrush, room - badges);
@@ -737,13 +737,13 @@ namespace ReBuzz.Studio.Views.Sequence
             return w + 3;
         }
 
-        void DrawPreview(DrawingContext ctx, IPattern p, ClipSegment s, double sx, double sw, double h)
+        void DrawPreview(DrawingContext ctx, IClip p, ClipSegment s, double sx, double sw, double h)
         {
             if (p.Length <= 0) return;
             if (!previews.TryGetValue(p, out var marks))
             {
                 Watch(p);
-                previews[p] = marks = PatternPreview.Of(p);
+                previews[p] = marks = ClipPreview.Of(p);
             }
             if (marks.Length == 0) return;
             var area = new Rect(sx + 1, 19, Math.Max(0, sw - 2), Math.Max(0, h - 21));
@@ -843,8 +843,8 @@ namespace ReBuzz.Studio.Views.Sequence
             if (item == null) return SequenceGeometry.InRuler(p) ? $"{BarBeat(geo.TimeAt(p.X))}\nClick: move the play position here" : null;
             if (IsAudioItem(item)) return AudioTip(item, part, p);
             var s = item.Spec;
-            string text = $"{s.Pattern.Name} · {BarBeat(item.Time)} · {item.End - item.Time} ticks";
-            if (UsesOf(s.Pattern) > 1) text += $"\nShared by {UsesOf(s.Pattern)} places: Make unique gives this clip a pattern of its own";
+            string text = $"{s.Clip.Name} · {BarBeat(item.Time)} · {item.End - item.Time} ticks";
+            if (UsesOf(s.Clip) > 1) text += $"\nShared by {UsesOf(s.Clip)} places: Make unique gives this place a clip of its own";
             text += part switch
             {
                 BlockPart.LeftEdge => "\nDrag: trim the start",
@@ -904,7 +904,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 {
                     Select(item);
                     if (TryOpenEnvelope(item, p)) return;
-                    ClipOpened?.Invoke(item.Pattern);
+                    ClipOpened?.Invoke(item.Clip);
                 }
                 else if (laneRow?.Lane != null)
                 {
@@ -995,7 +995,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     goto case Drag.Move;
                 case Drag.Move:
                     ghostTime = Snap(geo.TimeAt(p.X) - grabOffset, fine);
-                    // An audio clip may go to the lane of another Neo Audio track too (it gets a pattern there); Alt copies it, as Ctrl/Cmd does.
+                    // An audio clip may go to the lane of another Neo Audio track too (it gets a clip there); Alt copies it, as Ctrl/Cmd does.
                     bool audioClip = IsAudioItem(dragItem);
                     if (LaneRowAt(p.Y)?.Lane is { } lane && (lane.Machine == dragItem.Sequence.Machine ||
                         (audioClip && lane.Machine != null && ReBuzz.Core.Session.SessionLayout.IsClipPlayer(lane.Machine) && core.Arrangement?.RoleOf(lane) != LaneRole.Automation))) ghostLane = lane;
@@ -1112,7 +1112,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Changed();
         }
 
-        /// <summary>A double click on an empty place: a pattern and its clip (the session's clip length, shorter where the next clip starts).</summary>
+        /// <summary>A double click on an empty place: a clip and its clip (the session's clip length, shorter where the next clip starts).</summary>
         public void DrawAt(ISequence lane, int time)
         {
             int length = core.SessionLayout?.NewClipLength ?? TicksPerBeat * 4;
@@ -1120,7 +1120,7 @@ namespace ReBuzz.Studio.Views.Sequence
             Changed();
             if (made != null)
             {
-                var item = ItemsOf(lane).FirstOrDefault(i => ReferenceEquals(i.Pattern, made));
+                var item = ItemsOf(lane).FirstOrDefault(i => ReferenceEquals(i.Clip, made));
                 if (item != null) Select(item);
             }
         }
@@ -1249,9 +1249,9 @@ namespace ReBuzz.Studio.Views.Sequence
         public bool PasteAtCursor()
         {
             if (clipboard == null) return false;
-            bool audioClip = editor.IsAudio(clipboard.Pattern);
-            var lane = cursorLane?.Machine == clipboard.Pattern.Machine || (audioClip && cursorLane?.Machine != null && ReBuzz.Core.Session.SessionLayout.IsClipPlayer(cursorLane.Machine))
-                ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == clipboard.Pattern.Machine);
+            bool audioClip = editor.IsAudio(clipboard.Clip);
+            var lane = cursorLane?.Machine == clipboard.Clip.Machine || (audioClip && cursorLane?.Machine != null && ReBuzz.Core.Session.SessionLayout.IsClipPlayer(cursorLane.Machine))
+                ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == clipboard.Clip.Machine);
             if (lane == null) { SetStatus("The clip's machine has no lane."); return false; }
             int at = Snap(cursorTime, false);
             bool ok = Run(editor.Paste(clipboard, lane, at));
@@ -1259,13 +1259,13 @@ namespace ReBuzz.Studio.Views.Sequence
             return ok;
         }
 
-        /// <summary>Puts an existing pattern at the cursor as a clip (shared with its other places).</summary>
-        public bool PlaceAtCursor(IPattern pattern)
+        /// <summary>Puts an existing clip at the cursor as a clip (shared with its other places).</summary>
+        public bool PlaceAtCursor(IClip clip)
         {
-            var lane = cursorLane?.Machine == pattern?.Machine ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == pattern?.Machine);
-            if (lane == null) { SetStatus("That pattern's machine has no lane."); return false; }
+            var lane = cursorLane?.Machine == clip?.Machine ? cursorLane : Song.Sequences.FirstOrDefault(s => s.Machine == clip?.Machine);
+            if (lane == null) { SetStatus("That clip's machine has no lane."); return false; }
             int at = Snap(cursorTime, false);
-            bool ok = Run(editor.Place(lane, pattern, at));
+            bool ok = Run(editor.Place(lane, clip, at));
             if (ok) Reselect(lane, at);
             return ok;
         }
@@ -1294,7 +1294,7 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>Launches the selected clip in the Session View, on its lane's track.</summary>
         public bool LaunchSelected() => selected != null && Run(core.Arrangement.Links.Launch(selected));
 
-        /// <summary>Gives the selected clip's pattern to a slot of its machine's session track.</summary>
+        /// <summary>Gives the selected clip's clip to a slot of its machine's session track.</summary>
         public bool SendSelectedToSession()
         {
             if (selected == null) return false;
@@ -1323,8 +1323,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.R when IsAudioSelected: return ReverseSelected();
                     case Key.C: return CompAtCursor();
                     case Key.E: Envelopes = !Envelopes; return true;
-                    case Key.Return when selected != null: PatternDoubleClicked?.Invoke(selected.Pattern); return true;
-                    case Key.P when selected != null: ClipOpened?.Invoke(selected.Pattern); return true;
+                    case Key.Return when selected != null: ClipDoubleClicked?.Invoke(selected.Clip); return true;
+                    case Key.P when selected != null: ClipOpened?.Invoke(selected.Clip); return true;
                     case Key.Escape: ClearSelection(); return true;
                     case Key.Right: MoveCursor(cursorTime + TicksPerBeat, null); return true;
                     case Key.Left: MoveCursor(cursorTime - TicksPerBeat, null); return true;

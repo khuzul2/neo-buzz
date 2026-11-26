@@ -166,7 +166,7 @@ namespace ReBuzz.Studio.Shell.Design
         /// <summary>The block selection of the grids: the accent at 35 %.</summary>
         public static readonly IBrush BlockSelectionFill = Themed(() => Tokens.Accent, 0x59);
 
-        /// <summary>An immutable brush of a fixed colour (a clip's, a pattern's: not a token).</summary>
+        /// <summary>An immutable brush of a fixed colour (a clip's, a clip's: not a token).</summary>
         public static IBrush Brush(Color c) => new ImmutableSolidColorBrush(c);
 
         // ---- WCAG 2.2

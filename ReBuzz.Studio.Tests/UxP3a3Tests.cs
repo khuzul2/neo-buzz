@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Tests
                 Dialogs.Responder = (m, c, b) => UserAnswer.No;
                 Song = new SessionRig("Drums", "Bass");
                 var drums = Song.Machine("Drums");
-                var beat = Song.Pattern(drums, "Beat", 16, (0, 60), (4, 62));
+                var beat = Song.Clip(drums, "Beat", 16, (0, 60), (4, 62));
                 Song.Layout.SetSlot(0, 0, beat);
                 StudioSelection.For(Song.Core).Clear(this);
                 Window = new MainWindow(Studio.Host) { Width = width, Height = height };
@@ -150,12 +150,12 @@ namespace ReBuzz.Studio.Tests
             AssertClean(buttons, view, "the Session toolbar");
 
             // The docked Tracker's chooser bar.
-            w.ShowView("Pattern");
+            w.ShowView("Clip");
             Settle();
             Assert.That(w.Detail.IsOpen, Is.True);
             var page = w.Detail.Page;
             var frame = Box(page, w);
-            var bar = Visible<Avalonia.Controls.Control>(page, w).Where(c => c.Name.StartsWith("ComboBox") || c.Name.StartsWith("Button") || c.Name.StartsWith("TextBlock:Machine") || c.Name.StartsWith("TextBlock:Pattern")).Where(c => c.Box.Bottom <= frame.Y + 80).ToList();
+            var bar = Visible<Avalonia.Controls.Control>(page, w).Where(c => c.Name.StartsWith("ComboBox") || c.Name.StartsWith("Button") || c.Name.StartsWith("TextBlock:Machine") || c.Name.StartsWith("TextBlock:Clip")).Where(c => c.Box.Bottom <= frame.Y + 80).ToList();
             AssertClean(bar, frame, "the Tracker's chooser bar");
         }
 

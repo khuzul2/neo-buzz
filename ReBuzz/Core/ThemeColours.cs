@@ -130,7 +130,7 @@ namespace ReBuzz.Core
             ("SE Break Box", 0xFFE0B06D),
             ("SE Line", 0xFF000000),
             ("SE Mute Box", 0xFFDD816C),
-            ("SE Pattern Box", 0xFFC6BEA9),
+            ("SE Clip Box", 0xFFC6BEA9),
             ("SE Sel BG", 0xFFF7F7F4),
             ("SE Song Position", 0xFFFFFF00),
             ("SE Text", 0xFF303021),

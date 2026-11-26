@@ -13,7 +13,7 @@ using System.Xml.Serialization;
 
 namespace BuzzGUI.Common.Templates
 {
-    public enum TemplatePatternMode { NoPatterns, PatternsOnly, PatternsAndSequences };
+    public enum TemplateClipMode { NoClips, ClipsOnly, ClipsAndSequences };
     public enum TemplateWavetableMode { NoWavetable, WaveRefsOnly, WaveFiles };
     public enum TemplateMIDIBindingsMode { NoBindings, All };
 
@@ -31,13 +31,13 @@ namespace BuzzGUI.Common.Templates
         public string Path;
 
         public Template() { }
-        public Template(IEnumerable<IMachine> machines, IEnumerable<IMachineGroup> groups, TemplatePatternMode patternmode, TemplateWavetableMode wtmode, TemplateMIDIBindingsMode bindingMode)
+        public Template(IEnumerable<IMachine> machines, IEnumerable<IMachineGroup> groups, TemplateClipMode clipmode, TemplateWavetableMode wtmode, TemplateMIDIBindingsMode bindingMode)
         {
             var song = machines.First().Graph as ISong;
 
-            Machines = machines.Select(m => new Machine(m, patternmode != TemplatePatternMode.NoPatterns)).ToList();
+            Machines = machines.Select(m => new Machine(m, clipmode != TemplateClipMode.NoClips)).ToList();
             Connections = machines.SelectMany(m => m.Inputs.Where(c => machines.Contains(c.Source))).Select(c => new Connection(c)).ToList();
-            if (patternmode == TemplatePatternMode.PatternsAndSequences) Sequences = song.Sequences.Where(s => machines.Contains(s.Machine)).Select(s => new Sequence(s)).ToList();
+            if (clipmode == TemplateClipMode.ClipsAndSequences) Sequences = song.Sequences.Where(s => machines.Contains(s.Machine)).Select(s => new Sequence(s)).ToList();
             if (wtmode != TemplateWavetableMode.NoWavetable) Wavetable = song.Wavetable.Waves.Where(w => w != null).Select(w => new Wave(w)).ToList();
             Markers = new Markers(song);
 
@@ -279,7 +279,7 @@ namespace BuzzGUI.Common.Templates
                             p = new Point(m.PositionX + 0.025, m.PositionY + 0.025);
                         }
 
-                        graph.CreateMachine(m.Preset.Machine, "", rename[m.Name], m.Data, m.PatternEditor != null ? m.PatternEditor : "", m.PatternEditorData,
+                        graph.CreateMachine(m.Preset.Machine, "", rename[m.Name], m.Data, m.ClipEditor != null ? m.ClipEditor : "", m.ClipEditorData,
                             m.TrackCount > 0 ? m.TrackCount : -1, (float)p.X, (float)p.Y);
                         var newm = graph.Machines.Last();
                         newm.IsWireless = m.IsWireless;
@@ -331,12 +331,12 @@ namespace BuzzGUI.Common.Templates
 
                     foreach (var m in map)
                     {
-                        if (m.Key.Patterns != null)
+                        if (m.Key.Clips != null)
                         {
-                            foreach (var p in m.Key.Patterns)
+                            foreach (var p in m.Key.Clips)
                             {
-                                m.Value.CreatePattern(p.Name, p.Length);
-                                var pat = m.Value.Patterns.Where(q => q.Name == p.Name).First();
+                                m.Value.CreateClip(p.Name, p.Length);
+                                var pat = m.Value.Clips.Where(q => q.Name == p.Name).First();
 
                                 foreach (var c in p.Columns)
                                 {
@@ -360,7 +360,7 @@ namespace BuzzGUI.Common.Templates
                     {
                         foreach (var s in Sequences)
                         {
-                            if (s.Machine == "Master") continue;    // TODO: paste master patterns and sequences if the song doesn't currently have them
+                            if (s.Machine == "Master") continue;    // TODO: paste master clips and sequences if the song doesn't currently have them
                             if (machineToReplace != null && s.Machine == sourceMachine.Name) continue;
 
                             var m = machinesbyoldname[s.Machine];
@@ -368,8 +368,8 @@ namespace BuzzGUI.Common.Templates
                             var ns = song.Sequences.Last();
                             foreach (var e in s.Events)
                             {
-                                if (e.Type == SequenceEventType.PlayPattern)
-                                    ns.SetEvent(e.Time, new SequenceEvent(e.Type, m.Patterns.First(p => p.Name == e.Pattern)));
+                                if (e.Type == SequenceEventType.PlayClip)
+                                    ns.SetEvent(e.Time, new SequenceEvent(e.Type, m.Clips.First(p => p.Name == e.Clip)));
                                 else
                                     ns.SetEvent(e.Time, new SequenceEvent(e.Type));
                             }
@@ -417,7 +417,7 @@ namespace BuzzGUI.Common.Templates
                         if (remap.Count > 0)
                         {
                             foreach (var m in mlist)
-                                foreach (var p in m.Patterns)
+                                foreach (var p in m.Clips)
                                     p.UpdateWaveReferences(remap);
                         }
                     }

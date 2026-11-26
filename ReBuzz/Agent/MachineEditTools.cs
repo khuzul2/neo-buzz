@@ -1,5 +1,5 @@
 // Agent server (agent-knowledge.md K3b, ux-overhaul.md §9 rows 4, 5, 12 and 14): what the studio's machine menu does that had no tool.
-// machine_clone (Clone and Clone with patterns; Copy and Paste are the same steps), machine_group (the Group menu), machine_latency
+// machine_clone (Clone and Clone with clips; Copy and Paste are the same steps), machine_group (the Group menu), machine_latency
 // (the Latency window), machine_attributes and machine_command (the Attributes and Commands menus).
 //
 // Clone and group call ReBuzz.Core.MachineEditing, which the studio's MachineEdits calls too: one implementation.
@@ -77,15 +77,15 @@ namespace ReBuzz.Agent
                 Name = "machine_clone",
                 Title = "Clone machines",
                 Description =
-                    "Makes a copy of each machine with its settings, a little below and right of it (the machine menu's Clone). with_patterns=true is " +
-                    "Clone with patterns, and what Copy then Paste does: the copy also gets the original's patterns and its rows in the arrangement, and the " +
+                    "Makes a copy of each machine with its settings, a little below and right of it (the machine menu's Clone). with_clips=true is " +
+                    "Clone with clips, and what Copy then Paste does: the copy also gets the original's clips and its rows in the arrangement, and the " +
                     "wires between the machines cloned together are cloned too. A cut is machine_clone then machine_remove. The Master can't be cloned. " +
-                    "One undo step. Example: machine_clone(machines=[\"Lead\", \"Lead Delay\"], with_patterns=true).",
+                    "One undo step. Example: machine_clone(machines=[\"Lead\", \"Lead Delay\"], with_clips=true).",
                 Input = Object(null,
                     Req("machines", Array(String("A machine"), "The machines to clone", 1)),
-                    Opt("with_patterns", Boolean("Also copy patterns, arrangement rows and the wires between the clones (default false)"))),
+                    Opt("with_clips", Boolean("Also copy clips, arrangement rows and the wires between the clones (default false)"))),
                 Output = Object(null, Req("copies", Array(Object(null, Req("name", String("The copy")), Req("from", String("The original"))), "In the order given")),
-                    Req("with_patterns", Boolean("Patterns were copied"))),
+                    Req("with_clips", Boolean("Clips were copied"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -93,16 +93,16 @@ namespace ReBuzz.Agent
                     {
                         var sources = Named(core, c.List("machines"), "cloned");
                         if (sources.Count == 0) throw new ToolError("Name at least one machine.");
-                        bool patterns = c.Bool("with_patterns") == true;
-                        var copies = patterns ? MachineEditing.CloneWithPatterns(core, sources) : MachineEditing.Duplicate(core, sources);
+                        bool clips = c.Bool("with_clips") == true;
+                        var copies = clips ? MachineEditing.CloneWithClips(core, sources) : MachineEditing.Duplicate(core, sources);
                         if (copies.Count == 0) throw new ToolError($"{Product.Name} made no copy: a machine of this kind can't be cloned (machine_add makes a new one).");
                         var pairs = new JsonArray();
                         for (int i = 0; i < copies.Count && i < sources.Count; i++)
                             pairs.Add(new JsonObject { ["name"] = copies[i].Name, ["from"] = sources[i].Name });
-                        return new JsonObject { ["copies"] = pairs, ["with_patterns"] = patterns };
+                        return new JsonObject { ["copies"] = pairs, ["with_clips"] = clips };
                     }, c.Cancellation);
                     return ToolResult.Ok("Cloned " + string.Join(", ", r["copies"]!.AsArray().Select(p => $"{p!["from"]} → {p["name"]}")) +
-                                         (r["with_patterns"]!.GetValue<bool>() ? " (with patterns)." : "."), r);
+                                         (r["with_clips"]!.GetValue<bool>() ? " (with clips)." : "."), r);
                 },
             });
 

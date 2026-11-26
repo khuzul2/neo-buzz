@@ -1,6 +1,6 @@
 // Fork (docs/specs/history-snapshots.md HS2): the Snapshots section of the inspector's History tab. The song's full snapshots
 // (kept in <song>.history): a list with name, time and manual or auto; save, rename, delete; a diff (machines, wires, parameters,
-// patterns, arrangement) of two snapshots or of one against the song now; an A/B toggle between two snapshots; restore.
+// clips, arrangement) of two snapshots or of one against the song now; an A/B toggle between two snapshots; restore.
 // Restore while the song plays is applied live at the next beat or bar (HS3: the "Apply at" choice, default a bar), or waits for the
 // transport to stop when a machine can't be prepared safely while playing; the line under the buttons says which.
 

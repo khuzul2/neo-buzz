@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3a, decisions 31-34): the browser, the main window's panel on the left. A search box over the
-// installed machines that a double-click adds to the song, and the patterns of the selected machine (first: a long list of
+// installed machines that a double-click adds to the song, and the clips of the selected machine (first: a long list of
 // machines is below them) (a click selects one in every view, a double-click opens it in the Tracker). It collapses to a rail, and
 // its open state and width are remembered in the settings.
 // Fork (P3d, decisions 56-57): the machines are the machine browser's: by category (the manifest catalogue's ten), with tags,
@@ -41,7 +41,7 @@ namespace ReBuzz.Studio.Views.Browser
         readonly ReBuzzCore core;
         readonly IRegistryEx registry;
         readonly StudioSelection selection;
-        readonly Action<IPattern> openPattern;
+        readonly Action<IClip> openClip;
         readonly TextBox search;
         readonly ListBox list;
         readonly Border grip;
@@ -69,13 +69,13 @@ namespace ReBuzz.Studio.Views.Browser
 
         bool open, updating, disposed;
         double width;
-        string lastRows, lastPattern;
+        string lastRows, lastClip;
 
-        public BrowserPanel(ReBuzzCore core, IRegistryEx registry, Action<IPattern> openPattern)
+        public BrowserPanel(ReBuzzCore core, IRegistryEx registry, Action<IClip> openClip)
         {
             this.core = core;
             this.registry = registry;
-            this.openPattern = openPattern;
+            this.openClip = openClip;
             selection = StudioSelection.For(core);
             model = MachineBrowserModel.For(core, registry);
             open = Read(OpenKey, false);
@@ -258,10 +258,10 @@ namespace ReBuzz.Studio.Views.Browser
         /// <summary>Tree (grouped, a header folds) or list (flat).</summary>
         internal bool TreeMode => treeMode;
 
-        /// <summary>The item behind a row's tag, for the rows that are not machines or patterns of the selection.</summary>
+        /// <summary>The item behind a row's tag, for the rows that are not machines or clips of the selection.</summary>
         internal BrowserItem ItemOf(string tag) => itemsByTag.TryGetValue(tag, out var i) ? i : null;
 
-        /// <summary>The list as "kind: text" rows: headers are "#Instruments", machines "gear:Name", patterns "pattern:Name".</summary>
+        /// <summary>The list as "kind: text" rows: headers are "#Instruments", machines "gear:Name", clips "clip:Name".</summary>
         internal IReadOnlyList<string> Rows => list.Items.OfType<ListBoxItem>().Select(i => i.Tag as string).ToList();
 
         public void Open() => SetOpen(true);
@@ -458,25 +458,25 @@ namespace ReBuzz.Studio.Views.Browser
             if (!open || disposed) return;
             string query = (search.Text ?? "").Trim();
             var machine = selection.Machine;
-            var pattern = selection.Pattern;
+            var clip = selection.Clip;
             bool allView = source == BrowserSource.All || query.Length > 0;
 
-            // The rows: (tag, text, kind of row). Machines and patterns of the selection are as they were; the other kinds are BrowserItems.
+            // The rows: (tag, text, kind of row). Machines and clips of the selection are as they were; the other kinds are BrowserItems.
             var rows = new List<MachineBrowserModel.Row>();
-            var objects = new Dictionary<string, IPattern>();
+            var objects = new Dictionary<string, IClip>();
             var others = new List<BrowserRow>();
             itemsByTag.Clear();
             if (allView)
             {
-                var patterns = machine == null ? new List<IPattern>() : machine.Patterns.Where(p => Matches(p.Name, query) || Matches(machine.Name, query)).ToList();
+                var clips = machine == null ? new List<IClip>() : machine.Clips.Where(p => Matches(p.Name, query) || Matches(machine.Name, query)).ToList();
                 if (machine != null)
                 {
-                    rows.Add(new MachineBrowserModel.Row("#Patterns of " + machine.Name, "Patterns of " + machine.Name, null, true));
-                    if (patterns.Count == 0 && query.Length == 0) rows.Add(new MachineBrowserModel.Row("none:", "No patterns yet: make one in the Tracker", null, true));
-                    foreach (var p in patterns)
+                    rows.Add(new MachineBrowserModel.Row("#Clips of " + machine.Name, "Clips of " + machine.Name, null, true));
+                    if (clips.Count == 0 && query.Length == 0) rows.Add(new MachineBrowserModel.Row("none:", "No clips yet: make one in the Tracker", null, true));
+                    foreach (var p in clips)
                     {
-                        rows.Add(new MachineBrowserModel.Row("pattern:" + p.Name, $"{p.Name}   {p.Length}", null, false));
-                        objects["pattern:" + p.Name] = p;
+                        rows.Add(new MachineBrowserModel.Row("clip:" + p.Name, $"{p.Name}   {p.Length}", null, false));
+                        objects["clip:" + p.Name] = p;
                     }
                 }
                 rows.AddRange(model.Rows(query, source == BrowserSource.All ? filter.Category : null, source == BrowserSource.All && filter.FavouritesOnly));
@@ -486,7 +486,7 @@ namespace ReBuzz.Studio.Views.Browser
                     var found = model.SearchAll(query).Where(i => i.Machine == null || i.Kind == BrowserKind.Preset).ToList();
                     foreach (var group in found.GroupBy(i => i.Kind))
                     {
-                        string title = group.Key switch { BrowserKind.Preset => "Presets", BrowserKind.Pattern => "Clips", BrowserKind.Midi => "MIDI files", _ => "Samples" };
+                        string title = group.Key switch { BrowserKind.Preset => "Presets", BrowserKind.Clip => "Clips", BrowserKind.Midi => "MIDI files", _ => "Samples" };
                         others.Add(new BrowserRow("#" + title, title, null, true));
                         foreach (var i in group.Take(MachineBrowserModel.MaxRows)) others.Add(new BrowserRow(i.Tag, i.Name, i, false));
                     }
@@ -517,13 +517,13 @@ namespace ReBuzz.Studio.Views.Browser
 
             foreach (var r in others) if (r.Item != null) itemsByTag[r.Tag] = r.Item;
             string tags = string.Join("\n", rows.Select(r => r.Tag).Concat(others.Select(r => r.Tag)));
-            string shownPattern = pattern?.Name ?? "";
+            string shownClip = clip?.Name ?? "";
             string stamp = source + "|" + treeMode + "|" + string.Join(",", folded) + "\n" + tags + "\n" + string.Join(",", model.Favourites) + "|" + string.Join(",", model.Collections.All()) + "|" + string.Join(",", model.Collections.All().Select(model.Collections.Colour));
-            if (stamp == lastStamp && shownPattern == lastPattern && !force) return;
+            if (stamp == lastStamp && shownClip == lastClip && !force) return;
             bool sameRows = stamp == lastStamp;
             lastRows = tags;
             lastStamp = stamp;
-            lastPattern = shownPattern;
+            lastClip = shownClip;
             updating = true;
             try
             {
@@ -531,7 +531,7 @@ namespace ReBuzz.Studio.Views.Browser
                 {
                     var built = new List<ListBoxItem>();
                     foreach (var r in rows)
-                        built.Add(r.Entry != null || r.Header ? BrowserRows.Item(r, model, detail: query.Length > 0) : PatternRow(r, objects[r.Tag]));
+                        built.Add(r.Entry != null || r.Header ? BrowserRows.Item(r, model, detail: query.Length > 0) : ClipRow(r, objects[r.Tag]));
                     foreach (var r in others)
                     {
                         if (r.Item == null)
@@ -548,9 +548,9 @@ namespace ReBuzz.Studio.Views.Browser
                     }
                     list.ItemsSource = built;
                 }
-                var current = pattern == null ? null : list.Items.OfType<ListBoxItem>().FirstOrDefault(i => i.Tag as string == "pattern:" + pattern.Name);
+                var current = clip == null ? null : list.Items.OfType<ListBoxItem>().FirstOrDefault(i => i.Tag as string == "clip:" + clip.Name);
                 if (current != null) list.SelectedItem = current;
-                else if (list.SelectedItem is ListBoxItem { Tag: string t } && t.StartsWith("pattern:")) list.SelectedItem = null;
+                else if (list.SelectedItem is ListBoxItem { Tag: string t } && t.StartsWith("clip:")) list.SelectedItem = null;
             }
             finally
             {
@@ -563,7 +563,7 @@ namespace ReBuzz.Studio.Views.Browser
             BrowserSource.Favourites => "No favourites yet: star an item",
             var s when s.StartsWith("col:") => "Nothing has this tag yet: right-click an item",
             "cat:presets" => "No factory presets found for the installed machines",
-            "cat:clips" => "The song has no patterns yet",
+            "cat:clips" => "The song has no clips yet",
             "cat:samples" => "No samples: add a folder with + under Sources",
             "cat:plugins" => "No plug-ins found: Preferences > Plug-ins shows the folders scanned",
             "song:audio" => "The song has no audio in its waves",
@@ -572,7 +572,7 @@ namespace ReBuzz.Studio.Views.Browser
             _ => "Nothing here",
         };
 
-        static ListBoxItem PatternRow(MachineBrowserModel.Row r, IPattern p)
+        static ListBoxItem ClipRow(MachineBrowserModel.Row r, IClip p)
         {
             var item = new ListBoxItem
             {
@@ -583,14 +583,14 @@ namespace ReBuzz.Studio.Views.Browser
                 Padding = new Thickness(20, 2, 8, 2),
             };
             AutomationProperties.SetName(item, r.Text);
-            BrowserDragSource.Attach(item, () => new BrowserDragData(BrowserKind.Pattern, p.Machine.Name + "/" + p.Name, null, p.Name));
+            BrowserDragSource.Attach(item, () => new BrowserDragData(BrowserKind.Clip, p.Machine.Name + "/" + p.Name, null, p.Name));
             return item;
         }
 
         void OnListSelected(object sender, SelectionChangedEventArgs e)
         {
             if (updating) return;
-            if (list.SelectedItem is ListBoxItem { DataContext: IPattern p })
+            if (list.SelectedItem is ListBoxItem { DataContext: IClip p })
             {
                 selection.Set(p.Machine, p, this);
                 return;
@@ -608,7 +608,7 @@ namespace ReBuzz.Studio.Views.Browser
             _ => null,
         };
 
-        /// <summary>A double-click or Enter: a machine is added to the song (or, in swap mode, put in the machine's place), a pattern opens in the Tracker, a sample plays, a preset loads.</summary>
+        /// <summary>A double-click or Enter: a machine is added to the song (or, in swap mode, put in the machine's place), a clip opens in the Tracker, a sample plays, a preset loads.</summary>
         internal void Activate()
         {
             if (list.SelectedItem is not ListBoxItem item) return;
@@ -627,9 +627,9 @@ namespace ReBuzz.Studio.Views.Browser
                     var added = model.Add(entry, 0, 0);
                     if (added != null) selection.Set(added, null, this);
                     break;
-                case IPattern p:
+                case IClip p:
                     selection.Set(p.Machine, p, this);
-                    openPattern(p);
+                    openClip(p);
                     break;
                 default:
                     if (picked == null) break;

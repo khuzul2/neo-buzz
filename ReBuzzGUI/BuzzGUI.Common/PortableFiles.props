@@ -12,9 +12,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Actions\EventRef.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\AddSequenceAction.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\CreatePatternAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\CreateClipAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\SetTrackCountAction.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Actions\PatternNames.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\ClipNames.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\Restorations.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\SequenceAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\SequenceActions\ClearAction.cs" />

@@ -5,7 +5,7 @@
 //
 // Headless ReBuzz has no audio output, so the playing tools answer there with the way to hear the
 // song instead (render). These calls change what plays, not the song, so they are not undo steps;
-// the takes recorded go on the Session View's own undo history (or pattern_delete removes one).
+// the takes recorded go on the Session View's own undo history (or clip_delete removes one).
 
 using System;
 using System.Collections.Generic;
@@ -201,15 +201,15 @@ namespace ReBuzz.Agent
                 Name = "session_launch",
                 Title = "Launch session clips",
                 Description =
-                    "Launches the Session View live, in time: a whole scene (scene), one slot (machine + scene), or any of a machine's patterns on " +
-                    "its track (machine + pattern). Launches wait for the clip's quantization (session_clip_set) or the session's (default the next " +
+                    "Launches the Session View live, in time: a whole scene (scene), one slot (machine + scene), or any of a machine's clips on " +
+                    "its track (machine + clip). Launches wait for the clip's quantization (session_clip_set) or the session's (default the next " +
                     "bar). stop=true stops a track (machine) or everything, at the quantization or immediate=true now; back_to_arrangement=true " +
                     "hands every track back to the arrangement. Launching starts the transport if it is stopped. Returns what plays and waits. " +
                     "Studio mode only. Not an undo step. Example: session_launch(scene=2).",
                 Input = Object(null,
                     Opt("scene", Integer("Scene, from 1: the whole row, or with machine its slot", 1, 999)),
                     Opt("machine", String("A track's machine")),
-                    Opt("pattern", String("With machine: launch this pattern on its track (in the grid or not)")),
+                    Opt("clip", String("With machine: launch this clip on its track (in the grid or not)")),
                     Opt("stop", Boolean("Stop the machine's track, or every track")),
                     Opt("immediate", Boolean("With stop: now, not at the quantization")),
                     Opt("back_to_arrangement", Boolean("Every track follows the arrangement again"))),
@@ -217,19 +217,19 @@ namespace ReBuzz.Agent
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
-                    RequireStudio(host, "session_launch", "put the patterns in the arrangement (arrangement_place) and render the range.");
+                    RequireStudio(host, "session_launch", "put the clips in the arrangement (arrangement_place) and render the range.");
                     var s = await host.Engine("session_launch", false, _ =>
                     {
                         var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         var session = core.SessionCore;
                         int? scene = c.Int("scene") is int sc ? sc - 1 : null;
-                        string machineName = c.String("machine"), patternName = c.String("pattern");
+                        string machineName = c.String("machine"), clipName = c.String("clip");
                         MachineCore m = machineName != null ? SongModel.Machine(core, machineName) : null;
                         int track = -1;
                         if (m != null)
                         {
                             track = TrackOf(layout, m);
-                            if (track < 0) throw new ToolError($"{m.Name} has no session track; session_clip_set(machine=\"{m.Name}\", scene=…, pattern=…) gives it one.");
+                            if (track < 0) throw new ToolError($"{m.Name} has no session track; session_clip_set(machine=\"{m.Name}\", scene=…, clip=…) gives it one.");
                         }
                         if (c.Bool("back_to_arrangement") == true)
                         {
@@ -245,21 +245,21 @@ namespace ReBuzz.Agent
                         }
                         if (m == null)
                         {
-                            if (scene == null) throw new ToolError("Say what to launch: scene=N for a scene, machine + scene for a slot, machine + pattern for a pattern, or stop=true.");
+                            if (scene == null) throw new ToolError("Say what to launch: scene=N for a scene, machine + scene for a slot, machine + clip for a clip, or stop=true.");
                             if (scene >= layout.SceneCount) throw new ToolError($"There are {layout.SceneCount} scenes; session_get shows them.");
                             layout.LaunchScene(scene.Value);
                             return LiveState(core);
                         }
                         var seq = layout.SequenceOf(track);
-                        IPattern pattern;
-                        if (patternName != null) pattern = SongModel.Pattern(m, patternName);
+                        IClip clip;
+                        if (clipName != null) clip = SongModel.Clip(m, clipName);
                         else if (scene != null)
                         {
                             if (scene >= layout.SceneCount) throw new ToolError($"There are {layout.SceneCount} scenes; session_get shows them.");
-                            pattern = layout.PatternAt(track, scene.Value) ?? throw new ToolError($"{m.Name}'s slot in scene {scene + 1} is empty; session_get shows the grid.");
+                            clip = layout.ClipAt(track, scene.Value) ?? throw new ToolError($"{m.Name}'s slot in scene {scene + 1} is empty; session_get shows the grid.");
                         }
-                        else throw new ToolError("With machine, say scene (its slot) or pattern.");
-                        layout.LaunchClip(seq, pattern, 127, scene ?? -1);
+                        else throw new ToolError("With machine, say scene (its slot) or clip.");
+                        layout.LaunchClip(seq, clip, 127, scene ?? -1);
                         return LiveState(core);
                     }, c.Cancellation);
                     return ToolResult.Ok(StateLine(s), s);
@@ -291,7 +291,7 @@ namespace ReBuzz.Agent
                     Opt("take", String("The take started or stopped")),
                     Opt("scene", Integer("start: the scene its slot is in")),
                     Opt("notes", Integer("Notes recorded in it so far")),
-                    Opt("clips", Array(Object(null, Req("machine", String("Machine")), Req("pattern", String("Clip"))), "capture: the clips made")),
+                    Opt("clips", Array(Object(null, Req("machine", String("Machine")), Req("clip", String("Clip"))), "capture: the clips made")),
                     Req("state", StateSchema())),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
@@ -336,15 +336,15 @@ namespace ReBuzz.Agent
                                     host.ArmedByAgent.Add(m.Name);
                                 }
                                 int s = (c.Int("scene") ?? 1) - 1;
-                                while (s < layout.SceneCount && layout.PatternAt(t, s) != null) s++;
+                                while (s < layout.SceneCount && layout.ClipAt(t, s) != null) s++;
                                 while (layout.SceneCount <= s) layout.InsertScene(layout.SceneCount);
                                 var doc = layout.Document;
                                 int bars = doc.RecordBars;
                                 if (c.Int("bars") is int b) layout.SetRecordBars(b);
-                                IPattern take;
+                                IClip take;
                                 try { take = layout.RecordTake(t, s); }
                                 finally { if (c.Int("bars") != null) layout.SetRecordBars(bars); }
-                                if (take == null) throw new ToolError($"{m.Name} couldn't start a take (its slot in scene {s + 1} isn't free, or the machine has no free pattern name).");
+                                if (take == null) throw new ToolError($"{m.Name} couldn't start a take (its slot in scene {s + 1} isn't free, or the machine has no free clip name).");
                                 result["take"] = take.Name;
                                 result["scene"] = s + 1;
                                 break;
@@ -369,12 +369,12 @@ namespace ReBuzz.Agent
                                 if (made.Count == 0)
                                     throw new ToolError("Nothing to capture: armed tracks keep what they're played while the transport runs. " +
                                                         "session_record(action=\"arm\", machine=…) first, then the user plays.");
-                                result["clips"] = new JsonArray(made.Select(p => (JsonNode)new JsonObject { ["machine"] = p.Machine.Name, ["pattern"] = p.Name }).ToArray());
+                                result["clips"] = new JsonArray(made.Select(p => (JsonNode)new JsonObject { ["machine"] = p.Machine.Name, ["clip"] = p.Name }).ToArray());
                                 break;
                             }
                             case "status":
                                 foreach (var t in Enumerable.Range(0, layout.TrackCount))
-                                    if (m != null && layout.SequenceOf(t)?.Machine == m && FindTake(layout, t) is IPattern p)
+                                    if (m != null && layout.SequenceOf(t)?.Machine == m && FindTake(layout, t) is IClip p)
                                     {
                                         result["take"] = p.Name;
                                         result["notes"] = layout.RecordedNoteCount(p);
@@ -390,7 +390,7 @@ namespace ReBuzz.Agent
                     {
                         "start" => $"Take {r["take"]} started in scene {r["scene"]}. ",
                         "stop" when r["take"] != null => $"Take {r["take"]} ended with {r["notes"]} notes. ",
-                        "capture" => "Captured: " + string.Join(", ", r["clips"]!.AsArray().Select(x => $"{x!["pattern"]} on {x["machine"]}")) + ". ",
+                        "capture" => "Captured: " + string.Join(", ", r["clips"]!.AsArray().Select(x => $"{x!["clip"]} on {x["machine"]}")) + ". ",
                         _ => "",
                     };
                     return ToolResult.Ok(line + StateLine(r["state"]!.AsObject()), r);
@@ -548,11 +548,11 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>The take a track records into now, if any.</summary>
-        static IPattern FindTake(SessionLayout layout, int track)
+        static IClip FindTake(SessionLayout layout, int track)
         {
             var seq = layout.SequenceOf(track);
             for (int s = 0; s < layout.SceneCount; s++)
-                if (layout.PatternAt(track, s) is IPattern p && layout.IsRecordingInto(seq, p)) return p;
+                if (layout.ClipAt(track, s) is IClip p && layout.IsRecordingInto(seq, p)) return p;
             return null;
         }
 

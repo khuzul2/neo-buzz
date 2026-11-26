@@ -32,7 +32,7 @@ namespace ReBuzz.Core.Session
     internal sealed class ConvertOutcome
     {
         public IMachine Machine { get; init; }
-        public IPattern Pattern { get; init; }
+        public IClip Clip { get; init; }
         public string Instrument { get; init; } = "";
         public int Notes { get; init; }
         public int Bends { get; init; }
@@ -46,7 +46,7 @@ namespace ReBuzz.Core.Session
         public static string InstrumentFor(ConvertMode mode) => mode == ConvertMode.Drums ? "Neo Drums" : "Neo Poly";
 
         /// <summary>The source of a conversion: an audio clip of the song; null and a reason when it isn't one.</summary>
-        public StemSource ConvertSourceOfClip(IPattern clip, out string error) => StemSourceOfClip(clip, out error);
+        public StemSource ConvertSourceOfClip(IClip clip, out string error) => StemSourceOfClip(clip, out error);
 
         /// <summary>Why a conversion of this mode can't be put in the song (the instrument isn't installed), or null.</summary>
         public string ConvertBlocker(ConvertMode mode)
@@ -96,11 +96,11 @@ namespace ReBuzz.Core.Session
             }
             error = ConvertBlocker(result.Mode);
             if (error != null) return null;
-            var clip = source.Clip;
-            var audio = AudioOf(clip);
+            var sourceClip = source.Clip;
+            var audio = AudioOf(sourceClip);
             if (audio == null)
             {
-                error = $"\"{clip.Name}\" isn't an audio clip any more.";
+                error = $"\"{sourceClip.Name}\" isn't an audio clip any more.";
                 return null;
             }
 
@@ -114,7 +114,7 @@ namespace ReBuzz.Core.Session
                 if (audio.Reverse) sample = asset.Source.Length - sample;
                 return map.BeatAt(Math.Clamp(sample, 0, asset.Source.Length));
             }
-            int clipTime = clip.Length * ClipNotes.TimeBase;
+            int clipTime = sourceClip.Length * ClipNotes.TimeBase;
             int shift = result.Mode == ConvertMode.Drums ? 0 : audio.Transpose + (int)Math.Round(audio.Detune / 100.0);
             var notes = new List<ClipNote>();
             var controllers = new List<ControllerPoint>();
@@ -147,7 +147,7 @@ namespace ReBuzz.Core.Session
             }
 
             // Where the source is: its Session scene and its arrangement positions.
-            SourcePlace(clip, out int sourceScene, out var sourceEvents, out var sourceSettings);
+            SourcePlace(sourceClip, out int sourceScene, out var sourceEvents, out var sourceSettings);
 
             UndoStack.BeginActionGroup();
             try
@@ -158,11 +158,11 @@ namespace ReBuzz.Core.Session
                     ?? throw new InvalidOperationException("Couldn't make the MIDI track.");
                 int track = FirstTrackOf(machine);
                 if (track < 0) throw new InvalidOperationException("Couldn't make the MIDI track.");
-                var added = notes.Select(ToEvent).Concat(controllers.Select(c => { var (t, v, d) = c.ToEvent(); return new PatternEvent(t, v, d); })).ToArray();
-                var (pattern, ticks) = PutMidiClip(clip, machine, track, name, added, sourceScene, sourceEvents, sourceSettings);
+                var added = notes.Select(ToEvent).Concat(controllers.Select(c => { var (t, v, d) = c.ToEvent(); return new ClipEvent(t, v, d); })).ToArray();
+                var (clip, ticks) = PutMidiClip(sourceClip, machine, track, name, added, sourceScene, sourceEvents, sourceSettings);
                 var outcome = new ConvertOutcome
                 {
-                    Machine = machine, Pattern = pattern, Instrument = InstrumentFor(result.Mode), Notes = notes.Count,
+                    Machine = machine, Clip = clip, Instrument = InstrumentFor(result.Mode), Notes = notes.Count,
                     Bends = controllers.Count(c => c.Value != ControllerPoint.BendCentre), Scene = sourceScene,
                 };
                 outcome.Ticks.AddRange(ticks);
@@ -180,16 +180,16 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Where an audio clip is: its Session scene (-1 for none), the arrangement positions it plays at, and its settings (a copy).</summary>
-        internal void SourcePlace(IPattern clip, out int scene, out List<int> events, out SessionDocument.ClipSettings settings)
+        internal void SourcePlace(IClip clip, out int scene, out List<int> events, out SessionDocument.ClipSettings settings)
         {
             scene = -1;
             for (int t = 0; t < TrackCount && scene < 0; t++)
                 for (int s = 0; s < SceneCount; s++)
-                    if (ReferenceEquals(PatternAt(t, s), clip)) { scene = s; break; }
+                    if (ReferenceEquals(ClipAt(t, s), clip)) { scene = s; break; }
             events = new List<int>();
             foreach (var seq in song.Sequences.Where(q => q.Machine == clip.Machine))
                 foreach (var e in seq.Events)
-                    if (e.Value.Type == SequenceEventType.PlayPattern && ReferenceEquals(e.Value.Pattern, clip))
+                    if (e.Value.Type == SequenceEventType.PlayClip && ReferenceEquals(e.Value.Clip, clip))
                         events.Add(e.Key);
             settings = ClipOf(clip).Clone();
         }
@@ -198,33 +198,33 @@ namespace ReBuzz.Core.Session
         /// A MIDI clip of <paramref name="added"/> where the audio clip <paramref name="clip"/> is: the same length, Session scene, arrangement positions,
         /// region, loop and colour, on <paramref name="machine"/> (its Session track is <paramref name="track"/>). Part of the caller's undo group.
         /// </summary>
-        internal (IPattern Pattern, List<int> Ticks) PutMidiClip(IPattern clip, IMachine machine, int track, string name, PatternEvent[] added,
+        internal (IClip Clip, List<int> Ticks) PutMidiClip(IClip sourceClip, IMachine machine, int track, string name, ClipEvent[] added,
                                                                  int sourceScene, List<int> sourceEvents, SessionDocument.ClipSettings sourceSettings)
         {
-            string patternName = machine.GetNewPatternName() ?? name;
-            var create = new SessionCreatePatternAction(this, machine, patternName, clip.Length, midiColumn: true);
+            string clipName = machine.GetNewClipName() ?? name;
+            var create = new SessionCreateClipAction(this, machine, clipName, sourceClip.Length, midiColumn: true);
             UndoStack.Do(create);
-            var pattern = create.Created ?? throw new InvalidOperationException("Couldn't make a clip.");
+            var clip = create.Created ?? throw new InvalidOperationException("Couldn't make a clip.");
             var settings = sourceSettings.Clone();
             settings.Audio = null;
             if (sourceScene >= 0)
             {
                 while (SceneCount <= sourceScene) InsertScene(SceneCount);
-                Edit(doc => doc.SetSlot(track, sourceScene, pattern.Name));
+                Edit(doc => doc.SetSlot(track, sourceScene, clip.Name));
             }
-            SetClipSettings(pattern, settings);
-            int color = PatternColors.Get(clip);
-            if (color >= 0) SetClipColor(pattern, color);
-            if (added.Length > 0) UndoStack.Do(new ClipEventsReplaceAction(this, pattern, ColumnKey.Midi, Array.Empty<PatternEvent>(), added));
+            SetClipSettings(clip, settings);
+            int color = ClipColors.Get(sourceClip);
+            if (color >= 0) SetClipColor(clip, color);
+            if (added.Length > 0) UndoStack.Do(new ClipEventsReplaceAction(this, clip, ColumnKey.Midi, Array.Empty<ClipEvent>(), added));
             var ticks = new List<int>();
             var sequence = song.Sequences.FirstOrDefault(q => q.Machine == machine);
             if (sequence != null)
                 foreach (int time in sourceEvents)
                 {
-                    UndoStack.Do(new SetEventAction(sequence, time, new SequenceEvent(SequenceEventType.PlayPattern, pattern)));
+                    UndoStack.Do(new SetEventAction(sequence, time, new SequenceEvent(SequenceEventType.PlayClip, clip)));
                     ticks.Add(time);
                 }
-            return (pattern, ticks);
+            return (clip, ticks);
         }
 
         /// <summary>A new instrument track: <paramref name="dllName"/> connected to the master, with a track at the end. Part of the caller's undo group.</summary>
@@ -246,7 +246,7 @@ namespace ReBuzz.Core.Session
             song.BeginActionGroup();
             try
             {
-                string editor = buzz.DefaultPatternEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultPatternEditor) ? buzz.DefaultPatternEditor : null;
+                string editor = buzz.DefaultClipEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultClipEditor) ? buzz.DefaultClipEditor : null;
                 song.CreateMachine(dll.Name, null, machineName, null, editor, null, -1, x, y);
                 machine = song.Machines.LastOrDefault(m => m.Name == machineName);
                 if (machine == null) return null;

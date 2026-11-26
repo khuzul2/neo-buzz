@@ -77,10 +77,10 @@ namespace ReBuzz.AppViews
         internal void StartReBuzzEngineStep4(
             IMachineDatabase machineDb,
             Action<string> machineDbDatabaseEvent,
-            Action onPatternEditorActivated,
+            Action onClipEditorActivated,
             Action onSequenceEditorActivated,
             Action<string> onShowSettings,
-            Action<object> onSetPatternEditorControl,
+            Action<object> onSetClipEditorControl,
             Action<bool> onFullScreenChanged,
             Action<string> onThemeChanged)
         {
@@ -94,10 +94,10 @@ namespace ReBuzz.AppViews
             // Init stuff before loading anything else
             buzz.LoadThemeColours();
 
-            buzz.PatternEditorActivated += onPatternEditorActivated;
+            buzz.ClipEditorActivated += onClipEditorActivated;
             buzz.SequenceEditorActivated += onSequenceEditorActivated;
             buzz.ShowSettings += onShowSettings;
-            buzz.SetPatternEditorControl += onSetPatternEditorControl;
+            buzz.SetClipEditorControl += onSetClipEditorControl;
             buzz.FullScreenChanged += onFullScreenChanged;
             buzz.ThemeChanged += onThemeChanged;
         }

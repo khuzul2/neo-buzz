@@ -1,6 +1,6 @@
 // Fork (docs/specs/history-snapshots.md HS1): the song's one undo history. The stack itself (steps, names, sources,
 // coalescing, the memory cap, shared blobs, jumping), then on the shared engine: the Session View's edits and the other
-// views' edits in one order, tempo and loop, MIDI controller moves, pattern renames and machine state (a Dye Essence
+// views' edits in one order, tempo and loop, MIDI controller moves, clip renames and machine state (a Dye Essence
 // wavetable) as steps.
 
 using System;
@@ -474,19 +474,19 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void APatternRenameFromAnEditorIsAStepAndAnUndoIsNotRecordedAgain()
+        public void AClipRenameFromAnEditorIsAStepAndAnUndoIsNotRecordedAgain()
         {
             using var rig = new SessionRig("Lead");
             var song = rig.Core.SongCore;
             var stack = song.ActionStack;
             var lead = rig.Machine("Lead");
-            var riff = rig.Pattern(lead, "Riff", 8);
+            var riff = rig.Clip(lead, "Riff", 8);
             stack.Clear();
 
-            lead.RenamePattern(riff, "Hook");
+            lead.RenameClip(riff, "Hook");
             Assert.That(riff.Name, Is.EqualTo("Hook"));
-            Assert.That(stack.Steps.Select(s => s.Name), Is.EqualTo(new[] { "Rename pattern" }));
-            lead.RenamePattern(riff, "Hook");                          // the same name: taken, nothing happens
+            Assert.That(stack.Steps.Select(s => s.Name), Is.EqualTo(new[] { "Rename clip" }));
+            lead.RenameClip(riff, "Hook");                          // the same name: taken, nothing happens
             Assert.That(stack.Steps.Count, Is.EqualTo(1));
 
             song.Undo();

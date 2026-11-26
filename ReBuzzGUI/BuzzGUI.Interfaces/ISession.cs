@@ -5,7 +5,7 @@ namespace BuzzGUI.Interfaces
     // Session View engine (fork addition). See docs/specs/session-view.md.
     //
     // A track is a sequence (ISequence), a clip is one of that sequence's machine's
-    // patterns (IPattern). Each track plays at most one clip. Launches and stops are
+    // clips (IClip). Each track plays at most one clip. Launches and stops are
     // quantized to a session clock that starts at 0 when the transport starts and,
     // unlike the song position, never wraps at the loop end.
 
@@ -122,10 +122,10 @@ namespace BuzzGUI.Interfaces
         /// Starts the transport if it is stopped; the clip then starts on the first tick.
         /// The track's arrangement is ignored from then on (see <see cref="IsArrangementOverridden"/>).
         /// </summary>
-        void Launch(ISequence track, IPattern clip, LaunchOptions? options = null);
+        void Launch(ISequence track, IClip clip, LaunchOptions? options = null);
 
         /// <summary>Launches several clips so they all start on the same tick.</summary>
-        void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip)> slots, LaunchOptions? options = null);
+        void LaunchScene(IEnumerable<(ISequence Track, IClip Clip)> slots, LaunchOptions? options = null);
         /// <summary>
         /// Launches clips together (0.5), each with its own options (shape, legato, gain; their
         /// mode and quantization don't apply), all on the same tick. With <paramref name="scene"/>
@@ -133,13 +133,13 @@ namespace BuzzGUI.Interfaces
         /// with no clips still changes them), and it replaces a scene still waiting to start.
         /// Null: clips launched together without scene settings (a group slot).
         /// </summary>
-        void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip, LaunchOptions? Options)> slots, SceneOptions? scene);
+        void LaunchScene(IEnumerable<(ISequence Track, IClip Clip, LaunchOptions? Options)> slots, SceneOptions? scene);
         /// <summary>
         /// Release of a clip's launch control (0.5): Gate stops the clip on the next quantization
         /// point (released before it started: one quantization step after it starts), Repeat stops
         /// repeating and lets the clip play on; other modes ignore it.
         /// </summary>
-        void Release(ISequence track, IPattern clip, LaunchOptions? options = null);
+        void Release(ISequence track, IClip clip, LaunchOptions? options = null);
 
         /// <summary>Stops a track at the next quantization point, or on the next tick if immediate.
         /// Cancels a queued launch if nothing plays.</summary>
@@ -149,12 +149,12 @@ namespace BuzzGUI.Interfaces
         void StopAll(bool immediate = false);
 
         /// <summary>Clip playing on the track, or null.</summary>
-        IPattern? GetPlaying(ISequence track);
+        IClip? GetPlaying(ISequence track);
 
         /// <summary>Clip waiting to launch on the track, or null.</summary>
-        IPattern? GetQueued(ISequence track);
+        IClip? GetQueued(ISequence track);
 
-        ClipState GetState(ISequence track, IPattern clip);
+        ClipState GetState(ISequence track, IClip clip);
 
         /// <summary>Clock value at which the playing clip started, or -1.</summary>
         long GetClipStartClock(ISequence track);

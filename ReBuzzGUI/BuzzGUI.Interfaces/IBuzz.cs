@@ -11,7 +11,7 @@ namespace BuzzGUI.Interfaces
     public enum DCLogLevel { Verbose, Debug, Information, Warning, Error, Fatal }
 
     // Fork addition: SessionView, the docked Session View (docs/specs/session-view.md 0.3). Appended.
-    public enum BuzzView { PatternView, MachineView, SequenceView, WaveTableView, SongInfoView, SessionView };
+    public enum BuzzView { ClipView, MachineView, SequenceView, WaveTableView, SongInfoView, SessionView };
     public enum BuzzCommand { NewFile, OpenFile, SaveFile, SaveFileAs, Cut, Copy, Paste, Undo, Redo, Stop, Exit, About, Preferences, DebugConsole,
         // Fork additions (docs/specs/session-view.md), appended so existing values keep their numbers:
         // SessionView switches the main window between the Session and Sequence views,
@@ -76,10 +76,10 @@ namespace BuzzGUI.Interfaces
         void DCWriteLine(string s);
         void DCWriteLine(string s, DCLogLevel level);
 
-        void ActivatePatternEditor();
+        void ActivateClipEditor();
         void ActivateSequenceEditor();
-        void SetPatternEditorMachine(IMachine m);
-        void SetPatternEditorPattern(IPattern p);
+        void SetClipEditorMachine(IMachine m);
+        void SetClipEditorClip(IClip p);
         void NewSequenceEditorActivated();
 
         void SendMIDIInput(int data);
@@ -100,7 +100,7 @@ namespace BuzzGUI.Interfaces
         event Action<IOpenSong> OpenSong;
         event Action<ISaveSong> SaveSong;
         event Action<int> MIDIInput;
-        event Action PatternEditorActivated;
+        event Action ClipEditorActivated;
 
         // Fired on the audio work path, NOT the GUI thread. The samples array
         // may be a reused buffer that is recycled as soon as the handler

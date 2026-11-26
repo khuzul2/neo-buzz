@@ -43,18 +43,18 @@ namespace ReBuzz.AgentEval
             Recipes.Add(s, "Neo Verb", "Space", 0, insertAfter: "Pad");
             Recipes.Set(s, "Space", ("Mix", "100%"), ("Width", "150%"), ("Decay", "2.5 s"));
 
-            Recipes.Pattern(s, "Kick", "Beat", 16, Recipes.Every("A1", 16, 1, length: 0.5, velocity: 120));
+            Recipes.Clip(s, "Kick", "Beat", 16, Recipes.Every("A1", 16, 1, length: 0.5, velocity: 120));
             var bass = new List<JsonObject>();
             string[] roots = { "A2", "A2", "F2", "G2" };
             for (int bar = 0; bar < 4; bar++) bass.Add(J.Note(roots[bar], bar * 4, 3.75, 105));
-            Recipes.Pattern(s, "Bass", "Roots", 16, bass);
+            Recipes.Clip(s, "Bass", "Roots", 16, bass);
             string[] lead = { "A4", "C5", "E5", "D5", "C5", "A4", "G4", "A4" };
-            Recipes.Pattern(s, "Lead", "Line", 16, lead.Select((p, i) => J.Note(p, i * 2, 1.5, 100)));
-            Recipes.Pattern(s, "Hats", "Sixteenths", 16, Recipes.Every("C6", 16, 0.25, length: 0.1, velocity: 100));
+            Recipes.Clip(s, "Lead", "Line", 16, lead.Select((p, i) => J.Note(p, i * 2, 1.5, 100)));
+            Recipes.Clip(s, "Hats", "Sixteenths", 16, Recipes.Every("C6", 16, 0.25, length: 0.1, velocity: 100));
             var pad = new List<JsonObject>();
             string[][] chords = { new[] { "A3", "C4", "E4" }, new[] { "A3", "C4", "E4" }, new[] { "F3", "A3", "C4" }, new[] { "G3", "B3", "D4" } };
             for (int bar = 0; bar < 4; bar++) pad.AddRange(chords[bar].Select(p => J.Note(p, bar * 4, 4, 90)));
-            Recipes.Pattern(s, "Pad", "Chords", 16, pad);
+            Recipes.Clip(s, "Pad", "Chords", 16, pad);
             foreach (var (m, p) in new[] { ("Kick", "Beat"), ("Bass", "Roots"), ("Lead", "Line"), ("Hats", "Sixteenths"), ("Pad", "Chords") }) Recipes.Place(s, m, p, 0);
         }
 

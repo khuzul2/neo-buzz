@@ -1,0 +1,660 @@
+// Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor's view on Avalonia, a port of
+// ClipEditor.xaml: its toolbar (play the clip, new/clone/delete clip, beats, tracks, wave,
+// base octave, the keyboard mapping's root note, mapping, steps down and right, MIDI edit and
+// velocity, play notes, zoom, help), the clip grid (ClipGrid) and the status bar. The engine
+// gets it from the machine (ClipEditorControl) and the studio's Clip tab shows it.
+
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Threading;
+using BuzzGUI.Common;
+using BuzzGUI.Interfaces;
+using System.ComponentModel;
+using Control = Avalonia.Controls.Control;
+
+namespace WDE.ModernPatternEditor.AvaloniaView
+{
+    // Avalonia's, not the portable editor's stand-in (PortableShims.cs).
+    using Color = Avalonia.Media.Color;
+
+    public sealed class ClipEditorView : UserControl, IDisposable
+    {
+        readonly ClipEditor editor;
+        readonly ClipGridView grid;
+        readonly WrapPanel toolbar = new WrapPanel { Margin = new Thickness(4, 0) };
+        readonly TextBlock status1 = StatusText(100), status2 = StatusText(150), status3 = StatusText(double.NaN);
+        readonly Border help;
+
+        // Fork: Space plays and stops the song (the studio's window has it); Shift+Space this clip, from the cursor.
+        readonly ToggleButton playButton = SmallToggle("▶", "Play/Stop Clip (Shift+Space: from the cursor)");
+        readonly NumericUpDown beatsBox = Number(1, 8192, "Beats");
+        readonly NumericUpDown tracksBox = Number(0, 128, "Tracks");
+        readonly ComboBox waveBox = new ComboBox { Width = 160, Margin = new Thickness(4, 4, 0, 4) };
+        readonly ComboBox octaveBox = new ComboBox { Width = 56, Margin = new Thickness(4, 4, 0, 4), ItemsSource = Enumerable.Range(0, 10).ToArray() };
+        readonly ToggleButton mappingToggle = SmallToggle("K", "Show Keyboard Mapping");
+        readonly ComboBox rootBox = new ComboBox { Width = 64, Margin = new Thickness(4, 4, 0, 4) };
+        readonly ComboBox mappingBox = new ComboBox { Width = 140, Margin = new Thickness(4, 4, 0, 4) };
+        readonly NumericUpDown downBox = Number(0, 32, "Steps down when editing");
+        readonly NumericUpDown rightBox = Number(0, 32, "Steps right when editing");
+        readonly CheckBox midiEditBox = new CheckBox { Content = "Midi Edit", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly CheckBox midiVelocityBox = new CheckBox { Content = "Midi Velocity", Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly ToggleButton playNotesToggle = SmallToggle("♪", "Play Notes (Alt+N)");
+        readonly Slider zoom = new Slider { Width = 100, Minimum = 0, Maximum = 20, Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly ToggleButton helpToggle = SmallToggle("Help", "Show Help (F1)");
+        readonly Control[] mappingControls;
+
+        // Fork (ux-overhaul.md P3c): the empty automation columns' control, the value base, centred scrolling.
+        readonly Button automationButton = KeepFocus(new Button { Content = "+ Automation", Margin = new Thickness(8, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
+        readonly ToggleButton hexToggle = SmallToggle("Hex", "Show and type values in hex, as Buzz does (Preferences > General > Pattern values)");
+        readonly ToggleButton centreToggle = SmallToggle("Centre", "Keep the cursor row in the middle of the view (the play row while it plays)");
+        // Fork (daw-modes.md AR3): the MIDI column's notes as lanes of their own.
+        readonly ToggleButton notesToggle = SmallToggle("Notes", "Show the Notes lanes: the notes of the clip's MIDI column, which the engine plays, as rows (shown by themselves when it has notes)");
+        readonly TextBox automationFilter = new TextBox { Watermark = "Filter parameters", Width = 240 };
+        readonly ListBox automationList = new ListBox { Width = 240, MaxHeight = 320 };
+        readonly Button automationAll = new Button { Content = "Show all", Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
+        readonly TextBlock emptyHint = new TextBlock
+        {
+            Text = "No columns to show yet.\nUse + Automation above to pick the parameters this clip should show.",
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = ClipTheme.StatusText,
+            FontSize = 13,
+            IsHitTestVisible = false,
+            IsVisible = false,
+        };
+
+        MachineVM machine;
+        ClipVM clip;
+        bool updating;
+
+        /// <summary>The grid (for tests and for the studio's focus).</summary>
+        public ClipGridView TrackerGrid => grid;
+
+        public ClipEditor Editor => editor;
+
+        /// <summary>The editor's undo stack and clipboard commands, for the studio's Edit menu.</summary>
+        public IEditContext EditContext => editor.EditContext;
+
+        public ClipEditorView(ClipEditor editor)
+        {
+            this.editor = editor;
+            grid = new ClipGridView(editor);
+            Background = ClipTheme.Background;
+            Focusable = false;
+
+            var create = SmallButton("+", "Create Clip (Ctrl+Return)", editor.CreateClipCommand);
+            var clone = SmallButton("C", "Clone Clip (Ctrl+Shift+Return)", editor.CloneClipCommand);
+            var delete = SmallButton("-", "Delete Clip (Ctrl+Del)", editor.DeleteClipCommand);
+            mappingControls = new Control[] { rootBox, mappingBox, Label("Down:"), downBox, Label("Right:"), rightBox, midiEditBox, midiVelocityBox };
+            toolbar.Children.AddRange(new Control[]
+            {
+                playButton, create, clone, delete,
+                Label("Beats:"), beatsBox, Label("Tracks:"), tracksBox, Label("Wave:"), waveBox,
+                Label("Base Octave:"), octaveBox, mappingToggle,
+            });
+            toolbar.Children.AddRange(mappingControls);
+            toolbar.Children.AddRange(new Control[] { playNotesToggle, zoom, automationButton, hexToggle, centreToggle, notesToggle });
+            ToolTip.SetTip(automationButton, "Show columns for parameters this clip has no data for");
+            automationButton.Flyout = MakeAutomationFlyout();
+
+            var bar = new DockPanel { Background = ClipTheme.ToolbarBackground };
+            DockPanel.SetDock(helpToggle, Dock.Right);
+            helpToggle.Margin = new Thickness(8, 4);
+            bar.Children.Add(helpToggle);
+            bar.Children.Add(toolbar);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(toolbar, 0);
+            Avalonia.Input.KeyboardNavigation.SetTabIndex(helpToggle, 1);
+
+            var statusBar = new DockPanel { Height = 20, Background = ClipTheme.ToolbarBackground, LastChildFill = true };
+            var s1 = new Border { Child = status1, BorderBrush = ClipTheme.ElementBorder, BorderThickness = new Thickness(0, 0, 1, 0) };
+            var s2 = new Border { Child = status2, BorderBrush = ClipTheme.ElementBorder, BorderThickness = new Thickness(0, 0, 1, 0) };
+            DockPanel.SetDock(s1, Dock.Left);
+            DockPanel.SetDock(s2, Dock.Left);
+            statusBar.Children.Add(s1);
+            statusBar.Children.Add(s2);
+            statusBar.Children.Add(status3);
+
+            help = new Border
+            {
+                Width = 360,
+                Margin = new Thickness(0, 4, 4, 4),
+                Background = Brushes.White,
+                BorderBrush = ClipTheme.ElementBorder,
+                BorderThickness = new Thickness(1),
+                Child = new ScrollViewer { Content = HelpText() },
+                IsVisible = false,
+            };
+
+            var main = new DockPanel();
+            DockPanel.SetDock(bar, Dock.Top);
+            DockPanel.SetDock(statusBar, Dock.Bottom);
+            DockPanel.SetDock(help, Dock.Right);
+            main.Children.Add(bar);
+            main.Children.Add(statusBar);
+            main.Children.Add(help);
+            main.Children.Add(new Panel { Children = { grid, emptyHint } });
+            Content = main;
+
+            Wire();
+            editor.PropertyChanged += Editor_PropertyChanged;
+            editor.Activated += () => Dispatcher.UIThread.Post(() => grid.FocusGrid());
+            editor.Control.PropertiesRequested += () => _ = ClipPropertiesDialog.Show(this, editor);
+            editor.Control.ViewRequest += request =>
+            {
+                switch (request)
+                {
+                    case "BaseOctave": octaveBox.IsDropDownOpen = true; break;
+                    case "RootNote": rootBox.IsDropDownOpen = true; break;
+                    case "KeyboardMapping": mappingBox.IsDropDownOpen = true; break;
+                }
+            };
+            // Fork (ux-overhaul.md §3.5): the base octave as Preferences name notes (Buzz's 4 is 2 when C3 is 60).
+            octaveBox.ItemTemplate = new FuncDataTemplate<int>((o, _) => new TextBlock { Text = NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            NoteNames.Changed += OnNoteNames;
+            ValueDisplay.Changed += OnValueDisplay;
+            hexToggle.IsCheckedChanged += (s, e) =>
+            {
+                if (updating) return;
+                var to = hexToggle.IsChecked == true ? ValueBase.Hex : ValueBase.Decimal;
+                // Through the settings, so that Preferences shows it and it is saved; the value itself where there are none.
+                if (Global.GeneralSettings != null) Global.GeneralSettings.Set(nameof(Global.GeneralSettings.ClipValues), to.ToString());
+                else ValueDisplay.Base = to;
+            };
+            centreToggle.IsCheckedChanged += (s, e) =>
+            {
+                if (updating) return;
+                ClipEditor.Settings.Set("CenteredScrolling", centreToggle.IsChecked == true);
+            };
+            notesToggle.IsCheckedChanged += (s, e) =>
+            {
+                if (updating || clip == null) return;
+                clip.ShowNoteLanes = notesToggle.IsChecked == true;
+            };
+            Follow(editor.SelectedMachine);
+            UpdateAll();
+        }
+
+        /// <summary>Preferences name notes another way: the base octaves again (the grid draws its notes again itself).</summary>
+        void OnNoteNames() => Dispatcher.UIThread.Post(() =>
+        {
+            updating = true;
+            try { octaveBox.ItemsSource = Enumerable.Range(0, 10).ToArray(); }
+            finally { updating = false; }
+            UpdateAll();
+        });
+
+        /// <summary>The base octaves as the list shows them, for tests.</summary>
+        public IEnumerable<string> OctaveTexts => octaveBox.Items.OfType<int>().Select(o => NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+        /// <summary>Preferences (or the Hex toggle) changed the value base: the toggle follows (the grid lays out again itself).</summary>
+        void OnValueDisplay() => Dispatcher.UIThread.Post(UpdateAll);
+
+        /// <summary>The + Automation menu: the parameters whose columns are hidden, filtered by what is typed; a click shows its columns.</summary>
+        Flyout MakeAutomationFlyout()
+        {
+            automationList.ItemTemplate = new FuncDataTemplate<HiddenColumn>((h, _) => new TextBlock { Text = h.Name + "   " + h.Group, FontSize = 12 });
+            automationFilter.TextChanged += (s, e) => FillAutomation();
+            automationList.SelectionChanged += (s, e) =>
+            {
+                if (automationList.SelectedItem is HiddenColumn h && clip != null)
+                {
+                    clip.RevealColumns(new[] { h.Parameter });
+                    FillAutomation();
+                    Dispatcher.UIThread.Post(() => grid.FocusGrid());
+                }
+            };
+            automationAll.Click += (s, e) =>
+            {
+                if (clip == null) return;
+                clip.RevealColumns(FilteredAutomation().Select(h => h.Parameter).ToArray());
+                FillAutomation();
+                Dispatcher.UIThread.Post(() => grid.FocusGrid());
+            };
+            var panel = new StackPanel { Spacing = 4, Children = { automationFilter, automationList, automationAll } };
+            var flyout = new Flyout { Content = panel, Placement = PlacementMode.BottomEdgeAlignedLeft };
+            flyout.Opening += (s, e) => { automationFilter.Text = ""; FillAutomation(); };
+            return flyout;
+        }
+
+        IEnumerable<HiddenColumn> FilteredAutomation()
+        {
+            var all = clip?.HiddenColumns ?? (IReadOnlyList<HiddenColumn>)Array.Empty<HiddenColumn>();
+            var f = automationFilter.Text?.Trim();
+            return string.IsNullOrEmpty(f) ? all : all.Where(h => h.Name.Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+
+        void FillAutomation()
+        {
+            automationList.ItemsSource = FilteredAutomation().ToList();
+            automationList.SelectedItem = null;
+            automationAll.IsEnabled = automationList.ItemCount > 0;
+            automationAll.Content = automationList.ItemCount > 0 ? "Show all " + automationList.ItemCount : "Show all";
+        }
+
+        /// <summary>The hidden columns' parameter names, as + Automation lists them (for tests).</summary>
+        public IReadOnlyList<string> AutomationChoices => (clip?.HiddenColumns ?? (IReadOnlyList<HiddenColumn>)Array.Empty<HiddenColumn>()).Select(h => h.Name).ToList();
+
+        /// <summary>Shows a hidden column by its parameter's name, as picking it in + Automation does (for tests).</summary>
+        public bool ShowAutomation(string parameter)
+        {
+            var found = clip?.HiddenColumns.Where(h => h.Name == parameter).Select(h => h.Parameter).ToArray();
+            if (found == null || found.Length == 0) return false;
+            clip.RevealColumns(found);
+            return true;
+        }
+
+        /// <summary>Shows every hidden column at once ("Show all" in + Automation).</summary>
+        public void ShowAllAutomation()
+        {
+            if (clip?.HiddenColumns is { Count: > 0 } hidden) clip.RevealColumns(hidden.Select(h => h.Parameter).ToArray());
+        }
+
+        /// <summary>The + Automation control and the other toggles, for tests.</summary>
+        public Button AutomationButton => automationButton;
+        public ToggleButton HexToggle => hexToggle;
+        public ToggleButton CentreToggle => centreToggle;
+        public ToggleButton NotesToggle => notesToggle;
+        public bool EmptyHintShown => emptyHint.IsVisible;
+
+        public void Dispose()
+        {
+            ValueDisplay.Changed -= OnValueDisplay;
+            NoteNames.Changed -= OnNoteNames;
+            editor.PropertyChanged -= Editor_PropertyChanged;
+            Follow(null);
+            grid.Release();
+        }
+
+        void Wire()
+        {
+            playButton.IsCheckedChanged += (s, e) =>
+            {
+                if (updating || clip?.Clip == null) return;
+                clip.Clip.IsPlayingSolo = playButton.IsChecked == true;
+            };
+            beatsBox.ValueChanged += (s, e) =>
+            {
+                if (updating || clip == null || e.NewValue == null) return;
+                clip.UndoableBeatCount = (int)e.NewValue.Value;
+            };
+            tracksBox.ValueChanged += (s, e) =>
+            {
+                if (updating || machine == null || e.NewValue == null) return;
+                machine.UndoableTrackCount = (int)e.NewValue.Value;
+            };
+            waveBox.SelectionChanged += (s, e) =>
+            {
+                if (updating) return;
+                editor.SelectedWave = waveBox.SelectedItem as WaveVM;
+            };
+            octaveBox.SelectionChanged += (s, e) =>
+            {
+                if (updating || machine?.Machine == null || octaveBox.SelectedItem is not int o) return;
+                machine.Machine.BaseOctave = o;
+            };
+            mappingToggle.IsCheckedChanged += (s, e) => { if (!updating) editor.IsKeyboardMappingVisible = mappingToggle.IsChecked == true; };
+            rootBox.ItemsSource = editor.RootNotes.ToArray();
+            rootBox.SelectionChanged += (s, e) => { if (!updating && rootBox.SelectedIndex >= 0) editor.SelectedRootNote = rootBox.SelectedIndex; };
+            mappingBox.ItemsSource = editor.KeyboardMappings?.Select(m => m.DisplayName).ToArray() ?? Array.Empty<string>();
+            mappingBox.SelectionChanged += (s, e) =>
+            {
+                if (updating || editor.KeyboardMappings == null || mappingBox.SelectedIndex < 0) return;
+                editor.SelectedKeyboardMapping = editor.KeyboardMappings.ElementAt(mappingBox.SelectedIndex);
+            };
+            downBox.ValueChanged += (s, e) => { if (!updating && e.NewValue != null) editor.SelectedStepsDown = (int)e.NewValue.Value; };
+            rightBox.ValueChanged += (s, e) => { if (!updating && e.NewValue != null) editor.SelectedStepsRight = (int)e.NewValue.Value; };
+            midiEditBox.IsCheckedChanged += (s, e) => { if (!updating) editor.MidiEdit = midiEditBox.IsChecked == true; };
+            midiVelocityBox.IsCheckedChanged += (s, e) => { if (!updating) editor.MidiVelocity = midiVelocityBox.IsChecked == true; };
+            playNotesToggle.IsCheckedChanged += (s, e) => { if (!updating) editor.PlayNotes = playNotesToggle.IsChecked == true; };
+            zoom.ValueChanged += (s, e) =>
+            {
+                if (updating) return;
+                editor.ScaleFactor = zoom.Value;
+                grid.Relayout();
+            };
+            helpToggle.IsCheckedChanged += (s, e) => { if (!updating) editor.IsHelpVisible = helpToggle.IsChecked == true; };
+        }
+
+        void Editor_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "SelectedMachine")
+                Follow(editor.SelectedMachine);
+            Dispatcher.UIThread.Post(UpdateAll);
+        }
+
+        /// <summary>Follows the machine and the clip shown (WPF binds to SelectedMachine.SelectedClip).</summary>
+        void Follow(MachineVM m)
+        {
+            if (machine != null)
+            {
+                machine.PropertyChanged -= Machine_PropertyChanged;
+                if (machine.Machine != null) machine.Machine.PropertyChanged -= TargetMachine_PropertyChanged;
+            }
+            machine = m;
+            if (machine != null)
+            {
+                machine.PropertyChanged += Machine_PropertyChanged;
+                if (machine.Machine != null) machine.Machine.PropertyChanged += TargetMachine_PropertyChanged;
+            }
+            FollowClip(machine?.SelectedClip);
+        }
+
+        void FollowClip(ClipVM p)
+        {
+            if (clip != null)
+            {
+                clip.PropertyChanged -= Clip_PropertyChanged;
+                if (clip.Clip != null) clip.Clip.PropertyChanged -= IClip_PropertyChanged;
+            }
+            clip = p;
+            if (clip != null)
+            {
+                clip.PropertyChanged += Clip_PropertyChanged;
+                if (clip.Clip != null) clip.Clip.PropertyChanged += IClip_PropertyChanged;
+            }
+        }
+
+        void Machine_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "SelectedClip" || e.PropertyName == "Machine")
+            {
+                if (e.PropertyName == "Machine") Follow(machine);
+                else FollowClip(machine.SelectedClip);
+            }
+            Dispatcher.UIThread.Post(UpdateAll);
+        }
+
+        void TargetMachine_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "BaseOctave" || e.PropertyName == "TrackCount")
+                Dispatcher.UIThread.Post(UpdateAll);
+        }
+
+        void Clip_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Clip") FollowClip(clip);
+            if (e.PropertyName != "CursorPosition" && e.PropertyName != "Selection")
+                Dispatcher.UIThread.Post(UpdateAll);
+        }
+
+        void IClip_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "IsPlayingSolo" || e.PropertyName == "Length")
+                Dispatcher.UIThread.Post(UpdateAll);
+        }
+
+        /// <summary>The toolbar and status bar from the editor's state (WPF: their bindings).</summary>
+        void UpdateAll()
+        {
+            updating = true;
+            try
+            {
+                bool hasClip = clip?.Clip != null;
+                playButton.IsEnabled = hasClip;
+                playButton.IsChecked = hasClip && clip.Clip.IsPlayingSolo;
+                beatsBox.IsEnabled = hasClip;
+                if (hasClip) beatsBox.Value = clip.BeatCount;
+                var m = machine?.Machine;
+                tracksBox.IsEnabled = machine != null && m?.DLL != null && machine.CanChangeTrackCount;
+                if (m?.DLL != null)
+                {
+                    tracksBox.Minimum = machine.MinTracks;
+                    tracksBox.Maximum = Math.Max(machine.MinTracks, machine.MaxTracks);
+                    tracksBox.Value = m.TrackCount;
+                    octaveBox.SelectedItem = m.BaseOctave;
+                }
+                var waves = editor.Waves.ToList();
+                if (!waveBox.Items.Cast<object>().SequenceEqual(waves))
+                    waveBox.ItemsSource = waves;
+                waveBox.DisplayMemberBinding = new Avalonia.Data.Binding("Name");
+                waveBox.SelectedItem = editor.SelectedWave;
+                mappingToggle.IsChecked = editor.IsKeyboardMappingVisible;
+                foreach (var c in mappingControls) c.IsVisible = editor.IsKeyboardMappingVisible;
+                rootBox.SelectedIndex = editor.SelectedRootNote;
+                if (editor.KeyboardMappings != null && editor.SelectedKeyboardMapping != null)
+                    mappingBox.SelectedIndex = editor.KeyboardMappings.ToList().IndexOf(editor.SelectedKeyboardMapping);
+                downBox.Value = editor.SelectedStepsDown;
+                rightBox.Value = editor.SelectedStepsRight;
+                downBox.IsEnabled = rightBox.IsEnabled = midiEditBox.IsEnabled = midiVelocityBox.IsEnabled = hasClip;
+                midiEditBox.IsChecked = editor.MidiEdit;
+                midiVelocityBox.IsChecked = editor.MidiVelocity;
+                playNotesToggle.IsChecked = editor.PlayNotes;
+                zoom.Value = editor.ScaleFactor;
+                helpToggle.IsChecked = editor.IsHelpVisible;
+                help.IsVisible = editor.IsHelpVisible;
+                int hidden = clip?.HiddenColumns?.Count ?? 0;
+                automationButton.IsEnabled = hasClip && hidden > 0;
+                ToolTip.SetTip(automationButton, hidden > 0 ? "Show columns for the " + hidden + " parameters this clip has no data for" : "Every parameter's column is shown");
+                hexToggle.IsChecked = ValueDisplay.IsHex;
+                centreToggle.IsChecked = ClipEditor.Settings.CenteredScrolling;
+                notesToggle.IsEnabled = hasClip;
+                notesToggle.IsChecked = clip?.HasNoteLanes == true;
+                emptyHint.IsVisible = hasClip && (clip.ColumnSets == null || clip.ColumnSets.Count == 0);
+                status1.Text = editor.StatusBarItem1;
+                status2.Text = editor.StatusBarItem2;
+                status3.Text = editor.StatusBarItem3;
+            }
+            finally
+            {
+                updating = false;
+            }
+        }
+
+        static TextBlock StatusText(double width) => new TextBlock
+        {
+            Width = width,
+            Margin = new Thickness(4, 0),
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = ClipTheme.StatusText,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+
+        static TextBlock Label(string text) => new TextBlock
+        {
+            Text = text,
+            Margin = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = ClipTheme.StatusText,
+            FontSize = 12,
+        };
+
+        static NumericUpDown Number(int min, int max, string tip)
+        {
+            var n = new NumericUpDown
+            {
+                Minimum = min,
+                Maximum = max,
+                Increment = 1,
+                FormatString = "0",
+                Height = 26,
+                Margin = new Thickness(4, 4, 0, 4),
+                FontSize = 12,
+            };
+            // Fork (ui-gallery.md): as wide as its largest value. A fixed 96 points left the text one digit and a half
+            // beside the spinner, so 32 beats showed "3:". The text box takes the widest value in its own font.
+            n.TemplateApplied += (s, e) =>
+            {
+                if (e.NameScope.Find<TextBox>("PART_TextBox") is not { } text) return;
+                var typeface = new Typeface(text.FontFamily, text.FontStyle, text.FontWeight);
+                double Width(string value) => new Avalonia.Media.TextFormatting.TextLayout(value, typeface, n.FontSize, null).WidthIncludingTrailingWhitespace;
+                double widestDigit = Enumerable.Range(0, 10).Max(d => Width(d.ToString()));
+                int digits = Math.Max(min.ToString().Length, max.ToString().Length);
+                text.MinWidth = Math.Ceiling(Math.Max(Width(max.ToString()), digits * widestDigit))
+                                + text.Padding.Left + text.Padding.Right + text.BorderThickness.Left + text.BorderThickness.Right + 4;
+            };
+            ToolTip.SetTip(n, tip);
+            return n;
+        }
+
+        /// <summary>A tip's words before its key: "Create Clip (Ctrl+Return)" is named "Create Clip" (a glyph button's name for a screen reader).</summary>
+        static string NameOf(string tip)
+        {
+            int at = tip.IndexOf(" (", StringComparison.Ordinal);
+            return at > 0 ? tip.Substring(0, at) : tip;
+        }
+
+        /// <summary>
+        /// A click with the pointer leaves the keyboard where it was (the grid's), as these buttons did when they took no focus at all;
+        /// Tab reaches them now, and Enter or Space presses one and keeps the focus (the studio's StudioButtons.KeepFocus; this library
+        /// can't reference the studio).
+        /// </summary>
+        static T KeepFocus<T>(T button) where T : Button
+        {
+            Avalonia.Input.IInputElement before = null;
+            button.AddHandler(PointerPressedEvent, (s, e) => before = TopLevel.GetTopLevel(button)?.FocusManager?.GetFocusedElement(), Avalonia.Interactivity.RoutingStrategies.Tunnel);
+            button.Click += (s, e) =>
+            {
+                var back = before;
+                before = null;
+                if (back is Control c && c != button && c.IsEffectivelyVisible && c.Focusable) c.Focus();
+            };
+            return button;
+        }
+
+        static ToggleButton SmallToggle(string text, string tip)
+        {
+            var b = KeepFocus(new ToggleButton { Content = text, Margin = new Thickness(6, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
+            ToolTip.SetTip(b, tip);
+            Avalonia.Automation.AutomationProperties.SetName(b, NameOf(tip));
+            return b;
+        }
+
+        static Button SmallButton(string text, string tip, System.Windows.Input.ICommand command)
+        {
+            var b = KeepFocus(new Button { Content = text, Margin = new Thickness(4, 4, 0, 4), VerticalAlignment = VerticalAlignment.Center });
+            Avalonia.Automation.AutomationProperties.SetName(b, NameOf(tip));
+            b.Click += (s, e) =>
+            {
+                if (command.CanExecute(null)) command.Execute(null);
+            };
+            ToolTip.SetTip(b, tip);
+            return b;
+        }
+
+        /// <summary>
+        /// The keyboard commands (Help.xaml), as a table. Fork (ux-overhaul.md §4): the studio's Keyboard Shortcuts window
+        /// lists them too (it finds this field by name: the studio doesn't reference the editor).
+        /// </summary>
+        internal static readonly string[][] KeyRows =
+            {
+                new[] { "F1", "Show/hide help" },
+                new[] { "Ctrl+Z/Y", "Undo/Redo" },
+                new[] { "Ctrl+X/C/V", "Cut/Copy/Paste" },
+                new[] { "+/- (numpad)", "Select clip" },
+                new[] { "/ and * (numpad), Alt+B", "Select keyboard base octave" },
+                new[] { "Alt+R", "Select keyboard root note" },
+                new[] { "Alt+Y", "Select keyboard mapping" },
+                new[] { "Alt+N", "Toggle Play Notes" },
+                new[] { "Return", "Switch to sequence editor" },
+                new[] { "Space", "Play/stop the song" },
+                new[] { "Shift+Space", "Play clip from cursor position / stop it" },
+                new[] { "Ctrl+Return", "Create clip" },
+                new[] { "Ctrl+Shift+Return", "Clone clip" },
+                new[] { "Ctrl+Del", "Delete clip" },
+                new[] { "Ctrl+Backspace", "Clip properties" },
+                new[] { "Arrows/PageUp/PageDown/Home/End/(Shift+)Tab", "Move cursor (+shift selects)" },
+                new[] { ". (period)", "Clear field under cursor" },
+                new[] { "Z,S,X,D,C,... (note column)", "Enter notes at base octave" },
+                new[] { "Q,2,W,3,E,... (note column)", "Enter notes at base octave + 1" },
+                new[] { "1 (note column)", "Enter note off" },
+                new[] { "4 (note column)", "Play cursor row (current track)" },
+                new[] { "8 (note column)", "Play cursor row (all tracks)" },
+                new[] { "Insert/Delete", "Insert/Delete row" },
+                new[] { "Ctrl+Shift+Insert/Delete", "Insert/Delete column" },
+                new[] { "Ctrl+R", "Randomize" },
+                new[] { "Ctrl+I", "Interpolate" },
+                new[] { "Ctrl+Shift+I", "Interpolate logarithmic" },
+                new[] { "Ctrl+W", "Rotate forward" },
+                new[] { "Ctrl+Shift+W", "Rotate backwards" },
+                new[] { "Ctrl+T", "Write machine state" },
+                new[] { "Shift+Add/Subtract", "Shift values (transpose)" },
+                new[] { "Ctrl+Shift+Add/Subtract", "Shift values by +12/-12" },
+                new[] { "Ctrl+1,2,3...", "Beat subdivision" },
+                new[] { "Ctrl+Shift+1,2,3...", "Beat subdivision + 10" },
+                new[] { "Ctrl+1,2,3... (numpad)", "Step down" },
+                new[] { "Ctrl+Alt+1,2,3... (numpad)", "Step right" },
+            };
+
+        static Control HelpText()
+        {
+            var rows = KeyRows;
+            var g = new Grid { ColumnDefinitions = new ColumnDefinitions("*,2*"), Margin = new Thickness(4) };
+            var title = new TextBlock { Text = "Keyboard Commands", FontWeight = FontWeight.Bold, Foreground = Brushes.Black, Background = Brushes.LightSteelBlue, Padding = new Thickness(2) };
+            Grid.SetColumnSpan(title, 2);
+            g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            g.Children.Add(title);
+            int r = 1;
+            foreach (var row in rows)
+            {
+                g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                for (int c = 0; c < 2; c++)
+                {
+                    var t = new TextBlock { Text = row[c], FontSize = 12, Foreground = Brushes.Black, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 1) };
+                    Grid.SetRow(t, r);
+                    Grid.SetColumn(t, c);
+                    g.Children.Add(t);
+                }
+                r++;
+            }
+            return g;
+        }
+    }
+
+    /// <summary>The grid's context menu (ClipControl.xaml): edits, undo, clipboard, selection, properties.</summary>
+    internal static class ClipMenus
+    {
+        public static ContextMenu Create(ClipControl c)
+        {
+            var mod = OperatingSystem.IsMacOS() ? "Cmd" : "Ctrl";
+            var items = new List<(MenuItem, System.Windows.Input.ICommand)>();
+            MenuItem Item(string header, System.Windows.Input.ICommand command, string gesture)
+            {
+                var m = new MenuItem { Header = header, InputGesture = null };
+                if (gesture != null) m.Header = header + "    " + gesture;
+                m.Click += (s, e) =>
+                {
+                    if (command.CanExecute(null)) command.Execute(null);
+                };
+                items.Add((m, command));
+                return m;
+            }
+
+            var edit = new MenuItem { Header = "Edit" };
+            edit.Items.Add(Item("Decrease", c.DecreaseCommand, "- (numpad)"));
+            edit.Items.Add(Item("Increase", c.IncreaseCommand, "+ (numpad)"));
+            edit.Items.Add(Item("Interpolate (linear)", c.InterpolateLinearCommand, mod + "+I"));
+            edit.Items.Add(Item("Interpolate (exponential)", c.InterpolateExpCommand, mod + "+Shift+I"));
+            edit.Items.Add(Item("Randomize", c.RandomizeCommand, mod + "+R"));
+            edit.Items.Add(Item("Rotate Forward", c.RotateCommandUp, mod + "+W"));
+            edit.Items.Add(Item("Rotate Backward", c.RotateCommandDown, mod + "+Shift+W"));
+            edit.Items.Add(Item("Write State", c.WriteStateCommand, mod + "+T"));
+            edit.Items.Add(new Separator());
+            edit.Items.Add(Item("Undo", c.UndoCommand, mod + "+Z"));
+            edit.Items.Add(Item("Redo", c.RedoCommand, mod + "+Y"));
+            edit.Items.Add(new Separator());
+            edit.Items.Add(Item("Cut", c.CutCommand, mod + "+X"));
+            edit.Items.Add(Item("Copy", c.CopyCommand, mod + "+C"));
+            edit.Items.Add(Item("Paste", c.PasteCommand, mod + "+V"));
+
+            var menu = new ContextMenu();
+            menu.Items.Add(edit);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Select All", c.SelectAllCommand, mod + "+A"));
+            menu.Items.Add(Item("Unselect", c.UnselectCommand, mod + "+U"));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Clip Properties...", c.PropertiesCommand, mod + "+Backspace"));
+            // The commands don't say when they can run (SimpleCommand off Windows); ask when the menu opens.
+            menu.Opening += (s, e) =>
+            {
+                foreach (var (m, command) in items) m.IsEnabled = command.CanExecute(null);
+            };
+            return menu;
+        }
+    }
+}

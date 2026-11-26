@@ -1,5 +1,5 @@
 // Fork (docs/specs/studio-mvp.md S9): P3's exit test, headless. A song made from an empty one by
-// simulated mouse and keys alone (machine view, a Neo editor, a parameter window, the Pattern and
+// simulated mouse and keys alone (machine view, a Neo editor, a parameter window, the Clip and
 // Sequence tabs, the transport, the Session View), played through the engine, saved as .nbl
 // and opened again: the same song, and the same samples. And the MCP server's start-up option, which CI uses to run the
 // A7 live scenarios against the real app (tools/headless-live.py --studio). Screenshots: exit-*.png.
@@ -41,7 +41,7 @@ namespace ReBuzz.Studio.Tests
 
     public class ExitTests
     {
-        const int Row = PatternEvent.TimeBase;      // a row of the pattern editor at 4 rows a beat
+        const int Row = ClipEvent.TimeBase;      // a row of the clip editor at 4 rows a beat
 
         static ReBuzzCore Core => Studio.Host.Core;
 
@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Tests
 
         /// <summary>
         /// The song as lines of text: machines (gear, place, tracks, data, every state parameter's value),
-        /// wires (amp, pan), patterns (the editor's events and the engine's columns), the pattern
+        /// wires (amp, pan), clips (the editor's events and the engine's columns), the clip
         /// editors' data, the sequences and markers, and the Session View's slots.
         /// </summary>
         static List<string> Snapshot()
@@ -189,24 +189,24 @@ namespace ReBuzz.Studio.Tests
                     lines.Add($"{at}{p.Group.Type} {p.Name}[{track}] = {p.GetValue(track)}");
                 foreach (var c in m.Outputs.Where(c => !((MachineCore)c.Destination).Hidden).OrderBy(c => c.Destination.Name, StringComparer.Ordinal))
                     lines.Add($"{at}wire to {c.Destination.Name}: amp {c.Amp}, pan {c.Pan}");
-                foreach (var p in m.Patterns.OrderBy(p => p.Name, StringComparer.Ordinal))
+                foreach (var p in m.Clips.OrderBy(p => p.Name, StringComparer.Ordinal))
                 {
-                    lines.Add($"{at}pattern {p.Name}: {p.Length} ticks");
-                    foreach (var c in p.PatternEditorMachineEvents.Where(c => c.Events.Any()))       // clips CU3: an editor that views the store holds no empty columns of its own
-                        lines.Add($"{at}pattern {p.Name}, editor column {c.Parameter.Name}: {string.Join(" ", c.Events.Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");
+                    lines.Add($"{at}clip {p.Name}: {p.Length} ticks");
+                    foreach (var c in p.ClipEditorMachineEvents.Where(c => c.Events.Any()))       // clips CU3: an editor that views the store holds no empty columns of its own
+                        lines.Add($"{at}clip {p.Name}, editor column {c.Parameter.Name}: {string.Join(" ", c.Events.Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");
                     foreach (var c in p.Columns)
-                        lines.Add($"{at}pattern {p.Name}, column {c.Type} {c.Machine?.Name} {c.Parameter?.Name}[{c.Track}]: {string.Join(" ", c.GetEvents(0, int.MaxValue).Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");
+                        lines.Add($"{at}clip {p.Name}, column {c.Type} {c.Machine?.Name} {c.Parameter?.Name}[{c.Track}]: {string.Join(" ", c.GetEvents(0, int.MaxValue).Select(e => $"{e.Time}={e.Value}/{e.Duration}"))}");
                 }
-                if (m.EditorMachine != null && m.Patterns.Count > 0)
-                    lines.Add($"{at}pattern editor {m.EditorMachine.DLL.Name}: {Hex(core.MachineManager.GetMachineData(m.EditorMachine))}");
+                if (m.EditorMachine != null && m.Clips.Count > 0)
+                    lines.Add($"{at}clip editor {m.EditorMachine.DLL.Name}: {Hex(core.MachineManager.GetMachineData(m.EditorMachine))}");
             }
             foreach (var s in song.Sequences)
                 lines.Add($"sequence {s.Machine.Name}{(s.IsDisabled ? " (disabled)" : "")}: " +
-                          string.Join(" ", s.Events.Select(e => $"{e.Key}:{(e.Value.Type == SequenceEventType.PlayPattern ? e.Value.Pattern.Name : e.Value.Type.ToString())}")));
+                          string.Join(" ", s.Events.Select(e => $"{e.Key}:{(e.Value.Type == SequenceEventType.PlayClip ? e.Value.Clip.Name : e.Value.Type.ToString())}")));
             var layout = core.SessionLayout;
             for (int t = 0; t < layout.TrackCount; t++)
                 lines.Add($"session track {layout.SequenceOf(t)?.Machine.Name}: " +
-                          string.Join(" ", Enumerable.Range(0, layout.SceneCount).Select(s => layout.PatternAt(t, s)?.Name ?? "-")));
+                          string.Join(" ", Enumerable.Range(0, layout.SceneCount).Select(s => layout.ClipAt(t, s)?.Name ?? "-")));
             return lines;
         }
 
@@ -314,14 +314,14 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(undoSteps + 1), "one undo step");
                 Studio.Screenshot(editor, "exit-3-neo-poly-editor");
 
-                // ---- The Pattern tab (F2): notes typed into each synth's pattern. A click on empty space
+                // ---- The Clip tab (F2): notes typed into each synth's clip. A click on empty space
                 // in the machine view first: the keyboard follows the window clicked last.
                 Click(window, view.PointOf(0.3, 0.6, window));
                 Key(window, PhysicalKey.F2);
-                var page = PatternView.Page;
+                var page = ClipView.Page;
                 Assert.That(window.Detail.IsMaximised, Is.True, "F2: the Tracker over the whole window");
                 var boxes = page.GetLogicalDescendants().OfType<ComboBox>().ToList();
-                ComboBox machineBox = boxes[0], patternBox = boxes[1];
+                ComboBox machineBox = boxes[0], clipBox = boxes[1];
 
                 // Click the grid's first field on row 0 (track 0's Note column: the notes come first), type.
                 void TypeNotes(params PhysicalKey[] keys)
@@ -333,34 +333,34 @@ namespace ReBuzz.Studio.Tests
                     Click(window, body.TranslatePoint(field, window)!.Value);
                     Keys(window, keys);
                 }
-                (int, int)[] Notes(IPattern p) => p.PatternEditorMachineEvents.First(c => c.Parameter.Name == "Note").Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
+                (int, int)[] Notes(IClip p) => p.ClipEditorMachineEvents.First(c => c.Parameter.Name == "Note").Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
                 const PhysicalKey down = PhysicalKey.ArrowDown;
 
                 Choose(machineBox, poly.Name);
-                Choose(patternBox, "00");
-                Assert.That(page.Pattern, Is.SameAs(poly.Patterns.Single(p => p.Name == "00")), "Poly's pattern from the gear menu");
+                Choose(clipBox, "00");
+                Assert.That(page.Clip, Is.SameAs(poly.Clips.Single(p => p.Name == "00")), "Poly's clip from the gear menu");
                 TypeNotes(PhysicalKey.Z, down, down, down, PhysicalKey.C, down, down, down, PhysicalKey.B, down, down, down, PhysicalKey.Q);
-                Assert.That(Notes(page.Pattern), Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (4 * Row, BuzzNote.Parse("E-4")), (8 * Row, BuzzNote.Parse("G-4")), (12 * Row, BuzzNote.Parse("C-5")) }));
-                Studio.Screenshot(window, "exit-5-pattern-poly");
+                Assert.That(Notes(page.Clip), Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (4 * Row, BuzzNote.Parse("E-4")), (8 * Row, BuzzNote.Parse("G-4")), (12 * Row, BuzzNote.Parse("C-5")) }));
+                Studio.Screenshot(window, "exit-5-clip-poly");
 
-                // New pattern (the button): Poly's 01.
-                ClickControl(page.GetLogicalDescendants().OfType<Button>().Single(b => b.Content as string == "New pattern"));
+                // New clip (the button): Poly's 01.
+                ClickControl(page.GetLogicalDescendants().OfType<Button>().Single(b => b.Content as string == "New clip"));
                 Settle();
-                var poly01 = poly.Patterns.SingleOrDefault(p => p.Name == "01");
-                Assert.That(poly01, Is.Not.Null, "New pattern made 01");
-                Assert.That(page.Pattern, Is.SameAs(poly01));
+                var poly01 = poly.Clips.SingleOrDefault(p => p.Name == "01");
+                Assert.That(poly01, Is.Not.Null, "New clip made 01");
+                Assert.That(page.Clip, Is.SameAs(poly01));
                 TypeNotes(PhysicalKey.X, down, PhysicalKey.V, down, down, PhysicalKey.N, down, down, down, down, PhysicalKey.X, down, down, PhysicalKey.Digit1);
                 Assert.That(Notes(poly01), Is.EqualTo(new[] { (0, BuzzNote.Parse("D-4")), (2 * Row, BuzzNote.Parse("F-4")), (5 * Row, BuzzNote.Parse("A-4")), (10 * Row, BuzzNote.Parse("D-4")), (13 * Row, BuzzNote.Off) }));
 
                 // Keys Test's 00, in its Note column (it plays notes only from there).
                 Choose(machineBox, bass.Name);
-                Choose(patternBox, "00");
+                Choose(clipBox, "00");
                 TypeNotes(PhysicalKey.Z, down, PhysicalKey.Digit1, down, PhysicalKey.B, down, PhysicalKey.Digit1, down, PhysicalKey.Z, down, PhysicalKey.Digit1, down, PhysicalKey.N, down, PhysicalKey.Digit1);
-                var bass00 = bass.Patterns.Single(p => p.Name == "00");
+                var bass00 = bass.Clips.Single(p => p.Name == "00");
                 Assert.That(Notes(bass00).Length, Is.EqualTo(8), "four notes and their offs");
-                Studio.Screenshot(window, "exit-6-pattern-keys");
+                Studio.Screenshot(window, "exit-6-clip-keys");
 
-                // ---- The Sequence tab (F4): the patterns placed by their keys, then the loop and the song end.
+                // ---- The Sequence tab (F4): the clips placed by their keys, then the loop and the song end.
                 Key(window, PhysicalKey.F4);
                 var sequence = (SequenceView)((TabItem)window.Tabs.SelectedItem!).Content!;
                 var canvas = sequence.Canvas;
@@ -375,9 +375,9 @@ namespace ReBuzz.Studio.Tests
                     foreach (char ch in text) window.KeyTextInput(ch.ToString());
                     Settle();
                 }
-                string Events(int row) => string.Join(" ", Core.Song.Sequences[row].Events.Select(e => $"{e.Key}:{e.Value.Pattern?.Name}"));
+                string Events(int row) => string.Join(" ", Core.Song.Sequences[row].Events.Select(e => $"{e.Key}:{e.Value.Clip?.Name}"));
                 Assert.That(Core.Song.Sequences.Select(s => s.Machine), Is.EqualTo(new[] { poly, bass }), "a track for each synth (the gear menu made them)");
-                Assert.That(Events(0), Is.EqualTo("0:00"), "the first machine's pattern plays from the start (as in WPF)");
+                Assert.That(Events(0), Is.EqualTo("0:00"), "the first machine's clip plays from the start (as in WPF)");
                 Click(window, Cell(16, 0));
                 Type("1");
                 Click(window, Cell(0, 1));
@@ -442,17 +442,17 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(peak, Is.LessThan(4.0), "nothing diverged (under +12 dBFS)");
                 Assert.That(rms, Is.GreaterThan(-45));
 
-                // ---- The Session View (Ctrl+Tab): a pattern into an empty slot, and launched there.
+                // ---- The Session View (Ctrl+Tab): a clip into an empty slot, and launched there.
                 Key(window, PhysicalKey.Tab, RawInputModifiers.Control);
                 var session = (SessionView)((TabItem)window.Tabs.SelectedItem!).Content!;
                 Settle();
                 var layout = Core.SessionLayout;
-                var slot = session.Slots.First(s => s.Track == 1 && s.Pattern == null && s.Scene > 0);
+                var slot = session.Slots.First(s => s.Track == 1 && s.Clip == null && s.Scene > 0);
                 int scene = slot.Scene;
                 ClickControl(slot, MouseButton.Right, fx: 0.6);
-                Assert.That(session.ClickMenuItem("Assign pattern/00"), Is.True, "the slot's menu assigns Keys Test's 00");
+                Assert.That(session.ClickMenuItem("Assign clip/00"), Is.True, "the slot's menu assigns Keys Test's 00");
                 Settle();
-                Assert.That(layout.PatternAt(1, scene), Is.SameAs(bass00), "the slot holds it");
+                Assert.That(layout.ClipAt(1, scene), Is.SameAs(bass00), "the slot holds it");
                 SessionCore.Timestamp = () => 1_000_000;          // heard = rendered, as SessionRig does
                 using (var pump = new SequenceEditorTests.Player())
                 {

@@ -1,10 +1,10 @@
 // Fork (docs/specs/studio-mvp.md S4): the sequence editor's edits, as undo steps on the song's
 // history. The portable BuzzGUI.Common has SetEventAction, ClearAction, SetMarkerAction,
-// CreatePatternAction and AddSequenceAction; the others the WPF editor uses are ported here,
+// CreateClipAction and AddSequenceAction; the others the WPF editor uses are ported here,
 // since their BuzzGUI.Common copies are in its Windows build only (System.Windows.Rect):
 // InsertOrDelete, SwapSequences, DeleteSequence, SetLength, the clipboard and its cut, copy and
 // paste, and the horizontal editor's time signature actions. SequenceEditing holds the commands
-// the view runs (SequenceEditor.xaml.cs, HoldDragHelper, PatternResizeHelper), pure of UI.
+// the view runs (SequenceEditor.xaml.cs, HoldDragHelper, ClipResizeHelper), pure of UI.
 
 using System;
 using System.Collections.Generic;
@@ -73,29 +73,29 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void UndoAction() => DoAction();
     }
 
-    /// <summary>Sets a pattern's length (BuzzGUI.Common SetLengthAction).</summary>
+    /// <summary>Sets a clip's length (BuzzGUI.Common SetLengthAction).</summary>
     internal sealed class SetLengthAction : MachineAction
     {
-        readonly string patternName;
+        readonly string clipName;
         readonly int newLength;
         readonly int oldLength;
 
-        public SetLengthAction(IPattern pattern, int length) : base(pattern.Machine)
+        public SetLengthAction(IClip clip, int length) : base(clip.Machine)
         {
-            patternName = pattern.Name;
+            clipName = clip.Name;
             newLength = length;
-            oldLength = pattern.Length;
+            oldLength = clip.Length;
         }
 
-        IPattern Pattern => Machine.Patterns.FirstOrDefault(x => x.Name == patternName) ?? throw new ActionException(this);
+        IClip Clip => Machine.Clips.FirstOrDefault(x => x.Name == clipName) ?? throw new ActionException(this);
 
-        protected override void DoAction() => Pattern.Length = newLength;
+        protected override void DoAction() => Clip.Length = newLength;
 
-        protected override void UndoAction() => Pattern.Length = oldLength;
+        protected override void UndoAction() => Clip.Length = oldLength;
     }
 
     /// <summary>
-    /// Events cut or copied from a block of tracks, kept by pattern name (BuzzGUI.Common
+    /// Events cut or copied from a block of tracks, kept by clip name (BuzzGUI.Common
     /// SequenceClipboard, with ints for the rectangle).
     /// </summary>
     internal sealed class SequenceClipboard
@@ -305,34 +305,34 @@ namespace ReBuzz.Studio.Views.Sequence
             }
         }
 
-        /// <summary>Puts an event (a pattern, or a break, mute, thru or stop) on a track.</summary>
+        /// <summary>Puts an event (a clip, or a break, mute, thru or stop) on a track.</summary>
         public void SetEvent(int row, int time, SequenceEvent e)
         {
             var seq = Track(row);
             if (seq != null) Do(new SetEventAction(seq, time, e));
         }
 
-        public void PlacePattern(int row, int time, IPattern pattern) =>
-            SetEvent(row, time, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+        public void PlaceClip(int row, int time, IClip clip) =>
+            SetEvent(row, time, new SequenceEvent(SequenceEventType.PlayClip, clip));
 
-        /// <summary>A new pattern of <paramref name="length"/> ticks, placed (a double click on an empty cell).</summary>
-        public IPattern NewPatternAt(int row, int time, int length)
+        /// <summary>A new clip of <paramref name="length"/> ticks, placed (a double click on an empty cell).</summary>
+        public IClip NewClipAt(int row, int time, int length)
         {
             var seq = Track(row);
             if (seq == null) return null;
-            IPattern made = null;
+            IClip made = null;
             Group(() =>
             {
-                string name = seq.Machine.GetNewPatternName();
-                Do(new CreatePatternAction(seq.Machine, name, length));
-                made = seq.Machine.Patterns.FirstOrDefault(p => p.Name == name);
-                if (made != null) Do(new SetEventAction(seq, time, new SequenceEvent(SequenceEventType.PlayPattern, made)));
+                string name = seq.Machine.GetNewClipName();
+                Do(new CreateClipAction(seq.Machine, name, length));
+                made = seq.Machine.Clips.FirstOrDefault(p => p.Name == name);
+                if (made != null) Do(new SetEventAction(seq, time, new SequenceEvent(SequenceEventType.PlayClip, made)));
             });
             return made;
         }
 
-        /// <summary>Quick Create Patterns: <paramref name="count"/> new patterns in a row from the cursor, over what was there (or inserted).</summary>
-        public void CreatePatterns(int row, int time, int count, int length, bool insert)
+        /// <summary>Quick Create Clips: <paramref name="count"/> new clips in a row from the cursor, over what was there (or inserted).</summary>
+        public void CreateClips(int row, int time, int count, int length, bool insert)
         {
             var seq = Track(row);
             if (seq == null || count <= 0) return;
@@ -343,10 +343,10 @@ namespace ReBuzz.Studio.Views.Sequence
                 Do(new InsertOrDeleteAction(seq, time, span, true));
                 for (int i = 0; i < count; i++)
                 {
-                    string name = seq.Machine.GetNewPatternName();
-                    Do(new CreatePatternAction(seq.Machine, name, length));
-                    var p = seq.Machine.Patterns.FirstOrDefault(x => x.Name == name);
-                    if (p != null) Do(new SetEventAction(seq, time + i * length, new SequenceEvent(SequenceEventType.PlayPattern, p)));
+                    string name = seq.Machine.GetNewClipName();
+                    Do(new CreateClipAction(seq.Machine, name, length));
+                    var p = seq.Machine.Clips.FirstOrDefault(x => x.Name == name);
+                    if (p != null) Do(new SetEventAction(seq, time + i * length, new SequenceEvent(SequenceEventType.PlayClip, p)));
                 }
             });
         }
@@ -365,26 +365,26 @@ namespace ReBuzz.Studio.Views.Sequence
             return true;
         }
 
-        /// <summary>A right-edge resize: the pattern's new length (all its blocks change).</summary>
-        public void SetPatternLength(IPattern pattern, int length)
+        /// <summary>A right-edge resize: the clip's new length (all its blocks change).</summary>
+        public void SetClipLength(IClip clip, int length)
         {
-            if (pattern == null || length <= 0 || length == pattern.Length) return;
-            Do(new SetLengthAction(pattern, length));
+            if (clip == null || length <= 0 || length == clip.Length) return;
+            Do(new SetLengthAction(clip, length));
         }
 
-        /// <summary>A left-edge resize: the event starts at <paramref name="newTime"/> and its pattern ends where the block did.</summary>
+        /// <summary>A left-edge resize: the event starts at <paramref name="newTime"/> and its clip ends where the block did.</summary>
         public void ResizeLeft(int row, int time, int newTime, int newLength)
         {
             var seq = Track(row);
-            if (seq == null || !seq.Events.TryGetValue(time, out var e) || e.Pattern == null) return;
-            if (newTime == time && newLength == e.Pattern.Length) return;
+            if (seq == null || !seq.Events.TryGetValue(time, out var e) || e.Clip == null) return;
+            if (newTime == time && newLength == e.Clip.Length) return;
             var copy = new SequenceEvent(e);
-            var pattern = e.Pattern;
+            var clip = e.Clip;
             Group(() =>
             {
                 Do(new ClearAction(seq, time, GeometrySpan(e)));
                 Do(new SetEventAction(seq, newTime, copy));
-                Do(new SetLengthAction(pattern, newLength));
+                Do(new SetLengthAction(clip, newLength));
             });
         }
 

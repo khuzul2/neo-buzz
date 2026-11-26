@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "midi-mapping", "note-wires", "live-performance", "dye-sound-design", "teaching", "performance", "recipes", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Chord", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Lo-Fi", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Organ", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch", "Neo Arp" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Chord", "Neo Chop", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Lo-Fi", "Neo Low End", "Neo Macro", "Neo Multiband", "Neo Organ", "Neo Poly", "Neo Sampler", "Neo Scope", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch", "Neo Arp" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -26,7 +26,7 @@ namespace ReBuzz.AgentTests
         /// <summary>
         /// Every tool a guide may name, with its arguments (null: not checked). Taken from the tool
         /// files, not from the spec:
-        /// - main: ReBuzz/Agent/StudioTools.cs, MachineTools.cs, ParamTools.cs, PatternTools.cs,
+        /// - main: ReBuzz/Agent/StudioTools.cs, MachineTools.cs, ParamTools.cs, ClipTools.cs,
         ///   RenderTools.cs (render with probes), AnalysisTools.cs (analyze_mix, compare, plot),
         ///   StateTools.cs (presets, snapshots), WaveTools.cs, and ReBuzz.Agent/Guides/Guides.cs (guide);
         /// - origin/agent/a3-tools: ReBuzz/Agent/CompositionTools.cs (markers, automation, session grid,
@@ -71,15 +71,15 @@ namespace ReBuzz.AgentTests
             ["modulate"] = new[] { "source", "target_machine", "param", "depth", "polarity", "range", "curve", "track", "slot", "listen_machine", "listen_track" },
             ["modulation_list"] = new[] { "machine" },
             ["modulation_remove"] = new[] { "source", "slot", "target_machine", "param", "all" },
-            ["pattern_list"] = new[] { "machine" },
-            ["pattern_create"] = new[] { "machine", "name", "length_beats" },
-            ["pattern_delete"] = new[] { "machine", "pattern" },
-            ["pattern_rename"] = new[] { "machine", "pattern", "new_name" },
-            ["pattern_duplicate"] = new[] { "machine", "pattern", "new_name" },
-            ["notes_write"] = new[] { "machine", "pattern", "notes", "mode", "range_start", "range_end", "input", "apply_pitch_offset" },
-            ["notes_read"] = new[] { "machine", "pattern", "range_start", "range_end", "input", "apply_pitch_offset" },
+            ["clip_list"] = new[] { "machine" },
+            ["clip_create"] = new[] { "machine", "name", "length_beats" },
+            ["clip_delete"] = new[] { "machine", "clip" },
+            ["clip_rename"] = new[] { "machine", "clip", "new_name" },
+            ["clip_duplicate"] = new[] { "machine", "clip", "new_name" },
+            ["notes_write"] = new[] { "machine", "clip", "notes", "mode", "range_start", "range_end", "input", "apply_pitch_offset" },
+            ["notes_read"] = new[] { "machine", "clip", "range_start", "range_end", "input", "apply_pitch_offset" },
             ["arrangement_get"] = new[] { "from", "to" },
-            ["arrangement_place"] = new[] { "machine", "pattern", "at", "repeat_every_beats", "times" },
+            ["arrangement_place"] = new[] { "machine", "clip", "at", "repeat_every_beats", "times" },
             ["arrangement_clear"] = new[] { "machine", "from", "to" },
             ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "bits", "dither", "cpu", "cpu_window_seconds", "opus_kbps" },
             ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds", "target", "opus_kbps" },
@@ -110,30 +110,30 @@ namespace ReBuzz.AgentTests
             ["wave_import"] = new[] { "path", "slot", "name", "root_note", "replace", "layer" },
             // A3 (origin/agent/a3-tools: ReBuzz/Agent/CompositionTools.cs)
             ["arrangement_markers"] = new[] { "set", "remove" },
-            ["automation_write"] = new[] { "machine", "pattern", "param", "track", "points", "shape", "clear", "allow_unsafe" },
-            ["automation_read"] = new[] { "machine", "pattern", "param" },
+            ["automation_write"] = new[] { "machine", "clip", "param", "track", "points", "shape", "clear", "allow_unsafe" },
+            ["automation_read"] = new[] { "machine", "clip", "param" },
             ["machine_data_import"] = new[] { "machine", "kind", "path", "item" },
             ["wave_from_render"] = new[] { "source", "from_seconds", "to_seconds", "slot", "name", "root_note" },
             ["session_get"] = new string[0],
-            ["session_clip_set"] = new[] { "machine", "scene", "pattern", "mode", "quantization", "loop", "legato" },
+            ["session_clip_set"] = new[] { "machine", "scene", "clip", "mode", "quantization", "loop", "legato" },
             // NA1 (neo-audio.md: ReBuzz/Agent/AudioClipTools.cs)
             ["audio_import"] = new[] { "path", "track", "slot", "at_beats" },
-            ["audio_clip_get"] = new[] { "machine", "pattern" },
-            ["audio_clip_set"] = new[] { "machine", "pattern", "warp", "preserve", "tempo_bpm", "detect_tempo", "auto_warp", "from_seconds", "transpose", "detune", "gain_db", "loop", "region", "warp_markers", "fade_in_beats", "fade_out_beats", "reverse", "stretch_to_beats" },
+            ["audio_clip_get"] = new[] { "machine", "clip" },
+            ["audio_clip_set"] = new[] { "machine", "clip", "warp", "preserve", "tempo_bpm", "detect_tempo", "auto_warp", "from_seconds", "transpose", "detune", "gain_db", "loop", "region", "warp_markers", "fade_in_beats", "fade_out_beats", "reverse", "stretch_to_beats" },
             // WM1 (neo-audio.md: ReBuzz/Agent/AudioWarpTools.cs)
-            ["audio_warp_markers"] = new[] { "machine", "pattern", "action", "markers", "marker", "sample", "beat", "from_sample", "to_sample", "from_beat", "to_beat", "delta_beats", "delta_samples", "bpm", "bars", "strength", "grid_beats" },
+            ["audio_warp_markers"] = new[] { "machine", "clip", "action", "markers", "marker", "sample", "beat", "from_sample", "to_sample", "from_beat", "to_beat", "delta_beats", "delta_samples", "bpm", "bars", "strength", "grid_beats" },
             // stem separation (stem-separation.md: ReBuzz/Agent/AudioClipTools.cs)
-            ["audio_separate"] = new[] { "machine", "pattern", "path", "quality", "stems", "slot", "at_beats" },
+            ["audio_separate"] = new[] { "machine", "clip", "path", "quality", "stems", "slot", "at_beats" },
             // Convert to MIDI (pitch.md section 9: ReBuzz/Agent/AudioClipTools.cs)
-            ["audio_slice_to_midi"] = new[] { "machine", "pattern", "slot", "by", "apply" },
-            ["audio_convert_to_midi"] = new[] { "machine", "pattern", "mode", "range", "min_note_ms", "smooth_ms", "pitch_bends", "onset_threshold", "frame_threshold", "drum_threshold", "quantize", "strength", "apply" },
+            ["audio_slice_to_midi"] = new[] { "machine", "clip", "slot", "by", "apply" },
+            ["audio_convert_to_midi"] = new[] { "machine", "clip", "mode", "range", "min_note_ms", "smooth_ms", "pitch_bends", "onset_threshold", "frame_threshold", "drum_threshold", "quantize", "strength", "apply" },
             ["session_scene_set"] = new[] { "scene", "insert", "name", "tempo_bpm", "beats_per_bar" },
             // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)
             ["theory"] = new[] { "op", "chord", "progression", "key", "octave", "register", "voicing", "inversion", "voice_leading", "previous", "beats_per_chord", "start", "pitches", "steps", "notes" },
-            ["notes_transform"] = new[] { "machine", "pattern", "transforms", "range_start", "range_end", "pitch_low", "pitch_high" },
+            ["notes_transform"] = new[] { "machine", "clip", "transforms", "range_start", "range_end", "pitch_low", "pitch_high" },
             // A7 (ReBuzz/Agent/LiveTools.cs)
             ["transport"] = new[] { "action", "at", "loop" },
-            ["session_launch"] = new[] { "scene", "machine", "pattern", "stop", "immediate", "back_to_arrangement" },
+            ["session_launch"] = new[] { "scene", "machine", "clip", "stop", "immediate", "back_to_arrangement" },
             ["session_record"] = new[] { "action", "machine", "scene", "bars" },
             ["track_input"] = new[] { "action", "machine", "audio_from", "midi_from", "channel", "monitor" },
             ["midi_play"] = new[] { "machine", "notes", "start", "stop" },
@@ -166,26 +166,26 @@ namespace ReBuzz.AgentTests
             ["audio_status"] = new string[0],
             ["audio_devices"] = new string[0],
             ["audio_set"] = new[] { "device", "buffer_frames", "sample_rate" },
-            ["view_show"] = new[] { "view", "machine", "pattern", "editor" },
+            ["view_show"] = new[] { "view", "machine", "clip", "editor" },
             ["machine_open_editor"] = new[] { "machine", "window" },
-            ["select"] = new[] { "machine", "pattern", "scene", "clear" },
+            ["select"] = new[] { "machine", "clip", "scene", "clear" },
             ["panel_set"] = new[] { "panel", "open", "size", "tab", "maximised" },
             ["window_layout"] = new[] { "width", "height", "maximised" },
             ["export_audio"] = new[] { "path", "range", "from", "to", "section", "tail_seconds", "bits", "dither", "stems", "machines", "sample_rate", "normalize_db", "overwrite" },
             ["app_status"] = new string[0],
             ["song_recent"] = new[] { "limit" },
             // K3b (agent-knowledge.md §11): the features built since K3 (ReBuzz/Agent/ArrangementTools.cs, MachineEditTools.cs; ReBuzz.Studio/Shell/Tools/RecorderTools.cs)
-            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "pattern", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at", "to_machine", "fade_in_beats", "fade_out_beats", "gain_db", "start_at", "end_at" },
+            ["arrangement_clip"] = new[] { "op", "machine", "lane", "clip", "at", "clip", "length_beats", "to", "to_lane", "link", "start", "end", "on", "split_at", "to_machine", "fade_in_beats", "fade_out_beats", "gain_db", "start_at", "end_at" },
             ["arrangement_lane"] = new[] { "op", "machine", "role", "lane", "remove_clips" },
             ["arrangement_automation"] = new[] { "op", "machine", "param", "track", "from", "to", "points", "shape", "allow_unsafe" },
             ["arrangement_takes"] = new[] { "op", "machine", "loop", "take_lane", "to_lane", "from", "to" },
             // EV1 (daw-modes.md §8.8: ReBuzz/Agent/ClipEnvelopeTools.cs)
             // CU4 (clips.md §8: ReBuzz/Agent/ClipTools.cs)
-            ["clip_get"] = new[] { "machine", "pattern", "scene", "lane", "clip", "at" },
-            ["clip_envelope"] = new[] { "op", "machine", "pattern", "scene", "lane", "clip", "at", "param", "track", "points", "shape", "replace", "from", "to", "allow_unsafe" },
+            ["clip_get"] = new[] { "machine", "clip", "scene", "lane", "clip", "at" },
+            ["clip_envelope"] = new[] { "op", "machine", "clip", "scene", "lane", "clip", "at", "param", "track", "points", "shape", "replace", "from", "to", "allow_unsafe" },
             // NA4b (neo-audio.md "Takes and comping": ReBuzz/Agent/ArrangementTools.cs)
             ["takes"] = new[] { "op", "machine", "take", "from", "to", "ranges" },
-            ["machine_clone"] = new[] { "machines", "with_patterns" },
+            ["machine_clone"] = new[] { "machines", "with_clips" },
             ["machine_group"] = new[] { "op", "group", "name", "new_name", "machines" },
             ["machine_latency"] = new[] { "machine", "override_samples", "clear", "clear_all" },
             ["machine_attributes"] = new[] { "machine", "set" },
@@ -207,7 +207,7 @@ namespace ReBuzz.AgentTests
         static readonly string[] TransformOps = { "transpose", "quantize", "humanize", "velocity", "shift", "stretch", "reverse", "invert", "legato", "staccato" };
 
         /// <summary>Tool areas: a backticked snake_case word starting with one of these must be a tool.</summary>
-        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window", "patch", "browser" };
+        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "clip", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq", "settings", "midi", "audio", "export", "view", "panel", "window", "patch", "browser" };
 
         // ---- the repository -------------------------------------------------------------------
 
@@ -419,6 +419,7 @@ namespace ReBuzz.AgentTests
             foreach (Match m in Regex.Matches(text, @"`([a-z][a-z0-9_]*)`"))
             {
                 string w = m.Groups[1].Value;
+                if (w == "clip_db") continue; // Neo Clipper's reading, not a clip tool
                 if (KnownTools.ContainsKey(w) || (w.Contains('_') && Areas.Contains(w.Split('_')[0]))) yield return w;
             }
         }

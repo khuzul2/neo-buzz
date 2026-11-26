@@ -3,7 +3,7 @@
 // editor sees them, and the edits a piano roll makes. See docs/specs/session-view.md, 0.7.1.
 //
 // No dependency on the rest of ReBuzz, so ReBuzz.SessionTests links this file. Times are
-// pattern time, 1/240 tick (BuzzGUI's PatternEvent.TimeBase).
+// clip time, 1/240 tick (BuzzGUI's ClipEvent.TimeBase).
 
 using System;
 using System.Collections.Generic;

@@ -8,13 +8,13 @@ namespace ReBuzz.AgentTests
     [TestFixture]
     public class TransformTests
     {
-        const int Tpb = 4, PatternTicks = 64;   // a 16-beat pattern at 4 ticks per beat
+        const int Tpb = 4, ClipTicks = 64;   // a 16-beat clip at 4 ticks per beat
 
         static int T(double beats) => (int)Math.Round(beats * Tpb * NoteList.TimeBase);
 
         static NoteEvent N(double start, double length, int pitch, int velocity = 100) => new(T(start), T(length), pitch, velocity);
 
-        static TransformContext Ctx() => new(Tpb, PatternTicks);
+        static TransformContext Ctx() => new(Tpb, ClipTicks);
 
         static string Problems(TransformContext ctx) => string.Join(" ", ctx.Problems);
 
@@ -125,26 +125,26 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
-        public void ShiftKeepsNotesInsideThePattern()
+        public void ShiftKeepsNotesInsideTheClip()
         {
             Assert.That(Starts(Transforms.Shift(new[] { N(0, 1, 60), N(1, 1, 62) }, Ctx(), 1)), Is.EqualTo(new[] { 1, 2 }));
 
             var ctx = Ctx();
             var r = Transforms.Shift(new[] { N(15.5, 0.5, 60), N(0, 1, 62) }, ctx, 1);
             Assert.That(Starts(r), Is.EqualTo(new[] { 1 }));
-            Assert.That(Problems(ctx), Does.Contain("1 note ended up outside the pattern (beats 0–16) and was removed: C4 at beat 16.5"));
+            Assert.That(Problems(ctx), Does.Contain("1 note ended up outside the clip (beats 0–16) and was removed: C4 at beat 16.5"));
 
             ctx = Ctx();
             r = Transforms.Shift(new[] { N(14, 1.5, 60) }, ctx, 1.5);
             Assert.That(Starts(r), Is.EqualTo(new[] { 15.5 }));
             Assert.That(Lengths(r), Is.EqualTo(new[] { 0.5 }));
-            Assert.That(Problems(ctx), Does.Contain("ran past the pattern's end (beat 16) and was shortened"));
+            Assert.That(Problems(ctx), Does.Contain("ran past the clip's end (beat 16) and was shortened"));
 
             ctx = Ctx();
             r = Transforms.Shift(new[] { N(0, 2, 60) }, ctx, -1);
             Assert.That(Starts(r), Is.EqualTo(new[] { 0 }));
             Assert.That(Lengths(r), Is.EqualTo(new[] { 1 }));
-            Assert.That(Problems(ctx), Does.Contain("started before the pattern"));
+            Assert.That(Problems(ctx), Does.Contain("started before the clip"));
         }
 
         [Test]
@@ -160,7 +160,7 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
-        public void ReverseInThePatternOrTheRange()
+        public void ReverseInTheClipOrTheRange()
         {
             var r = Transforms.Reverse(new[] { N(0, 1, 60), N(2, 0.5, 62) }, Ctx());
             Assert.That(r.Select(n => (NoteList.Beats(n.Time, Tpb), n.Pitch)), Is.EqualTo(new[] { (13.5, 62), (15.0, 60) }));
@@ -218,15 +218,15 @@ namespace ReBuzz.AgentTests
         static readonly List<NoteEvent> Riff = new() { N(0, 1, 60), N(1, 1, 62), N(2, 1, 64) };
 
         static string Fails(string json) =>
-            Assert.Throws<ToolError>(() => NotesTransform.Apply(Args(json), Riff, Tpb, PatternTicks))!.Message;
+            Assert.Throws<ToolError>(() => NotesTransform.Apply(Args(json), Riff, Tpb, ClipTicks))!.Message;
 
         [Test]
         public void ApplyFollowsTheSelectionThroughEveryTransform()
         {
             var o = NotesTransform.Run(Args("""
-                {"machine": "Keys", "pattern": "A", "range_start": 0, "range_end": 2,
+                {"machine": "Keys", "clip": "A", "range_start": 0, "range_end": 2,
                  "transforms": [{"op": "transpose", "semitones": 12}, {"op": "shift", "beats": 1}]}
-                """), Riff, Tpb, PatternTicks);
+                """), Riff, Tpb, ClipTicks);
             Assert.That(o.Notes.Select(n => (NoteList.Beats(n.Time, Tpb), n.Pitch)), Is.EqualTo(new[] { (1.0, 72), (2.0, 64), (2.0, 74) }));
             Assert.That(o.Selected, Is.EqualTo(2));
             Assert.That(o.Changed, Is.EqualTo(2));
@@ -237,32 +237,32 @@ namespace ReBuzz.AgentTests
             // A transform's own selection picks again, from the notes as they are then.
             var (result, problems) = NotesTransform.Apply(Args("""
                 {"transforms": [{"op": "transpose", "semitones": 2}, {"op": "velocity", "set": 50, "pitch_low": "F#4"}]}
-                """), Riff, Tpb, PatternTicks);
+                """), Riff, Tpb, ClipTicks);
             Assert.That(result.Select(n => (n.Pitch, n.Velocity)), Is.EqualTo(new[] { (62, 100), (64, 100), (66, 50) }));
             Assert.That(problems, Is.Empty);
 
             // "bar.beat" positions count bars of beatsPerBar.
-            (result, _) = NotesTransform.Apply(Args("""{"range_start": "1.2", "transforms": [{"op": "transpose", "scale_steps": 1, "key": "C major"}]}"""), Riff, Tpb, PatternTicks);
+            (result, _) = NotesTransform.Apply(Args("""{"range_start": "1.2", "transforms": [{"op": "transpose", "scale_steps": 1, "key": "C major"}]}"""), Riff, Tpb, ClipTicks);
             Assert.That(Pitches(result), Is.EqualTo(new[] { 60, 64, 65 }));
         }
 
         [Test]
         public void ApplyRoundTripsAndReportsClips()
         {
-            var (twice, problems) = NotesTransform.Apply(Args("""{"transforms": [{"op": "invert", "axis": "C4"}, {"op": "invert", "axis": 60}]}"""), Riff, Tpb, PatternTicks);
+            var (twice, problems) = NotesTransform.Apply(Args("""{"transforms": [{"op": "invert", "axis": "C4"}, {"op": "invert", "axis": 60}]}"""), Riff, Tpb, ClipTicks);
             Assert.That(twice, Is.EqualTo(Riff));
             Assert.That(problems, Is.Empty);
-            (twice, _) = NotesTransform.Apply(Args("""{"transforms": [{"op": "reverse"}, {"op": "reverse"}]}"""), Riff, Tpb, PatternTicks);
+            (twice, _) = NotesTransform.Apply(Args("""{"transforms": [{"op": "reverse"}, {"op": "reverse"}]}"""), Riff, Tpb, ClipTicks);
             Assert.That(twice, Is.EqualTo(Riff));
 
-            var o = NotesTransform.Run(Args("""{"transforms": [{"op": "shift", "beats": 14.5}, {"op": "velocity", "add": 40}]}"""), Riff, Tpb, PatternTicks);
+            var o = NotesTransform.Run(Args("""{"transforms": [{"op": "shift", "beats": 14.5}, {"op": "velocity", "add": 40}]}"""), Riff, Tpb, ClipTicks);
             Assert.That(o.Notes.Count, Is.EqualTo(2));
             Assert.That(o.Removed, Is.EqualTo(1));
-            Assert.That(string.Join(" ", o.Problems), Does.Contain("transforms[0] (shift): 1 note ended up outside the pattern"));
-            Assert.That(string.Join(" ", o.Problems), Does.Contain("transforms[0] (shift): 1 note ran past the pattern's end"));
+            Assert.That(string.Join(" ", o.Problems), Does.Contain("transforms[0] (shift): 1 note ended up outside the clip"));
+            Assert.That(string.Join(" ", o.Problems), Does.Contain("transforms[0] (shift): 1 note ran past the clip's end"));
             Assert.That(string.Join(" ", o.Problems), Does.Contain("transforms[1] (velocity): 2 velocities went above 127"));
 
-            var none = NotesTransform.Run(Args("""{"pitch_low": 100, "transforms": [{"op": "legato"}]}"""), Riff, Tpb, PatternTicks);
+            var none = NotesTransform.Run(Args("""{"pitch_low": 100, "transforms": [{"op": "legato"}]}"""), Riff, Tpb, ClipTicks);
             Assert.That(none.Changed, Is.EqualTo(0));
             Assert.That(string.Join(" ", none.Problems), Does.Contain("Nothing matched the selection (notes with pitches E7–G9)"));
         }
@@ -291,11 +291,11 @@ namespace ReBuzz.AgentTests
             };
             foreach (var step in calls)
             {
-                var args = Args($$"""{"machine": "Keys", "pattern": "A", "transforms": [{{step}}]}""");
+                var args = Args($$"""{"machine": "Keys", "clip": "A", "transforms": [{{step}}]}""");
                 var errors = new List<string>();
                 Schema.Validate(NotesTransform.Input, args, "", errors);
                 Assert.That(errors, Is.Empty, step);
-                var o = NotesTransform.Run(args, Riff, Tpb, PatternTicks);
+                var o = NotesTransform.Run(args, Riff, Tpb, ClipTicks);
                 Assert.That(o.Notes.Count, Is.EqualTo(3), step);
                 Assert.That(o.Changed, Is.GreaterThan(0), step);
                 var result = NotesTransform.Result("Keys", "A", o, Tpb);
@@ -322,10 +322,10 @@ namespace ReBuzz.AgentTests
             Assert.That(Fails("""{"range_start": 4, "range_end": 2, "transforms": [{"op": "reverse"}]}"""), Does.Contain("range_end must be after range_start"));
             Assert.That(Fails("""{"pitch_low": "C5", "pitch_high": "C4", "transforms": [{"op": "reverse"}]}"""), Does.Contain("swap them"));
             Assert.That(Fails("""{"transforms": []}"""), Does.Contain("give a list of transforms"));
-            Assert.That(Fails("""{"transforms": [{"op": "invert", "axis": "C-5"}]}"""), Does.Contain("Buzz pattern notation"));
+            Assert.That(Fails("""{"transforms": [{"op": "invert", "axis": "C-5"}]}"""), Does.Contain("Buzz clip notation"));
 
             var errors = new List<string>();
-            Schema.Validate(NotesTransform.Input, Args("""{"machine": "K", "pattern": "A", "transforms": [{"op": "shift", "beat": 1}], "range": 2}"""), "", errors);
+            Schema.Validate(NotesTransform.Input, Args("""{"machine": "K", "clip": "A", "transforms": [{"op": "shift", "beat": 1}], "range": 2}"""), "", errors);
             Assert.That(string.Join(" ", errors), Does.Contain("transforms[0].beat: unknown argument"));
             Assert.That(string.Join(" ", errors), Does.Contain("range: unknown argument"));
         }

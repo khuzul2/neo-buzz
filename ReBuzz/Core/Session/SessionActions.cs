@@ -8,63 +8,63 @@ using System.Runtime.CompilerServices;
 namespace ReBuzz.Core.Session
 {
     /// <summary>
-    /// Pattern colours shared with the Sequence View (fork addition, docs/specs/session-view.md
-    /// 0.2): an index into the theme's PatternColors, stored by the sequence editor's
-    /// ViewSettings.PatternAssociations and saved in the song by it. Without a sequence editor
+    /// Clip colours shared with the Sequence View (fork addition, docs/specs/session-view.md
+    /// 0.2): an index into the theme's ClipColors, stored by the sequence editor's
+    /// ViewSettings.ClipAssociations and saved in the song by it. Without a sequence editor
     /// (tests, headless use) colours are kept here instead. UI thread only.
     /// </summary>
-    internal static class PatternColors
+    internal static class ClipColors
     {
-        static readonly ConditionalWeakTable<IPattern, StrongBox<int>> fallback = new ConditionalWeakTable<IPattern, StrongBox<int>>();
+        static readonly ConditionalWeakTable<IClip, StrongBox<int>> fallback = new ConditionalWeakTable<IClip, StrongBox<int>>();
 
-        /// <summary>A pattern's colour changed (from the session; the Sequence View should redraw).</summary>
-        public static event Action<IPattern> Changed;
+        /// <summary>A clip's colour changed (from the session; the Sequence View should redraw).</summary>
+        public static event Action<IClip> Changed;
 
-        public static int Get(IPattern pattern)
+        public static int Get(IClip clip)
         {
-            if (pattern == null) return -1;
-            var associations = PatternColours.Current;   // engine-split.md S7
+            if (clip == null) return -1;
+            var associations = ClipColours.Current;   // engine-split.md S7
             if (associations != null)
-                return associations.TryGet(pattern, out var index) ? index : -1;
-            return fallback.TryGetValue(pattern, out var box) ? box.Value : -1;
+                return associations.TryGet(clip, out var index) ? index : -1;
+            return fallback.TryGetValue(clip, out var box) ? box.Value : -1;
         }
 
-        public static void Set(IPattern pattern, int index)
+        public static void Set(IClip clip, int index)
         {
-            if (pattern == null) return;
-            var associations = PatternColours.Current;
+            if (clip == null) return;
+            var associations = ClipColours.Current;
             if (associations != null)
             {
                 if (index < 0)
-                    associations.Remove(pattern);
+                    associations.Remove(clip);
                 else
-                    associations.Set(pattern, index);
+                    associations.Set(clip, index);
             }
             else
             {
-                fallback.AddOrUpdate(pattern, new StrongBox<int>(index));
+                fallback.AddOrUpdate(clip, new StrongBox<int>(index));
             }
-            Changed?.Invoke(pattern);
+            Changed?.Invoke(clip);
         }
     }
 
     /// <summary>
-    /// Renames a pattern (0.6.1: holds the pattern, not its old name, and follows it if an undo
+    /// Renames a clip (0.6.1: holds the clip, not its old name, and follows it if an undo
     /// brought it back as another object). Does nothing if the name it would take is taken.
     /// </summary>
     [BuzzGUI.Common.HistoryName("Rename clip")]
-    internal sealed class RenamePatternAction : IAction
+    internal sealed class RenameClipAction : IAction
     {
         readonly SessionLayout layout;
-        readonly IPattern pattern;
+        readonly IClip clip;
         readonly string oldName;
         readonly string newName;
 
-        public RenamePatternAction(SessionLayout layout, IPattern pattern, string newName)
+        public RenameClipAction(SessionLayout layout, IClip clip, string newName)
         {
             this.layout = layout;
-            this.pattern = pattern;
-            oldName = pattern.Name;
+            this.clip = clip;
+            oldName = clip.Name;
             this.newName = newName;
         }
 
@@ -73,38 +73,38 @@ namespace ReBuzz.Core.Session
 
         void Rename(string name)
         {
-            var p = layout.Current(pattern);
+            var p = layout.Current(clip);
             var machine = p?.Machine;
-            if (machine == null || !machine.Patterns.Contains(p) || p.Name == name) return;
-            if (machine.Patterns.Any(x => !ReferenceEquals(x, p) && x.Name == name)) return;
+            if (machine == null || !machine.Clips.Contains(p) || p.Name == name) return;
+            if (machine.Clips.Any(x => !ReferenceEquals(x, p) && x.Name == name)) return;
             p.Name = name;
         }
     }
 
-    /// <summary>A pattern's colour (0.6.1: holds the pattern, not its name).</summary>
+    /// <summary>A clip's colour (0.6.1: holds the clip, not its name).</summary>
     [BuzzGUI.Common.HistoryName("Clip colour")]
-    internal sealed class PatternColorAction : IAction
+    internal sealed class ClipColorAction : IAction
     {
         readonly SessionLayout layout;
-        readonly IPattern pattern;
+        readonly IClip clip;
         readonly int oldIndex;
         readonly int newIndex;
 
-        public PatternColorAction(SessionLayout layout, IPattern pattern, int newIndex)
+        public ClipColorAction(SessionLayout layout, IClip clip, int newIndex)
         {
             this.layout = layout;
-            this.pattern = pattern;
-            oldIndex = PatternColors.Get(pattern);
+            this.clip = clip;
+            oldIndex = ClipColors.Get(clip);
             this.newIndex = newIndex;
         }
 
-        public void Do() => PatternColors.Set(Live(), newIndex);
-        public void Undo() => PatternColors.Set(Live(), oldIndex);
+        public void Do() => ClipColors.Set(Live(), newIndex);
+        public void Undo() => ClipColors.Set(Live(), oldIndex);
 
-        IPattern Live()
+        IClip Live()
         {
-            var p = layout.Current(pattern);
-            return p?.Machine != null && p.Machine.Patterns.Contains(p) ? p : null;
+            var p = layout.Current(clip);
+            return p?.Machine != null && p.Machine.Clips.Contains(p) ? p : null;
         }
     }
 

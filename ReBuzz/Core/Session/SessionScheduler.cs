@@ -43,7 +43,7 @@ namespace ReBuzz.Core.Session
         TTrack Track, TClip Previous, TClip Current, SessionChangeKind Kind);
 
     /// <summary>
-    /// Where a clip plays within its pattern (0.5, Live's clip markers): it starts at
+    /// Where a clip plays within its clip (0.5, Live's clip markers): it starts at
     /// <see cref="Start"/>, plays to the end of the loop region, then (with <see cref="Loop"/>)
     /// repeats the region <see cref="LoopStart"/>..<see cref="LoopEnd"/>; without loop it ends
     /// there. LoopEnd 0 means the clip's end. Immutable.
@@ -292,7 +292,7 @@ namespace ReBuzz.Core.Session
         public volatile bool FollowActionsEnabled = true;
 
         /// <summary>
-        /// Whether a clip or track can still play (0.6.1): false once its pattern was deleted or
+        /// Whether a clip or track can still play (0.6.1): false once its clip was deleted or
         /// its sequence removed. Launches of a dead clip or onto a dead track are ignored, so
         /// stale references (a pad's map, a follow column, the undo history) can't bring them back.
         /// </summary>
@@ -413,7 +413,7 @@ namespace ReBuzz.Core.Session
         /// <summary>
         /// Queues a launch at an absolute clock value (replacing any queued action). With an
         /// <paramref name="origin"/> before <paramref name="at"/> the clip starts partway through.
-        /// A clip plays in one place at a time (Buzz patterns have one play position): a launch
+        /// A clip plays in one place at a time (Buzz clips have one play position): a launch
         /// of the same clip queued on another track is dropped, and a track playing it hands it
         /// over when it starts here (<see cref="SessionChangeKind.Moved"/>, without a stop).
         /// </summary>
@@ -624,7 +624,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// Removes a clip everywhere (its pattern was deleted). Tracks that were playing it are
+        /// Removes a clip everywhere (its clip was deleted). Tracks that were playing it are
         /// added to <paramref name="stoppedTracks"/>.
         /// </summary>
         public void ForgetClip(TClip clip, List<TTrack> stoppedTracks)
@@ -1093,7 +1093,7 @@ namespace ReBuzz.Core.Session
                 st.Next = queued.With(queued.Spec, p.StopAfter);     // a Gate released before it started still stops after a step
         }
 
-        /// <summary>Whether a memento refers to the clip (0.6.1: a deleted pattern leaves the undo history).</summary>
+        /// <summary>Whether a memento refers to the clip (0.6.1: a deleted clip leaves the undo history).</summary>
         public bool Refers(object memento, TClip clip) =>
             memento is Memento m && clip != null &&
             (ReferenceEquals(m.Playing, clip) || (m.Next != null && !m.Next.IsStop && ReferenceEquals(m.Next.Clip, clip)));
@@ -1179,7 +1179,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// For recording (0.5.1): where the track's clip is in its pattern at
+        /// For recording (0.5.1): where the track's clip is in its clip at
         /// <paramref name="clock"/> (its start marker if that is before it started), and the end
         /// of its region (exclusive). (0, 0) when none plays.
         /// </summary>
@@ -1198,7 +1198,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// For recording (0.7): the clip the track plays at <paramref name="atClock"/> (now, or a
-        /// little earlier as heard), where it is in its pattern then (ticks), the end of its region
+        /// little earlier as heard), where it is in its clip then (ticks), the end of its region
         /// (exclusive) and the clock it counts from. False when none plays, or the clip (re)started
         /// after that moment. Call under the gate.
         /// </summary>

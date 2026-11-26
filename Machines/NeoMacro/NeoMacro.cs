@@ -35,7 +35,7 @@ namespace NeoBuzz.MacroMachine
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoAbout.Show(
                         "Neo Macro \u2014 one knob that moves up to 8 parameters of other machines at once, each with its own depth, polarity, " +
-                        "range and curve. The Value is an ordinary parameter: patterns, the agent and a bound MIDI controller drive it. Writes are " +
+                        "range and curve. The Value is an ordinary parameter: clips, the agent and a bound MIDI controller drive it. Writes are " +
                         "smoothed, are not undo steps, and the targets' own values stay the base. Safe ranges are kept.\n\n" +
                         "Part of neo-buzz (docs/specs/neo-patch.md).", "Neo LFO"),
                 },

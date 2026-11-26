@@ -1,7 +1,7 @@
 #nullable disable
 // Agent server (docs/specs/mcp-server.md §5.5): notes as the agent writes and reads them (pitch,
-// start and length in beats, velocity) and as a pattern's engine MIDI column holds them (events in
-// pattern time, 1/240 tick, whose value is the note-on: 0x90 | note << 8 | velocity << 16).
+// start and length in beats, velocity) and as a clip's engine MIDI column holds them (events in
+// clip time, 1/240 tick, whose value is the note-on: 0x90 | note << 8 | velocity << 16).
 
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using ReBuzz.Agent.Mcp;
 namespace ReBuzz.Agent.Model
 {
     /// <summary>
-    /// A note in pattern time (1/240 tick). A machine that plays a sample per note (Neo Sampler's Tracker mode) has three more: the sample's number
+    /// A note in clip time (1/240 tick). A machine that plays a sample per note (Neo Sampler's Tracker mode) has three more: the sample's number
     /// (0: none), where in it the note starts (frames of the sample) and its tune (cents).
     /// </summary>
     public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0)
@@ -42,29 +42,29 @@ namespace ReBuzz.Agent.Model
         public const int TimeBase = 240;
         public const int DefaultVelocity = 100;
 
-        /// <summary>Pattern time for a position in beats.</summary>
+        /// <summary>Clip time for a position in beats.</summary>
         public static int Time(double beats, int ticksPerBeat) => (int)Math.Round(beats * ticksPerBeat * TimeBase);
 
-        /// <summary>Beats for a position in pattern time (rounded to a millionth).</summary>
+        /// <summary>Beats for a position in clip time (rounded to a millionth).</summary>
         public static double Beats(int time, int ticksPerBeat) => Math.Round(time / (double)(ticksPerBeat * TimeBase), 6);
 
         /// <summary>
         /// The notes an agent wrote, checked: each needs a pitch (MIDI number or name), a start
-        /// (beats from the pattern start, or "bar.beat" in it) and a length in beats; velocity is
-        /// 1–127 (100 when absent). Notes running past the pattern's end are shortened, with a warning.
+        /// (beats from the clip start, or "bar.beat" in it) and a length in beats; velocity is
+        /// 1–127 (100 when absent). Notes running past the clip's end are shortened, with a warning.
         /// </summary>
-        public static List<NoteEvent> Parse(JsonArray notes, int ticksPerBeat, int beatsPerBar, int patternTicks, List<string> warnings)
+        public static List<NoteEvent> Parse(JsonArray notes, int ticksPerBeat, int beatsPerBar, int clipTicks, List<string> warnings)
         {
             var list = new List<NoteEvent>();
-            int patternTime = patternTicks * TimeBase;
-            double patternBeats = patternTicks / (double)ticksPerBeat;
+            int clipTime = clipTicks * TimeBase;
+            double clipBeats = clipTicks / (double)ticksPerBeat;
             for (int i = 0; i < notes.Count; i++)
             {
                 string at = $"notes[{i}]";
                 if (notes[i] is not JsonObject n) throw new ToolError($"{at}: each note is an object like {{\"pitch\": \"C4\", \"start\": 0, \"length\": 1, \"velocity\": 100}}.");
                 int pitch = ParsePitch(n["pitch"], at + ".pitch");
-                if (n["start"] == null) throw new ToolError($"{at}.start: missing (beats from the pattern start, e.g. 0 or 1.5).");
-                double start = SongTime.ParseBeats(n["start"], beatsPerBar, at + ".start", "the pattern start");
+                if (n["start"] == null) throw new ToolError($"{at}.start: missing (beats from the clip start, e.g. 0 or 1.5).");
+                double start = SongTime.ParseBeats(n["start"], beatsPerBar, at + ".start", "the clip start");
                 if (!Schema.TryNumber(n["length"], out double length) || length <= 0)
                     throw new ToolError($"{at}.length: give the note's length in beats, more than 0 (0.25 = a 16th note at 4 ticks per beat).");
                 int velocity = DefaultVelocity;
@@ -96,14 +96,14 @@ namespace ReBuzz.Agent.Model
                 if (sample == 0 && (offset != 0 || tune != 0))
                     throw new ToolError($"{at}: offset and tune belong to a sample; give the note a sample too.");
                 int time = Time(start, ticksPerBeat);
-                if (time >= patternTime)
-                    throw new ToolError($"{at}: starts at beat {Fmt(start)}, but the pattern is {Fmt(patternBeats)} beats long. " +
-                                        "Make the pattern longer (pattern_create with length_beats) or use another pattern.");
+                if (time >= clipTime)
+                    throw new ToolError($"{at}: starts at beat {Fmt(start)}, but the clip is {Fmt(clipBeats)} beats long. " +
+                                        "Make the clip longer (clip_create with length_beats) or use another clip.");
                 int duration = Math.Max(1, Time(start + length, ticksPerBeat) - time);
-                if (time + duration > patternTime)
+                if (time + duration > clipTime)
                 {
-                    duration = patternTime - time;
-                    warnings.Add($"{at} ({Pitch.Name(pitch)} at beat {Fmt(start)}) ran past the pattern's end; shortened to {Fmt(Beats(duration, ticksPerBeat))} beats.");
+                    duration = clipTime - time;
+                    warnings.Add($"{at} ({Pitch.Name(pitch)} at beat {Fmt(start)}) ran past the clip's end; shortened to {Fmt(Beats(duration, ticksPerBeat))} beats.");
                 }
                 list.Add(new NoteEvent(time, duration, pitch, velocity, 0, sample, offset, tune));
             }

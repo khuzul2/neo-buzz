@@ -52,9 +52,9 @@ namespace ReBuzz.Studio.Shell
         /// "Auto-warp ▸ Follow the beat / To grid · 1/16 · 100 % / Options…" for the audio clips <paramref name="clips"/> gives when the menu opens; "Auto-warp selection" when
         /// <paramref name="range"/> gives a range. A menu is built each time one opens, so it names the clip's own grid and the song's strength.
         /// </summary>
-        public static MenuItem Menu(Func<IReadOnlyList<IPattern>> clips, Func<Range?> range = null, bool enabled = true)
+        public static MenuItem Menu(Func<IReadOnlyList<IClip>> clips, Func<Range?> range = null, bool enabled = true)
         {
-            var list = clips() ?? Array.Empty<IPattern>();
+            var list = clips() ?? Array.Empty<IClip>();
             var r = range?.Invoke();
             var layout = Core?.SessionLayout;
             var first = list.FirstOrDefault();
@@ -88,7 +88,7 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>Auto-warps the clips (one undo step), shows the first one on the Audio page, and says what it did.</summary>
-        public static bool Run(IReadOnlyList<IPattern> clips, bool toGrid, Range? range = null, AudioClipEdit options = null)
+        public static bool Run(IReadOnlyList<IClip> clips, bool toGrid, Range? range = null, AudioClipEdit options = null)
         {
             var layout = Core?.SessionLayout;
             if (layout == null || clips == null || clips.Count == 0) return false;
@@ -101,7 +101,7 @@ namespace ReBuzz.Studio.Shell
             return why == null;
         }
 
-        static string Summary(SessionLayout layout, IReadOnlyList<IPattern> clips, bool toGrid)
+        static string Summary(SessionLayout layout, IReadOnlyList<IClip> clips, bool toGrid)
         {
             if (!toGrid) return clips.Count == 1 ? "Auto-warped." : $"Auto-warped {clips.Count} clips.";
             int made = layout.LastGridReports.Sum(r => r.Report.Made), far = layout.LastGridReports.Sum(r => r.Report.OutOfReach);
@@ -109,7 +109,7 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>The Options dialog: the clip's saved options; Auto-warp runs from there.</summary>
-        public static async Task ShowOptions(IReadOnlyList<IPattern> clips, Range? range = null)
+        public static async Task ShowOptions(IReadOnlyList<IClip> clips, Range? range = null)
         {
             var layout = Core?.SessionLayout;
             if (layout == null || clips == null || clips.Count == 0) return;
@@ -127,7 +127,7 @@ namespace ReBuzz.Studio.Shell
             await StudioDialog.Run(new OptionsWindow(clips, range, start));
         }
 
-        internal static void RunChoice(IReadOnlyList<IPattern> clips, AutoWarpChoice c, Range? range)
+        internal static void RunChoice(IReadOnlyList<IClip> clips, AutoWarpChoice c, Range? range)
         {
             var layout = Core?.SessionLayout;
             if (layout == null) return;
@@ -140,7 +140,7 @@ namespace ReBuzz.Studio.Shell
         internal sealed class OptionsWindow : Window
         {
             static readonly string[] Bases = { "1/4", "1/8", "1/16", "1/32" };
-            readonly IReadOnlyList<IPattern> clips;
+            readonly IReadOnlyList<IClip> clips;
             readonly Range? range;
             readonly ToggleButton follow = Segment("Follow the beat"), toGrid = Segment("To grid");
             readonly ToggleButton[] bases = Bases.Select(Segment).ToArray();
@@ -163,7 +163,7 @@ namespace ReBuzz.Studio.Shell
 
             static ToggleButton Segment(string text) => new ToggleButton { Content = text, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center, MinHeight = 28 };
 
-            public OptionsWindow(IReadOnlyList<IPattern> clips, Range? range, AutoWarpChoice start)
+            public OptionsWindow(IReadOnlyList<IClip> clips, Range? range, AutoWarpChoice start)
             {
                 this.clips = clips;
                 this.range = range;

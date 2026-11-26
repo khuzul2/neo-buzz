@@ -137,9 +137,9 @@
     "Off",
     "On"
    ],
-   "description": "A manual gate in Note mode: on starts the envelope, off releases it (patterns can write it)",
+   "description": "A manual gate in Note mode: on starts the envelope, off releases it (clips can write it)",
    "how": "Starts the envelope when switched on and releases it when switched off, with no notes needed (Note mode).",
-   "sound": "A pattern writing this switch triggers the envelope on its own steps."
+   "sound": "A clip writing this switch triggers the envelope on its own steps."
   },
   {
    "index": 8,

@@ -40,13 +40,13 @@ namespace ReBuzz.AgentEval
 
             // Harmony from the theory tool: i–VI–III–VII in A minor, a bar each.
             var prog = s.C.Ok("theory", new JsonObject { ["op"] = "progression", ["key"] = "A minor", ["progression"] = "i VI III VII", ["octave"] = 3, ["beats_per_chord"] = 4 });
-            s.C.Ok("pattern_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Prog", ["length_beats"] = 16 });
-            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["pattern"] = "Prog", ["notes"] = prog["notes"]!.DeepClone() });
+            s.C.Ok("clip_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Prog", ["length_beats"] = 16 });
+            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["clip"] = "Prog", ["notes"] = prog["notes"]!.DeepClone() });
             // The same chords played softly, for the intro and the outro.
             var soft = prog["notes"]!.DeepClone().AsArray();
             foreach (var n in soft.OfType<JsonObject>()) n["velocity"] = 50;
-            s.C.Ok("pattern_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Soft", ["length_beats"] = 16 });
-            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["pattern"] = "Soft", ["notes"] = soft });
+            s.C.Ok("clip_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Soft", ["length_beats"] = 16 });
+            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["clip"] = "Soft", ["notes"] = soft });
             var roots = J.Objects(prog["chords"]).Select(c => J.Str(c["root"])).ToList();
             var bass = new List<JsonObject>();
             for (int bar = 0; bar < roots.Count; bar++)
@@ -55,12 +55,12 @@ namespace ReBuzz.AgentEval
                 if (p < 40) p += 12;
                 for (int k = 0; k < 8; k++) bass.Add(J.Note(p, bar * 4 + k * 0.5, 0.4, k % 2 == 0 ? 110 : 85));
             }
-            Recipes.Pattern(s, "Bass", "Drive", 16, bass);
-            Recipes.Pattern(s, "Kick", "Four", 16, Recipes.Every("A1", 16, 1, length: 0.25, velocity: 120));
-            Recipes.Pattern(s, "Snare", "Back", 16, Recipes.Every("D4", 16, 2, offset: 1, length: 0.25, velocity: 110));
-            Recipes.Pattern(s, "Hats", "Eighths", 16, Recipes.Every("C6", 16, 0.5, length: 0.1, velocity: 90));
+            Recipes.Clip(s, "Bass", "Drive", 16, bass);
+            Recipes.Clip(s, "Kick", "Four", 16, Recipes.Every("A1", 16, 1, length: 0.25, velocity: 120));
+            Recipes.Clip(s, "Snare", "Back", 16, Recipes.Every("D4", 16, 2, offset: 1, length: 0.25, velocity: 110));
+            Recipes.Clip(s, "Hats", "Eighths", 16, Recipes.Every("C6", 16, 0.5, length: 0.1, velocity: 90));
             var hook = new (string, double, double)[] { ("E5", 0, 2), ("C5", 2, 1), ("D5", 3, 1), ("C5", 4, 2), ("A4", 6, 2), ("G4", 8, 1), ("A4", 9, 1), ("C5", 10, 2), ("B4", 12, 2), ("G4", 14, 2) };
-            Recipes.Pattern(s, "Lead", "Hook", 16, hook.Select(n => J.Note(n.Item1, n.Item2, n.Item3 - 0.1, 100)));
+            Recipes.Clip(s, "Lead", "Hook", 16, hook.Select(n => J.Note(n.Item1, n.Item2, n.Item3 - 0.1, 100)));
             // Check the hook against the key before using it.
             s.C.Ok("theory", new JsonObject { ["op"] = "fit", ["key"] = "A minor", ["notes"] = new JsonArray(hook.Select(n => (JsonNode)n.Item1).ToArray()) });
 

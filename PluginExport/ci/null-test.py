@@ -154,27 +154,27 @@ CHORD = [{"pitch": "C3", "start": 0, "length": 4}, {"pitch": "G3", "start": 0, "
          {"pitch": "A#3", "start": 4, "length": 3}, {"pitch": "F4", "start": 4, "length": 3}]
 
 
-def pattern(machine):
-    call("pattern_create", machine=machine, name="A", length_beats=8)
-    check(call("notes_write", machine=machine, pattern="A", notes=CHORD)[0], f"notes on {machine}")
-    call("arrangement_place", machine=machine, pattern="A", at=[0])
+def make_clip(machine):
+    call("clip_create", machine=machine, name="A", length_beats=8)
+    check(call("notes_write", machine=machine, clip="A", notes=CHORD)[0], f"notes on {machine}")
+    call("arrangement_place", machine=machine, clip="A", at=[0])
 
 
 NATIVE = "Native"
 outs = [NATIVE]          # the machines whose output is probed
 if INSTR:
     check(call("machine_add", gear=spec.get("gear", args.plugin), name=NATIVE)[0], f"native {args.plugin}")
-    pattern(NATIVE)
+    make_clip(NATIVE)
     call("connect", **{"from": NATIVE, "to": "Master"})
     for nm, plugin in (("ClapP", clap), ("VstP", vst3)):
         if not plugin: continue
         ok, _, _ = call("machine_add", gear=host_gear, plugin=plugin, name=nm)
         check(ok, f"machine_add {nm} ({plugin})")
         if ok:
-            pattern(nm); call("connect", **{"from": nm, "to": "Master"}); outs.append(nm)
+            make_clip(nm); call("connect", **{"from": nm, "to": "Master"}); outs.append(nm)
 else:
     check(call("machine_add", gear="Neo Poly", name="Src")[0], "Neo Poly source")
-    pattern("Src")
+    make_clip("Src")
     check(call("machine_add", gear=spec.get("gear", args.plugin), name=NATIVE, insert_after="Src")[0], f"native {args.plugin} after the source")
     for nm, plugin in (("ClapF", clap), ("VstF", vst3)):
         if not plugin: continue
@@ -314,7 +314,7 @@ def write_automation(auto, N, per_beat, clear):
     for nm in outs:
         slot = nm != NATIVE
         first[nm] = []
-        if not INSTR and clear: call("pattern_create", machine=nm, name="A", length_beats=8); call("arrangement_place", machine=nm, pattern="A", at=[0])
+        if not INSTR and clear: call("clip_create", machine=nm, name="A", length_beats=8); call("arrangement_place", machine=nm, clip="A", at=[0])
         for j, (n, lo, hi, df) in enumerate(auto):
             pts = []
             for i in range(N):
@@ -322,7 +322,7 @@ def write_automation(auto, N, per_beat, clear):
                 k = lo + round(frac * (hi - lo))
                 pts.append({"at": i / per_beat, "value": "raw:%d" % (round(65534 * (k - lo) / (hi - lo)) if slot else k)})
                 if i == 0: first[nm].append({"param": n, "value": pts[-1]["value"]})
-            check(call("automation_write", machine=nm, pattern="A", param=n, points=pts, shape="step", clear=True)[0], f"automation: {nm}.{n}: {N} steps")
+            check(call("automation_write", machine=nm, clip="A", param=n, points=pts, shape="step", clear=True)[0], f"automation: {nm}.{n}: {N} steps")
     return first
 
 

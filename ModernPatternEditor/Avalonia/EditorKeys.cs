@@ -16,7 +16,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         [ModuleInitializer]
         internal static void Register()
         {
-            PatternEditor.ViewFactory = editor => new PatternEditorView(editor);
+            ClipEditor.ViewFactory = editor => new ClipEditorView(editor);
         }
     }
 

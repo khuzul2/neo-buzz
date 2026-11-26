@@ -6,28 +6,28 @@ using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor.Actions
 {
-    public class MPESetOrClearEventsAction : PatternAction
+    public class MPESetOrClearEventsAction : ClipAction
     {
-        PatternEvent[] newevents;
-        PatternEvent[] oldevents;
+        ClipEvent[] newevents;
+        ClipEvent[] oldevents;
         bool set;
         int columnIndex;
 
-        MPEPattern mpePattern;
+        MPEClip mpeClip;
 
-        public MPESetOrClearEventsAction(IPattern Pattern, MPEPatternColumn mpePatternColumn, IEnumerable<PatternEvent> events, bool set)
-            : base(Pattern)
+        public MPESetOrClearEventsAction(IClip Clip, MPEClipColumn mpeClipColumn, IEnumerable<ClipEvent> events, bool set)
+            : base(Clip)
         {
             this.newevents = events.ToArray();
             this.set = set;
 
-            this.mpePattern = mpePatternColumn.MPEPattern;
-            columnIndex = mpePattern.MPEPatternColumns.IndexOf(mpePatternColumn);
+            this.mpeClip = mpeClipColumn.MPEClip;
+            columnIndex = mpeClip.MPEClipColumns.IndexOf(mpeClipColumn);
         }
 
         protected override void DoAction()
         {
-            var mpeColumn = mpePattern.MPEPatternColumns[columnIndex];
+            var mpeColumn = mpeClip.MPEClipColumns[columnIndex];
 
             if (set)
             {
@@ -42,19 +42,19 @@ namespace WDE.ModernPatternEditor.Actions
             }
 
 
-            var pattern = this.mpePattern.Pattern;
-            if (pattern != null)
+            var clip = this.mpeClip.Clip;
+            if (clip != null)
             {
-                mpePattern.Editor.PatternChanged(pattern);
+                mpeClip.Editor.ClipChanged(clip);
             }
 
-            mpePattern.Editor.SetModifiedFlag();
+            mpeClip.Editor.SetModifiedFlag();
         }
 
         protected override void UndoAction()
         {
-            //var col = Pattern.Columns[columnIndex];
-            var mpeColumn = mpePattern.MPEPatternColumns[columnIndex];
+            //var col = Clip.Columns[columnIndex];
+            var mpeColumn = mpeClip.MPEClipColumns[columnIndex];
 
             if (set)
             {
@@ -66,7 +66,7 @@ namespace WDE.ModernPatternEditor.Actions
                 mpeColumn.SetEvents(newevents, true);
             }
 
-            mpePattern.Editor.SetModifiedFlag();
+            mpeClip.Editor.SetModifiedFlag();
         }
     }
 }

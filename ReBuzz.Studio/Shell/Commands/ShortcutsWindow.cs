@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md §4, UX review mac-331): Help ▸ Keyboard Shortcuts, a searchable window made from the
 // same keymap as the menus (StudioKeymap): the app's commands by menu, then each view's own keys. It replaced a 12-line
-// message box; the Pattern editor's keys come from its own help panel, the Session View's from its key list.
+// message box; the Clip editor's keys come from its own help panel, the Session View's from its key list.
 
 using System;
 using System.Collections.Generic;
@@ -64,19 +64,19 @@ namespace ReBuzz.Studio.Shell.Commands
             }
             if (mac) result.Insert(result.FindIndex(r => r.Section == "Edit"), new Row("App", "⌘,", "Preferences"));
             foreach (var k in StudioKeymap.ViewKeys(mac)) result.Add(new Row(k.Section, k.Keys, k.What));
-            foreach (var k in StudioKeymap.PatternKeys(PatternEditorRows(), mac)) result.Add(new Row(k.Section, k.Keys, k.What));
+            foreach (var k in StudioKeymap.ClipKeys(ClipEditorRows(), mac)) result.Add(new Row(k.Section, k.Keys, k.What));
             return result;
         }
 
         static string Lower(string s) => s.Length > 1 && char.IsUpper(s[0]) && !char.IsUpper(s[1]) ? char.ToLowerInvariant(s[0]) + s.Substring(1) : s;
 
-        /// <summary>The Pattern editor's key table (its help panel's), from its view's assembly once Gear has loaded it.</summary>
-        static IEnumerable<string[]> PatternEditorRows()
+        /// <summary>The Clip editor's key table (its help panel's), from its view's assembly once Gear has loaded it.</summary>
+        static IEnumerable<string[]> ClipEditorRows()
         {
             try
             {
                 var type = AppDomain.CurrentDomain.GetAssemblies()
-                    .Select(a => a.GetType("WDE.ModernPatternEditor.AvaloniaView.PatternEditorView", false))
+                    .Select(a => a.GetType("WDE.ModernPatternEditor.AvaloniaView.ClipEditorView", false))
                     .FirstOrDefault(t => t != null);
                 return type?.GetField("KeyRows", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?.GetValue(null) as string[][];
             }

@@ -196,10 +196,10 @@ check(call("midi_play", stop=True)[0], "midi_play stop lets go")
 
 # The arrangement, played in real time.
 check(call("song_set", tempo_bpm=120, song_end_beats=16)[0], "song_set")
-check(call("pattern_create", machine="Keys", name="A", length_beats=16)[0], "pattern_create")
-check(call("notes_write", machine="Keys", pattern="A",
+check(call("clip_create", machine="Keys", name="A", length_beats=16)[0], "clip_create")
+check(call("notes_write", machine="Keys", clip="A",
            notes=[{"pitch": p, "start": 0, "length": 16} for p in ("D4", "F4", "A4")])[0], "notes_write")
-check(call("arrangement_place", machine="Keys", pattern="A", at=[0])[0], "arrangement_place")
+check(call("arrangement_place", machine="Keys", clip="A", at=[0])[0], "arrangement_place")
 ok, _, t = call("transport", action="play", at="1.1")
 check(ok, "transport play")
 ok, _, m = call("meters_read", window_seconds=1)
@@ -243,10 +243,10 @@ ok, _, t = call("transport", action="stop")
 check(ok and t.get("playing") is False, "transport stop")
 
 # The Session View: a one-bar clip in scene 1, launched (it starts the transport), heard, stopped.
-check(call("pattern_create", machine="Keys", name="Clip", length_beats=4)[0], "pattern_create a clip")
-check(call("notes_write", machine="Keys", pattern="Clip",
+check(call("clip_create", machine="Keys", name="Clip", length_beats=4)[0], "clip_create a clip")
+check(call("notes_write", machine="Keys", clip="Clip",
            notes=[{"pitch": p, "start": 0, "length": 4} for p in ("E4", "G4", "B4")])[0], "notes_write the clip")
-check(call("session_clip_set", machine="Keys", scene=1, pattern="Clip")[0], "session_clip_set")
+check(call("session_clip_set", machine="Keys", scene=1, clip="Clip")[0], "session_clip_set")
 ok, _, s = call("session_launch", scene=1)
 check(ok and s.get("playing") is True, "session_launch scene 1 (the transport starts)")
 playing, until = None, time.time() + 6
@@ -292,7 +292,7 @@ while recording and time.time() < until:
 check(not recording, "the take ended after its two bars")
 ok, _, r = call("session_record", action="stop", machine="Keys")
 check(ok and not track(r.get("state"), "Keys").get("armed"), "session_record stop disarms the track")
-ok, _, n = call("notes_read", machine="Keys", pattern=take or "?")
+ok, _, n = call("notes_read", machine="Keys", clip=take or "?")
 pitches = sorted(x.get("pitch") for x in n.get("notes") or [])
 check(ok and pitches == [60, 64, 67], f"the take has the notes played ({pitches})")
 call("transport", action="stop")

@@ -31,7 +31,7 @@ An envelope with no audio of its own that moves up to 8 parameters of other mach
 ## Pitfalls
 
 - In Note mode with nothing listened to, only `Gate` starts it; `modulate` says so.
-- Notes played from a MIDI keyboard are not seen, only those a pattern or `midi_play` send; note events arrive a few milliseconds late.
+- Notes played from a MIDI keyboard are not seen, only those a clip or `midi_play` send; note events arrive a few milliseconds late.
 - The follower measures the output of the listened machine's connections, one block late, and only while a follower runs; a machine with no output has no level.
 
 ## Pairs well with

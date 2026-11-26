@@ -27,11 +27,11 @@ namespace BuzzGUI.SequenceEditor.Actions
 
             newer.Set(seq, time);
 
-            if (newer.Type == SequenceEventType.PlayPattern)
+            if (newer.Type == SequenceEventType.PlayClip)
             {
                 oldLoopEnd = Song.LoopEnd;
                 oldSongEnd = Song.SongEnd;
-                if (Song.LoopEnd < time + newer.PatternLength) Song.LoopEnd = time + newer.PatternLength;
+                if (Song.LoopEnd < time + newer.ClipLength) Song.LoopEnd = time + newer.ClipLength;
             }
 
         }
@@ -45,7 +45,7 @@ namespace BuzzGUI.SequenceEditor.Actions
             else
                 seq.SetEvent(time, null);
 
-            if (newer.Type == SequenceEventType.PlayPattern)
+            if (newer.Type == SequenceEventType.PlayClip)
             {
                 Song.LoopEnd = oldLoopEnd;
                 Song.SongEnd = oldSongEnd;

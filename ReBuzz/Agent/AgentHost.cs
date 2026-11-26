@@ -64,7 +64,7 @@ namespace ReBuzz.Agent
             SwapTools.RegisterSwap(tools, this); // BR1 (docs/specs/browser.md): machine_swap
             ParamTools.Register(tools, this);
             ModulationTools.Register(tools, this);
-            PatternTools.Register(tools, this);
+            ClipEditingTools.Register(tools, this);
             ArrangementTools.Register(tools, this);   // K3b (agent-knowledge.md §11): arrangement_clip, arrangement_lane, arrangement_automation, arrangement_takes
             ClipEnvelopeTools.Register(tools, this);  // EV1 (daw-modes.md §8.8): clip_envelope
             ClipTools.Register(tools, this);          // CU4 (clips.md §8): clip_get

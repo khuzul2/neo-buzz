@@ -1,5 +1,5 @@
-// Fork (docs/specs/studio-mvp.md S6): the pattern grid's geometry, ported from the WPF editor's
-// ColumnSetElement (GetFieldRect, GetDigitRect, GetDigitAtPoint) and PatternControl (column sets side
+// Fork (docs/specs/studio-mvp.md S6): the clip grid's geometry, ported from the WPF editor's
+// ColumnSetElement (GetFieldRect, GetDigitRect, GetDigitAtPoint) and ClipControl (column sets side
 // by side, ColumnSetGap apart): where a beat, a field and a digit are, and which digit is at a point.
 
 using Avalonia;
@@ -14,14 +14,14 @@ namespace WDE.ModernPatternEditor.AvaloniaView
     {
         public const int ColumnSetGap = 4;
 
-        public PatternVM Pattern { get; }
-        public PatternFont Font { get; }
+        public ClipVM Clip { get; }
+        public ClipFont Font { get; }
 
-        /// <summary>Rows per beat the grid is drawn with (the pattern's default; other beats squeeze into it).</summary>
+        /// <summary>Rows per beat the grid is drawn with (the clip's default; other beats squeeze into it).</summary>
         public int RPB { get; }
 
-        public double LineHeight => Font.LineHeight * PatternControl.Scale;
-        public int BeatHeight => (int)Math.Ceiling(Font.LineHeight * RPB * PatternControl.Scale);
+        public double LineHeight => Font.LineHeight * ClipControl.Scale;
+        public int BeatHeight => (int)Math.Ceiling(Font.LineHeight * RPB * ClipControl.Scale);
         public int BeatCount { get; }
 
         readonly int[][] columnWidths;          // [set][column]
@@ -32,13 +32,13 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public double ExtentHeight => BeatCount * BeatHeight;
         public int SetCount => columnWidths.Length;
 
-        public GridLayout(PatternVM pattern, PatternFont font)
+        public GridLayout(ClipVM clip, ClipFont font)
         {
-            Pattern = pattern;
+            Clip = clip;
             Font = font;
-            RPB = Math.Max(1, pattern.DefaultRPB);
-            BeatCount = pattern.BeatCount;
-            var sets = pattern.ColumnSets ?? new List<ParameterColumnSet>();
+            RPB = Math.Max(1, clip.DefaultRPB);
+            BeatCount = clip.BeatCount;
+            var sets = clip.ColumnSets ?? new List<ParameterColumnSet>();
             columnWidths = sets.Select(cs => cs.Columns.Select(ColumnWidth).ToArray()).ToArray();
             setX = new double[columnWidths.Length];
             setWidth = new double[columnWidths.Length];
@@ -57,7 +57,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         {
             int digits = (int)Math.Ceiling(Font.Width(column.TiedToNext ? column.DigitCount - 1 : column.DigitCount));
             // Fork (ux-overhaul.md P3c): wide enough for its two-line name, which is horizontal.
-            return PatternEditor.Settings.ColumnLabels ? Math.Max(digits, (int)Math.Ceiling(HeaderText.Split(column.Label).Width + HeaderText.Pad)) : digits;
+            return ClipEditor.Settings.ColumnLabels ? Math.Max(digits, (int)Math.Ceiling(HeaderText.Split(column.Label).Width + HeaderText.Pad)) : digits;
         }
 
         public double SetX(int set) => setX[set];
@@ -67,7 +67,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
         public Rect GetFieldRect(Digit d)
         {
-            var cs = Pattern.ColumnSets[d.ColumnSet];
+            var cs = Clip.ColumnSets[d.ColumnSet];
             var col = cs.Columns[d.Column];
             var beat = col.FetchBeat(d.Beat);
 
@@ -82,7 +82,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public Rect GetDigitRect(Digit d)
         {
             var r = GetFieldRect(d);
-            var col = Pattern.ColumnSets[d.ColumnSet].Columns[d.Column];
+            var col = Clip.ColumnSets[d.ColumnSet].Columns[d.Column];
             var beat = col.FetchBeat(d.Beat);
             var text = beat.Rows[d.RowInBeat].ValueString;
             var widths = Font.AdvanceWidths(text);
@@ -92,10 +92,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return new Rect(x, r.Y, index >= 0 ? widths[index] : r.Width, r.Height);
         }
 
-        /// <summary>The cursor's rectangle (PatternControl.UpdateCursor): a digit, or a note's whole field.</summary>
+        /// <summary>The cursor's rectangle (ClipControl.UpdateCursor): a digit, or a note's whole field.</summary>
         public Rect GetCursorRect(Digit p)
         {
-            var col = Pattern.GetColumn(p);
+            var col = Clip.GetColumn(p);
             if (col.Type == ColumnType.Note && p.Index == 0)
                 return GetFieldRect(p).Inflate(new Thickness(-1, 0));
             return GetDigitRect(p).Inflate(new Thickness(1, 0));
@@ -112,7 +112,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public Digit GetDigitAtPoint(Point p)
         {
             int set = SetAt(p.X);
-            var cs = Pattern.ColumnSets[set];
+            var cs = Clip.ColumnSets[set];
             var cw = columnWidths[set];
             double px = p.X - setX[set];
 
@@ -159,14 +159,14 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             }
             newIndex = Math.Min(newIndex, col.DigitCount - 1);
 
-            return new Digit(Pattern, set, newColumn, newBeat, newRowInBeat, newIndex);
+            return new Digit(Clip, set, newColumn, newBeat, newRowInBeat, newIndex);
         }
 
         /// <summary>The row (as a digit in the first column) at a y, for the row numbers.</summary>
         public Digit GetRowAtY(double y)
         {
             var d = GetDigitAtPoint(new Point(0, y));
-            return Pattern.CursorPosition.SetBeat(d.Beat).SetRowInBeat(d.RowInBeat).Constrained;
+            return Clip.CursorPosition.SetBeat(d.Beat).SetRowInBeat(d.RowInBeat).Constrained;
         }
     }
     /// <summary>

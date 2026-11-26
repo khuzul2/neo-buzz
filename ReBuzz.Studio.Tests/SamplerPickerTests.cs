@@ -60,7 +60,7 @@ namespace ReBuzz.Studio.Tests
         {
             public MainWindow Window;
             public MachineCore Machine;
-            public IPattern Pattern;
+            public IClip Clip;
             public TrackerRoll Roll;
             public PianoRoll Notes => Roll.Roll;
             readonly string dir;
@@ -79,15 +79,15 @@ namespace ReBuzz.Studio.Tests
                 Core.SongCore.CreateMachine(gear, null, "Breaks", null, null, null, -1, 0.3f, 0.3f);
                 Machine = Core.SongCore.MachinesList.First(m => m.Name == "Breaks");
                 if (gear == "Neo Sampler") Machine.ParameterGroups[1].Parameters.First(p => p.Name == "Mode").SetValue(0, mode);
-                Machine.CreatePattern("Jungle", 16);
-                Pattern = Machine.PatternsList.First(p => p.Name == "Jungle");
+                Machine.CreateClip("Jungle", 16);
+                Clip = Machine.ClipsList.First(p => p.Name == "Jungle");
                 Window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
                 Window.Show();
                 Pump();
                 Window.Detail.ShowPage(true, true);
-                PatternView.Edit(Pattern);
+                ClipView.Edit(Clip);
                 Pump();
-                Roll = PatternView.Page.Roll;
+                Roll = ClipView.Page.Roll;
                 Roll.Poll();
                 Pump();
             }
@@ -105,12 +105,12 @@ namespace ReBuzz.Studio.Tests
 
             public void Write(params ClipNote[] notes)
             {
-                Assert.That(SongNotes.For(Core, Pattern).Edit(null, notes), Is.Null);
+                Assert.That(SongNotes.For(Core, Clip).Edit(null, notes), Is.Null);
                 Roll.Poll();
                 Pump();
             }
 
-            public ClipNote[] Now => SongNotes.For(Core, Pattern).Notes().OrderBy(n => n.Time).ToArray();
+            public ClipNote[] Now => SongNotes.For(Core, Clip).Notes().OrderBy(n => n.Time).ToArray();
         }
 
         static readonly string[] Names = { "Break · kick", "Break · snare", "Break · snare roll", "Break · hat", "Break · kick and hat" };

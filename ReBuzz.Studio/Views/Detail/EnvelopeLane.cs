@@ -83,7 +83,7 @@ namespace ReBuzz.Studio.Views.Detail
     /// <summary>Where a double click on a clip's curve asks for its lane (the window opens the Detail panel).</summary>
     internal static class EnvelopeOpener
     {
-        public static Func<IPattern, ColumnKey, bool> Open { get; set; }
+        public static Func<IClip, ColumnKey, bool> Open { get; set; }
     }
 
     internal sealed class EnvelopeLane : Control
@@ -112,7 +112,7 @@ namespace ReBuzz.Studio.Views.Detail
         readonly IEnvelopeAxis axis;
         readonly ClipEnvelopeEditor editor;
         readonly HashSet<int> selected = new();
-        IPattern pattern;
+        IClip clip;
         ClipEnvelope env;
         long signature;
         string refusal;
@@ -125,11 +125,11 @@ namespace ReBuzz.Studio.Views.Detail
         int hoverTime = -1;
         int insertTime;
 
-        public EnvelopeLane(ReBuzzCore core, IEnvelopeAxis axis, IPattern pattern, ColumnKey key)
+        public EnvelopeLane(ReBuzzCore core, IEnvelopeAxis axis, IClip clip, ColumnKey key)
         {
             this.core = core;
             this.axis = axis;
-            this.pattern = pattern;
+            this.clip = clip;
             ParamKey = key;
             editor = new ClipEnvelopeEditor(core);
             Height = LaneHeight;
@@ -144,7 +144,7 @@ namespace ReBuzz.Studio.Views.Detail
         public ColumnKey ParamKey { get; }
 
         /// <summary>The clip the lane shows.</summary>
-        public IPattern Pattern => pattern;
+        public IClip Clip => clip;
 
         /// <summary>The envelope as the last reading found it (null when the parameter is gone).</summary>
         public ClipEnvelope Envelope => env;
@@ -204,9 +204,9 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>Reads the clip again (after an edit, an undo, the agent); true when what the lane shows changed.</summary>
         public bool Reload(bool force = false)
         {
-            var next = ClipEnvelopes.Read(pattern, ParamKey);
+            var next = ClipEnvelopes.Read(clip, ParamKey);
             long sig = Sign(next);
-            if (!force && sig == signature && ReferenceEquals(next?.Pattern, env?.Pattern)) return false;
+            if (!force && sig == signature && ReferenceEquals(next?.Clip, env?.Clip)) return false;
             signature = sig;
             env = next;
             var times = env?.Points.Select(p => p.Time).ToHashSet() ?? new HashSet<int>();
@@ -429,7 +429,7 @@ namespace ReBuzz.Studio.Views.Detail
             AutoPoint? p = gesture == Gesture.Points && moved && time == grabbed.Time ? Displaced(grabbed) : env.Points.Cast<AutoPoint?>().FirstOrDefault(q => q!.Value.Time == time);
             if (p is not { } pt) return null;
             int tpb = Math.Max(1, core.TPB), bpb = Math.Max(1, core.Session?.BeatsPerBar ?? 4);
-            return $"{env.Param.Describe(pt.Value)} · {TimeText.Position(pt.Time / PatternEvent.TimeBase, tpb, bpb)} · {(pt.Ramp ? "ramp" : "step")}";
+            return $"{env.Param.Describe(pt.Value)} · {TimeText.Position(pt.Time / ClipEvent.TimeBase, tpb, bpb)} · {(pt.Ramp ? "ramp" : "step")}";
         }
 
         void DrawTip(DrawingContext dc, double w, double h)
@@ -736,7 +736,7 @@ namespace ReBuzz.Studio.Views.Detail
             return true;
         }
 
-        string SourceId => $"{pattern.Machine?.Name}|{ParamKey.Group}|{ParamKey.Index}|{ParamKey.Track}";
+        string SourceId => $"{clip.Machine?.Name}|{ParamKey.Group}|{ParamKey.Index}|{ParamKey.Track}";
 
         public bool Paste() => PasteAt(insertTime);
 

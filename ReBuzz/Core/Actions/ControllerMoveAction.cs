@@ -15,7 +15,7 @@ namespace ReBuzz.Core.Actions
         /// <summary>A controller's moves within this idle gap are one step.</summary>
         public static readonly TimeSpan Gap = TimeSpan.FromMilliseconds(500);
 
-        /// <summary>SetValue's flag: not recorded into patterns while recording (undo and redo aren't playing).</summary>
+        /// <summary>SetValue's flag: not recorded into clips while recording (undo and redo aren't playing).</summary>
         const int DoNotRecord = 1 << 16;
 
         readonly ReBuzzCore core;

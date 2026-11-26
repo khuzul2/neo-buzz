@@ -6,7 +6,7 @@ using System.ComponentModel;
 
 namespace BuzzGUI.Interfaces
 {
-    public enum MachineDialog { Parameters, Attributes, SignalAnalysis, Rename, Delay, Patterns };
+    public enum MachineDialog { Parameters, Attributes, SignalAnalysis, Rename, Delay, Clips };
 
     public interface IMachine : INotifyPropertyChanged
     {
@@ -30,7 +30,7 @@ namespace BuzzGUI.Interfaces
 
         ReadOnlyCollection<string> EnvelopeNames { get; }
 
-        ReadOnlyCollection<IPattern> Patterns { get; }
+        ReadOnlyCollection<IClip> Clips { get; }
 
         bool IsControlMachine { get; }
         bool IsActive { get; }
@@ -46,12 +46,12 @@ namespace BuzzGUI.Interfaces
         int Latency { get; }                                                // latency given by the machine
         int OverrideLatency { get; set; }                                   // -1 = don't override
 
-        IMachineDLL PatternEditorDLL { get; }
+        IMachineDLL ClipEditorDLL { get; }
 
         int BaseOctave { get; set; }
 
         byte[] Data { get; set; }                                           // calls CMachineInterface::Save and CMachineInterfaceEx::Load
-        byte[] PatternEditorData { get; }                                   // calls CMachineInterface::Save of the pattern editor machine
+        byte[] ClipEditorData { get; }                                   // calls CMachineInterface::Save of the clip editor machine
 
         IntPtr CMachinePtr { get; }                                         // native CMachine *
 
@@ -81,14 +81,14 @@ namespace BuzzGUI.Interfaces
         void SendMIDINote(int channel, int value, int velocity);        // CMICallbacks::SendMidiNote
         void SendMIDIControlChange(int ctrl, int channel, int value);   // CMICallbacks::SendMidiControlChange
 
-        void CreatePattern(string name, int length);
-        void ClonePattern(string name, IPattern p);
-        void DeletePattern(IPattern p);
+        void CreateClip(string name, int length);
+        void CloneClip(string name, IClip p);
+        void DeleteClip(IClip p);
 
-        void RenamePattern(IPattern p, string name);
+        void RenameClip(IClip p, string name);
 
-        event Action<IPattern> PatternAdded;
-        event Action<IPattern> PatternRemoved;
+        event Action<IClip> ClipAdded;
+        event Action<IClip> ClipRemoved;
 
     }
 }

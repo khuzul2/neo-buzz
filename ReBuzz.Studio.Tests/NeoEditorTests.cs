@@ -64,6 +64,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Spectral", "NeoSpectralEditor", "neo-spectral-editor", 1004, 300),
             ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 836),   // the live view, key, pitch, triggers with the Train panel, chords and expression
             ("Neo Lo-Fi", "NeoLoFiEditor", "neo-lofi-editor", 1041, 241),   // LF2: Amount and Mix over Tone and Output (1000 x 330 with the three knobs in a column)
+            ("Neo Chop", "NeoChopEditor", "neo-chop-editor", 898, 546),   // CHP1: the mode row, the mode pages, the sixteen steps and Output (the size is read from the first CI run)
             ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
@@ -1574,11 +1575,11 @@ namespace ReBuzz.Studio.Tests
                 var busy = sampler.ManagedMachine.GetType().GetProperty("Busy")!;
                 var clock = System.Diagnostics.Stopwatch.StartNew();
                 while (busy.GetValue(sampler.ManagedMachine) is true && clock.ElapsedMilliseconds < 20000) Thread.Sleep(20);
-                sampler.CreatePattern("00", 16);
-                var pattern = sampler.Patterns.First(p => p.Name == "00");
-                Core.SessionLayout.EditNotes(pattern, null, new[] { new ReBuzz.Core.Session.ClipNote(0, PatternEvent.TimeBase * 2, 36, 120) });
+                sampler.CreateClip("00", 16);
+                var clip = sampler.Clips.First(p => p.Name == "00");
+                Core.SessionLayout.EditNotes(clip, null, new[] { new ReBuzz.Core.Session.ClipNote(0, ClipEvent.TimeBase * 2, 36, 120) });
                 song.AddSequence(sampler, song.Sequences.Count);
-                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, clip));
                 Core.Looping = true;
                 song.LoopStart = 0;
                 song.LoopEnd = 16;
@@ -1858,7 +1859,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(agent.Name, Is.EqualTo("Drive"));
                 Assert.That(agent.Badge, Is.EqualTo("Agent"));
 
-                // The same control written by anything else (a pattern, a peer machine) is automation.
+                // The same control written by anything else (a clip, a peer machine) is automation.
                 var attack = Global(m, "Attack");
                 window.MouseMove(new Point(2, 2));
                 Thread.Sleep((int)ExplainState.AutomationHoldMs + 100);

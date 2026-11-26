@@ -4,7 +4,7 @@ namespace WDE.ModernPatternEditor.Actions
 {
     abstract class MachineVMAction : BuzzAction
     {
-        PatternEditor editor;
+        ClipEditor editor;
         string machineName;
 
         protected MachineVM MachineVM

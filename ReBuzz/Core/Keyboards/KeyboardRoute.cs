@@ -1,7 +1,7 @@
 // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): how the keyboard under a machine's window
 // plays it, and whether it shows one at all. A machine that takes MIDI notes gets MIDI, as a MIDI
 // keyboard plays it; one that takes notes only in its Note track parameter (most native machines, the
-// Pedal synths) gets them there, a note per track, as its patterns play it. The agent server decides
+// Pedal synths) gets them there, a note per track, as its clips play it. The agent server decides
 // the same way (ReBuzz/Agent/MachineNotes.cs: the manifest's note input, its pitch offset, the Note and
 // velocity track parameters), with one thing first: a managed machine that has MidiNote takes MIDI,
 // whatever a manifest profiled before it had it says (the Pedal synths are getting MIDI input).
@@ -108,7 +108,7 @@ namespace ReBuzz.Core.Keyboards
                 Velocity = input.VelocityParameter,
                 Lowest = lowest,
                 Highest = highest,
-                Description = $"Plays its Note track parameter, a note per track, as its patterns do: {m.DLL.Name} takes no MIDI notes." + pitch,
+                Description = $"Plays its Note track parameter, a note per track, as its clips do: {m.DLL.Name} takes no MIDI notes." + pitch,
             };
         }
     }

@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class ArrangementViewTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         static ReBuzzCore Core => Studio.Host.Core;
 
@@ -128,8 +128,8 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
 
-            /// <summary>The clips of a lane as text: "0-16 Name 0 +0" (start-end, pattern, the part it starts with).</summary>
-            public string Clips(ISequence lane) => string.Join(" | ", Canvas.ItemsOf(lane).Select(i => $"{i.Time}-{i.End} {i.Pattern.Name} from {i.Spec.Start}{(i.Spec.Loop ? " loop" : "")}"));
+            /// <summary>The clips of a lane as text: "0-16 Name 0 +0" (start-end, clip, the part it starts with).</summary>
+            public string Clips(ISequence lane) => string.Join(" | ", Canvas.ItemsOf(lane).Select(i => $"{i.Time}-{i.End} {i.Clip.Name} from {i.Spec.Start}{(i.Spec.Loop ? " loop" : "")}"));
 
             public void Dispose()
             {
@@ -144,13 +144,13 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        static void Notes(IPattern p, int length)
+        static void Notes(IClip p, int length)
         {
             var notes = Enumerable.Range(0, length / 2).Select(i => new ClipNote(i * 2 * TB, TB, 48 + 3 * (i % 7), 100)).ToArray();
             Core.SessionLayout.EditNotes(p, null, notes);
         }
 
-        static string Events(ISequence s) => string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e => $"{e.Key}:{e.Value.Pattern?.Name}[{e.Value.Offset},{e.Value.End}]"));
+        static string Events(ISequence s) => string.Join(" ", s.Events.OrderBy(e => e.Key).Select(e => $"{e.Key}:{e.Value.Clip?.Name}[{e.Value.Offset},{e.Value.End}]"));
 
         // ------------------------------------------------------------------ the mode
 
@@ -211,9 +211,9 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig("Lead");
             var lane = rig.Lane("Lead");
             rig.DoubleClick(rig.At(lane, 0, 2));
-            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0 loop"), "a clip of the session's clip length with a pattern of its own");
-            var pattern = Core.Song.Machines.First(m => m.Name == "Lead").Patterns.Single();
-            Assert.That(pattern.Length, Is.EqualTo(16));
+            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0 loop"), "a clip of the session's clip length with a clip of its own");
+            var clip = Core.Song.Machines.First(m => m.Name == "Lead").Clips.Single();
+            Assert.That(clip.Length, Is.EqualTo(16));
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 48));
             Assert.That(Events(lane), Is.EqualTo("0:00[0,0] 16:00[0,0] 32:00[0,0]"), "the right edge repeats a looping clip");
             Assert.That(rig.Clips(lane), Is.EqualTo("0-48 00 from 0 loop"));
@@ -238,32 +238,32 @@ namespace ReBuzz.Studio.Tests
             var lane = rig.Lane("Lead");
             rig.DoubleClick(rig.At(lane, 0, 2));
             var machine = Core.Song.Machines.First(m => m.Name == "Lead");
-            Notes(machine.Patterns.Single(), 16);
-            int original = lane.Events[0].Clip;
+            Notes(machine.Clips.Single(), 16);
+            int original = lane.Events[0].PlacementId;
             Assert.That(original, Is.Positive);
 
             rig.Drag(rig.At(lane, 4), rig.At(lane, 36), Cmd);
-            Assert.That(machine.Patterns.Count, Is.EqualTo(2), "a copy-drag makes a new pattern");
-            var copy = lane.Events[32].Pattern;
-            Assert.That(copy.Name, Is.Not.EqualTo(machine.Patterns.First(p => p.Name == "00").Name));
-            Assert.That(lane.Events[32].Clip, Is.Not.EqualTo(original), "and a clip id of its own");
-            Assert.That(copy.Columns.Count, Is.EqualTo(machine.Patterns.First(p => p.Name == "00").Columns.Count), "with the notes (the engine columns) copied");
+            Assert.That(machine.Clips.Count, Is.EqualTo(2), "a copy-drag makes a new clip");
+            var copy = lane.Events[32].Clip;
+            Assert.That(copy.Name, Is.Not.EqualTo(machine.Clips.First(p => p.Name == "00").Name));
+            Assert.That(lane.Events[32].PlacementId, Is.Not.EqualTo(original), "and a clip id of its own");
+            Assert.That(copy.Columns.Count, Is.EqualTo(machine.Clips.First(p => p.Name == "00").Columns.Count), "with the notes (the engine columns) copied");
             Assert.That(Events(lane), Is.EqualTo($"0:00[0,0] 32:{copy.Name}[0,0]"));
 
             rig.Drag(rig.At(lane, 4), rig.At(lane, 68), RawInputModifiers.Alt);
-            Assert.That(machine.Patterns.Count, Is.EqualTo(2), "an Alt-drag makes no pattern");
-            Assert.That(lane.Events[64].Pattern.Name, Is.EqualTo("00"), "it is another place of the same pattern");
-            Assert.That(lane.Events[64].Clip, Is.Not.EqualTo(original).And.Not.EqualTo(lane.Events[32].Clip), "with its own id");
-            Assert.That(rig.Canvas.UsesOf(machine.Patterns.First(p => p.Name == "00")), Is.EqualTo(2), "the shared badge counts the places");
+            Assert.That(machine.Clips.Count, Is.EqualTo(2), "an Alt-drag makes no clip");
+            Assert.That(lane.Events[64].Clip.Name, Is.EqualTo("00"), "it is another place of the same clip");
+            Assert.That(lane.Events[64].PlacementId, Is.Not.EqualTo(original).And.Not.EqualTo(lane.Events[32].PlacementId), "with its own id");
+            Assert.That(rig.Canvas.UsesOf(machine.Clips.First(p => p.Name == "00")), Is.EqualTo(2), "the shared badge counts the places");
 
-            // Make unique: the clip gets a pattern of its own.
+            // Make unique: the clip gets a clip of its own.
             rig.Click(rig.At(lane, 68));
             rig.Key(PhysicalKey.U);
-            Assert.That(machine.Patterns.Count, Is.EqualTo(3));
-            Assert.That(lane.Events[64].Pattern.Name, Is.Not.EqualTo("00"));
-            Assert.That(rig.Canvas.UsesOf(machine.Patterns.First(p => p.Name == "00")), Is.EqualTo(1));
+            Assert.That(machine.Clips.Count, Is.EqualTo(3));
+            Assert.That(lane.Events[64].Clip.Name, Is.Not.EqualTo("00"));
+            Assert.That(rig.Canvas.UsesOf(machine.Clips.First(p => p.Name == "00")), Is.EqualTo(1));
             rig.Key(PhysicalKey.Z, Cmd);
-            Assert.That(lane.Events[64].Pattern.Name, Is.EqualTo("00"), "undo gives the shared pattern back");
+            Assert.That(lane.Events[64].Clip.Name, Is.EqualTo("00"), "undo gives the shared clip back");
         }
 
         [AvaloniaTest]
@@ -276,8 +276,8 @@ namespace ReBuzz.Studio.Tests
             string before = Events(lane);
             rig.Click(rig.At(lane, 24));           // the click puts the cursor on the beat
             rig.Key(PhysicalKey.S);
-            Assert.That(rig.Clips(lane), Is.EqualTo("0-24 00 from 0 loop | 24-48 00 from 8 loop"), "two clips, the second starting partway into the pattern");
-            Assert.That(lane.Events[0].Clip, Is.Not.EqualTo(lane.Events[24].Clip));
+            Assert.That(rig.Clips(lane), Is.EqualTo("0-24 00 from 0 loop | 24-48 00 from 8 loop"), "two clips, the second starting partway into the clip");
+            Assert.That(lane.Events[0].PlacementId, Is.Not.EqualTo(lane.Events[24].PlacementId));
             rig.Click(rig.At(lane, 4));
             rig.Key(PhysicalKey.J);
             Assert.That(rig.Clips(lane), Is.EqualTo("0-48 00 from 0 loop"));
@@ -292,10 +292,10 @@ namespace ReBuzz.Studio.Tests
             rig.DoubleClick(rig.At(lane, 0, 2));
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 64));
             rig.Click(rig.At(lane, 8));
-            rig.Key(PhysicalKey.L);                  // loop off: it plays its pattern once
+            rig.Key(PhysicalKey.L);                  // loop off: it plays its clip once
             Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0"));
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 48));
-            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0"), "without a loop the right edge can't make it longer than its pattern");
+            Assert.That(rig.Clips(lane), Is.EqualTo("0-16 00 from 0"), "without a loop the right edge can't make it longer than its clip");
             rig.Click(rig.At(lane, 8));
             rig.Key(PhysicalKey.L);
             rig.Drag(rig.At(lane, 16, -2), rig.At(lane, 48));
@@ -315,8 +315,8 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig("Lead");
             var lane = rig.Lane("Lead");
             rig.DoubleClick(rig.At(lane, 0, 2));
-            var pattern = Core.Song.Machines.First(m => m.Name == "Lead").Patterns.Single();
-            Core.Session.Launch(lane, pattern);
+            var clip = Core.Song.Machines.First(m => m.Name == "Lead").Clips.Single();
+            Core.Session.Launch(lane, clip);
             Settle();
             rig.Canvas.InvalidateVisual();
             Settle();
@@ -336,13 +336,13 @@ namespace ReBuzz.Studio.Tests
         {
             using var rig = new Rig("Lead");
             var machine = Core.Song.Machines.First(m => m.Name == "Lead");
-            machine.CreatePattern("P", 16);
-            var p = machine.Patterns.Single();
+            machine.CreateClip("P", 16);
+            var p = machine.Clips.Single();
             var spec = new ClipSpec(0, p, 8, 32, 4, 2, 12, true, 1.0);
             // Starts at 4, plays to 12 (8 ticks), then repeats 2..12 (10 ticks): 8 + 10 + 10 + 10 = 38, cut at 40.
             Assert.That(spec.Segments(), Is.EqualTo(new[] { new ClipSegment(8, 4, 8), new ClipSegment(16, 2, 10), new ClipSegment(26, 2, 10), new ClipSegment(36, 2, 4) }));
             Assert.That(spec.Events(1).Select(e => (e.Time, e.Event.Offset, e.Event.End)), Is.EqualTo(new[] { (8, 4, 12), (16, 2, 12), (26, 2, 12), (36, 2, 6) }));
-            Assert.That(spec.PatternPositionAt(30), Is.EqualTo(6));
+            Assert.That(spec.ClipPositionAt(30), Is.EqualTo(6));
             var right = spec.CutLeft(30);
             Assert.That((right.Time, right.Start, right.Length), Is.EqualTo((30, 6, 10)));
             Assert.That((spec with { Loop = false }).Segments(), Is.EqualTo(new[] { new ClipSegment(8, 4, 8) }), "without a loop the region plays once");
@@ -409,26 +409,26 @@ namespace ReBuzz.Studio.Tests
 
             // Lead: a clip drawn at bar 1, repeated to bar 4 by its right edge, and copied (independently) to bar 5 by Ctrl/Cmd-drag.
             rig.DoubleClick(rig.At(lead, 0, 2));
-            Notes(leadMachine.Patterns.Single(), 16);
+            Notes(leadMachine.Clips.Single(), 16);
             rig.Drag(rig.At(lead, 16, -2), rig.At(lead, 64));
             rig.Drag(rig.At(lead, 8), rig.At(lead, 72), Cmd);
 
             // Bass: a clip at bar 1, its start trimmed by a beat, repeated to bar 3 and its end trimmed again;
             // and a second one at bar 6 that doesn't loop, trimmed to half.
             rig.DoubleClick(rig.At(bass, 0, 2));
-            Notes(bassMachine.Patterns.Single(), 16);
+            Notes(bassMachine.Clips.Single(), 16);
             rig.Drag(rig.At(bass, 0, 2), rig.At(bass, 4));
             rig.Drag(rig.At(bass, 16, -2), rig.At(bass, 48));
             rig.Drag(rig.At(bass, 48, -2), rig.At(bass, 40));
             rig.DoubleClick(rig.At(bass, 80, 2));
-            var second = bassMachine.Patterns.First(p => p.Name != bass.Events.OrderBy(e => e.Key).First().Value.Pattern.Name);
+            var second = bassMachine.Clips.First(p => p.Name != bass.Events.OrderBy(e => e.Key).First().Value.Clip.Name);
             Notes(second, 16);
             rig.Click(rig.At(bass, 84));
             rig.Key(PhysicalKey.L);
             rig.Drag(rig.At(bass, 96, -2), rig.At(bass, 88));
 
-            string leadName = lead.Events[0].Pattern.Name, copyName = lead.Events[64].Pattern.Name, bassName = bass.Events.OrderBy(e => e.Key).First().Value.Pattern.Name;
-            Assert.That(copyName, Is.Not.EqualTo(leadName), "the copy-drag made its own pattern");
+            string leadName = lead.Events[0].Clip.Name, copyName = lead.Events[64].Clip.Name, bassName = bass.Events.OrderBy(e => e.Key).First().Value.Clip.Name;
+            Assert.That(copyName, Is.Not.EqualTo(leadName), "the copy-drag made its own clip");
             Assert.That(Events(lead), Is.EqualTo($"0:{leadName}[0,0] 16:{leadName}[0,0] 32:{leadName}[0,0] 48:{leadName}[0,0] 64:{copyName}[0,0] 80:{copyName}[0,0] 96:{copyName}[0,0] 112:{copyName}[0,0]"),
                 "Lead: two looped clips, as the mouse made them");
             Assert.That(Events(bass), Is.EqualTo($"4:{bassName}[4,0] 16:{bassName}[0,0] 32:{bassName}[0,8] 80:{second.Name}[0,8]"),
@@ -445,22 +445,22 @@ namespace ReBuzz.Studio.Tests
             Assert.That(drawn.Max(Math.Abs), Is.GreaterThan(0.01f), "the song makes sound");
 
             // ...is the render of the same events written plain, with no clip ids, loops or arrangement data...
-            var plain = new List<(ISequence Seq, int Time, IPattern Pattern, int Offset, int End)>();
+            var plain = new List<(ISequence Seq, int Time, IClip Clip, int Offset, int End)>();
             foreach (var seq in new[] { lead, bass })
                 foreach (var kv in seq.Events.OrderBy(e => e.Key))
-                    plain.Add((seq, kv.Key, kv.Value.Pattern, kv.Value.Offset, kv.Value.End));
+                    plain.Add((seq, kv.Key, kv.Value.Clip, kv.Value.Offset, kv.Value.End));
             foreach (var seq in new[] { lead, bass })
                 foreach (int t in seq.Events.Keys.ToList()) seq.SetEvent(t, null);
             Core.Clips.Reset();
-            foreach (var (seq, time, pattern, offset, end) in plain)
-                seq.SetEvent(time, new SequenceEvent(SequenceEventType.PlayPattern, pattern) { Offset = offset, End = end });
+            foreach (var (seq, time, clip, offset, end) in plain)
+                seq.SetEvent(time, new SequenceEvent(SequenceEventType.PlayClip, clip) { Offset = offset, End = end });
             Assert.That(rig.Canvas.Editor.Read(bass).Count, Is.GreaterThan(0));
             var asPlain = RenderSong();
             Assert.That(asPlain, Is.EqualTo(drawn), "the song drawn by mouse renders as the equivalent plain events");
 
             // ...and, but for the trims, as upstream ReBuzz plays it: upstream knows no Offset or End and plays each event whole.
-            foreach (var (seq, time, pattern, _, _) in plain)
-                seq.SetEvent(time, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+            foreach (var (seq, time, clip, _, _) in plain)
+                seq.SetEvent(time, new SequenceEvent(SequenceEventType.PlayClip, clip));
             var upstream = RenderSong();
             var upstreamLead = RenderSong(bassMachine);
             Assert.That(upstreamLead, Is.EqualTo(drawnLead), "Lead, whose clips aren't trimmed, plays the same as upstream plays it");

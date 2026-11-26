@@ -45,7 +45,7 @@ namespace ReBuzz.Core
         /// <summary>Warp markers (audio sample, clip beat): at least two, or none to clear.</summary>
         public List<(double Sample, double Beat)> Markers;
         public bool? Reverse;
-        /// <summary>The pattern's own loop and region, in ticks of the clip (the Session's slot). The arrangement's are the clip's: ClipEditor.</summary>
+        /// <summary>The clip's own loop and region, in ticks of the clip (the Session's slot). The arrangement's are the clip's: ClipEditor.</summary>
         public bool? Loop;
         public int? Start, LoopStart, LoopEnd;
 
@@ -67,7 +67,7 @@ namespace ReBuzz.Core
 
         static string Find(string[] among, string value) => among.FirstOrDefault(w => string.Equals(w, value, StringComparison.OrdinalIgnoreCase));
 
-        /// <summary>The fields applied to a clip's settings (the pattern's, a copy): its audio and its own loop and region.</summary>
+        /// <summary>The fields applied to a clip's settings (the clip's, a copy): its audio and its own loop and region.</summary>
         internal void ApplyTo(SessionDocument.ClipSettings settings)
         {
             var a = settings.Audio;

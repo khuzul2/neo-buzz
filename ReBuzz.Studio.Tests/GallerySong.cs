@@ -1,6 +1,6 @@
 // Fork (docs/specs/ui-gallery.md): the demo song both UI galleries capture, built through the engine alone so the
 // Mac studio's headless gallery (ReBuzz.Studio.Tests, GalleryTests) and ReBuzz.exe's (--ui-shots, UiShots) show the
-// same song: Neo generators and effects wired up, patterns with notes (most moved onto the Pattern View's note lanes,
+// same song: Neo generators and effects wired up, clips with notes (most moved onto the Clip View's note lanes,
 // one left in its clip for the piano roll), an arrangement, Session View clips, scenes, colours and a return, song
 // notes. Native machines join it where Gear has them (ReBuzz.exe); elsewhere they are left out. Compiled into
 // ReBuzz.exe and linked into ReBuzz.Studio.Tests; engine APIs only.
@@ -18,13 +18,13 @@ namespace ReBuzz.Gallery
     {
         public const string Title = "Night Drive";
         public const int Bar = 16;                  // ticks a bar at 4 ticks a beat
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         /// <summary>What was built, for the galleries to point at.</summary>
         internal sealed class Song
         {
             public MachineCore Drums, Bass, Lead, Pad, Drive, Comp, Delay, Verb, Eq, Limiter, Master;
-            public IPattern Beat, Fill, Break, LineA, LineB, Hook, Answer, Arp, Chords;
+            public IClip Beat, Fill, Break, LineA, LineB, Hook, Answer, Arp, Chords;
             public readonly List<string> Problems = new List<string>();
             public IEnumerable<MachineCore> Generators => new[] { Drums, Bass, Lead, Pad }.Where(m => m != null);
         }
@@ -35,7 +35,7 @@ namespace ReBuzz.Gallery
             var s = new Song();
             var song = core.SongCore;
             MachineCore M(string name) => song.MachinesList.FirstOrDefault(m => m.Name == name);
-            IPattern P(MachineCore m, string name) => m?.Patterns.FirstOrDefault(p => p.Name == name);
+            IClip P(MachineCore m, string name) => m?.Clips.FirstOrDefault(p => p.Name == name);
             s.Master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
             s.Drums = M("Drums"); s.Bass = M("Bass"); s.Lead = M("Lead"); s.Pad = M("Pad");
             s.Drive = M("Drive"); s.Comp = M("Drum Bus"); s.Delay = M("Delay"); s.Verb = M("Verb"); s.Eq = M("EQ"); s.Limiter = M("Limiter");
@@ -100,13 +100,13 @@ namespace ReBuzz.Gallery
             foreach (var g in s.Generators)
                 if (!song.SequencesList.Any(q => q.Machine == g)) song.AddSequence(g, song.SequencesList.Count);
 
-            // Patterns and notes (beats of 4 ticks; a tick is a row of the pattern editor).
+            // Clips and notes (beats of 4 ticks; a tick is a row of the clip editor).
             var layout = core.SessionLayout;
-            IPattern Pattern(MachineCore m, string name, int ticks, params (double At, double Length, int Note, int Velocity)[] notes)
+            IClip Clip(MachineCore m, string name, int ticks, params (double At, double Length, int Note, int Velocity)[] notes)
             {
                 if (m == null) return null;
-                m.CreatePattern(name, ticks);
-                var p = m.PatternsList.Single(x => x.Name == name);
+                m.CreateClip(name, ticks);
+                var p = m.ClipsList.Single(x => x.Name == name);
                 if (notes.Length > 0)
                     layout.EditNotes(p, null, notes.Select(n => new ClipNote((int)Math.Round(n.At * TB), Math.Max(1, (int)Math.Round(n.Length * TB)), n.Note, n.Velocity)).ToArray());
                 return p;
@@ -116,42 +116,42 @@ namespace ReBuzz.Gallery
             for (int i = 0; i < 16; i += 4) beat.Add((i, 1, 36, 120));
             foreach (int i in new[] { 4, 12 }) { beat.Add((i, 1, 38, 110)); beat.Add((i, 1, 39, 80)); }
             for (int i = 2; i < 16; i += 4) beat.Add((i, 1, i == 14 ? 46 : 42, i % 8 == 2 ? 90 : 70));
-            s.Beat = Pattern(s.Drums, "Beat", Bar, beat.ToArray());
-            s.Fill = Pattern(s.Drums, "Fill", Bar, (0, 1, 36, 120), (4, 1, 38, 100), (8, 1, 36, 120), (10, 1, 36, 100),
+            s.Beat = Clip(s.Drums, "Beat", Bar, beat.ToArray());
+            s.Fill = Clip(s.Drums, "Fill", Bar, (0, 1, 36, 120), (4, 1, 38, 100), (8, 1, 36, 120), (10, 1, 36, 100),
                 (12, 1, 38, 90), (13, 1, 38, 100), (14, 1, 38, 110), (15, 1, 38, 127));
             var brk = new List<(double, double, int, int)>();
             for (int i = 0; i < 32; i += 2) brk.Add((i, 1, 42, i % 4 == 0 ? 85 : 55));
             brk.Add((0, 1, 36, 110));
             brk.Add((24, 1, 39, 90));
-            s.Break = Pattern(s.Drums, "Break", 2 * Bar, brk.ToArray());
+            s.Break = Clip(s.Drums, "Break", 2 * Bar, brk.ToArray());
 
             // A minor: A1 C2 E2 G2.
             (double, double, int, int)[] Line(int[] notes) => notes.Select((n, i) => ((double)i * 2, 1.5, n, i % 4 == 0 ? 115 : 95)).Where(n => n.Item3 > 0).ToArray();
-            s.LineA = Pattern(s.Bass, "Line A", 2 * Bar, Line(new[] { 33, 33, 45, 33, 36, 33, 43, 40, 33, 33, 45, 33, 31, 31, 43, 38 }));
-            s.LineB = Pattern(s.Bass, "Line B", 2 * Bar, Line(new[] { 29, 29, 41, 29, 31, 31, 43, 31, 36, 36, 48, 36, 31, 31, 43, 35 }));
+            s.LineA = Clip(s.Bass, "Line A", 2 * Bar, Line(new[] { 33, 33, 45, 33, 36, 33, 43, 40, 33, 33, 45, 33, 31, 31, 43, 38 }));
+            s.LineB = Clip(s.Bass, "Line B", 2 * Bar, Line(new[] { 29, 29, 41, 29, 31, 31, 43, 31, 36, 36, 48, 36, 31, 31, 43, 35 }));
 
-            s.Hook = Pattern(s.Lead, "Hook", 2 * Bar, (0, 3, 69, 110), (4, 2, 72, 100), (6, 2, 76, 100), (8, 6, 74, 105),
+            s.Hook = Clip(s.Lead, "Hook", 2 * Bar, (0, 3, 69, 110), (4, 2, 72, 100), (6, 2, 76, 100), (8, 6, 74, 105),
                 (16, 3, 72, 110), (20, 2, 71, 95), (22, 2, 67, 95), (24, 8, 69, 100));
-            s.Answer = Pattern(s.Lead, "Answer", 2 * Bar, (0, 2, 76, 100), (2, 2, 74, 90), (4, 4, 72, 100), (12, 2, 71, 90),
+            s.Answer = Clip(s.Lead, "Answer", 2 * Bar, (0, 2, 76, 100), (2, 2, 74, 90), (4, 4, 72, 100), (12, 2, 71, 90),
                 (16, 2, 72, 100), (18, 2, 74, 90), (20, 8, 76, 105));
             var arp = new List<(double, double, int, int)>();
             int[][] chords = { new[] { 57, 60, 64, 69 }, new[] { 53, 57, 60, 65 }, new[] { 48, 52, 55, 60 }, new[] { 55, 59, 62, 67 } };
             for (int i = 0; i < 128; i++) arp.Add((i, 1, chords[i / 32 % 4][i % 4] + (i / 16 % 2 == 1 ? 12 : 0), 70 + i % 4 * 10));
-            s.Arp = Pattern(s.Lead, "Arp", 8 * Bar, arp.ToArray());
+            s.Arp = Clip(s.Lead, "Arp", 8 * Bar, arp.ToArray());
 
             var pad = new List<(double, double, int, int)>();
             for (int c = 0; c < 4; c++)
                 foreach (int n in chords[c].Take(3)) pad.Add((c * Bar, Bar, n, 80));
-            s.Chords = Pattern(s.Pad, "Chords", 4 * Bar, pad.ToArray());
+            s.Chords = Clip(s.Pad, "Chords", 4 * Bar, pad.ToArray());
 
-            // (The notes are in the clips' store already: the Pattern View's Notes lanes and the piano roll show the same ones.)
+            // (The notes are in the clips' store already: the Clip View's Notes lanes and the piano roll show the same ones.)
 
             // The arrangement: 16 bars.
-            void Place(IPattern p, params int[] bars)
+            void Place(IClip p, params int[] bars)
             {
                 if (p == null) return;
                 var seq = song.SequencesList.First(q => q.Machine == p.Machine);
-                foreach (int b in bars) seq.SetEvent(b * Bar, new SequenceEvent(SequenceEventType.PlayPattern, p));
+                foreach (int b in bars) seq.SetEvent(b * Bar, new SequenceEvent(SequenceEventType.PlayClip, p));
             }
             Place(s.Arp, 0);
             Place(s.Chords, 0, 4, 8, 12);
@@ -172,7 +172,7 @@ namespace ReBuzz.Gallery
             int Track(MachineCore m) => m == null ? -1 : doc.Tracks.FindIndex(t => t.Machine == m.Name);
             for (int t = 0; t < doc.Tracks.Count; t++)
                 for (int sc = 0; sc < 12; sc++) layout.ClearSlot(t, sc);
-            void Slot(MachineCore m, int scene, IPattern p)
+            void Slot(MachineCore m, int scene, IClip p)
             {
                 int t = Track(m);
                 if (t >= 0 && p != null) layout.SetSlot(t, scene, p);

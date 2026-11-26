@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Views.Audio
         IPen playPen;
 
         /// <param name="view">The clip as the arrangement draws it (the asset, the warp map, the gain).</param>
-        /// <param name="lengthBeats">The slot's clip, in beats: its pattern's length.</param>
+        /// <param name="lengthBeats">The slot's clip, in beats: its clip's length.</param>
         public AudioSlotWave(AudioClipView view, double lengthBeats)
         {
             this.view = view;

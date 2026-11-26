@@ -35,17 +35,17 @@ namespace ReBuzz.AgentEval
             Recipes.Preset(s, "Bass", "Bass — Classic Sub", -20);
             Recipes.Preset(s, "Pad", "Pad — Warm Strings", -16);
             Recipes.Preset(s, "Lead", "Lead — Smooth Saw", -22);
-            Recipes.Pattern(s, "Kick", "Beat", 16, Recipes.Every("F1", 16, 1, length: 0.25, velocity: 120));
-            Recipes.Pattern(s, "Hats", "Eighths", 16, Recipes.Every("C6", 16, 0.5, offset: 0, length: 0.1, velocity: 90));
+            Recipes.Clip(s, "Kick", "Beat", 16, Recipes.Every("F1", 16, 1, length: 0.25, velocity: 120));
+            Recipes.Clip(s, "Hats", "Eighths", 16, Recipes.Every("C6", 16, 0.5, offset: 0, length: 0.1, velocity: 90));
             string[] roots = { "A2", "F2", "C3", "G2" };
             var bass = new List<JsonObject>();
             for (int bar = 0; bar < 4; bar++)
                 for (int k = 0; k < 8; k++) bass.Add(J.Note(roots[bar], bar * 4 + k * 0.5, 0.4, k % 2 == 0 ? 110 : 90));
-            Recipes.Pattern(s, "Bass", "Eighths", 16, bass);
+            Recipes.Clip(s, "Bass", "Eighths", 16, bass);
             string[][] chords = { new[] { "A3", "C4", "E4" }, new[] { "F3", "A3", "C4" }, new[] { "G3", "C4", "E4" }, new[] { "G3", "B3", "D4" } };
-            Recipes.Pattern(s, "Pad", "Chords", 16, Enumerable.Range(0, 4).SelectMany(bar => chords[bar].Select(p => J.Note(p, bar * 4, 4, 90))));
+            Recipes.Clip(s, "Pad", "Chords", 16, Enumerable.Range(0, 4).SelectMany(bar => chords[bar].Select(p => J.Note(p, bar * 4, 4, 90))));
             string[] lead = { "E5", "D5", "C5", "B4", "C5", "A4", "G4", "A4" };
-            Recipes.Pattern(s, "Lead", "Line", 16, lead.Select((p, i) => J.Note(p, i * 2, 1.75, 100)));
+            Recipes.Clip(s, "Lead", "Line", 16, lead.Select((p, i) => J.Note(p, i * 2, 1.75, 100)));
             foreach (var (m, p) in new[] { ("Kick", "Beat"), ("Hats", "Eighths"), ("Bass", "Eighths"), ("Pad", "Chords"), ("Lead", "Line") })
                 Recipes.Place(s, m, p, 0, every: 16, times: 2);
         }

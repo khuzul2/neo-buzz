@@ -110,7 +110,7 @@ def write_wave(path, samples, rate=48000):
 
 def gen(name, gear, preset, params, notes, beats=4, tail=1.0, waves=(), auto=()):
     """A generator; waves: [(slot, WAVES key, root, layer)] imported into the song's wavetable first (Neo Sampler);
-    auto: its parameters in its pattern, [(param, track or None, [(beat, value), ...])], in steps (a played parameter,
+    auto: its parameters in its clip, [(param, track or None, [(beat, value), ...])], in steps (a played parameter,
     a drum's hit column, one event per point)."""
     return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail, "waves": list(waves),
             "gen_auto": list(auto)}
@@ -425,10 +425,14 @@ CASES = [
     fx("lofi-8bit", "Neo Lo-Fi", "Crush — 8-bit"),
     fx("lofi-cassette", "Neo Lo-Fi", "Tape — Cassette"),
     fx("lofi-vinyl", "Neo Lo-Fi", "Vinyl — Dusty vinyl"),
+    # Neo Chop (docs/specs/neo-chop.md): the stutter (the ring, the slice and the per-repeat pitch), the tape stop (the curved read) and the gate and pan (the smooth steps); on both platforms the engine runs on the same portable maths.
+    fx("chop-stutter", "Neo Chop", "Stutter — Sixteenth Stutter", beats=8),
+    fx("chop-tape", "Neo Chop", "Tape — Tape Stop at the Bar", beats=18),
+    fx("chop-gate", "Neo Chop", "Gate — Pumping Step Gate", beats=8),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),
-    # Neo Strip (docs/specs/mastering-tools.md §5.10, M5b): the five stages together, the gate, a stage switched on and off in a pattern, Delta.
+    # Neo Strip (docs/specs/mastering-tools.md §5.10, M5b): the five stages together, the gate, a stage switched on and off in a clip, Delta.
     fx("strip-vocal", "Neo Strip", "Vocal — Up Front"),
     fx("strip-spoken-gate", "Neo Strip", "Vocal — Spoken Word (Gate and Tidy)", [("Gate threshold", "-30 dB")]),
     fx("strip-drums", "Neo Strip", "Drums — Punch Bus", auto=[("Drive on", [(1, "Off"), (2, "On")]), ("Delta", [(3, "On")])]),
@@ -664,13 +668,13 @@ def render_case(exe, case, out_dir, work):
         tracks = [t for _, t, _ in case.get("gen_auto", []) if t is not None]
         if tracks:
             c.call("machine_set", machine="Src", tracks=max(tracks) + 1)
-        c.call("pattern_create", machine="Src", name="A", length_beats=case["beats"])
+        c.call("clip_create", machine="Src", name="A", length_beats=case["beats"])
         if notes:
-            c.call("notes_write", machine="Src", pattern="A", notes=notes)
+            c.call("notes_write", machine="Src", clip="A", notes=notes)
         for param, track, points in case.get("gen_auto", []):
-            c.call("automation_write", machine="Src", pattern="A", param=param, shape="step",
+            c.call("automation_write", machine="Src", clip="A", param=param, shape="step",
                    points=[{"at": at, "value": v} for at, v in points], **({"track": track} if track is not None else {}))
-        c.call("arrangement_place", machine="Src", pattern="A", at=[0])
+        c.call("arrangement_place", machine="Src", clip="A", at=[0])
         last = "Src"
         for i, (fgear, fpreset, fparams) in enumerate(case["fx"]):
             name = f"Fx{i + 1}"
@@ -679,11 +683,11 @@ def render_case(exe, case, out_dir, work):
                 c.call("preset_load", machine=name, preset=fpreset)
             set_params(c, name, fparams)
             if i == 0 and case.get("auto"):
-                c.call("pattern_create", machine=name, name="A", length_beats=case["beats"])
+                c.call("clip_create", machine=name, name="A", length_beats=case["beats"])
                 for param, points in case["auto"]:
-                    c.call("automation_write", machine=name, pattern="A", param=param, shape="step",
+                    c.call("automation_write", machine=name, clip="A", param=param, shape="step",
                            points=[{"at": at, "value": v} for at, v in points])
-                c.call("arrangement_place", machine=name, pattern="A", at=[0])
+                c.call("arrangement_place", machine=name, clip="A", at=[0])
             last = name
         for mgear, mname, mparams, targets, listen in case.get("mods", []):
             c.call("machine_add", gear=mgear, name=mname, connect_to="none")
