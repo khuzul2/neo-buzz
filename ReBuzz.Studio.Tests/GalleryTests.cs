@@ -2308,6 +2308,31 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "650-neo-organ-editor", "Neo Organ: the nine drawbars with their footage labels (set to a full registration), then Percussion, Key, Vibrato, Drive, Rotary (the Speed switch at Fast, with the two rotors' live speeds) and Output.", "Add Neo Organ, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                Try("654-neo-arp-editor", () =>
+                {
+                    var m = Add("Neo Arp", "Arp");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // The Steps pattern with a row of ties and accents and some transposes, a 1/16 rate with a little swing, Accent velocity, Latch on.
+                    Set("Pattern", 11);
+                    Set("Step count", 16);
+                    string kinds = "AOTNAOTNANTNAOTN";                         // O off, N on, T tie, A accent
+                    int[] trans = { 0, 0, 0, 12, 0, 0, 0, 7, 0, 12, 12, 0, -5, 0, 0, 3 };
+                    for (int i = 0; i < 16; i++)
+                    {
+                        Set("Step " + (i + 1), "ONTA".IndexOf(kinds[i]));
+                        Set("Step " + (i + 1) + " transpose", 12 + trans[i]);
+                    }
+                    Set("Swing", 30);
+                    Set("Velocity", 2);
+                    Set("Latch", 1);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "654-neo-arp-editor", "Neo Arp: Pattern (Steps) and Rate on top, the 16-step row with ties (slim bars), accents (bright with a mark), offs (empty) and a transpose bar under each step, then Gate, Swing, Velocity (Accent) and Hold (Latch on).", "Add Neo Arp, set the Steps pattern and a step row, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {

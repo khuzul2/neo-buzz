@@ -662,6 +662,19 @@
     "tape"
    ],
    "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
+  },
+  "Neo Arp": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "rhythmic",
+    "sequencer",
+    "tempo-sync"
+   ],
+   "use_for": "Turn held notes into an arpeggio or a stepped line before any synth: 12 patterns, 1/1 to 1/64 or ms rates, swing, gate, octaves, latch and a 16-step row with ties and accents.",
+   "note_in": true,
+   "note_out": true
   }
  }
 }

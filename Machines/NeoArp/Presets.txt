@@ -1,0 +1,119 @@
+# Neo Arp factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoArp
+machine "Neo Arp"
+
+preset "Runs — Straight 16ths Up"
+comment "A plain run up through the held notes in even sixteenth notes, short and clean."
+Pattern = Up
+Octaves = 1
+Rate = 1/16
+Gate = 55
+Velocity = Fixed
+Fixed velocity = 100
+
+preset "Waves — Up-Down Two Octaves"
+comment "Up and back down through two octaves in eighth notes, notes joined, played as you touch the keys."
+Pattern = Up-down
+Octaves = 2
+Octave mode = Up-down
+Rate = 1/8
+Gate = 95
+Velocity = As played
+
+preset "Runs — Triplet Cascade"
+comment "A falling cascade over three octaves in triplet eighths: twelve notes fill a bar, each ringing into the next."
+Pattern = Down
+Octaves = 3
+Octave mode = Down
+Rate = 1/8
+Feel = Triplet
+Gate = 140
+Velocity = Fixed
+Fixed velocity = 85
+
+preset "Random — Random Sparkle"
+comment "Short random notes from three octaves, an octave up, loosened by a little timing and velocity chance."
+Pattern = Random
+Octaves = 3
+Rate = 1/16
+Gate = 30
+Transpose = 12
+Velocity = Fixed
+Fixed velocity = 90
+Humanize time = 8
+Humanize velocity = 20
+
+preset "Rhythm — Swing Eighths"
+comment "The notes taken from the outside in, in swung eighths, over two octaves."
+Pattern = Converge
+Octaves = 2
+Octave mode = Up
+Rate = 1/8
+Swing = 58
+Gate = 70
+Velocity = As played
+
+preset "Rhythm — Gated Chord Pulse"
+comment "The whole chord struck on every sixteenth and cut very short: a chopped, pulsing stab that starts again on each bar."
+Pattern = Chord
+Octaves = 1
+Rate = 1/16
+Gate = 22
+Velocity = Fixed
+Fixed velocity = 105
+Retrigger = On bar
+
+preset "Steps — Step Bassline"
+comment "A sixteen-step bass figure with ties, accents and a few jumps up an octave and a fifth, two octaves down, swung a little."
+Pattern = Steps
+Octaves = 1
+Transpose = -24
+Rate = 1/16
+Swing = 20
+Gate = 65
+Velocity = Accent
+Fixed velocity = 78
+Accent = 75
+Step count = 16
+Step 1 = Accent
+Step 2 = Off
+Step 3 = On
+Step 4 = Tie
+Step 5 = On
+Step 6 = Off
+Step 7 = Accent
+Step 8 = On
+Step 9 = On
+Step 10 = Off
+Step 11 = Accent
+Step 12 = Tie
+Step 13 = On
+Step 14 = Off
+Step 15 = On
+Step 16 = Accent
+Step 1 transpose = 0
+Step 2 transpose = 0
+Step 3 transpose = 0
+Step 4 transpose = 0
+Step 5 transpose = 12
+Step 6 transpose = 0
+Step 7 transpose = 0
+Step 8 transpose = 0
+Step 9 transpose = 0
+Step 10 transpose = 0
+Step 11 transpose = 7
+Step 12 transpose = 0
+Step 13 transpose = 0
+Step 14 transpose = 0
+Step 15 transpose = 12
+Step 16 transpose = 0
+
+preset "Waves — Slow Converge"
+comment "Slow dotted quarter notes closing in from the ends of the range, long and overlapping, an octave lower."
+Pattern = Converge
+Octaves = 2
+Octave mode = Down
+Rate = 1/4
+Feel = Dotted
+Gate = 160
+Transpose = -12
+Velocity = As played
