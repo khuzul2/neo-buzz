@@ -292,6 +292,7 @@ namespace NeoBuzz.MachineTests
             double mt = tt.Average(), md = dbs.Average();
             double slope = tt.Zip(dbs, (a, b) => (a - mt) * (b - md)).Sum() / tt.Select(a => (a - mt) * (a - mt)).Sum();
             double t60 = -60.0 / slope;
+            TestContext.Out.WriteLine($"T60 {ModelNames[model]} note {note} decay {decay}: {t60:0.000} s ({100 * (t60 / decay - 1):+0.00;-0.00} %)");
             Assert.That(t60, Is.EqualTo(decay).Within(0.05 * decay), $"{ModelNames[model]} note {note}: T60 {t60:0.000} s");
         }
 
