@@ -415,6 +415,76 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // ------------------------------------------------------------------ the targets list (the rows' staleness check)
+
+        [AvaloniaTest]
+        public void TheEditorsRowsAreDueWhenNeverReadWhenTheClockWentBackAndAfter25Ms()
+        {
+            // Neo LFO's editor type is in the studio machine's assembly, loaded when its machine is created; its base class holds the check.
+            NewSong();
+            try
+            {
+                var lfo = Add("Neo LFO", "Rows LFO");
+                Core.UiHost.OpenGui(lfo, null);
+                var window = StudioMachineUiHost.GuiWindowOf(lfo);
+                try
+                {
+                    var editor = StudioMachineUiHost.ContentOf(window!)!;
+                    var baseType = editor.GetType().BaseType!;
+                    Assert.That(baseType.Name, Is.EqualTo("ModulatorEditor"));
+                    var due = baseType.GetMethod("RowsDue", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!;
+                    bool Due(long now, long at) => (bool)due.Invoke(null, new object[] { now, at })!;
+
+                    foreach (long now in new long[] { 0, 1, 25, 26, 1_000_000, long.MaxValue / 2, long.MaxValue })
+                        Assert.That(Due(now, long.MinValue), Is.True, "never read (long.MinValue) is due at now = " + now);
+                    Assert.That(Due(100, 200), Is.True, "the clock went back");
+                    Assert.That(Due(100, 100), Is.False, "the same millisecond");
+                    Assert.That(Due(125, 100), Is.False, "25 ms later is not yet due");
+                    Assert.That(Due(126, 100), Is.True, "more than 25 ms later is due");
+                }
+                finally
+                {
+                    Core.UiHost.ReleaseMachine(lfo);
+                    Core.SongCore.DeleteMachines(new[] { lfo });
+                }
+            }
+            finally
+            {
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
+        public void AnEditorShowsItsTargetsOnTheFirstRead()
+        {
+            NewSong();
+            try
+            {
+                var filter = Add("Neo Filter", "Rows Filter");
+                var lfo = Add("Neo LFO", "Rows LFO");
+                var cutoff = Param(filter, "Cutoff");
+                Assert.That(Mod(lfo).SetTarget(-1, filter, cutoff, 0, Info(40), out _), Is.Null);
+                Core.UiHost.OpenGui(lfo, null);
+                try
+                {
+                    var window = StudioMachineUiHost.GuiWindowOf(lfo);
+                    var editor = StudioMachineUiHost.ContentOf(window!)!;
+                    var rows = (System.Collections.Generic.IReadOnlyList<ModulationInfo>)editor.GetType().GetProperty("Rows")!.GetValue(editor)!;
+                    Assert.That(rows, Has.Count.EqualTo(1), "the target is listed on the first read");
+                    Assert.That(rows[0].Param, Is.EqualTo("Cutoff"));
+                }
+                finally
+                {
+                    Core.UiHost.ReleaseMachine(lfo);
+                    Core.SongCore.DeleteMachines(new[] { lfo, filter });
+                }
+            }
+            finally
+            {
+                NewSong();
+            }
+        }
+
         // ------------------------------------------------------------------ the editors
 
         static object Static(System.Reflection.Assembly a, string type, string property) =>

@@ -114,12 +114,15 @@ namespace NeoBuzz.Modulator
 
         // ------------------------------------------------------------------ IModTargetHost
 
+        /// <summary>True when the targets list is to be read again: never read yet (long.MinValue, where now - rowsAt would overflow), the clock went back, or more than 25 ms old.</summary>
+        internal static bool RowsDue(long now, long rowsAt) => rowsAt == long.MinValue || now < rowsAt || now - rowsAt > 25;
+
         public IReadOnlyList<ModulationInfo> Rows
         {
             get
             {
                 long now = Environment.TickCount64;
-                if (now - rowsAt > 25 || now < rowsAt)
+                if (RowsDue(now, rowsAt))
                 {
                     rowsAt = now;
                     try { rows = mod?.Targets ?? rows; } catch (Exception) { }
