@@ -174,16 +174,6 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.MidiControlChange(ctrl, channel, value);
         }
 
-        public int[] GetClipEditorMachineMIDIEvents(IClip clip)
-        {
-            return ModernPatternEditor.ExportMidiEvents(clip);
-        }
-
-        public void SetClipEditorMachineMIDIEvents(IClip clip, int[] data)
-        {
-            ModernPatternEditor.ImportMidiEvents(clip, data);
-        }
-
         public IEnumerable<IClipEditorColumn> GetClipEditorEvents(IClip clip, int tbegin, int tend)
         {
             return ModernPatternEditor.GetClipColumnEvents(clip, tbegin, tend);

@@ -19,8 +19,6 @@ namespace WDE.ModernPatternEditor.MPEStructures
         public bool Graphical { get; internal set; }
         //public string MachineName { get; internal set; }
 
-        List<ClipEvent> eventList = new List<ClipEvent>();
-
         // This is only for loading/saving pxp format
         // public int ParamIndex { get; internal set; }
         public List<int> BeatRowsList { get; private set; }
@@ -47,16 +45,15 @@ namespace WDE.ModernPatternEditor.MPEStructures
             BeatRowsList = new List<int>();
         }
 
-        List<ClipEvent> clipEventsList = new List<ClipEvent>(0);
         ClipEvent[] emptyClipEventList = Array.Empty<ClipEvent>();
-        Lock clipEventsLock = new Lock();
 
-        // ---- Fork (docs/specs/clips.md §6, CU3): the seam. Where the song's clips are lanes in the clip's columns (the Studio), this column is a view
+        // ---- Fork (docs/specs/clips.md §6, CU3; CU7): the seam. The song's clips are lanes in the clip's columns, and this column is a view
         // of one lane, the unmarked column of the clip for its parameter and track: it reads and writes the lane's events, and keeps none of its
-        // own. The lane is made on the first write (a template's thousand empty columns are not in the song). Classic keeps its list.
+        // own (CU7 removed the list the editor kept beside the store). The lane is made on the first write (a template's thousand empty columns
+        // are not in the song). A column of one of the editor's own lanes (a loaded blob's MIDI lanes, dropped when the editor takes the store) holds nothing.
 
-        /// <summary>The clip editor views the store for this column: its parameter is a machine's (not one of the editor's own lanes).</summary>
-        internal bool Bound => MPEClip?.Editor != null && MPEClip.Editor.StoreAttached && Parameter != null && Parameter is not MPEInternalParameter;
+        /// <summary>This column's parameter is a machine's (not one of the editor's own lanes): its events are a lane's in the store.</summary>
+        internal bool Bound => MPEClip?.Editor != null && Parameter != null && Parameter is not MPEInternalParameter;
 
         IClipColumn store;
         Action<IEnumerable<ClipEvent>, bool> storeChanged;
@@ -110,12 +107,6 @@ namespace WDE.ModernPatternEditor.MPEStructures
             if (!c.Metadata.TryGetValue(ClipMeta.Grid, out var have) || have != grid) c.Metadata[ClipMeta.Grid] = grid;
         }
 
-        /// <summary>The editor starts viewing the store: what it held of its own is in the store already (the migration), so it is let go.</summary>
-        internal void LetGoOfOwnEvents()
-        {
-            lock (clipEventsLock) eventList.Clear();
-        }
-
         /// <summary>Fork (clips.md §6): ask for the store's lane without making one, to read the lane's Grid and Mute into this column.</summary>
         internal void TakeViewFromStore()
         {
@@ -133,30 +124,16 @@ namespace WDE.ModernPatternEditor.MPEStructures
         {
             get
             {
-                if (Bound) { var lane = StoreLane(false); return lane != null && lane.GetEvents(int.MinValue, int.MaxValue).Any(); }
-                lock (clipEventsLock) return eventList.Count > 0;
+                if (!Bound) return false;
+                var lane = StoreLane(false);
+                return lane != null && lane.GetEvents(int.MinValue, int.MaxValue).Any();
             }
         }
 
         public IEnumerable<ClipEvent> GetEvents(int start, int end)
         {
-            if (Bound)
-                return StoreLane(false)?.GetEvents(start, end) ?? emptyClipEventList;
-            if (eventList.Count == 0)
-                return emptyClipEventList;
-
-            clipEventsList.Clear();
-            lock (clipEventsLock)
-            {
-                for (int i = 0; i < eventList.Count; i++)
-                {
-                    var pe = eventList[i];
-
-                    if (pe.Time >= start && pe.Time < end)
-                        clipEventsList.Add(pe);
-                }
-            }
-            return clipEventsList.ToArray();
+            if (!Bound) return emptyClipEventList;
+            return StoreLane(false)?.GetEvents(start, end) ?? emptyClipEventList;
         }
 
         /// <summary>
@@ -167,21 +144,9 @@ namespace WDE.ModernPatternEditor.MPEStructures
         internal List<ClipEvent> GetEventsInto(int start, int end, List<ClipEvent> into)
         {
             into.Clear();
-            if (Bound)
-            {
-                var lane = StoreLane(false);
-                if (lane != null) into.AddRange(lane.GetEvents(start, end));
-                return into;
-            }
-            lock (clipEventsLock)
-            {
-                for (int i = 0; i < eventList.Count; i++)
-                {
-                    var pe = eventList[i];
-                    if (pe.Time >= start && pe.Time < end)
-                        into.Add(pe);
-                }
-            }
+            if (!Bound) return into;
+            var lane = StoreLane(false);
+            if (lane != null) into.AddRange(lane.GetEvents(start, end));
             return into;
         }
 
@@ -192,55 +157,33 @@ namespace WDE.ModernPatternEditor.MPEStructures
             if (clip != null)
                 clipLenght = clip.Length * ClipEvent.TimeBase;
 
-            bool bound = Bound;
-            lock (clipEventsLock)
-            {
-                // Paste might introduce wrong numbers for notes, so check.
-                if (Parameter.Type == ParameterType.Note)
-                {
-                    for (int i = 0; i < events.Length; i++)
-                    {
-                        int value = events[i].Value;
-                        if (value != BuzzNote.Off)
-                        {
-                            int o = value >> 4;
-                            if ((value & 15) < 1 || (value & 15) > 12 || o < BuzzNote.MinOctave || o > BuzzNote.MaxOctave)
-                            {
-                                // convert from midinote
-                                value = Math.Max(0, Math.Min(value, 119));
-                                value = BuzzNote.FromMIDINote(value);
-                            }
-                        }
-                        events[i].Value = value;
-                    }
-                }
+            // The lane takes the events; its own EventsChanged tells the view (and everyone else watching the lane).
+            if (!Bound || events == null || events.Length == 0) return;
 
-                if (bound)
+            // Paste might introduce wrong numbers for notes, so check.
+            if (Parameter.Type == ParameterType.Note)
+            {
+                for (int i = 0; i < events.Length; i++)
                 {
-                    // The lane takes the events; its own EventsChanged tells the view (and everyone else watching the lane).
-                    if (events == null || events.Length == 0) return;
-                    var lane = StoreLane(set);
-                    if (lane == null) return;
-                    var changing = set ? events.Where(e => e.Time < clipLenght).ToArray() : events;
-                    if (changing.Length > 0) lane.SetEvents(changing, set);
-                    return;
-                }
-                if (!set)
-                {
-                    foreach (var e in events)
-                        eventList.Remove(e);
-                }
-                else
-                {
-                    foreach (var e in events)
+                    int value = events[i].Value;
+                    if (value != BuzzNote.Off)
                     {
-                        if (e.Time < clipLenght)
-                            eventList.Add(e);
+                        int o = value >> 4;
+                        if ((value & 15) < 1 || (value & 15) > 12 || o < BuzzNote.MinOctave || o > BuzzNote.MaxOctave)
+                        {
+                            // convert from midinote
+                            value = Math.Max(0, Math.Min(value, 119));
+                            value = BuzzNote.FromMIDINote(value);
+                        }
                     }
+                    events[i].Value = value;
                 }
             }
 
-            EventsChanged?.Invoke(events, set);
+            var lane = StoreLane(set);
+            if (lane == null) return;
+            var changing = set ? events.Where(e => e.Time < clipLenght).ToArray() : events;
+            if (changing.Length > 0) lane.SetEvents(changing, set);
         }
 
         internal void SetEvents(ClipEvent[] events, int timeOffset, bool set)
@@ -295,21 +238,8 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal void ClearRegion(int regionLenght, int offsetFromTop, Digit topLeftDigit)
         {
-            if (Bound)
-            {
-                var gone = GetEvents(offsetFromTop, offsetFromTop + regionLenght).ToArray();
-                if (gone.Length > 0) StoreLane(false)?.SetEvents(gone, false);
-            }
-            else
-            for (int i = 0; i < eventList.Count; i++)
-            {
-                ClipEvent e = eventList[i];
-                if (e.Time >= offsetFromTop && e.Time < offsetFromTop + regionLenght)
-                {
-                    eventList.RemoveAt(i);
-                    i--;
-                }
-            }
+            var gone = GetEvents(offsetFromTop, offsetFromTop + regionLenght).ToArray();
+            if (gone.Length > 0) StoreLane(false)?.SetEvents(gone, false);
 
             // Need to refresh editor view
             //topLeftDigit.ClipVM.Editor.InvalidateVisual();
@@ -448,7 +378,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal IEnumerable<ClipEvent> GetEventsQuantized(int start, int end, int rpb)
         {
-            var events = (Bound ? GetEvents(start, end) : eventList.Where(e => e.Time >= start && e.Time < end)).ToArray();
+            var events = GetEvents(start, end).ToArray();
             for (int i = 0; i < events.Length; i++)
             {
                 events[i].Time = GetTimeQuantized(events[i].Time, rpb);
@@ -464,13 +394,8 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal void Clear()
         {
-            if (Bound)
-            {
-                var all = GetEvents(int.MinValue, int.MaxValue).ToArray();
-                if (all.Length > 0) StoreLane(false)?.SetEvents(all, false);
-            }
-            else
-                eventList.Clear();
+            var all = GetEvents(int.MinValue, int.MaxValue).ToArray();
+            if (all.Length > 0) StoreLane(false)?.SetEvents(all, false);
             MPEClip.Editor.clipControl.InvalidateVisual();
         }
     }

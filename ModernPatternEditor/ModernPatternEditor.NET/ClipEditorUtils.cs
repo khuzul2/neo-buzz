@@ -133,26 +133,12 @@ namespace WDE.ModernPatternEditor
                 mpeColumn.GroupType = parameter.Group.Type;
             }
 
+            // The events are the store's (CU7): a song's own are moved there on open by ClipMigration, which reads the same bytes. They are skipped here.
             int count = BCReadInt(machineClipsData, ref index);
-
-            List<ClipEvent> events = new List<ClipEvent>();
-            for (int i = 0; i < count; i++)
-            {
-                int eventTime = BCReadInt(machineClipsData, ref index);
-                int eventValue = BCReadInt(machineClipsData, ref index);
-
-                ClipEvent pe = new ClipEvent();
-                pe.Time = eventTime * ClipEvent.TimeBase * 4 / pat.RowsPerBeat;
-                pe.Value = eventValue;
-
-                events.Add(pe);
-            }
+            index += count * 2 * sizeof(int);
 
             if (parameter != null)
-            {
-                mpeColumn.SetEvents(events.ToArray(), true);
                 pat.MPEClipColumns.Add(mpeColumn);
-            }
         }
 
         #endregion
@@ -222,24 +208,9 @@ namespace WDE.ModernPatternEditor
             }
             mpeColumn.Parameter = parameter;
 
+            // The events are the store's (CU7); a song's own are moved there on open by ClipMigration, which reads the same bytes. They are skipped here.
             int count = BCReadInt(machineClipsData, ref index);
-
-            List<ClipEvent> events = new List<ClipEvent>();
-            for (int i = 0; i < count; i++)
-            {
-                int first = BCReadInt(machineClipsData, ref index);
-                int second = BCReadInt(machineClipsData, ref index);
-
-                ClipEvent pe = new ClipEvent();
-                pe.Time = first;
-                pe.Value = second;
-                events.Add(pe);
-            }
-
-            if (parameter != null)
-            {
-                mpeColumn.SetEvents(events.ToArray(), true);
-            }
+            index += count * 2 * sizeof(int);
 
             List<int> beatRows = new List<int>();
             // Read rows in beat
@@ -255,64 +226,6 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        #endregion
-
-        #region PatternXPData Write
-        public static byte[] CreatePatternXPClipData(IEnumerable<MPEClip> clips)
-        {
-            // Encode clip editor data
-            List<byte> data = new List<byte>();
-
-            data.Add(PATTERNXP_DATA_VERSION);
-
-            int numpat = clips.Count();
-            data.AddRange(BitConverter.GetBytes(numpat));
-
-            for (int i = 0; i < numpat; i++)
-            {
-                MPEClip mpeClip = clips.ElementAt(i);
-                data.AddRange(Encoding.ASCII.GetBytes(mpeClip.ClipName));
-                data.Add(0);
-
-                CreateClipData(mpeClip, data, PATTERNXP_DATA_VERSION);
-            }
-            
-            byte[] dataret = data.ToArray();
-            return dataret;
-        }
-
-        private static void CreateClipData(MPEClip pat, List<byte> data, byte ver)
-        {
-            if (ver > 1)
-                data.AddRange(BitConverter.GetBytes(pat.RowsPerBeat));
-
-            int count = pat.MPEClipColumns.Count;
-            data.AddRange(BitConverter.GetBytes(count));
-
-            for (int i = 0; i < count; i++)
-            {
-                SaveColumn(pat.MPEClipColumns[i], data, ver, pat.RowsPerBeat);
-            }
-        }
-
-        public static void SaveColumn(MPEClipColumn mpeColumn, List<byte> data, byte ver, int rpb)
-        {
-            data.AddRange(Encoding.ASCII.GetBytes(mpeColumn.Machine.Name));
-            data.Add(0);
-            data.AddRange(BitConverter.GetBytes(GetParamIndex(mpeColumn.Parameter, mpeColumn.ParamTrack)));
-            data.AddRange(BitConverter.GetBytes(mpeColumn.ParamTrack));
-            data.Add(Convert.ToByte(mpeColumn.Graphical));
-
-            IEnumerable<ClipEvent> events = mpeColumn.GetEventsQuantized(0, int.MaxValue, rpb);
-            data.AddRange(BitConverter.GetBytes(events.Count()));
-
-            foreach (var e in events.OrderBy(x => x.Time).ToList())
-            {
-                int time = (int)(e.Time / (ClipEvent.TimeBase * 4 / mpeColumn.MPEClip.RowsPerBeat));
-                data.AddRange(BitConverter.GetBytes(time));
-                data.AddRange(BitConverter.GetBytes(e.Value));
-            }
-        }
         #endregion
 
         #region Modern Pattern Editor Data Write
@@ -418,14 +331,9 @@ namespace WDE.ModernPatternEditor
             data.AddRange(BitConverter.GetBytes(mpeColumn.ParamTrack));
             data.Add(Convert.ToByte(mpeColumn.Graphical));
 
-            IEnumerable<ClipEvent> events = mpeColumn.GetEvents(0, int.MaxValue);
-            data.AddRange(BitConverter.GetBytes(events.Count()));
-
-            foreach (var e in events)
-            {
-                data.AddRange(BitConverter.GetBytes((int)(e.Time)));
-                data.AddRange(BitConverter.GetBytes(e.Value));
-            }
+            // CU7: the blob holds the shape of the view (columns, their order, rows in each beat) and no events: they are lanes in the store.
+            // The count stays in the layout, as 0, so a reader of the blob (ClipMigration, this loader) reads it as it always did.
+            data.AddRange(BitConverter.GetBytes(0));
 
             // MPE Save beats
 
@@ -505,203 +413,9 @@ namespace WDE.ModernPatternEditor
 
         #endregion
 
-        #region MIDI Import Export
-        public static int[] ExportMidiEvents(MPEClip clip)
-        {
-            const int MidiTimeBase = 960;
+        #region Other
 
-            List<Tuple<int, int, int>> midiEvents = new List<Tuple<int, int, int>>();
-
-            // Todo: delay & cut
-
-            foreach (var mpeColumn in clip.MPEClipColumns)
-            {
-                if (mpeColumn.Parameter.Type == ParameterType.Note)
-                {
-                    int previousNote = 0;
-
-                    foreach (var e in mpeColumn.GetEvents(0, int.MaxValue).OrderBy(x => x.Time).ToList())
-                    {
-                        int midiTime = (e.Time / ClipEvent.TimeBase) * MidiTimeBase;
-                        if (e.Value != BuzzNote.Off)
-                        {
-                            int newNote = BuzzNote.ToMIDINote(e.Value);
-                            if (previousNote != 0)
-                            {
-                                // Add note off before new note
-                                var msgOff = MIDI.EncodeNoteOff(previousNote);
-                                midiEvents.Add(new Tuple<int, int, int>(midiTime, msgOff, previousNote));
-                            }
-                            var msg = MIDI.EncodeNoteOn(newNote, 70);
-                            midiEvents.Add(new Tuple<int, int, int>(midiTime, msg, newNote));
-                            previousNote = newNote;
-                        }
-                        else
-                        {
-                            var msg = MIDI.EncodeNoteOff(previousNote);
-                            midiEvents.Add(new Tuple<int, int, int>(midiTime, msg, previousNote));
-                            previousNote = 0;
-                        }
-                    }
-                }
-            }
-
-            midiEvents = midiEvents.OrderBy(x => x.Item1).ToList();
-            List<int> ordereEvents = new List<int>();
-            foreach (var t in midiEvents)
-            {
-                ordereEvents.Add(t.Item1);
-                ordereEvents.Add(t.Item2);
-            }
-            ordereEvents.Add(-1);
-            int[] intArray = ordereEvents.ToArray();
-            //byte[] result = new byte[intArray.Length * sizeof(int)];
-            //Buffer.BlockCopy(intArray, 0, result, 0, result.Length);
-
-            return intArray;
-        }
-
-        internal struct ActiveMidiNote
-        {
-            internal enum State { note_on_pending, playing, note_off_pending, recording, pw_or_cc };
-
-            internal State state;
-            internal int note;
-            internal int velocity;
-            internal int previousNote;
-            internal int delaytime;
-            internal int cuttime;
-            internal int pw;
-            internal int cc;
-            internal int rowInBeat;
-            internal int RPB;
-        };
-
-        // Use pvst param names. ToDo: Make it configurable
-        private static string noteParameterName = "note";
-        private static string noteVelocityParameterName = "note velocity";
-        private static string noteDelayParameterName = "note delay";
-        private static string noteCutParameterName = "note cut";
-        private static string midiCCParameterName = "MidiCC";
-        private static string midiPitchWheelParameterName = "MidiPitchWheel";
-        public static bool ImportMidiEvents(MPEClip clip, int [] data)
-        {
-            int tc = clip.Clip.Machine.TrackCount;
-            if (tc < 1) return false;
-
-            List<MPEClipColumn> notecol = new List<MPEClipColumn>();
-            List<MPEClipColumn> velcol = new List<MPEClipColumn>();
-            List<MPEClipColumn> delaycol = new List<MPEClipColumn>();
-            List<MPEClipColumn> cutcol = new List<MPEClipColumn>();
-
-            for (int t = 0; t < tc; t++)
-            {
-                // try to find these columns
-                notecol.Add(GetColumn(clip, noteParameterName, t));
-                velcol.Add(GetColumn(clip, noteVelocityParameterName, t));
-                delaycol.Add(GetColumn(clip, noteDelayParameterName, t));
-                cutcol.Add(GetColumn(clip, noteCutParameterName, t));
-            }
-
-            for (int t = 0; t < tc; t++)
-            {   
-                notecol[t]?.Clear();
-                velcol[t]?.Clear();
-                delaycol[t]?.Clear();
-                cutcol[t]?.Clear();
-            }
-
-            Dictionary<Tuple<IMachine, int>, ActiveMidiNote> notes = new Dictionary<Tuple<IMachine, int>, ActiveMidiNote>();
-            int index = 0;
-            while (true)
-            {
-                // we read 2 ints per loop
-                if (index + 1 >= data.Length)
-                    return false;
-
-                int time = data[index++];
-                if (time < 0) break;
-
-                time = time * clip.RowsPerBeat / (10 * MPEClipColumn.BUZZ_TICKS_PER_BEAT);
-
-                int mididata = data[index++];
-
-                int row = time / 96;
-                int delay = time % 96;
-
-                if (row >= clip.Clip.Length) continue;
-
-                int status = mididata & 0xff;
-                int data1 = (mididata >> 8) & 0xff;
-                int data2 = (mididata >> 16) & 0xff;
-
-                int clipRow = row * ClipEvent.TimeBase;
-
-                if (status == 0x90)
-                {
-                    int t = AllocateMidiTrack(clip, row, delay, notes, tc);
-                    if (t < 0) continue;
-
-                    if (notecol[t] == null) continue;
-
-                    // note
-                    ClipEvent e = new ClipEvent();
-                    e.Value = BuzzNote.FromMIDINote(data1);
-                    e.Time = clipRow;
-                    notecol[t].SetEvents([e], true, false);
-
-                    // velocity
-                    e = new ClipEvent();
-                    e.Value = data2;
-                    e.Time = clipRow;
-                    if (velcol[t] != null) velcol[t].SetEvents([e], true, false);
-
-                    // delay
-                    e = new ClipEvent();
-                    e.Value = delay;
-                    e.Time = clipRow;
-                    if (delaycol[t] != null && delay != 0) delaycol[t].SetEvents([e], true, false);
-
-                    ActiveMidiNote n = new ActiveMidiNote();
-                    n.note = data1;
-                    n.velocity = data2;
-                    n.state = ActiveMidiNote.State.recording;
-                    notes[new Tuple<IMachine, int>(clip.Clip.Machine, t)] = n;
-                }
-                else if (status == 0x80)
-                {
-                    int t = FreeMidiTrack(clip, data1, notes);
-                    if (t < 0) continue;
-
-                    if (notecol[t] == null) continue;
-                    
-
-                    if (notecol[t].GetEvents(clipRow, clipRow + 1).Count() > 0)
-                    {
-                        ClipEvent e = new ClipEvent();
-                        e.Value = delay;
-                        e.Time = clipRow;
-                        if (cutcol[t] != null && delay != 0) cutcol[t].SetEvents([e], true, false);
-
-                    }
-                    else
-                    {
-                        ClipEvent e = new ClipEvent();
-                        e.Value = BuzzNote.Off;
-                        e.Time = clipRow;
-                        notecol[t].SetEvents([e], true, false);
-
-                        e = new ClipEvent();
-                        e.Value = delay;
-                        e.Time = clipRow;
-                        if (delaycol[t] != null && delay != 0) delaycol[t].SetEvents([e], true, false);
-                    }
-                }
-            }
-
-            return false;
-        }
-
+        /// <summary>The clip's column of a parameter, by its name, on a track.</summary>
         public static MPEClipColumn? GetColumn(MPEClip mpeClip, string name, int t)
         {
             foreach (var c in mpeClip.MPEClipColumns)
@@ -711,118 +425,6 @@ namespace WDE.ModernPatternEditor
             }
             return null;
         }
-
-        private static int AllocateMidiTrack(MPEClip mpeClip, int row, int delay, Dictionary<Tuple<IMachine, int>, ActiveMidiNote> notes, int tc)
-        {
-            int clipTime = row * ClipEvent.TimeBase;
-            for (int t = 0; t < tc; t++)
-            {   
-                foreach (var i in notes)
-                {
-                    if (i.Key.Item2 == t)
-                    {
-                        break;
-                    }
-                    else if (i.Key == notes.Last().Key)
-                    {
-                        var pwcol = GetColumn(mpeClip, midiPitchWheelParameterName, t);
-                        if (pwcol != null && pwcol.GetEvents(clipTime, clipTime + 1).Count() > 0) continue;
-                        var cccol = GetColumn(mpeClip, midiCCParameterName, t);
-                        if (cccol != null && cccol.GetEvents(clipTime, clipTime + 1).Count() > 0) continue;
-
-                        var notecol = GetColumn(mpeClip, noteParameterName, t);
-                        if (notecol != null)
-                        {
-                            if (notecol.GetEvents(clipTime, clipTime + 1).Count() > 0)
-                            {
-                                if (delay == 0 && notecol.GetEvents(clipTime, clipTime + 1).First().Value == BuzzNote.Off)
-                                {
-                                    // note off can be overwritten except when it's delayed or cut
-
-                                    var delaycol = GetColumn(mpeClip, noteDelayParameterName, t);
-                                    var cutcol = GetColumn(mpeClip, noteCutParameterName, t);
-
-                                    bool dval = delaycol != null && delaycol.GetEvents(clipTime, clipTime + 1).Count() > 0;
-                                    bool cval = cutcol != null && cutcol.GetEvents(clipTime, clipTime + 1).Count() > 0;
-
-                                    if (!dval && !cval) return t;
-                                }
-                            }
-                            else
-                            {
-                                return t;
-                            }
-                        }
-                    }
-
-                }
-            }
-
-            return tc > 0 ? 0 : -1;
-        }
-
-        private static int FreeMidiTrack(MPEClip mpeClip, int note, Dictionary<Tuple<IMachine, int>, ActiveMidiNote> notes)
-        {
-            foreach (var i in notes.Keys.ToArray())
-            {
-                if (i.Item1 == mpeClip.Clip.Machine && notes[i].note == note)
-                {
-                    int t = i.Item2;
-                    notes.Remove(i);
-                    return t;
-                }
-            }
-
-            return -1;
-        }
-
-        #endregion
-
-        #region Clip notes (fork: neo-buzz Session View 0.7.1)
-
-        // A clip's MIDI note lanes (the MIDI Note, Velocity, Note Delay and Note Cut columns
-        // of each track of the clip's own machine) as notes, and back: the Session View moves
-        // a clip's recorded notes into the Clip View and back with these. Notes are int
-        // triples (time in 1/240 tick, note-on message, duration); the layout on rows is
-        // BuzzGUI.Common.TrackerNotes'. Notes the lanes can hold: MIDI 0-119 (BuzzNote's range).
-
-        public const int MaxClipNote = 119;
-
-        static readonly InternalParameter[] NoteLanes =
-            { InternalParameter.MidiNote, InternalParameter.MidiVelocity, InternalParameter.MidiNoteDelay, InternalParameter.MidiNoteCut };
-
-        static bool IsLane(MPEClipColumn c, IMachine machine, InternalParameter type) =>
-            c.Machine == machine && c.Parameter is MPEInternalParameter p && p.InternalType == type;
-
-        static bool IsAnyLane(MPEClipColumn c, IMachine machine) =>
-            c.Machine == machine && c.Parameter is MPEInternalParameter p && NoteLanes.Contains(p.InternalType);
-
-        static MPEClipColumn Lane(MPEClip clip, InternalParameter type, int track) =>
-            clip.MPEClipColumns.FirstOrDefault(c => IsLane(c, clip.Clip.Machine, type) && c.ParamTrack == track);
-
-        static int ValueAt(MPEClipColumn column, int time) =>
-            column == null ? 0 : column.GetEvents(time, time + 1).Select(e => e.Value).FirstOrDefault();
-
-        static int BeatsOf(MPEClip clip) =>
-            Math.Max(1, (clip.Clip.Length + MPEClipColumn.BUZZ_TICKS_PER_BEAT - 1) / MPEClipColumn.BUZZ_TICKS_PER_BEAT);
-
-        /// <summary>Rows in each beat of a lane (its own subdivisions, else the clip's rows per beat).</summary>
-        static List<int> BeatRows(MPEClip clip, MPEClipColumn lane)
-        {
-            int beats = BeatsOf(clip);
-            var list = new List<int>(beats);
-            for (int b = 0; b < beats; b++)
-                list.Add(lane != null && b < lane.BeatRowsList.Count ? lane.BeatRowsList[b] : Math.Max(1, clip.RowsPerBeat));
-            return list;
-        }
-
-        internal static List<MPEClipColumn> LaneColumns(MPEClip clip) =>
-            clip.MPEClipColumns.Where(c => IsAnyLane(c, clip.Clip.Machine)).ToList();
-
-        #endregion
-
-        #region Other
-
 
         #endregion
 

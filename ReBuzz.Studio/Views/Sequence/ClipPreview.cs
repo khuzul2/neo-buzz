@@ -26,8 +26,6 @@ namespace ReBuzz.Studio.Views.Sequence
 
     internal static class ClipPreview
     {
-        const int MidiTimeBase = 960;       // ClipEditorMachineMIDIEvents' ticks per Buzz tick
-
         public static PreviewMark[] Of(IClip clip)
         {
             if (clip == null || clip.Length <= 0) return Array.Empty<PreviewMark>();
@@ -35,9 +33,6 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 if (clip.Machine is MachineCore mc && mc.EditorMachine != null)
                 {
-                    var midi = clip.ClipEditorMachineMIDIEvents;
-                    if (midi != null && midi.Length >= 2)
-                        return Midi(Pairs(midi), clip.Length, Math.Max(1, clip.Machine.TrackCount));
                     var columns = clip.ClipEditorMachineEvents?.ToList();
                     if (columns != null && columns.Count > 0)
                         return Detail(columns.Select(c => (c.Parameter, c.Events)).ToList(), clip.Length);
@@ -48,60 +43,6 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 return Array.Empty<PreviewMark>();
             }
-        }
-
-        static List<(int Time, int Message)> Pairs(int[] me)
-        {
-            var list = new List<(int, int)>(me.Length / 2);
-            for (int i = 0; i + 1 < me.Length; i += 2) list.Add((me[i], me[i + 1]));
-            return list;
-        }
-
-        /// <summary>
-        /// ClipBoxEventHintType.Midi: note-ons take the leftmost free lane of <paramref name="lanes"/>,
-        /// note-offs end their note's lane (and are drawn there), other messages show where they fall.
-        /// </summary>
-        static PreviewMark[] Midi(List<(int Time, int Message)> events, int length, int lanes)
-        {
-            var marks = new List<PreviewMark>();
-            var held = new int[lanes];
-            int pos = 0;
-            foreach (var (time, message) in events)
-            {
-                int command = message & 0xF0;
-                int data1 = (message >> 8) & 0x7F;
-                for (int i = 0; i < lanes; i++)
-                    if (held[i] == 0) { pos = i; break; }
-                var kind = command == 0x80 ? PreviewKind.Off : command == 0x90 ? PreviewKind.Note : PreviewKind.Parameter;
-                if (command == 0x90)
-                {
-                    bool found = false;
-                    for (int i = 0; i < lanes; i++)
-                        if (held[(pos + i) % lanes] == 0)
-                        {
-                            pos = (pos + i) % lanes;
-                            found = true;
-                            break;
-                        }
-                    if (!found) pos = (pos + 1) % lanes;
-                    held[pos] = data1;
-                }
-                else if (command == 0x80)
-                {
-                    bool found = false;
-                    for (int i = 0; i < lanes; i++)
-                        if (held[i] == data1)
-                        {
-                            pos = i;
-                            found = true;
-                            held[i] = 0;
-                            break;
-                        }
-                    if (!found) continue;       // an off without its note isn't drawn
-                }
-                marks.Add(new PreviewMark(time / (double)MidiTimeBase / length, pos, lanes, kind, false));
-            }
-            return marks.ToArray();
         }
 
         /// <summary>ClipBoxEventHintType.Detail: a lane per column; notes, note-offs and other values.</summary>
