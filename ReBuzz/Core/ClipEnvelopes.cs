@@ -37,6 +37,12 @@ namespace ReBuzz.Core
         public int Length => Engine.End;
 
         public bool HasData => Engine.Points.Count > 0 || Tracker != null;
+
+        /// <summary>
+        /// T2: this envelope is the tracker's own lane (the unmarked one a parameter column shows, read with its ramps and edited in place):
+        /// <see cref="Engine"/> holds its points, <see cref="Tracker"/> is null, and an edit goes to that lane, never to the marked one.
+        /// </summary>
+        public bool OwnLane { get; init; }
     }
 
     /// <summary>Reads the envelopes of a clip, and finds which parameters hold data.</summary>
@@ -67,11 +73,24 @@ namespace ReBuzz.Core
             foreach (var t in AutomationReader.TrackerColumns(cache, clip))
             {
                 if (!AutomationReader.Same(machine, t, key) || t.Events.All(x => x.Value == param.Parameter.NoValue)) continue;
-                tracker = Segment(clip, AutoSource.Tracker, AutomationMath.PointsOf(t.Events, false, param.Parameter.NoValue), false);
+                tracker = Segment(clip, AutoSource.Tracker, AutomationMath.PointsOf(t.Events, ClipColumnCore.PlaysEveryLane, param.Parameter.NoValue), false);
                 break;
             }
             var overlaps = tracker != null && points.Count > 0 ? AutomationReader.OverlapsOf(new[] { engine, tracker }) : new List<AutoOverlap>();
             return new ClipEnvelope { Clip = clip, Param = param, Key = key, Engine = engine, Tracker = tracker, Overlaps = overlaps };
+        }
+
+        /// <summary>
+        /// T2: the tracker's own lane of one parameter of a clip, read now (the points of the unmarked lane its column shows, a Duration above 0 a
+        /// ramp, as the engine plays it); null when the clip's machine has no such state parameter. No lane yet reads as no points.
+        /// </summary>
+        public static ClipEnvelope ReadOwn(IClip clip, ColumnKey key)
+        {
+            var param = AutomationParams.Find(clip?.Machine, key);
+            if (param == null) return null;
+            var lane = Notes.StoreLanes.OwnLane(clip, key, create: false);
+            var points = AutomationMath.PointsOf(lane?.GetEvents(int.MinValue, int.MaxValue) ?? Array.Empty<ClipEvent>(), true, param.Parameter.NoValue);
+            return new ClipEnvelope { Clip = clip, Param = param, Key = key, Engine = Segment(clip, AutoSource.Tracker, points, true), OwnLane = true };
         }
 
         /// <summary>The parameters that hold data in a clip: its engine columns first, then the clip editor's, each in the machine's parameter order.</summary>
@@ -150,8 +169,14 @@ namespace ReBuzz.Core
     internal sealed class ClipEnvelopeEditor
     {
         readonly AutomationEditor editor;
+        readonly AutomationEditor own;
 
-        public ClipEnvelopeEditor(ReBuzzCore core) => editor = new AutomationEditor(core, new ClipEditor(core));
+        public ClipEnvelopeEditor(ReBuzzCore core)
+        {
+            var clips = new ClipEditor(core);
+            editor = new AutomationEditor(core, clips);
+            own = new AutomationEditor(core, clips, own: true);
+        }
 
         public ClipEnvelopeEditor(AutomationEditor editor) => this.editor = editor;
 
@@ -159,7 +184,7 @@ namespace ReBuzz.Core
 
         /// <summary>Changes the clip's points with <paramref name="change"/>; the points it returns are kept inside the clip.</summary>
         public string Edit(ClipEnvelope e, Func<List<AutoPoint>, List<AutoPoint>> change) =>
-            editor.Edit(e.Engine, e.Key, old =>
+            (e.OwnLane ? own ?? throw new InvalidOperationException("This editor has no tracker lane.") : editor).Edit(e.Engine, e.Key, old =>
             {
                 var result = change(old);
                 return result.Select(p => p with { Time = Math.Clamp(p.Time, 0, Last(e)), Value = Math.Clamp(p.Value, e.Param.Min, e.Param.Max) })

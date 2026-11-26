@@ -1310,6 +1310,59 @@ namespace ReBuzz.Studio.Tests
                     }
                 });
 
+                Try("067-clip-lanes", () =>
+                {
+                    // T2: two parameter columns of Lead's clip with their envelope lanes open, on a clip with steps and ramps written through the store.
+                    var lead = (MachineCore)Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead");
+                    lead.CreateClip("Lanes", 16);
+                    var clip = lead.Clips.First(p => p.Name == "Lanes");
+                    var two = ReBuzz.Core.AutomationParams.List(lead).Where(p => p.Parameter.Group.Type == ParameterGroupType.Global && p.Max - p.Min >= 60 && p.Max - p.Min <= 1000).Take(2).ToList();
+                    Assert.That(two.Count, Is.EqualTo(2), "two global parameters with a range worth drawing");
+                    ClipEvent[] Written(ReBuzz.Core.AutoParam q, bool first)
+                    {
+                        int lo = q.Min, span = q.Max - q.Min;
+                        int At(double f) => lo + (int)System.Math.Round(span * f);
+                        const int T = ClipEvent.TimeBase;
+                        return first
+                            ? new[] { new ClipEvent(0, At(0.15), 6 * T), new ClipEvent(6 * T, At(0.85), 0), new ClipEvent(9 * T, At(0.4), 0), new ClipEvent(12 * T, At(0.7), 3 * T), new ClipEvent(15 * T, At(0.2), 0) }
+                            : new[] { new ClipEvent(1 * T, At(0.5), 0), new ClipEvent(4 * T, At(0.9), 0), new ClipEvent(5 * T, At(0.1), 0), new ClipEvent(8 * T, At(0.2), 6 * T), new ClipEvent(14 * T, At(0.95), 0) };
+                    }
+                    for (int i = 0; i < 2; i++)
+                        ReBuzz.Core.Notes.StoreLanes.OwnLane(clip, two[i].Key, create: true).SetEvents(Written(two[i], i == 0), true);
+                    try
+                    {
+                        window.Detail.Show(true);
+                        ClipView.Edit(clip);
+                        Wait(200);
+                        dynamic v = ClipView.Page.EditorControl;
+                        foreach (var q in two) v.ShowAutomation(q.Name);
+                        Settle();
+                        dynamic vm = v.Editor.SelectedMachine.SelectedClip;
+                        foreach (var q in two)
+                            for (int i = 0; i < ((System.Collections.ICollection)vm.ColumnSets).Count; i++)
+                                for (int j = 0; j < ((System.Collections.ICollection)vm.ColumnSets[i].Columns).Count; j++)
+                                    if ((string)vm.ColumnSets[i].Columns[j].Label == q.Name) v.TrackerGrid.SetLane(i, j, true);
+                        Settle();
+                        v.TrackerGrid.ScrollSideways(0.0);
+                        ((Control)v.TrackerGrid.Body).Focus();
+                        Wait(200);
+                        string what = $"Clip: the Tracker with two envelope lanes open, beside the {two[0].Name} and {two[1].Name} columns of Lead's clip (steps and ramps written into the clip; a lane is one row of the grid for one row of the strip, values from the parameter's minimum on the left to its maximum on the right, and it scrolls with the grid).";
+                        string how = "The small curve button under a parameter column's name (the Tracker's header) shows or hides its lane; click in a lane to add a point, drag to move it, R switches ramp and step, Delete removes.";
+                        Shot(window, "067-clip-lanes-200", what + " Drawn at 200 %.", how);
+                        window.SetRenderScaling(1);
+                        Wait(250);
+                        Shot(window, "067-clip-lanes-100", what + " Drawn at 100 %.", how);
+                    }
+                    finally
+                    {
+                        window.SetRenderScaling(Scale);
+                        var other = lead.Clips.FirstOrDefault(p => p != clip);
+                        if (other != null) { ClipView.Edit(other); Wait(100); }
+                        lead.DeleteClip(clip);
+                        Settle();
+                    }
+                });
+
                 Control Grid() => (Control)((dynamic)ClipView.Page.EditorControl).TrackerGrid.Body;
                 ContextMenu GridMenu()
                 {

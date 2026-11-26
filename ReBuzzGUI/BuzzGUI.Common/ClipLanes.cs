@@ -25,6 +25,8 @@ namespace BuzzGUI.Common
         public const string Grid = "Grid";
         /// <summary>"1": the tracker's mute of the column.</summary>
         public const string Mute = "Mute";
+        /// <summary>"1": the tracker shows this column's vertical envelope lane (T2). View state kept with the lane, like Grid and Mute; absent means closed.</summary>
+        public const string Lane = "Lane";
     }
 
     /// <summary>The cause tags of the migration log (clips.md §5.6): what opening a .nbl of format 1 or 2 changed or dropped.</summary>
