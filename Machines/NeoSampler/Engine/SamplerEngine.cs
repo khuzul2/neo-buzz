@@ -120,6 +120,9 @@ namespace NeoBuzz.Sampler
             }
         }
 
+        /// <summary>Notes held now (gate on), for the note contract tests (docs/specs/notes.md).</summary>
+        public int HeldNotes { get { int n = 0; foreach (var v in voices) if (v.Held) n++; return n; } }
+
         public int ActiveVoices
         {
             get

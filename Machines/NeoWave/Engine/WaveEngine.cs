@@ -108,6 +108,9 @@ namespace NeoBuzz.Wave
             }
         }
 
+        /// <summary>Notes held now (gate on), for the note contract tests (docs/specs/notes.md).</summary>
+        public int HeldNotes => alloc.HeldNotes;
+
         public int ActiveVoices
         {
             get

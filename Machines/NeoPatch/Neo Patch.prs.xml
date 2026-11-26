@@ -23,6 +23,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A saw through a low-pass and a VCA, each with its own envelope. Macro 1: cutoff. Macro 2: release.</Comment>
@@ -52,6 +53,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A square and a saw an octave down through a 24 dB ladder low-pass; the filter envelope bites on each note. Macro 1: cutoff. Macro 2: resonance.</Comment>
@@ -81,6 +83,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Two sines, the second frequency-modulating the first through its own envelope: a bell that rings out. Macro 1: modulation depth. Macro 2: decay.</Comment>
@@ -110,6 +113,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Two wavetable oscillators on the Formants table, detuned, their position drifting on a slow LFO, into a low-pass. Macro 1: table position. Macro 2: cutoff.</Comment>
@@ -139,6 +143,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A saw into a ladder low-pass whose envelope snaps shut: a plucked bass-guitar or harp sound. Macro 1: cutoff. Macro 2: resonance.</Comment>
@@ -168,6 +173,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A triangle and a square a few cents apart, soft-clipped. Macro 1: drive. Macro 2: detune.</Comment>
@@ -197,6 +203,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Noise and a saw through a band-pass whose centre wanders on a random generator. Macro 1: wander rate. Macro 2: centre.</Comment>
@@ -226,6 +233,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Per voice: a saw and a VCA. After the Voice sum: one echo and one low-pass for all notes, with a global LFO on the cutoff. Macro 1: feedback. Macro 2: cutoff.</Comment>
@@ -235,7 +243,7 @@
   <Item Key="Bass — Reese Pair">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="507" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="535" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -255,6 +263,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Two saws an octave down, 14 cents apart either way, through a ladder low-pass that a slow LFO moves: the beating bass of drum and bass. Macro 1: cutoff. Macro 2: detune.</Comment>
@@ -264,7 +273,7 @@
   <Item Key="Bass — Pulse Walk">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="398" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="428" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -284,6 +293,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A square whose pulse width an LFO walks, through a low-pass with a short envelope: a hollow, moving bass. Macro 1: cutoff. Macro 2: walk rate.</Comment>
@@ -293,7 +303,7 @@
   <Item Key="Bass — Wobble Ladder">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="485" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="515" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -313,6 +323,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A saw an octave down through a ladder low-pass whose cutoff a 3 Hz LFO sweeps, restarted on every note: a wobble bass. Macro 1: cutoff. Macro 2: wobble rate.</Comment>
@@ -320,35 +331,6 @@
     </Preset>
   </Item>
   <Item Key="Lead — Sync Sweep">
-    <Preset Machine="Neo Patch">
-      <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="470" />
-        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
-        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
-        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
-        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="500" />
-        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="500" />
-        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
-        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
-        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
-        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
-        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
-        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
-        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
-        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
-        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
-        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
-        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
-        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
-        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
-        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
-      </Parameters>
-      <Attributes />
-      <Comment>A saw restarted by a square on every cycle while an envelope sweeps its pitch down: the tearing lead of hard sync. Macro 1: slave tune. Macro 2: sweep decay.</Comment>
-      <Data>AiICAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIExlYWQlMjAlRTIlODAlOTQlMjBTeW5jJTIwU3dlZXA7biAxIEtleXMgMCAwIDA7biAyIE9zYyAwIDAgMCAxIDAgMCAwIDAuNSAwIDAgMDtuIDMgT3NjIDAgMCAwIDAgNSAwIDAgMC41IDEgMCAwO24gNCBFbnZlbG9wZSAwIDAgMCAwLjAwMSAwLjYgMC4zIDAuMyAwIDAgMDtuIDUgRmlsdGVyIDAgMCAwIDAgNDUwMCAwLjggMDtuIDYgRW52ZWxvcGUgMCAwIDAgMC4wMDIgMC4zIDAuODUgMC4yIDAgMCAwO24gNyBWY2EgMCAwIDAgMTtuIDggT3V0IDAgMCAwIDEgMCAwIDAgMCAwO3cgMSAwIDIgMCAxO3cgMSAwIDMgMCAxO3cgMiAwIDMgMyAxO3cgMSAxIDQgMCAxO3cgNCAwIDMgMCAxMjt3IDMgMCA1IDAgMTt3IDEgMSA2IDAgMTt3IDUgMCA3IDAgMTt3IDYgMCA3IDEgMTt3IDcgMCA4IDAgMTttIDAgMyAxIDAgMTA7bSAxIDQgMSAwLjEwMDAwMDAyNCAxLjE7bSAyIDUgMSAxMzUwIDc2NTA8L1BhdGNoPjwvTmVvUGF0Y2hTdGF0ZT4=</Data>
-    </Preset>
-  </Item>
-  <Item Key="Lead — Folded Sine">
     <Preset Machine="Neo Patch">
       <Parameters>
         <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="498" />
@@ -371,6 +353,37 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
+      </Parameters>
+      <Attributes />
+      <Comment>A saw restarted by a square on every cycle while an envelope sweeps its pitch down: the tearing lead of hard sync. Macro 1: slave tune. Macro 2: sweep decay.</Comment>
+      <Data>AiICAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJ1dGYtOCI/Pgo8TmVvUGF0Y2hTdGF0ZT48UGF0Y2g+bmVvcGF0Y2ggMTtuYW1lIExlYWQlMjAlRTIlODAlOTQlMjBTeW5jJTIwU3dlZXA7biAxIEtleXMgMCAwIDA7biAyIE9zYyAwIDAgMCAxIDAgMCAwIDAuNSAwIDAgMDtuIDMgT3NjIDAgMCAwIDAgNSAwIDAgMC41IDEgMCAwO24gNCBFbnZlbG9wZSAwIDAgMCAwLjAwMSAwLjYgMC4zIDAuMyAwIDAgMDtuIDUgRmlsdGVyIDAgMCAwIDAgNDUwMCAwLjggMDtuIDYgRW52ZWxvcGUgMCAwIDAgMC4wMDIgMC4zIDAuODUgMC4yIDAgMCAwO24gNyBWY2EgMCAwIDAgMTtuIDggT3V0IDAgMCAwIDEgMCAwIDAgMCAwO3cgMSAwIDIgMCAxO3cgMSAwIDMgMCAxO3cgMiAwIDMgMyAxO3cgMSAxIDQgMCAxO3cgNCAwIDMgMCAxMjt3IDMgMCA1IDAgMTt3IDEgMSA2IDAgMTt3IDUgMCA3IDAgMTt3IDYgMCA3IDEgMTt3IDcgMCA4IDAgMTttIDAgMyAxIDAgMTA7bSAxIDQgMSAwLjEwMDAwMDAyNCAxLjE7bSAyIDUgMSAxMzUwIDc2NTA8L1BhdGNoPjwvTmVvUGF0Y2hTdGF0ZT4=</Data>
+    </Preset>
+  </Item>
+  <Item Key="Lead — Folded Sine">
+    <Preset Machine="Neo Patch">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="526" />
+        <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
+        <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Macro 1" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Macro 2" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Macro 3" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Macro 4" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Macro 5" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Macro 6" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Macro 7" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Macro 8" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Macro 9" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Macro 10" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Macro 11" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Macro 12" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Macro 13" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
+        <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
+        <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A sine folded back on itself by a Shaper, its drive raised by an envelope on each note: bright at the attack, softer as it dies. Macro 1: drive. Macro 2: bias.</Comment>
@@ -380,7 +393,7 @@
   <Item Key="Lead — Ring Glass">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="437" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="467" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -400,6 +413,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Two sines multiplied (ring modulation) for the bell-like sum and difference tones, with a little of the carrier. Macro 1: modulator tune. Macro 2: cutoff.</Comment>
@@ -409,7 +423,7 @@
   <Item Key="Lead — Square Stack">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="404" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="433" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -429,6 +443,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Three square waves a few cents apart, soft-clipped into a low-pass: a thick, buzzy lead. Macro 1: drive. Macro 2: cutoff.</Comment>
@@ -438,7 +453,7 @@
   <Item Key="Keys — Electric Tine">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="396" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="424" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -458,6 +473,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A sine frequency-modulated by a sine at the same pitch, the modulation decaying faster than the note: a tine with a soft attack. Macro 1: FM index. Macro 2: decay.</Comment>
@@ -467,7 +483,7 @@
   <Item Key="Keys — Four Op Chime">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="435" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="463" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -487,6 +503,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Two FM pairs mixed: operator 2 modulates 1 and 4 modulates 3 at an inharmonic ratio, one envelope shaping both: a glassy chime. Macro 1: first index. Macro 2: second index.</Comment>
@@ -496,7 +513,7 @@
   <Item Key="Pad — Slow Strings">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="524" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="552" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -516,6 +533,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Three detuned saws through a low-pass that a very slow LFO moves, with a slow attack: a string section. Macro 1: cutoff. Macro 2: attack.</Comment>
@@ -525,7 +543,7 @@
   <Item Key="Pad — Crossfade Glass">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="509" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="537" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -545,6 +563,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Two wavetable oscillators crossfaded by a slow LFO through a low-pass: a pad that drifts between two timbres. Macro 1: crossfade. Macro 2: cutoff.</Comment>
@@ -554,7 +573,7 @@
   <Item Key="Pluck — Karplus String">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="287" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="317" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -574,6 +593,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A burst of noise into a tuned delay whose feedback rings it as a string, then a low-pass body and a little feedback node: a plucked string. Macro 1: damping. Macro 2: sustain.</Comment>
@@ -583,7 +603,7 @@
   <Item Key="Pluck — Short Pulse">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="652" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="680" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -603,6 +623,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A narrow pulse into a low-pass with a short decay: a staccato, woody pluck. Macro 1: cutoff. Macro 2: pulse width.</Comment>
@@ -612,7 +633,7 @@
   <Item Key="Texture — Choir Loop">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="533" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="561" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -632,6 +653,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>A looped choir sample at the pitch of the keys through a low-pass that a smooth random generator wanders. Macro 1: cutoff. Macro 2: wander depth.</Comment>
@@ -641,7 +663,7 @@
   <Item Key="FX — Metal Rain">
     <Preset Machine="Neo Patch">
       <Parameters>
-        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="965" />
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="993" />
         <Parameter Name="Voices" Group="1" Index="1" Track="0" Value="8" />
         <Parameter Name="Glide" Group="1" Index="2" Track="0" Value="0" />
         <Parameter Name="Audio-rate mod" Group="1" Index="3" Track="0" Value="0" />
@@ -661,6 +683,7 @@
         <Parameter Name="Macro 14" Group="1" Index="17" Track="0" Value="500" />
         <Parameter Name="Macro 15" Group="1" Index="18" Track="0" Value="500" />
         <Parameter Name="Macro 16" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Vel -&gt; level" Group="1" Index="20" Track="0" Value="700" />
       </Parameters>
       <Attributes />
       <Comment>Noise and a saw an octave up through a resonant band-pass whose centre a stepped random generator jumps around: metallic drops. Macro 1: jump rate. Macro 2: centre.</Comment>

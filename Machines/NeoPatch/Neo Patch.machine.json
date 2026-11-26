@@ -310,6 +310,20 @@
    "description": "Macro 16, moves every node setting mapped to it",
    "how": "Moves every node setting that the patch maps to macro 16, each between its own low and high value.",
    "sound": "What it does depends on the patch; the preset's mappings are named in its description."
+  },
+  {
+   "index": 20,
+   "id": "vel_level",
+   "name": "Vel -> level",
+   "group": "Velocity",
+   "min": 0,
+   "max": 1000,
+   "default": 700,
+   "kind": "percent",
+   "unit": "%",
+   "description": "How much note velocity changes loudness",
+   "how": "Sets how strongly note velocity changes the loudness of each note, from 0 to 100 %. At 0 every note is as loud as the patch makes it.",
+   "sound": "At 70 % a soft note is clearly quieter than a hard one, as on any played instrument; 0 % ignores velocity unless the patch wires it from the Keys node."
   }
  ],
  "readings": [

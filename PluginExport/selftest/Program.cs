@@ -11,7 +11,7 @@ namespace NeoExport
         static void Check(bool ok, string what) { Console.WriteLine((ok ? "ok   " : "FAIL ") + what); if (!ok) failures++; }
 
         // ---- a host's event list, output list and streams, in native memory
-        const int MaxEv = 16;
+        const int MaxEv = 40;
         static byte* evMem;              // MaxEv slots of 64 bytes
         static int evCount;
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })] static uint EvSize(ClapInputEvents* l) => (uint)evCount;
@@ -169,6 +169,44 @@ namespace NeoExport
             Check(audible, "the render is audible");
             Check(allocAfter - allocBefore == 0, $"process allocates nothing over 300 blocks ({allocAfter - allocBefore} bytes)");
 
+            // ---- real notes: velocity, a chord, sixteen notes, and a note-off that ends only its own note (instruments only)
+            if (info.Instrument)
+            {
+                bool drums = info.Name.Contains("Drums");
+                int[] chord = drums ? new[] { 36, 38, 42, 46 } : new[] { 60, 64, 67, 72 };
+                var sixteen = new int[16]; for (int i = 0; i < 16; i++) sixteen[i] = drums ? 36 + i : 48 + 2 * i;
+                const int Win = 30;   // 0.3 s
+                double Peak(double[] pk) { double m = 0; for (int i = 0; i < Win && i < pk.Length; i++) m = Math.Max(m, pk[i]); return m; }
+                // Neo FM6's Init patch has velocity sensitivity 0 (its presets set it): give operator 1 the full 7 first
+                bool fm6 = info.Name == "Neo FM6"; int sensId = fm6 ? Array.FindIndex(table, t => t.Name == "Op1 vel sens") : -1;
+                var pre = new List<(int, Ev)>(); if (fm6) pre.Add((0, new Ev { Time = 0, Kind = 0, A = sensId, V = 7 }));
+                // Neo Learn Physical: the mallet pulse has spectral nulls, so its level is not monotone in velocity; 127 must still beat 30
+                bool notMono = info.Name == "Neo Learn Physical"; double minSpan = notMono ? 1.0 : 6.0;
+                var lv = new double[4]; int[] vels = { 30, 60, 90, 127 };
+                for (int k = 0; k < 4; k++)
+                {
+                    var e = new List<(int, Ev)>(pre); foreach (int key in chord) e.Add((0, new Ev { Time = 0, Kind = 1, A = key, V = vels[k] / 127.0 }));
+                    lv[k] = Peak(Render(fac, d, &pr, oL, oR, e, Win).peak);
+                }
+                double dbSpan = 20 * Math.Log10(lv[3] / Math.Max(lv[0], 1e-9));
+                Console.WriteLine($"     chord peaks at velocity 30/60/90/127: {lv[0]:F4} {lv[1]:F4} {lv[2]:F4} {lv[3]:F4} ({dbSpan:F1} dB from 30 to 127)");
+                Check(lv[0] > 1e-5 && dbSpan >= minSpan, notMono ? "a four-note chord is louder at velocity 127 than at 30 (not monotone in between)" : "a four-note chord is 6 dB or more louder at velocity 127 than at 30");
+                var many = new List<(int, Ev)>(pre); foreach (int key in sixteen) many.Add((0, new Ev { Time = 0, Kind = 1, A = key, V = 0.7 }));
+                var mr = Render(fac, d, &pr, oL, oR, many, Win);
+                Check(Peak(mr.peak) > 1e-5 && double.IsFinite(Peak(mr.peak)) && Peak(mr.peak) < 16, "sixteen notes at once sound and stay finite");
+                // note A and B held, A released: late level matches B alone (A's voice ended, B's did not)
+                int ka = chord[0], kb = chord[1];
+                var both = new List<(int, Ev)>(pre) { (0, new Ev { Kind = 1, A = ka, V = 0.8 }), (0, new Ev { Kind = 1, A = kb, V = 0.8 }), (10, new Ev { Kind = 2, A = ka }) };
+                var only = new List<(int, Ev)>(pre) { (0, new Ev { Kind = 1, A = kb, V = 0.8 }) };
+                var held = new List<(int, Ev)>(pre) { (0, new Ev { Kind = 1, A = ka, V = 0.8 }), (0, new Ev { Kind = 1, A = kb, V = 0.8 }) };
+                var rb = Render(fac, d, &pr, oL, oR, both, 300).rms; var ro = Render(fac, d, &pr, oL, oR, only, 300).rms; var rh = Render(fac, d, &pr, oL, oR, held, 300).rms;
+                double Late(double[] r) { double s2 = 0; for (int i = 240; i < 300; i++) s2 += r[i] * r[i]; return Math.Sqrt(s2 / 60); }
+                double dbBO = 20 * Math.Log10(Math.Max(Late(rb), 1e-9) / Math.Max(Late(ro), 1e-9)), dbBH = 20 * Math.Log10(Math.Max(Late(rb), 1e-9) / Math.Max(Late(rh), 1e-9));
+                Console.WriteLine($"     late level: A off + B vs B alone {dbBO:F1} dB, vs both held {dbBH:F1} dB (late rms {Late(rb):E2} / {Late(ro):E2} / {Late(rh):E2})");
+                bool oneShot = drums || Late(rh) < 1e-3;   // a one-shot, or a plucked sound that has decayed below -60 dB by then, has no held level to compare
+                Check(oneShot || (Math.Abs(dbBO) <= 3.0 && dbBH < dbBO), "a note-off ends only its own note");
+            }
+
             // ---- state: round trip, an older (shorter) state, a bad header
             var stext = (ClapPluginState*)Ext(p, "clap.state");
             var os = new ClapOStream { Write = &StWrite }; var ist = new ClapIStream { Read = &StRead };
@@ -208,6 +246,25 @@ namespace NeoExport
             Check(inst.Sh->Param[target] == table[target].Min && inst.Sh->ParamSeq != seq, "host automation reaches the editor through the shared struct");
 
             p->Destroy(p); p2->Destroy(p2); p3->Destroy(p3);
+        }
+
+        /// <summary>Plays the events (block, event) on a fresh instance and returns each block's rms and peak over both channels.</summary>
+        static (double[] rms, double[] peak) Render(ClapFactory* fac, ClapDescriptor* d, ClapProcess* pr, float* oL, float* oR, List<(int blk, Ev ev)> evs, int blocks)
+        {
+            var q = fac->Create(fac, null, d->Id); q->Init(q); q->Activate(q, 48000, 1, 256);
+            var inst = System.Runtime.CompilerServices.Unsafe.As<Instance>(GCHandle.FromIntPtr((IntPtr)q->PluginData).Target);
+            var sw = System.Diagnostics.Stopwatch.StartNew(); while (inst.Eng.Preparing && sw.ElapsedMilliseconds < 30000) System.Threading.Thread.Sleep(10);
+            var rms = new double[blocks]; var peak = new double[blocks];
+            for (int b = 0; b < blocks; b++)
+            {
+                int n = 0; foreach (var (blk, ev) in evs) if (blk == b) { WriteEvent(evMem + 64 * n, ev); n++; }
+                evCount = n; q->Process(q, pr);
+                double s2 = 0, pk = 0; int N = (int)pr->FramesCount;
+                for (int i = 0; i < N; i++) { s2 += (double)oL[i] * oL[i] + (double)oR[i] * oR[i]; pk = Math.Max(pk, Math.Max(Math.Abs(oL[i]), Math.Abs(oR[i]))); }
+                rms[b] = Math.Sqrt(s2 / (2 * N)); peak[b] = pk;
+            }
+            evCount = 0; q->Destroy(q);
+            return (rms, peak);
         }
 
         static void WriteEvent(byte* m, Ev e)

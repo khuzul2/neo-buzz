@@ -17,7 +17,8 @@ namespace NeoBuzz.EnvelopeMachine
         public const int Curve = 6;
         public const int Gate = 7;
         public const int Glide = 8;
-        public const int Count = 9;
+        public const int Velocity = 9;
+        public const int Count = 10;
     }
 
     internal static class Params
@@ -36,6 +37,7 @@ namespace NeoBuzz.EnvelopeMachine
             new ParamDef(P.Curve, "curve", "Curve", 0, 1000, 500, MapKind.Bipolar, group: "Shape", description: "Bends the output: negative eases out (fast start), positive eases in (slow start)", how: "Bends the output from -100 % (fast start, eases out) to +100 % (slow start, eases in).", sound: "Negative curves make the movement jump then settle; positive curves hold back then rush."),
             new ParamDef(P.Gate, "gate", "Gate", 0, 1, 0, MapKind.Switch, group: "Control", description: "A manual gate in Note mode: on starts the envelope, off releases it (clips can write it)", how: "Starts the envelope when switched on and releases it when switched off, with no notes needed (Note mode).", sound: "A clip writing this switch triggers the envelope on its own steps."),
             new ParamDef(P.Glide, "glide", "Write glide", 0, 1000, 408, MapKind.Time, a: 0.001, b: 1, group: "Control", description: "Time a target takes to cross its whole range: no write moves further than this allows", how: "Limits how fast a target may move: it takes at least this long to cross its whole range.", sound: "A short glide keeps fast modulation clean; a long one smooths and slows it."),
+            new ParamDef(P.Velocity, "velocity", "Velocity", 0, 1000, 0, MapKind.Percent, group: "Control", description: "Note mode: how much a note's velocity scales the output (0 %: every note opens it fully)", how: "Sets how much the velocity of the note changes the height of the envelope in Note mode, from 0 % (every note as high as the next) to 100 % (a soft note moves its targets far less than a hard one).", sound: "At 0 % a quiet note and a hard note open a filter alike; at 100 % the filter opens in step with how hard each note was played."),
         };
     }
 }

@@ -135,9 +135,7 @@ namespace NeoBuzz.Plug
         readonly PlugNative.Event[] events = new PlugNative.Event[1024];
         readonly PlugNative.Event[] chunkEvents = new PlugNative.Event[1024];
         readonly PlugNative.Event[] outEvents = new PlugNative.Event[512];
-        readonly PlugNative.Event[] midiRing = new PlugNative.Event[1024];
-        int midiCount;
-        readonly object midiLock = new();
+        readonly PlugEventQueue<PlugNative.Event> midiQueue = new(1024, 128);   // note-ons stop 128 short of full: a note-off always gets in
         volatile bool stopAll;
         volatile bool resetRequested;
         public volatile int MidiChannel;
@@ -941,7 +939,7 @@ namespace NeoBuzz.Plug
 
         void ClearPlaying()
         {
-            lock (midiLock) midiCount = 0;
+            midiQueue.Clear();
             Array.Fill(trackKey, -1);
             Array.Fill(carryNote, -1);
             Array.Fill(pending, -1);
@@ -1050,8 +1048,7 @@ namespace NeoBuzz.Plug
 
         void QueueMidi(in PlugNative.Event e)
         {
-            lock (midiLock)
-                if (midiCount < midiRing.Length) midiRing[midiCount++] = e;
+            midiQueue.Push(e, e.type == PlugNative.EvNoteOn);
         }
 
         /// <summary>Events a note wire carried this block (audio thread, just before Work): queued at their frame in the block.</summary>
@@ -1208,11 +1205,7 @@ namespace NeoBuzz.Plug
                     events[ne++] = new PlugNative.Event { frame = (uint)f, type = PlugNative.EvNoteOn, channel = ch, key = key, note_id = -1, value = (nv > 0 ? nv : 100) / 127.0 };
                     trackKey[t] = key;
                 }
-                lock (midiLock)
-                {
-                    for (int i = 0; i < midiCount && ne < events.Length - 1; i++) events[ne++] = midiRing[i];
-                    midiCount = 0;
-                }
+                midiQueue.DrainTo(events, ref ne, events.Length - 1);
                 for (int i = 0; i < Slots && ne < events.Length - 1; i++)
                 {
                     int v = Interlocked.Exchange(ref pending[i], -1);

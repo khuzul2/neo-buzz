@@ -29,6 +29,8 @@ namespace NeoBuzz.Patch
         StealFade fade;
         int quiet, releaseBlocks;
         float lastPress, lastSlide, lastBend;
+        // The velocity gain of the last block (the machine's Vel -> level, 1 - a (1 - velocity)): a change of the setting ramps across a block like the voice's other gain.
+        float lastVelGain = float.NaN;
 
         public PatchVoice(float sampleRate, PatchRuntime runtime) { sr = sampleRate; rt = runtime; }
 
@@ -53,6 +55,7 @@ namespace NeoBuzz.Patch
             quiet = 0; releaseBlocks = 0; GainEnd = 1f;
             pending = false;
             lastPress = lastSlide = float.NaN;
+            lastVelGain = float.NaN;
             fade.Cancel();
         }
 
@@ -75,8 +78,11 @@ namespace NeoBuzz.Patch
                 }
                 GainEnd = g;
             }
-            c.Gain0[v] = g0;
-            c.Gain1[v] = Sounding ? GainEnd : 0f;
+            float vg = 1f - rt.VelLevel * (1f - Vel);
+            float vg0 = float.IsNaN(lastVelGain) ? vg : lastVelGain;
+            lastVelGain = vg;
+            c.Gain0[v] = g0 * vg0;
+            c.Gain1[v] = Sounding ? GainEnd * vg : 0f;
             float bend = rt.BendFor(Channel);
             c.Pitch0[v] = Cur + (float.IsNaN(lastBend) ? bend : lastBend);
             Cur += (Target - Cur) * glideK;
@@ -170,6 +176,9 @@ namespace NeoBuzz.Patch
                 if (alloc.Polyphony > ctx.VoiceSlots && lastGraph != null) RequestRecompile();
             }
         }
+        /// <summary>How much velocity sets a note's level (0 … 1): the gain is 1 - VelLevel (1 - velocity), applied to the voice's output.</summary>
+        public float VelLevel { get; set; }
+
         public float Glide { get => glideSeconds; set { glideSeconds = Math.Max(0f, value); alloc.GlideAlways = glideSeconds > 0f; } }
         public VoiceMode Mode { get => alloc.Mode; set => alloc.Mode = value; }
         /// <summary>The patch's "audio-rate modulation" switch: control ports are read for every sample, not every control interval.</summary>
@@ -180,6 +189,9 @@ namespace NeoBuzz.Patch
         public SampleLayer UserSample { get => ctx.UserSample; set => ctx.UserSample = value; }
         /// <summary>Samples the guard has had to zero (NaN, infinities, runaway) at the output.</summary>
         public long NonFinite => nonFinite;
+        /// <summary>Notes held now (gate on), for the note contract tests (docs/specs/notes.md).</summary>
+        public int HeldNotes => alloc.HeldNotes;
+
         public int ActiveVoices { get { int n = 0; for (int i = 0; i < voices.Length; i++) if (voices[i].Sounding) n++; return n; } }
         /// <summary>Nodes that took their state over from the patch before, at the last compile.</summary>
         public int LastAdopted => lastPublished?.Adopted ?? 0;

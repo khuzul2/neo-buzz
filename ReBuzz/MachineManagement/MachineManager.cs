@@ -487,6 +487,8 @@ namespace ReBuzz.MachineManagement
                 var mc = machine as MachineCore;
                 // Fork (note-wires.md): a track with note inserts hands its clip notes, live MIDI and keys to the first insert.
                 if (mc != null && Buzz?.NoteWires is { } nw && nw.RouteTrackInput(mc, data)) return;
+                // Fork (notes.md G1): the modulators that listen to this machine hear the notes it is given, from any source.
+                if (mc != null && (commandCode == MIDI.NoteOn || commandCode == MIDI.NoteOff)) mc.TapNote(data1, commandCode == MIDI.NoteOn ? data2 : 0);
                 if (managedMachines.ContainsKey(mc))
                 {
                     var mmh = managedMachines[mc];
@@ -788,6 +790,7 @@ namespace ReBuzz.MachineManagement
         internal void SendMIDINote(MachineCore machine, int channel, int value, int velocity)
         {
             machine.NoteMonitor?.Note(channel, value, velocity);     // fork (machine keyboard)
+            machine.TapNote(value, velocity);                         // fork (notes.md G1)
             if (machine.DLL.IsManaged && managedMachines.ContainsKey(machine))
             {
                 var machineHost = ManagedMachines[machine];

@@ -39,4 +39,24 @@ namespace BuzzGUI.Interfaces
     {
         void EmitNote(in NoteMessage e);
     }
+
+    /// <summary>
+    /// Told of every note a machine is given, whatever its source (docs/specs/notes.md G1): the clip player, the piano roll and Session (their MIDI column),
+    /// live MIDI and the keyboards, a note insert or note wire, another machine. Called on the MIDI or audio thread; must not allocate, lock or wait.
+    /// </summary>
+    public interface INoteTap
+    {
+        /// <summary>A note-on: the MIDI note and its velocity (1 ... 127).</summary>
+        void TapNoteOn(int note, int velocity);
+
+        void TapNoteOff(int note);
+    }
+
+    /// <summary>Implemented by the machine core: a modulator (Neo Envelope, Neo LFO) listens to the notes a machine plays through it, as it listens to its Note parameters.</summary>
+    public interface INoteTapSource
+    {
+        void AddNoteTap(INoteTap tap);
+
+        void RemoveNoteTap(INoteTap tap);
+    }
 }

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Phase 1 (audit and plan), 2026-11-26. Nothing is built yet. Issue #168, branch `engine/real-notes-cu6a`. |
+| Status | Phase 1 (audit and plan) and Phase 2 (built, section 8), 2026-11-26. Issue #168, branch `engine/real-notes-cu6a`. |
 | Principle | Every machine that plays notes takes note-on and note-off with velocity and any polyphony, wherever the notes come from: clips, the piano roll, Session, live MIDI, note wires and note inserts. Neo Plug and the exported plug-ins too. |
 | Not here | The tracker's chord columns are CU6b. |
 | Read first | `clips.md` S3, section 10.0d (CU7 as built), `note-wires.md`, `mcp-server.md` section 12.2 |
@@ -141,3 +141,27 @@ What changes instead is a guard: the Route test above fails if a Neo instrument 
 4. G8: raise Polyphony to 32 on Poly, Wave and FM6 (defaults stay 8). Recommended: yes.
 5. Exported plug-ins: only the 16 instruments that are exported are covered; Wave, Organ, Mallet, Sampler, Patch and Neo Plug are not exported and stay out.
 6. `TrackNotes.Allocate` and `MaxTracks`: keep (section 6).
+
+## 8. Phase 2: what was built, and what was decided
+
+The coordinator took the decisions of section 7 as follows. Gaps G1, G2, G4, G5, G9, G10 and G11 are built; G3, G6, G7 and G8 are documented.
+
+| Gap | Result |
+|---|---|
+| G1 | `INoteTap` / `INoteTapSource` (`INoteWires.cs`): `MachineCore` tells its taps every note it is given (live MIDI and keyboard in `SendMidiInput`, clip and Session notes through the same path, `SendMIDINote`, and a note wire's delivery in `NoteNode`). `NeoModulatorBase` subscribes while it listens to "any note" and keeps the last velocity. Neo Envelope's Note mode and Neo LFO's note retrigger now start on a clip, roll, Session, live MIDI or wire note on a Neo synth. A listener set to one track still hears only that track. Tests: `NoteTapTests` (Neo Poly and Neo Envelope, real engine). |
+| G2 | Neo Patch: appended `Vel -> level` (`vel_level`, 0 to 100 %, default 70 % for a new instance), the gain law of the other synths, 1 - a(1 - v), applied per voice and ramped. `PatchMigrations` gives a song saved before 0 %, so it sounds the same. Tests: `NoteGapsTests` (new default 70 %, old song 0 %, 6 dB between velocity 30 and 127 at 70 %, 0 % blind). |
+| G3 | **Declared exception: Neo Organ is velocity-blind.** A tonewheel organ's keys are not velocity sensitive. It is marked `VelocityBlind` in the contract table, which asserts equal levels at every velocity instead of a rise. No knob. |
+| G4 | Neo Chop and Neo LFO stay triggers: a note starts them, its velocity does nothing. Neo Envelope: appended `Velocity` (`velocity`, 0 to 100 %, default 0 %, so every old song and preset is unchanged); at 100 % the envelope's peak is velocity/127. The editor has a knob in the Output section (Mac gallery, light and dark). |
+| G5 | `NoteInput`: the ring is 4096 events, a note-on is refused once only a reserve of 256 is left, so a note-off always finds room; a `Dropped` counter. `PlugCore`: the same idea in `PlugEventQueue` (1024 events, 128 reserve), with the note-ons also stopping short of the block's event limit. Tests: `NoteQueueTests`. |
+| G6 | **Accepted limit.** Two sources playing the same pitch at once share one key; the second note-on takes over the voice and either note-off ends it, as on any MIDI instrument. No reference count. |
+| G7 | Out of scope, as noted: a note that arrives by wire starts at its block's start in the Neo synths. |
+| G8 | **Not done: Polyphony stays 1 to 16 on Poly, Wave and FM6.** A MIDI map stores a mapped knob's range as a fraction of the parameter's range (`MapModel`, `MapDrive.Min` and `Max`, read by `Router.Make` against the parameter's min and max). Widening 1-16 to 1-32 would move every saved map's value, and automation of that parameter written as a normalised value would shift with it. The defaults (8) are unchanged, and a 16-note chord on a new instance releases the oldest eight; raise Polyphony to 16 for it. The engines do have 32 voices: a new parameter with a wider range, or a map version, is the way, and is a decision for a later task. |
+| G9 | Neo Plug: the native library is built only by the plug-in host workflow, so the Studio tests that need the native synth skip where it is not there. The checks are therefore: `tools/plugin-host-test.py` (fixtures) plays a four-note chord at velocity 30 and 127 on the native test synth (`neoplug.test.synth`, which plays each voice at its note-on velocity) and asserts 6 dB or more between them; `PlugEventQueue` (the queue of events for the plug-in) is unit-tested in `NeoBuzz.MachineTests` without the native library (a flood of note-ons never costs a note-off or a controller); and `NoteTapTests` asserts that Neo Plug takes notes and Neo Plug FX has no note input. |
+| G10 | `PluginExport/selftest` plays, for every instrument in the factory, a four-note chord at velocity 30, 60, 90 and 127 (6 dB or more from 30 to 127), sixteen notes at once, and a note-off that must end only its own note (the level late in the tail, with the other note held, matches that note alone). Run by `plugin-export.yml` ("ALL OK"). Two sounds are marked: Neo FM6's Init patch has operator velocity sensitivity 0 (the presets set it), so the test gives Op1 sensitivity 7 first; Neo Learn Physical is not monotone in velocity (below), so it is asked only to be louder at 127 than at 30. |
+| G11 | `NoteContractTests` (`NeoBuzz.MachineTests`): one row per instrument (Poly, Wave, FM6, Mallet, Organ, Sampler, Drums, Patch, Dye, the 13 Neo Learn synths): velocity ordering and 6 dB between 30 and 127, four notes at four velocities give four voices, each note-off ends only its own note, sixteen notes give sixteen voices or the stated maximum, notes past the maximum steal without a crash or click, and 0 bytes allocated per block with note-ons and note-offs. A new instrument is one row. |
+
+Route guard (section 6): `NoteTapTests.EveryNeoInstrumentTakesItsClipNotesByTheMidiColumn` asserts `SongNotes.For` is the MIDI column for every Neo instrument, so `TrackNotes.Allocate` and `MaxTracks` stay out of the note path. `TrackNotes.Allocate` and `MaxTracks` are kept; raising `MaxTracks` to 32 belongs to CU6b.
+
+### Finding for a decision: Neo Learn Physical is not monotone in velocity
+
+Its mallet pulse has spectral nulls, so the peak level moves by up to about 17 dB between neighbouring velocities (127 is still 18 dB over 30 in the engine test, 2.5 dB with the plug-in's default chord). A smoother strike would change the sound, so it is not changed here: it needs a listening pack and the project owner's approval. The contract row carries `NotMonotone` until then.

@@ -33,7 +33,7 @@ A low-frequency oscillator with no audio of its own: it moves up to 8 parameters
 ## Pitfalls
 
 - A uni LFO at depth 100 % on a parameter already near its top clips at the top: lower the base or use bi.
-- With `Retrigger` Note and nothing to listen to, the cycle never restarts: give `listen_machine`. Notes played from a MIDI keyboard are not seen, only those the song and `midi_play` send.
+- With `Retrigger` Note and nothing to listen to, the cycle never restarts: give `listen_machine`. It hears every note the listened machine is given (a clip, Session, a MIDI keyboard, `midi_play`, a note wire); the note's velocity does not change the sweep.
 - Two modulators on the same parameter fight: the second takes the first's output as its base.
 - The master volume is never pushed past 0 dB and tempo parameters are refused.
 

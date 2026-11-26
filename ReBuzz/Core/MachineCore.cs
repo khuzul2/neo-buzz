@@ -23,7 +23,7 @@ using System.Windows.Input;
 
 namespace ReBuzz.Core
 {
-    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget, INoteEmitter
+    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget, INoteEmitter, INoteTapSource
     {
         public static long machineHostId = 1;
         public readonly Lock workLock = new();
@@ -795,6 +795,48 @@ namespace ReBuzz.Core
         /// tick's Note track values. Null until then: the feeds skip it.
         /// </summary>
         internal volatile Keyboards.NoteMonitor NoteMonitor;
+
+        // Fork (docs/specs/notes.md G1): the modulators that listen to this machine's notes. A copy-on-write array: the audio and MIDI threads read it with no lock.
+        volatile INoteTap[] noteTaps = Array.Empty<INoteTap>();
+        readonly object noteTapGate = new object();
+
+        public void AddNoteTap(INoteTap tap)
+        {
+            if (tap == null) return;
+            lock (noteTapGate)
+            {
+                var now = noteTaps;
+                if (Array.IndexOf(now, tap) >= 0) return;
+                var next = new INoteTap[now.Length + 1];
+                Array.Copy(now, next, now.Length);
+                next[now.Length] = tap;
+                noteTaps = next;
+            }
+        }
+
+        public void RemoveNoteTap(INoteTap tap)
+        {
+            lock (noteTapGate)
+            {
+                var now = noteTaps;
+                int at = Array.IndexOf(now, tap);
+                if (at < 0) return;
+                var next = new INoteTap[now.Length - 1];
+                for (int i = 0, j = 0; i < now.Length; i++) if (i != at) next[j++] = now[i];
+                noteTaps = next;
+            }
+        }
+
+        /// <summary>A note the machine is given (MIDI thread or audio thread): velocity 0 is a note-off. Nothing is allocated; no tap, no cost beyond one read.</summary>
+        internal void TapNote(int note, int velocity)
+        {
+            var taps = noteTaps;
+            for (int i = 0; i < taps.Length; i++)
+            {
+                if (velocity > 0) taps[i].TapNoteOn(note, velocity);
+                else taps[i].TapNoteOff(note);
+            }
+        }
 
 
         public long CMachineHost { get; internal set; }

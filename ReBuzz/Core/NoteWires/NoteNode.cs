@@ -58,6 +58,13 @@ namespace ReBuzz.Core.NoteWires
             Delivered += n;
             if (Receiver != null)
             {
+                // Fork (notes.md G1): the modulators that listen to this machine hear what its wires gave it.
+                for (int i = 0; i < n; i++)
+                {
+                    ref var e = ref Scratch[i];
+                    if (e.Kind == NoteMessageKind.NoteOn) Machine.TapNote(e.Data1, Math.Max(1, e.Data2));
+                    else if (e.Kind == NoteMessageKind.NoteOff) Machine.TapNote(e.Data1, 0);
+                }
                 Receiver.ReceiveNotes(new ReadOnlySpan<NoteMessage>(Scratch, 0, n));
                 return;
             }
