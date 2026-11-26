@@ -2402,6 +2402,21 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "660-neo-mallet-editor", "Neo Mallet with the Church Bell preset: the Bell model picker and its mode drawing (a line per mode on a log axis, height = gain at the strike position), then Exciter, Decay and damping, Tremolo and Output.", "Add Neo Mallet, load Church Bell, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                // CU6a: Neo Envelope's editor with the new Velocity depth in its Output section (Note mode, a snappy pluck shape, Velocity at 70 %).
+                Try("661-neo-envelope-editor", () =>
+                {
+                    var m = Add("Neo Envelope", "Env");
+                    var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                    foreach (var (name, raw) in new[] { ("Attack", 120), ("Decay", 450), ("Sustain", 150), ("Release", 500), ("Curve", 650), ("Velocity", 700) })
+                        group.Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "661-neo-envelope-editor", "Neo Envelope in Note mode with a pluck shape (short Attack, Decay to a low Sustain, a bent Curve) and Velocity at 70 %: the Velocity knob is the last in the Output section, after Threshold, Curve and Glide; at 0 % every note opens the envelope fully, at 100 % a soft note opens it only a little.", "Add Neo Envelope; open its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {
