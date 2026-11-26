@@ -181,8 +181,8 @@ namespace NeoBuzz.Prism
                 labelHigh = highMs;
                 label = $"delay {lowMs:0} → {highMs:0} ms";
             }
-            g.Text(label, plot.Right + 4, plot.Top, 9, cc);
-            g.Text("2 s", plot.Right + 4, plot.Top + 12, 9, Palette.DimText);
+            g.Text(label, plot.Right - 4, plot.Top + 2, 9, cc, align: NeoAlign.Right);
+            g.Text("2 s", plot.Right + 4, plot.Top, 9, Palette.DimText);
         }
 
 #if AVALONIA

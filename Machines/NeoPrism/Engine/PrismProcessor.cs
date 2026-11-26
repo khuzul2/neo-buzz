@@ -45,6 +45,12 @@ namespace NeoBuzz.Prism
         public int Lights;
         public int Size;
 
+        public PrismView()
+        {
+            Array.Fill(In, -120f);      // nothing has played yet
+            Array.Fill(Out, -120f);
+        }
+
         public void CopyTo(PrismView o)
         {
             Array.Copy(In, o.In, Bands);
