@@ -830,27 +830,6 @@ namespace ReBuzz.MachineManagement
             }
         }
 
-        internal int[] GetClipEditorMachineMIDIEvents(MachineCore machine, ClipCore clip)
-        {
-            var editor = machine.EditorMachine;
-            if (managedMachines.ContainsKey(editor))
-            {
-                var machineHost = ManagedMachines[editor];
-                return machineHost.GetClipEditorMachineMIDIEvents(clip);
-            }
-            return new int[0];
-        }
-
-        internal void SetClipEditorMachineMIDIEvents(MachineCore machine, ClipCore clip, int[] data)
-        {
-            var editor = machine.EditorMachine;
-            if (managedMachines.ContainsKey(editor))
-            {
-                var machineHost = ManagedMachines[editor];
-                machineHost.SetClipEditorMachineMIDIEvents(clip, data);
-            }
-        }
-
         internal IEnumerable<IClipEditorColumn> ClipEditorMachineEvents(MachineCore machine, ClipCore clipCore)
         {
             var editor = machine.EditorMachine;

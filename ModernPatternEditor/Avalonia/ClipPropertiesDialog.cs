@@ -62,7 +62,6 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 // characters, so every name "started with" U+0001 and the list was empty on macOS and Linux.
                 if (mac.Name.StartsWith('\u0001')) continue;
                 tree.Children.Add(new TextBlock { Text = mac.Name, FontWeight = FontWeight.Bold, Margin = new Thickness(0, 6, 0, 2) });
-                AddGroup(tree, "Clip Editor", ClipEditorUtils.GetInternalParameters(mac));
                 AddGroup(tree, "Parameters", mac.ParameterGroups[1].Parameters.Concat(mac.ParameterGroups[2].Parameters));
             }
 

@@ -414,7 +414,7 @@ namespace WDE.ModernPatternEditor
                         }
                     }
 
-                    if (StoreAttached) ApplyStoreView();
+                    ApplyStoreView();
 
                     if (MPEClipsDB.GetClips().Count() == 0 && TargetMachine.Clips.Count() > 0)
                     {
@@ -445,18 +445,14 @@ namespace WDE.ModernPatternEditor
                 MPEClipsDB.RemoveClip(clip);
             }
         }
-        // ---- Fork (docs/specs/clips.md §6, CU3): the tracker views the store. After the song's tracker data is migrated into the clip's
-        // columns, the editor lets go of what it held and its columns read and write the lanes. The engine plays every lane, so the editor's
-        // own player is not built for the Studio, and its note columns are the engine's Notes lane (shown by the note host).
-        public bool StoreAttached { get; private set; }
-
+        // ---- Fork (docs/specs/clips.md §6, CU3; CU7): the tracker views the store. The song's clips are lanes in the clip's columns (a song
+        // file's own tracker data is moved there on open, by ClipOpen, from the bytes the file gave), so the editor keeps no events: it reads
+        // the data it is given for the shape of its view (columns, order, rows per beat) and its columns read and write the lanes. The engine
+        // plays every lane, so the editor has no player, and its note columns are the engine's Notes lane (shown by the note host).
+        /// <summary>The song's clips are in the store (opened and moved there, or made): the editor takes the shape of its view from their lanes.</summary>
         public void AttachClipStore()
         {
-            lock (syncLock)
-            {
-                StoreAttached = true;
-                ApplyStoreView();
-            }
+            lock (syncLock) ApplyStoreView();
         }
 
         void ApplyStoreView()
@@ -465,10 +461,7 @@ namespace WDE.ModernPatternEditor
             {
                 p.MPEClipColumns.RemoveAll(c => c.Parameter is MPEInternalParameter);
                 foreach (var c in p.MPEClipColumns)
-                {
-                    c.LetGoOfOwnEvents();
                     c.TakeViewFromStore();
-                }
                 p.MPEClipColumnsDict.Clear();
                 for (int i = 0; i < p.MPEClipColumns.Count; i++) p.MPEClipColumnsDict[i] = p.MPEClipColumns[i];
             }
@@ -492,11 +485,7 @@ namespace WDE.ModernPatternEditor
         // From native
         public byte[] GetClipEditorData()
         {
-            if (Settings.PXPDataFormat)
-                return ClipEditorUtils.CreatePatternXPClipData(MPEClipsDB.GetClips());
-            else
-                return ClipEditorUtils.CreateModernPatternEditorData(MPEClipsDB.GetClips());
-
+            return ClipEditorUtils.CreateModernPatternEditorData(MPEClipsDB.GetClips());
         }
 
         // From native
@@ -625,38 +614,6 @@ namespace WDE.ModernPatternEditor
         public void MidiControlChange(int ctrl, int channel, int value)
         {
             TargetMachine?.SendMIDIControlChange(ctrl, channel, value);
-        }
-
-        // From native
-        public int[] ExportMidiEvents(IClip pat)
-        {
-            //lock (syncLock)
-            {
-                if (SelectedMachine != null)
-                {
-                    //IClip pat = SelectedMachine.Machine.Clips.FirstOrDefault(x => x.Name == clip);
-                    if (pat != null)
-                    {
-                        MPEClip mpeClip = MPEClipsDB.GetMPEClip(pat);
-                        return ClipEditorUtils.ExportMidiEvents(mpeClip);
-                    }
-                }
-                return new int[0];
-            }
-        }
-
-        public bool ImportMidiEvents(IClip pat, int [] data)
-        {
-            lock (syncLock)
-            {
-                if (pat != null)
-                {
-                    MPEClip mpeClip = MPEClipsDB.GetMPEClip(pat);
-                    return ClipEditorUtils.ImportMidiEvents(mpeClip, data);
-                }
-            }
-
-            return false;
         }
 
         public bool CanExecuteCommand(BuzzCommand cmd)
