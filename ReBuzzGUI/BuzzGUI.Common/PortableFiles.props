@@ -84,6 +84,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)TrackerNotes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NoteLanes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipLanes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClipLaneHost.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipBlob.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipMigration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)VUMeter.cs" />

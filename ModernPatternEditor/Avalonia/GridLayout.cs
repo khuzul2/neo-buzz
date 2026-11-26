@@ -24,9 +24,16 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public int BeatHeight => (int)Math.Ceiling(Font.LineHeight * RPB * ClipControl.Scale);
         public int BeatCount { get; }
 
-        readonly int[][] columnWidths;          // [set][column]
+        readonly int[][] columnWidths;          // [set][column]: the digits' width (what the column's values are drawn in)
+        readonly double[][] laneWidths;         // [set][column]: the envelope lane's strip beside an open column (T2); 0 for a column without one
         readonly double[] setX;                 // each set's left edge
         readonly double[] setWidth;
+
+        /// <summary>The width of a lane strip at the editor's zoom (about 56 px at 100 %).</summary>
+        public static double LaneStripWidth => Math.Round(56 * ClipControl.Scale);
+
+        /// <summary>Whether any column of the clip can have a lane (the header then has its toggle row).</summary>
+        public bool AnyLaneSupport { get; }
 
         public double ExtentWidth { get; }
         public double ExtentHeight => BeatCount * BeatHeight;
@@ -40,13 +47,22 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             BeatCount = clip.BeatCount;
             var sets = clip.ColumnSets ?? new List<ParameterColumnSet>();
             columnWidths = sets.Select(cs => cs.Columns.Select(ColumnWidth).ToArray()).ToArray();
+            double strip = LaneStripWidth;
+            bool any = false;
+            laneWidths = sets.Select(cs => cs.Columns.Select(c =>
+            {
+                if (c is not ParameterColumn pc || !pc.LaneSupported) return 0.0;
+                any = true;
+                return pc.LaneOpen ? strip : 0.0;
+            }).ToArray()).ToArray();
+            AnyLaneSupport = any;
             setX = new double[columnWidths.Length];
             setWidth = new double[columnWidths.Length];
             double x = 0;
             for (int i = 0; i < columnWidths.Length; i++)
             {
                 setX[i] = x;
-                setWidth[i] = columnWidths[i].Sum();
+                setWidth[i] = columnWidths[i].Sum() + laneWidths[i].Sum();
                 x += setWidth[i] + ColumnSetGap;
             }
             ExtentWidth = Math.Max(1, x);
@@ -63,7 +79,26 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public double SetX(int set) => setX[set];
         public double SetWidth(int set) => setWidth[set];
         public int ColumnWidthAt(int set, int column) => columnWidths[set][column];
-        public double ColumnX(int set, int column) => setX[set] + columnWidths[set].Take(column).Sum();
+
+        /// <summary>The lane strip beside a column (0 when it has none).</summary>
+        public double LaneWidthAt(int set, int column) => laneWidths[set][column];
+
+        /// <summary>A column's whole place: its digits and its lane strip.</summary>
+        public double SlotWidthAt(int set, int column) => columnWidths[set][column] + laneWidths[set][column];
+
+        /// <summary>The widths of the lane strips of a set, for drawing its beats.</summary>
+        public double[] LaneWidthsOf(int set) => laneWidths[set];
+
+        /// <summary>Where a column starts (the digits come first, the lane strip after them).</summary>
+        public double ColumnX(int set, int column)
+        {
+            double x = setX[set];
+            for (int i = 0; i < column; i++) x += columnWidths[set][i] + laneWidths[set][i];
+            return x;
+        }
+
+        /// <summary>Where a column's lane strip starts.</summary>
+        public double LaneX(int set, int column) => ColumnX(set, column) + columnWidths[set][column];
 
         public Rect GetFieldRect(Digit d)
         {
@@ -114,13 +149,14 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             int set = SetAt(p.X);
             var cs = Clip.ColumnSets[set];
             var cw = columnWidths[set];
+            var lw = laneWidths[set];
             double px = p.X - setX[set];
 
             int newColumn = cw.Length - 1;
             double sum = 0;
             for (int i = 0; i < cw.Length; i++)
             {
-                sum += cw[i];
+                sum += cw[i] + lw[i];
                 if (px < sum) { newColumn = i; break; }
             }
             var col = cs.Columns[newColumn];
@@ -147,7 +183,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             var beat = col.FetchBeat(newBeat);
             var text = beat.Rows[newRowInBeat].ValueString;
             var widths = Font.AdvanceWidths(text);
-            px -= cw.Take(newColumn).Sum();
+            for (int i = 0; i < newColumn; i++) px -= cw[i] + lw[i];
             px -= cw[newColumn] / 2.0 - widths.Sum() / 2;
             if (col.TiedToNext) px -= Font.Width(0) / 2;
             int newIndex = col.DigitCount - 1;

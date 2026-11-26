@@ -3,7 +3,6 @@
 ReBuzzCore.cs	Modern Pattern Editor	the machine's name: a song stores it (the editor machine is looked up by this name)
 MachineManager.cs	Modern Pattern Editor	the machine's name: a song stores it
 ModernPatternEditorMachine.cs	Modern Pattern Editor	the machine's name: a song stores it
-ClipEditorSettings.cs	PatternXP	PatternXP is a third-party file format's name
 ClipEditorView.cs	Pattern values	the text of a stored preference's page in the old settings dialog, named as the setting is
 ShortcutsWindow.cs	ModernPatternEditor	a type name shown in a diagnostic: the editor's namespace, which a saved song's machine state refers to
 ModernPatternEditor/README.md	# ModernPatternEditor	the editor project's name (the project and machine keep the name; the clip editor inside it says clip)

@@ -23,10 +23,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
     using Color = Avalonia.Media.Color;
 
     /// <summary>The grid: header, row numbers, and the scrolled beats with their overlay.</summary>
-    public sealed class ClipGridView : Grid
+    public sealed partial class ClipGridView : Grid
     {
         internal const double SetLabelHeight = 34;
         internal const double ColumnLabelHeight = 32;        // two lines of 11 pt (ux-overhaul.md P3c)
+        internal const double LaneToggleHeight = 16;         // the row under the column names that holds each column's lane toggle (T2)
 
         internal readonly ClipEditor Editor;
         internal readonly ClipControl Controller;
@@ -96,6 +97,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Scroller.ScrollChanged += (s, e) =>
             {
                 UpdatePad();
+                RaiseLaneView();
                 if (Controller.Clip != null) Controller.Clip.ScrollPosition = Offset.Y;
                 Body.InvalidateVisual();
                 header.InvalidateVisual();
@@ -192,12 +194,14 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 }
                 content.Width = Layout.ExtentWidth;
                 content.Height = Layout.ExtentHeight;
+                SyncLanes();
                 rowNumbers.Width = Math.Ceiling(Font.Width(RowDigits(clip)));
                 header.Height = HeaderHeight;
             }
             else
             {
                 content.Width = content.Height = 0;
+                SyncLanes();
                 rowNumbers.Width = Math.Ceiling(Font.Width(4));
                 header.Height = HeaderHeight;
             }
@@ -241,7 +245,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         /// <summary>Scrolls the beats so that their coordinate <paramref name="y"/> is at the view's top.</summary>
         void ScrollTo(double x, double y) => Scroller.Offset = new Vector(Math.Max(0, x), Math.Max(0, y + pad));
 
-        internal double HeaderHeight => SetLabelHeight + (ClipEditor.Settings.ColumnLabels ? ColumnLabelHeight : 0);
+        internal double HeaderHeight => SetLabelHeight + (ClipEditor.Settings.ColumnLabels ? ColumnLabelHeight : 0) + (HasToggleRow ? LaneToggleHeight : 0);
+
+        /// <summary>The header has a row of lane toggles: the studio supplies lanes and a column of the clip can have one.</summary>
+        internal bool HasToggleRow => Layout?.AnyLaneSupport == true;
 
         static int RowDigits(ClipVM clip) => clip.RowNumberColumnSet.Columns[0].DigitCount;
 
@@ -249,10 +256,12 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         {
             Body.InvalidateVisual();
             overlay.InvalidateVisual();
+            RaiseLaneData();
         }
 
         void InvalidateAll()
         {
+            RaiseLaneData();
             Body.InvalidateVisual();
             overlay.InvalidateVisual();
             header.InvalidateVisual();
@@ -335,6 +344,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             PlayPosition = p;
             overlay.InvalidateVisual();
             rowNumbers.InvalidateVisual();
+            RaiseLaneView();
             if (p != int.MinValue && Layout != null && (Centered || ClipEditor.Settings.FollowPlayPositioninClip))
             {
                 double y = PlayY(p);
@@ -372,12 +382,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public double SidewaysOffset => Offset.X;
         public int ColumnSetCount => Layout.Clip.ColumnSets.Count;
         public int ColumnCount(int columnSet) => Layout.Clip.ColumnSets[columnSet].Columns.Count;
-        public double ColumnX(int columnSet, int column)
-        {
-            double x = Layout.SetX(columnSet);
-            for (int c = 0; c < column; c++) x += Layout.ColumnWidthAt(columnSet, c);
-            return x - Offset.X;
-        }
+        public double ColumnX(int columnSet, int column) => Layout.ColumnX(columnSet, column) - Offset.X;
         public double ColumnWidth(int columnSet, int column) => Layout.ColumnWidthAt(columnSet, column);
 
         /// <summary>How long the last drawing of the beats took (for tests: the grid redraws a lot).</summary>
@@ -410,16 +415,18 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         /// frame laid out text for all of them, 1.2 s a frame at 704.
         /// </summary>
         internal void DrawBeat(DrawingContext dc, IColumnSet set, int[] widths, int index, double x0, double y0, int h,
-            double visibleFrom = double.NegativeInfinity, double visibleTo = double.PositiveInfinity)
+            double visibleFrom = double.NegativeInfinity, double visibleTo = double.PositiveInfinity, double[] lanes = null)
         {
+            // T2: a column with an open lane has its strip after its digits; the digits are drawn as always.
+            double Lane(int i) => lanes == null ? 0 : lanes[i];
             int c0 = 0;
             double x = x0;
-            while (c0 < widths.Length && x + widths[c0] < visibleFrom) x += widths[c0++];
+            while (c0 < widths.Length && x + widths[c0] + Lane(c0) < visibleFrom) { x += widths[c0] + Lane(c0); c0++; }
             int c1 = c0;
-            for (double end = x; c1 < widths.Length && end <= visibleTo; c1++) end += widths[c1];
+            for (double end = x; c1 < widths.Length && end <= visibleTo; c1++) end += widths[c1] + Lane(c1);
             var beats = new IBeat[c1 - c0];
             for (int i = 0; i < beats.Length; i++) beats[i] = set.Columns[c0 + i].FetchBeat(index);
-            double total = widths.Sum();
+            double total = widths.Sum() + (lanes?.Sum() ?? 0);
             if (ClipEditor.Settings.BeatHighlight == BeatHighlightMode.Block)
             {
                 dc.FillRectangle((index & 1) == 0 ? ClipTheme.BeatDark : ClipTheme.Beat, new Rect(x0, y0, total, h));
@@ -439,7 +446,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 if (ClipEditor.Settings.TextDropShadow)
                     DrawColumn(dc, beats[i], x + xoffset + 1, y0, 1, widths[c], h, true);
                 DrawColumn(dc, beats[i], x + xoffset, y0, 0, widths[c], h, false);
-                x += widths[c];
+                x += widths[c] + Lane(c);
             }
         }
 
@@ -539,8 +546,9 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 double x = layout.SetX(s);
                 if (x > o.X + v.Width || x + layout.SetWidth(s) < o.X) continue;
                 var widths = sets[s].Columns.Select(layout.ColumnWidth).ToArray();
+                var laneWidths = layout.LaneWidthsOf(s);
                 for (int b = first; b <= last; b++)
-                    grid.DrawBeat(dc, sets[s], widths, b, x, b * h, h, o.X, o.X + v.Width);
+                    grid.DrawBeat(dc, sets[s], widths, b, x, b * h, h, o.X, o.X + v.Width, laneWidths);
             }
             grid.DrawRules(dc, Bounds.Width, first, last);
             LastRenderTime = clock.Elapsed;
@@ -800,27 +808,61 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     using (dc.PushTransform(Matrix.CreateScale(set.Scale, set.Scale) * Matrix.CreateTranslation(set.Bounds.X, set.Bounds.Y)))
                         dc.DrawText(set.Text, new Point(0, 0));
 
-                    if (!ClipEditor.Settings.ColumnLabels) continue;
                     double cx = x;
                     for (int c = 0; c < cs.Columns.Count; c++)
                     {
                         int cw = layout.ColumnWidthAt(s, c);
+                        double slot = layout.SlotWidthAt(s, c);
                         // Fork (docs/specs/dye-essence.md §5.2): the labels in view only.
-                        if (cx + cw < ox || cx > ox + Bounds.Width)
+                        if (cx + slot < ox || cx > ox + Bounds.Width)
                         {
-                            cx += cw;
+                            cx += slot;
                             continue;
                         }
-                        var col = new Rect(cx, ClipGridView.SetLabelHeight, cw, ClipGridView.ColumnLabelHeight);
-                        if (hover is Point hp && col.Contains(new Point(hp.X + ox, hp.Y)))
-                            dc.DrawRectangle(ClipTheme.LabelHover, null, col, 3, 3);
-                        var name = ColumnLabel(s, c);
-                        using (dc.PushClip(col))
-                            dc.DrawText(name.Text, name.Bounds.TopLeft);
-                        cx += cw;
+                        if (cs.Columns[c] is ParameterColumn { LaneSupported: true } lanePc)
+                            DrawLaneToggle(dc, layout, s, c, lanePc, cx, cw);
+                        if (ClipEditor.Settings.ColumnLabels)
+                        {
+                            var col = new Rect(cx, ClipGridView.SetLabelHeight, cw, ClipGridView.ColumnLabelHeight);
+                            if (hover is Point hp && col.Contains(new Point(hp.X + ox, hp.Y)))
+                                dc.DrawRectangle(ClipTheme.LabelHover, null, col, 3, 3);
+                            var name = ColumnLabel(s, c);
+                            using (dc.PushClip(col))
+                                dc.DrawText(name.Text, name.Bounds.TopLeft);
+                        }
+                        cx += slot;
                     }
                 }
             }
+        }
+
+        /// <summary>Where a column's lane toggle is (the beats' x, the header's y): centred over the column's digits, in the row under the names.</summary>
+        internal Rect ToggleRect(GridLayout layout, int s, int c)
+        {
+            double cx = layout.ColumnX(s, c), cw = layout.ColumnWidthAt(s, c);
+            double top = ClipGridView.SetLabelHeight + (ClipEditor.Settings.ColumnLabels ? ClipGridView.ColumnLabelHeight : 0);
+            double w = Math.Min(18, Math.Max(10, cw - 2));
+            return new Rect(cx + (cw - w) / 2, top + 1, w, ClipGridView.LaneToggleHeight - 3);
+        }
+
+        static readonly IPen ToggleOutline = new Pen(ClipTheme.ColumnLabel, 1);
+        static readonly IPen ToggleCurve = new Pen(ClipTheme.ColumnLabel, 1.25);
+        static readonly IPen ToggleCurveOn = new Pen(ClipTheme.Text, 1.25);
+
+        /// <summary>The toggle: a small button with an envelope curve on it, filled in the accent while the lane is open.</summary>
+        void DrawLaneToggle(DrawingContext dc, GridLayout layout, int s, int c, ParameterColumn column, double cx, int cw)
+        {
+            var r = ToggleRect(layout, s, c);
+            bool open = column.LaneOpen;
+            bool over = hover is Point h && r.Contains(new Point(h.X + grid.Offset.X, h.Y));
+            if (open) dc.DrawRectangle(ClipTheme.SelectionFill, ClipTheme.SelectionStroke, r, 3, 3);
+            else dc.DrawRectangle(over ? ClipTheme.LabelHover : null, ToggleOutline, r, 3, 3);
+            var pen = open ? ToggleCurveOn : ToggleCurve;
+            double l = r.X + 3, rr = r.Right - 3, t = r.Y + 2.5, b = r.Bottom - 2.5;
+            // A ramp up and a step down: the lane's own shapes.
+            dc.DrawLine(pen, new Point(l, b), new Point(l + (rr - l) * 0.45, t));
+            dc.DrawLine(pen, new Point(l + (rr - l) * 0.45, t), new Point(l + (rr - l) * 0.45, (t + b) / 2));
+            dc.DrawLine(pen, new Point(l + (rr - l) * 0.45, (t + b) / 2), new Point(rr, (t + b) / 2));
         }
 
         static readonly Typeface LabelFont = new Typeface(FontFamily.Default);
@@ -855,8 +897,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         {
             var layout = grid.Layout;
             var cs = layout.Clip.ColumnSets[s];
-            double cx = layout.SetX(s);
-            for (int i = 0; i < c; i++) cx += layout.ColumnWidthAt(s, i);
+            double cx = layout.ColumnX(s, c);
             int cw = layout.ColumnWidthAt(s, c);
             var label = cs.Columns[c].Label;
             double width = Math.Ceiling(Math.Min(cw - 2, HeaderText.Make(label, cw - 2, ClipTheme.ColumnLabel).WidthIncludingTrailingWhitespace)) + 1;
@@ -881,11 +922,29 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return Math.Clamp(left, first, last);
         }
 
+        string tip;
+
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
             hover = e.GetPosition(this);
+            string now = ToggleTipAt(hover.Value);
+            if (now != tip) { tip = now; ToolTip.SetTip(this, now); }
             InvalidateVisual();
+        }
+
+        /// <summary>The tooltip of the lane toggle under a point of the header, or null.</summary>
+        string ToggleTipAt(Point p)
+        {
+            var layout = grid.Layout;
+            if (layout == null || !layout.AnyLaneSupport) return null;
+            double x = p.X + grid.Offset.X;
+            int s = layout.SetAt(x);
+            var cs = layout.Clip.ColumnSets[s];
+            for (int c = 0; c < cs.Columns.Count; c++)
+                if (cs.Columns[c] is ParameterColumn { LaneSupported: true } pc && ToggleRect(layout, s, c).Contains(new Point(x, p.Y)))
+                    return pc.LaneOpen ? "Hide this parameter's envelope lane" : "Show this parameter's envelope lane beside the column";
+            return null;
         }
 
         protected override void OnPointerExited(PointerEventArgs e)
@@ -915,12 +974,26 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     InvalidateVisual();
                 }
             }
+            else if (p.Y >= ClipGridView.SetLabelHeight + (ClipEditor.Settings.ColumnLabels ? ClipGridView.ColumnLabelHeight : 0))
+            {
+                // T2: the toggle row under the names: a click on a column's toggle shows or hides its lane.
+                double cx = layout.SetX(s);
+                for (int c = 0; c < cs.Columns.Count; c++)
+                {
+                    cx += layout.SlotWidthAt(s, c);
+                    if (x < cx)
+                    {
+                        if (cs.Columns[c] is ParameterColumn { LaneSupported: true } pc && e.ClickCount == 1 && ToggleRect(layout, s, c).Contains(new Point(x, p.Y))) grid.ToggleLane(pc);
+                        break;
+                    }
+                }
+            }
             else if (ClipEditor.Settings.ColumnLabels)
             {
                 double cx = layout.SetX(s);
                 for (int c = 0; c < cs.Columns.Count; c++)
                 {
-                    cx += layout.ColumnWidthAt(s, c);
+                    cx += layout.SlotWidthAt(s, c);
                     if (x < cx)
                     {
                         var column = cs.Columns[c];

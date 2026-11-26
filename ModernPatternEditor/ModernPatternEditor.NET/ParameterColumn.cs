@@ -293,6 +293,34 @@ namespace WDE.ModernPatternEditor
             pc.BeatSubdivisionChanged += pc_BeatSubdivisionChanged;
         }
 
+        // ---- Fork (clips.md §5.5, T2): the vertical envelope lane beside this column (a toggle in the header; the lane is the studio's control).
+
+        /// <summary>The store column this editor column views, for its lane and rows.</summary>
+        internal MPEClipColumn StoreColumn => mpeColumn;
+
+        /// <summary>Whether this column can have a lane: the studio supplies lanes, the column views the store, and its parameter is one a lane can show.</summary>
+        internal bool LaneSupported
+        {
+            get
+            {
+                var provider = ClipLaneHost.Provider;
+                var parameter = ClipColumn?.Parameter;
+                return provider != null && mpeColumn != null && mpeColumn.ParameterOfStore && parameter != null && Type != ColumnRenderer.ColumnType.Note
+                    && provider.Supports(Set.Clip.Clip, parameter, ClipColumn.Track);
+            }
+        }
+
+        /// <summary>Whether the lane is open: saved with the song, in the store's lane metadata.</summary>
+        internal bool LaneOpen => mpeColumn != null && mpeColumn.LaneOpen;
+
+        internal void SetLaneOpen(bool open) => mpeColumn?.SetLaneOpen(open);
+
+        /// <summary>The track of the parameter this column is for (the lane's key).</summary>
+        internal int LaneTrack => ClipColumn.Track;
+
+        /// <summary>Rows in a beat of this column (a beat can hold more or fewer than another): as its cells draw them.</summary>
+        internal int RowsInBeat(int beat) => mpeColumn != null && mpeColumn.BeatRowsList.Count > beat ? mpeColumn.BeatRowsList[beat] : 4;
+
         public virtual void Release()
         {
             // ClipColumn.EventsChanged -= pc_EventsChanged;

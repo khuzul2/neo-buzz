@@ -162,8 +162,7 @@ namespace WDE.ModernPatternEditor
 
         /// <summary>
         /// The clip properties, as WPF's dialog applies them (one undo step): length in beats, rows
-        /// per beat, name, and the columns: the parameters given (null: as they are), the editor's MIDI
-        /// lanes included.
+        /// per beat, name, and the columns: the parameters given (null: as they are).
         /// </summary>
         public void ApplyClipProperties(int beats, int rowsPerBeat, string name, IEnumerable<IParameter> parameters)
         {
@@ -193,9 +192,12 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        /// <summary>The parameters the clip properties offer for a machine: the editor's MIDI lanes, then the machine's own.</summary>
+        /// <summary>
+        /// The parameters the clip properties offer for a machine: its own. (CU7: the editor's own MIDI lanes are not offered; a clip's MIDI notes are
+        /// its Notes lane in the store, which the note lanes of the view show.)
+        /// </summary>
         public IEnumerable<IParameter> ColumnChoices(IMachine machine) =>
-            ClipEditorUtils.GetInternalParameters(machine).Concat(machine.ParameterGroups[1].Parameters).Concat(machine.ParameterGroups[2].Parameters);
+            machine.ParameterGroups[1].Parameters.Concat(machine.ParameterGroups[2].Parameters);
 
         /// <summary>Whether the shown clip has a column for the parameter.</summary>
         public bool HasColumn(IParameter parameter) => SelectedMachine?.SelectedClip != null && MPEClipsDB.IsParameterEnabled(parameter);

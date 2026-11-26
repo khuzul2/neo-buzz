@@ -537,6 +537,27 @@ Our own songs open as before. Their pattern data moves into the new clip store o
 
 **Limits.** A Neo Poly's typed Note-parameter column (tracks route) is a separate store from the roll's MIDI column. `automation_write` writes marked lanes only. Session takes and recorders write the MIDI column directly.
 
+### 10.0d CU7 as built
+
+**One source.** The clip editor keeps no events: its columns are views of the store's lanes whether or not a song load attached it (a machine made again by the undo of a delete, a clone, a replace: their lanes are put back by the actions that carry them, and the editor shows them). What the editor reads from a blob (an old song's, or the shape of its own) is columns, order and rows in each beat; a song's own events are read by `ClipMigration` from the same bytes.
+
+**Removed.**
+
+| What | Where | Callers moved |
+|---|---|---|
+| The editor's list store: `MPEClipColumn.eventList`, its lock, the unbound branches of `GetEvents`, `GetEventsInto`, `SetEvents`, `ClearRegion`, `GetEventsQuantized`, `Clear`, `HasEvents`, `LetGoOfOwnEvents`; `ClipEditor.StoreAttached` | `ModernPatternEditor/ModernPatternEditor.NET` | The Studio's editors were bound already; the ones that were not (a machine made again outside a song load: the undo of a delete, a clone) are bound now, and show the lanes those actions put back (`AMachineMadeAgainByUndoShowsTheStoresLanesInItsEditor`) |
+| The editor's own MIDI lanes (MIDI Note, Velocity, Note Delay, Note Cut, Pitch Wheel, CC), the last columns that kept events in the list: they did not play in the Studio (the engine plays the Notes lane) and a reopen dropped them, so they are not offered in Clip Properties any more (`ColumnChoices`, the dialog's "Clip Editor" group, `GetInternalParameters`). A clip's MIDI notes are its Notes lane, which the note lanes of the view show | `ClipEditor.Portable.cs`, `ClipPropertiesDialog.cs`, `ClipEditorUtils` | `ClipEditorTests.ClipPropertiesAddColumnsAndRowsPerBeat` (was `…AddMidiLanes…`) types into a track's Note column and reads the store's lane |
+| The PatternXP write: the `PXPDataFormat` setting, `CreatePatternXPClipData`, `CreateClipData`, `SaveColumn` | `ClipEditorSettings`, `ClipEditorUtils`, `ClipEditor.Core` | None (nothing set it in the Studio). The readers (`ParsePatternXPData`, `ClipBlob`, `ClipMigration`) stay |
+| The blob's event section: `SaveMPEColumn` writes a count of 0 (the layout of the blob is the same, so every reader reads it as before); the loaders skip the events the old data holds | `ClipEditorUtils` | The blob keeps the clips' names, beats, rows per beat, and each column's machine, parameter, track, graphical flag and rows in each beat: the view's shape, which `ProcessEditorData` reads. Events are the store's |
+| The MIDI import and export bridge, which only the Session preview read, and which already returned nothing for an editor that views the store: `IClip.ClipEditorMachineMIDIEvents`, `ClipCore`, `MachineManager.Get/SetClipEditorMachineMIDIEvents`, `ManagedMachineHost`'s two delegates, the editor's `ExportMidiEvents`/`ImportMidiEvents` and their helpers (`ActiveMidiNote`, `AllocateMidiTrack`, `FreeMidiTrack`, the note-lane helpers `IsLane`, `LaneColumns`, `BeatRows`…) | `BuzzGUI.Interfaces`, `ReBuzz`, `ModernPatternEditor`, `ReBuzz.Studio/Views/Sequence/ClipPreview.cs` | `ClipPreview.Of` read this first; it now reads the editor's column events (the store), then the engine's columns, as it did when the first returned nothing |
+| `EditorPreviewNotes` | gone with CU4; the last of its bridge is the row above | |
+
+**Kept, and why.** `TrackNotes.Allocate` and the track-count refusals of `TrackerColumnNotes` (a machine at most `MaxTracks`, a note per track): the tracks route is live. Neo Sampler in its Tracker mode (a sample, offset and tune per note, `PlaysSamplePerNote`) keeps its notes in its Note track parameter, and so does any machine with one that is asked for `input: "tracks"` (Dye Essence has one); each overlapping note needs a voice, and `SongNotes.For(…, "tracks")` allocates them with `TrackNotes.Allocate`: it is not a path of the old machines, it is the tracks route itself (`SamplerPerNoteTests`, `DawModesSeamTests.TrackerColumnNotesFollowTrackerRules`, `UxP3bTests`). The brief's reason ("notes no longer need a track slot") held for the old machines CB1 removed, not for these. `MachineInfo.MaxTracks` stays as the machine interface needs it.
+
+**Clip-name identity.** A rename carries everything that is keyed by the name: `ClipIdentityTests` renames a clip by the editor's path, the Session's and the agent's, with settings, a Session slot, an arrangement placement, a tracker lane's Grid and Mute and its events, a colour and the editor's saved view, and reads them after the rename and after a save and reopen; an undo and a redo of the rename; two clips swapping names. Nothing was lost, so no code changed (CU3's lane metadata and `SessionLayout`'s and `MPEClipDatabase`'s rename hooks already carry the keys); a stable clip id stays out of scope.
+
+**Gates.** The sound gate: `tools/clip-change-report.py` went with the old-song corpus in CB1 (clean-break.md §8); the corpus is the two `.nbl` templates and `gen/session-loop`, and `tools/clip-null.py check --twice` holds their hashes (CI, Linux). The saving gate: `ClipRetireTests.TheRepoSongsSaveOpenAndSaveToTheSameBytesAndKeepEveryLane` opens each song template, saves, reopens, saves again, and compares the two files byte for byte and every lane; the only difference from what the build before CU7 wrote is the removed event section of the editors' blobs (8 bytes an event). Allocation: the existing allocation tests.
+
 ### 10.1 Gates (every wave from CU3; CU1 sets them)
 
 Direct engine (D3) changes the first gate: for data the engine now plays differently **by design**, the goldens become a **change report**; for everything else they stay a hard gate.
@@ -555,13 +576,21 @@ Direct engine (D3) changes the first gate: for data the engine now plays differe
 
 ---
 
+### T2 as built: tracker parameter lanes
+
+- **What:** each parameter column's header has a toggle (not note columns) that opens a vertical lane strip (56 px at 100 %) right of the column. It draws the column's own events at the grid's row scale, scrolls with the grid and shows the play position. Click adds a point, a drag moves it (snaps to the column's rows; Alt = no snap), a drag on empty space selects, R switches ramp and step, Delete removes. Each gesture is one step of the song's history. Ctrl+Z with the lane focused undoes on the song's history; a typed value in a cell is undone on the editor's own stack.
+- **Which lane:** the column's own (unmarked) lane, written through `ColumnEventsAction(own: true)`. EV1's Detail lane keeps writing the marked automation lane and shows the tracker lane read only as dashed steps and ramps (now with ramps). A Detail edit is therefore not mirrored into the tracker's cells: the reverse direction of "one curve" is covered by a typed value showing in the strip and the Detail model. Decide with EV1 whether the Detail lane should write the unmarked lane once the "tracker columns" read-only source goes away (§8).
+- **Shared code:** `LaneController` (Studio, `Views/Detail`) holds the points, hit-test, selection and edit gestures for `EnvelopeLane` (horizontal) and `TrackerLane` (vertical). The editor is a separately loaded machine, so the seam is `BuzzGUI.Common.ClipLaneHost` (`IClipRowAxis`, `IClipLaneProvider`), additive.
+- **Saved view:** `Lane` = `1` in the store lane's metadata (beside `Grid`, `Mute`), saved in `.nbl` with the lane; a song from before has no `Lane` and opens with every lane closed. An open lane keeps its column shown even when empty.
+- **Allocation:** the strip's geometry is cached and rebuilt only when its data, width, extent or row scale change; scrolling and the play line draw from the cache. Steady-state `Prepare` allocates 0 bytes (test); a rebuild after an edit allocates the new geometry.
+
 ## 11. Risks and loose ends
 
 | Risk | Handling |
 |---|---|
 | Timing (§2.3 item 2): the engine's timing differs from MPE's for migrated songs | **Accepted by the user** (D3 direct). The change report (CU1, run at CU3) shows which songs and by how much; no `Lag` emulation |
 | The shared MPE sources change under Classic | `#if WINDOWS` keeps the list store; Classic's tests in every wave |
-| Pattern-name identity | Unchanged here. A stable clip id (`ClipView`, `ClipSettings`, TAP2 all key by name) is debt; do it with CU7 if renames still lose data |
+| Pattern-name identity | Checked at CU7 (§10.0d): a rename carries the settings, slots, placements, tracker view and lane metadata; nothing is lost, so a stable clip id stays out of scope (debt only if a future store keys by name beside the song) |
 | A blob edited in Classic after a Studio save | The stamp (§7.2): the blob wins, with a message |
 | Notes doubled upstream | One-place rule for MIDI machines (§7.2); tested by the NF2 simulated upstream read |
 | Store size: a 12-byte event, a dense agent ramp is many events | Unchanged from today (S2); EV1 and the agent write ramps as single events |

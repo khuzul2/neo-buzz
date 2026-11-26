@@ -71,11 +71,14 @@ namespace ReBuzz.Core.Notes
         readonly string name;
         readonly Change[] changes;
         readonly bool automation;
+        readonly bool own;
 
         /// <param name="automation">An arrangement or clip envelope: new events go to the marked lane, not the tracker's.</param>
-        public ColumnEventsAction(ReBuzzCore buzz, IClip clip, IReadOnlyList<Change> changes, bool automation = false)
+        /// <param name="own">T2, the lane beside a tracker column: events come from and go to the tracker's own (unmarked) lane alone.</param>
+        public ColumnEventsAction(ReBuzzCore buzz, IClip clip, IReadOnlyList<Change> changes, bool automation = false, bool own = false)
         {
             this.automation = automation;
+            this.own = own;
             this.buzz = buzz;
             machine = clip.Machine.Name;
             name = clip.Name;
@@ -96,7 +99,7 @@ namespace ReBuzz.Core.Notes
         {
             var p = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == machine)?.Clips.FirstOrDefault(x => x.Name == name);
             if (p == null) return;
-            StoreLanes.Change(p, key, take, put, automation);
+            StoreLanes.Change(p, key, take, put, automation, own);
         }
     }
 }
