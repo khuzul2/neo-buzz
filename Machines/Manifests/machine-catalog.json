@@ -688,6 +688,16 @@
    "note_in": true,
    "note_out": true
   },
+  "Neo Prism": {
+   "category": "Modulation",
+   "tags": [
+    "spectral",
+    "pitch-shift",
+    "pad",
+    "lush"
+   ],
+   "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times."
+  },
   "Neo Chop": {
    "category": "Modulation",
    "tags": [
