@@ -33,6 +33,8 @@ namespace ReBuzz.Core.Drop
         Replace,
         /// <summary>An effect between the track's last machine and what it fed.</summary>
         InsertEffect,
+        /// <summary>NW1: a machine that takes and sends notes, added to the track's note chain before its instrument.</summary>
+        InsertNote,
         /// <summary>The Machine View: a machine added where it was dropped, not wired.</summary>
         AddMachine,
         /// <summary>A preset loaded into a machine that is of its type.</summary>
@@ -231,6 +233,12 @@ namespace ReBuzz.Core.Drop
             string name = GearNames.Display(inst);
             bool generator = inst.Type == InstrumentType.Generator;
 
+            // A note insert (it takes and sends notes) dropped on an instrument goes into the track's note chain before it.
+            if (machine != null && IsNoteInsert(inst) && PlaysNotes(machine))
+            {
+                return new DropPlan { Action = DropAction.InsertNote, Target = machine, Describe = $"Add {name} before {machine.Name}" };
+            }
+
             if (t.View == DropView.Machine)
             {
                 if (machine != null)
@@ -258,6 +266,13 @@ namespace ReBuzz.Core.Drop
             // An effect.
             if (machine == null || !HasSequence(machine)) return DropPlan.Refuse("Drop on a track.");
             return PlanInsert(machine, inst, t);
+        }
+
+        /// <summary>The gear both takes and sends notes, read from its manifest (the catalogue's note_in and note_out) before any machine exists.</summary>
+        static bool IsNoteInsert(IInstrument inst)
+        {
+            var m = SongModel.Manifest(inst.MachineDLL);
+            return m is { NoteIn: true, NoteOut: true };
         }
 
         DropPlan PlanInsert(IMachine machine, IInstrument inst, DropTarget t)
@@ -469,6 +484,7 @@ namespace ReBuzz.Core.Drop
                     return Done(plan, machine, note ?? plan.Describe);
                 }
                 case DropAction.InsertEffect: return DoInsert(machine, FindInstrument(first.Id), t);
+                case DropAction.InsertNote: return DoInsertNote(machine, FindInstrument(first.Id));
                 case DropAction.NewAudioTrack:
                 case DropAction.AudioClips: return DoAudio(plan, items, t);
                 case DropAction.LoadSample: return DoSamples(machine, items);
@@ -569,6 +585,16 @@ namespace ReBuzz.Core.Drop
                 Ok = true, Action = preset != null ? DropAction.ReplaceWithPreset : DropAction.Replace, Machine = now,
                 Message = $"{now.Name}: {from} replaced by {GearNames.Display(inst)}." + (note != null ? " " + note : ""),
             };
+        }
+
+        /// <summary>A note insert: made left of its instrument (no audio wire, no track of its own) and put last in the instrument's chain, right before it.</summary>
+        DropResult DoInsertNote(IMachine instrument, IInstrument inst)
+        {
+            int have = core.NoteWires.State.ChainOf(instrument.Name).Count;
+            var insert = MakeMachine(inst, ReBuzz.Core.NoteWires.NoteInsertLayout.X(instrument.Position.Item1, have, have + 1, 0.35f), instrument.Position.Item2, pattern: false);
+            string why = core.NoteWires.AddInsert(instrument.Name, insert.Name);
+            if (why != null) throw new ToolError(why);
+            return new DropResult { Ok = true, Action = DropAction.InsertNote, Machine = insert, Message = $"{insert.Name} ({GearNames.Display(inst)}) added before {instrument.Name}." };
         }
 
         DropResult DoInsert(IMachine track, IInstrument inst, DropTarget t)

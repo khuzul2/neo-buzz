@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Chords — Major Triads">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="320" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every note becomes a plain major triad, all together: bright, solid block chords.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chords — Minor Sevenths">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="12" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="600" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="320" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Minor seventh chords in an open voicing with a root an octave below: warm and jazzy.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chords — Open Fifths">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="350" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="320" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Root, fifth and octave spread wide over a low root: hollow, powerful and neither major nor minor.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Diatonic — Sevenths in C">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="2" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="320" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every white key plays the right seventh chord of C major (C major 7, D minor 7, ...), dropped-2 voiced: one finger, always in key.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Strum — Slow Strum Up">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="19" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="625" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="1" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="880" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="250" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="200" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="400" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A minor ninth strummed from the bottom up over 220 ms, slowing at the top, a little loose: a harp-like roll.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Strum — Down-Up Strum">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="15" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="2" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="650" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="550" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="3" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="280" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="700" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="133" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="333" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>An add-9 chord strummed fast, down on the first chord and up on the next, and so on: a driving guitar-like strum.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Voicing — Stacked Fourths">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="20" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="3" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="500" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="320" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Notes piled in perfect fourths, one octave up: an open, modern, unresolved sound with no major or minor.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Voicing — Wide Pad Voicing">
+    <Preset Machine="Neo Chord">
+      <Parameters>
+        <Parameter Name="Chord" Group="1" Index="0" Track="0" Value="18" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Scale" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Diatonic chord" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Custom 1" Group="1" Index="5" Track="0" Value="29" />
+        <Parameter Name="Custom 2" Group="1" Index="6" Track="0" Value="32" />
+        <Parameter Name="Custom 3" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Custom 4" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Inversion" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="10" Track="0" Value="3" />
+        <Parameter Name="Octave shift" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Bass note" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Voices" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="Top voice" Group="1" Index="14" Track="0" Value="500" />
+        <Parameter Name="Bass voice" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Velocity spread" Group="1" Index="16" Track="0" Value="400" />
+        <Parameter Name="Strum" Group="1" Index="17" Track="0" Value="1" />
+        <Parameter Name="Strum time" Group="1" Index="18" Track="0" Value="360" />
+        <Parameter Name="Strum curve" Group="1" Index="19" Track="0" Value="650" />
+        <Parameter Name="Humanize time" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="22" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A major ninth in the widest voicing over a root two octaves down, with a gentle upward roll: a big, slowly opening pad chord.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
