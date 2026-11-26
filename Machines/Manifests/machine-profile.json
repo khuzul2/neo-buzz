@@ -514,6 +514,420 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Chop": {
+   "gear": "Neo Chop",
+   "kind": "effect",
+   "load_seconds": 0.42,
+   "gear_info": {
+    "file": "Effects/Neo Chop.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 1,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 65,
+   "track_parameters": 0,
+   "inferred": 65,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 65,
+    "of": 65
+   },
+   "effect": {
+    "gain_db": 0.0,
+    "latency_samples": 0,
+    "latency_ms": 0.0,
+    "tail_seconds": 0.0,
+    "echoes": 0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 0.0,
+    "tilt_db": 0.0,
+    "sine": {
+     "loud": {
+      "gain_db": 0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     },
+     "quiet": {
+      "gain_db": 0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     }
+    },
+    "traits": [
+     "utility"
+    ],
+    "response": [
+     [
+      20.6,
+      0.0
+     ],
+     [
+      23.1,
+      -0.32
+     ],
+     [
+      26.0,
+      -0.76
+     ],
+     [
+      29.1,
+      -12.49
+     ],
+     [
+      32.7,
+      0.0
+     ],
+     [
+      36.7,
+      0.0
+     ],
+     [
+      41.2,
+      0.0
+     ],
+     [
+      46.2,
+      0.0
+     ],
+     [
+      51.9,
+      0.0
+     ],
+     [
+      58.3,
+      0.0
+     ],
+     [
+      65.4,
+      0.0
+     ],
+     [
+      73.4,
+      0.0
+     ],
+     [
+      82.4,
+      0.0
+     ],
+     [
+      92.5,
+      0.0
+     ],
+     [
+      103.8,
+      0.0
+     ],
+     [
+      116.5,
+      0.0
+     ],
+     [
+      130.8,
+      0.0
+     ],
+     [
+      146.8,
+      0.0
+     ],
+     [
+      164.8,
+      0.0
+     ],
+     [
+      185.0,
+      0.0
+     ],
+     [
+      207.7,
+      -0.87
+     ],
+     [
+      233.1,
+      -16.15
+     ],
+     [
+      261.6,
+      -19.3
+     ],
+     [
+      293.7,
+      -32.24
+     ],
+     [
+      329.6,
+      -32.92
+     ],
+     [
+      370.0,
+      -21.3
+     ],
+     [
+      415.3,
+      -43.2
+     ],
+     [
+      466.2,
+      -33.42
+     ],
+     [
+      523.3,
+      -38.6
+     ],
+     [
+      587.3,
+      -34.27
+     ],
+     [
+      659.3,
+      -30.97
+     ],
+     [
+      740.0,
+      -36.34
+     ],
+     [
+      830.6,
+      -30.99
+     ],
+     [
+      932.3,
+      -0.0
+     ],
+     [
+      1046.5,
+      0.0
+     ],
+     [
+      1174.7,
+      0.0
+     ],
+     [
+      1318.5,
+      0.0
+     ],
+     [
+      1480.0,
+      0.0
+     ],
+     [
+      1661.2,
+      0.0
+     ],
+     [
+      1864.7,
+      0.0
+     ],
+     [
+      2093.0,
+      0.0
+     ],
+     [
+      2349.3,
+      0.0
+     ],
+     [
+      2637.0,
+      0.0
+     ],
+     [
+      2960.0,
+      0.0
+     ],
+     [
+      3322.4,
+      0.0
+     ],
+     [
+      3729.3,
+      0.0
+     ],
+     [
+      4186.0,
+      0.0
+     ],
+     [
+      4698.6,
+      0.0
+     ],
+     [
+      5274.0,
+      0.0
+     ],
+     [
+      5919.9,
+      0.0
+     ],
+     [
+      6644.9,
+      0.0
+     ],
+     [
+      7458.6,
+      0.0
+     ],
+     [
+      8372.0,
+      0.0
+     ],
+     [
+      9397.3,
+      0.0
+     ],
+     [
+      10548.1,
+      0.0
+     ],
+     [
+      11839.8,
+      0.0
+     ],
+     [
+      13289.8,
+      0.0
+     ],
+     [
+      14917.2,
+      0.0
+     ],
+     [
+      16744.0,
+      0.0
+     ],
+     [
+      18794.5,
+      0.0
+     ]
+    ],
+    "response_summary": {
+     "level_db": -1.48,
+     "spread_db": 43.2,
+     "centroid_oct": -0.439,
+     "max_db": 0.0,
+     "max_hz": 20.6,
+     "prominence_db": 0.0,
+     "low_corner_hz": 20.6,
+     "high_corner_hz": 26.0,
+     "width_oct": 0.34,
+     "tilt_db": 3.42,
+     "wobble_db": 0.0
+    },
+    "impulse": {
+     "latency_samples": 0,
+     "direct_db": -1.92,
+     "early_db": -4.47,
+     "late_db": -120.0,
+     "t60_s": null,
+     "t60_span_db": 0.0,
+     "ring_s": 0.005,
+     "rings_past_window": false,
+     "echoes": [],
+     "echoes_left": [],
+     "echoes_right": [],
+     "copy_s": null,
+     "late_onset_s": 0.003,
+     "balance_db": 0.0
+    },
+    "steps": {
+     "curve": [
+      [
+       -40.86,
+       0.0
+      ],
+      [
+       -34.85,
+       -2.72
+      ],
+      [
+       -28.82,
+       -4.02
+      ],
+      [
+       -22.79,
+       0.0
+      ],
+      [
+       -16.77,
+       0.0
+      ],
+      [
+       -10.75,
+       0.0
+      ],
+      [
+       -4.8,
+       0.0
+      ]
+     ],
+     "compression_db": -1.36,
+     "top_slope": 1.0,
+     "knee_in_db": -34.85,
+     "attack_s": 0.235,
+     "release_s": 0.0,
+     "attack_tau_s": 0.23,
+     "release_tau_s": null
+    },
+    "thd_percent": 2.38
+   },
+   "cpu_ms_per_s": 0.3,
+   "type": "utility",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.3,
+     "growth_db": -0.06,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 2.78,
+      "growth_db": -0.15,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 99
+   },
+   "sweeps": {},
+   "denormal": {
+    "playing_ms_per_s": 2.301,
+    "silent_ms_per_s": 2.259,
+    "silent_worst_ms_per_s": 2.377,
+    "windows_ms_per_s": [
+     2.301,
+     2.259,
+     2.31,
+     2.368,
+     2.256,
+     2.358,
+     2.377,
+     0.429,
+     0.428,
+     0.439,
+     0.431
+    ]
+   },
+   "seconds": 12.2,
+   "platform": "linux",
+   "date": "2026-11-26",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+2.8 dBFS peak), but with no parameter alone"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Clipper": {
    "gear": "Neo Clipper",
    "kind": "effect",

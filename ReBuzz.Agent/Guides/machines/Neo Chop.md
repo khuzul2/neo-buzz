@@ -26,8 +26,6 @@ An effect that cuts up the audio of a track in time with the song, with no laten
 | Pitch per repeat | +2 st | a rising roll; negative falls; 0 keeps the pitch |
 | Length | 1/2 | with Interval 1 bar, a Repeat fill in the second half of every bar |
 | Stop time | 700 ms | a tape stop; 200 ms is a brake, 2 s a slow sink |
-| Gate rate | 1/8 | the 16 steps then make a pattern of two bars (1/16: one bar) |
-| Smoothness | 4 ms | longer is softer (and slurs fast repeats), 2 ms is the tightest |
 | Amount | 100% | the whole strength; 50% halves every shift and depth |
 | Mix | 100% | blend the dry in to keep the groove under a cut |
 
