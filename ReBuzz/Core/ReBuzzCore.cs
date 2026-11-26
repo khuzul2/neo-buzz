@@ -134,6 +134,7 @@ namespace ReBuzz.Core
         internal SongMarkerStore MarkerStore { get; set; }
         internal MachinePinStore PinStore { get; set; }         // fork (ux-overhaul.md, the parameter panel): the Inspector's pinned parameters
         internal TrackColourStore TrackColours { get; set; }    // fork (ux-overhaul.md, MX1): a colour per track
+        internal MixerFoldStore MixerFolds { get; set; }          // fork (ux-overhaul.md, MX1): the groups the mixer shows folded, saved with the song
         internal ReBuzz.Core.NoteWires.NoteWireStore NoteWires { get; set; }    // fork (note-wires.md): the note wires and insert chains
 
         IReadOnlyList<string> INoteWireHost.NoteTargetsOf(IMachine source) => NoteWires?.NoteTargetsOf(source) ?? Array.Empty<string>();
@@ -2538,6 +2539,7 @@ namespace ReBuzz.Core
                         PinStore?.Rename(oldName, machine.Name);     // fork (ux-overhaul.md): pins and locks follow a renamed machine
                         MidiMapping?.RenameMachine(oldName, machine.Name);     // fork (midi-mapping.md): so do its mappings and its track's pages
                         TrackColours?.Rename(oldName, machine.Name);   // fork (ux-overhaul.md, MX1): and so does its track colour
+                        MixerFolds?.Rename(oldName, machine.Name);   // fork (ux-overhaul.md, MX1): and a group its fold
                         NoteWires?.Rename(oldName, machine.Name);      // fork (note-wires.md): and its note wires and inserts
                     }
                     Modified = true;
@@ -2718,6 +2720,7 @@ namespace ReBuzz.Core
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
             PinStore?.Clear();                  // fork (ux-overhaul.md, the parameter panel)
             TrackColours?.Clear();              // fork (ux-overhaul.md, MX1)
+            MixerFolds?.Clear();               // fork (ux-overhaul.md, MX1): groups folded in the mixer
             NoteWires?.Clear();                 // fork (note-wires.md)
             MidiMapping?.Clear();               // fork (midi-mapping.md, MM1)
             Arrangement?.Clear();               // fork (daw-modes.md S5)

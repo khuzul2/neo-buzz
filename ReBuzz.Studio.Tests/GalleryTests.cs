@@ -25,6 +25,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using BuzzGUI.Common;
+using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
@@ -2247,11 +2248,28 @@ namespace ReBuzz.Studio.Tests
                     var tabs = w.GetVisualDescendants().OfType<Control>().Last(c => c.GetType().Name == "PageTabs" && Avalonia.Automation.AutomationProperties.GetName(c) == "Page tabs");
                     ClickIn(w, tabs, 120, 12);
                 }, "Neo Poly's editor on its Modulation page (P5a): the mod envelope, the two LFOs and the modulation matrix; Synth is the other page.", "Double-click Neo Poly, then the Full view's Modulation tab (or Right on the tabs).");
-                P5aShot("496-editor-neo-poly-acid-view", "Neo Poly", (w, m) =>
+                // FU2: the Acid view shows an acid preset (a patch that uses the acid controls), and the Synth page of the same patch is a shot of its own.
+                Try("496-editor-neo-poly-acid-view", () =>
                 {
-                    var outer = w.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "Pages");
-                    outer.GetType().GetProperty("Selected")!.SetValue(outer, 1);
-                }, "Neo Poly's Acid view (AC3): six big knobs (Tuning, Cutoff, Resonance, Env mod, Decay, Accent), the waveform switch (saw or square), Slide and Slide time, and below them the four limits (Filter range, Sweep limit, Soft start, Filter quality). A patch that uses the acid controls opens in it; Full is the other view.", "Double-click Neo Poly, then Acid in the tabs at the top.");
+                    var m = Add("Neo Poly", "Acid Poly");
+                    m.GetPreset("Acid — Squelch").Apply(m, true);
+                    Dispatcher.UIThread.RunJobs();
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    var views = editor!.GetVisualDescendants().OfType<Control>().First(c => c.GetType().Name == "Pages");
+                    views.GetType().GetProperty("Selected")!.SetValue(views, 1);
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor, "496-editor-neo-poly-acid-view", "Neo Poly's Acid view (AC3) with the preset Acid — Squelch loaded: the six big knobs (Tuning, Cutoff, Resonance, Env mod, Decay, Accent) set for the preset, the waveform switch (saw or square), Slide and Slide time, and below them the four limits (Filter range, Sweep limit, Soft start, Filter quality). A patch that uses the acid controls opens in it; Full is the other view." + KeyboardUnder(m),
+                        "Double-click Neo Poly, then Acid in the tabs at the top.");
+                    views.GetType().GetProperty("Selected")!.SetValue(views, 0);
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor, "497-editor-neo-poly-acid-synth-page", "Neo Poly's Synth page (Full view) with the same acid preset, Acid — Squelch: the oscillators, filters, envelopes and the accent and slide section as the acid patch sets them; the Acid tab is the other view of the same sound." + KeyboardUnder(m),
+                        "Double-click Neo Poly, then Full in the tabs at the top.");
+                    Core.UiHost.CloseWindows(m);
+                });
                 P5aShot("491-editor-neo-fm6-operator-4", "Neo FM6", (w, m) =>
                 {
                     var tiles = EditorPart(w, "InteractiveGraph", "Operator overview");

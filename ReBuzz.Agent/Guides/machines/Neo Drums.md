@@ -31,7 +31,7 @@ Every control has a How and a Sound sentence in `machine_describe`; `param_set` 
 
 ## Starting points
 
-- "909 — Classic" (the defaults), "909 — Techno", "808 — Classic", "808 — Electro Boom", "Lo-Fi — Dusty", "Minimal — Tight".
+- "Classic — Punchy Kit" (the defaults), "Techno — Driving Kit", "Boom — Long Kick", "Boom — Electro Sub", "Lo-Fi — Dusty", "Minimal — Tight".
 - A beat: `notes_write(machine="Drums", clip="Beat", notes=[{"pitch": "C2", "start": 0, "length": 0.25, "velocity": 120}, {"pitch": "F#2", "start": 0.5, "length": 0.25, "velocity": 90}])`; vary the hats' velocities for a groove.
 - Tracker way: hit columns BD to RC take a velocity (1-127), and Accent accents every hit of its tick; `machine_describe` lists them under `played_parameters`.
 

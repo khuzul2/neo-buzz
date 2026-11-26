@@ -51,6 +51,7 @@ namespace ReBuzz.AppViews
             buzz.MarkerStore = new Core.SongMarkerStore(buzz);
             buzz.PinStore = new Core.MachinePinStore(buzz);        // fork (ux-overhaul.md, the parameter panel)
             buzz.TrackColours = new Core.TrackColourStore(buzz);   // fork (ux-overhaul.md, MX1): a colour per track
+            buzz.MixerFolds = new Core.MixerFoldStore(buzz);       // fork (ux-overhaul.md, MX1): the groups the mixer shows folded
             buzz.NoteWires = new Core.NoteWires.NoteWireStore(buzz);     // fork (note-wires.md): note wires and insert chains
             buzz.MidiMapping = new Core.MidiMapping(buzz, registryEx);     // fork (midi-mapping.md, MM1): after the pins and the session layout it follows
             buzz.Arrangement = new Core.ArrangementStore(buzz);     // fork (daw-modes.md S5)

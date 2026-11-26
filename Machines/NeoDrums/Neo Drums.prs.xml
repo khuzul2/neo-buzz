@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PresetDictionary>
-  <Item Key="909 — Classic">
+  <Item Key="Classic — Punchy Kit">
     <Preset Machine="Neo Drums">
       <Parameters>
         <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="600" />
@@ -75,7 +75,7 @@
       <Comment></Comment>
     </Preset>
   </Item>
-  <Item Key="909 — Techno">
+  <Item Key="Techno — Driving Kit">
     <Preset Machine="Neo Drums">
       <Parameters>
         <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="580" />
@@ -150,7 +150,7 @@
       <Comment></Comment>
     </Preset>
   </Item>
-  <Item Key="808 — Classic">
+  <Item Key="Boom — Long Kick">
     <Preset Machine="Neo Drums">
       <Parameters>
         <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="600" />
@@ -225,7 +225,7 @@
       <Comment></Comment>
     </Preset>
   </Item>
-  <Item Key="808 — Electro Boom">
+  <Item Key="Boom — Electro Sub">
     <Preset Machine="Neo Drums">
       <Parameters>
         <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="570" />

@@ -48,7 +48,7 @@ namespace NeoBuzz.MachineTests
         /// <summary>Neo Drums: a four-bar pattern played twice.</summary>
         static (float[], float[]) DrumsSource()
         {
-            var v = PresetValues(NeoBuzz.Drums.Params.Table, "Neo Drums", "909 — Classic");
+            var v = PresetValues(NeoBuzz.Drums.Params.Table, "Neo Drums", "Classic — Punchy Kit");
             var e = new NeoBuzz.Drums.DrumsEngine(v);
             e.SetSampleRate(Rate);
             return Run((l, r, n) => e.Process(l, r, n), Length, pos =>
@@ -143,7 +143,7 @@ namespace NeoBuzz.MachineTests
             var log = new StringBuilder();
             log.AppendLine("# Neo Chop listening pack");
             log.AppendLine();
-            log.AppendLine("Source: a four-bar drum loop (Neo Drums, \"909 — Classic\") with a four-chord loop (Neo Poly, \"Pad — Warm Strings\") under it, 120 BPM in 4/4,");
+            log.AppendLine("Source: a four-bar drum loop (Neo Drums, \"Classic — Punchy Kit\") with a four-chord loop (Neo Poly, \"Pad — Warm Strings\") under it, 120 BPM in 4/4,");
             log.AppendLine($"played twice ({Bars} bars, {Length / (double)Rate:0.0} s), at -3 dBFS peak before Neo Chop. Every file: 48 kHz, 16-bit, stereo WAV. The song runs from beat 0;");
             log.AppendLine("the first bar has no history to cut from, so the cuts start in bar 2 (a note or loop that starts mid-song is the same).");
             log.AppendLine();

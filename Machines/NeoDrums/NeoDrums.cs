@@ -51,7 +51,7 @@ namespace NeoBuzz.Drums
 
         /// <summary>
         /// Hosts (the keyboard under the machine's window, docs/specs/studio-mvp.md §3.12): the name of the voice each
-        /// key plays, General MIDI's drum keys with the TR-909's pairs (DrumsEngine.VoiceOfKey); keys not listed play nothing.
+        /// key plays, General MIDI's drum keys with a classic analog kit's pairs (DrumsEngine.VoiceOfKey); keys not listed play nothing.
         /// </summary>
         public IReadOnlyDictionary<int, string> KeyNames => keyNames;
 
@@ -74,7 +74,7 @@ namespace NeoBuzz.Drums
             return entries;
         }
 
-        /// <summary>Every key that plays a voice (General MIDI's drum keys with the TR-909's pairs), by the voice's name; the same for every channel.</summary>
+        /// <summary>Every key that plays a voice (General MIDI's drum keys with a classic analog kit's pairs), by the voice's name; the same for every channel.</summary>
         internal override IReadOnlyList<NoteMapEntry> BuildNoteMap(int channel) => noteMap;
 
         /// <summary>The kit's keys never change.</summary>
@@ -126,7 +126,7 @@ namespace NeoBuzz.Drums
                 {
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
-                        "Neo Drums — a synthesised drum kit in the TR-909 and TR-808 manner: kick, snare, clap, rim, closed " +
+                        "Neo Drums — a synthesised drum kit in the classic analog manner: kick, snare, clap, rim, closed " +
                         "and open hats (the closed one chokes the open one), three toms, cowbell, crash and ride, each with " +
                         "its tune, decay, tone, level and pan. It plays the General MIDI drum keys from C2, as Neo Sampler's " +
                         "Kit mode does, and per-track hit columns (BD, SD, … at a velocity) with an Accent column, as Buzz " +

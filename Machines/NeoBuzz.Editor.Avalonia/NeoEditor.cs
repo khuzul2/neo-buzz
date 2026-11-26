@@ -28,6 +28,10 @@ namespace NeoBuzz.Editor
         IMachine machine;
         EditorContext ctx;
         bool stale;
+        DispatcherTimer poll;
+
+        /// <summary>How often the editor looks at the parameters it shows for a change from outside (the UI tick).</summary>
+        internal static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(33);
 
         protected NeoEditor()
         {
@@ -79,6 +83,7 @@ namespace NeoBuzz.Editor
             set
             {
                 if (machine == value) return;
+                StopPoll();
                 ctx?.Detach();
                 machine = value;
                 if (machine != null) Build();
@@ -92,6 +97,7 @@ namespace NeoBuzz.Editor
                 Edits = new ParamEdits(machine, Table, a => Dispatcher.UIThread.Post(a, DispatcherPriority.Background), Slots),
             };
             AutomationProperties.SetName(this, Title);
+            StartPoll();
             var root = new DockPanel { Background = Theme.Background, LastChildFill = true };
             var header = new DockPanel { Margin = new Thickness(8, 6, 8, 2), LastChildFill = false };
             var title = new TextBlock
@@ -129,10 +135,33 @@ namespace NeoBuzz.Editor
             Content = root;
         }
 
+        // A parameter tells its listeners in the engine's next tick; the knobs and buttons also look at their parameters every UI tick, so an
+        // agent's, a MIDI map's, automation's or a modulator's change shows at once, with the engine stopped or between ticks too.
+        void StartPoll()
+        {
+            if (poll != null || ctx == null) return;
+            poll = new DispatcherTimer(DispatcherPriority.Background) { Interval = PollInterval };
+            poll.Tick += (s, e) => PollNow();
+            poll.Start();
+        }
+
+        /// <summary>One UI tick's look at the parameters (the timer's; tests call it, as the headless platform's timers run only now and then).</summary>
+        internal bool PollNow() => ctx?.PollOutside() ?? false;
+
+        /// <summary>Whether the editor is looking at its parameters every UI tick (tests).</summary>
+        internal bool IsPolling => poll?.IsEnabled == true;
+
+        void StopPoll()
+        {
+            poll?.Stop();
+            poll = null;
+        }
+
         // A closed window drops its editor: let go of the parameters, and build again if shown again.
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnDetachedFromVisualTree(e);
+            StopPoll();
             ctx?.Detach();
             stale = true;
         }
@@ -140,6 +169,7 @@ namespace NeoBuzz.Editor
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
+            StartPoll();
             if (!stale || machine == null) return;
             stale = false;
             Build();

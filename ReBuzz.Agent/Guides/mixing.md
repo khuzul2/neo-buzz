@@ -56,7 +56,7 @@ Parts add up in power, so they can't all sit at the loud end of their range: if 
 | Part | Body | Character | Trouble | High-pass from |
 |---|---|---|---|---|
 | Kick | sub 45–65 Hz, punch 80–120 Hz | click 2–5 kHz | boxy 250–500 Hz | 25–30 Hz |
-| Bass, 808 | fundamentals 40–120 Hz (E1–B2) | harmonics 600 Hz–1.5 kHz, what small speakers hear | mud 150–300 Hz | 25–35 Hz |
+| Bass, sub bass | fundamentals 40–120 Hz (E1–B2) | harmonics 600 Hz–1.5 kHz, what small speakers hear | mud 150–300 Hz | 25–35 Hz |
 | Snare | body 150–250 Hz | crack 2–5 kHz, snares 6–10 kHz | box 400–800 Hz | 80–120 Hz |
 | Clap | 800 Hz–1.5 kHz | 2–5 kHz | 300–500 Hz | 150–250 Hz |
 | Hats, cymbals | 6–12 kHz | air 12–16 kHz | harsh 3–5 kHz | 300–600 Hz |

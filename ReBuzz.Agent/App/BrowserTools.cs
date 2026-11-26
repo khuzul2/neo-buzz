@@ -30,7 +30,7 @@ namespace ReBuzz.Agent.App
                     "The studio browser's one search over everything the person can drag into a song: machines and plug-ins (the installed gear, plug-ins from Neo Plug's scan by vendor), " +
                     "factory presets, the song's clips, and the sample and MIDI files in the folders added with browser_places (name, folder, length, rate, tempo, key). " +
                     "kind narrows it to machine, plugin, preset, audio, midi or clip. Every word of the query must match. Results carry what machine_add, machine_swap and wave_import take: " +
-                    "a gear name, a preset's gear and name, a file's path. Studio mode only. Example: browser_search(query=\"kick 808\", kind=\"audio\").",
+                    "a gear name, a preset's gear and name, a file's path. Studio mode only. Example: browser_search(query=\"kick long\", kind=\"audio\").",
                 Input = Object(null,
                     Req("query", String("Words to find (all of them)")),
                     Opt("kind", String("Only this kind", Kinds)),

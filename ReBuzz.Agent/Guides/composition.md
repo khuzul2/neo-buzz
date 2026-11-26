@@ -138,7 +138,7 @@ Copy before you vary: `clip_duplicate`, then transform the copy. Check the resul
 | Boom bap 90 | Kick | `x......x..x.....` | 110–127 |
 | | Snare | `....x.......x...` | 105–120 |
 | | Hats | `x.xxx.xxx.xxx.x.` | 60–95 |
-| Trap 140 | Kick (808 follows it) | `x......x..x.....` | 110–127 |
+| Trap 140 | Kick (a sub bass follows it) | `x......x..x.....` | 110–127 |
 | | Snare or clap (half-time) | `........x.......` | 110–120 |
 | | Hats | `x.x.x.x.x.x.x.x.` plus rolls | 60–100 |
 | Lo-fi 80 | Kick | `x.........x.....` | 90–110 |

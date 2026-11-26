@@ -4,6 +4,7 @@
 // (meters, Neo Analyzer's spectrum, Neo EQ's response) draw what the audio does.
 
 using System.Reflection;
+using System.Text.Json.Nodes;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Automation;
@@ -18,6 +19,7 @@ using Avalonia.VisualTree;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Editor;
+using ReBuzz.Agent.Mcp;
 using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
@@ -304,6 +306,134 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(modeParam.GetValue(0), Is.EqualTo(2), "a click picks the choice");
                 Core.SongCore.Undo();
                 Assert.That(modeParam.GetValue(0), Is.EqualTo(oldMode), "undo puts the choice back");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        /// <summary>
+        /// One UI tick of the window's editor: what its 33 ms timer does (the headless platform runs timers only now and then, so the
+        /// test makes the tick). The engine is not run: a change from outside must show without a tick of the engine's, which is when a
+        /// parameter's events are sent.
+        /// </summary>
+        static void UiTick(Window window)
+        {
+            var editor = window.GetVisualDescendants().OfType<Control>().First(c => c.GetType().BaseType?.Name == "NeoEditor");
+            Assert.That((bool)Get(editor, "IsPolling"), Is.True, "the editor looks at its parameters every UI tick");
+            editor.GetType().GetMethod("PollNow", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!.Invoke(editor, null);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        static JsonObject CallAgent(string tool, JsonObject args)
+        {
+            var message = new JsonObject
+            {
+                ["jsonrpc"] = "2.0",
+                ["id"] = 1,
+                ["method"] = "tools/call",
+                ["params"] = new JsonObject { ["name"] = tool, ["arguments"] = args },
+            };
+            var task = Studio.Host.Agent.Host.Server.HandleAsync(message, new McpSession(), _ => Task.CompletedTask, CancellationToken.None);
+            var until = DateTime.UtcNow.AddSeconds(60);
+            while (!task.IsCompleted)
+            {
+                Dispatcher.UIThread.RunJobs();
+                if (DateTime.UtcNow > until) Assert.Fail($"{tool} didn't answer in time");
+                Thread.Sleep(2);
+            }
+            var result = task.GetAwaiter().GetResult()!["result"]!.AsObject();
+            Assert.That(result["isError"]?.GetValue<bool>() == true, Is.False, result.ToJsonString());
+            return result;
+        }
+
+        // Outside changes (an agent's, a MIDI map's, automation's, a modulator's) all reach a parameter through SetValue, flagged as not
+        // for recording (1 << 16) or not. The parameter's events tell the editor in the engine's next tick; the editor also looks at the
+        // parameters it shows every UI tick (NeoEditor, EditorContext.PollOutside), so a knob is the parameter's value whatever the
+        // engine is doing. One place for every Neo editor (the shared editor kit).
+        [AvaloniaTest]
+        public void AKnobFollowsAChangeFromTheAgentAndFromAutomationWithinOneTick()
+        {
+            var m = Add("Neo Comp", "Follow Comp");
+            try
+            {
+                var window = OpenEditor(m);
+                var knob = Find(window, "ParamKnob", "Threshold");
+                var threshold = Global(m, "Threshold");
+                double Shown() => (double)Get(knob, "Value");
+                // The editor kit is compiled into each machine's assembly: its types are reached by name.
+                var binding = Get(knob, "Binding");
+                double Norm(int raw) => (double)binding.GetType().GetMethod("Normalized")!.Invoke(binding, new object[] { raw })!;
+                var def = Get(binding, "Def");
+                string Describe(int raw) => (string)def.GetType().GetMethod("Describe")!.Invoke(def, new object[] { raw })!;
+
+                // The agent's tool path: param_set.
+                int start = threshold.GetValue(0);
+                double was = Shown();
+                CallAgent("param_set", new JsonObject
+                {
+                    ["machine"] = "Follow Comp",
+                    ["changes"] = new JsonArray(new JsonObject { ["param"] = "Threshold", ["value"] = "-20 dB" }),
+                });
+                int viaAgent = threshold.GetValue(0);
+                Assert.That(viaAgent, Is.Not.EqualTo(start), "param_set moved the parameter");
+                UiTick(window);
+                Assert.That(Shown(), Is.Not.EqualTo(was).And.EqualTo(Norm(viaAgent)).Within(1e-9), "the knob followed the agent within one tick");
+                Assert.That(Get(knob, "ValueText"), Is.EqualTo(Describe(viaAgent)), "and shows its value");
+
+                // Automation: the engine writes the played value with the not-recorded flag, as WorkManager does for a clip's envelope.
+                was = Shown();
+                int viaAutomation = viaAgent > 400 ? 150 : 850;
+                threshold.SetValue(0 | (1 << 16), viaAutomation);
+                UiTick(window);
+                Assert.That(Shown(), Is.Not.EqualTo(was).And.EqualTo(Norm(viaAutomation)).Within(1e-9), "the knob followed automation within one tick");
+                Assert.That(Get(knob, "ValueText"), Is.EqualTo(Describe(viaAutomation)));
+
+                // A recorded write (a MIDI map's knob while the song records) too.
+                was = Shown();
+                int viaMap = viaAutomation > 400 ? 100 : 900;
+                threshold.SetValue(0, viaMap);
+                UiTick(window);
+                Assert.That(Shown(), Is.Not.EqualTo(was).And.EqualTo(Norm(viaMap)).Within(1e-9), "the knob followed a MIDI map within one tick");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        // The same through every editor kit knob of several machines: each knob of the editor, written from outside, shows it after a tick.
+        [AvaloniaTest]
+        [TestCase("Neo Comp")]
+        [TestCase("Neo Lo-Fi")]
+        [TestCase("Neo Poly")]
+        [TestCase("Neo Filter")]
+        [TestCase("Neo Drums")]
+        public void EveryKnobOfAnEditorFollowsAnOutsideWrite(string gear)
+        {
+            var m = Add(gear, "Follow " + gear);
+            try
+            {
+                var window = OpenEditor(m);
+                var knobs = Controls(window, "ParamKnob").ToList();
+                Assert.That(knobs, Is.Not.Empty, gear + " has knobs");
+                var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                int checkedKnobs = 0;
+                foreach (var knob in knobs)
+                {
+                    int index = (int)Get(knob, "ParamIndex");
+                    var binding = Get(knob, "Binding");
+                    var parameter = group.Parameters[index];
+                    int now = parameter.GetValue(0);
+                    int target = now - parameter.MinValue > parameter.MaxValue - now ? (parameter.MinValue + now) / 2 : (now + parameter.MaxValue) / 2;
+                    if (target == now) continue;
+                    parameter.SetValue(0 | (1 << 16), target);
+                    UiTick(window);
+                    Assert.That((double)Get(knob, "Value"), Is.EqualTo((double)binding.GetType().GetMethod("Normalized")!.Invoke(binding, new object[] { target })!).Within(1e-9), $"{gear}: {AutomationProperties.GetName(knob)} followed");
+                    checkedKnobs++;
+                }
+                Assert.That(checkedKnobs, Is.GreaterThan(0));
             }
             finally
             {

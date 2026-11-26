@@ -1,6 +1,6 @@
 // Fork (docs/specs/ux-overhaul.md §11, MX1): one strip of the one mixer, in one of three densities with the same parts in each:
 //   Full    colour and name, kind, I/O, inserts, sends, pan, fader in dB with a meter and a peak hold, On, Solo, Arm, Cue;
-//   Compact name, fader, meter, pan, On, Solo, Arm (and the sends, the crossfader's A and B, Cue and I/O where a view asks for them);
+//   Compact name, fader, meter, pan, the sends, On, Solo, Arm (and the crossfader's A and B, Cue and I/O where a view asks for them);
 //   Header  a track header's row: the fader, the meter, the pan and the sends, laid out sideways.
 // Every control acts on what the Session mixer always acted on: the machine's output connections (SessionMixer), so the Machine View
 // shows the same numbers; a gesture is one undo step (MixerEdits). Values are polled (Refresh), the meters on the ticker (RefreshMeter).
@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Views.Mixer
         public static MixerOptions For(MixerDensity density) => density switch
         {
             MixerDensity.Full => new MixerOptions { Inserts = true, Sends = true, Cue = true, Arm = true },
-            MixerDensity.Compact => new MixerOptions { Sends = false, Arm = true },
+            MixerDensity.Compact => new MixerOptions { Sends = true, Arm = true },
             _ => new MixerOptions { Sends = true, Arm = true },
         };
     }
