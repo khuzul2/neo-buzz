@@ -9077,7 +9077,7 @@
   "Neo Grain": {
    "gear": "Neo Grain",
    "kind": "generator",
-   "load_seconds": 0.48,
+   "load_seconds": 0.53,
    "gear_info": {
     "file": "Generators/Neo Grain.NET.dll",
     "managed": true,
@@ -9106,23 +9106,23 @@
     },
     "polyphony": 8,
     "polyphony_levels": {
-     "1": -33.5,
-     "2": -30.3,
-     "4": -27,
-     "8": -24.3
+     "1": -26.5,
+     "2": -23.3,
+     "4": -20,
+     "8": -17.3
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -33,
-    "sample_peak_dbfs": -22.51,
-    "true_peak_dbtp": -22.51
+    "integrated_lufs": -26,
+    "sample_peak_dbfs": -15.52,
+    "true_peak_dbtp": -15.52
    },
    "cpu_ms_per_s": 0.0,
    "type": "polysynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -22.1,
+     "peak_dbfs": -15.12,
      "growth_db": -0.09,
      "verdict": "ok"
     },
@@ -9138,7 +9138,7 @@
     }
    },
    "envelope": {
-    "peak_db": -29.37,
+    "peak_db": -22.38,
     "attack_s": 0.14,
     "final_db": -6.23,
     "half_s": 0.005,
@@ -9153,35 +9153,35 @@
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 17.42,
+    "range_db": 17.41,
     "db_per_doubling": 5.93,
     "curve": "linear in amplitude (about 6 dB per doubling)",
     "levels_db": {
-     "16": -47.56,
-     "32": -41.67,
-     "64": -34.81,
-     "127": -30.14
+     "16": -40.57,
+     "32": -34.68,
+     "64": -27.83,
+     "127": -23.16
     }
    },
    "denormal": {
-    "playing_ms_per_s": 5.187,
-    "silent_ms_per_s": 1.305,
-    "silent_worst_ms_per_s": 2.776,
+    "playing_ms_per_s": 6.554,
+    "silent_ms_per_s": 1.595,
+    "silent_worst_ms_per_s": 3.368,
     "windows_ms_per_s": [
-     5.187,
-     2.776,
-     1.318,
-     1.305,
-     1.306,
-     1.309,
-     1.299,
-     1.297,
-     1.303,
-     1.088,
-     1.257
+     6.554,
+     3.368,
+     1.673,
+     1.595,
+     1.708,
+     1.569,
+     1.574,
+     1.515,
+     1.562,
+     1.595,
+     1.744
     ]
    },
-   "seconds": 1.4,
+   "seconds": 1.6,
    "platform": "linux",
    "date": "2026-11-26",
    "problems": [],
