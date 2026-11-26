@@ -200,20 +200,6 @@ namespace ReBuzz.Core
             }
         }
 
-        public int[] ClipEditorMachineMIDIEvents
-        {
-            get
-            {
-                var buzz = Machine.Graph.Buzz as ReBuzzCore;
-                return buzz.MachineManager.GetClipEditorMachineMIDIEvents(Machine as MachineCore, this);
-            }
-            set
-            {
-                var buzz = Machine.Graph.Buzz as ReBuzzCore;
-                buzz.MachineManager.SetClipEditorMachineMIDIEvents(Machine as MachineCore, this, value);
-            }
-        }
-
         public IntPtr CClip { get; set; }
         public byte[] Data { get; internal set; }
 

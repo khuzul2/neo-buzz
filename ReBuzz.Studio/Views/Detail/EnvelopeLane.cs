@@ -86,12 +86,10 @@ namespace ReBuzz.Studio.Views.Detail
         public static Func<IClip, ColumnKey, bool> Open { get; set; }
     }
 
-    internal sealed class EnvelopeLane : Control
+    internal sealed class EnvelopeLane : Control, ILaneGeometry
     {
         public const double LaneHeight = 76;
         const double Pad = 7;
-        const double Grab = 8;
-        const double DragDistance = 3;
 
         static readonly IBrush Fill = StudioTokens.Themed(() => NeoBuzz.Editor.Tokens.IsLight ? Color.Parse("#26C2185B") : Color.Parse("#30E0457B"));
         static readonly IBrush OutOfClip = SessionPalette.Pair("#141417", "#D8D8E0");
@@ -106,24 +104,10 @@ namespace ReBuzz.Studio.Views.Detail
         static readonly IPen LoopPen = new Pen(StudioTokens.AccentBrush, 1);
         static readonly IPen PlayPen = new Pen(StudioTokens.PlayBrush, 1.5);
 
-        enum Gesture { None, Points, Band, Add }
-
         readonly ReBuzzCore core;
         readonly IEnvelopeAxis axis;
-        readonly ClipEnvelopeEditor editor;
-        readonly HashSet<int> selected = new();
+        readonly LaneController lane;
         IClip clip;
-        ClipEnvelope env;
-        long signature;
-        string refusal;
-
-        Gesture gesture;
-        Point down, now;
-        bool moved, additive, collapseOnRelease;
-        AutoPoint grabbed;
-        int previewDt, previewDv;
-        int hoverTime = -1;
-        int insertTime;
 
         public EnvelopeLane(ReBuzzCore core, IEnvelopeAxis axis, IClip clip, ColumnKey key)
         {
@@ -131,7 +115,7 @@ namespace ReBuzz.Studio.Views.Detail
             this.axis = axis;
             this.clip = clip;
             ParamKey = key;
-            editor = new ClipEnvelopeEditor(core);
+            lane = new LaneController(core, this, () => ClipEnvelopes.Read(this.clip, ParamKey), InvalidateVisual, () => $"{this.clip.Machine?.Name}|{ParamKey.Group}|{ParamKey.Index}|{ParamKey.Track}");
             Height = LaneHeight;
             ClipToBounds = true;
             Focusable = true;
@@ -149,25 +133,27 @@ namespace ReBuzz.Studio.Views.Detail
         /// <summary>The envelope as the last reading found it (null when the parameter is gone).</summary>
         public ClipEnvelope Envelope => env;
 
+        ClipEnvelope env => lane.Env;
+
         public AutoParam Param => env?.Param;
 
         /// <summary>The times of the selected points.</summary>
-        public IReadOnlyCollection<int> Selection => selected;
+        public IReadOnlyCollection<int> Selection => lane.Selection;
 
         /// <summary>Why the last edit was refused, or null.</summary>
-        public string Refusal => refusal;
+        public string Refusal => lane.Refusal;
 
         /// <summary>A gesture is going on (the stack leaves the lane alone).</summary>
-        public bool IsDragging => gesture != Gesture.None;
+        public bool IsDragging => lane.IsDragging;
 
         /// <summary>A point was added, moved, removed or changed (one step of the history).</summary>
-        public event Action Edited;
+        public event Action Edited { add => lane.Edited += value; remove => lane.Edited -= value; }
 
         /// <summary>The selection changed.</summary>
-        public event Action SelectionChanged;
+        public event Action SelectionChanged { add => lane.SelectionChanged += value; remove => lane.SelectionChanged -= value; }
 
         /// <summary>The clip time a paste goes to: where the pointer last pressed.</summary>
-        public int InsertTime => insertTime;
+        public int InsertTime => lane.InsertTime;
 
         void OnAxis() => InvalidateVisual();
 
@@ -188,32 +174,12 @@ namespace ReBuzz.Studio.Views.Detail
         }
 
         /// <summary>The tooltip text the lane would show for the point under the pointer (or being dragged), or null.</summary>
-        public string TipText => TipFor(gesture == Gesture.Points && moved ? grabbed.Time : hoverTime);
+        public string TipText => lane.TipText;
 
         // ------------------------------------------------------------------ reading
 
-        static long Sign(ClipEnvelope e)
-        {
-            if (e == null) return -1;
-            long sum = e.Length;
-            foreach (var p in e.Engine.Points) sum = sum * 31 + p.Time * 7 + p.Value * 131 + (p.Ramp ? 1 : 0);
-            if (e.Tracker != null) foreach (var p in e.Tracker.Points) sum = sum * 37 + p.Time * 11 + p.Value * 17;
-            return sum * 31 + e.Overlaps.Count;
-        }
-
         /// <summary>Reads the clip again (after an edit, an undo, the agent); true when what the lane shows changed.</summary>
-        public bool Reload(bool force = false)
-        {
-            var next = ClipEnvelopes.Read(clip, ParamKey);
-            long sig = Sign(next);
-            if (!force && sig == signature && ReferenceEquals(next?.Clip, env?.Clip)) return false;
-            signature = sig;
-            env = next;
-            var times = env?.Points.Select(p => p.Time).ToHashSet() ?? new HashSet<int>();
-            if (selected.RemoveWhere(t => !times.Contains(t)) > 0) SelectionChanged?.Invoke();
-            InvalidateVisual();
-            return true;
-        }
+        public bool Reload(bool force = false) => lane.Reload(force);
 
         // ------------------------------------------------------------------ geometry
 
@@ -228,12 +194,20 @@ namespace ReBuzz.Studio.Views.Detail
 
         int Last => Math.Max(0, (env?.Length ?? 1) - 1);
 
-        int Snap(int time, bool noSnap)
+        // ILaneGeometry: the lane lies along the time axis of the view above it.
+        Point ILaneGeometry.PointOf(int time, int value) => new Point(XOf(time), YOf(value));
+
+        int ILaneGeometry.TimeAt(Point p) => axis.TimeAt(p.X);
+
+        int ILaneGeometry.ValueAt(Point p) => ValueAt(p.Y);
+
+        int ILaneGeometry.Snap(int time, bool noSnap)
         {
             int grid = axis.GridUnits;
-            if (!noSnap && grid > 1) time = (int)Math.Round(time / (double)grid) * grid;
-            return Math.Clamp(time, 0, Last);
+            return !noSnap && grid > 1 ? (int)Math.Round(time / (double)grid) * grid : time;
         }
+
+        bool ILaneGeometry.InClip(Point p) => XOf(0) <= p.X && axis.TimeAt(p.X) <= Last;
 
         /// <summary>Where a point is, for tests that click or drag it (in this control).</summary>
         internal Point PointOf(int time)
@@ -251,21 +225,6 @@ namespace ReBuzz.Studio.Views.Detail
 
         static FormattedText Text(string text, IBrush brush, double size) =>
             new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, size, brush);
-
-        IReadOnlyList<AutoPoint> Shown()
-        {
-            if (env == null) return Array.Empty<AutoPoint>();
-            if (gesture != Gesture.Points || !moved) return env.Points;
-            var moving = env.Points.Where(p => selected.Contains(p.Time)).Select(Displaced).ToList();
-            var landed = moving.Select(p => p.Time).ToHashSet();
-            return env.Points.Where(p => !selected.Contains(p.Time) && !landed.Contains(p.Time)).Concat(moving).OrderBy(p => p.Time).ToList();
-        }
-
-        AutoPoint Displaced(AutoPoint p) => p with
-        {
-            Time = Math.Clamp(p.Time + previewDt, 0, Last),
-            Value = Math.Clamp(p.Value + previewDv, env.Param.Min, env.Param.Max),
-        };
 
         public override void Render(DrawingContext dc)
         {
@@ -297,12 +256,12 @@ namespace ReBuzz.Studio.Views.Detail
                     dc.FillRectangle(StudioTokens.WarningBrush, new Rect(r.X, 0, r.Width, 3));
                     if (r.Width > 56) dc.DrawText(Text("overlap", StudioTokens.TextPrimaryBrush, StudioTokens.FontCaption), new Point(r.X + 3, 4));
                 }
-                var shown = Shown();
+                var shown = lane.Shown();
                 DrawCurve(dc, shown, xEnd);
                 DrawPoints(dc, shown);
-                if (gesture == Gesture.Band && moved)
+                if (lane.Current == LaneController.Gesture.Band && lane.Moved)
                 {
-                    var band = new Rect(down, now).Normalize();
+                    var band = new Rect(lane.Down, lane.Now).Normalize();
                     dc.DrawRectangle(StudioTokens.BlockSelectionFill, BandPen, band);
                 }
                 if (axis.Playhead >= 0)
@@ -380,13 +339,13 @@ namespace ReBuzz.Studio.Views.Detail
 
         void DrawPoints(DrawingContext dc, IReadOnlyList<AutoPoint> pts)
         {
-            bool previewing = gesture == Gesture.Points && moved;
-            var movedTimes = previewing ? selected.Select(t => Math.Clamp(t + previewDt, 0, Last)).ToHashSet() : null;
+            bool previewing = lane.Previewing;
+            var movedTimes = previewing ? lane.Selection.Select(lane.LandedTime).ToHashSet() : null;
             foreach (var p in pts)
             {
                 double x = XOf(p.Time), y = YOf(p.Value);
-                bool sel = previewing ? movedTimes.Contains(p.Time) : selected.Contains(p.Time);
-                double r = sel || p.Time == hoverTime ? 5.5 : 4.5;
+                bool sel = previewing ? movedTimes.Contains(p.Time) : lane.IsSelected(p.Time);
+                double r = sel || p.Time == lane.HoverTime ? 5.5 : 4.5;
                 var centre = new Point(x, y);
                 if (sel)
                 {
@@ -423,20 +382,10 @@ namespace ReBuzz.Studio.Views.Detail
             dc.DrawLine(PianoRoll.BarLine, new Point(0, 0.5), new Point(w, 0.5));
         }
 
-        string TipFor(int time)
-        {
-            if (env == null || time < 0) return null;
-            AutoPoint? p = gesture == Gesture.Points && moved && time == grabbed.Time ? Displaced(grabbed) : env.Points.Cast<AutoPoint?>().FirstOrDefault(q => q!.Value.Time == time);
-            if (p is not { } pt) return null;
-            int tpb = Math.Max(1, core.TPB), bpb = Math.Max(1, core.Session?.BeatsPerBar ?? 4);
-            return $"{env.Param.Describe(pt.Value)} · {TimeText.Position(pt.Time / ClipEvent.TimeBase, tpb, bpb)} · {(pt.Ramp ? "ramp" : "step")}";
-        }
-
         void DrawTip(DrawingContext dc, double w, double h)
         {
             string tip = TipText;
-            if (tip == null) return;
-            var p = (gesture == Gesture.Points && moved ? Displaced(grabbed) : env.Points.FirstOrDefault(q => q.Time == hoverTime));
+            if (tip == null || lane.TipPoint is not { } p) return;
             var text = Text(tip, StudioTokens.TextPrimaryBrush, StudioTokens.FontBody);
             double bw = text.Width + 14, bh = text.Height + 6;
             double x = XOf(p.Time) + 10, y = YOf(p.Value) - bh - 8;
@@ -448,49 +397,14 @@ namespace ReBuzz.Studio.Views.Detail
             dc.DrawText(text, new Point(r.X + 7, r.Y + 3));
         }
 
-        // ------------------------------------------------------------------ the gestures
-
-        int HitTest(Point p)
-        {
-            if (env == null) return -1;
-            int best = -1;
-            double bestD = Grab * Grab;
-            foreach (var pt in env.Points)
-            {
-                double dx = XOf(pt.Time) - p.X, dy = YOf(pt.Value) - p.Y;
-                double d = dx * dx + dy * dy;
-                if (d <= bestD) { bestD = d; best = pt.Time; }
-            }
-            return best;
-        }
-
-        static bool Additive(KeyModifiers mods) => mods.HasFlag(KeyModifiers.Shift) || SessionView.Normalize(mods).HasFlag(KeyModifiers.Control);
-
-        void Select(IEnumerable<int> times, bool extend)
-        {
-            if (!extend) selected.Clear();
-            foreach (int t in times) selected.Add(t);
-            SelectionChanged?.Invoke();
-            InvalidateVisual();
-        }
-
-        public void ClearSelection()
-        {
-            if (selected.Count == 0) return;
-            selected.Clear();
-            SelectionChanged?.Invoke();
-            InvalidateVisual();
-        }
+        // ------------------------------------------------------------------ the gestures (LaneController: shared with the tracker's lane)
 
         /// <summary>Selects points by their times (tests, and the stack).</summary>
-        internal void SelectTimes(IEnumerable<int> times, bool extend = false) => Select(times.Where(t => env?.Points.Any(p => p.Time == t) == true), extend);
+        internal void SelectTimes(IEnumerable<int> times, bool extend = false) => lane.SelectTimes(times, extend);
 
-        public bool SelectAll()
-        {
-            if (env == null) return false;
-            Select(env.Points.Select(p => p.Time), false);
-            return true;
-        }
+        public void ClearSelection() => lane.ClearSelection();
+
+        public bool SelectAll() => lane.SelectAll();
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
@@ -499,151 +413,37 @@ namespace ReBuzz.Studio.Views.Detail
             var p = e.GetPosition(this);
             if (p.X < axis.Gutter) return;
             Focus();
-            refusal = null;
-            down = now = p;
-            moved = false;
-            additive = Additive(e.KeyModifiers);
-            int hit = HitTest(p);
-            insertTime = Snap(axis.TimeAt(p.X), false);
-            if (hit >= 0)
-            {
-                if (e.ClickCount == 2)
-                {
-                    selected.Clear();
-                    Commit(editor.Delete(env, new[] { hit }));
-                    SelectionChanged?.Invoke();
-                    e.Handled = true;
-                    return;
-                }
-                if (additive)
-                {
-                    // Shift/Ctrl/Cmd-click toggles the point; one that is now selected can be dragged at once (Shift is also "no snap" in a drag).
-                    if (!selected.Remove(hit)) selected.Add(hit);
-                    SelectionChanged?.Invoke();
-                    if (!selected.Contains(hit))
-                    {
-                        InvalidateVisual();
-                        e.Handled = true;
-                        return;
-                    }
-                    collapseOnRelease = false;
-                }
-                else
-                {
-                    collapseOnRelease = selected.Contains(hit) && selected.Count > 1;
-                    if (!selected.Contains(hit)) { selected.Clear(); selected.Add(hit); SelectionChanged?.Invoke(); }
-                }
-                grabbed = env.Points.First(q => q.Time == hit);
-                gesture = Gesture.Points;
-                previewDt = previewDv = 0;
-            }
-            else
-            {
-                gesture = XOf(0) <= p.X && axis.TimeAt(p.X) <= Last && !additive ? Gesture.Add : Gesture.Band;
-                if (gesture == Gesture.Add && selected.Count > 0) { selected.Clear(); SelectionChanged?.Invoke(); }
-            }
-            e.Pointer.Capture(this);
-            InvalidateVisual();
+            var result = lane.Pressed(p, e.KeyModifiers, e.ClickCount);
+            if (result == LaneController.Press.NotHandled) return;
+            if (result == LaneController.Press.Captured) e.Pointer.Capture(this);
             e.Handled = true;
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
-            if (env == null) return;
-            var p = e.GetPosition(this);
-            if (gesture == Gesture.None)
-            {
-                int hit = HitTest(p);
-                if (hit != hoverTime) { hoverTime = hit; InvalidateVisual(); }
-                return;
-            }
-            now = p;
-            if (!moved)
-            {
-                if (Math.Abs(p.X - down.X) < DragDistance && Math.Abs(p.Y - down.Y) < DragDistance) return;
-                moved = true;
-                if (gesture == Gesture.Add) gesture = Gesture.Band;
-            }
-            bool noSnap = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-            if (gesture == Gesture.Points)
-            {
-                int target = Snap(axis.TimeAt(p.X), noSnap);
-                int lo = selected.Min(), hi = selected.Max();
-                previewDt = Math.Clamp(target - grabbed.Time, -lo, Last - hi);
-                previewDv = ValueAt(p.Y) - grabbed.Value;
-            }
-            InvalidateVisual();
+            lane.PointerMoved(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
-            if (e.InitialPressMouseButton != MouseButton.Left || gesture == Gesture.None) return;
-            var p = e.GetPosition(this);
-            now = p;
-            var g = gesture;
-            bool noSnap = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-            gesture = Gesture.None;
+            if (e.InitialPressMouseButton != MouseButton.Left || !lane.IsDragging) return;
+            bool done = lane.Released(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
             e.Pointer.Capture(null);
-            switch (g)
-            {
-                case Gesture.Add:
-                {
-                    int time = Snap(axis.TimeAt(p.X), noSnap);
-                    insertTime = time;
-                    string why = editor.AddPoint(env, time, ValueAt(p.Y));
-                    selected.Clear();
-                    if (why == null) selected.Add(time);
-                    Commit(why);
-                    SelectionChanged?.Invoke();
-                    break;
-                }
-                case Gesture.Points when moved:
-                {
-                    int dt = previewDt, dv = previewDv;
-                    var times = selected.ToList();
-                    string why = editor.Move(env, times, dt, dv);
-                    selected.Clear();
-                    foreach (int t in times) selected.Add(Math.Clamp(t + dt, 0, Last));
-                    Commit(why);
-                    SelectionChanged?.Invoke();
-                    break;
-                }
-                case Gesture.Points:
-                    if (collapseOnRelease && !additive) { selected.Clear(); selected.Add(grabbed.Time); SelectionChanged?.Invoke(); }
-                    InvalidateVisual();
-                    break;
-                case Gesture.Band:
-                {
-                    var band = new Rect(down, p).Normalize();
-                    if (!moved) { if (!additive) { selected.Clear(); SelectionChanged?.Invoke(); } }
-                    else
-                    {
-                        var inside = env.Points.Where(q => band.Contains(new Point(XOf(q.Time), YOf(q.Value)))).Select(q => q.Time);
-                        Select(inside, additive);
-                    }
-                    InvalidateVisual();
-                    break;
-                }
-            }
-            moved = false;
-            e.Handled = true;
+            if (done) e.Handled = true;
         }
 
         protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
         {
             base.OnPointerCaptureLost(e);
-            if (gesture == Gesture.None) return;
-            gesture = Gesture.None;
-            moved = false;
-            InvalidateVisual();
+            lane.CaptureLost();
         }
 
         protected override void OnPointerExited(PointerEventArgs e)
         {
             base.OnPointerExited(e);
-            if (hoverTime >= 0 && gesture == Gesture.None) { hoverTime = -1; InvalidateVisual(); }
+            lane.PointerExited();
         }
 
         protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -658,116 +458,26 @@ namespace ReBuzz.Studio.Views.Detail
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
-            var mods = SessionView.Normalize(e.KeyModifiers);
-            bool ctrl = mods == KeyModifiers.Control;
-            bool handled = true;
-            switch (e.Key)
-            {
-                case Key.Delete:
-                case Key.Back when mods == KeyModifiers.None:
-                    DeleteSelection();
-                    break;
-                case Key.R when mods == KeyModifiers.None:
-                    ToggleRamp();
-                    break;
-                case Key.A when ctrl:
-                    SelectAll();
-                    break;
-                case Key.C when ctrl:
-                    CopySelection();
-                    break;
-                case Key.X when ctrl:
-                    CopySelection();
-                    DeleteSelection();
-                    break;
-                case Key.V when ctrl:
-                    Paste();
-                    break;
-                case Key.Escape:
-                    if (gesture != Gesture.None) { gesture = Gesture.None; moved = false; }
-                    else ClearSelection();
-                    InvalidateVisual();
-                    break;
-                default:
-                    handled = false;
-                    break;
-            }
-            if (handled) e.Handled = true;
+            if (lane.KeyDown(e.Key, e.KeyModifiers)) e.Handled = true;
         }
 
         // ------------------------------------------------------------------ edits (the keys, the buttons and the Edit commands call these)
 
-        void Commit(string why)
-        {
-            refusal = why;
-            Reload(force: true);
-            Edited?.Invoke();
-        }
-
-        public bool DeleteSelection()
-        {
-            if (env == null || selected.Count == 0) return false;
-            var times = selected.ToList();
-            selected.Clear();
-            Commit(editor.Delete(env, times));
-            SelectionChanged?.Invoke();
-            return true;
-        }
+        public bool DeleteSelection() => lane.DeleteSelection();
 
         /// <summary>The line after the selected points a ramp or a step: ramps unless every one of them is a ramp already.</summary>
-        public bool ToggleRamp()
-        {
-            if (env == null || selected.Count == 0) return false;
-            bool allRamps = env.Points.Where(p => selected.Contains(p.Time)).All(p => p.Ramp);
-            return SetRamp(!allRamps);
-        }
+        public bool ToggleRamp() => lane.ToggleRamp();
 
-        public bool SetRamp(bool ramp)
-        {
-            if (env == null || selected.Count == 0) return false;
-            Commit(editor.SetRamp(env, selected.ToList(), ramp));
-            return true;
-        }
+        public bool SetRamp(bool ramp) => lane.SetRamp(ramp);
 
-        public bool CopySelection()
-        {
-            if (env == null || selected.Count == 0) return false;
-            EnvelopeClipboard.Set(env.Points.Where(p => selected.Contains(p.Time)), SourceId, env.Param.Min, env.Param.Max);
-            return true;
-        }
+        public bool CopySelection() => lane.CopySelection();
 
-        string SourceId => $"{clip.Machine?.Name}|{ParamKey.Group}|{ParamKey.Index}|{ParamKey.Track}";
-
-        public bool Paste() => PasteAt(insertTime);
+        public bool Paste() => lane.Paste();
 
         /// <summary>Puts the copied points in at a clip time; they become the selection.</summary>
-        public bool PasteAt(int at)
-        {
-            var copied = EnvelopeClipboard.Points;
-            if (env == null || copied.Count == 0) return false;
-            bool same = EnvelopeClipboard.Source == SourceId;
-            var points = copied.Select(p => same ? p : p with
-            {
-                Value = EnvelopeClipboard.Max > EnvelopeClipboard.Min
-                    ? env.Param.ValueAt((p.Value - EnvelopeClipboard.Min) / (double)(EnvelopeClipboard.Max - EnvelopeClipboard.Min))
-                    : env.Param.Min,
-            }).ToList();
-            int shift = Math.Clamp(at, 0, Last) - points.Min(p => p.Time);
-            var landed = points.Select(p => p.Time + shift).Where(t => t >= 0 && t <= Last).ToList();
-            string why = editor.Paste(env, points, at);
-            selected.Clear();
-            if (why == null) foreach (int t in landed) selected.Add(t);
-            Commit(why);
-            SelectionChanged?.Invoke();
-            return why == null;
-        }
+        public bool PasteAt(int at) => lane.PasteAt(at);
 
         /// <summary>The points and their types now selected: all ramps, all steps or mixed.</summary>
-        internal (int Ramps, int Steps) SelectedKinds()
-        {
-            if (env == null) return (0, 0);
-            var sel = env.Points.Where(p => selected.Contains(p.Time)).ToList();
-            return (sel.Count(p => p.Ramp), sel.Count(p => !p.Ramp));
-        }
+        internal (int Ramps, int Steps) SelectedKinds() => lane.SelectedKinds();
     }
 }

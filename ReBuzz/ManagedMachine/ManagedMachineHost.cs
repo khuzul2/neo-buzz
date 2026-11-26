@@ -68,10 +68,6 @@ namespace ReBuzz.ManagedMachine
 
         private delegate void ExecuteCommandDelegate(BuzzCommand cmd);
 
-        private delegate int[] GetClipEditorMachineMIDIEventsDelegate(IClip clip);
-
-        private delegate void SetClipEditorMachineMIDIEventsDelegate(IClip clip, int[] data);
-
         private delegate IEnumerable<IClipEditorColumn> GetClipEditorEventsDelegate(IClip clip, int tbegin, int tend);
 
         private delegate void ActivateDelegate();
@@ -135,9 +131,7 @@ namespace ReBuzz.ManagedMachine
 
         private ExecuteCommandDelegate ExecuteCommandFunction;
 
-        private GetClipEditorMachineMIDIEventsDelegate GetClipEditorMachineMIDIEventsFunction;
 
-        private SetClipEditorMachineMIDIEventsDelegate SetClipEditorMachineMIDIEventsFunction;
 
         private GetClipEditorEventsDelegate GetClipEditorEventsFunction;
 
@@ -244,8 +238,6 @@ namespace ReBuzz.ManagedMachine
             GetClipEditorDataFunction = (GetClipEditorDataDelegate)GetMethod(typeof(GetClipEditorDataDelegate), "GetClipEditorData");
             CanExecuteCommandFunction = (CanExecuteCommandDelegate)GetMethod(typeof(CanExecuteCommandDelegate), "CanExecuteCommand");
             ExecuteCommandFunction = (ExecuteCommandDelegate)GetMethod(typeof(ExecuteCommandDelegate), "ExecuteCommand");
-            GetClipEditorMachineMIDIEventsFunction = (GetClipEditorMachineMIDIEventsDelegate)GetMethod(typeof(GetClipEditorMachineMIDIEventsDelegate), "GetClipEditorMachineMIDIEvents");
-            SetClipEditorMachineMIDIEventsFunction = (SetClipEditorMachineMIDIEventsDelegate)GetMethod(typeof(SetClipEditorMachineMIDIEventsDelegate), "SetClipEditorMachineMIDIEvents");
             GetClipEditorEventsFunction = (GetClipEditorEventsDelegate)GetMethod(typeof(GetClipEditorEventsDelegate), "GetClipEditorEvents");
             DescribeValueFunction = (DescribeValueDelegate)GetMethod(typeof(DescribeValueDelegate), "DescribeValue");
             ActivateFunction = (ActivateDelegate)GetMethod(typeof(ActivateDelegate), "Activate");
@@ -693,23 +685,6 @@ namespace ReBuzz.ManagedMachine
             }
 
             return;
-        }
-
-        internal int[] GetClipEditorMachineMIDIEvents(ClipCore clip)
-        {
-            if (GetClipEditorMachineMIDIEventsFunction != null)
-            {
-                return GetClipEditorMachineMIDIEventsFunction(clip);
-            }
-            else return new int[0];
-        }
-
-        internal void SetClipEditorMachineMIDIEvents(ClipCore clip, int[] data)
-        {
-            if (SetClipEditorMachineMIDIEventsFunction != null)
-            {
-                SetClipEditorMachineMIDIEventsFunction(clip, data);
-            }
         }
 
         internal IEnumerable<IClipEditorColumn> GetClipCloumnEvents(ClipCore clip, int tbegin, int tend)
