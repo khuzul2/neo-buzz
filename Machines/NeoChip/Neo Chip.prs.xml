@@ -44,9 +44,10 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="924" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="1" />
       </Parameters>
       <Attributes />
-      <Comment>Bold 50 % square mono lead with delayed vibrato and crisp stepped ADSR.</Comment>
+      <Comment>Bold 50 % square mono lead with delayed vibrato and clean smooth ADSR.</Comment>
     </Preset>
   </Item>
   <Item Key="Lead — Thin 12 %">
@@ -93,6 +94,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment>Cutting 12.5 % pulse lead with animated PWM and lively vibrato.</Comment>
@@ -142,6 +144,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="946" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="1" />
       </Parameters>
       <Attributes />
       <Comment>Tight mono 25 % pulse bass with snappy pluck-sustain envelope.</Comment>
@@ -191,6 +194,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="850" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="870" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Bright wide tempo-synced 1/32 major triad arpeggio across thin pulse duties.</Comment>
@@ -240,6 +244,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Driving mono minor octave-and-third run at 1/16T with a pulsing saw-down hardware envelope.</Comment>
@@ -289,9 +294,10 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="1000" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="826" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="1" />
       </Parameters>
       <Attributes />
-      <Comment>Wide three-voice detuned unison pad with slow PWM and stepped swell.</Comment>
+      <Comment>Wide three-voice detuned unison pad with slow PWM and smooth swell.</Comment>
     </Preset>
   </Item>
   <Item Key="Drums — Noise hat">
@@ -338,6 +344,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="250" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="946" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Crisp metallic 7-bit short LFSR hi-hat with a fast one-shot decay.</Comment>
@@ -387,6 +394,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="150" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="946" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Crunchy 15-bit long LFSR snare with a downward pitch sweep and one-shot decay.</Comment>
@@ -436,6 +444,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Fast downward pitch sweep on a 25 % pulse with one-shot decay.</Comment>
@@ -485,6 +494,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="0" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="935" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Crisp two-step fourth jump on a 50 % square wave with one-shot decay.</Comment>
@@ -534,6 +544,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="750" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="0" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="880" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Shimmering polyphonic bell driven by a rapid repeating triangle hardware envelope.</Comment>
@@ -583,6 +594,7 @@
         <Parameter Name="Stereo spread" Group="1" Index="38" Track="0" Value="800" />
         <Parameter Name="Lo-res DAC" Group="1" Index="39" Track="0" Value="1" />
         <Parameter Name="Volume" Group="1" Index="40" Track="0" Value="859" />
+        <Parameter Name="Envelope" Group="1" Index="41" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Stepped aliased pulse edges and 4-bit per-channel DAC with a rhythmic saw-down hardware envelope.</Comment>

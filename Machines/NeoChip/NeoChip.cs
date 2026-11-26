@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Chip
@@ -25,6 +26,8 @@ namespace NeoBuzz.Chip
         }
 
         internal ChipEngine Engine { get; private set; }
+
+        internal override StateMigrations Migrations => ChipEngine.Migrations;
 
         internal override void Restart()
         {

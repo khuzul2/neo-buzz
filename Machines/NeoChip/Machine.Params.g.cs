@@ -130,6 +130,9 @@ namespace NeoBuzz.Chip
         [ParameterDecl(Name = "Volume", Description = "Master output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
+        [ParameterDecl(Name = "Envelope", Description = "Stepped 16-level ADSR or continuous smooth ADSR (hardware modes stay stepped)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Envelope { get => Values[P.Envelope]; set => Values.Set(P.Envelope, value); }
+
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);
 

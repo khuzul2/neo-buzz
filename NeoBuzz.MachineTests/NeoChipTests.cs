@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Xml.Linq;
 using NeoBuzz.Chip;
 using NeoBuzz.Dsp;
@@ -1274,24 +1275,368 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void StateMigrationsRoundTrip()
         {
-            var chain = new StateMigrations(Params.Table);
+            var chain = ChipEngine.Migrations;
             Assert.That(chain.Validate(), Is.Empty);
-            Assert.That(chain.Current, Is.EqualTo(0));
+            Assert.That(chain.Current, Is.EqualTo(1));
             Assert.That(chain.Keys.Count, Is.EqualTo(Params.Table.Length));
 
-            var saved = new int[Params.Table.Length];
-            var keyed = new Dictionary<string, int>();
+            // v1 round-trip.
+            var savedV1 = new int[Params.Table.Length];
+            var keyedV1 = new Dictionary<string, int>();
             for (int i = 0; i < Params.Table.Length; i++)
             {
                 int val = Params.Table[i].Min + (Params.Table[i].Max - Params.Table[i].Min) / 2;
-                saved[i] = val;
-                keyed[Params.Table[i].Id] = val;
+                savedV1[i] = val;
+                keyedV1[Params.Table[i].Id] = val;
             }
-            var roundPos = chain.MigrateGlobals(0, saved);
-            Assert.That(roundPos, Is.EqualTo(saved));
-            var roundKey = chain.Migrate(0, keyed);
-            foreach (var kv in keyed)
-                Assert.That(roundKey[kv.Key], Is.EqualTo(kv.Value));
+            Assert.That(chain.MigrateGlobals(1, savedV1), Is.EqualTo(savedV1));
+            var roundKeyV1 = chain.Migrate(1, keyedV1);
+            foreach (var kv in keyedV1)
+                Assert.That(roundKeyV1[kv.Key], Is.EqualTo(kv.Value));
+
+            // v0 -> v1 migration preserves all 41 original globals and defaults Envelope (index 41) to Stepped (0).
+            var savedV0 = new int[41];
+            var keyedV0 = new Dictionary<string, int>();
+            for (int i = 0; i < 41; i++)
+            {
+                int val = Params.Table[i].Min + (Params.Table[i].Max - Params.Table[i].Min) / 2;
+                savedV0[i] = val;
+                keyedV0[Params.Table[i].Id] = val;
+            }
+            var migratedPos = chain.MigrateGlobals(0, savedV0);
+            Assert.That(migratedPos.Length, Is.EqualTo(42));
+            for (int i = 0; i < 41; i++)
+                Assert.That(migratedPos[i], Is.EqualTo(savedV0[i]), $"v0 global {i} preserved");
+            Assert.That(migratedPos[P.Envelope], Is.EqualTo(0), "v0 -> v1 migrates Envelope to Stepped (0)");
+
+            var migratedKey = chain.Migrate(0, keyedV0);
+            foreach (var kv in keyedV0)
+                Assert.That(migratedKey[kv.Key], Is.EqualTo(kv.Value), $"v0 keyed {kv.Key} preserved");
+            Assert.That(migratedKey["Envelope"], Is.EqualTo(0), "v0 -> v1 keyed migrates Envelope to Stepped (0)");
+        }
+
+        [Test]
+        public void SteppedRendersAreBitIdenticalToCb8c406aAcrossAllPresetsAndLines()
+        {
+            // Reference SHA-256 hashes of all 36 WAV renders (12 presets x 3 lines) captured on cb8c406a
+            // before the Envelope (Stepped/Smooth) parameter was added.
+            var expected = new Dictionary<string, string>
+            {
+                ["01-lead-square-hero__arpeggio"] = "ec0fd64b10144a46f6ec5b5316e3d0809d4490a04ae120fb776f487008c8f8ca",
+                ["01-lead-square-hero__drums"] = "c95e95cfbfb8f4558ff089e34f84fc3e2a3940693b2a2de0db72a77933761eb8",
+                ["01-lead-square-hero__melody"] = "6a7b0ec90f6e5ae593c0b99905deeb2a108beaabffe7d229c9d7ae5f7ca044e5",
+                ["02-lead-thin-12-pct__arpeggio"] = "8d37ba545708e63823c3f487e62eecd234b1f9588525f2237adbfb572c45fae4",
+                ["02-lead-thin-12-pct__drums"] = "6cfbb6a81317df9f8052bb0f765ece9c8d57cede3b4a1dd7932de192950c48c9",
+                ["02-lead-thin-12-pct__melody"] = "6a3d8f091972c5f1d27fd471dfb0b2b47feca9ba2ad25fc65fec4faae3fab861",
+                ["03-bass-pulse-bass__arpeggio"] = "2f17240f2e4c6adda8869e6133ede8b675198dfa9b0df9531d455004c21b8230",
+                ["03-bass-pulse-bass__drums"] = "43a6ea5c783222498f74f5ce088a6b6305be0cc98740c497bc40444f6878b012",
+                ["03-bass-pulse-bass__melody"] = "9555b2e624b8c11416f0b5d35326a9a4a631c97cc853efdee671440d81801fd5",
+                ["04-arp-major-sparkle__arpeggio"] = "88189258819379c97705b75f038504fc1195f1031f169797a5ba9d6c74ad798c",
+                ["04-arp-major-sparkle__drums"] = "e9ef283a12b0cb112463610ba0ee1d27df825088806e62e7bf46db899c57eaa3",
+                ["04-arp-major-sparkle__melody"] = "178b533cfc4ba02bb281408f4f812f27e729cb67e5c9932b9ad835cc27b8b37f",
+                ["05-arp-minor-run__arpeggio"] = "ba8d7ecef93a24dbdcd72a0a15c069ddbc9a86756ddca52d7188a2b4e5dd2c5a",
+                ["05-arp-minor-run__drums"] = "6a0fbaf4699b8843814a6c4e668bfcf013fd190262ffe86ac764d580a24adf4f",
+                ["05-arp-minor-run__melody"] = "635bb2048352d16f4576a04e3badecd735581fe484a7401d3923865908897472",
+                ["06-pad-unison-detune__arpeggio"] = "0e907f1011f703f879d1f834c3878c762b884b014bcfb01518ad5f021cd4c4dd",
+                ["06-pad-unison-detune__drums"] = "bdd3cc2caa64b599104a866cbc78652d5df3e7877935b470b13288dc583e0bea",
+                ["06-pad-unison-detune__melody"] = "a97b0e96b2608e81c4f2b77c8b1f3abc590e4f01fb50dbc55b098491e68fe93a",
+                ["07-drums-noise-hat__arpeggio"] = "12d64e9931df2fb5cd1119ef61b012ed0a6c58ffe5faeceb9e1aa8fd68ea3112",
+                ["07-drums-noise-hat__drums"] = "d4ee97c5a5b0f1f3af4a81ab7d8f9417c27b8744a59f3edfe7c7aaa94cb61ea1",
+                ["07-drums-noise-hat__melody"] = "264d8efae77b9d3eccb10c8e73056a99016e6175eca06991a138a0ca90f7c607",
+                ["08-drums-noise-snare__arpeggio"] = "a6430a9f1ed97ced1965eda047e655c7f752ea7db95f5f88326520c7e852eb17",
+                ["08-drums-noise-snare__drums"] = "2a8d7150abc8e02eb0e8e7e074090a0f2e87c3795fad8ff09f1cd29db519ef5d",
+                ["08-drums-noise-snare__melody"] = "9ed74f596fc6a2bd556a711f3d9719db256b17a2cd8eae3d597a721dca9d23b4",
+                ["09-fx-laser-sweep__arpeggio"] = "df03fbf0e1316b09f89b0403ec6e4696228e5bd409cfd9ddd2da8c717bea5f2f",
+                ["09-fx-laser-sweep__drums"] = "a4ad063180a432b9f0e39590ce58502782f68ea5ba4beb11f1d4519cdfb53c49",
+                ["09-fx-laser-sweep__melody"] = "e4009ac755cf6e7300ca6b10a577abe66c805aaeea95093f8d612e559d75818b",
+                ["10-fx-coin__arpeggio"] = "b204d48adffdef1aee658969094bd7c960334953cb9477c7890b58833fbec3cb",
+                ["10-fx-coin__drums"] = "cc0b9bd7013807465e4239ee98ab688af467075155f7c90bf9edad1a32f39e2a",
+                ["10-fx-coin__melody"] = "6e1247c1ab48dbfcf5ea5b197468d55f759be8b6c86c18ab1e897557d2e82f2d",
+                ["11-bell-hardware-envelope__arpeggio"] = "15dfb167f46865a8418eb45c47cd7566c316f6ff2a027615e82011077b15e8a7",
+                ["11-bell-hardware-envelope__drums"] = "b5ed2ff8b3ded984c887963612bf624a69224243240b7a978f5501e8996378a0",
+                ["11-bell-hardware-envelope__melody"] = "6f41b2f90c36dbfcfe32d111d72935f1429893249e62b022ecbad45ba1d9f1b0",
+                ["12-raw-lo-res-grit__arpeggio"] = "016240c2f5c0dfe314babde55128b202586fed6f9c0335e629151b2d1d70f96c",
+                ["12-raw-lo-res-grit__drums"] = "1142f1f34820baa16eead8e3731ac86a689a4733d16bbb5fc0c660d68d29cebd",
+                ["12-raw-lo-res-grit__melody"] = "24abb53c1c9f937236535f90f33ac81c1e00efbb406161c6120d6706a1371493",
+            };
+
+            string prsPath = Path.Combine(NeoChipPack.RepoRoot(), "Machines", "NeoChip", "Neo Chip.prs.xml");
+            var items = XDocument.Load(prsPath).Root!.Elements("Item").ToList();
+            Assert.That(items.Count, Is.EqualTo(12));
+
+            var smoothSet = new HashSet<string>(NeoChipPack.SmoothPresetNames);
+            var lines = new (string Name, NeoChipPack.NoteEvent[] Events)[]
+            {
+                ("arpeggio", NeoChipPack.ArpeggioLine()),
+                ("drums", NeoChipPack.NoiseDrumLine()),
+                ("melody", NeoChipPack.MelodyLine()),
+            };
+
+            int idx = 1;
+            foreach (var item in items)
+            {
+                string name = (string)item.Attribute("Key")!;
+                var v = new ParamValues(Params.Table);
+                foreach (var p in item.Element("Preset")!.Element("Parameters")!.Elements("Parameter"))
+                    v.Set((int)p.Attribute("Index")!, (int)p.Attribute("Value")!);
+
+                bool isSmoothPreset = smoothSet.Contains(name);
+                Assert.That(v.Choice(P.Envelope), Is.EqualTo(isSmoothPreset ? 1 : 0),
+                    $"Preset '{name}' Envelope must be {(isSmoothPreset ? "Smooth" : "Stepped")}");
+
+                // For the 4 Smooth presets, force Stepped (0) to verify the Stepped path matches cb8c406a bit-identically;
+                // for the other 8 presets, leave the preset XML untouched to prove they stayed Stepped and bit-identical.
+                if (isSmoothPreset) v.Set(P.Envelope, 0);
+
+                foreach (var (lineName, evs) in lines)
+                {
+                    var (l, r, _) = NeoChipPack.RenderLine(v, evs, 16.0);
+                    string hash = Convert.ToHexString(SHA256.HashData(NeoChipPack.WavBytes(l, r))).ToLowerInvariant();
+                    string key = $"{idx:00}-{NeoChipPack.Slug(name)}__{lineName}";
+                    Assert.That(hash, Is.EqualTo(expected[key]), $"Stepped render '{key}' must be bit-identical to cb8c406a");
+                }
+                idx++;
+            }
+            Measure.Report("Neo Chip Stepped bit-identicality: all 36 renders (12 presets x 3 lines) match cb8c406a SHA-256 bit-for-bit");
+        }
+
+        [TestCase(52, 164.8138)] // ~165 Hz (E3)
+        [TestCase(64, 329.6276)] // ~330 Hz (E4)
+        [TestCase(76, 659.2551)] // ~659 Hz (E5)
+        public void SmoothReleaseHasAtLeast8DbLowerBetweenHarmonicEnergyThanStepped(int midiNote, double f0Hz)
+        {
+            // Coordinator gate: on a held 25 % pulse note at 165, 330 and 659 Hz, the Smooth release
+            // measures at least 8 dB lower in between-harmonic energy than Stepped (2 to 20 kHz,
+            // outside +/-12 % of each harmonic, over the release window).
+            double MeasureBetweenHarmonicDb(bool smooth)
+            {
+                var (e, _) = Make(v =>
+                {
+                    v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                    v.Set(P.P1Duty, 1);          // 25 % pulse
+                    v.Set(P.P1Pwm, 0);
+                    v.Set(P.Raw, 0);
+                    v.Set(P.LoResDac, 0);
+                    v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                    v.Set(P.Envelope, smooth ? 1 : 0);
+                    Set(v, P.EnvAttack, 0.002);
+                    Set(v, P.EnvDecay, 0.12);
+                    v.Set(P.EnvSustain, 15);
+                    Set(v, P.EnvRelease, 0.15); // 150 ms release (10 ms/step in Stepped; Hann main lobe +/-13.3 Hz < +/-12% of 165 Hz)
+                    Set(v, P.Spread, 0.0);
+                    Set(v, P.Volume, 0.0);
+                });
+
+                int holdSamples = 12288; // 256 ms (settled in sustain)
+                int relSamples = (int)Math.Round(0.15 * Measure.Rate); // 150 ms release window (7200 samples)
+                int fftLen = 16384;      // 2.93 Hz/bin resolution
+                int total = holdSamples + relSamples + 512;
+                e.NoteOn(1000 + midiNote, midiNote, 0.9f, 0);
+                var (l, _) = RenderStereo(e, total, pos =>
+                {
+                    if (pos == holdSamples) e.NoteOff(1000 + midiNote, midiNote, 0);
+                });
+
+                // Hann-windowed, zero-padded FFT over the release window.
+                var win = new float[fftLen];
+                for (int i = 0; i < relSamples; i++)
+                {
+                    double w = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * i / (relSamples - 1)));
+                    win[i] = (float)(l[holdSamples + i] * w);
+                }
+                var mag = Measure.Spectrum(win, 0, fftLen);
+                double binHz = (double)Measure.Rate / fftLen;
+                double totalPow = 0.0;
+                double betweenPow = 0.0;
+                for (int k = 1; k < mag.Length; k++)
+                {
+                    double f = k * binHz;
+                    if (f < 2000.0 || f > 20000.0) continue;
+                    double p = mag[k] * mag[k];
+                    totalPow += p;
+                    double hIdx = f / f0Hz;
+                    double dist = Math.Abs(hIdx - Math.Round(hIdx));
+                    if (dist > 0.12)
+                        betweenPow += p;
+                }
+                return 10.0 * Math.Log10(Math.Max(1e-20, betweenPow) / Math.Max(1e-20, totalPow));
+            }
+
+            double steppedDb = MeasureBetweenHarmonicDb(smooth: false);
+            double smoothDb = MeasureBetweenHarmonicDb(smooth: true);
+            double reductionDb = steppedDb - smoothDb;
+            Measure.Report($"Neo Chip 25% pulse release between-harmonic (2-20 kHz, f0={f0Hz:F1} Hz): Stepped {steppedDb:F1} dB vs Smooth {smoothDb:F1} dB (reduction {reductionDb:F1} dB)");
+            Assert.That(reductionDb, Is.GreaterThanOrEqualTo(8.0),
+                $"Smooth release at {f0Hz:F1} Hz must be >= 8 dB lower in between-harmonic energy (Stepped {steppedDb:F1} dB, Smooth {smoothDb:F1} dB)");
+        }
+
+        [Test]
+        public void SmoothEnvelopeGainTraceHasNoStepLargerThanOneFifteenthPerMsAndKeepsFades()
+        {
+            // 1. Held ADSR in Smooth mode: max 1 ms delta <= 1/15, 0 gain clicks, exact sustain = 10/15.
+            var (e, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                v.Set(P.Envelope, 1); // Smooth
+                Set(v, P.EnvAttack, 0.15);
+                Set(v, P.EnvDecay, 0.18);
+                v.Set(P.EnvSustain, 10);
+                Set(v, P.EnvRelease, 0.15);
+            });
+
+            int total = 36000;
+            var gainTrace = new float[total];
+            var blockTrace = new[] { new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock], new float[ChipEngine.MaxBlock] };
+            e.GainTrace = blockTrace;
+            var bl = new float[ChipEngine.MaxBlock];
+            var br = new float[ChipEngine.MaxBlock];
+
+            e.NoteOn(1060, 60, 1f, 0);
+            for (int pos = 0; pos < total; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == 22016) e.NoteOff(1060, 60, 0);
+                int n = Math.Min(ChipEngine.MaxBlock, total - pos);
+                e.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, gainTrace, pos, n);
+            }
+
+            const int OneMs = 48;
+            const double OneStep = 1.0 / 15.0;
+            double maxDelta1Ms = 0;
+            for (int i = OneMs; i < total; i++)
+            {
+                double d = Math.Abs(gainTrace[i] - gainTrace[i - OneMs]);
+                if (d > maxDelta1Ms) maxDelta1Ms = d;
+            }
+            int clicks = NeoChipPack.DetectGainClicks(gainTrace, Measure.Rate);
+            double sustainGain = gainTrace[20000];
+            Measure.Report($"Neo Chip Smooth ADSR gain trace: max 1 ms delta {maxDelta1Ms:F5} (limit {OneStep:F5}), sustain {sustainGain:F5} (10/15={10.0 / 15.0:F5}), clicks {clicks}");
+            Assert.That(maxDelta1Ms, Is.LessThanOrEqualTo(OneStep + 1e-4), "Smooth gain trace has no step > 1/15 per ms");
+            Assert.That(sustainGain, Is.EqualTo(10.0 / 15.0).Within(1e-3), "Smooth sustain matches sustain step / 15");
+            Assert.That(clicks, Is.EqualTo(0), "Smooth ADSR gain trace has 0 clicks");
+
+            // 2. Minimum release (>= 2 ms fade) and hard note-off (>= 2 ms fade) preserved in Smooth mode.
+            var (eMinRel, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                v.Set(P.Envelope, 1);
+                Set(v, P.EnvAttack, 0.001);
+                v.Set(P.EnvSustain, 15);
+                Set(v, P.EnvRelease, 0.001);
+            });
+            var minRelTrace = new float[4096];
+            eMinRel.GainTrace = blockTrace;
+            eMinRel.NoteOn(1060, 60, 1f, 0);
+            int relAt = 1024;
+            for (int pos = 0; pos < minRelTrace.Length; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == relAt) eMinRel.NoteOff(1060, 60, 0);
+                int n = Math.Min(ChipEngine.MaxBlock, minRelTrace.Length - pos);
+                eMinRel.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, minRelTrace, pos, n);
+            }
+            int riseSmp = 0;
+            while (riseSmp < 500 && minRelTrace[riseSmp] < 0.99f) riseSmp++;
+            int relFall = 0;
+            while (relAt + relFall < minRelTrace.Length && minRelTrace[relAt + relFall] > 1e-3f) relFall++;
+            Assert.That(riseSmp, Is.GreaterThanOrEqualTo(47), $"Smooth note-on >= 1 ms (was {riseSmp} smp)");
+            Assert.That(relFall, Is.GreaterThanOrEqualTo(95), $"Smooth min-release >= 2 ms (was {relFall} smp)");
+
+            var (eHard, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                v.Set(P.Envelope, 1);
+                Set(v, P.EnvAttack, 0.002);
+                v.Set(P.EnvSustain, 15);
+            });
+            var hardTrace = new float[4096];
+            eHard.GainTrace = blockTrace;
+            eHard.NoteOn(1060, 60, 1f, 0);
+            int hardAt = 1024;
+            for (int pos = 0; pos < hardTrace.Length; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == hardAt) eHard.AllNotesOff(true);
+                int n = Math.Min(ChipEngine.MaxBlock, hardTrace.Length - pos);
+                eHard.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, hardTrace, pos, n);
+            }
+            int hardFall = 0;
+            while (hardAt + hardFall < hardTrace.Length && hardTrace[hardAt + hardFall] > 1e-3f) hardFall++;
+            Assert.That(hardFall, Is.GreaterThanOrEqualTo(96), $"Smooth hard note-off >= 2 ms (was {hardFall} smp)");
+            Assert.That(hardTrace[^1], Is.EqualTo(0f));
+
+            // 3. Mono legato retrigger keeps continuous phase and gain in Smooth mode (0 clicks).
+            var (eMono, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Mono);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                v.Set(P.Envelope, 1);
+                Set(v, P.EnvAttack, 0.08);
+                v.Set(P.EnvSustain, 14);
+                Set(v, P.EnvRelease, 0.25);
+            });
+            var monoTrace = new float[8192];
+            eMono.GainTrace = blockTrace;
+            eMono.NoteOn(1060, 60, 0.8f, 0);
+            double phaseBefore = 0, phaseAfter = 0;
+            for (int pos = 0; pos < monoTrace.Length; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == 3072) eMono.NoteOff(1060, 60, 0);
+                if (pos == 4096)
+                {
+                    phaseBefore = eMono.ChannelPulsePhase(0);
+                    eMono.NoteOn(1064, 64, 0.9f, 0);
+                    phaseAfter = eMono.ChannelPulsePhase(0);
+                }
+                int n = Math.Min(ChipEngine.MaxBlock, monoTrace.Length - pos);
+                eMono.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, monoTrace, pos, n);
+            }
+            Assert.That(phaseAfter, Is.EqualTo(phaseBefore).Within(1e-12), "Smooth Mono retrigger preserves pulse phase");
+            Assert.That(Math.Abs(monoTrace[4096] - monoTrace[4095]), Is.LessThan(0.01), "Smooth Mono retrigger has no gain jump");
+            Assert.That(NeoChipPack.DetectGainClicks(monoTrace, Measure.Rate), Is.EqualTo(0));
+
+            // 4. Poly voice steal fades smoothly through exact 0 before phase reset in Smooth mode.
+            var (ePoly, _) = Make(v =>
+            {
+                v.Set(P.VoiceMode, (int)ChipVoiceMode.Poly);
+                v.Set(P.EnvMode, (int)ChipEnvMode.Adsr);
+                v.Set(P.Envelope, 1);
+                Set(v, P.EnvAttack, 0.005);
+                v.Set(P.EnvSustain, 15);
+            });
+            var polyTrace = new float[8192];
+            ePoly.GainTrace = blockTrace;
+            ePoly.NoteOn(1060, 60, 1f, 0);
+            ePoly.NoteOn(1064, 64, 1f, 0);
+            ePoly.NoteOn(1067, 67, 1f, 0);
+            for (int pos = 0; pos < polyTrace.Length; pos += ChipEngine.MaxBlock)
+            {
+                if (pos == 2048) ePoly.NoteOn(1072, 72, 1f, 0);
+                int n = Math.Min(ChipEngine.MaxBlock, polyTrace.Length - pos);
+                ePoly.Process(bl, br, n);
+                Array.Copy(blockTrace[0], 0, polyTrace, pos, n);
+            }
+            float minInSteal = 1f;
+            for (int i = 2048; i < 2048 + 160; i++) if (polyTrace[i] < minInSteal) minInSteal = polyTrace[i];
+            Assert.That(minInSteal, Is.EqualTo(0f), "Smooth Poly steal fades through exact 0");
+            Assert.That(NeoChipPack.DetectGainClicks(polyTrace, Measure.Rate), Is.EqualTo(0));
+
+            // 5. Hardware envelope modes stay bit-identical stepped in both Stepped and Smooth settings.
+            foreach (var hwMode in new[] { ChipEnvMode.SawDown, ChipEnvMode.Triangle, ChipEnvMode.DecayShot })
+            {
+                var (eStep, _) = Make(v => { v.Set(P.EnvMode, (int)hwMode); v.Set(P.Envelope, 0); Set(v, P.EnvPeriod, 0.08); });
+                var (eSmo, _) = Make(v => { v.Set(P.EnvMode, (int)hwMode); v.Set(P.Envelope, 1); Set(v, P.EnvPeriod, 0.08); });
+                eStep.NoteOn(1060, 60, 0.9f, 0);
+                eSmo.NoteOn(1060, 60, 0.9f, 0);
+                var (ls, rs) = RenderStereo(eStep, 8192, pos => { if (pos == 5120) eStep.NoteOff(1060, 60, 0); });
+                var (lm, rm) = RenderStereo(eSmo, 8192, pos => { if (pos == 5120) eSmo.NoteOff(1060, 60, 0); });
+                Assert.That(lm, Is.EqualTo(ls), $"Hardware mode {hwMode} L must stay bit-identical stepped in Smooth");
+                Assert.That(rm, Is.EqualTo(rs), $"Hardware mode {hwMode} R must stay bit-identical stepped in Smooth");
+            }
         }
 
         [Test]

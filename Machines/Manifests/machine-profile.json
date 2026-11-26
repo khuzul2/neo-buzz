@@ -13964,13 +13964,13 @@
       "note_parameter": "Note",
       "takes_midi": true
     },
-    "parameters": 41,
+    "parameters": 42,
     "track_parameters": 0,
-    "inferred": 41,
+    "inferred": 42,
     "from_description": 0,
     "inference_check": {
-      "agree": 41,
-      "of": 41
+      "agree": 42,
+      "of": 42
     },
     "notes": {
       "input": "midi",

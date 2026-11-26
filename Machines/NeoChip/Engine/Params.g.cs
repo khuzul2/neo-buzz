@@ -49,7 +49,8 @@ namespace NeoBuzz.Chip
         public const int Spread = 38;
         public const int LoResDac = 39;
         public const int Volume = 40;
-        public const int Count = 41;
+        public const int Envelope = 41;
+        public const int Count = 42;
     }
 
     internal static class Params
@@ -100,6 +101,7 @@ namespace NeoBuzz.Chip
             new ParamDef(P.Spread, "Spread", "Stereo spread", 0, 1000, 350, MapKind.Percent, group: "Output", description: "Stereo spread across the channels", how: "Widens the stereo positions of the three pulse channels and noise channel symmetrically from 0 to 100 percent.", sound: "Zero keeps everything focused in mono, and higher values open chords and unison wide."),
             new ParamDef(P.LoResDac, "LoResDac", "Lo-res DAC", 0, 1, 0, MapKind.Switch, group: "Output", description: "4-bit per-channel DAC quantisation mixed linearly", how: "Quantises each channel's output to a 4-bit stepped DAC grid before linear stereo mixing.", sound: "Adds crunchy, authentic low-resolution quantization grain and harmonic grit on quiet tails and sweeps."),
             new ParamDef(P.Volume, "Volume", "Volume", 0, 1000, 739, MapKind.Db, a: -40, b: 6, flag: true, group: "Output", description: "Master output level", how: "Sets the overall output level of the instrument from -40 to +6 dB, or silence at minimum.", sound: "Balances the instrument in the mix without altering its tone or quantization grain."),
+            new ParamDef(P.Envelope, "Envelope", "Envelope", 0, 1, 0, MapKind.Enum, names: new[] { "Stepped", "Smooth" }, group: "Envelope", description: "Stepped 16-level ADSR or continuous smooth ADSR (hardware modes stay stepped)", how: "Switches the ADSR envelope between 16-level hardware steps and a continuous smooth curve; hardware envelope shapes stay stepped in both settings.", sound: "Stepped gives classic lo-fi chip decay grit, while Smooth keeps short decays and releases clean and crackle-free."),
         };
     }
 }

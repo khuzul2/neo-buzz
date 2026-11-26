@@ -713,6 +713,23 @@
    "description": "Master output level",
    "how": "Sets the overall output level of the instrument from -40 to +6 dB, or silence at minimum.",
    "sound": "Balances the instrument in the mix without altering its tone or quantization grain."
+  },
+  {
+   "index": 41,
+   "id": "Envelope",
+   "name": "Envelope",
+   "group": "Envelope",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Stepped",
+    "Smooth"
+   ],
+   "description": "Stepped 16-level ADSR or continuous smooth ADSR (hardware modes stay stepped)",
+   "how": "Switches the ADSR envelope between 16-level hardware steps and a continuous smooth curve; hardware envelope shapes stay stepped in both settings.",
+   "sound": "Stepped gives classic lo-fi chip decay grit, while Smooth keeps short decays and releases clean and crackle-free."
   }
  ]
 }

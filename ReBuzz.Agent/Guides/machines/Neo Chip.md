@@ -3,7 +3,7 @@
 A four-channel sound-chip instrument: three pulse channels with selectable duty cycles (12.5, 25, 50 and 75 %) plus continuous pulse-width modulation, and a linear-feedback shift-register noise channel with a 15-bit long mode for crisp percussion and a 7-bit short mode for pitched metallic buzz. Pulse edges are band-limited by default for clean high notes, with a `Raw` switch that keeps the stepped, aliased edges in on purpose, and a `Lo-res DAC` switch that quantises each channel to 4-bit resolution before linear mixing.
 
 - Tracks 1–3 drive pulse channels 1–3 directly and track 4 drives the noise channel. From MIDI or the piano roll, `Voice mode` routes notes across the three pulse channels (`Poly` round-robin with oldest-note stealing, `Mono` last-note, or `Unison` detuned by `Detune`), while `Noise MIDI ch` (default `10`, or `All` for noise-only kits) routes MIDI notes to noise.
-- The volume envelope runs in 16 discrete 4-bit steps (0–15), either as a stepped ADSR or in five hardware-style repeating and one-shot shapes (`Saw down`, `Saw up`, `Triangle`, `Decay shot`, `Attack hold`) with a period in milliseconds or tempo-synced.
+- The volume envelope supports ADSR (either `Envelope` = `Stepped` in 16 discrete 4-bit steps 0–15, or `Envelope` = `Smooth` for a continuous crackle-free curve with the same times and sustain level) and five hardware-style repeating and one-shot shapes (`Saw down`, `Saw up`, `Triangle`, `Decay shot`, `Attack hold`) with a period in milliseconds or tempo-synced. Hardware envelope modes always stay stepped in both `Stepped` and `Smooth` settings.
 - Per-track motion adds a 1–3 step semitone arpeggiator (free Hz or tempo-synced 1/16 to 1/64, straight or triplet), linear `Pitch sweep` in semitones per second, and delayed pitch vibrato.
 - Every parameter has a How and a Sound sentence in `machine_describe`; `param_set` takes the parameter name or id.
 
@@ -18,9 +18,9 @@ A four-channel sound-chip instrument: three pulse channels with selectable duty 
 | P1 duty | 50% | 50% is hollow and full; 25% and 12.5% sound progressively thinner and more nasal |
 | Voice mode | Poly | Poly plays three-note chords; Mono tightens leads/basses; Unison stacks all three pulses |
 | Raw | Off | Off band-limits pulse edges cleanly; On keeps raw aliased edges for extra sparkle |
-| Env mode | ADSR | Stepped 16-level ADSR, or repeating/one-shot hardware shapes for bells and drums |
+| Env mode | ADSR | ADSR envelope, or repeating/one-shot hardware shapes (always stepped) for bells and drums |
+| Envelope | Stepped | Stepped gives 16-level chip decay grit; Smooth gives continuous ADSR without release crackle |
 | Arp mode | Off | Up, Down, Up-Down or As written cycles `Arp step 1` to `Arp step 3` per track |
-| Pitch sweep | 0.0 st/s | Negative sweeps make laser drops and snare punch; positive sweeps rise |
 | Noise mode | Long | Long (15-bit) is white noise for snares; Short (7-bit) is pitched metallic buzz |
 | Lo-res DAC | Off | Quantises each channel to 4-bit steps before linear mixing for authentic grain |
 

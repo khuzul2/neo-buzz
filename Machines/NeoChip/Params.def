@@ -139,3 +139,9 @@ LoResDac    "Lo-res DAC"    0 1    0    switch                          | 4-bit 
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Master output level
     how Sets the overall output level of the instrument from -40 to +6 dB, or silence at minimum.
     sound Balances the instrument in the mix without altering its tone or quantization grain.
+
+# Smooth envelope option (state version 1). Appended: older songs and presets default to Stepped (0).
+group Envelope
+Envelope    "Envelope"      0 1    0    enum Stepped Smooth             | Stepped 16-level ADSR or continuous smooth ADSR (hardware modes stay stepped)
+    how Switches the ADSR envelope between 16-level hardware steps and a continuous smooth curve; hardware envelope shapes stay stepped in both settings.
+    sound Stepped gives classic lo-fi chip decay grit, while Smooth keeps short decays and releases clean and crackle-free.

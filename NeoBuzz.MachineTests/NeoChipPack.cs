@@ -18,12 +18,12 @@ namespace NeoBuzz.MachineTests
     [Explicit("Generates local listening pack in listening-packs/186/ (never committed).")]
     public class NeoChipPack
     {
-        const int Rate = 48000;
-        const double Bpm = 128.0;
+        internal const int Rate = 48000;
+        internal const double Bpm = 128.0;
 
-        readonly record struct NoteEvent(double StartBeat, double DurationBeats, int Note, float Velocity, int MidiChannel, bool UseTrack4 = false);
+        internal readonly record struct NoteEvent(double StartBeat, double DurationBeats, int Note, float Velocity, int MidiChannel, bool UseTrack4 = false);
 
-        static string RepoRoot()
+        internal static string RepoRoot()
         {
             for (var d = new DirectoryInfo(AppContext.BaseDirectory); d != null; d = d.Parent)
                 if (Directory.Exists(Path.Combine(d.FullName, "Machines")) && Directory.Exists(Path.Combine(d.FullName, "NeoBuzz.MachineTests")))
@@ -31,11 +31,11 @@ namespace NeoBuzz.MachineTests
             throw new DirectoryNotFoundException("Repository root not found");
         }
 
-        static string Slug(string name) =>
+        internal static string Slug(string name) =>
             Regex.Replace(name.ToLowerInvariant().Replace("—", "-").Replace("%", "pct"), @"[^a-z0-9]+", "-").Trim('-');
 
         // 1. Heroic 4-bar melody (MIDI ch 1) with accents and real note-offs.
-        static NoteEvent[] MelodyLine() => new[]
+        internal static NoteEvent[] MelodyLine() => new[]
         {
             new NoteEvent(0.0, 0.75, 64, 0.90f, 0),
             new NoteEvent(1.0, 0.45, 67, 0.80f, 0),
@@ -58,7 +58,7 @@ namespace NeoBuzz.MachineTests
         };
 
         // 2. 4-bar chord/arpeggio progression (Am - F - C - G, 3 voices on MIDI ch 1).
-        static NoteEvent[] ArpeggioLine() => new[]
+        internal static NoteEvent[] ArpeggioLine() => new[]
         {
             // Bar 1: Am (A3, C4, E4)
             new NoteEvent(0.0, 3.6, 57, 0.85f, 0),
@@ -79,7 +79,7 @@ namespace NeoBuzz.MachineTests
         };
 
         // 3. 4-bar noise drum groove on Track 4 (high hat hits on 8ths + lower snare accents on 2 & 4).
-        static NoteEvent[] NoiseDrumLine()
+        internal static NoteEvent[] NoiseDrumLine()
         {
             var evs = new List<NoteEvent>();
             for (int bar = 0; bar < 4; bar++)
@@ -98,14 +98,14 @@ namespace NeoBuzz.MachineTests
             return evs.ToArray();
         }
 
-        static (float[] L, float[] R, float[][] Gains) RenderLine(ParamValues v, NoteEvent[] events, double totalBeats)
+        internal static (float[] L, float[] R, float[][] Gains) RenderLine(ParamValues v, NoteEvent[] events, double totalBeats, int exactSamples = 0)
         {
             var e = new ChipEngine(v);
             e.SetSampleRate(Rate);
             e.Tempo = Bpm;
 
             double secPerBeat = 60.0 / Bpm;
-            int totalSamples = (int)Math.Ceiling((totalBeats + 2.0) * secPerBeat * Rate);
+            int totalSamples = exactSamples > 0 ? exactSamples : (int)Math.Ceiling((totalBeats + 2.0) * secPerBeat * Rate);
             var outL = new float[totalSamples];
             var outR = new float[totalSamples];
             var gains = new float[4][];
@@ -248,11 +248,11 @@ namespace NeoBuzz.MachineTests
             return max;
         }
 
-        static void WriteWav16(string path, float[] l, float[] r, int rate = Rate)
+        internal static byte[] WavBytes(float[] l, float[] r, int rate = Rate)
         {
             int n = l.Length;
-            using var fs = File.Create(path);
-            using var bw = new BinaryWriter(fs);
+            using var ms = new MemoryStream(44 + n * 4);
+            using var bw = new BinaryWriter(ms, Encoding.ASCII, leaveOpen: true);
             int dataBytes = n * 4; // stereo 16-bit
             bw.Write(Encoding.ASCII.GetBytes("RIFF"));
             bw.Write(36 + dataBytes);
@@ -274,7 +274,20 @@ namespace NeoBuzz.MachineTests
                 bw.Write(sl);
                 bw.Write(sr);
             }
+            bw.Flush();
+            return ms.ToArray();
         }
+
+        static void WriteWav16(string path, float[] l, float[] r, int rate = Rate) =>
+            File.WriteAllBytes(path, WavBytes(l, r, rate));
+
+        internal static readonly string[] SmoothPresetNames =
+        {
+            "Lead — Square hero",
+            "Lead — Thin 12 %",
+            "Bass — Pulse bass",
+            "Pad — Unison detune",
+        };
 
         [Test]
         public void BuildListeningPack186()
@@ -282,31 +295,26 @@ namespace NeoBuzz.MachineTests
             string root = RepoRoot();
             string outDir = Path.Combine(root, "listening-packs", "186");
             Directory.CreateDirectory(outDir);
+            foreach (var oldWav in Directory.GetFiles(outDir, "*.wav"))
+                File.Delete(oldWav);
 
             string prsPath = Path.Combine(root, "Machines", "NeoChip", "Neo Chip.prs.xml");
             var doc = XDocument.Load(prsPath);
-            var items = doc.Root!.Elements("Item").ToList();
-
-            var lines = new (string Name, NoteEvent[] Events)[]
-            {
-                ("melody", MelodyLine()),
-                ("arpeggio", ArpeggioLine()),
-                ("drums", NoiseDrumLine()),
-            };
+            var byName = doc.Root!.Elements("Item").ToDictionary(x => (string)x.Attribute("Key")!);
+            var melody = MelodyLine();
+            const int EightSecSamples = 8 * Rate;
 
             var readme = new StringBuilder();
-            readme.AppendLine("# Neo Chip — Listening Pack (Issue #186)");
+            readme.AppendLine("# Neo Chip — Listening Pack, Round 3 Smooth Envelope (Issue #186)");
             readme.AppendLine();
-            readme.AppendLine("Rendered by `NeoBuzz.MachineTests/NeoChipPack.cs` at 48 kHz, 16-bit stereo WAV, 128 BPM (git-ignored, never committed).");
+            readme.AppendLine("Rendered by `NeoBuzz.MachineTests/NeoChipPack.cs` at 48 kHz, 16-bit stereo WAV, 128 BPM, 8.0 s each (git-ignored, never committed).");
             readme.AppendLine();
-            readme.AppendLine("## Sources (written in code)");
-            readme.AppendLine("- `melody`: 4-bar melodic phrase on MIDI channel 1 with dynamic accents and real note-offs.");
-            readme.AppendLine("- `arpeggio`: 4-bar 3-note chord progression (Am – F – C – G) on MIDI channel 1.");
-            readme.AppendLine("- `drums`: 4-bar noise percussion groove on Track 4 (8th-note hats and beats 2 & 4 snare accents).");
+            readme.AppendLine("## Contents");
+            readme.AppendLine("The four Smooth-envelope presets (`Envelope = Smooth`) on the 4-bar `melody` line (MIDI channel 1 with accents and real note-offs). The other 8 presets remain `Envelope = Stepped` and bit-identical to `cb8c406a`.");
             readme.AppendLine();
             readme.AppendLine("## Click detectors (audio + gain trace)");
             readme.AppendLine("- **Audio:** Frame-peak second-difference detector (128-sample frame max `d2` vs local mean of 14 neighbouring frames, threshold `4.5x` & `> 0.15`, 20 ms refractory window).");
-            readme.AppendLine("- **Gain trace:** Direct second-difference detector on each channel's live `envGain * stealGain` trace, threshold `|g[i+1] - 2g[i] + g[i-1]| > 0.015` (5 ms refractory; un-slewed 1/15 step = `0.0667`).");
+            readme.AppendLine("- **Gain trace:** Direct second-difference detector on each channel's live `envGain * velGain * stealGain` trace, threshold `|g[i+1] - 2g[i] + g[i-1]| > 0.015` (5 ms refractory; un-slewed 1/15 step = `0.0667`).");
             readme.AppendLine();
             readme.AppendLine("| # | Preset | Line | File | RMS (dBFS) | Peak (dBFS) | Audio clicks | Gain clicks | Max gain d2 | Notes |");
             readme.AppendLine("|---|---|---|---|---:|---:|---:|---:|---:|---|");
@@ -314,39 +322,36 @@ namespace NeoBuzz.MachineTests
             int totalAudioClicks = 0;
             int totalGainClicks = 0;
             int idx = 1;
-            foreach (var item in items)
+            foreach (string name in SmoothPresetNames)
             {
-                string name = (string)item.Attribute("Key")!;
+                var item = byName[name];
                 var v = new ParamValues(Params.Table);
                 foreach (var p in item.Element("Preset")!.Element("Parameters")!.Elements("Parameter"))
                     v.Set((int)p.Attribute("Index")!, (int)p.Attribute("Value")!);
 
-                foreach (var (lineName, evs) in lines)
-                {
-                    var (l, r, gains) = RenderLine(v, evs, 16.0);
-                    string file = $"{idx:00}-{Slug(name)}__{lineName}.wav";
-                    WriteWav16(Path.Combine(outDir, file), l, r);
+                var (l, r, gains) = RenderLine(v, melody, 16.0, exactSamples: EightSecSamples);
+                string file = $"{idx:00}-{Slug(name)}__melody.wav";
+                WriteWav16(Path.Combine(outDir, file), l, r);
 
-                    double rms = Math.Sqrt(0.5 * (Measure.Rms(l, 0, l.Length) * Measure.Rms(l, 0, l.Length) + Measure.Rms(r, 0, r.Length) * Measure.Rms(r, 0, r.Length)));
-                    double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
-                    var (audioClicks, times) = DetectClicks(l, r);
-                    int gainClicks = 0;
-                    for (int c = 0; c < 4; c++) gainClicks += DetectGainClicks(gains[c]);
-                    double maxGd2 = MaxGainD2(gains);
-                    totalAudioClicks += audioClicks;
-                    totalGainClicks += gainClicks;
-                    string note = audioClicks == 0 && gainClicks == 0
-                        ? "clean"
-                        : $"audio={audioClicks} ({string.Join(", ", times.Take(3).Select(t => $"{t:F2}s"))}), gain={gainClicks}";
-                    readme.AppendLine($"| {idx:00} | {name} | {lineName} | `{file}` | {Measure.Db(rms):F1} | {Measure.Db(peak):F1} | {audioClicks} | {gainClicks} | {maxGd2:F5} | {note} |");
-                }
+                double rms = Math.Sqrt(0.5 * (Measure.Rms(l, 0, l.Length) * Measure.Rms(l, 0, l.Length) + Measure.Rms(r, 0, r.Length) * Measure.Rms(r, 0, r.Length)));
+                double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
+                var (audioClicks, times) = DetectClicks(l, r);
+                int gainClicks = 0;
+                for (int c = 0; c < 4; c++) gainClicks += DetectGainClicks(gains[c]);
+                double maxGd2 = MaxGainD2(gains);
+                totalAudioClicks += audioClicks;
+                totalGainClicks += gainClicks;
+                string note = audioClicks == 0 && gainClicks == 0
+                    ? "clean"
+                    : $"audio={audioClicks} ({string.Join(", ", times.Take(3).Select(t => $"{t:F2}s"))}), gain={gainClicks}";
+                readme.AppendLine($"| {idx:00} | {name} | melody | `{file}` | {Measure.Db(rms):F1} | {Measure.Db(peak):F1} | {audioClicks} | {gainClicks} | {maxGd2:F5} | {note} |");
                 idx++;
             }
 
             readme.AppendLine();
-            readme.AppendLine($"**Total files:** {items.Count * lines.Length}. **Total audio clicks:** {totalAudioClicks}. **Total gain-trace clicks:** {totalGainClicks}.");
+            readme.AppendLine($"**Total files:** {SmoothPresetNames.Length}. **Total audio clicks:** {totalAudioClicks}. **Total gain-trace clicks:** {totalGainClicks}.");
             File.WriteAllText(Path.Combine(outDir, "README.md"), readme.ToString(), new UTF8Encoding(false));
-            TestContext.Out.WriteLine($"Wrote {items.Count * lines.Length} WAVs and README.md to {outDir} (audio clicks: {totalAudioClicks}, gain-trace clicks: {totalGainClicks})");
+            TestContext.Out.WriteLine($"Wrote {SmoothPresetNames.Length} WAVs and README.md to {outDir} (audio clicks: {totalAudioClicks}, gain-trace clicks: {totalGainClicks})");
             Assert.That(totalAudioClicks, Is.EqualTo(0), $"Expected 0 audio clicks across all renders (got {totalAudioClicks})");
             Assert.That(totalGainClicks, Is.EqualTo(0), $"Expected 0 gain-trace clicks across all renders (got {totalGainClicks})");
         }

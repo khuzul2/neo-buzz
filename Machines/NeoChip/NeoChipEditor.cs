@@ -75,15 +75,17 @@ namespace NeoBuzz.Chip
                 Divider(),
                 noiseStrip));
 
-            // Envelope section with a live 16-step staircase shape picture.
-            var envGraph = new GraphView(306, 78, (g, r) => DrawEnvelope(g, r, ctx), animate: false);
+            // Envelope section with a live 16-step or smooth ADSR / hardware shape picture.
+            var envGraph = new GraphView(314, 78, (g, r) => DrawEnvelope(g, r, ctx), animate: false);
             ctx.Changed += envGraph.InvalidateVisual;
 
             var envelope = S("Envelope", Layout.Column(
                 Layout.Row(
-                    new ParamDropdown(ctx, P.EnvMode, "Mode", width: 136),
-                    Layout.Gap(8),
-                    new ParamDropdown(ctx, P.EnvSync, "Sync", width: 88)),
+                    new ParamDropdown(ctx, P.EnvMode, "Mode", width: 112),
+                    Layout.Gap(6),
+                    new ParamChoice(ctx, P.Envelope, "Envelope", cellWidth: 58),
+                    Layout.Gap(6),
+                    new ParamDropdown(ctx, P.EnvSync, "Sync", width: 74)),
                 Layout.Gap(1, 6),
                 envGraph,
                 Layout.Gap(1, 6),
@@ -140,7 +142,7 @@ namespace NeoBuzz.Chip
                 Layout.Row(envelope, arpMotion, output));
         }
 
-        /// <summary>Draws the 16-step ADSR or hardware-style envelope staircase for the current parameters.</summary>
+        /// <summary>Draws the 16-step or smooth ADSR or hardware-style envelope shape for the current parameters.</summary>
         static void DrawEnvelope(INeoCanvas g, NeoRect r, EditorContext ctx)
         {
             var plot = new NeoRect(r.X + 6, r.Y + 6, r.Width - 12, r.Height - 12);
@@ -157,6 +159,7 @@ namespace NeoBuzz.Chip
             }
 
             int mode = ctx.Raw(P.EnvMode);
+            bool smooth = ctx.Raw(P.Envelope) != 0;
             var path = new NeoPath();
 
             if (mode == (int)ChipEnvMode.Adsr)
@@ -171,36 +174,49 @@ namespace NeoBuzz.Chip
                 double Y(int step) => bottom - (step / 15.0) * h;
 
                 path.MoveTo(X(0), bottom);
-                // 16 stepped attack levels 0..15.
-                for (int s = 0; s <= 15; s++)
+                if (smooth)
                 {
-                    double x0 = X(wa * s / 16.0);
-                    double x1 = X(wa * (s + 1) / 16.0);
-                    path.LineTo(x0, Y(s)).LineTo(x1, Y(s));
+                    path.LineTo(X(wa), Y(15))
+                        .LineTo(X(wa + wd), Y(sus))
+                        .LineTo(X(wa + wd + ws), Y(sus))
+                        .LineTo(X(total), bottom)
+                        .Close();
+                    g.Path(path, AccentColor.WithAlpha(0x30), new NeoStroke(AccentColor, 1.5));
+                    g.Text($"ADSR · smooth · sus {sus}", plot.Left + 2, plot.Top - 1, 9.5, Palette.DimText);
                 }
-                // Stepped decay 15 -> sus.
-                int dSteps = Math.Max(1, 15 - sus);
-                for (int i = 0; i < dSteps; i++)
+                else
                 {
-                    int s = 15 - i;
-                    double x0 = X(wa + wd * i / dSteps);
-                    double x1 = X(wa + wd * (i + 1) / dSteps);
-                    path.LineTo(x0, Y(s)).LineTo(x1, Y(s));
+                    // 16 stepped attack levels 0..15.
+                    for (int s = 0; s <= 15; s++)
+                    {
+                        double x0 = X(wa * s / 16.0);
+                        double x1 = X(wa * (s + 1) / 16.0);
+                        path.LineTo(x0, Y(s)).LineTo(x1, Y(s));
+                    }
+                    // Stepped decay 15 -> sus.
+                    int dSteps = Math.Max(1, 15 - sus);
+                    for (int i = 0; i < dSteps; i++)
+                    {
+                        int s = 15 - i;
+                        double x0 = X(wa + wd * i / dSteps);
+                        double x1 = X(wa + wd * (i + 1) / dSteps);
+                        path.LineTo(x0, Y(s)).LineTo(x1, Y(s));
+                    }
+                    // Sustain plateau.
+                    path.LineTo(X(wa + wd), Y(sus)).LineTo(X(wa + wd + ws), Y(sus));
+                    // Stepped release sus -> 0.
+                    int rSteps = Math.Max(1, sus);
+                    for (int i = 0; i < rSteps; i++)
+                    {
+                        int s = sus - i;
+                        double x0 = X(wa + wd + ws + wr * i / rSteps);
+                        double x1 = X(wa + wd + ws + wr * (i + 1) / rSteps);
+                        path.LineTo(x0, Y(s)).LineTo(x1, Y(s));
+                    }
+                    path.LineTo(X(total), bottom).Close();
+                    g.Path(path, AccentColor.WithAlpha(0x30), new NeoStroke(AccentColor, 1.5));
+                    g.Text($"ADSR · 16-step · sus {sus}", plot.Left + 2, plot.Top - 1, 9.5, Palette.DimText);
                 }
-                // Sustain plateau.
-                path.LineTo(X(wa + wd), Y(sus)).LineTo(X(wa + wd + ws), Y(sus));
-                // Stepped release sus -> 0.
-                int rSteps = Math.Max(1, sus);
-                for (int i = 0; i < rSteps; i++)
-                {
-                    int s = sus - i;
-                    double x0 = X(wa + wd + ws + wr * i / rSteps);
-                    double x1 = X(wa + wd + ws + wr * (i + 1) / rSteps);
-                    path.LineTo(x0, Y(s)).LineTo(x1, Y(s));
-                }
-                path.LineTo(X(total), bottom).Close();
-                g.Path(path, AccentColor.WithAlpha(0x30), new NeoStroke(AccentColor, 1.5));
-                g.Text($"ADSR · 16-step · sus {sus}", plot.Left + 2, plot.Top - 1, 9.5, Palette.DimText);
             }
             else
             {

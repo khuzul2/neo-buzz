@@ -40,7 +40,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Learn Additive | generator | Teaching synth (box name Learn Add): one Dye Essence patch behind 12 controls (tilt, odd/even, partial count, inharmonicity, spectral comb, partial shimmer, ADSR, unison, output) with an Explain strip |
 | Neo Wave | generator | Wavetable synth: 2 morphing oscillators with warp modes, table import, mod matrix |
 | Neo FM6 | generator | 6-operator FM: the 32 DX7 algorithms, DX7 envelopes, DX7 SysEx import |
-| Neo Chip | generator | Four-channel sound-chip synth (docs/specs/neo-chip.md): three pulse channels (12.5/25/50/75 % duty, PWM, band-limited or raw), 15-bit/7-bit LFSR noise, 16-step ADSR and hardware envelopes, per-track arpeggio, pitch sweep, vibrato and 4-bit per-channel DAC |
+| Neo Chip | generator | Four-channel sound-chip synth (docs/specs/neo-chip.md): three pulse channels (12.5/25/50/75 % duty, PWM, band-limited or raw), 15-bit/7-bit LFSR noise, Stepped (16-level) or Smooth ADSR and stepped hardware envelopes, per-track arpeggio, pitch sweep, vibrato and 4-bit per-channel DAC |
 
 **Second batch (mix and master, for the agent server: docs/specs/mcp-server.md §8.2)**
 
