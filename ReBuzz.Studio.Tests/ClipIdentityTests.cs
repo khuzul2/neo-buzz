@@ -82,6 +82,7 @@ namespace ReBuzz.Studio.Tests
                     settings.LoopEnd = 8;
                     layout.SetClipSettings(riff, settings);
                     layout.SetSlot(0, 1, riff);
+                    ReBuzz.Core.Session.ClipColors.Set(riff, 3);
                     var seq = Core.SongCore.SequencesList.First(s => s.Machine == lead);
                     seq.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, riff) { Span = 16 });
 
@@ -100,6 +101,7 @@ namespace ReBuzz.Studio.Tests
                     }
                     rig.Settle();
                     AssertIntact("Lead", "Hook", "Riff", "after the rename");
+                    Assert.That(ReBuzz.Core.Session.ClipColors.Get(riff), Is.EqualTo(3), "its colour (kept by the clip, not its name)");
 
                     Core.SaveSongCopy(path);
                 }
@@ -110,6 +112,55 @@ namespace ReBuzz.Studio.Tests
                 AssertIntact("Lead", "Hook", "Riff", "after a save and reopen");
             }
             finally { File.Delete(path); }
+        }
+
+        [AvaloniaTest]
+        public void AnUndoAndARedoOfARenameCarryTheKeysBackAndForth()
+        {
+            using var rig = new SessionRig("Lead");
+            var song = Core.SongCore;
+            var lead = rig.Machine("Lead");
+            var riff = rig.Clip(lead, "Riff", 16, (0, 60));
+            var layout = rig.Layout;
+            var settings = layout.ClipOf(riff);
+            settings.Velocity = 40;
+            layout.SetClipSettings(riff, settings);
+            layout.SetSlot(0, 2, riff);
+            song.ActionStack.Clear();
+
+            lead.RenameClip(riff, "Hook");
+            rig.Settle();
+            Assert.That(layout.Document.GetClip("Lead", "Hook").Velocity, Is.EqualTo(40), "renamed");
+            Assert.That(layout.ClipAt(0, 2)?.Name, Is.EqualTo("Hook"));
+            song.Undo();
+            rig.Settle();
+            Assert.That(riff.Name, Is.EqualTo("Riff"));
+            Assert.That(layout.Document.GetClip("Lead", "Riff").Velocity, Is.EqualTo(40), "the settings came back with the name");
+            Assert.That(layout.Document.GetClip("Lead", "Hook").IsDefault, Is.True, "and none are left under the other");
+            Assert.That(layout.ClipAt(0, 2)?.Name, Is.EqualTo("Riff"));
+            song.Redo();
+            rig.Settle();
+            Assert.That(layout.Document.GetClip("Lead", "Hook").Velocity, Is.EqualTo(40), "and forth again");
+            Assert.That(layout.ClipAt(0, 2)?.Name, Is.EqualTo("Hook"));
+        }
+
+        [AvaloniaTest]
+        public void TwoClipsThatSwapNamesEachKeepTheirOwnSettings()
+        {
+            using var rig = new SessionRig("Lead");
+            var lead = rig.Machine("Lead");
+            var a = rig.Clip(lead, "A", 16, (0, 60));
+            var b = rig.Clip(lead, "B", 16, (0, 62));
+            var layout = rig.Layout;
+            var sa = layout.ClipOf(a); sa.Velocity = 10; layout.SetClipSettings(a, sa);
+            var sb = layout.ClipOf(b); sb.Velocity = 20; layout.SetClipSettings(b, sb);
+
+            lead.RenameClip(a, "Tmp"); rig.Settle();
+            lead.RenameClip(b, "A"); rig.Settle();
+            lead.RenameClip(a, "B"); rig.Settle();
+            Assert.That(layout.ClipOf(a).Velocity, Is.EqualTo(10), "the first clip keeps its settings under its new name");
+            Assert.That(layout.ClipOf(b).Velocity, Is.EqualTo(20), "the second keeps its own");
+            Assert.That(layout.Document.GetClip("Lead", "Tmp").IsDefault, Is.True, "nothing is left under the name in between");
         }
     }
 }
