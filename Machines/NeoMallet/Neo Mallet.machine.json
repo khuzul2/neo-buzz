@@ -12,7 +12,7 @@
   "bright",
   "polyphonic"
  ],
- "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, tubular chimes, bells, tines, plucks and glass, and a resonator that tunes any audio input to the notes held: tuned percussion, bell pads, drum loops turned into pitched resonances.",
+ "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks and glass; its resonator tunes any audio input, such as a drum loop, to the held notes.",
  "note_in": true,
  "tracks": 16,
  "track_parameters": [
@@ -44,7 +44,7 @@
    ],
    "description": "The body: which modes the note rings (their frequency ratios and weights)",
    "how": "Chooses the body that rings: a soft (marimba-like) bar, a hard (xylophone-like) bar, a metal (vibraphone-like) bar, a bright (glockenspiel-like) bar, a tube, a bell, a tine, a stiff string, glass, a plate, or a custom stretched series.",
-   "sound": "Bars are woody or metallic and pitched, the tube is hollow, the bell is deep with a minor-third shimmer, the tine is thin and sweet, the string is plucked, glass has a slow beating, the plate is clangorous and the custom series bends from harmonic to bell-like."
+   "sound": "Bars are woody or metallic and pitched, the tube is hollow, the bell is deep with a minor-third shimmer, the tine is thin and sweet, the string is plucked, glass beats slowly and the plate is clangorous."
   },
   {
    "index": 1,

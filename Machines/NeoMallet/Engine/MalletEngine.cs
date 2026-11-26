@@ -85,7 +85,7 @@ namespace NeoBuzz.Mallet
         {
             fx = new FxStage(values, P.Amount, P.Mix, AmountRules, maxLatency: 16, maxBlock: MaxBlock);
             this.values = fx.Effective;
-            for (int i = 0; i <= HannSize + 1; i++) hann[i] = (float)(0.5 - 0.5 * Math.Cos(2.0 * Math.PI * Math.Min(i, HannSize) / HannSize));
+            for (int i = 0; i <= HannSize + 1; i++) hann[i] = (float)(0.5 - 0.5 * PortableMath.Cos(2.0 * Math.PI * Math.Min(i, HannSize) / HannSize));
             for (int v = 0; v < Voices; v++) noise[v] = new Rng(0x9E3779B1u + (uint)v * 7919u);
             SetSampleRate(48000);
         }
@@ -309,8 +309,8 @@ namespace NeoBuzz.Mallet
                 t60 = Math.Clamp(t60, 0.008, 80.0);
                 double r = PortableMath.Pow(10.0, -3.0 / (t60 * fs));
                 double w = 2.0 * Math.PI * f / fs;
-                tc[i] = r * Math.Cos(w);
-                ts[i] = r * Math.Sin(w);
+                tc[i] = r * PortableMath.Cos(w);
+                ts[i] = r * PortableMath.Sin(w);
                 double g = set.BaseGain[m] * MalletModels.Weight(set, m, pos) * PortableMath.Pow(ratio, bright);
                 gainScratch[m] = g;
                 sum2 += g * g;
@@ -417,7 +417,7 @@ namespace NeoBuzz.Mallet
                 {
                     if (st == Held) { if (res && d < 1f) { d += (float)(1.0 / (ResonatorRise * fs)); if (d > 1f) d = 1f; } }
                     else if (st == Released) d *= releaseCoef;
-                    else { fadeT += fadeD; d = fadeT >= 1f ? 0f : fadeFrom[v] * (0.5f + 0.5f * (float)Math.Cos(Math.PI * fadeT)); }
+                    else { fadeT += fadeD; d = fadeT >= 1f ? 0f : fadeFrom[v] * (0.5f + 0.5f * PortableMathF.Cos((float)(Math.PI * fadeT))); }
                     damp[i] = d;
                 }
                 damper[v] = d;
@@ -511,7 +511,7 @@ namespace NeoBuzz.Mallet
                 float gain = 1f;
                 if (depth > 0f)
                 {
-                    gain = 1f - depth * (0.5f - 0.5f * (float)Math.Cos(tremPhase));
+                    gain = 1f - depth * (0.5f - 0.5f * PortableMathF.Cos((float)tremPhase));
                 }
                 tremPhase += 2.0 * Math.PI * rate / fs;
                 if (tremPhase > 2.0 * Math.PI) tremPhase -= 2.0 * Math.PI;
@@ -563,8 +563,8 @@ namespace NeoBuzz.Mallet
                 {
                     double c = cf[b + m], s = sf[b + m];
                     double r = Math.Sqrt(c * c + s * s);
-                    hz[m] = r > 0 ? Math.Atan2(s, c) * fs / (2.0 * Math.PI) : 0;
-                    t60[m] = r > 0 && r < 1 ? -3.0 / (fs * Math.Log10(r)) : 0;
+                    hz[m] = r > 0 ? PortableMath.Atan2(s, c) * fs / (2.0 * Math.PI) : 0;
+                    t60[m] = r > 0 && r < 1 ? -3.0 / (fs * PortableMath.Log10(r)) : 0;
                     gain[m] = gf[b + m];
                 }
                 return count;

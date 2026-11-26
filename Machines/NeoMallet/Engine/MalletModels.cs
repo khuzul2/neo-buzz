@@ -84,7 +84,7 @@ namespace NeoBuzz.Mallet
         {
             double m = set.Shape[k];
             double a = m * Math.PI * x;
-            double sh = set.Partner[k] ? Math.Cos(a) : Math.Sin(a);
+            double sh = set.Partner[k] ? PortableMath.Cos(a) : PortableMath.Sin(a);
             double w = PositionFloor + (1.0 - PositionFloor) * Math.Abs(sh);
             // The sign is the mode shape's: neighbouring modes move in opposite senses at a strike, so the strike does not start them all in phase
             // (which would add up to one sharp pulse).
@@ -202,7 +202,7 @@ namespace NeoBuzz.Mallet
             {
                 PlateRatio[i] = list[i].f / f0;
                 PlateM[i] = list[i].m;
-                PlateY[i] = (float)(0.15 + 0.85 * Math.Abs(Math.Sin(list[i].n * Math.PI * 0.37)));
+                PlateY[i] = (float)(0.15 + 0.85 * Math.Abs(PortableMath.Sin(list[i].n * Math.PI * 0.37)));
             }
         }
 

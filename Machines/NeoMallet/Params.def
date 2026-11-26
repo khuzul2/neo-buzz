@@ -8,7 +8,7 @@ summary A modal synth for mallets, bars, bells and plucks, with a resonator mode
 group Model
 Model       "Model"         0 10    0     enum Soft_bar Hard_bar Metal_bar Bright_bar Tube Bell Tine Pluck Glass Plate Custom | The body: which modes the note rings (their frequency ratios and weights)
     how Chooses the body that rings: a soft (marimba-like) bar, a hard (xylophone-like) bar, a metal (vibraphone-like) bar, a bright (glockenspiel-like) bar, a tube, a bell, a tine, a stiff string, glass, a plate, or a custom stretched series.
-    sound Bars are woody or metallic and pitched, the tube is hollow, the bell is deep with a minor-third shimmer, the tine is thin and sweet, the string is plucked, glass has a slow beating, the plate is clangorous and the custom series bends from harmonic to bell-like.
+    sound Bars are woody or metallic and pitched, the tube is hollow, the bell is deep with a minor-third shimmer, the tine is thin and sweet, the string is plucked, glass beats slowly and the plate is clangorous.
 Source      "Source"        0 1     0     enum Mallet Resonator           | Where the energy comes from: a note strikes (or plucks) the bodies, or the audio input rings the bodies tuned to the held notes
     how Mallet: every note strikes a body of its own. Resonator: nothing is struck, the audio coming into the machine drives one body for each held note.
     sound Mallet plays tuned percussion; Resonator turns drums, noise or any sound into pitched ringing that follows your keys.
