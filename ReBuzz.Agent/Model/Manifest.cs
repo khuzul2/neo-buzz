@@ -297,6 +297,9 @@ namespace ReBuzz.Agent.Model
         public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
         /// <summary>K0: one line, in our own words, of what to use it for ("Tame harsh s sounds in vocals").</summary>
         public string UseFor { get; init; } = "";
+        /// <summary>NW1: the machine takes notes from note wires (<c>note_in</c>) and sends them (<c>note_out</c>); read at drop time, before the machine exists.</summary>
+        public bool NoteIn { get; init; }
+        public bool NoteOut { get; init; }
         public string Source { get; init; } = "";
         public int Tracks { get; init; }
         public IReadOnlyList<ManifestParameter> Parameters { get; init; } = Array.Empty<ManifestParameter>();
@@ -405,6 +408,8 @@ namespace ReBuzz.Agent.Model
                 Category = (string)root["category"] ?? "",
                 Tags = Strings(root["tags"]),
                 UseFor = (string)root["use_for"] ?? "",
+                NoteIn = (bool?)root["note_in"] ?? false,
+                NoteOut = (bool?)root["note_out"] ?? false,
                 Source = (string)root["source"] ?? "",
                 Tracks = (int?)root["tracks"] ?? 0,
                 Parameters = parameters,

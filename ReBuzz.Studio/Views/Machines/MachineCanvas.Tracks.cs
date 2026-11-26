@@ -100,6 +100,27 @@ namespace ReBuzz.Studio.Views.Machines
             LitChanged?.Invoke();
         }
 
+        /// <summary>
+        /// NW1 (note-wires.md §11): in the Tracks mode a note insert is drawn left of its instrument, in chain order (the last one nearest it), one box and a gap apart,
+        /// on the instrument's row. Drawn only: no stored position is written. Null for a machine that is in no chain.
+        /// </summary>
+        Point? TracksInsertSpot(IMachine m)
+        {
+            var wires = core.NoteWires;
+            if (wires == null) return null;
+            string instrument = wires.State.InstrumentOf(m.Name);
+            if (instrument == null) return null;
+            var owner = Machines.FirstOrDefault(x => x.Name == instrument);
+            if (owner == null) return null;
+            var chain = wires.State.ChainOf(instrument);
+            int index = -1;
+            for (int i = 0; i < chain.Count; i++) if (chain[i] == m.Name) index = i;
+            if (index < 0) return null;
+            var o = CanvasMap.Clamp(new Point(owner.Position.Item1, owner.Position.Item2));
+            double step = Math.Abs(map.PositionDelta(new Vector(CanvasMap.BoxWidth + 24, 0)).X);
+            return CanvasMap.Clamp(new Point(ReBuzz.Core.NoteWires.NoteInsertLayout.X((float)o.X, index, chain.Count, (float)step), o.Y));
+        }
+
         /// <summary>The target lit now, or null when nothing is.</summary>
         public TrackTarget? Lit => hoverLit ?? focusLit ?? pinnedLit;
 

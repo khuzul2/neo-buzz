@@ -654,6 +654,7 @@ namespace ReBuzz.Studio.Views.Machines
         Point PositionOf(IMachine m)
         {
             if (dragPositions.TryGetValue(m, out var p)) return p;
+            if (tracksOn && TracksInsertSpot(m) is { } spot) return spot;
             var pos = m.Position;
             return CanvasMap.Clamp(new Point(pos.Item1, pos.Item2));
         }

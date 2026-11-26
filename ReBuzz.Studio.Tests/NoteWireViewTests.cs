@@ -148,6 +148,33 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void MachineListShowsTheNotePortsAndTheInstrumentAnInsertSitsBefore()
+        {
+            var (window, view) = OpenEmpty();
+            try
+            {
+            Put("Test Note Echo", "Pinst", 0.3, 0.3);
+            Put("Neo Chord", "Pch", -0.3, 0.3);
+            Put("Neo Poly", "Ppoly", 0.6, 0.3);
+            Assert.That(Core.NoteWires.AddInsert("Pinst", "Pch"), Is.Null);
+            Settle();
+            var all = Try("machine_list");
+            Assert.That(all.Error, Is.False, all.Text);
+            JsonObject Of(string name) => all.Data["machines"]!.AsArray().Select(m => m!.AsObject()).Single(m => m["name"]!.GetValue<string>() == name);
+            var chord = Of("Pch");
+            Assert.That(chord["note_in"]?.GetValue<bool>(), Is.True);
+            Assert.That(chord["note_out"]?.GetValue<bool>(), Is.True);
+            Assert.That(chord["note_insert_of"]?.GetValue<string>(), Is.EqualTo("Pinst"));
+            Assert.That(Of("Ppoly")["note_in"]?.GetValue<bool>(), Is.True, "an instrument takes notes");
+            Assert.That(Of("Ppoly")["note_out"], Is.Null, "and sends none");
+            Assert.That(Of("Ppoly")["note_insert_of"], Is.Null);
+            Assert.That(all.Data["machines"]!.AsArray().First()!["note_in"], Is.Null, "the Master has no note ports");
+            Assert.That(all.Text, Does.Contain("Pch [Neo Chord] (notes in/out)"));
+            }
+            finally { Close(window); }
+        }
+
+        [AvaloniaTest]
         public void TheAgentToolsListConnectAndEditTheChainWithTheSameChecksAndUndo()
         {
             var (window, view) = OpenEmpty();

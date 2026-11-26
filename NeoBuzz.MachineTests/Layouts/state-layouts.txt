@@ -2,8 +2,10 @@
 # namespace<TAB>state version<TAB>parameters<TAB>fingerprint. The last line of a namespace is the table as it is now (parameters appended since are not yet in it: appending needs no version).
 # Changing a table (order, key, range, mapping, default) without adding its next version and line fails EveryMachineLayoutIsRecordedAndOnlyChangesWithAVersion.
 NeoBuzz.Analyzer	0	6	d09ad78ec03ed49d
+NeoBuzz.Arp	0	51	aaa9487e4a43faf9
 NeoBuzz.AudioToMidi	0	40	f026429bd83d63bf
 NeoBuzz.Chip	0	41	5a6f97f568d7fa03
+NeoBuzz.Chord	0	23	59bb134d4b8604b5
 NeoBuzz.Clipper	0	15	70d4b85d1bfad1fc
 NeoBuzz.Comp	0	16	45efdd9ad3e0f78b
 NeoBuzz.DeEsser	0	13	c0c0dfc6900f468a
