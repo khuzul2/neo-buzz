@@ -2308,12 +2308,12 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "650-neo-organ-editor", "Neo Organ: the nine drawbars with their footage labels (set to a full registration), then Percussion, Key, Vibrato, Drive, Rotary (the Speed switch at Fast, with the two rotors' live speeds) and Output.", "Add Neo Organ, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
-                // MAL1: Neo Mallet with the Church Bell preset's values set before the editor opens: the Bell model's mode drawing, the exciter, decay and damping, the resonator.
+                // MAL1: Neo Mallet with the Church Bell preset's values set before the editor opens: the Bell model's mode drawing, the exciter, decay and damping.
                 Try("660-neo-mallet-editor", () =>
                 {
                     var m = Add("Neo Mallet", "Mallet");
-                    string[] names = { "Model", "Source", "Hardness", "Position", "Velocity to hardness", "Mallet noise", "Decay", "Damping tilt", "Brightness", "Release damping", "Modes", "Stretch", "Inharmonicity", "Tremolo rate", "Tremolo depth", "Input drive", "Stereo spread", "Volume", "Mix", "Amount" };
-                    int[] raws = { 5, 0, 770, 700, 600, 150, 940, 150, 500, 952, 10, 500, 0, 691, 0, 667, 300, 778, 1000, 500 };
+                    string[] names = { "Model", "Hardness", "Position", "Velocity to hardness", "Mallet noise", "Decay", "Damping tilt", "Brightness", "Release damping", "Modes", "Stretch", "Inharmonicity", "Tremolo rate", "Tremolo depth", "Stereo spread", "Volume" };
+                    int[] raws = { 5, 770, 700, 600, 150, 940, 150, 500, 952, 10, 500, 0, 691, 0, 300, 786 };
                     var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
                     for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
                     Core.UiHost.OpenGui(m, null);
@@ -2321,7 +2321,7 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(editor, Is.Not.Null, "its GUI opened");
                     Dispatcher.UIThread.RunJobs();
                     Wait(200);
-                    Shot(editor!, "660-neo-mallet-editor", "Neo Mallet with the Church Bell preset: the Bell model picker and its mode drawing (a line per mode on a log axis, height = gain at the strike position), then Exciter, Decay and damping, Tremolo, Resonator and Output.", "Add Neo Mallet, load Church Bell, open its editor");
+                    Shot(editor!, "660-neo-mallet-editor", "Neo Mallet with the Church Bell preset: the Bell model picker and its mode drawing (a line per mode on a log axis, height = gain at the strike position), then Exciter, Decay and damping, Tremolo and Output.", "Add Neo Mallet, load Church Bell, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.

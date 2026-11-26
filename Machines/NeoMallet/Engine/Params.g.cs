@@ -9,26 +9,22 @@ namespace NeoBuzz.Mallet
     internal static class P
     {
         public const int Model = 0;
-        public const int Source = 1;
-        public const int Hardness = 2;
-        public const int Position = 3;
-        public const int VelHard = 4;
-        public const int Noise = 5;
-        public const int Decay = 6;
-        public const int Tilt = 7;
-        public const int Bright = 8;
-        public const int Release = 9;
-        public const int Modes = 10;
-        public const int Stretch = 11;
-        public const int Inharm = 12;
-        public const int TremRate = 13;
-        public const int TremDepth = 14;
-        public const int InDrive = 15;
-        public const int Spread = 16;
-        public const int Volume = 17;
-        public const int Mix = 18;
-        public const int Amount = 19;
-        public const int Count = 20;
+        public const int Hardness = 1;
+        public const int Position = 2;
+        public const int VelHard = 3;
+        public const int Noise = 4;
+        public const int Decay = 5;
+        public const int Tilt = 6;
+        public const int Bright = 7;
+        public const int Release = 8;
+        public const int Modes = 9;
+        public const int Stretch = 10;
+        public const int Inharm = 11;
+        public const int TremRate = 12;
+        public const int TremDepth = 13;
+        public const int Spread = 14;
+        public const int Volume = 15;
+        public const int Count = 16;
     }
 
     internal static class Params
@@ -39,9 +35,8 @@ namespace NeoBuzz.Mallet
         public static readonly ParamDef[] Table =
         {
             new ParamDef(P.Model, "Model", "Model", 0, 10, 0, MapKind.Enum, names: new[] { "Soft bar", "Hard bar", "Metal bar", "Bright bar", "Tube", "Bell", "Tine", "Pluck", "Glass", "Plate", "Custom" }, group: "Model", description: "The body: which modes the note rings (their frequency ratios and weights)", how: "Chooses the body that rings: a soft (marimba-like) bar, a hard (xylophone-like) bar, a metal (vibraphone-like) bar, a bright (glockenspiel-like) bar, a tube, a bell, a tine, a stiff string, glass, a plate, or a custom stretched series.", sound: "Bars are woody or metallic and pitched, the tube is hollow, the bell is deep with a minor-third shimmer, the tine is thin and sweet, the string is plucked, glass beats slowly and the plate is clangorous."),
-            new ParamDef(P.Source, "Source", "Source", 0, 1, 0, MapKind.Enum, names: new[] { "Mallet", "Resonator" }, group: "Model", description: "Where the energy comes from: a note strikes (or plucks) the bodies, or the audio input rings the bodies tuned to the held notes", how: "Mallet: every note strikes a body of its own. Resonator: nothing is struck, the audio coming into the machine drives one body for each held note.", sound: "Mallet plays tuned percussion; Resonator turns drums, noise or any sound into pitched ringing that follows your keys."),
             new ParamDef(P.Hardness, "Hardness", "Hardness", 0, 1000, 486, MapKind.Exp, a: 12, b: 0.3, unit: "ms", digits: 1, group: "Exciter", description: "The mallet's contact time with the body, 12 ms (a soft felt head) down to 0.3 ms (a hard stick): a short contact excites the high modes, a long one only the low", how: "Sets how hard the mallet is, from a soft head that touches the bar for 12 ms to a hard stick that touches it for 0.3 ms. The knob reads the contact time.", sound: "Soft heads give a round, dull thud with few overtones; hard sticks give a bright, clicking, ringing attack."),
-            new ParamDef(P.Position, "Position", "Position", 0, 1000, 300, MapKind.Percent, group: "Exciter", description: "Where along the body the mallet strikes: each mode n is weighed by the sine of n times pi times the position (bells, glass and plates by their own shape), so a mode at a node is nearly silent", how: "Moves the strike across the body from one end (0 %) to the other (100 %); in Resonator mode it moves the point where the modes are heard.", sound: "The centre brings out the fundamental and hides the second mode; towards the ends the overtones take over and the tone turns thin and nasal."),
+            new ParamDef(P.Position, "Position", "Position", 0, 1000, 300, MapKind.Percent, group: "Exciter", description: "Where along the body the mallet strikes: each mode n is weighed by the sine of n times pi times the position (bells, glass and plates by their own shape), so a mode at a node is nearly silent", how: "Moves the strike across the body from one end (0 %) to the other (100 %).", sound: "The centre brings out the fundamental and hides the second mode; towards the ends the overtones take over and the tone turns thin and nasal."),
             new ParamDef(P.VelHard, "VelHard", "Velocity to hardness", 0, 1000, 600, MapKind.Percent, group: "Exciter", description: "How much the note's velocity changes the contact time: at 100 % a hard hit (velocity 127) is about 8 times shorter, and a soft hit 8 times longer, than the Hardness setting", how: "Sets how much a hard hit also makes the mallet harder, from 0 % (velocity only changes the level) to 100 %.", sound: "Soft hits are dull and quiet, hard hits bright and loud, as with a real mallet."),
             new ParamDef(P.Noise, "Noise", "Mallet noise", 0, 1000, 100, MapKind.Percent, group: "Exciter", description: "The share of noise in the strike, a short burst shaped by the contact: the sound of the mallet's own impact", how: "Sets how much noise the strike adds, from 0 to 100 %.", sound: "A little adds the knock of the mallet on the wood; a lot makes a breathy, clacking attack."),
             new ParamDef(P.Decay, "Decay", "Decay", 0, 1000, 616, MapKind.Time, a: 0.05, b: 20, group: "Decay", description: "Decay time of the fundamental, the time it takes to fall by 60 dB (T60)", how: "Sets how long the fundamental rings, as the time to fall by 60 dB, from 0.05 to 20 s.", sound: "Short times are dry wooden knocks; long times ring like metal bars, bells and chimes."),
@@ -53,11 +48,8 @@ namespace NeoBuzz.Mallet
             new ParamDef(P.Inharm, "Inharm", "Inharmonicity", 0, 1000, 0, MapKind.Percent, group: "Modes", description: "Stiff-string and Custom models: the inharmonicity B of a stiff string, mode n sits at n times the fundamental times the square root of one plus B times n squared, with B = 0.02 times the setting squared, so B = 0.02 at 100 %", how: "Sets the stiffness of the string, from 0 (a perfect harmonic series) to 100 % (B = 0.02, a stiff piano bass string and beyond).", sound: "A little makes the string sound real and slightly bright; a lot makes it clang."),
             new ParamDef(P.TremRate, "TremRate", "Tremolo rate", 0, 1000, 691, MapKind.Exp, a: 0.5, b: 12, unit: "Hz", digits: 2, group: "Tremolo", description: "Rate of the tremolo, the level swing of a vibraphone's rotating fans", how: "Sets the speed of the tremolo from 0.5 to 12 Hz.", sound: "Slow is a gentle swell; fast is a flutter."),
             new ParamDef(P.TremDepth, "TremDepth", "Tremolo depth", 0, 1000, 0, MapKind.Percent, group: "Tremolo", description: "Depth of the tremolo: at 100 % the level swings between full and silent", how: "Sets how deeply the level swings, from 0 % (off) to 100 %.", sound: "Turn it up for the pulsing of a vibraphone with its motor on."),
-            new ParamDef(P.InDrive, "InDrive", "Input drive", 0, 1000, 667, MapKind.Db, a: -24, b: 12, group: "Resonator", description: "Resonator mode: the level of the audio driving the modes", how: "Sets how loud the audio is when it enters the modes, from -24 to +12 dB.", sound: "More drive makes the pitched ringing louder against the dry sound."),
             new ParamDef(P.Spread, "Spread", "Stereo spread", 0, 1000, 400, MapKind.Percent, group: "Output", description: "How far the notes are placed left and right by their pitch (0 % is all centre)", how: "Sets how widely low and high notes are spread across the stereo field, from 0 to 100 %.", sound: "Like a real instrument seen from the front, low bars sit left and high bars right."),
             new ParamDef(P.Volume, "Volume", "Volume", 0, 1000, 750, MapKind.Db, a: -60, b: 12, flag: true, group: "Output", description: "Output level", how: "Sets the final level in dB, from off to +12.", sound: "It makes the instrument louder or quieter without changing its character."),
-            new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 1000, MapKind.Percent, group: "Output", description: "Dry/wet: the audio coming in against the sound of the modes (the dry signal is not delayed: there is no latency)", how: "Blends the audio coming into the machine with the sound of the modes.", sound: "At 100 % you hear only the modes; lower values keep the input, so a drum loop stays and gains a pitched ring."),
-            new ParamDef(P.Amount, "Amount", "Amount", 0, 1000, 500, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 0, group: "Output", description: "Effect strength: how strongly the modes act, 100 % = the settings as they stand, 0 = the input unchanged (bit for bit), 200 % = exaggerated (a longer decay and a harder drive)", how: "Scales the decay time of the modes and the drive of the input at once, so the ringing grows or fades without changing its tuning; at 0 % the machine is out of the signal path and the input passes bit for bit.", sound: "Turn it down to hear the ringing fade out of the sound, and up to make the resonances longer and louder."),
         };
     }
 }

@@ -1,6 +1,6 @@
 # Neo Mallet factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoMallet
-# A preset that does not name a parameter takes its default: Mallet source, Hardness 2 ms, Position 30 %, Decay 2 s, Damping tilt 50 %,
-# Release 300 ms, 16 modes... (see Params.def), Tremolo depth 0, Mix 100 %, Amount 100 %.
+# A preset that does not name a parameter takes its default: Hardness 2 ms, Position 30 %, Decay 2 s, Damping tilt 50 %,
+# Release 300 ms, 16 modes... (see Params.def), Tremolo depth 0.
 machine "Neo Mallet"
 
 preset "Bars — Soft Wooden Bars"
@@ -8,14 +8,14 @@ comment "A soft marimba-like bar struck near its centre with a felt head: a roun
 Model = Soft bar
 Hardness = 3.5
 Position = 28
-VelHard = 70
-Noise = 12
+VelHard = 50
+Noise = 6
 Decay = 1.4
 Tilt = 75
 Bright = -10
 Release = 140
 Modes = 12
-Volume = -3
+Volume = -0.4
 
 preset "Bars — Bright Metal Bars"
 comment "Untuned bars of ringing metal struck with a hard stick: a bright, glassy chime with every overtone alive and a long shimmering tail."
@@ -29,7 +29,7 @@ Bright = 30
 Release = 900
 Modes = 16
 Spread = 60
-Volume = -13.5
+Volume = -12.1
 
 preset "Bars — Tremolo Bars"
 comment "Metal bars with the motor on: a long, warm ring that swells and fades at 5 Hz, as on a vibraphone."
@@ -41,7 +41,7 @@ Tilt = 30
 Release = 700
 TremRate = 5.2
 TremDepth = 70
-Volume = -5.5
+Volume = -4
 
 preset "Chimes — Hollow Tube Chimes"
 comment "A set of hollow tubes struck once: a pure, open tone with the octave and the twelfth above it, ringing for eight seconds."
@@ -54,7 +54,7 @@ Tilt = 35
 Bright = 10
 Release = 1200
 Modes = 10
-Volume = -7
+Volume = -5.8
 
 preset "Bells — Church Bell"
 comment "A big bell: a deep hum an octave below the note, the minor-third shimmer on top and a fourteen-second tail."
@@ -67,7 +67,7 @@ Tilt = 15
 Release = 1500
 Modes = 14
 Spread = 30
-Volume = -4
+Volume = -3.4
 
 preset "Plucked — Thumb Tines"
 comment "Thin steel tines plucked with a thumb, like a music box: a sweet, short ping that darkens quickly."
@@ -81,7 +81,7 @@ Tilt = 55
 Release = 300
 Modes = 8
 Spread = 70
-Volume = -2
+Volume = 0.4
 
 preset "Glass — Glass Harmonics"
 comment "Wine glasses touched with a soft finger: a slow, beating, ethereal ring with the two halves of every mode drifting against each other."
@@ -96,18 +96,18 @@ Bright = -10
 Release = 800
 Modes = 16
 Spread = 55
-Volume = 0.5
+Volume = 3.7
 
-preset "Resonator — Resonated Drums"
-comment "Feed it a drum loop and hold a chord: every kick and snare rings the hollow tube modes of the notes you hold, so the loop plays tuned drums."
-Source = Resonator
-Model = Tube
-Position = 35
-Decay = 1.6
-Tilt = 60
-Bright = 15
-Release = 250
-Modes = 12
-InDrive = 6
-Mix = 60
-Volume = -4
+preset "Plates — Struck Steel Plate"
+comment "A big steel plate hit hard with a mallet: a crashing, clangorous burst of inharmonic overtones that rumbles on for five seconds like a stage thunder sheet."
+Model = Plate
+Hardness = 1.5
+Position = 55
+Noise = 30
+Decay = 5
+Tilt = 20
+Bright = 20
+Release = 600
+Modes = 24
+Spread = 65
+Volume = -7.1

@@ -661,7 +661,7 @@
     "bright",
     "polyphonic"
    ],
-   "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks and glass; its resonator tunes any audio input, such as a drum loop, to the held notes.",
+   "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks, glass and struck plates; a playable instrument with no audio input.",
    "note_in": true
   }
  }

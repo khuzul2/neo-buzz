@@ -275,12 +275,11 @@ namespace NeoBuzz.MachineTests
             return y;
         }
 
-        /// <summary>Neo Mallet: the chord held for two thirds of the take; its Resonator source rings the input (<paramref name="x"/>), its Mallet source ignores it.</summary>
+        /// <summary>Neo Mallet: the chord held for two thirds of the take (<paramref name="x"/> only gives the length: it is an instrument).</summary>
         static float[] RenderMallet(ParamValues v, float[] x)
         {
             var engine = new NeoBuzz.Mallet.MalletEngine(v);
             engine.SetSampleRate((float)Measure.Rate);
-            bool resonator = v[NeoBuzz.Mallet.P.Source] == 1;
             var y = new float[x.Length];
             var l = new float[256];
             var r = new float[256];
@@ -291,7 +290,7 @@ namespace NeoBuzz.MachineTests
                 if (pos <= x.Length * 2 / 3 && pos + 256 > x.Length * 2 / 3)
                     for (int k = 0; k < chord.Length; k++) engine.NoteOff(k);
                 int n = Math.Min(256, x.Length - pos);
-                for (int i = 0; i < n; i++) { l[i] = r[i] = resonator ? x[pos + i] : 0f; }
+                for (int i = 0; i < n; i++) { l[i] = r[i] = 0f; }
                 engine.Process(l, r, n);
                 for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
             }

@@ -1,7 +1,7 @@
 #nullable disable
 // Neo Mallet's editor (docs/specs/neo-mallet.md): the model picker with a drawing of the model's modes (one line per mode on a log axis of
 // frequency ratio, its height the mode's gain at the strike position), then the Exciter (Hardness, Position, Velocity, Noise), Decay and
-// Damping, Tremolo, the Resonator (Source, Input drive, Mix, Amount) and Output. One source for WPF and Avalonia (the Neo editor kit).
+// Damping, Tremolo and Output. One source for WPF and Avalonia (the Neo editor kit).
 
 using System;
 #if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
@@ -35,7 +35,7 @@ namespace NeoBuzz.Mallet
             ctx.Changed += modes.InvalidateVisual;
 
             var model = S("Model", Layout.Column(
-                Layout.Row(new ParamDropdown(ctx, P.Model, width: 130), Layout.Gap(8), new ParamChoice(ctx, P.Source, "Source", 74)),
+                Layout.Row(new ParamDropdown(ctx, P.Model, width: 130)),
                 Layout.Gap(1, 4),
                 modes,
                 Layout.Gap(1, 4),
@@ -51,9 +51,6 @@ namespace NeoBuzz.Mallet
 
             var tremolo = S("Tremolo", Layout.Column(new ParamKnob(ctx, P.TremRate, diameter: D), new ParamKnob(ctx, P.TremDepth, diameter: D)));
 
-            var resonator = S("Resonator", Layout.Column(
-                Build.Knobs(ctx, 3, D, P.InDrive, P.Mix, P.Amount)));
-
             var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 100);
             var output = S("Output", Layout.Row(
                 Layout.Column(new ParamKnob(ctx, P.Volume, diameter: 50), new ParamKnob(ctx, P.Spread, diameter: D)),
@@ -62,7 +59,7 @@ namespace NeoBuzz.Mallet
 
             return Layout.Column(
                 Layout.Row(model, exciter, decay),
-                Layout.Row(tremolo, resonator, output));
+                Layout.Row(tremolo, output));
         }
 
         /// <summary>One line for each mode: its place on a log axis of frequency against the note, its height its gain (at the strike position and Brightness).</summary>

@@ -69,7 +69,7 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>Renders <paramref name="length"/> samples in blocks of <paramref name="block"/>; the events run at their sample position (a multiple of 256, so at a block start whatever the block size).</summary>
-        static Take Render(MalletEngine e, int length, int block, List<(int At, Action Do)> events = null, float[] input = null, Action<int> perBlock = null)
+        static Take Render(MalletEngine e, int length, int block, List<(int At, Action Do)> events = null, Action<int> perBlock = null)
         {
             var t = new Take { L = new float[length], R = new float[length] };
             var l = new float[MalletEngine.MaxBlock];
@@ -81,8 +81,7 @@ namespace NeoBuzz.MachineTests
                 int n = Math.Min(block, length - pos);
                 while (events != null && ei < events.Count && events[ei].At <= pos) events[ei++].Do();
                 perBlock?.Invoke(pos);
-                if (input != null) { Array.Copy(input, pos, l, 0, n); Array.Copy(input, pos, r, 0, n); }
-                else { Array.Clear(l, 0, n); Array.Clear(r, 0, n); }
+                Array.Clear(l, 0, n); Array.Clear(r, 0, n);
                 e.Process(l, r, n);
                 Array.Copy(l, 0, t.L, pos, n);
                 Array.Copy(r, 0, t.R, pos, n);
@@ -340,28 +339,13 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
-        public void NoClicksInTheResonatorAtNoteStartReleaseAndStealAtEveryBlockSize([Values(4, 5, 10)] int model, [Values(16, 64, 256)] int block)
+        public void ABlockOf16And64And256GiveTheSameSamples([Values(0, 5, 8)] int model)
         {
-            var (e, _) = Make(v => { Plain(v, model, 2, 40, 16); v.Set(P.Source, 1); Set(v, P.Release, 60); Set(v, P.Position, 30); Set(v, P.Spread, 50); Set(v, P.Volume, -12); });
-            var rng = new Rng(77);
-            var input = new float[144000];
-            for (int i = 0; i < input.Length; i++) input[i] = 0.3f * rng.NextBipolar();
-            var t = Render(e, 144000, block, ClickScenario(e), input);
-            var clicks = ClickDetector.Find(t.L, t.R);
-            Assert.That(clicks, Is.Empty, $"{ModelNames[model]} resonator, block {block}: clicks at {string.Join(", ", clicks)}");
-            Assert.That(Measure.Peak(t.L, 0, t.L.Length), Is.GreaterThan(0.02), "it played");
-        }
-
-        [Test]
-        public void ABlockOf16And64And256GiveTheSameSamples([Values(0, 5, 8)] int model, [Values(false, true)] bool resonator)
-        {
-            float[] input = null;
-            if (resonator) { var rng = new Rng(5); input = new float[144000]; for (int i = 0; i < input.Length; i++) input[i] = 0.2f * rng.NextBipolar(); }
             Take reference = null;
             foreach (int block in new[] { 256, 64, 16 })
             {
-                var (e, _) = Make(v => { Plain(v, model, 3, 40, 24); Set(v, P.Noise, 20); Set(v, P.TremDepth, 40); Set(v, P.Spread, 60); if (resonator) v.Set(P.Source, 1); });
-                var t = Render(e, 144000, block, ClickScenario(e), input);
+                var (e, _) = Make(v => { Plain(v, model, 3, 40, 24); Set(v, P.Noise, 20); Set(v, P.TremDepth, 40); Set(v, P.Spread, 60); });
+                var t = Render(e, 144000, block, ClickScenario(e));
                 if (reference == null) reference = t;
                 else
                 {
@@ -385,27 +369,6 @@ namespace NeoBuzz.MachineTests
                 double peak = Measure.Peak(x, 0, x.Length);
                 int end = x.Length - 1;
                 // The end of the note: where it falls to a ten-thousandth of its peak for good (a kill's fade ends in exact silence).
-                while (end > 48000 && Math.Abs(x[end]) < 1e-4 * peak) end--;
-                double first = MaxD2(x, 0, 240), last = MaxD2(x, end - 240, end + 1), middle = MaxD2(x, 240, 48000);   // the body: the sharpest the note itself ever is, up to its release
-                Assert.That(first, Is.LessThanOrEqualTo(middle), $"{ModelNames[model]}: the first 5 ms ({first:0.00000}) against the middle ({middle:0.00000})");
-                Assert.That(last, Is.LessThanOrEqualTo(middle), $"{ModelNames[model]} {(kill ? "killed" : "released")}: the last 5 ms ({last:0.00000}) against the middle ({middle:0.00000})");
-            }
-        }
-
-        [Test]
-        public void TheResonatorsFirstAndLast5MsHaveNoSharperEdgesThanTheMiddle([Values(4, 5, 10)] int model)
-        {
-            double pos = BestPosition((MalletModel)model, 16);
-            foreach (bool kill in new[] { false, true })
-            {
-                var (e, _) = Make(v => { Plain(v, model, 20, 0, 16); v.Set(P.Source, 1); Set(v, P.Release, 80); Set(v, P.Position, pos * 100); });
-                var rng = new Rng(3);
-                var input = new float[96000];
-                for (int i = 0; i < input.Length; i++) input[i] = 0.3f * rng.NextBipolar();
-                var ev = new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)), (48000, () => { if (kill) e.AllNotesOff(true); else e.NoteOff(1); }) };
-                var x = Mono(Render(e, 96000, 256, ev, input));
-                double peak = Measure.Peak(x, 0, x.Length);
-                int end = x.Length - 1;
                 while (end > 48000 && Math.Abs(x[end]) < 1e-4 * peak) end--;
                 double first = MaxD2(x, 0, 240), last = MaxD2(x, end - 240, end + 1), middle = MaxD2(x, 240, 48000);   // the body: the sharpest the note itself ever is, up to its release
                 Assert.That(first, Is.LessThanOrEqualTo(middle), $"{ModelNames[model]}: the first 5 ms ({first:0.00000}) against the middle ({middle:0.00000})");
@@ -448,129 +411,14 @@ namespace NeoBuzz.MachineTests
             Assert.That(ms, Is.InRange(3.0, 7.0));
         }
 
-        // ------------------------------------------------------------------------------------------ gate: resonator
-
-        [Test]
-        public void AmountZeroIsBitExactDry([Values(0, 5, 10)] int model, [Values(0, 1)] int source)
-        {
-            var rng = new Rng(11);
-            var input = new float[48000];
-            for (int i = 0; i < input.Length; i++) input[i] = 0.5f * rng.NextBipolar();
-            var (e, _) = Make(v => { Plain(v, model); v.Set(P.Source, source); Set(v, P.Amount, 0); Set(v, P.Mix, 80); });
-            var ev = new List<(int, Action)> { (0, () => { e.NoteOn(1, 48, 1f); e.NoteOn(2, 55, 1f); }) };
-            var t = Render(e, input.Length, 256, ev, input);
-            Assert.That(t.L, Is.EqualTo(input), "left is the input, bit for bit");
-            Assert.That(t.R, Is.EqualTo(input), "right is the input, bit for bit");
-            Assert.That(e.Latency, Is.EqualTo(0), "no latency to compensate");
-        }
-
-        [Test]
-        public void AmountFadesTheRingingInAndOutBitExactAtZero()
-        {
-            var rng = new Rng(2);
-            var input = new float[96000];
-            for (int i = 0; i < input.Length; i++) input[i] = 0.3f * rng.NextBipolar();
-            var (e, v) = Make(vv => { Plain(vv, 4, 1.0, 20); vv.Set(P.Source, 1); Set(vv, P.Amount, 100); });
-            var ev = new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)), (48000, () => Set(v, P.Amount, 0)) };
-            var t = Render(e, 96000, 256, ev, input);
-            Assert.That(Measure.Rms(t.L, 20000, 8000), Is.Not.EqualTo(Measure.Rms(input, 20000, 8000)).Within(0.02), "at 100 % the modes are in the sound");
-            for (int i = 60000; i < 96000; i++) Assert.That(t.L[i], Is.EqualTo(input[i]), $"sample {i}: back to the dry input exactly");
-        }
-
-        [Test]
-        public void MixIsADryWetBlendWithNoLatency()
-        {
-            var rng = new Rng(21);
-            var input = new float[48000];
-            for (int i = 0; i < input.Length; i++) input[i] = 0.4f * rng.NextBipolar();
-            Take Go(double mix)
-            {
-                var (e, _) = Make(v => { Plain(v, 5, 2, 30); v.Set(P.Source, 1); Set(v, P.Mix, mix); });
-                return Render(e, 48000, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 52, 1f)) }, input);
-            }
-            var wet = Go(100); var half = Go(50); var dry = Go(0);
-            Assert.That(dry.L, Is.EqualTo(input), "Mix 0 is the input");
-            double worst = 0;
-            for (int i = 4800; i < input.Length; i++) worst = Math.Max(worst, Math.Abs(half.L[i] - (0.5f * input[i] + 0.5f * wet.L[i])));
-            Assert.That(worst, Is.LessThan(1e-6), "Mix 50 % is half dry (not delayed) and half wet");
-            Assert.That(Measure.Rms(wet.L, 24000, 12000), Is.GreaterThan(0.002), "the wet path sounds");
-        }
-
-        [Test]
-        public void AHeldChordTunesWhiteNoiseIntoItsPitchesWithinOneCent()
-        {
-            var (e, _) = Make(v => { Plain(v, (int)MalletModel.Custom, 6, 20, 16); v.Set(P.Source, 1); Set(v, P.Position, 37); Set(v, P.Release, 300); });
-            int len = Rate * 40;
-            var rng = new Rng(99);
-            var input = new float[len];
-            for (int i = 0; i < len; i++) input[i] = 0.2f * rng.NextBipolar();
-            int[] chord = { 60, 64, 67 };
-            var ev = new List<(int, Action)>();
-            foreach (int n in chord) { int k = n; ev.Add((0, () => e.NoteOn(k, k, 1f))); }
-            var x = Mono(Render(e, len, 256, ev, input));
-            // Welch: Hann windows of 2^17 (2.7 s) at half overlap over the last 32 s, averaged as power.
-            const int N = 1 << 17;
-            var power = new double[N / 2 + 1];
-            int count = 0;
-            for (int start = 8 * Rate; start + N <= len; start += N / 2)
-            {
-                var w = new float[N];
-                for (int i = 0; i < N; i++) w[i] = (float)(x[start + i] * (0.5 - 0.5 * Math.Cos(2 * Math.PI * (i + 0.5) / N)));
-                var mag = Fft.Magnitudes(w, 0, N);
-                for (int k = 0; k < mag.Length; k++) power[k] += mag[k] * mag[k];
-                count++;
-            }
-            Assert.That(count, Is.GreaterThan(20));
-            double Bin(double hz) => hz * N / Rate;
-            double Peak(double expected)
-            {
-                int lo = (int)Bin(expected * 0.99), hi = (int)Bin(expected * 1.01) + 1, best = lo;
-                for (int k = lo; k <= hi; k++) if (power[k] > power[best]) best = k;
-                double a = Math.Log(power[best - 1]), b = Math.Log(power[best]), c = Math.Log(power[best + 1]);
-                return (best + 0.5 * (a - c) / (a - 2 * b + c)) * Rate / N;
-            }
-            double worst = 0;
-            foreach (int n in chord)
-                for (int h = 1; h <= 3; h++)
-                {
-                    double want = DspMath.NoteToHz(n) * h;
-                    bool shared = chord.Any(m => m != n && Enumerable.Range(1, 3).Any(g => Math.Abs(Cents(DspMath.NoteToHz(m) * g, want)) < 25));
-                    if (shared) continue;               // two partials of the chord within 25 cents of each other make one peak between them
-                    double got = Peak(want);
-                    double c = Cents(got, want);
-                    worst = Math.Max(worst, Math.Abs(c));
-                    Assert.That(Math.Abs(c), Is.LessThan(1.0), $"note {n}, harmonic {h}: {got:0.000} Hz against {want:0.000} Hz");
-                    double peak = power[(int)Math.Round(Bin(got))];
-                    double gap = new[] { 1.06, 0.94, 1.1, 0.9 }.First(k => chord.All(m => Enumerable.Range(1, 8).All(g => Math.Abs(Cents(DspMath.NoteToHz(m) * g, want * k)) > 60)));
-                    double between = power[(int)Math.Round(Bin(want * gap))] + 1e-30;      // a gap away from every chord partial
-                    Assert.That(10 * Math.Log10(peak / between), Is.GreaterThan(15), $"note {n}, harmonic {h} stands out of the noise floor");
-                }
-            TestContext.Out.WriteLine($"white noise through a held C major chord: worst peak error {worst:0.000} cents over {count} averaged windows");
-        }
-
-        [Test]
-        public void TheResonatorSoundsOnlyWhileNotesAreHeld()
-        {
-            var rng = new Rng(4);
-            var input = new float[96000];
-            for (int i = 0; i < input.Length; i++) input[i] = 0.3f * rng.NextBipolar();
-            var (e, _) = Make(v => { Plain(v, 4, 1, 20); v.Set(P.Source, 1); Set(v, P.Release, 30); });
-            var ev = new List<(int, Action)> { (32000, () => e.NoteOn(1, 60, 1f)), (64000, () => e.NoteOff(1)) };
-            var x = Mono(Render(e, 96000, 256, ev, input));
-            Assert.That(Measure.Peak(x, 0, 31000), Is.EqualTo(0), "no notes, no sound (Mix 100 %: no dry)");
-            Assert.That(Measure.Rms(x, 40000, 20000), Is.GreaterThan(0.005), "a held note rings the input");
-            Assert.That(Measure.Peak(x, 70000, 20000), Is.LessThan(1e-4), "released and damped");
-        }
-
         // ------------------------------------------------------------------------------------------ gate: the audio thread
 
         [Test]
-        public void ARenderMakesNoGarbageWith16VoicesAnd32Modes([Values(0, 1)] int source)
+        public void ARenderMakesNoGarbageWith16VoicesAnd32Modes()
         {
-            var (e, v) = Make(vv => { Plain(vv, (int)MalletModel.Custom, 5, 30, 32); vv.Set(P.Source, source); Set(vv, P.TremDepth, 50); Set(vv, P.Spread, 80); Set(vv, P.Noise, 30); });
-            var l = new float[MalletEngine.MaxBlock]; var r = new float[MalletEngine.MaxBlock]; var input = new float[MalletEngine.MaxBlock];
-            var rng = new Random(5); var noise = new Rng(8);
-            for (int i = 0; i < input.Length; i++) input[i] = 0.2f * noise.NextBipolar();
+            var (e, v) = Make(vv => { Plain(vv, (int)MalletModel.Custom, 5, 30, 32); Set(vv, P.TremDepth, 50); Set(vv, P.Spread, 80); Set(vv, P.Noise, 30); });
+            var l = new float[MalletEngine.MaxBlock]; var r = new float[MalletEngine.MaxBlock];
+            var rng = new Random(5);
             for (int n = 0; n < 16; n++) e.NoteOn(n, 36 + 3 * n, 0.7f);
             var (bytes, why) = AllocationCheck.Run(2000, b =>
             {
@@ -580,9 +428,8 @@ namespace NeoBuzz.MachineTests
                 {
                     v.Set(P.Model, rng.Next(11)); v.Set(P.Decay, rng.Next(1001)); v.Set(P.Tilt, rng.Next(1001)); v.Set(P.Bright, rng.Next(1001)); v.Set(P.Position, rng.Next(1001));
                     v.Set(P.Volume, 600 + rng.Next(400)); v.Set(P.TremDepth, rng.Next(1001)); v.Set(P.TremRate, rng.Next(1001)); v.Set(P.Spread, rng.Next(1001));
-                    v.Set(P.Modes, rng.Next(29)); v.Set(P.Mix, rng.Next(1001)); v.Set(P.Amount, rng.Next(1001)); v.Set(P.InDrive, rng.Next(1001)); v.Set(P.Stretch, rng.Next(1001));
+                    v.Set(P.Modes, rng.Next(29)); v.Set(P.Stretch, rng.Next(1001));
                 }
-                Array.Copy(input, l, l.Length); Array.Copy(input, r, r.Length);
                 e.Process(l, r, MalletEngine.MaxBlock);
             });
             Assert.That(bytes, Is.EqualTo(0), why);
@@ -591,24 +438,19 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void CpuPerVoiceModeIsReported()
         {
-            foreach (int source in new[] { 0, 1 })
-            {
-                var (e, _) = Make(vv => { Plain(vv, (int)MalletModel.Custom, 20, 0, 32); vv.Set(P.Source, source); Set(vv, P.Release, 2000); });
-                var l = new float[256]; var r = new float[256]; var input = new float[256];
-                var noise = new Rng(8);
-                for (int i = 0; i < 256; i++) input[i] = 0.1f * noise.NextBipolar();
-                for (int n = 0; n < 16; n++) e.NoteOn(n, 36 + n, 0.7f);
-                for (int b = 0; b < 100; b++) { Array.Copy(input, l, 256); Array.Copy(input, r, 256); e.Process(l, r, 256); }
-                Assert.That(e.ActiveVoices, Is.EqualTo(16));
-                var sw = Stopwatch.StartNew();
-                const int blocks = 750;                                       // 4 s of audio
-                for (int b = 0; b < blocks; b++) { Array.Copy(input, l, 256); Array.Copy(input, r, 256); e.Process(l, r, 256); }
-                sw.Stop();
-                double perSample = sw.Elapsed.TotalMilliseconds * 1e6 / (blocks * 256.0 * 16 * 32);
-                double load = sw.Elapsed.TotalSeconds / (blocks * 256.0 / Rate);
-                TestContext.Out.WriteLine($"{(source == 0 ? "Mallet" : "Resonator")}: {perSample:0.00} ns per voice-mode-sample, 16 voices of 32 modes use {load * 100:0.0} % of one core at 48 kHz");
-                Assert.That(perSample, Is.LessThan(30), "per voice-mode-sample");
-            }
+            var (e, _) = Make(vv => { Plain(vv, (int)MalletModel.Custom, 20, 0, 32); Set(vv, P.Release, 2000); });
+            var l = new float[256]; var r = new float[256];
+            for (int n = 0; n < 16; n++) e.NoteOn(n, 36 + n, 0.7f);
+            for (int b = 0; b < 100; b++) e.Process(l, r, 256);
+            Assert.That(e.ActiveVoices, Is.EqualTo(16));
+            var sw = Stopwatch.StartNew();
+            const int blocks = 750;                                       // 4 s of audio
+            for (int b = 0; b < blocks; b++) e.Process(l, r, 256);
+            sw.Stop();
+            double perSample = sw.Elapsed.TotalMilliseconds * 1e6 / (blocks * 256.0 * 16 * 32);
+            double load = sw.Elapsed.TotalSeconds / (blocks * 256.0 / Rate);
+            TestContext.Out.WriteLine($"{perSample:0.00} ns per voice-mode-sample, 16 voices of 32 modes use {load * 100:0.0} % of one core at 48 kHz");
+            Assert.That(perSample, Is.LessThan(30), "per voice-mode-sample");
         }
 
         [Test]
@@ -634,21 +476,18 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AutomationMakesNoZipperNoise()
         {
-            // A held bank (Custom, a harmonic series) driven by a sine half way between its first two modes (so it is not a resonance that overloads); every block moves Volume, Brightness, Position, Decay, the drive, the spread,
-            // the tremolo and Mix. Nothing above 2 kHz may rise above -60 dB of the carrier: the modes there have no input but what the changes make.
-            double f0 = DspMath.NoteToHz(60);
-            var (e, v) = Make(vv => { Plain(vv, (int)MalletModel.Custom, 2, 0, 16); vv.Set(P.Source, 1); Set(vv, P.Spread, 50); });
+            // A long, soft strike of a harmonic series (Custom, 20 s decay, a 12 ms felt head, so almost nothing rings above 2 kHz); from the first second on every
+            // block moves Volume, Brightness, Position, Decay, the spread and the tremolo. Nothing above 2 kHz may rise above -60 dB of the carrier: the modes
+            // there have nothing but what the changes make.
+            var (e, v) = Make(vv => { Plain(vv, (int)MalletModel.Custom, 20, 0, 16); Set(vv, P.Hardness, 12); Set(vv, P.Spread, 50); });
             int len = Rate * 6;
-            var input = new float[len];
-            for (int i = 0; i < len; i++) input[i] = (float)(0.2 * Math.Sin(2 * Math.PI * 1.5 * f0 * i / Rate));
             var rng = new Random(9);
-            var x = Mono(Render(e, len, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)) }, input, pos =>
+            var x = Mono(Render(e, len, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)) }, pos =>
             {
                 if (pos < Rate) return;
                 v.Set(P.Volume, 700 + rng.Next(300)); v.Set(P.Bright, rng.Next(1001)); v.Set(P.Position, 200 + rng.Next(700)); v.Set(P.Decay, 500 + rng.Next(400));
-                v.Set(P.InDrive, 500 + rng.Next(500)); v.Set(P.Spread, rng.Next(1001)); v.Set(P.TremDepth, rng.Next(400)); v.Set(P.Mix, 800 + rng.Next(200));
+                v.Set(P.Spread, rng.Next(1001)); v.Set(P.TremDepth, rng.Next(400));
             }));
-            // The dry sine at the same frequency is in the mix: look from 2 kHz up.
             int start = 2 * Rate, n = 1 << 16;
             var w = new float[n];
             for (int i = 0; i < n; i++) w[i] = (float)(x[start + i] * (0.35875 - 0.48829 * Math.Cos(2 * Math.PI * (i + 0.5) / n) + 0.14128 * Math.Cos(4 * Math.PI * (i + 0.5) / n) - 0.01168 * Math.Cos(6 * Math.PI * (i + 0.5) / n)));
@@ -685,8 +524,7 @@ namespace NeoBuzz.MachineTests
             Take Go(ParamValues v)
             {
                 var e = new MalletEngine(v); e.SetSampleRate(Rate);
-                var input = new float[24000]; var noise = new Rng(1); for (int i = 0; i < input.Length; i++) input[i] = 0.2f * noise.NextBipolar();
-                return Render(e, 24000, 256, new List<(int, Action)> { (0, () => { e.NoteOn(1, 55, 0.9f); e.NoteOn(2, 62, 0.6f); }) }, input);
+                return Render(e, 24000, 256, new List<(int, Action)> { (0, () => { e.NoteOn(1, 55, 0.9f); e.NoteOn(2, 62, 0.6f); }) });
             }
             var ra = Go(a); var rb = Go(b);
             Assert.That(rb.L, Is.EqualTo(ra.L)); Assert.That(rb.R, Is.EqualTo(ra.R));
@@ -708,7 +546,7 @@ namespace NeoBuzz.MachineTests
         }
 
         /// <summary>A short melody and chord of our own, on the engine of a preset: (left, right).</summary>
-        internal static Take PlayMelody(Dictionary<int, int> preset, float[] input, int length)
+        internal static Take PlayMelody(Dictionary<int, int> preset, int length)
         {
             var v = new ParamValues(Params.Table);
             foreach (var kv in preset) v.Set(kv.Key, kv.Value);
@@ -718,7 +556,7 @@ namespace NeoBuzz.MachineTests
             for (int i = 0; i < melody.Length; i++) { int n = melody[i], k = 20 + i; ev.Add((i * 9216, () => e.NoteOn(k, n, 0.85f))); ev.Add((i * 9216 + 7680, () => e.NoteOff(k))); }
             int[] chord = { 48, 55, 60 };
             for (int i = 0; i < chord.Length; i++) { int n = chord[i], k = i; ev.Add((0, () => e.NoteOn(k, n, 0.7f))); ev.Add((length - 9600, () => e.NoteOff(k))); }
-            return Render(e, length, 256, ev, input);
+            return Render(e, length, 256, ev);
         }
 
         [Test]
@@ -727,15 +565,11 @@ namespace NeoBuzz.MachineTests
             var presets = FactoryPresets().ToList();
             Assert.That(presets.Count, Is.EqualTo(8), "eight presets");
             int len = Rate * 4;
-            var rng = new Rng(17);
-            var input = new float[len];
-            // A drum-like input of our own: a kick-ish thump and noise bursts on a beat.
-            for (int b = 0; b < 8; b++) { int at = b * 24000; for (int i = 0; i < 4800 && at + i < len; i++) input[at + i] = (float)(0.7 * Math.Exp(-i / 900.0) * (b % 2 == 0 ? Math.Sin(2 * Math.PI * 60 * i / Rate) : rng.NextBipolar())); }
             var bands = new List<double[]>();
             var names = new List<string>();
             foreach (var (name, vals) in presets)
             {
-                var t = PlayMelody(vals, input, len);
+                var t = PlayMelody(vals, len);
                 var x = Mono(t);
                 double peak = Measure.Peak(x, 0, len), rms = Measure.Rms(x, 0, len);
                 TestContext.Out.WriteLine($"{name}: peak {Measure.Db(peak):0.0} dBFS, RMS {Measure.Db(rms):0.0} dB");
@@ -767,31 +601,91 @@ namespace NeoBuzz.MachineTests
             Assert.That(least, Is.GreaterThan(4.0), $"{pair}: clearly different");
         }
 
+        /// <summary>The level of an instrument: the pack's melody peaks between -6 and -3 dBFS, and four notes struck together at full velocity stay under -1 dBFS (the limiter's ceiling) with no clicks.</summary>
+        [Test]
+        public void TheLevelIsThatOfAnInstrumentAndAFourNoteChordDoesNotClip()
+        {
+            int length = (int)(Rate * (MalletPack.Beat * 24 + 1.8));
+            foreach (var (name, vals) in FactoryPresets())
+            {
+                var t = MalletPack.Play(vals, MalletPack.Tune(), length);
+                double peak = Math.Max(Measure.Peak(t.L, 0, t.L.Length), Measure.Peak(t.R, 0, t.R.Length));
+                Assert.That(Measure.Db(peak), Is.InRange(-6.0, -3.0), $"{name}: the melody's peak");
+                var v = new ParamValues(Params.Table);
+                foreach (var kv in vals) v.Set(kv.Key, kv.Value);
+                var e = new MalletEngine(v); e.SetSampleRate(Rate);
+                var ev = new List<(int, Action)>();
+                int[] chord = { 48, 55, 60, 64 };
+                for (int i = 0; i < chord.Length; i++) { int n = chord[i], k = i; ev.Add((0, () => e.NoteOn(k, n, 1f))); ev.Add((Rate * 2, () => e.NoteOff(k))); }
+                var c = Render(e, Rate * 4, 256, ev);
+                double cp = Math.Max(Measure.Peak(c.L, 0, c.L.Length), Measure.Peak(c.R, 0, c.R.Length));
+                TestContext.Out.WriteLine($"{name}: melody peak {Measure.Db(peak):0.0} dBFS, four-note chord at full velocity {Measure.Db(cp):0.0} dBFS");
+                Assert.That(Measure.Db(cp), Is.LessThan(-1.0 + 1e-6), $"{name}: the chord stays under the limiter's -1 dBFS ceiling");
+                Assert.That(ClickDetector.Find(c.L, c.R), Is.Empty, $"{name}: no clicks in the chord (a limiter that bites would make them)");
+            }
+        }
+
+        [Test]
+        public void TheLimiterIsTransparentBelowItsKneeAndHoldsTheCeiling()
+        {
+            // Below the knee (0.7, -3.1 dBFS) the output is linear in Volume: the same note 6 dB down is half.
+            Take Note(double volume)
+            {
+                var (e, _) = Make(v => { Plain(v, 4, 20, 0, 8); Set(v, P.Hardness, 4); Set(v, P.Volume, volume); });
+                return Render(e, 24000, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 0.6f)) });
+            }
+            var loud = Note(12.0); var half = Note(12.0 - 6.0206);
+            double top = Measure.Peak(loud.L, 0, loud.L.Length);
+            Assert.That(top, Is.InRange(0.15, 0.69), "the note sits under the knee");
+            for (int i = 0; i < loud.L.Length; i++) Assert.That(half.L[i], Is.EqualTo(0.5f * loud.L[i]).Within(5e-3 * top), $"sample {i}: linear below the knee");
+            var (e2, _) = Make(v => { Plain(v, 4, 20, 0, 32); Set(v, P.Hardness, 0.3); Set(v, P.Volume, 12); });
+            for (int k = 0; k < 16; k++) e2.NoteOn(k, 48 + k, 1f);
+            var hot = Render(e2, 24000, 256);
+            Assert.That(Measure.Db(Math.Max(Measure.Peak(hot.L, 0, hot.L.Length), Measure.Peak(hot.R, 0, hot.R.Length))), Is.LessThanOrEqualTo(-1.0 + 1e-6), "16 hard strikes at +12 dB stay under the -1 dBFS ceiling");
+        }
+
         [Test]
         public void EveryFactoryPresetPlaysWithoutClicks()
         {
             int len = Rate * 6;
-            var rng = new Rng(17);
-            var input = new float[len];
-            for (int b = 0; b < 12; b++) { int at = b * 24000; for (int i = 0; i < 4800 && at + i < len; i++) input[at + i] = (float)(0.7 * Math.Exp(-i / 900.0) * (b % 2 == 0 ? Math.Sin(2 * Math.PI * 60 * i / Rate) : rng.NextBipolar())); }
             foreach (var (name, vals) in FactoryPresets())
             {
-                var t = PlayMelody(vals, input, len);
+                var t = PlayMelody(vals, len);
                 var clicks = ClickDetector.Find(t.L, t.R);
                 Assert.That(clicks, Is.Empty, $"{name}: clicks at {string.Join(", ", clicks)}");
             }
         }
 
+        static string RepoFile(params string[] parts)
+        {
+            var d = new DirectoryInfo(AppContext.BaseDirectory);
+            while (d != null && !File.Exists(Path.Combine(d.FullName, "ReBuzz.sln"))) d = d.Parent;
+            return Path.Combine(new[] { d!.FullName }.Concat(parts).ToArray());
+        }
+
+        /// <summary>Neo Mallet is an instrument: a generator with no audio input, no Mix and no Amount, in the manifest, both projects and the machine's declaration.</summary>
         [Test]
-        public void TheModelAndSourceNamesAreTheDocumented()
+        public void TheMachineIsAGeneratorWithNoAudioInputMixOrAmount()
+        {
+            var manifest = File.ReadAllText(RepoFile("Machines", "NeoMallet", "Neo Mallet.machine.json"));
+            Assert.That(System.Text.Json.JsonDocument.Parse(manifest).RootElement.GetProperty("kind").GetString(), Is.EqualTo("generator"), "manifest kind");
+            foreach (var proj in new[] { RepoFile("Machines", "Portable", "NeoMallet", "NeoMallet.Portable.csproj"), RepoFile("Machines", "Studio", "NeoMallet", "NeoMallet.Studio.csproj") })
+                Assert.That(File.ReadAllText(proj), Does.Contain("<NeoKind>Generators</NeoKind>"), proj);
+            Assert.That(File.ReadAllText(RepoFile("Machines", "NeoMallet", "NeoMallet.cs")), Does.Contain("InputCount = 0, OutputCount = 1"), "no audio input");
+            Assert.That(File.ReadAllText(RepoFile("Machines", "NeoMallet", "NeoMallet.cs")), Does.Not.Contain("Sample[] input"), "Work takes no input");
+            foreach (var id in new[] { "Source", "InDrive", "Mix", "Amount" })
+                Assert.That(Params.Table.Any(t => t.Id == id), Is.False, $"no {id} parameter");
+            Assert.That(Params.Table.Length, Is.EqualTo(16));
+        }
+
+        [Test]
+        public void TheModelNamesAndRangesAreTheDocumented()
         {
             Assert.That(Params.Table[P.Model].Names, Is.EqualTo(ModelNames));
-            Assert.That(Params.Table[P.Source].Names, Is.EqualTo(new[] { "Mallet", "Resonator" }));
             Assert.That(Params.Table[P.Hardness].Value(Params.Table[P.Hardness].Min), Is.EqualTo(12.0).Within(1e-9), "softest: 12 ms");
             Assert.That(Params.Table[P.Hardness].Value(Params.Table[P.Hardness].Max), Is.EqualTo(0.3).Within(1e-9), "hardest: 0.3 ms");
             Assert.That(Params.Table[P.Modes].Value(Params.Table[P.Modes].Min), Is.EqualTo(4));
             Assert.That(Params.Table[P.Modes].Value(Params.Table[P.Modes].Max), Is.EqualTo(32));
-            Assert.That(Params.Table[P.Amount].Value(Params.Table[P.Amount].Max), Is.EqualTo(200).Within(1e-9));
         }
 
         [Test]

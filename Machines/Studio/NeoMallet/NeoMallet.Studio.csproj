@@ -3,7 +3,7 @@
   <PropertyGroup>
     <NeoFolder>NeoMallet</NeoFolder>
     <NeoName>Neo Mallet</NeoName>
-    <NeoKind>Effects</NeoKind>
+    <NeoKind>Generators</NeoKind>
   </PropertyGroup>
   <Import Project="../NeoStudio.targets" />
 </Project>

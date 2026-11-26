@@ -3,21 +3,18 @@
 namespace NeoBuzz.Mallet
 class NeoMalletMachine
 tracks 16
-summary A modal synth for mallets, bars, bells and plucks, with a resonator mode: each note rings a bank of up to 32 decaying modes (soft, hard, metal and bright bars, a tube, a bell, a tine, a stiff string, glass, a plate, or a custom stretched series), struck by a mallet whose contact time sets how much of the highs it excites, at a position along the body that weighs each mode, or plucked. Decay, a damping tilt that kills the highs sooner, brightness, a tremolo, release damping and velocity to hardness shape it. In Resonator mode any audio into the machine rings the same mode bank, tuned to the notes you hold, with Mix and Amount. 16 voices. Use it for marimba, vibraphone and glockenspiel, chimes, bells, music-box tines, harp-like plucks, glass pads, and for turning drum loops and noise into pitched resonances.
+summary A modal synth for mallets, bars, bells and plucks: each note rings a bank of up to 32 decaying modes (soft, hard, metal and bright bars, a tube, a bell, a tine, a stiff string, glass, a plate, or a custom stretched series), struck by a mallet whose contact time sets how much of the highs it excites, at a position along the body that weighs each mode, or plucked. Decay, a damping tilt that kills the highs sooner, brightness, a tremolo, release damping and velocity to hardness shape it. 16 voices. Use it for marimba, vibraphone and glockenspiel, chimes, bells, music-box tines, harp-like plucks and glass pads.
 
 group Model
 Model       "Model"         0 10    0     enum Soft_bar Hard_bar Metal_bar Bright_bar Tube Bell Tine Pluck Glass Plate Custom | The body: which modes the note rings (their frequency ratios and weights)
     how Chooses the body that rings: a soft (marimba-like) bar, a hard (xylophone-like) bar, a metal (vibraphone-like) bar, a bright (glockenspiel-like) bar, a tube, a bell, a tine, a stiff string, glass, a plate, or a custom stretched series.
     sound Bars are woody or metallic and pitched, the tube is hollow, the bell is deep with a minor-third shimmer, the tine is thin and sweet, the string is plucked, glass beats slowly and the plate is clangorous.
-Source      "Source"        0 1     0     enum Mallet Resonator           | Where the energy comes from: a note strikes (or plucks) the bodies, or the audio input rings the bodies tuned to the held notes
-    how Mallet: every note strikes a body of its own. Resonator: nothing is struck, the audio coming into the machine drives one body for each held note.
-    sound Mallet plays tuned percussion; Resonator turns drums, noise or any sound into pitched ringing that follows your keys.
 group Exciter
 Hardness    "Hardness"      0 1000  486   exp 12 0.3 ms 1                 | The mallet's contact time with the body, 12 ms (a soft felt head) down to 0.3 ms (a hard stick): a short contact excites the high modes, a long one only the low
     how Sets how hard the mallet is, from a soft head that touches the bar for 12 ms to a hard stick that touches it for 0.3 ms. The knob reads the contact time.
     sound Soft heads give a round, dull thud with few overtones; hard sticks give a bright, clicking, ringing attack.
 Position    "Position"      0 1000  300   pct                             | Where along the body the mallet strikes: each mode n is weighed by the sine of n times pi times the position (bells, glass and plates by their own shape), so a mode at a node is nearly silent
-    how Moves the strike across the body from one end (0 %) to the other (100 %); in Resonator mode it moves the point where the modes are heard.
+    how Moves the strike across the body from one end (0 %) to the other (100 %).
     sound The centre brings out the fundamental and hides the second mode; towards the ends the overtones take over and the tone turns thin and nasal.
 VelHard     "Velocity to hardness" 0 1000 600 pct                        | How much the note's velocity changes the contact time: at 100 % a hard hit (velocity 127) is about 8 times shorter, and a soft hit 8 times longer, than the Hardness setting
     how Sets how much a hard hit also makes the mallet harder, from 0 % (velocity only changes the level) to 100 %.
@@ -55,10 +52,6 @@ TremRate    "Tremolo rate"  0 1000  691   exp 0.5 12 Hz 2                 | Rate
 TremDepth   "Tremolo depth" 0 1000  0     pct                             | Depth of the tremolo: at 100 % the level swings between full and silent
     how Sets how deeply the level swings, from 0 % (off) to 100 %.
     sound Turn it up for the pulsing of a vibraphone with its motor on.
-group Resonator
-InDrive     "Input drive"   0 1000  667   db -24 12                       | Resonator mode: the level of the audio driving the modes
-    how Sets how loud the audio is when it enters the modes, from -24 to +12 dB.
-    sound More drive makes the pitched ringing louder against the dry sound.
 group Output
 Spread      "Stereo spread" 0 1000  400   pct                             | How far the notes are placed left and right by their pitch (0 % is all centre)
     how Sets how widely low and high notes are spread across the stereo field, from 0 to 100 %.
@@ -66,9 +59,3 @@ Spread      "Stereo spread" 0 1000  400   pct                             | How 
 Volume      "Volume"        0 1000  750   db -60 12 inf                   | Output level
     how Sets the final level in dB, from off to +12.
     sound It makes the instrument louder or quieter without changing its character.
-Mix         "Mix"           0 1000  1000  pct                             | Dry/wet: the audio coming in against the sound of the modes (the dry signal is not delayed: there is no latency)
-    how Blends the audio coming into the machine with the sound of the modes.
-    sound At 100 % you hear only the modes; lower values keep the input, so a drum loop stays and gains a pitched ring.
-Amount      "Amount"        0 1000  500   lin 0 200 % 0                   | Effect strength: how strongly the modes act, 100 % = the settings as they stand, 0 = the input unchanged (bit for bit), 200 % = exaggerated (a longer decay and a harder drive)
-    how Scales the decay time of the modes and the drive of the input at once, so the ringing grows or fades without changing its tuning; at 0 % the machine is out of the signal path and the input passes bit for bit.
-    sound Turn it down to hear the ringing fade out of the sound, and up to make the resonances longer and louder.

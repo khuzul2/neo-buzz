@@ -10,9 +10,6 @@ namespace NeoBuzz.Mallet
         [ParameterDecl(Name = "Model", Description = "The body: which modes the note rings (their frequency ratios and weights)", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int Model { get => Values[P.Model]; set => Values.Set(P.Model, value); }
 
-        [ParameterDecl(Name = "Source", Description = "Where the energy comes from: a note strikes (or plucks) the bodies, or the audio input rings the bodies tuned to the held notes", MinValue = 0, MaxValue = 1, DefValue = 0)]
-        public int Source { get => Values[P.Source]; set => Values.Set(P.Source, value); }
-
         [ParameterDecl(Name = "Hardness", Description = "The mallet's contact time with the body, 12 ms (a soft felt head) down to 0.3 ms (a hard stick): a short contact excites the high modes, a long one only the low", MinValue = 0, MaxValue = 1000, DefValue = 486)]
         public int Hardness { get => Values[P.Hardness]; set => Values.Set(P.Hardness, value); }
 
@@ -52,20 +49,11 @@ namespace NeoBuzz.Mallet
         [ParameterDecl(Name = "Tremolo depth", Description = "Depth of the tremolo: at 100 % the level swings between full and silent", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int TremDepth { get => Values[P.TremDepth]; set => Values.Set(P.TremDepth, value); }
 
-        [ParameterDecl(Name = "Input drive", Description = "Resonator mode: the level of the audio driving the modes", MinValue = 0, MaxValue = 1000, DefValue = 667)]
-        public int InDrive { get => Values[P.InDrive]; set => Values.Set(P.InDrive, value); }
-
         [ParameterDecl(Name = "Stereo spread", Description = "How far the notes are placed left and right by their pitch (0 % is all centre)", MinValue = 0, MaxValue = 1000, DefValue = 400)]
         public int Spread { get => Values[P.Spread]; set => Values.Set(P.Spread, value); }
 
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 750)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
-
-        [ParameterDecl(Name = "Mix", Description = "Dry/wet: the audio coming in against the sound of the modes (the dry signal is not delayed: there is no latency)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
-        public int Mix { get => Values[P.Mix]; set => Values.Set(P.Mix, value); }
-
-        [ParameterDecl(Name = "Amount", Description = "Effect strength: how strongly the modes act, 100 % = the settings as they stand, 0 = the input unchanged (bit for bit), 200 % = exaggerated (a longer decay and a harder drive)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
-        public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

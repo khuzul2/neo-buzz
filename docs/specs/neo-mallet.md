@@ -1,6 +1,6 @@
 # Neo Mallet
 
-Status: MAL1 (issue #187). A modal synth for mallets, bars, bells and plucks, with a resonator mode, one machine, clean room.
+Status: MAL1 (issue #187). A modal synth for mallets, bars, bells and plucks: a normal instrument (a generator), clean room. A resonator mode is later (section 10).
 Code: `Machines/NeoMallet` (engine in `Engine/MalletEngine.cs`, mode tables in `Engine/MalletModels.cs`, parameters in `Params.def`),
 gates in `NeoBuzz.MachineTests/MalletTests.cs`, guide `ReBuzz.Agent/Guides/machines/Neo Mallet.md`.
 
@@ -22,7 +22,6 @@ commented with their source in `MalletModels.cs`. No other product's code, table
   hit); a plucked model (Tine, Pluck) strikes 0.3 times as long; the contact is clamped to 0.08 to 30 ms. A little noise rides on the pulse (Mallet noise, multiplicative, so it is as smooth as the pulse).
 - **Position** weighs mode `n` by `sin(n pi x)` (cosine for the second half of a Glass doublet), keeping its sign (neighbouring modes move in opposite senses, so the strike does not
   start every mode in phase and add up to one sharp pulse), with a floor of 3 % so a mode on a node is 30 dB down, not gone. Bells, glass and plates use their own shape numbers.
-- **Resonator source:** no exciter; the audio in drives each held note's bank through a gate that rises over 5 ms (and falls with Release damping). The drive is normalised so that each mode adds the same power to white noise.
 
 ## 3. The models
 
@@ -41,35 +40,35 @@ commented with their source in `MalletModels.cs`. No other product's code, table
 | Custom | `n * 2^((n-1) * Stretch / 1200) * sqrt(1 + B n^2)` | Stretch in cents per mode step |
 
 Whatever the table, the mode that carries the note (the first, or the prime for the bell, or the first of a stiff string) is tuned to the note: the engine divides every ratio by the carrier's.
-Each model has a level trim (`Trim` in `MalletModels.cs`) so that a single note's peak lands at about -9.5 dBFS at Volume 0 dB whatever the model.
+Each model has a level trim (`Trim` in `MalletModels.cs`) so that the models sit at about the same level whatever the model; the strike gain and the limiter below set the instrument's level.
 
-## 4. The single-machine shape, and why
+## 4. The shape: a generator
 
-The brief asks for audio input that rings the bank, and a host that cannot always feed audio into a generator. Neo Mallet is therefore **one effect that also plays by notes**:
-it has one audio input and one output, takes notes through the host's note input (`note_in`), and has the shared Mix and Amount (the `FxStage` helper). On a track it plays as an
-instrument (Mix 100 %: only the modes; the input is silent); with `Source` on Resonator the input is what rings the held notes' banks (Mix below 100 % keeps the input beside the ringing).
-The alternatives were a generator plus a separate effect (two machines, two presets, and the resonator one could not hold notes without a second input) or a generator with a hidden
-sidechain (not supported by the host's wiring). One machine means one preset set, one editor and one state, and it is the same code path in both sources. The cost: at Amount 0 % the
-machine passes its input bit for bit, so the notes play no sound; Amount, as for every effect, is the effect strength, and 0 % is dry. This is stated in the guide.
-Mix and Amount are latency compensated; the machine has no latency (the dry is not delayed).
+Neo Mallet is a **generator**, a normal instrument like the other Neo synths: no audio input (`InputCount = 0`), notes in through the host's note input (`note_in`), 16 tracks of Note
+and Velocity, MIDI and note wires. It can start a new track on an empty-space drop and replace a generator. It has no Mix and no Amount (those belong to effects; the shared helper is
+not used). The first build was an effect that also played by notes (so that audio could ring the bank); the project owner decided an effect cannot be a track's instrument, so the
+resonator source, the input, Mix and Amount were removed before anything shipped (the state is still version 0, its layout line rewritten).
+
+Level: a strike's pulse gain is 0.65 and every preset's Volume is set so that the pack's melody (a tune and a bass note, velocities 0.6 to 0.9) peaks between -6 and -3 dBFS
+(measured -5.1 to -4.5, under the knee: the limiter does not touch it). The output limiter is transparent below 0.7 (-3.1 dBFS: the output is exactly linear in Volume there) and rounds above it with slope 1 at the knee and a smooth approach to a ceiling of 0.89 (-1 dBFS), so four notes struck together
+at full velocity stay under -1 dBFS and click-free (`TheLevelIsThatOfAnInstrumentAndAFourNoteChordDoesNotClip`).
 
 ## 5. Parameters and state
 
-`Params.def` (20 parameters, version 0): Model, Source, Hardness (ms), Position (%), Velocity to hardness (%), Mallet noise (%), Decay (s), Damping tilt (%), Brightness (%),
-Release damping (ms), Modes (4 to 32), Stretch (cents), Inharmonicity (%), Tremolo rate (Hz), Tremolo depth (%), Input drive (dB), Stereo spread (%), Volume (dB), Mix (%), Amount (%).
-New parameters are appended. Amount scales the decay time of the modes and the drive of the input at once (the `AmountRules`), so 100 % is the settings as they stand, 200 % rings longer and
-harder, and 0 % is the dry input bit for bit. Every continuous parameter is smoothed: Volume, tremolo and spread have their own ramps, the rest go through the per-tick slew and the per-sample gain glide.
+`Params.def` (16 parameters, version 0): Model, Hardness (ms), Position (%), Velocity to hardness (%), Mallet noise (%), Decay (s), Damping tilt (%), Brightness (%),
+Release damping (ms), Modes (4 to 32), Stretch (cents), Inharmonicity (%), Tremolo rate (Hz), Tremolo depth (%), Stereo spread (%), Volume (dB).
+New parameters are appended. Every continuous parameter is smoothed: Volume, tremolo and spread have their own ramps, the rest go through the per-tick slew and the per-sample gain glide.
 
 ## 6. Editor
 
-House style (NeoEditor): the Model drop-down and Source switch, the **mode drawing** (a line per mode on a log axis of frequency against the note, its height the mode's gain at the strike
+House style (NeoEditor): the Model drop-down, the **mode drawing** (a line per mode on a log axis of frequency against the note, its height the mode's gain at the strike
 position and Brightness, the carrier lit), Modes, Stretch and Inharmonicity; Exciter (Hardness, Position, Velocity to hardness, Mallet noise); Decay and damping (Decay, Damping tilt,
-Brightness, Release damping); Tremolo; Resonator (Input drive, Mix, Amount); Output (Volume, Stereo spread, meter). Mac gallery shot `660-neo-mallet-editor`, dark and light, with the Church Bell preset.
+Brightness, Release damping); Tremolo; Output (Volume, Stereo spread, meter). Mac gallery shot `660-neo-mallet-editor`, dark and light, with the Church Bell preset.
 
 ## 7. Presets
 
 Eight, generic names: Bars - Soft Wooden Bars, Bright Metal Bars, Tremolo Bars; Chimes - Hollow Tube Chimes; Bells - Church Bell; Plucked - Thumb Tines; Glass - Glass Harmonics;
-Resonator - Resonated Drums (Source Resonator over a drum loop). Each is different from the others by at least 11 dB RMS over one-third-octave bands, and peaks between -3 and -6 dBFS on the preset test's held four-note chord.
+Plates - Struck Steel Plate (the Plate model hit hard: a clangorous, inharmonic burst that rumbles for five seconds). Each is clearly different from the others (TheFactoryPresetsAreAudibleAndClearlyDifferent, over one-third-octave bands), and the pack's melody peaks between -6 and -3 dBFS.
 
 ## 8. Gates, as tested (`MalletTests`)
 
@@ -78,16 +77,16 @@ Resonator - Resonated Drums (Source Resonator over a drum loop). Each is differe
 | Fundamental within 1 cent, C2 to C7 | `TheFundamentalIsWithinOneCentOfTheNoteFromC2ToC7`, 11 models x 61 notes, FFT peak | worst 0.108 cent (Glass), 0.006 for the others |
 | Every mode within 1 cent of its table ratio after stretch | `EveryModeIsWithinOneCentOf...` (engine snapshot, 32 modes, three stretch / inharmonicity settings) and `TheModesInTheAudioSitAtTheirTableRatios` (42 modes in the audio) | 0.0001 cent; 0.002 cent in the audio |
 | T60 of the fundamental within 5 % of Decay | `TheFundamentalsT60IsWithinFivePercentOfDecay`, 11 models x 3 notes x 3 decays, complex demodulation | worst 0.58 % |
-| No clicks at note start, release and steal, blocks 16, 64, 256 | `NoClicksAtNoteStartReleaseAndStealAtBlockSizes16And64And256` (11 models, hardness 2 and 0.3 ms, a chord, 20 notes at once, a hard All Notes Off), and the resonator's | 0 clicks |
-| Ear-proxy: max abs second difference of the first and the last 5 ms no higher than the sharpest 5 ms of the body | `TheFirstAndLast5MsHaveNoSharperEdgesThanTheMiddle`, `...Resonator...` | met, with the strike as below |
+| No clicks at note start, release and steal, blocks 16, 64, 256 | `NoClicksAtNoteStartReleaseAndStealAtBlockSizes16And64And256` (11 models, hardness 2 and 0.3 ms, a chord, 20 notes at once, a hard All Notes Off), | 0 clicks |
+| Ear-proxy: max abs second difference of the first and the last 5 ms no higher than the sharpest 5 ms of the body | `TheFirstAndLast5MsHaveNoSharperEdgesThanTheMiddle` | met, with the strike as below |
 | Block size does not change the sound | `ABlockOf16And64And256GiveTheSameSamples` | bit-exact |
 | Steal fade at least 3 ms | `AStolenVoiceFadesOutOverAtLeast3Ms` | 95 % to 5 % in 4.25 ms (fade 5 ms) |
-| Resonator: Amount 0 bit-exact; Mix, Amount latency 0 | `AmountZeroIsBitExactDry`, `AmountFadesTheRingingIn...`, `MixIsADryWetBlendWithNoLatency` | bit-exact, latency 0 |
-| A held chord tunes white noise within 1 cent | `AHeldChordTunesWhiteNoiseIntoItsPitchesWithinOneCent` (C E G, 8 to 40 s of noise, Welch average) | worst 0.31 cent |
-| 0 bytes per block, 16 voices x 32 modes, 2000 blocks | `ARenderMakesNoGarbageWith16VoicesAnd32Modes` (both sources, parameters moving) | 0 bytes |
+| Generator: no audio input, no Mix, no Amount, 16 parameters | `TheMachineIsAGeneratorWithNoAudioInputMixOrAmount` (manifest kind, both projects, `InputCount = 0`) | met |
+| Level: the pack melody -6 to -3 dBFS, a four-note chord under -1 dBFS, 0 clicks | `TheLevelIsThatOfAnInstrumentAndAFourNoteChordDoesNotClip`, `TheLimiterIsTransparentBelowItsKneeAndHoldsTheCeiling` | -5.1 to -4.5 dBFS |
+| 0 bytes per block, 16 voices x 32 modes, 2000 blocks | `ARenderMakesNoGarbageWith16VoicesAnd32Modes` (parameters moving) | 0 bytes |
 | CPU per voice-mode | `CpuPerVoiceModeIsReported` | 3.4 ns per voice-mode-sample; 16 voices of 32 modes use 8.3 to 8.5 % of one core at 48 kHz (this 2-core box) |
 | No denormals, silent after the tail | `TheTailsLeaveNoDenormalsAndTheMachineGoesQuiet` | 0 |
-| No zipper above -60 dB under automation | `AutomationMakesNoZipperNoise` (Volume, Brightness, Position, Decay, drive, spread, tremolo, Mix moved every block) | -71.6 dB under the carrier above 2 kHz |
+| No zipper above -60 dB under automation | `AutomationMakesNoZipperNoise` (Volume, Brightness, Position, Decay, spread, tremolo moved every block on a long soft strike) | -71.6 dB under the carrier above 2 kHz |
 | State and presets | `EveryParameterSurvivesAMigration...`, `TheFactoryPresetsAreAudibleAndClearlyDifferent`, `EveryFactoryPresetPlaysWithoutClicks`, the shared `PresetTests`, `StateVersionTests`, `ModulationCostTests` | pass |
 
 ### The ear-proxy, and what it means for a hard strike
@@ -100,6 +99,14 @@ on every model) and the smooth, corner-free fade of a steal or kill, whose last 
 
 ## 9. Limits
 
-Modes above 0.45 of the sample rate are dropped, so high notes on the bright models ring fewer than the Modes setting (at C7 every mode above the tenth ratio of a bar is gone). Resonator mode needs held notes and audio on the input;
-there is no sustain from a single audio burst without a key. No per-mode detune or per-mode decay editing (the tilt and Brightness shape them all together); the Custom model is the open
-series. The preset levels are set on the 4-note chord of the preset test and, with a coherent strike on a chord, the peak is 6 to 15 dB above the ring's RMS.
+Modes above 0.45 of the sample rate are dropped, so high notes on the bright models ring fewer than the Modes setting (at C7 every mode above the tenth ratio of a bar is gone). No per-mode detune or per-mode decay editing (the tilt and Brightness shape them all together); the Custom model is the open
+series. The presets are levelled on the pack melody; a coherent strike of several notes at once peaks 3 to 5 dB above it, and the limiter rounds what passes -3.1 dBFS and holds -1 dBFS.
+
+## 10. Resonator mode: later, needs audio into an instrument
+
+The first design had a Resonator source: audio into the machine rings one body for each held note (the drive normalised so each mode adds the same power to white noise; a gate rising
+over 5 ms and falling with Release damping; a held chord tuned white noise within 1 cent, worst 0.31 cent), so a drum loop turned into pitched ringing that followed the keys. It needs
+audio going into an instrument, which the host cannot do today (an instrument has no audio input, a generator cannot take a sidechain), and an effect cannot be a track's instrument.
+It comes back when the host can feed audio to an instrument, either as a sidechain input on a generator or as a separate Neo Resonator effect that takes notes and shares this engine
+(the modes, the exciter and the per-tick slew are the same code); then it gets Mix and Amount like any effect. The first version's engine and tests are in the history of
+`machines/neo-mallet-mal1` (head 1a7d595).
