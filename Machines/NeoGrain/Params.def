@@ -1,0 +1,72 @@
+# Neo Grain parameters (docs/specs/neo-grain.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position; new parameters are appended. Regenerate: python3 tools/gen-machine-params.py Machines/NeoGrain
+namespace NeoBuzz.Grain
+class NeoGrainMachine
+tracks 16
+summary A granular synth that plays clouds of tiny grains cut from a wave of the song or from a built-in source (a chord, bells, noise), played by notes: each note is a cloud of up to 128 grains in all, 5 to 500 ms long, 1 to 200 a second, read from a position in the source that can be frozen or scanned, with a random spread of position, pitch and pan, a chance of reversed grains and a window shape; a note transposes the cloud, an ADSR shapes it, and a Drone switch plays one cloud with no notes while the song runs. 16 voices. Use it for frozen pads, glittering clouds, slow textures, stutters and drones made from any sound. Live input and the audio of an audio clip as a source come later.
+
+group Source
+Source      "Source"        0 3    0     enum Chord Bells Noise Song_wave | The sound the grains are cut from: one of three built-in sources made by code (a chord, inharmonic bells, filtered noise), or a wave of the song's wavetable
+    how Chooses the source the grains are cut from: a built-in chord, a built-in set of bells, built-in noise, or a wave of the song.
+    sound The chord gives pads and drones, the bells glitter, the noise gives breath and wind, and a wave of your own gives clouds made of that sound.
+Wave        "Wave"          0 199  0     int 1                     | Song wave: the slot of the song's wavetable (1 to 200) the grains are cut from when Source is Song wave; an empty slot plays silence
+    how Sets which wave of the song's wavetable the grains are read from, when Source is Song wave.
+    sound Load any sound into that slot and the cloud is made of it; an empty slot is silent and the editor says so.
+group Grain
+Size        "Grain size"    0 1000 650   exp 5 500 ms 1            | Length of every grain, 5 to 500 ms, shaped by the window
+    how Sets how long each grain is, from 5 ms to 500 ms.
+    sound Short grains are grainy, buzzy and glitchy; long grains blend into a smooth, evolving texture of the source.
+Density     "Density"       0 1000 565   exp 1 200 /s 1            | Grains started each second by each note, 1 to 200
+    how Sets how many grains each note starts every second, from 1 to 200.
+    sound Few grains are sparse and rhythmic; many make a dense, continuous cloud. The level is kept steady as the cloud thickens.
+Position    "Position"      0 1000 500   pct                       | Where in the source the grains are read, 0 to 100 % of its length (the point the scan starts from at each note)
+    how Sets the place in the source the grains are cut from, from the start (0 %) to the end (100 %).
+    sound Moving it walks through the source; with Scan at 0 it holds one moment of it, frozen.
+Spray       "Spray"         0 1000 80    lin 0 500 ms 0            | Random spread of each grain's start around the position, plus or minus this many milliseconds of the source
+    how Sets how far each grain's start position is scattered around Position, from 0 to 500 ms.
+    sound Zero repeats one slice; a little blurs it into a pad; a lot gives a wide, shimmering cloud of the whole neighbourhood.
+Scan        "Scan speed"    0 1000 500   lin -200 200 % 0          | How fast the position moves through the source after a note starts: 100 % is the source's own speed, 0 is frozen, negative runs backwards
+    how Sets how fast the read position travels through the source, from -200 % (backwards, twice as fast) to +200 %.
+    sound At 100 % the source plays through at its own speed whatever the pitch; at 0 it is held still; slow values give slowly evolving textures.
+Window      "Window"        0 2    0     enum Hann Tukey Gauss     | The grain's fade in and out: Hann (smooth bell), Tukey (flat top with soft edges) or Gauss (narrow bell)
+    how Chooses the shape of each grain's volume curve.
+    sound Hann is smooth and even, Tukey keeps more of each grain's body and sounds more distinct, Gauss is soft and diffuse.
+Align       "Align"         0 1000 600   pct                       | Phase alignment: a new grain starts at the point within up to 20 ms of its position where the sound already playing in the same note continues best, so tonal sources keep their pitch
+    how Sets how far each grain may move its start to line up with the grains already sounding, from 0 (off) to 100 % (up to 20 ms).
+    sound Up, a tonal source stays one clean tone; at 0 the grain rate makes sidebands and the tone turns buzzy or gritty.
+group Pitch
+Pitch       "Pitch"         0 1000 500   lin -24 24 st 2           | Transposition of every grain, on top of the note: 0 is the source's pitch at C3
+    how Sets the pitch of the grains in semitones, from -24 to +24, on top of the note.
+    sound Moves the whole cloud up or down; a note then adds its own interval to it.
+PitchSpray  "Pitch spray"   0 1000 0     lin 0 1200 ct 0           | Random detune of each grain, plus or minus this many cents
+    how Sets how far each grain's pitch is scattered around the note, from 0 to 1200 cents.
+    sound A little thickens the cloud like a chorus; a lot turns it into a swarm of different pitches.
+Reverse     "Reverse chance" 0 1000 0    pct                       | The share of grains that are read backwards
+    how Sets how many grains play backwards, from 0 to 100 %.
+    sound Backwards grains swell into their own end and blur the attack, for a shimmering, reversed wash.
+PanSpread   "Pan spread"    0 1000 500   pct                       | How far each grain is placed at random left or right (0 % is all centre, 100 % anywhere)
+    how Sets how widely the grains are scattered across the stereo field, from 0 to 100 %.
+    sound Zero is a narrow centred cloud; more spreads the grains into a wide, enveloping field.
+group Envelope
+Attack      "Attack"        0 1000 459   exp 1 5000 ms 0           | Attack time of each note's cloud
+    how Sets how long a note's cloud takes to swell to full level, from 1 ms to 5 s.
+    sound Short attacks start notes at once; long ones fade pads in slowly.
+Decay       "Decay"         0 1000 667   exp 5 5000 ms 0           | Decay time down to the sustain level
+    how Sets how long the cloud takes to fall to the sustain level, from 5 ms to 5 s.
+    sound Short decays make a pluck of the cloud's start; long ones make a slow settling.
+Sustain     "Sustain"       0 1000 1000  pct                       | Level a held note stays at after the decay
+    how Sets the level a held note stays at, from 0 to 100 %.
+    sound At 100 % the cloud holds steady; at 0 it fades away even while the key is down.
+Release     "Release"       0 1000 634   exp 5 5000 ms 0           | Release time after the key goes up (time to fall by 60 dB)
+    how Sets how long the cloud rings out after the key is released, from 5 ms to 5 s.
+    sound Short releases stop the cloud at once; long ones let it linger.
+group Output
+Drone       "Drone"         0 1    0     switch                    | Plays one cloud at the pitch of C3 with no notes while the song's transport runs; its envelope uses Attack and Release
+    how Turns on a cloud that plays by itself while the song plays.
+    sound Gives a constant bed under the notes, such as a drone or a texture, with no note needed.
+Seed        "Seed"          0 99   0     int 1                     | The random stream that spreads the grains: the same seed repeats the same cloud exactly
+    how Sets which random pattern the grains follow, from 1 to 100.
+    sound Another seed gives another cloud of the same character; the same seed always sounds the same.
+Volume      "Volume"        0 1000 750   db -60 12 inf             | Output level
+    how Sets the final level in dB, from off to +12.
+    sound It makes the cloud louder or quieter without changing its character.

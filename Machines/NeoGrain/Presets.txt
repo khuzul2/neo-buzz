@@ -1,0 +1,139 @@
+# Neo Grain factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoGrain
+# A preset that does not name a parameter takes its default: Grain size 100 ms, Density 20/s, Position 50 %, Spray 80 ms, Scan 0, Hann,
+# Align 60 %, Pitch 0, Attack 50 ms, Sustain 100 %, Release 400 ms, Seed 1 (see Params.def). Every preset reads one of the three built-in sources,
+# made by code (a chord, bells, noise), so it sounds the same in every song.
+machine "Neo Grain"
+
+preset "Pads — Frozen Pad"
+comment "One moment of a soft chord held still: long grains from one place with a little spray, phase-aligned so the chord stays a clean, slowly shimmering tone, swelling in over half a second."
+Source = Chord
+Size = 300
+Density = 40
+Position = 50
+Spray = 30
+Scan = 0
+Window = Hann
+Align = 90
+PanSpread = 60
+Attack = 600
+Release = 1200
+Volume = 6.0
+
+preset "Pads — Dark Drone"
+comment "The chord an octave and more down: very long grains, no spray, hardly any movement, a slow swell in and a long fade out, for a low bed under other sounds."
+Source = Chord
+Size = 450
+Density = 24
+Position = 30
+Spray = 10
+Scan = 0
+Window = Hann
+Align = 100
+Pitch = -12
+PanSpread = 40
+Attack = 1500
+Sustain = 100
+Release = 2500
+Volume = 8.0
+
+preset "Textures — Slow Scan Texture"
+comment "The chord scanned slowly through its changing colour: medium grains, the position creeping forward at 40 % of the source's speed, so the harmony breathes and turns over many seconds."
+Source = Chord
+Size = 200
+Density = 30
+Position = 0
+Spray = 40
+Scan = 40
+Window = Tukey
+Align = 70
+PanSpread = 50
+Attack = 300
+Release = 800
+Volume = 3.2
+
+preset "Textures — Wide Spray"
+comment "Breath and wind: the noise source cut into short grains scattered half a second either side of the position, a few cents of detune, every grain placed anywhere from left to right, a wide, airy wash."
+Source = Noise
+Size = 60
+Density = 100
+Position = 50
+Spray = 500
+Scan = 100
+Window = Hann
+Align = 0
+Pitch = 5
+PitchSpray = 20
+PanSpread = 100
+Attack = 20
+Release = 400
+Volume = 3.2
+
+preset "Glitch — Glitter Cloud"
+comment "Bright specks of bell: very short Gauss grains, 120 a second, scattered over the whole phrase of bells and an octave up, each a different place and pan, a sparkling, glittering cloud."
+Source = Bells
+Size = 25
+Density = 120
+Position = 50
+Spray = 400
+Scan = 20
+Window = Gauss
+Align = 0
+Pitch = 12
+PanSpread = 90
+Attack = 5
+Decay = 300
+Sustain = 70
+Release = 300
+Volume = 6.5
+
+preset "Glitch — Stutter Grains"
+comment "A bell strike chopped into a rhythm: short flat-topped grains of one place in the source, eight a second, no spray, so the same attack repeats like a stuttering sample."
+Source = Bells
+Size = 60
+Density = 8
+Position = 11
+Spray = 0
+Scan = 0
+Window = Tukey
+Align = 0
+Pitch = -5
+PanSpread = 20
+Attack = 1
+Decay = 200
+Sustain = 60
+Release = 80
+Volume = 9.0
+
+preset "Shimmer — Reverse Shimmer"
+comment "Every bell grain played backwards and an octave up: each swells into its own end, the attacks are blurred away and what is left is a washy, reversed shimmer."
+Source = Bells
+Size = 180
+Density = 30
+Position = 50
+Spray = 150
+Scan = 0
+Window = Hann
+Align = 0
+Pitch = 12
+Reverse = 100
+PanSpread = 80
+Attack = 150
+Release = 1500
+Volume = 4.5
+
+preset "Shimmer — Pitched Swarm"
+comment "The chord torn into a swarm: short Gauss grains, each detuned by up to seven semitones either way, so it hums like a crowd of voices all singing a different note."
+Source = Chord
+Size = 80
+Density = 90
+Position = 50
+Spray = 120
+Scan = 0
+Window = Gauss
+Align = 0
+Pitch = 0
+PitchSpray = 700
+PanSpread = 100
+Attack = 80
+Release = 500
+Volume = 9.4
