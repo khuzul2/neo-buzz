@@ -74,8 +74,11 @@ namespace NeoBuzz.Grain
             g.Rect(new NeoRect(r.X, r.Y, r.Width, r.Height), Palette.Track, new NeoStroke(Palette.PanelEdge, 1), 4);
             g.Line(new NeoPoint(x0, mid), new NeoPoint(x1, mid), new NeoStroke(Palette.Grid, 1, false));
 
-            var src = machine?.Engine.CurrentSource;
-            bool wave = ctx.Raw(P.Source) == 3;
+            // A built-in source is chosen by the Source parameter, so the outline and the name follow it even when no audio has run (the gallery);
+            // a song wave is the engine's loaded one.
+            int kind = ctx.Raw(P.Source);
+            bool wave = kind == 3;
+            var src = wave ? machine?.Engine.CurrentSource : GrainSource.BuiltIn(kind);
             if (src == null)
             {
                 string why = !wave ? "Source not ready" : machine == null ? "Song wave" : machine.Waves.Status switch
@@ -115,7 +118,7 @@ namespace NeoBuzz.Grain
                 double y = top + 6 + (bottom - top - 12) * (((i * 0.6180339887) % 1.0));
                 g.Ellipse(new NeoPoint(x0 + width * dotPos[i], y), 2 + 3 * w, 2 + 3 * w, Palette.Text.WithAlpha((byte)(70 + 160 * w)), NeoStroke.None);
             }
-            g.Text(src.Name + (wave ? "" : " (built in)"), x0 + 2, top - 2, 10.5, Palette.DimText);
+            g.Text(GrainSource.Label(kind, src.Name), x0 + 2, top - 2, 10.5, Palette.DimText);
         }
     }
 }

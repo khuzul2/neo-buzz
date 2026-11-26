@@ -67,6 +67,6 @@ Drone       "Drone"         0 1    0     switch                    | Plays one c
 Seed        "Seed"          0 99   0     int 1                     | The random stream that spreads the grains: the same seed repeats the same cloud exactly
     how Sets which random sequence the grains follow, from 1 to 100.
     sound Another seed gives another cloud of the same character; the same seed always sounds the same.
-Volume      "Volume"        0 1000 750   db -60 12 inf             | Output level
+Volume      "Volume"        0 1000 847   db -60 12 inf             | Output level
     how Sets the final level in dB, from off to +12.
     sound It makes the cloud louder or quieter without changing its character.

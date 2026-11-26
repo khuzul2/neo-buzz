@@ -64,7 +64,7 @@ namespace NeoBuzz.Grain
         [ParameterDecl(Name = "Seed", Description = "The random stream that spreads the grains: the same seed repeats the same cloud exactly", MinValue = 0, MaxValue = 99, DefValue = 0)]
         public int Seed { get => Values[P.Seed]; set => Values.Set(P.Seed, value); }
 
-        [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 750)]
+        [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 847)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]

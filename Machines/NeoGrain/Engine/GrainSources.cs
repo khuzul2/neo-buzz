@@ -91,6 +91,10 @@ namespace NeoBuzz.Grain
             }
         }
 
+        /// <summary>The name a source shows in the editor: the built-in source Source selects (0 to 2), or the loaded wave's name (3); it follows the parameter, not the engine's last block.</summary>
+        public static string Label(int sourceKind, string waveName) =>
+            sourceKind >= 0 && sourceKind < BuiltInCount ? BuiltInNames[sourceKind] + " (built in)" : string.IsNullOrEmpty(waveName) ? "Song wave" : waveName;
+
         /// <summary>A note's frequency snapped to a whole number of cycles in the source's length, so the loop has no seam.</summary>
         static double Snap(double hz) => Math.Max(1.0, Math.Round(hz * BuiltInSeconds)) / BuiltInSeconds;
 
@@ -167,7 +171,7 @@ namespace NeoBuzz.Grain
                     if (f > 14000) continue;
                     double w = 2 * Math.PI * f / BuiltInRate;
                     double r = PortableMath.Exp(-3.0 * 2.302585092994046 / (t60[m] * BuiltInRate));
-                    double re = 1.0, im = 0.0, amp = 0.09 * gain[m], c = r * PortableMath.Cos(w), s = r * PortableMath.Sin(w), a = 1.0;
+                    double re = 1.0, im = 0.0, amp = 0.09 * gain[m], c = r * PortableMath.Cos(w), s = r * PortableMath.Sin(w);
                     for (int i = 0; i < tail; i++)
                     {
                         // A raised-cosine strike of 2 ms, so the bell does not start with a click.
@@ -176,7 +180,6 @@ namespace NeoBuzz.Grain
                         x[at] += (float)(amp * fade * im);
                         double nr = re * c - im * s; im = re * s + im * c; re = nr;
                     }
-                    _ = a;
                 }
                 // The first sample of the strike sits where the phase is zero, so the sine starts at zero.
             }

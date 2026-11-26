@@ -641,6 +641,34 @@ namespace NeoBuzz.MachineTests
             Assert.That(bad, Is.Empty, "the phrase's peak is between -6 and -3 dBFS");
         }
 
+        /// <summary>A fresh Neo Grain is as loud as the Neo instruments are: the profiler hears A4 at velocity 100 for 1.5 beats; the median of the 22 Neo generators is -26.15 LUFS (machine-profile.json); the old default of -6 dB measured -33.5 here and profiled at -33.</summary>
+        [Test]
+        public void TheDefaultPatchIsAsLoudAsTheOtherNeoInstruments()
+        {
+            var v = new ParamValues(Params.Table);
+            Assert.That(v.Value(P.Volume), Is.EqualTo(1.0).Within(0.05), "Volume defaults to about +1 dB");
+            var e = new GrainEngine(v); e.SetSampleRate(Rate);
+            var ev = new List<(int, Action)> { (0, () => e.NoteOn(0, 69, 100f / 127f)), (36000, () => e.NoteOff(0)) };
+            var t = Render(e, Rate, 256, ev);
+            double lufs = OrganRockFigures.Lufs(t.L, t.R);
+            TestContext.Out.WriteLine($"default patch, A4: {lufs:0.0} LUFS (ungated, 1 s take)");
+            Assert.That(lufs, Is.InRange(-28.65, -23.65), "within 2.5 dB of -26.15 LUFS, the Neo median");
+        }
+
+        [Test]
+        public void TheSourceLabelFollowsTheSourceParameter()
+        {
+            for (int k = 0; k < GrainSource.BuiltInCount; k++)
+            {
+                string label = GrainSource.Label(k, "ignored");
+                Assert.That(label, Is.EqualTo(GrainSource.BuiltIn(k).Name + " (built in)"), "source " + k);
+                Assert.That(label, Does.StartWith(GrainSource.BuiltInNames[k]));
+            }
+            Assert.That(GrainSource.Label(SourceSong, "kick.wav"), Is.EqualTo("kick.wav"));
+            Assert.That(GrainSource.Label(SourceSong, null), Is.EqualTo("Song wave"));
+            Assert.That(GrainSource.Label(1, null), Does.Contain("Bells"), "Bells, not the Chord of the engine's last block");
+        }
+
         [Test]
         public void TheFactoryPresetsPlayCleanlyAndStayUnderTheCeiling()
         {

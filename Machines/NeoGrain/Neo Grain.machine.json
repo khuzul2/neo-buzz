@@ -323,7 +323,7 @@
    "group": "Output",
    "min": 0,
    "max": 1000,
-   "default": 750,
+   "default": 847,
    "kind": "db",
    "a": -60.0,
    "b": 12.0,
