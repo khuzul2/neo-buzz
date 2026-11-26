@@ -30,6 +30,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Organ"] = (NeoBuzz.Organ.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Organ.OrganEngine(v), (e, l, r, n) => ((NeoBuzz.Organ.OrganEngine)e).Process(l, r, n), x.Length)),
             // neo-mallet.md: the modal synth; in its Resonator source the pink noise is what rings the held chord.
             ["Neo Mallet"] = (NeoBuzz.Mallet.Params.Table, (v, x) => RenderMallet(v, x)),
+            // neo-grain.md: the granular synth; its presets read built-in sources, so the render needs no song.
+            ["Neo Grain"] = (NeoBuzz.Grain.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Grain.GrainEngine(v), (e, l, r, n) => ((NeoBuzz.Grain.GrainEngine)e).Process(l, r, n), x.Length)),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
             ["Neo FM6"] = (NeoBuzz.Fm6.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Fm6.FmEngine(v), (e, l, r, n) => ((NeoBuzz.Fm6.FmEngine)e).Process(l, r, n), x.Length)),
@@ -139,7 +141,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Grain", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that

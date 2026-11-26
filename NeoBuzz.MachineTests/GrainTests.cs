@@ -202,6 +202,75 @@ namespace NeoBuzz.MachineTests
             for (int i = 0; i < e.LogCount; i++) Assert.That(e.LogLength[i], Is.EqualTo(expected).Within(1.0), $"grain {i}");
         }
 
+        [Test]
+        public void SprayScattersTheStartPlusOrMinusTheSetMillisecondsAroundThePosition()
+        {
+            var (e, _) = Make(v => { Plain(v, size: 20, density: 100, align: 0); Set(v, P.Position, 40); Set(v, P.Spray, 100); v.Set(P.Source, 1); });
+            e.LogStart = new long[1000]; e.LogLength = new int[1000]; e.LogPosition = new double[1000]; e.LogBackwards = new bool[1000];
+            Render(e, Rate * 8, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)) });
+            var src = GrainSource.BuiltIn(1);
+            double centre = 0.4 * src.Length, range = 0.1 * src.Rate;
+            double lo = double.MaxValue, hi = double.MinValue, sum = 0;
+            for (int i = 0; i < e.LogCount; i++) { double d = e.LogPosition[i] - centre; lo = Math.Min(lo, d); hi = Math.Max(hi, d); sum += d; }
+            TestContext.Out.WriteLine($"{e.LogCount} grains: start offsets from {lo / src.Rate * 1000:0.0} to {hi / src.Rate * 1000:0.0} ms, mean {sum / e.LogCount / src.Rate * 1000:0.0} ms");
+            Assert.That(lo, Is.GreaterThanOrEqualTo(-range * 1.001)); Assert.That(hi, Is.LessThanOrEqualTo(range * 1.001));
+            Assert.That(lo, Is.LessThan(-0.9 * range)); Assert.That(hi, Is.GreaterThan(0.9 * range), "the whole range is used");
+            Assert.That(Math.Abs(sum / e.LogCount), Is.LessThan(0.1 * range), "centred on the position");
+        }
+
+        [Test]
+        public void ReverseChanceReversesThatShareOfTheGrains([Values(0.0, 30.0, 100.0)] double chance)
+        {
+            var (e, _) = Make(v => { Plain(v, size: 10, density: 100, align: 0); Set(v, P.Reverse, chance); v.Set(P.Source, 2); });
+            e.LogStart = new long[3000]; e.LogLength = new int[3000]; e.LogPosition = new double[3000]; e.LogBackwards = new bool[3000];
+            Render(e, Rate * 20, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)) });
+            int back = 0;
+            for (int i = 0; i < e.LogCount; i++) if (e.LogBackwards[i]) back++;
+            double share = 100.0 * back / e.LogCount;
+            TestContext.Out.WriteLine($"{share:0.0} % of {e.LogCount} grains backwards at a chance of {chance} %");
+            Assert.That(share, Is.EqualTo(chance).Within(3.0));
+        }
+
+        [Test]
+        public void AReversedGrainPlaysTheSegmentBackwards()
+        {
+            // A rising ramp read forwards rises inside the grain; every grain of Reverse 100 % falls.
+            int n = Rate * 3;
+            var ramp = new float[n];
+            for (int i = 0; i < n; i++) ramp[i] = 0.9f * i / n;
+            var wave = GrainSource.FromWave("ramp", ramp, null, n, Rate);
+            double Slope(double reverse)
+            {
+                var (e, _) = Make(v => { Plain(v, size: 100, density: 1, align: 0); Set(v, P.Reverse, reverse); Set(v, P.Window, 0); v.Set(P.Window, 1); }, wave);
+                var t = Render(e, 4800 + 2400, 256, new List<(int, Action)> { (0, () => e.NoteOn(1, 60, 1f)) });
+                // The flat top of a Tukey window is the middle half of the grain: compare its last quarter with its first.
+                double a = Measure.Rms(t.L, 1700, 400), b = Measure.Rms(t.L, 3000, 400);
+                return b - a;
+            }
+            Assert.That(Slope(0), Is.GreaterThan(0.0), "forwards it rises");
+            Assert.That(Slope(100), Is.LessThan(0.0), "backwards it falls");
+        }
+
+        [Test]
+        public void AutomatingEveryParameterMakesNoClick()
+        {
+            var (e, v) = Make(vv => { Plain(vv, size: 80, density: 40, align: 80); vv.Set(P.Source, 0); Set(vv, P.Release, 300); }, null);
+            var rng = new Random(11);
+            var ev = new List<(int, Action)>();
+            for (int i = 0; i < 6; i++) { int k = i, n = 48 + 5 * i; ev.Add((i * 8192, () => e.NoteOn(k, n, 0.7f))); }
+            var t = Render(e, Rate * 6, 256, ev, pos =>
+            {
+                if (pos % 1024 != 0) return;
+                v.Set(P.Size, rng.Next(1001)); v.Set(P.Density, 400 + rng.Next(500)); v.Set(P.Position, rng.Next(1001)); v.Set(P.Spray, rng.Next(1001));
+                v.Set(P.Scan, rng.Next(1001)); v.Set(P.Pitch, 300 + rng.Next(400)); v.Set(P.PitchSpray, rng.Next(400)); v.Set(P.Align, rng.Next(1001));
+                v.Set(P.Reverse, rng.Next(500)); v.Set(P.PanSpread, rng.Next(1001)); v.Set(P.Volume, 500 + rng.Next(400)); v.Set(P.Window, rng.Next(3));
+                v.Set(P.Sustain, 500 + rng.Next(501)); v.Set(P.Attack, rng.Next(400));
+            });
+            Assert.That(Measure.Peak(t.L, 0, t.L.Length), Is.GreaterThan(0.05));
+            var clicks = ClickDetector.Find(t.L, t.R);
+            Assert.That(clicks, Is.Empty, $"clicks at {string.Join(", ", clicks.Take(5))}");
+        }
+
         // ------------------------------------------------------------------------------------------ gate: clean
 
         /// <summary>A busy take: notes starting, released and stolen (more than 16), a changing position and size, every window.</summary>

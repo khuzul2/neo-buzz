@@ -21,6 +21,7 @@ NeoBuzz.Exciter	0	15	ae9270c82c60d418
 NeoBuzz.Filter	0	18	44306d9ce552e128
 NeoBuzz.Fm6	0	172	82815f73f6dd7eb2
 NeoBuzz.Gate	0	15	04189a5ccf665c32
+NeoBuzz.Grain	0	20	16ce0d8b2c888b8c
 NeoBuzz.Imager	0	14	17e3f5ad19d4a511
 NeoBuzz.LearnAdd	0	12	7ee147e298b2d95a
 NeoBuzz.LearnFm	0	12	b640e17f7493d56f

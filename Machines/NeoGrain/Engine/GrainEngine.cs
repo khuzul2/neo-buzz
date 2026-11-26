@@ -99,6 +99,9 @@ namespace NeoBuzz.Grain
         /// <summary>For the tests: when set, every grain's start (in samples since the engine's reset) and length are written here, up to the arrays' length.</summary>
         public long[] LogStart;
         public int[] LogLength;
+        /// <summary>With <see cref="LogStart"/>: where in the source each grain starts (frames, after any alignment; the end of the segment for a reversed grain) and whether it plays backwards.</summary>
+        public double[] LogPosition;
+        public bool[] LogBackwards;
         public int LogCount;
         /// <summary>Grains that could not start because 128 were sounding.</summary>
         public long Dropped;
@@ -331,7 +334,7 @@ namespace NeoBuzz.Grain
             gTaps[g] = (int)Math.Ceiling(Half / a);
             gSerial[g] = ++serial;
             lastGrain[v] = g; lastSerial[v] = gSerial[g];
-            if (LogStart != null && LogCount < LogStart.Length) { LogStart[LogCount] = chunkStart + offset; LogLength[LogCount] = len; LogCount++; }
+            if (LogStart != null && LogCount < LogStart.Length) { LogStart[LogCount] = chunkStart + offset; LogLength[LogCount] = len; if (LogPosition != null) { LogPosition[LogCount] = back ? s - len * ratio : s; LogBackwards[LogCount] = back; } LogCount++; }
         }
 
         long clock0, chunkStart;   // samples rendered before this block, and before this chunk: for the log
