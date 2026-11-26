@@ -527,30 +527,30 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ClipPropertiesAddMidiLanesAndRowsPerBeat()
+        public void ClipPropertiesAddColumnsAndRowsPerBeat()
         {
             var s = Open("PE Props");
             try
             {
                 dynamic editor = ((dynamic)s.EditorView).Editor;
                 var lanes = ((System.Collections.Generic.IEnumerable<IParameter>)editor.ColumnChoices(s.Machine)).ToList();
-                var midiNote = lanes.First(p => p.Name == "MIDI Note");
-                // Two of the MIDI lanes (the editor's own, listed first), the track's columns and Volume.
-                var chosen = lanes.Where(p => p.Name.StartsWith("MIDI ") ? p.Name == "MIDI Note" || p.Name == "MIDI Velocity"
-                    : p.Group.Type == ParameterGroupType.Track || p.Name == "Volume").ToList();
+                Assert.That(lanes.Any(p => p.Name.StartsWith("MIDI ")), Is.False, "the editor has no MIDI lanes of its own to add: a clip's notes are its Notes lane in the store");
+                // The track's columns and Volume.
+                var chosen = lanes.Where(p => p.Group.Type == ParameterGroupType.Track || p.Name == "Volume").ToList();
                 editor.ApplyClipProperties(8, 8, "verse", chosen);
                 Pump();
                 Assert.That(s.Clip.Name, Is.EqualTo("verse"), "renamed");
                 Assert.That(s.Clip.Length, Is.EqualTo(32), "8 beats");
-                // Notes typed in the MIDI Note lane, at 8 rows a beat.
-                GoTo(s, "MIDI Note");
+                // Notes typed in the track's Note column, at 8 rows a beat: the events are a lane of the clip's columns in the store.
+                GoTo(s, "Note");
                 Keys(s, PhysicalKey.Z, PhysicalKey.X);
-                var events = s.Clip.ClipEditorMachineEvents.First(c => c.Parameter.Name == "MIDI Note").Events.Select(e => (e.Time, e.Value)).ToArray();
+                var events = s.Clip.ClipEditorMachineEvents.First(c => c.Parameter.Name == "Note").Events.Select(e => (e.Time, e.Value)).ToArray();
                 Assert.That(events, Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (ClipEvent.TimeBase / 2, BuzzNote.Parse("D-4")) }), "half a tick a row");
+                var lane = s.Clip.Columns.Single(c => c.Type == ClipColumnType.Parameter && c.Parameter.Name == "Note" && c.Track == 0 && !c.Metadata.ContainsKey(ClipMeta.SessionAutomation));
+                Assert.That(lane.GetEvents(int.MinValue, int.MaxValue).Select(e => (e.Time, e.Value)).ToArray(), Is.EqualTo(events), "the editor shows the store's lane, nothing of its own");
                 var columns = s.Clip.ClipEditorMachineEvents.Select(c => c.Parameter.Name).ToList();
-                Assert.That(columns, Does.Contain("MIDI Note").And.Contain("MIDI Velocity").And.Contain("Note"), "the MIDI lanes beside the track's own columns");
-                Assert.That(columns, Does.Not.Contain("MIDI Pitch Wheel"), "only the lanes chosen");
-                Studio.Screenshot(s.Window, "clip-editor-midi-lanes");
+                Assert.That(columns, Does.Contain("Note").And.Contain("Volume"), "the columns chosen, beside the track's own");
+                Studio.Screenshot(s.Window, "clip-editor-columns");
             }
             finally
             {

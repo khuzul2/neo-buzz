@@ -57,6 +57,12 @@ namespace ReBuzz.Studio.Tests
             return lines;
         }
 
+        /// <summary>The events the editors' blobs held before CU7: those of the clips' unmarked parameter lanes (their columns' events), 8 bytes each.</summary>
+        static int EventsTheBlobsUsedToHold() =>
+            Core.SongCore.MachinesList.Where(m => m.EditorMachine != null).SelectMany(m => m.Clips)
+                .SelectMany(c => c.Columns).Where(c => c.Type == ClipColumnType.Parameter && !c.Metadata.ContainsKey(ClipMeta.SessionAutomation))
+                .Sum(c => c.GetEvents(int.MinValue, int.MaxValue).Count());
+
         [AvaloniaTest]
         public void TheEditorsDataHoldsTheShapeOfItsViewAndNoEvents()
         {
@@ -103,7 +109,8 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(AllLanes(), Is.EqualTo(lanes), $"{name}: every lane is as it was after the save and the reopen");
                     Core.SaveSongCopy(b);
                     Assert.That(File.ReadAllBytes(b), Is.EqualTo(File.ReadAllBytes(a)), $"{name}: open, save, open, save gives the same bytes");
-                    TestContext.Out.WriteLine($"{name}: {lanes.Count} lanes with events, {Blobs().Count} editor blobs with 0 events, {new FileInfo(a).Length} bytes, saved twice the same");
+                    int removed = EventsTheBlobsUsedToHold();
+                    TestContext.Out.WriteLine($"{name}: {lanes.Count} lanes with events, {Blobs().Count} editor blobs with 0 events (the build before held {removed} events there: {removed * 8} bytes), {new FileInfo(a).Length} bytes, saved twice the same");
                 }
             }
             finally { Directory.Delete(dir, true); }

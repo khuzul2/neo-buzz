@@ -375,20 +375,6 @@ namespace WDE.ModernPatternEditor
             return ret;
         }
 
-        public static IEnumerable<IParameter> GetInternalParameters(IMachine mac)
-        {
-            List<IParameter> pars = new List<IParameter>();
-
-            pars.Add(MPEInternalParameter.GetInternalParameter(mac, InternalParameter.MidiNote));
-            pars.Add(MPEInternalParameter.GetInternalParameter(mac, InternalParameter.MidiVelocity));
-            pars.Add(MPEInternalParameter.GetInternalParameter(mac, InternalParameter.MidiNoteDelay));
-            pars.Add(MPEInternalParameter.GetInternalParameter(mac, InternalParameter.MidiNoteCut));
-            pars.Add(MPEInternalParameter.GetInternalParameter(mac, InternalParameter.MidiPitchWheel));
-            pars.Add(MPEInternalParameter.GetInternalParameter(mac, InternalParameter.MidiCC));
-
-            return pars;
-        }
-
         public static int GetParamIndex(IParameter par, int track)
         {
             int index = 0;
