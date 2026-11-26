@@ -1338,7 +1338,7 @@ namespace ReBuzz.Studio.Tests
                 Try("056-clip-properties", () =>
                 {
                     var item = GridMenu().Items.OfType<MenuItem>().First(i => (i.Header as string)?.StartsWith("Clip Properties") == true);
-                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "056-clip-properties", "Clip Properties: name, length, rows per beat, the columns shown (the MIDI lanes among them).",
+                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "056-clip-properties", "Clip Properties: name, length, rows per beat, the columns shown (the machine's own parameters).",
                         "Right-click in the clip grid ▸ Clip Properties… (Ctrl+Backspace).");
                 });
                 Try("057-clip-help", () =>
