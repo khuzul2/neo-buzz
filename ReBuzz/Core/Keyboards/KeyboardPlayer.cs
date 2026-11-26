@@ -7,7 +7,7 @@
 // armed one, since this keyboard belongs to this machine. Otherwise the machine gets it directly, as
 // the piano roll's and the agent's live notes do.
 //
-// Tracks: the Note track parameter, as notes_write and the patterns play such a machine: each note
+// Tracks: the Note track parameter, as notes_write and the clips play such a machine: each note
 // takes the lowest track free (its velocity beside it, scaled to the velocity parameter's range, as
 // notes_write writes it), an off (255) lets go; with every track busy the oldest note is taken over
 // and comes back when a track frees (a mono synth plays the last key held, then the one before).

@@ -51,7 +51,7 @@ for menu in App File Edit Transport View Window Help; do
   n=$((n + 1))
 done
 
-# A few more by the keyboard, as a user would: Preferences (Command+,), the Session View (Ctrl+Tab), the Pattern View (F2).
+# A few more by the keyboard, as a user would: Preferences (Command+,), the Session View (Ctrl+Tab), the Clip View (F2).
 keys() { osascript -e "tell application \"System Events\" to tell (first process whose unix id is $pid) to $1" > /dev/null 2> "$out/osascript.txt" || echo "keys ($1): $(tr '\n' ' ' < "$out/osascript.txt")"; }
 menu() {
   if osascript -e "tell application \"System Events\" to tell (first process whose unix id is $pid) to click $1" > /dev/null 2> "$out/osascript.txt"; then

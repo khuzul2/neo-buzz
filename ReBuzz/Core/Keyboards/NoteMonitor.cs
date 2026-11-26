@@ -2,7 +2,7 @@
 // source, for the keyboard under its window to light up. Two feeds, both where the machine gets its
 // notes: MIDI as MachineManager hands it to the machine (a MIDI keyboard, the session's clips, the
 // piano roll, the agent's midi_play, the on-screen keyboard), and the Note track parameters its tick
-// sends (patterns, notes_write's columns, the on-screen keyboard playing a machine's tracks). Pitches
+// sends (clips, notes_write's columns, the on-screen keyboard playing a machine's tracks). Pitches
 // are as the machine gets them (MIDI numbers); the keyboard takes the manifest's pitch offset off.
 //
 // Made by the UI the first time a keyboard shows a machine (MachineCore.NoteMonitor); until then the
@@ -84,7 +84,7 @@ namespace ReBuzz.Core.Keyboards
             Changed();
         }
 
-        /// <summary>The transport stopped: what the patterns played has ended (the machines were told to stop).</summary>
+        /// <summary>The transport stopped: what the clips played has ended (the machines were told to stop).</summary>
         public void Stopped()
         {
             bool any = false;

@@ -163,7 +163,7 @@ namespace ReBuzz.Agent
                         if (probes.Any(SongModel.IsMaster)) throw new ToolError("probes: Master is the render itself; probe the machines feeding it.");
                         var warnings = new List<string>();
                         if (to > song.SongEnd)
-                            warnings.Add($"The range runs past the song end (beat {NoteList.Fmt(SongModel.Beats(core, song.SongEnd))}); patterns placed there still play.");
+                            warnings.Add($"The range runs past the song end (beat {NoteList.Fmt(SongModel.Beats(core, song.SongEnd))}); clips placed there still play.");
                         int n = host.Renders.Count + 1;
                         string id = "r" + n.ToString(CultureInfo.InvariantCulture);
                         string folder = Path.Combine(Path.GetDirectoryName(host.Log.FilePath) ?? Path.GetTempPath(), "renders");

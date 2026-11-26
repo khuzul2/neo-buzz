@@ -311,19 +311,19 @@ namespace ReBuzz.AgentTests
         [Test]
         public void TrackNotesRoundTrip()
         {
-            const int tick = 240, pattern = 16 * tick;   // a 16-tick pattern
+            const int tick = 240, clip = 16 * tick;   // a 16-tick clip
             var notes = new[]
             {
                 new NoteEvent(0, 4 * tick, 69, 100),
                 new NoteEvent(0, 2 * tick, 72, 64),
                 new NoteEvent(4 * tick, 4 * tick, 71, 127),            // straight after the first: no note-off between
-                new NoteEvent(12 * tick, 4 * tick, 60, 100),           // to the pattern's end: let go on its last tick
+                new NoteEvent(12 * tick, 4 * tick, 60, 100),           // to the clip's end: let go on its last tick
             };
             var (tracks, needed) = TrackNotes.Allocate(notes);
-            var events = TrackNotes.Events(notes, tracks, pattern, tick, (0, 127));
+            var events = TrackNotes.Events(notes, tracks, clip, tick, (0, 127));
             Assert.That(events.Where(e => e.Note == TrackNotes.Off).Select(e => e.Time), Is.EquivalentTo(new[] { 2 * tick, 8 * tick, 15 * tick }));
             Assert.That(events.First(e => e.Time == 0 && e.Note == Pitch.ToBuzz(69)).Velocity, Is.EqualTo(100));
-            var back = TrackNotes.Read(events.Select(e => (e.Track, e.Time, e.Note)), pattern, tick,
+            var back = TrackNotes.Read(events.Select(e => (e.Track, e.Time, e.Note)), clip, tick,
                 events.Where(e => e.Velocity.HasValue).ToDictionary(e => (e.Track, e.Time), e => e.Velocity!.Value), (0, 127));
             Assert.That(back, Is.EqualTo(notes.OrderBy(n => n.Time).ThenBy(n => n.Pitch).ToList()));
             Assert.That(needed, Is.EqualTo(2));

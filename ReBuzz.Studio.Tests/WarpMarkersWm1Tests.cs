@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The body of a test, once on the Session's clip and once on the Arrangement's: the page open on it, peaks made, 30 pixels to a beat.</summary>
-        static void Contexts(Action<Rig, IPattern, AudioClipPage> body)
+        static void Contexts(Action<Rig, IClip, AudioClipPage> body)
         {
             foreach (bool arranged in new[] { false, true })
             {
@@ -69,7 +69,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Markers at the transients with these numbers (and the audio's two ends), as the clip's own.</summary>
-        static void Seed(Rig rig, IPattern clip, params int[] transients)
+        static void Seed(Rig rig, IClip clip, params int[] transients)
         {
             var src = Layout.AudioSourceOf(clip)!;
             var audio = AudioOf(clip);
@@ -87,14 +87,14 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
-        static SessionDocument.AudioSettings AudioOf(IPattern p) => Layout.AudioOf(p)!;
+        static SessionDocument.AudioSettings AudioOf(IClip p) => Layout.AudioOf(p)!;
 
         static Point TransientAt(Rig rig, WarpEditor wave, double sample, double fy = 0.5) => rig.In(wave, 0, fy) + new Vector(wave.TransientX(sample), 0);
         static Point MarkerAt(Rig rig, WarpEditor wave, int index, double fy = 0.4) => rig.In(wave, 0, fy) + new Vector(wave.MarkerX(index), 0);
 
-        static List<(double Sample, double Beat)> Marks(IPattern clip) => AudioOf(clip).Markers.OrderBy(m => m.Beat).ToList();
+        static List<(double Sample, double Beat)> Marks(IClip clip) => AudioOf(clip).Markers.OrderBy(m => m.Beat).ToList();
 
-        static void AssertOrdered(IPattern clip)
+        static void AssertOrdered(IClip clip)
         {
             var m = Marks(clip);
             if (m.Count == 0) return;
@@ -122,7 +122,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(wave.LastMenu!.IsOpen, Is.True, "a right click opens the waveform's menu");
             var item = wave.LastMenu.Items.OfType<MenuItem>().First(i => ((string)i.Header!).StartsWith(header, StringComparison.Ordinal));
             Assert.That(item.IsEnabled, Is.True, header + " is enabled");
-            var clip = rig.Page.Pattern!;
+            var clip = rig.Page.Clip!;
             string before0 = State(clip.Machine.Name, clip.Name);
             Steps(rig, clip, () =>
             {
@@ -629,16 +629,16 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ the agent
 
-        static JsonObject Warp(IPattern clip, string action, JsonObject? args = null)
+        static JsonObject Warp(IClip clip, string action, JsonObject? args = null)
         {
             var a = args ?? new JsonObject();
             a["machine"] = clip.Machine.Name;
-            a["pattern"] = clip.Name;
+            a["clip"] = clip.Name;
             a["action"] = action;
             return Tool("audio_warp_markers", a);
         }
 
-        static void AssertSameMarkers(IPattern a, IPattern b, string why)
+        static void AssertSameMarkers(IClip a, IClip b, string why)
         {
             var x = Marks(a);
             var y = Marks(b);
@@ -787,7 +787,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Warp(clip, "set_bar_one")["isError"]!.GetValue<bool>(), Is.True, "no position");
             Assert.That(State("B", clip.Name), Is.EqualTo(before), "nothing changed");
             // Warp off: the markers don't apply.
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = clip.Name, ["warp"] = "Off" }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = clip.Name, ["warp"] = "Off" }));
             Assert.That(Warp(clip, "insert_every_bar")["isError"]!.GetValue<bool>(), Is.True, "warp is off");
         }
 
@@ -1009,7 +1009,7 @@ namespace ReBuzz.Studio.Tests
                 rig.Session.LastMenu?.Close();
                 rig.Page.Wave.LastMenu?.Close();
                 Settle();
-                if (view != "Audio page") Assert.That(rig.Page.Pattern, Is.SameAs(clip), view + ": the Audio page opens on the clip");
+                if (view != "Audio page") Assert.That(rig.Page.Clip, Is.SameAs(clip), view + ": the Audio page opens on the clip");
                 rig.Undo();
             }
         }

@@ -9,7 +9,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         public AppearancePage(PrefsModel model) : base(model)
         {
             Heading("Theme");
-            Note("Applies at once. Songs don't change: pattern, track and clip colours are saved in the song as they always were.");
+            Note("Applies at once. Songs don't change: clip, track and clip colours are saved in the song as they always were.");
             AddSection("appearance");
         }
 

@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Shell
                 DetailMaximised: detail?.IsMaximised == true,
                 DetailPage: detail?.IsPianoRoll == true ? "piano_roll" : "tracker",
                 Machine: sel.Machine?.Name,
-                Pattern: sel.Pattern?.Name,
+                Clip: sel.Clip?.Name,
                 Scene: sel.Scene,
                 WindowWidth: w.Bounds.Width,
                 WindowHeight: w.Bounds.Height,
@@ -64,21 +64,21 @@ namespace ReBuzz.Studio.Shell
             throw new ToolError($"No machine \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") + " machine_list lists them.");
         }
 
-        IPattern Pattern(IMachine machine, string name)
+        IClip Clip(IMachine machine, string name)
         {
-            var p = machine.Patterns.FirstOrDefault(x => x.Name == name) ?? machine.Patterns.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+            var p = machine.Clips.FirstOrDefault(x => x.Name == name) ?? machine.Clips.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
             if (p != null) return p;
-            var near = Text.Closest(name, machine.Patterns.Select(x => x.Name));
-            throw new ToolError($"{machine.Name} has no pattern \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") + $" pattern_list(machine=\"{machine.Name}\") lists them.");
+            var near = Text.Closest(name, machine.Clips.Select(x => x.Name));
+            throw new ToolError($"{machine.Name} has no clip \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") + $" clip_list(machine=\"{machine.Name}\") lists them.");
         }
 
-        public void ShowPattern(string machine, string pattern, bool pianoRoll)
+        public void ShowClip(string machine, string clip, bool pianoRoll)
         {
-            var p = Pattern(Machine(machine), pattern);
+            var p = Clip(Machine(machine), clip);
             var w = Main;
-            PatternView.Edit(p);
+            ClipView.Edit(p);
             if (pianoRoll) w.ShowPianoRoll();
-            else w.ShowView("Pattern");
+            else w.ShowView("Clip");
         }
 
         public bool OpenMachineWindow(string machine, string window)
@@ -98,16 +98,16 @@ namespace ReBuzz.Studio.Shell
             }
         }
 
-        public void Select(string machine, string pattern, int? scene)
+        public void Select(string machine, string clip, int? scene)
         {
             var sel = StudioSelection.For(Core);
-            if (machine == null && pattern == null && scene == null)
+            if (machine == null && clip == null && scene == null)
             {
                 sel.Clear(this);
                 return;
             }
             var m = Machine(machine ?? throw new ToolError("Give a machine to select."));
-            sel.Set(m, pattern != null ? Pattern(m, pattern) : null, this, scene);
+            sel.Set(m, clip != null ? Clip(m, clip) : null, this, scene);
         }
 
         public void Panel(string panel, bool? open, double? size, string tab, bool? maximised)

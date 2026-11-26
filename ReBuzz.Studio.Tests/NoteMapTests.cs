@@ -20,7 +20,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class NoteMapTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         // (Another test's core may have installed its dispatcher: a change is raised where it is made, here.)
         Action<Action> marshal;
@@ -304,7 +304,7 @@ namespace ReBuzz.Studio.Tests
             r.Notes.AddNote(2 * TB, 60);
             r.ShowTracker();
             UxP3bTests.Pump();
-            var body = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(r.Window).First(v => v.GetType().Name == "PatternBody");
+            var body = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(r.Window).First(v => v.GetType().Name == "ClipBody");
             var tipAt = body.GetType().GetMethod("NoteTipAt", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             Assert.That(tipAt, Is.Not.Null);
             var b = ((Avalonia.Controls.Control)body).Bounds;

@@ -1,10 +1,10 @@
 #nullable disable
 // Fork addition (neo-buzz, docs/specs/clips.md §5 and §10, wave CU2): what a clip holds, as data a converter can read and write
-// without an engine: lanes (the engine's pattern columns, §5.1) with their metadata (§5.2), a migration log with a cause tag per
+// without an engine: lanes (the engine's clip columns, §5.1) with their metadata (§5.2), a migration log with a cause tag per
 // step (§5.6), and the little helpers that go with them (the Grid text, note-on and note-off events).
 //
-// Pure (BuzzGUI.Interfaces' PatternEvent and BuzzNote are all it uses), so the converter, the export and their tests run on every
-// platform; the engine side (ClipStore) puts lanes into pattern columns and reads them back.
+// Pure (BuzzGUI.Interfaces' ClipEvent and BuzzNote are all it uses), so the converter, the export and their tests run on every
+// platform; the engine side (ClipStore) puts lanes into clip columns and reads them back.
 
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace BuzzGUI.Common
     /// <summary>The metadata keys of a lane (clips.md §5.2). Absent means what it means today.</summary>
     public static class ClipMeta
     {
-        /// <summary>The engine's own mark (PatternColumnCore.SessionAutomationKey): the engine plays this parameter column.</summary>
+        /// <summary>The engine's own mark (ClipColumnCore.SessionAutomationKey): the engine plays this parameter column.</summary>
         public const string SessionAutomation = "SessionAutomation";
         /// <summary>Rows per beat of the lane and the beats whose rows differ, "rpb=4;sub=3:6,7:3". View only: never changes a time.</summary>
         public const string Grid = "Grid";
@@ -39,8 +39,8 @@ namespace BuzzGUI.Common
         public const string NoteFixed = "note-fixed";               // a Note value the editor could not read, read as a MIDI note as the editor did
         public const string CcLaneConverted = "cc-lane-converted";  // a Pitch Wheel or CC lane on a track with no note lane: now controller events
         // Dropped (clips.md §7.1, D2 B).
-        public const string PxpSpDropped = "pxp-sp-dropped";        // PatternXP's own columns: trigger, effect, effect data (sub-pattern triggers)
-        public const string InputColumn = "input-column";           // a built-in pattern's connection amp and pan
+        public const string PxpSpDropped = "pxp-sp-dropped";        // PatternXP's own columns: trigger, effect, effect data (sub-clip triggers)
+        public const string InputColumn = "input-column";           // a built-in clip's connection amp and pan
         public const string CcLaneDropped = "cc-lane-dropped";      // a Pitch Wheel or CC lane on a track with a note lane (it throws in the editor's render)
         public const string ForeignDropped = "foreign-dropped";     // an editor's data that is not in a format we read
         public const string MachineMissing = "machine-missing";     // a column of a machine the song does not have
@@ -48,8 +48,8 @@ namespace BuzzGUI.Common
         public const string TrackDropped = "track-dropped";         // a column of a track the machine no longer has
         public const string MidiLaneOrphan = "midi-lane-orphan";    // a velocity, delay or cut lane with no note lane on its track
         public const string NoteInvalid = "note-invalid";           // a MIDI lane Note the editor could not turn into a MIDI note
-        public const string PatternMissing = "pattern-missing";     // data of a pattern the machine does not have
-        public const string EventPastEnd = "event-past-end";        // an event after the end of its pattern (the editor drops these as it loads them)
+        public const string ClipMissing = "pattern-missing";     // data of a clip the machine does not have
+        public const string EventPastEnd = "event-past-end";        // an event after the end of its clip (the editor drops these as it loads them)
         // The note-off events (clips.md §5.4).
         public const string OffExplicit = "off-explicit";           // an off with no note before it in the clip: an explicit note-off event on the Notes lane
         public const string OffNoteUnknown = "off-note-unknown";    // ... and the note it ends is not known (no ringing note before the clip): note 0
@@ -58,7 +58,7 @@ namespace BuzzGUI.Common
         public static readonly IReadOnlyCollection<string> Losses = new HashSet<string>
         {
             PxpSpDropped, InputColumn, CcLaneDropped, ForeignDropped, MachineMissing, ParamMissing, TrackDropped, MidiLaneOrphan,
-            NoteInvalid, PatternMissing, EventPastEnd,
+            NoteInvalid, ClipMissing, EventPastEnd,
         };
     }
 
@@ -116,7 +116,7 @@ namespace BuzzGUI.Common
         public int Group;                       // 1 global, 2 track (Parameter lanes)
         public int Index;                       // the parameter in its group
         public int Track;
-        public List<PatternEvent> Events = new List<PatternEvent>();
+        public List<ClipEvent> Events = new List<ClipEvent>();
         public Dictionary<string, string> Meta = new Dictionary<string, string>();
 
         public bool Auto => Meta.ContainsKey(ClipMeta.SessionAutomation);
@@ -136,10 +136,10 @@ namespace BuzzGUI.Common
         /// <summary>What names the lane in its clip: a column is the same lane when the key is the same.</summary>
         public string Key => (Kind == ClipLaneKind.Notes ? $"{Machine}|notes" : $"{Machine}|{Group}.{Index}.{Track}") + (Auto ? "|auto" : "");
 
-        public ClipLane Clone() => new ClipLane { Kind = Kind, Machine = Machine, Group = Group, Index = Index, Track = Track, Events = new List<PatternEvent>(Events), Meta = new Dictionary<string, string>(Meta) };
+        public ClipLane Clone() => new ClipLane { Kind = Kind, Machine = Machine, Group = Group, Index = Index, Track = Track, Events = new List<ClipEvent>(Events), Meta = new Dictionary<string, string>(Meta) };
 
         /// <summary>The events in a fixed order, for comparing lanes (the order of events in a column is not data).</summary>
-        public List<PatternEvent> Sorted() => Events.OrderBy(e => e.Time).ThenBy(e => e.Value).ThenBy(e => e.Duration).ToList();
+        public List<ClipEvent> Sorted() => Events.OrderBy(e => e.Time).ThenBy(e => e.Value).ThenBy(e => e.Duration).ToList();
 
         public override string ToString() => $"{Key} {Events.Count} events";
     }
@@ -148,7 +148,7 @@ namespace BuzzGUI.Common
     public sealed class ClipContent
     {
         public string Name;
-        public int Length;                      // in ticks (the pattern's Length)
+        public int Length;                      // in ticks (the clip's Length)
         public int RowsPerBeat = 4;
         public List<ClipLane> Lanes = new List<ClipLane>();
 
@@ -278,11 +278,11 @@ namespace BuzzGUI.Common
         public static int NoteOff(int note, int channel = 0) => 0x80 | (channel & 0x0F) | ((note & 0x7F) << 8);
 
         /// <summary>An explicit note-off event: duration 0, nothing before it in the clip to end.</summary>
-        public static PatternEvent Off(int time, int note, int channel = 0) => new PatternEvent(time, NoteOff(note, channel), 0);
+        public static ClipEvent Off(int time, int note, int channel = 0) => new ClipEvent(time, NoteOff(note, channel), 0);
 
-        public static bool IsExplicitOff(PatternEvent e) => (e.Value & 0xF0) == 0x80 && e.Duration == 0;
+        public static bool IsExplicitOff(ClipEvent e) => (e.Value & 0xF0) == 0x80 && e.Duration == 0;
 
-        public static bool IsNoteOn(PatternEvent e) => (e.Value & 0xF0) == 0x90 && ((e.Value >> 16) & 0x7F) > 0;
+        public static bool IsNoteOn(ClipEvent e) => (e.Value & 0xF0) == 0x90 && ((e.Value >> 16) & 0x7F) > 0;
 
         /// <summary>A controller event: a pitch wheel (14 bits) or a control change.</summary>
         public static int PitchWheel(int value14, int channel = 0) => 0xE0 | (channel & 0x0F) | ((value14 & 0x7F) << 8) | (((value14 >> 7) & 0x7F) << 16);

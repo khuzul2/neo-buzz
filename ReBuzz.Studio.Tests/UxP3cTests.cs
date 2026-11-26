@@ -1,4 +1,4 @@
-// Fork (docs/specs/ux-overhaul.md P3c): the pattern editor, notes first. Written after the helper the older editor tests share.
+// Fork (docs/specs/ux-overhaul.md P3c): the clip editor, notes first. Written after the helper the older editor tests share.
 
 using System;
 using System.Linq;
@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Tests
 {
     using Control = Avalonia.Controls.Control;
 
-    /// <summary>Moving the pattern editor's cursor by column name (the old tests' Tab and arrow chains no longer reach the same columns).</summary>
+    /// <summary>Moving the clip editor's cursor by column name (the old tests' Tab and arrow chains no longer reach the same columns).</summary>
     internal static class EditorNav
     {
         /// <summary>
@@ -34,7 +34,7 @@ namespace ReBuzz.Studio.Tests
             dynamic view = editorView;
             view.ShowAutomation(label);
             pump();
-            dynamic vm = view.Editor.SelectedMachine.SelectedPattern;
+            dynamic vm = view.Editor.SelectedMachine.SelectedClip;
             int found = 0;
             for (int i = 0; i < ((System.Collections.ICollection)vm.ColumnSets).Count; i++)
                 for (int j = 0; j < ((System.Collections.ICollection)vm.ColumnSets[i].Columns).Count; j++)
@@ -51,16 +51,16 @@ namespace ReBuzz.Studio.Tests
 
     public class UxP3cTests
     {
-        const int Row = PatternEvent.TimeBase;
+        const int Row = ClipEvent.TimeBase;
 
         sealed class Setup
         {
             public MainWindow Window;
             public MachineCore Machine;
-            public IPattern Pattern;
+            public IClip Clip;
             public dynamic View;
             public dynamic Grid => View.TrackerGrid;
-            public dynamic Vm => View.Editor.SelectedMachine.SelectedPattern;
+            public dynamic Vm => View.Editor.SelectedMachine.SelectedClip;
         }
 
         static void Pump()
@@ -78,19 +78,19 @@ namespace ReBuzz.Studio.Tests
             var core = Studio.Host.Core;
             core.SongCore.CreateMachine(type, null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = core.SongCore.MachinesList.First(m => m.Name == name);
-            machine.CreatePattern("00", ticks);
-            var pattern = machine.Patterns.First(p => p.Name == "00");
+            machine.CreateClip("00", ticks);
+            var clip = machine.Clips.First(p => p.Name == "00");
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
             Pump();
             window.Detail.Show(true);
-            PatternView.Edit(pattern);
+            ClipView.Edit(clip);
             Pump();
-            dynamic view = PatternView.Page.EditorControl;
+            dynamic view = ClipView.Page.EditorControl;
             Assert.That((object)view, Is.Not.Null);
             ((Control)view.TrackerGrid.Body).Focus();
             Pump();
-            return new Setup { Window = window, Machine = machine, Pattern = pattern, View = view };
+            return new Setup { Window = window, Machine = machine, Clip = clip, View = view };
         }
 
         static void Close(Setup s)
@@ -141,8 +141,8 @@ namespace ReBuzz.Studio.Tests
             return null;
         }
 
-        static (int Time, int Value)[] Events(IPattern pattern, string parameter) =>
-            pattern.PatternEditorMachineEvents.First(c => c.Parameter.Name == parameter).Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
+        static (int Time, int Value)[] Events(IClip clip, string parameter) =>
+            clip.ClipEditorMachineEvents.First(c => c.Parameter.Name == parameter).Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
 
         [AvaloniaTest]
         public void NoteAndVelocityColumnsComeFirstAndTheGlobalsAfterThem()
@@ -152,7 +152,7 @@ namespace ReBuzz.Studio.Tests
             {
                 Assert.That(Labels(s, 0).Take(2), Is.EqualTo(new[] { "Note", "Velocity" }), "track 0: the note, then its velocity");
                 Assert.That((string)s.Vm.ColumnSets[0].Label, Does.Contain("Track"), "the first set is a track's");
-                Assert.That(Labels(s, 0).Length, Is.EqualTo(2), "nothing else while the pattern holds nothing");
+                Assert.That(Labels(s, 0).Length, Is.EqualTo(2), "nothing else while the clip holds nothing");
                 var cursor = s.Grid.Cursor;
                 Assert.That(((int)cursor.ColumnSet, (int)cursor.Column), Is.EqualTo((0, 0)), "the cursor starts on the Note column");
 
@@ -196,10 +196,10 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(SongFiles.Open(path).Result, Is.True);
                     Pump();
                     s.Machine = Studio.Host.Core.SongCore.MachinesList.First(m => m.Name == "P3c Auto");
-                    s.Pattern = s.Machine.Patterns.First();
-                    PatternView.Edit(s.Pattern);
+                    s.Clip = s.Machine.Clips.First();
+                    ClipView.Edit(s.Clip);
                     Pump();
-                    s.View = PatternView.Page.EditorControl;
+                    s.View = ClipView.Page.EditorControl;
                     Assert.That(AllLabels(s), Does.Contain("Uni detune"), "a column with data shows");
                     Assert.That(AllLabels(s), Does.Not.Contain("Glide"), "an empty one doesn't");
                 }
@@ -236,7 +236,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(two, Is.GreaterThan(0), "names with a space take two lines");
                 var colours = ((Avalonia.Media.Color Label, Avalonia.Media.Color Background, Avalonia.Media.Color BeatRule, Avalonia.Media.Color BarRule))ReBuzz.Studio.Tests.UxP3cTests.Colours(s);
                 Assert.That(StudioTokens.Contrast(colours.Label, colours.Background), Is.GreaterThanOrEqualTo(4.5), "header text");
-                Studio.Screenshot(s.Window, "pattern-editor-headers-p3c");
+                Studio.Screenshot(s.Window, "clip-editor-headers-p3c");
             }
             finally { Close(s); }
         }
@@ -288,7 +288,7 @@ namespace ReBuzz.Studio.Tests
                 var barBack = Rule(bar, 6, 0);
                 Assert.That(StudioTokens.Contrast(barRule, barBack), Is.GreaterThanOrEqualTo(3.0), "a bar rule");
                 Assert.That(StudioTokens.Contrast(barRule, barBack), Is.GreaterThan(StudioTokens.Contrast(beatRule, back)), "the bar's is the stronger");
-                Studio.Screenshot(s.Window, "pattern-editor-rules");
+                Studio.Screenshot(s.Window, "clip-editor-rules");
             }
             finally { Close(s); }
         }
@@ -304,7 +304,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.X);      // 38: the snare
                 Pump();
                 Assert.That(Texts(s, "Note"), Is.EqualTo(new[] { "BD", "SD" }), "the machine's names, three characters at most");
-                Assert.That(Events(s.Pattern, "Note").Select(e => BuzzNote.ToMIDINote(e.Value)), Is.EqualTo(new[] { 36, 38 }), "the pattern holds the pitches");
+                Assert.That(Events(s.Clip, "Note").Select(e => BuzzNote.ToMIDINote(e.Value)), Is.EqualTo(new[] { 36, 38 }), "the clip holds the pitches");
             }
             finally { Close(s); }
 
@@ -329,7 +329,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.ArrowRight);
                 Key(s, PhysicalKey.A);               // not a decimal digit: ignored
                 Key(s, PhysicalKey.Digit7);          // the second digit of row 2: 0700
-                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 1000), (Row, 1000), (2 * Row, 700) }));
+                Assert.That(Events(s.Clip, "Uni detune"), Is.EqualTo(new[] { (0, 1000), (Row, 1000), (2 * Row, 700) }));
                 Assert.That(Texts(s, "Uni detune"), Is.EqualTo(new[] { "1000", "1000", "0700" }), "shown in decimal");
 
                 s.View.HexToggle.IsChecked = true;
@@ -339,7 +339,7 @@ namespace ReBuzz.Studio.Tests
                 GoTo(s, "Uni detune");
                 for (int i = 0; i < 3; i++) Key(s, PhysicalKey.ArrowDown);
                 Key(s, PhysicalKey.A);               // hex digits typed as before
-                Assert.That(Events(s.Pattern, "Uni detune").Last(), Is.EqualTo((3 * Row, 0xA000 > 1000 ? 1000 : 0xA000)), "typed in hex, clamped to the largest");
+                Assert.That(Events(s.Clip, "Uni detune").Last(), Is.EqualTo((3 * Row, 0xA000 > 1000 ? 1000 : 0xA000)), "typed in hex, clamped to the largest");
                 s.View.HexToggle.IsChecked = false;
                 Pump(); Pump();
                 Assert.That(ValueDisplay.IsHex, Is.False);
@@ -386,7 +386,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void OnlyViewingAPatternLeavesItsSavedDataByteEqual()
+        public void OnlyViewingAClipLeavesItsSavedDataByteEqual()
         {
             var s = Open("Neo Poly", "P3c Save", hex: true);
             try
@@ -394,7 +394,7 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.Z); Key(s, PhysicalKey.C); Key(s, PhysicalKey.B);
                 var core = Studio.Host.Core;
                 byte[] before = core.MachineManager.GetMachineData(s.Machine.EditorMachine);
-                var notes = Events(s.Pattern, "Note");
+                var notes = Events(s.Clip, "Note");
                 // Looking: every column, the other base, scrolling, the cursor about, the roll's page.
                 s.View.ShowAllAutomation();
                 s.View.HexToggle.IsChecked = false;
@@ -408,8 +408,8 @@ namespace ReBuzz.Studio.Tests
                     Key(s, k);
                 Pump();
                 Assert.That(core.MachineManager.GetMachineData(s.Machine.EditorMachine), Is.EqualTo(before), "the editor's data, byte for byte");
-                Assert.That(Events(s.Pattern, "Note"), Is.EqualTo(notes));
-                Assert.That(s.Pattern.PatternEditorMachineEvents.Where(c => c.Parameter.Name != "Note").Sum(c => c.Events.Count()), Is.EqualTo(0), "no event was made by looking");
+                Assert.That(Events(s.Clip, "Note"), Is.EqualTo(notes));
+                Assert.That(s.Clip.ClipEditorMachineEvents.Where(c => c.Parameter.Name != "Note").Sum(c => c.Events.Count()), Is.EqualTo(0), "no event was made by looking");
             }
             finally { Close(s); }
         }

@@ -149,7 +149,7 @@ namespace NeoBuzz.Plug
                               $"Its first {slotCount} automatable parameters are slots; values are shown with the plug-in's own units.",
                 ["category"] = effect ? "Plug-in effect" : "Plug-in instrument",
                 ["tags"] = new JsonArray("plug-in", (core.State.Format ?? "").ToLowerInvariant()),
-                ["use_for"] = effect ? "Run a CLAP or VST3 effect on a Buzz signal." : "Play a CLAP or VST3 instrument from patterns, MIDI and the agent.",
+                ["use_for"] = effect ? "Run a CLAP or VST3 effect on a Buzz signal." : "Play a CLAP or VST3 instrument from clips, MIDI and the agent.",
                 ["tracks"] = effect ? 0 : PlugCore.MaxTracks,
                 ["track_parameters"] = effect ? new JsonArray() : new JsonArray("Note", "Velocity", "Delay", "Param", "Value"),
                 ["parameters"] = parameters,

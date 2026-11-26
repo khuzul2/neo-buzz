@@ -11,11 +11,11 @@ namespace ReBuzz.Core.Session
     /// Session recording, layout side (docs/specs/session-view.md 0.7). Arms tracks, starts
     /// takes and overdubs, drains the engine's stamped input into clips, finishes them.
     ///
-    /// Recorded notes go to the clip's engine MIDI column (<see cref="PatternColumnType.MIDI"/>),
+    /// Recorded notes go to the clip's engine MIDI column (<see cref="ClipColumnType.MIDI"/>),
     /// which the engine plays itself for any machine that takes MIDI, and which songs save. The
-    /// pattern editors keep their own data and don't show it; the clip panel shows the count.
+    /// clip editors keep their own data and don't show it; the clip panel shows the count.
     ///
-    /// Undo: a new take is one step (its pattern, made with the column, and its slot; undo
+    /// Undo: a new take is one step (its clip, made with the column, and its slot; undo
     /// keeps what was recorded for a redo). Each overdub pass is one step per clip it recorded
     /// into, holding the clip itself.
     /// </summary>
@@ -25,7 +25,7 @@ namespace ReBuzz.Core.Session
         {
             public SequenceCore Track;
             /// <summary>A new take; null while overdubbing whatever plays.</summary>
-            public PatternCore Take;
+            public ClipCore Take;
             /// <summary>A take records its first pass: its length (until stopped: the longest take).</summary>
             public int FirstPassTicks;
             public bool UntilStopped;
@@ -34,15 +34,15 @@ namespace ReBuzz.Core.Session
             /// <summary>Heard time last seen while it recorded (1/240 tick), -1 before.</summary>
             public long LastHeard = -1;
             public SessionCore.RecordWindow Window;
-            public readonly Dictionary<PatternCore, TakeWriter> Writers = new Dictionary<PatternCore, TakeWriter>(ReferenceEqualityComparer.Instance);
+            public readonly Dictionary<ClipCore, TakeWriter> Writers = new Dictionary<ClipCore, TakeWriter>(ReferenceEqualityComparer.Instance);
             /// <summary>Overdub: what this pass wrote into each column of each clip, for its undo step.</summary>
-            public readonly Dictionary<(PatternCore Clip, ColumnKey Column), List<PatternEvent>> Written = new Dictionary<(PatternCore, ColumnKey), List<PatternEvent>>();
+            public readonly Dictionary<(ClipCore Clip, ColumnKey Column), List<ClipEvent>> Written = new Dictionary<(ClipCore, ColumnKey), List<ClipEvent>>();
             /// <summary>Overdub: the points of automation this pass replaced (SA1), net of what it wrote itself, for its undo step.</summary>
-            public readonly Dictionary<(PatternCore Clip, ColumnKey Column), List<PatternEvent>> Removed = new Dictionary<(PatternCore, ColumnKey), List<PatternEvent>>();
+            public readonly Dictionary<(ClipCore Clip, ColumnKey Column), List<ClipEvent>> Removed = new Dictionary<(ClipCore, ColumnKey), List<ClipEvent>>();
             /// <summary>Automation being swept: for each parameter of each clip, where its pass is (SA1).</summary>
-            public readonly Dictionary<(PatternCore Clip, ColumnKey Column), Sweep> Sweeps = new Dictionary<(PatternCore, ColumnKey), Sweep>();
+            public readonly Dictionary<(ClipCore Clip, ColumnKey Column), Sweep> Sweeps = new Dictionary<(ClipCore, ColumnKey), Sweep>();
 
-            public TakeWriter WriterFor(PatternCore clip)
+            public TakeWriter WriterFor(ClipCore clip)
             {
                 if (!Writers.TryGetValue(clip, out var w))
                     Writers[clip] = w = new TakeWriter();
@@ -112,7 +112,7 @@ namespace ReBuzz.Core.Session
         public bool IsRecording(ISequence track) => track is SequenceCore seq && (recordings.ContainsKey(seq) || audioTakes.ContainsKey(seq));
 
         /// <summary>Whether any track records into the clip (a take of it, or overdubbing it).</summary>
-        public bool IsRecordingClip(IPattern clip)
+        public bool IsRecordingClip(IClip clip)
         {
             if (clip == null) return false;
             if (IsAudioTake(clip)) return true;                             // 1.0
@@ -122,7 +122,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Whether the clip is a take waiting or recording on the track, or the clip the track overdubs.</summary>
-        public bool IsRecordingInto(ISequence track, IPattern clip)
+        public bool IsRecordingInto(ISequence track, IClip clip)
         {
             if (track is SequenceCore audio && audioTakes.TryGetValue(audio, out var a)) return ReferenceEquals(a.Take, clip);   // 1.0
             if (track is not SequenceCore seq || clip == null || !recordings.TryGetValue(seq, out var r)) return false;
@@ -130,17 +130,17 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Notes recorded into a clip (its engine MIDI columns).</summary>
-        public int RecordedNoteCount(IPattern clip) =>
+        public int RecordedNoteCount(IClip clip) =>
             clip?.Columns.Where(IsMidiColumn).Sum(c => c.GetEvents(0, int.MaxValue).Count(e => (e.Value & 0xF0) == 0x90 && ((e.Value >> 16) & 0x7F) > 0)) ?? 0;
 
-        static bool IsMidiColumn(IPatternColumn c) =>
-            c.Type == PatternColumnType.MIDI && (c.Parameter == null || c.Parameter.IndexInGroup < 0);
+        static bool IsMidiColumn(IClipColumn c) =>
+            c.Type == ClipColumnType.MIDI && (c.Parameter == null || c.Parameter.IndexInGroup < 0);
 
-        static IPatternColumn MidiColumnOf(IPattern clip) =>
+        static IClipColumn MidiColumnOf(IClip clip) =>
             clip?.Columns.FirstOrDefault(c => IsMidiColumn(c) && ReferenceEquals(c.Machine, clip.Machine));
 
         /// <summary>The clip's MIDI column for its own machine, made if it has none (copy-on-write: safe while it plays).</summary>
-        internal static IPatternColumn EnsureMidiColumn(IPattern clip)
+        internal static IClipColumn EnsureMidiColumn(IClip clip)
         {
             var column = MidiColumnOf(clip);
             if (column != null || clip == null) return column;
@@ -153,26 +153,26 @@ namespace ReBuzz.Core.Session
         /// column the engine plays) of a parameter of the clip's machine; made if
         /// <paramref name="create"/>. Null if there is none (or no such parameter).
         /// </summary>
-        internal static IPatternColumn ColumnFor(IPattern clip, ColumnKey key, bool create)
+        internal static IClipColumn ColumnFor(IClip clip, ColumnKey key, bool create)
         {
             if (clip?.Machine == null) return null;
             if (key.IsMidi) return create ? EnsureMidiColumn(clip) : MidiColumnOf(clip);
             var groups = clip.Machine.ParameterGroups;
             if (key.Group < 0 || key.Group >= groups.Count || key.Index < 0 || key.Index >= groups[key.Group].Parameters.Count) return null;
             var parameter = groups[key.Group].Parameters[key.Index];
-            IPatternColumn Find() => clip.Columns.FirstOrDefault(c => c.Type == PatternColumnType.Parameter && ReferenceEquals(c.Parameter, parameter)
-                && c.Track == key.Track && c.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey));
+            IClipColumn Find() => clip.Columns.FirstOrDefault(c => c.Type == ClipColumnType.Parameter && ReferenceEquals(c.Parameter, parameter)
+                && c.Track == key.Track && c.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey));
             var column = Find();
-            if (column != null || !create || clip is not PatternCore core) return column;
+            if (column != null || !create || clip is not ClipCore core) return column;
             // Marked before the engine can see it: the audio thread reads the mark (EnginePlays).
-            core.InsertColumn(clip.Columns.Count, parameter, key.Track, new Dictionary<string, string> { [PatternColumnCore.SessionAutomationKey] = "1" });
+            core.InsertColumn(clip.Columns.Count, parameter, key.Track, new Dictionary<string, string> { [ClipColumnCore.SessionAutomationKey] = "1" });
             var made = clip.Columns.LastOrDefault();
             return made != null && ReferenceEquals(made.Parameter, parameter) ? made : null;
         }
 
         /// <summary>Automation recorded into a clip: parameter events in its automation columns.</summary>
-        public int RecordedAutomationCount(IPattern clip) =>
-            clip?.Columns.Where(c => c.Type == PatternColumnType.Parameter && c.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey))
+        public int RecordedAutomationCount(IClip clip) =>
+            clip?.Columns.Where(c => c.Type == ClipColumnType.Parameter && c.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey))
                 .Sum(c => c.GetEvents(0, int.MaxValue).Count()) ?? 0;
 
         // ------------------------------------------------------------------ settings (saved, not undoable)
@@ -216,18 +216,18 @@ namespace ReBuzz.Core.Session
         public const int MaxTakeBars = 4096;
 
         /// <summary>
-        /// Records a new take into an empty slot of an armed track: a new pattern there (the
+        /// Records a new take into an empty slot of an armed track: a new clip there (the
         /// record length, or the longest take while recording until stopped), launched on the
         /// grid, recording its first pass. From a stopped transport the metronome counts in.
         /// Returns the take, or null.
         /// </summary>
-        public IPattern RecordTake(int track, int scene)
+        public IClip RecordTake(int track, int scene)
         {
             if (SequenceOf(track) is not SequenceCore seq || Engine == null || !Engine.IsArmed(seq) || scene < 0) return null;
-            if (PatternAt(track, scene) != null) return null;
+            if (ClipAt(track, scene) != null) return null;
             if (IsClipPlayer(seq.Machine)) return RecordAudioTake(track, scene, seq);      // 1.0: an audio take
             var machine = seq.Machine;
-            string name = machine?.GetNewPatternName();
+            string name = machine?.GetNewClipName();
             if (name == null) return null;
             HookTakes();
             var doc = Ensure();
@@ -236,13 +236,13 @@ namespace ReBuzz.Core.Session
             int length = (bars > 0 ? bars : TakeRoomBars) * bar;
 
             StopRecording(seq);
-            PatternCore take;
+            ClipCore take;
             UndoStack.BeginActionGroup();
             try
             {
-                var create = new SessionCreatePatternAction(this, machine, name, length, midiColumn: true);
+                var create = new SessionCreateClipAction(this, machine, name, length, midiColumn: true);
                 UndoStack.Do(create);
-                take = create.Created as PatternCore;
+                take = create.Created as ClipCore;
                 if (take == null) return null;
                 Edit(d => d.SetSlot(track, scene, take.Name));
             }
@@ -306,7 +306,7 @@ namespace ReBuzz.Core.Session
                         if (ReferenceEquals(SequenceOf(t), seq)) track = t;
                     if (track < 0) continue;
                     int s = Math.Max(0, scene);
-                    while (s < doc.Scenes.Count && PatternAt(track, s) != null) s++;
+                    while (s < doc.Scenes.Count && ClipAt(track, s) != null) s++;
                     if (s >= doc.Scenes.Count) InsertScene(doc.Scenes.Count);
                     RecordTake(track, s);
                 }
@@ -428,7 +428,7 @@ namespace ReBuzz.Core.Session
                 {
                     foreach (var key in passes)
                     {
-                        var written = r.Written.TryGetValue(key, out var added) ? added.ToArray() : Array.Empty<PatternEvent>();
+                        var written = r.Written.TryGetValue(key, out var added) ? added.ToArray() : Array.Empty<ClipEvent>();
                         var replaced = r.Removed.TryGetValue(key, out var taken) ? taken.ToArray() : null;
                         UndoStack.Do(new ClipEventsAction(this, key.Clip, key.Column, written, add: true, done: true, replaced));
                     }
@@ -480,16 +480,16 @@ namespace ReBuzz.Core.Session
         }
 
         /// <param name="overdub">An overdub of the take (after its first pass): its own undo step.</param>
-        void Write(Recording r, PatternCore clip, ColumnKey key, List<TakeEvent> events, bool overdub = false)
+        void Write(Recording r, ClipCore clip, ColumnKey key, List<TakeEvent> events, bool overdub = false)
         {
             var column = ColumnFor(clip, key, create: true);
             if (column == null) return;
-            var batch = events.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray();
+            var batch = events.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray();
             column.SetEvents(batch, true);
             if (overdub || !ReferenceEquals(clip, r.Take))
             {
                 if (!r.Written.TryGetValue((clip, key), out var list))
-                    r.Written[(clip, key)] = list = new List<PatternEvent>();
+                    r.Written[(clip, key)] = list = new List<ClipEvent>();
                 list.AddRange(batch);
             }
             buzz.SetModifiedFlag();
@@ -503,12 +503,12 @@ namespace ReBuzz.Core.Session
         /// wraps, or the recording's end) the clip holds only this pass's points (<see cref="AutomationSweep"/>); parameters not moved in
         /// the pass keep theirs. A take's first pass has nothing before it to replace.
         /// </summary>
-        void WriteAutomation(Recording r, PatternCore clip, ColumnKey key, TakeStamp stamp, bool overdub)
+        void WriteAutomation(Recording r, ClipCore clip, ColumnKey key, TakeStamp stamp, bool overdub)
         {
             var column = ColumnFor(clip, key, create: true);
             if (column == null) return;
             int t = stamp.Position;
-            var point = new PatternEvent(t, stamp.Data, 0);
+            var point = new ClipEvent(t, stamp.Data, 0);
             if (!overdub && ReferenceEquals(clip, r.Take))
             {
                 column.SetEvents(new[] { point }, true);
@@ -524,7 +524,7 @@ namespace ReBuzz.Core.Session
             int last = sweep?.Last ?? AutomationSweep.None;
             // The clear-then-write rule, on what the column holds in the swept range; the point goes in first, so a playing clip is never without one.
             var swept = column.GetEvents(AutomationSweep.From(last, t), t + 1).ToList();
-            var taken = new List<PatternEvent>();
+            var taken = new List<ClipEvent>();
             AutomationSweep.Write(swept, e => e.Time, last, t, point, taken);
             column.SetEvents(new[] { point }, true);
             if (taken.Count > 0) column.SetEvents(taken, false);
@@ -537,12 +537,12 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>What a pass wrote and replaced in a column, kept net for its undo step (a point it wrote and then replaced is neither).</summary>
-        void Note(Recording r, (PatternCore Clip, ColumnKey Column) id, IEnumerable<PatternEvent> added, List<PatternEvent> taken)
+        void Note(Recording r, (ClipCore Clip, ColumnKey Column) id, IEnumerable<ClipEvent> added, List<ClipEvent> taken)
         {
             if (!r.Written.TryGetValue(id, out var written))
-                r.Written[id] = written = new List<PatternEvent>();
+                r.Written[id] = written = new List<ClipEvent>();
             if (!r.Removed.TryGetValue(id, out var removed))
-                r.Removed[id] = removed = new List<PatternEvent>();
+                r.Removed[id] = removed = new List<ClipEvent>();
             foreach (var e in taken)
                 if (!written.Remove(e))
                     removed.Add(e);
@@ -550,7 +550,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>The pass of a parameter is over: what it swept to <paramref name="upTo"/> (position, included) after its last point is replaced too.</summary>
-        void EndSweep(Recording r, (PatternCore Clip, ColumnKey Column) id, Sweep sweep, int upTo)
+        void EndSweep(Recording r, (ClipCore Clip, ColumnKey Column) id, Sweep sweep, int upTo)
         {
             r.Sweeps.Remove(id);
             if (id.Clip.IsDeleted || upTo <= sweep.Last) return;
@@ -559,7 +559,7 @@ namespace ReBuzz.Core.Session
             var tail = column.GetEvents(sweep.Last + 1, upTo + 1).ToList();
             if (tail.Count == 0) return;
             column.SetEvents(tail, false);
-            Note(r, id, Array.Empty<PatternEvent>(), tail);
+            Note(r, id, Array.Empty<ClipEvent>(), tail);
             buzz.SetModifiedFlag();
         }
 
@@ -568,7 +568,7 @@ namespace ReBuzz.Core.Session
         /// stopped (or the transport), at <paramref name="end"/> for one still playing, up to the clip's end; or where it was last moved
         /// when that isn't known (a clip replaced by another, a dropped recording).
         /// </summary>
-        int PassEnd(Recording r, PatternCore clip, Sweep sweep, long end)
+        int PassEnd(Recording r, ClipCore clip, Sweep sweep, long end)
         {
             long stop = -1;
             if (ReferenceEquals(Engine?.GetPlayingCore(r.Track), clip))
@@ -701,9 +701,9 @@ namespace ReBuzz.Core.Session
         /// on at once, in phase with what was played. Needs the transport running. One undo step
         /// for all of it. Returns the clips made.
         /// </summary>
-        public IReadOnlyList<IPattern> CaptureMidi(int scene = 0)
+        public IReadOnlyList<IClip> CaptureMidi(int scene = 0)
         {
-            var made = new List<IPattern>();
+            var made = new List<IClip>();
             var engine = Engine;
             if (engine == null) return made;
             long now = engine.HeardTimeNow();
@@ -737,14 +737,14 @@ namespace ReBuzz.Core.Session
                     int track = -1;
                     for (int t = 0; t < doc.Tracks.Count && track < 0; t++)
                         if (ReferenceEquals(SequenceOf(t), seq)) track = t;
-                    if (track < 0 || seq.Machine?.GetNewPatternName() is not string name) continue;
+                    if (track < 0 || seq.Machine?.GetNewClipName() is not string name) continue;
                     int s = Math.Max(0, scene);
-                    while (s < doc.Scenes.Count && PatternAt(track, s) != null) s++;
+                    while (s < doc.Scenes.Count && ClipAt(track, s) != null) s++;
                     if (s >= doc.Scenes.Count) InsertScene(doc.Scenes.Count);
 
-                    var create = new SessionCreatePatternAction(this, seq.Machine, name, length, midiColumn: true);
+                    var create = new SessionCreateClipAction(this, seq.Machine, name, length, midiColumn: true);
                     UndoStack.Do(create);
-                    if (create.Created is not PatternCore clip) continue;
+                    if (create.Created is not ClipCore clip) continue;
                     int slot = s;
                     Edit(d => d.SetSlot(track, slot, clip.Name));
 
@@ -760,7 +760,7 @@ namespace ReBuzz.Core.Session
                     }
                     writer.CloseAll(now, takeEvents);
                     var column = EnsureMidiColumn(clip);
-                    column?.SetEvents(takeEvents.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
+                    column?.SetEvents(takeEvents.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
                     takeEvents.Clear();
 
                     engine.LaunchInPhase(seq, clip, startBar);
@@ -788,9 +788,9 @@ namespace ReBuzz.Core.Session
         /// timed by when it was played at the current tempo, becomes a clip from its first note,
         /// 1, 2, 4 or 8 bars long (later notes are left out). It doesn't start playing.
         /// </summary>
-        IReadOnlyList<IPattern> CaptureWhileStopped(int scene)
+        IReadOnlyList<IClip> CaptureWhileStopped(int scene)
         {
-            var made = new List<IPattern>();
+            var made = new List<IClip>();
             var engine = Engine;
             var doc = Ensure();
             int bar = BarTicks;
@@ -817,14 +817,14 @@ namespace ReBuzz.Core.Session
                     int track = -1;
                     for (int t = 0; t < doc.Tracks.Count && track < 0; t++)
                         if (ReferenceEquals(SequenceOf(t), seq)) track = t;
-                    if (track < 0 || seq.Machine?.GetNewPatternName() is not string name) continue;
+                    if (track < 0 || seq.Machine?.GetNewClipName() is not string name) continue;
                     int s = Math.Max(0, scene);
-                    while (s < doc.Scenes.Count && PatternAt(track, s) != null) s++;
+                    while (s < doc.Scenes.Count && ClipAt(track, s) != null) s++;
                     if (s >= doc.Scenes.Count) InsertScene(doc.Scenes.Count);
 
-                    var create = new SessionCreatePatternAction(this, seq.Machine, name, length, midiColumn: true);
+                    var create = new SessionCreateClipAction(this, seq.Machine, name, length, midiColumn: true);
                     UndoStack.Do(create);
-                    if (create.Created is not PatternCore clip) continue;
+                    if (create.Created is not ClipCore clip) continue;
                     int slot = s;
                     Edit(d => d.SetSlot(track, slot, clip.Name));
 
@@ -838,7 +838,7 @@ namespace ReBuzz.Core.Session
                         writer.Add(new TakeStamp(data, time, (int)Math.Clamp(time, 0, room - 1), (int)room), takeEvents);
                     }
                     writer.CloseAll(Math.Min(last, room), takeEvents);
-                    EnsureMidiColumn(clip)?.SetEvents(takeEvents.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
+                    EnsureMidiColumn(clip)?.SetEvents(takeEvents.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
                     takeEvents.Clear();
                     made.Add(clip);
                 }
@@ -923,12 +923,12 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Removes the automation recorded into a clip (undoable).</summary>
-        public void ClearRecordedAutomation(IPattern clip)
+        public void ClearRecordedAutomation(IClip clip)
         {
             var machine = clip?.Machine;
             if (machine == null) return;
-            var columns = clip.Columns.Where(c => c.Type == PatternColumnType.Parameter && c.Parameter != null
-                && c.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey)).ToList();
+            var columns = clip.Columns.Where(c => c.Type == ClipColumnType.Parameter && c.Parameter != null
+                && c.Metadata.ContainsKey(ClipColumnCore.SessionAutomationKey)).ToList();
             if (columns.Count == 0) return;
             UndoStack.BeginActionGroup();
             try
@@ -950,7 +950,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Removes the notes recorded into a clip (undoable).</summary>
-        public void ClearRecordedNotes(IPattern clip)
+        public void ClearRecordedNotes(IClip clip)
         {
             var column = MidiColumnOf(clip);
             var events = column?.GetEvents(int.MinValue, int.MaxValue).ToArray();
@@ -971,15 +971,15 @@ namespace ReBuzz.Core.Session
     internal sealed class ClipEventsAction : IAction
     {
         readonly SessionLayout layout;
-        readonly IPattern clip;
+        readonly IClip clip;
         readonly ColumnKey column;
-        readonly PatternEvent[] events;
-        readonly PatternEvent[] replaced;
+        readonly ClipEvent[] events;
+        readonly ClipEvent[] replaced;
         readonly bool add;
         bool skip;
 
         /// <param name="replaced">SA1, with <paramref name="add"/>: the points the added ones replaced (automation); undo puts them back.</param>
-        public ClipEventsAction(SessionLayout layout, IPattern clip, ColumnKey column, PatternEvent[] events, bool add, bool done, PatternEvent[] replaced = null)
+        public ClipEventsAction(SessionLayout layout, IClip clip, ColumnKey column, ClipEvent[] events, bool add, bool done, ClipEvent[] replaced = null)
         {
             this.layout = layout;
             this.clip = clip;
@@ -1001,7 +1001,7 @@ namespace ReBuzz.Core.Session
         void Apply(bool set)
         {
             var p = layout.Current(clip);
-            if (p == null || (p is PatternCore core && core.IsDeleted)) return;
+            if (p == null || (p is ClipCore core && core.IsDeleted)) return;
             var target = SessionLayout.ColumnFor(p, column, create: set);
             if (target == null) return;
             // The written points go in before the replaced ones come out, and the replaced ones before the written come out.

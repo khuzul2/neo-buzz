@@ -58,6 +58,8 @@ namespace BuzzGUI.Common.Settings
         public object ValueObject { get { return pi.GetValue(settings, null); } }
 
         public string Name { get; set; }
+        /// <summary>The key in the registry or the settings file: the name, unless the setting was renamed (BuzzSetting.StoredName).</summary>
+        public string StoredName { get; set; }
         public string[] Options { get; set; }
         public string Default { get; set; }
         public bool IsDefault { get { return Value == Default; } }
@@ -119,6 +121,7 @@ namespace BuzzGUI.Common.Settings
                 Setting s = new Setting(this, p)
                 {
                     Name = p.Name,
+                    StoredName = decl.StoredName ?? p.Name,
                     Default = decl != null && decl.DefaultValue != null ? decl.DefaultValue.ToString() : "",
                     Description = decl.Description,
                 };
@@ -155,7 +158,7 @@ namespace BuzzGUI.Common.Settings
                 string path = registryLocation.Substring(Global.RegistryRoot.Length);
                 foreach (var p in List)
                 {
-                    string v = RegistryEx.Store?.Get(path, p.Name);
+                    string v = RegistryEx.Store?.Get(path, p.StoredName);
                     if (v == null) continue;
                     try
                     {
@@ -171,7 +174,7 @@ namespace BuzzGUI.Common.Settings
 
             foreach (var p in List)
             {
-                object v = key.GetValue(p.Name);
+                object v = key.GetValue(p.StoredName);
                 if (v != null)
                 {
                     try
@@ -195,7 +198,7 @@ namespace BuzzGUI.Common.Settings
                 {
                     if (p.IsModified && p.ValueObject != null)
                     {
-                        RegistryEx.Store?.Set(path, p.Name, p.ValueObject.ToString());
+                        RegistryEx.Store?.Set(path, p.StoredName, p.ValueObject.ToString());
                         p.IsModified = false;
                     }
                 }
@@ -208,7 +211,7 @@ namespace BuzzGUI.Common.Settings
             {
                 if (p.IsModified && p.ValueObject != null)
                 {
-                    key.SetValue(p.Name, p.ValueObject);
+                    key.SetValue(p.StoredName, p.ValueObject);
                     p.IsModified = false;
                 }
             }

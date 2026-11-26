@@ -12,12 +12,12 @@ namespace WDE.ModernPatternEditor
 {
     public class ParameterColumn : ColumnRenderer.IColumn
     {
-        static int BeatDuration = 4 * PatternEvent.TimeBase;
+        static int BeatDuration = 4 * ClipEvent.TimeBase;
 
         internal readonly ParameterColumnSet Set;
-        internal readonly IPatternColumn PatternColumn;
+        internal readonly IClipColumn ClipColumn;
         readonly int track;
-        private readonly MPEPatternColumn mpeColumn;
+        private readonly MPEClipColumn mpeColumn;
 
         class Beat : ColumnRenderer.IBeat
         {
@@ -59,8 +59,8 @@ namespace WDE.ModernPatternEditor
 
                     return Enumerable.Range(0, RowsPerBeat).Select(i =>
                     {
-                        if (v[i] == column.PatternColumn.Parameter.NoValue) return ColumnRenderer.BeatValueType.NoValue;
-                        if (column.PatternColumn.Parameter.Type == ParameterType.Note) return ColumnRenderer.BeatValueType.Note;
+                        if (v[i] == column.ClipColumn.Parameter.NoValue) return ColumnRenderer.BeatValueType.NoValue;
+                        if (column.ClipColumn.Parameter.Type == ParameterType.Note) return ColumnRenderer.BeatValueType.Note;
                         else return ColumnRenderer.BeatValueType.Parameter;
                     });
                 }
@@ -68,13 +68,13 @@ namespace WDE.ModernPatternEditor
 
             string ValueToString(int v)
             {
-                if (v == column.PatternColumn.Parameter.NoValue)
+                if (v == column.ClipColumn.Parameter.NoValue)
                     return new string('.', column.DigitCount);
 
                 // Fork (ux-overhaul.md P3c): decimal, and a drum machine's names for its notes.
                 if (column.IsDecimal) return v.ToString(column.decimalFormat);
-                if (column.PatternColumn.Parameter.Type == ParameterType.Note && v != BuzzNote.Off && column.NoteName(v) is string name) return name;
-                return column.PatternColumn.Parameter.GetHexValueString(v);
+                if (column.ClipColumn.Parameter.Type == ParameterType.Note && v != BuzzNote.Off && column.NoteName(v) is string name) return name;
+                return column.ClipColumn.Parameter.GetHexValueString(v);
             }
 
             IList<int> Values
@@ -82,15 +82,15 @@ namespace WDE.ModernPatternEditor
                 get
                 {
                     int[] values = new int[RowsPerBeat];
-                    for (int i = 0; i < values.Length; i++) values[i] = column.PatternColumn.Parameter.NoValue;
+                    for (int i = 0; i < values.Length; i++) values[i] = column.ClipColumn.Parameter.NoValue;
 
                     int t = index * BeatDuration;
-                    //foreach (var e in column.PatternColumn.GetEvents(t, t + BeatDuration).Where(e => t % PatternEvent.TimeBase == 0))
-                    //						values[(e.Time - t) / PatternEvent.TimeBase] = e.Value;
+                    //foreach (var e in column.ClipColumn.GetEvents(t, t + BeatDuration).Where(e => t % ClipEvent.TimeBase == 0))
+                    //						values[(e.Time - t) / ClipEvent.TimeBase] = e.Value;
 
                     // Get event data from our own structure
-                    MPEPattern mpePattern = column.Set.Pattern.Editor.MPEPatternsDB.GetMPEPattern(column.Set.Pattern.Pattern);
-                    MPEPatternColumn mpeColumn = mpePattern.GetColumn(column.PatternColumn);
+                    MPEClip mpeClip = column.Set.Clip.Editor.MPEClipsDB.GetMPEClip(column.Set.Clip.Clip);
+                    MPEClipColumn mpeColumn = mpeClip.GetColumn(column.ClipColumn);
                     if (mpeColumn != null)
                     {
                         foreach (var e in mpeColumn.GetEvents(t, t + BeatDuration).Where(e => rowTimes.Contains(e.Time - t)))
@@ -109,25 +109,25 @@ namespace WDE.ModernPatternEditor
             public bool HasValue(int row)
             {
                 int t = GetRowTime(row);
-                MPEPattern mpePattern = column.Set.Pattern.Editor.MPEPatternsDB.GetMPEPattern(column.Set.Pattern.Pattern);
-                MPEPatternColumn mpeColumn = mpePattern.GetColumn(column.PatternColumn);
+                MPEClip mpeClip = column.Set.Clip.Editor.MPEClipsDB.GetMPEClip(column.Set.Clip.Clip);
+                MPEClipColumn mpeColumn = mpeClip.GetColumn(column.ClipColumn);
                 return mpeColumn != null && mpeColumn.GetEvents(t, t + 1).Any();
             }
 
             public BuzzAction SetValue(int row, int value)
             {
-                if (column.PatternColumn.Parameter.Type != ParameterType.Note || value != BuzzNote.Off)
+                if (column.ClipColumn.Parameter.Type != ParameterType.Note || value != BuzzNote.Off)
                 {
-                    value = Math.Min(Math.Max(value, column.PatternColumn.Parameter.MinValue), column.PatternColumn.Parameter.MaxValue);
+                    value = Math.Min(Math.Max(value, column.ClipColumn.Parameter.MinValue), column.ClipColumn.Parameter.MaxValue);
                 }
 
-                if (column.PatternColumn.Type == PatternColumnType.MIDI)
+                if (column.ClipColumn.Type == ClipColumnType.MIDI)
                 {
-                    MPEInternalParameter iParameter = (MPEInternalParameter)column.PatternColumn.Parameter;
+                    MPEInternalParameter iParameter = (MPEInternalParameter)column.ClipColumn.Parameter;
                     iParameter.SetValue(column.track, value);
                 }
                 /*
-				if (column.PatternColumn.Parameter.Type == ParameterType.Note && value != BuzzNote.Off)
+				if (column.ClipColumn.Parameter.Type == ParameterType.Note && value != BuzzNote.Off)
                 {
 					int o = value >> 4;
 					if ((value & 15) < 1 || (value & 15) > 12 || o < BuzzNote.MinOctave || o > BuzzNote.MaxOctave)
@@ -139,17 +139,17 @@ namespace WDE.ModernPatternEditor
                 }
 				*/
                 int t = GetRowTime(row);
-                MPEPattern mpePattern = column.Set.Pattern.Editor.MPEPatternsDB.GetMPEPattern(column.Set.Pattern.Pattern);
-                MPEPatternColumn mpeColumn = mpePattern.GetColumn(column.PatternColumn);
-                return new MPESetOrClearEventsAction(mpePattern.Pattern, mpeColumn, new[] { new PatternEvent(t, value) }, true);
+                MPEClip mpeClip = column.Set.Clip.Editor.MPEClipsDB.GetMPEClip(column.Set.Clip.Clip);
+                MPEClipColumn mpeColumn = mpeClip.GetColumn(column.ClipColumn);
+                return new MPESetOrClearEventsAction(mpeClip.Clip, mpeColumn, new[] { new ClipEvent(t, value) }, true);
             }
 
             public BuzzAction ClearValue(int row)
             {
                 int t = GetRowTime(row);
-                MPEPattern mpePattern = column.Set.Pattern.Editor.MPEPatternsDB.GetMPEPattern(column.Set.Pattern.Pattern);
-                MPEPatternColumn mpeColumn = mpePattern.GetColumn(column.PatternColumn);
-                return new MPESetOrClearEventsAction(mpePattern.Pattern, mpeColumn, mpeColumn.GetEvents(t, t + 1), false);
+                MPEClip mpeClip = column.Set.Clip.Editor.MPEClipsDB.GetMPEClip(column.Set.Clip.Clip);
+                MPEClipColumn mpeColumn = mpeClip.GetColumn(column.ClipColumn);
+                return new MPESetOrClearEventsAction(mpeClip.Clip, mpeColumn, mpeColumn.GetEvents(t, t + 1), false);
             }
 
             public void SendCCAtTime(int time)
@@ -157,23 +157,23 @@ namespace WDE.ModernPatternEditor
                 int row = Array.IndexOf(rowTimes, time);
                 if (row < 0 || !HasValue(row)) return;
 
-                if (column.PatternColumn.Type == PatternColumnType.MIDI)
+                if (column.ClipColumn.Type == ClipColumnType.MIDI)
                 {
-                    MPEInternalParameter iParameter = (MPEInternalParameter)column.PatternColumn.Parameter;
-                    if (iParameter.InternalType == PatternEditorUtils.InternalParameter.MidiNote)
+                    MPEInternalParameter iParameter = (MPEInternalParameter)column.ClipColumn.Parameter;
+                    if (iParameter.InternalType == ClipEditorUtils.InternalParameter.MidiNote)
                     {
                         int newValue = Values[row];
                         // ToDo: fetch volume from vol column
-                        this.column.Set.Pattern.Editor.playRecordManager.UpdatePlayingNotePattern(iParameter, column.PatternColumn.Track, newValue, MPEInternalParameter.DefaultMidiVolume);
+                        this.column.Set.Clip.Editor.playRecordManager.UpdatePlayingNoteClip(iParameter, column.ClipColumn.Track, newValue, MPEInternalParameter.DefaultMidiVolume);
                         iParameter.SetValue(column.track, newValue);
                     }
                 }
                 else
                 {
-                    var machine = column.PatternColumn.Machine;
-                    int group = column.PatternColumn.Machine.ParameterGroups.IndexOf(this.column.PatternColumn.Parameter.Group) | 16; // Don't record
-                    column.Set.Pattern.Editor.cb.ControlChange(machine, group, this.column.track, this.column.PatternColumn.Parameter.IndexInGroup, Values[row]);
-                    //column.PatternColumn.Parameter.SetValue(column.track, Values[row]);
+                    var machine = column.ClipColumn.Machine;
+                    int group = column.ClipColumn.Machine.ParameterGroups.IndexOf(this.column.ClipColumn.Parameter.Group) | 16; // Don't record
+                    column.Set.Clip.Editor.cb.ControlChange(machine, group, this.column.track, this.column.ClipColumn.Parameter.IndexInGroup, Values[row]);
+                    //column.ClipColumn.Parameter.SetValue(column.track, Values[row]);
                 }
             }
 
@@ -185,10 +185,10 @@ namespace WDE.ModernPatternEditor
                 // Use our own structure
                 RowsPerBeat = column.mpeColumn.BeatRowsList.Count > index ? column.mpeColumn.BeatRowsList[index] : 4;
 
-                // if (!column.PatternColumn.BeatSubdivision.TryGetValue(index, out RowsPerBeat))
+                // if (!column.ClipColumn.BeatSubdivision.TryGetValue(index, out RowsPerBeat))
                 //	RowsPerBeat = rpb;
 
-                rowTimes = Enumerable.Range(0, RowsPerBeat).Select(t => PatternEvent.TimeBase * 4 * t / RowsPerBeat).ToArray();
+                rowTimes = Enumerable.Range(0, RowsPerBeat).Select(t => ClipEvent.TimeBase * 4 * t / RowsPerBeat).ToArray();
             }
         }
 
@@ -196,10 +196,10 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                if (PatternColumn.Parameter.Type == ParameterType.Note)
+                if (ClipColumn.Parameter.Type == ParameterType.Note)
                     return ColumnRenderer.ColumnType.Note;
                 else
-                    return PatternColumn.Parameter.Flags.HasFlag(ParameterFlags.Ascii)
+                    return ClipColumn.Parameter.Flags.HasFlag(ParameterFlags.Ascii)
                         ? ColumnRenderer.ColumnType.Ascii : ColumnRenderer.ColumnType.HexValue;
             }
         }
@@ -211,7 +211,7 @@ namespace WDE.ModernPatternEditor
 
         void SetUpDecimal()
         {
-            var p = PatternColumn.Parameter;
+            var p = ClipColumn.Parameter;
             int digits = 0;
             if (p.Type != ParameterType.Note && !p.Flags.HasFlag(ParameterFlags.Ascii) && p.MinValue >= 0 && p.MaxValue > 0)
                 digits = ValueDisplay.DecimalDigits(p.MaxValue);
@@ -234,7 +234,7 @@ namespace WDE.ModernPatternEditor
         internal string NoteName(int buzzNote)
         {
             if (!(buzzNote >= BuzzNote.Min && buzzNote <= BuzzNote.Max)) return null;
-            var names = MachineNoteNames.For(PatternColumn.Machine);
+            var names = MachineNoteNames.For(ClipColumn.Machine);
             return names?.ShortName(BuzzNote.ToMIDINote(buzzNote));
         }
 
@@ -242,7 +242,7 @@ namespace WDE.ModernPatternEditor
         internal string NoteFullName(int buzzNote)
         {
             if (!(buzzNote >= BuzzNote.Min && buzzNote <= BuzzNote.Max)) return null;
-            return MachineNoteNames.For(PatternColumn.Machine)?.Name(BuzzNote.ToMIDINote(buzzNote));
+            return MachineNoteNames.For(ClipColumn.Machine)?.Name(BuzzNote.ToMIDINote(buzzNote));
         }
 
         public virtual int DigitCount
@@ -250,12 +250,12 @@ namespace WDE.ModernPatternEditor
             get
             {
                 if (IsDecimal) return decimalDigits;
-                switch (PatternColumn.Parameter.Type)
+                switch (ClipColumn.Parameter.Type)
                 {
                     case ParameterType.Note: return 3;
                     case ParameterType.Word: return 4;
                     case ParameterType.Switch: return 1;
-                    default: return PatternColumn.Parameter.Flags.HasFlag(ParameterFlags.Ascii) ? 1 : 2;
+                    default: return ClipColumn.Parameter.Flags.HasFlag(ParameterFlags.Ascii) ? 1 : 2;
                 }
             }
         }
@@ -264,46 +264,46 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                return PatternColumn.Parameter.Flags.HasFlag(ParameterFlags.TiedToNext);
+                return ClipColumn.Parameter.Flags.HasFlag(ParameterFlags.TiedToNext);
             }
         }
 
-        public virtual string Label { get { return PatternColumn.Parameter.Name; } }
-        public virtual string Description { get { return PatternColumn.Parameter.Description; } }
+        public virtual string Label { get { return ClipColumn.Parameter.Name; } }
+        public virtual string Description { get { return ClipColumn.Parameter.Description; } }
         public virtual ColumnRenderer.IBeat FetchBeat(int index) { return new Beat(this, index); }
 
         /// <summary>Fork (daw-modes.md AR3): a column that isn't one of the editor's own (the Notes lanes, NoteLaneColumn): no editor column behind it.</summary>
-        protected ParameterColumn(ParameterColumnSet set, IPatternColumn pc, int track)
+        protected ParameterColumn(ParameterColumnSet set, IClipColumn pc, int track)
         {
-            BeatDuration = 4 * PatternEvent.TimeBase;
+            BeatDuration = 4 * ClipEvent.TimeBase;
             this.Set = set;
-            this.PatternColumn = pc;
+            this.ClipColumn = pc;
             this.track = track;
         }
 
-        public ParameterColumn(ParameterColumnSet set, IPatternColumn pc, int track, int rpb)
+        public ParameterColumn(ParameterColumnSet set, IClipColumn pc, int track, int rpb)
         {
-            BeatDuration = 4 * PatternEvent.TimeBase;
+            BeatDuration = 4 * ClipEvent.TimeBase;
             this.Set = set;
-            this.PatternColumn = pc;
+            this.ClipColumn = pc;
             this.track = track;
-            MPEPattern mPEPattern = Set.Pattern.Editor.MPEPatternsDB.GetMPEPattern(pc.Pattern);
-            this.mpeColumn = mPEPattern.GetColumnOrCreate(PatternColumn);
+            MPEClip mPEClip = Set.Clip.Editor.MPEClipsDB.GetMPEClip(pc.Clip);
+            this.mpeColumn = mPEClip.GetColumnOrCreate(ClipColumn);
             mpeColumn.EventsChanged += pc_EventsChanged;
             pc.BeatSubdivisionChanged += pc_BeatSubdivisionChanged;
         }
 
         public virtual void Release()
         {
-            // PatternColumn.EventsChanged -= pc_EventsChanged;
+            // ClipColumn.EventsChanged -= pc_EventsChanged;
             mpeColumn.EventsChanged -= pc_EventsChanged;
-            PatternColumn.BeatSubdivisionChanged -= pc_BeatSubdivisionChanged;
+            ClipColumn.BeatSubdivisionChanged -= pc_BeatSubdivisionChanged;
         }
 
-        void pc_EventsChanged(IEnumerable<PatternEvent> events, bool setorclear)
+        void pc_EventsChanged(IEnumerable<ClipEvent> events, bool setorclear)
         {
             HashSet<int> hs = new HashSet<int>();
-            var invalidbeats = events.Select(e => e.Time / (PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase));
+            var invalidbeats = events.Select(e => e.Time / (ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase));
             foreach (var e in invalidbeats)
                 hs.Add(e);
             Set.FireBeatsInvalidated(hs);
@@ -314,7 +314,7 @@ namespace WDE.ModernPatternEditor
             var invalidbeats = new HashSet<int>();
             invalidbeats.Add(index);
             Set.FireBeatsInvalidated(invalidbeats);
-            Set.Pattern.CursorPosition = Set.Pattern.CursorPosition.Constrained;
+            Set.Clip.CursorPosition = Set.Clip.CursorPosition.Constrained;
         }
 
         public virtual int GetDigitTime(Digit d)
@@ -405,7 +405,7 @@ namespace WDE.ModernPatternEditor
 
         public virtual Digit GetDigitAtTime(int time)
         {
-            Digit digit = new Digit(Set.Pattern, Set.Pattern.ColumnSets.IndexOf(Set), this.Set.Columns.IndexOf(this), 0, 0, 0);
+            Digit digit = new Digit(Set.Clip, Set.Clip.ColumnSets.IndexOf(Set), this.Set.Columns.IndexOf(this), 0, 0, 0);
             int ibeat = time / BeatDuration;
             if (ibeat < 0 || ibeat >= Set.BeatCount) return digit;
             var beat = FetchBeat(ibeat) as Beat;

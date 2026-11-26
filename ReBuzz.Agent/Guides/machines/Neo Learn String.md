@@ -40,7 +40,7 @@ Neo Verb for a body or hall, Neo Comp to even out plucks, Neo Delay for echoing 
 ## Checklist
 
 - [ ] Read each control's id, range and how/sound with `machine_describe` (ids are snake_case and also taken by `param_set`).
-- [ ] Change one control at a time with `param_set`, play a pattern (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
+- [ ] Change one control at a time with `param_set`, play a clip (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
 - [ ] `plot` a spectrum of the render to see the comb from `Pick Position`, and `compare` two settings.
 - [ ] Check the ring time with `analyze` on a render of one note: the level should fall by 60 dB in about `Decay Time`.
 - [ ] Writes via `param_set` show on the Explain strip with the Agent badge.

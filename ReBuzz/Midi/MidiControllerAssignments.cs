@@ -130,8 +130,8 @@ namespace ReBuzz.Midi
                 case ReBuzzMIDIControllerType.SpeedDown:
                     buzz.Speed -= 1;
                     break;
-                case ReBuzzMIDIControllerType.PatternView:
-                    buzz.ActiveView = BuzzView.PatternView;
+                case ReBuzzMIDIControllerType.ClipView:
+                    buzz.ActiveView = BuzzView.ClipView;
                     break;
                 case ReBuzzMIDIControllerType.MachineView:
                     buzz.ActiveView = BuzzView.MachineView;

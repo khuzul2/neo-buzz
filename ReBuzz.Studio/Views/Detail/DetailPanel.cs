@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3a, decisions 31-34): the detail panel under the main view. Its one page today is the Tracker
-// (the pattern editor); the piano roll, Device and Mixer come in later steps. A 28 pt bar when closed and a panel of a height
+// (the clip editor); the piano roll, Device and Mixer come in later steps. A 28 pt bar when closed and a panel of a height
 // the user drags when open (both remembered in the settings); the Tracker button maximises it over the whole window.
 
 using System;
@@ -71,7 +71,7 @@ namespace ReBuzz.Studio.Views.Detail
             ToolTip.SetTip(trackerButton, Shell.Commands.StudioKeymap.Tip("view.pattern"));
             trackerButton.Click += (s, e) => Choose(false);
 
-            // Fork (ux-overhaul.md P3b): Tracker | Piano roll, two views of the one pattern the page's choosers name.
+            // Fork (ux-overhaul.md P3b): Tracker | Piano roll, two views of the one clip the page's choosers name.
             rollButton = StudioButtons.KeepFocus(new Button { Content = RollTab, BorderThickness = new Thickness(1) });
             AutomationProperties.SetName(rollButton, RollTab);
             ToolTip.SetTip(rollButton, Shell.Commands.StudioKeymap.Tip("view.pianoroll"));
@@ -121,7 +121,7 @@ namespace ReBuzz.Studio.Views.Detail
             grip.PointerMoved += GripMoved;
             grip.PointerReleased += GripReleased;
             Child = new Grid { Children = { frame, grip } };
-            if (page is PatternPage pp) pp.SetRollMode(rollPage);
+            if (page is ClipPage pp) pp.SetRollMode(rollPage);
             Apply();
         }
 
@@ -243,7 +243,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (rollPage == roll) return;
             rollPage = roll;
             Write(RollKey, roll);
-            if (page is PatternPage pp) pp.SetRollMode(roll);
+            if (page is ClipPage pp) pp.SetRollMode(roll);
             Apply();
         }
 

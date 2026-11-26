@@ -5,16 +5,16 @@ using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor.Actions
 {
-    public class MPEUpDownAction : PatternAction
+    public class MPEUpDownAction : ClipAction
     {
-        MPEPattern mpePattern;
+        MPEClip mpeClip;
         private Selection selection;
         private int delta;
 
-        public MPEUpDownAction(MPEPattern mpePattern, Selection selection, int delta)
-            : base(mpePattern.Pattern)
+        public MPEUpDownAction(MPEClip mpeClip, Selection selection, int delta)
+            : base(mpeClip.Clip)
         {
-            this.mpePattern = mpePattern;
+            this.mpeClip = mpeClip;
             this.selection = selection;
             this.delta = delta;
         }
@@ -45,7 +45,7 @@ namespace WDE.ModernPatternEditor.Actions
 
                     if (newValue >= 0)
                     {
-                        if (digitIterator.ParameterColumn.PatternColumn.Parameter.Type == ParameterType.Note)
+                        if (digitIterator.ParameterColumn.ClipColumn.Parameter.Type == ParameterType.Note)
                         {
                             if (newValue != BuzzNote.Off && newValue + shiftdelta > BuzzNote.Min && newValue + shiftdelta < BuzzNote.Max)
                             {
@@ -62,8 +62,8 @@ namespace WDE.ModernPatternEditor.Actions
                     }
 
                     // Beats can have different number of rows, so use closest time
-                    if (digitIterator.Beat * PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase + digitIterator.TimeInBeat >=
-                        columnEndDigit.Beat * PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase + columnEndDigit.TimeInBeat)
+                    if (digitIterator.Beat * ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase + digitIterator.TimeInBeat >=
+                        columnEndDigit.Beat * ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase + columnEndDigit.TimeInBeat)
                         break;
 
                     digitIterator = digitIterator.Down;

@@ -1,26 +1,26 @@
 ﻿namespace WDE.ModernPatternEditor.Actions
 {
-    class MoveCursorAction : PatternVMAction
+    class MoveCursorAction : ClipVMAction
     {
         Digit oldPosition;
         Digit newPosition;
 
-        public MoveCursorAction(PatternVM pvm, Digit p)
+        public MoveCursorAction(ClipVM pvm, Digit p)
             : base(pvm)
         {
-            // store PatternVM-independent digits
-            oldPosition = pvm.CursorPosition.SetPatternVM(null);
-            newPosition = p.SetPatternVM(null);
+            // store ClipVM-independent digits
+            oldPosition = pvm.CursorPosition.SetClipVM(null);
+            newPosition = p.SetClipVM(null);
         }
 
         protected override void DoAction()
         {
-            PatternVM.CursorPosition = newPosition.SetPatternVM(PatternVM);
+            ClipVM.CursorPosition = newPosition.SetClipVM(ClipVM);
         }
 
         protected override void UndoAction()
         {
-            PatternVM.CursorPosition = oldPosition.SetPatternVM(PatternVM);
+            ClipVM.CursorPosition = oldPosition.SetClipVM(ClipVM);
         }
     }
 }

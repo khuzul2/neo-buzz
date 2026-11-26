@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3b, second step: decisions 45-49): what the docked piano roll has around its grid: the bar and
-// beat ruler (the song's bar length and ticks a beat), the playhead that follows the pattern, the loop brace that is the song's own
+// beat ruler (the song's bar length and ticks a beat), the playhead that follows the clip, the loop brace that is the song's own
 // loop, the velocity lane (one undo step a drag, relative for several notes) and cut, copy and paste of notes.
 
 using System;
@@ -28,13 +28,13 @@ namespace ReBuzz.Studio.Tests
 
     public class UxP3b2Tests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
-        /// <summary>The pattern placed on its machine's track at a song tick (the loop brace needs it in the song).</summary>
+        /// <summary>The clip placed on its machine's track at a song tick (the loop brace needs it in the song).</summary>
         static void Place(UxP3bTests.Rig r, int time)
         {
             var seq = r.Song.Core.Song.Sequences.First(s => s.Machine == r.Lead);
-            seq.SetEvent(time, new SequenceEvent(SequenceEventType.PlayPattern, r.Pattern));
+            seq.SetEvent(time, new SequenceEvent(SequenceEventType.PlayClip, r.Clip));
         }
 
         static Point InWindow(UxP3bTests.Rig r, Control c, Point p)
@@ -117,12 +117,12 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the playhead
 
         [AvaloniaTest]
-        public void ThePlayheadFollowsThePatternsPlayPositionAndTheViewerWithIt()
+        public void ThePlayheadFollowsTheClipsPlayPositionAndTheViewerWithIt()
         {
             using var r = new UxP3bTests.Rig(128);
             r.ShowRoll();
             var roll = r.Roll;
-            var pattern = (PatternCore)r.Pattern;
+            var clip = (ClipCore)r.Clip;
             r.Window.UpdateLayout();
             UxP3bTests.Pump();
             try
@@ -131,14 +131,14 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(r.Notes.PlayheadTime, Is.EqualTo(-1), "not playing: no playhead");
                 Assert.That(roll.Playhead.LineX, Is.LessThan(0));
 
-                pattern.PlayPosition = 3 * TB;
+                clip.PlayPosition = 3 * TB;
                 roll.UpdatePlayhead();
                 Assert.That(r.Notes.PlayheadTime, Is.EqualTo(3 * TB));
                 Assert.That(roll.Ruler.Playhead, Is.EqualTo(3 * TB));
                 Assert.That(roll.Playhead.LineX, Is.EqualTo(r.Notes.X(3 * TB) - roll.Scroll.Offset.X).Within(0.01), "over the viewer, at the note-grid's x");
 
                 // Far to the right: Follow scrolls to it.
-                pattern.PlayPosition = 120 * TB;
+                clip.PlayPosition = 120 * TB;
                 roll.UpdatePlayhead();
                 Assert.That(roll.Scroll.Offset.X, Is.GreaterThan(0), "the viewer followed");
                 double x = roll.Playhead.LineX;
@@ -148,17 +148,17 @@ namespace ReBuzz.Studio.Tests
                 roll.FollowBox.IsChecked = false;
                 roll.Scroll.Offset = new Vector(0, roll.Scroll.Offset.Y);
                 UxP3bTests.Pump();
-                pattern.PlayPosition = 121 * TB;
+                clip.PlayPosition = 121 * TB;
                 roll.UpdatePlayhead();
                 Assert.That(roll.Scroll.Offset.X, Is.EqualTo(0).Within(0.01), "Follow off");
 
-                pattern.PlayPosition = int.MinValue;
+                clip.PlayPosition = int.MinValue;
                 roll.UpdatePlayhead();
                 Assert.That(roll.Playhead.LineX, Is.LessThan(0), "stopped: gone");
             }
             finally
             {
-                pattern.PlayPosition = int.MinValue;
+                clip.PlayPosition = int.MinValue;
             }
         }
 
@@ -174,7 +174,7 @@ namespace ReBuzz.Studio.Tests
             r.Window.UpdateLayout();
             UxP3bTests.Pump();
 
-            // The pattern isn't in the song yet: nothing to set.
+            // The clip isn't in the song yet: nothing to set.
             roll.RefreshBars();
             Assert.That(roll.Ruler.CanSetLoop, Is.False, "no place in the song, no loop to set");
 
@@ -185,7 +185,7 @@ namespace ReBuzz.Studio.Tests
 
             Point Tick(int tick) => InWindow(r, roll.Ruler, new Point(r.Notes.X(tick * TB) - roll.Scroll.Offset.X, 20));
             UxP3bTests.Drag(r, Tick(4), Tick(12));
-            Assert.That((core.LoopStart, core.LoopEnd), Is.EqualTo((16 + 4, 16 + 12)), "the pattern's ticks 4-12, where it lies in the song, snapped to beats");
+            Assert.That((core.LoopStart, core.LoopEnd), Is.EqualTo((16 + 4, 16 + 12)), "the clip's ticks 4-12, where it lies in the song, snapped to beats");
             Assert.That((roll.Ruler.LoopStartTick, roll.Ruler.LoopEndTick), Is.EqualTo((4, 12)), "the brace shows it");
 
             // One undo step, in the song's history; the roll's Undo takes it first.
@@ -333,7 +333,7 @@ namespace ReBuzz.Studio.Tests
         public void PasteGoesToThePlayheadWhilePlayingAndPastesNothingFromAnEmptyClipboard()
         {
             using var r = new UxP3bTests.Rig(16);
-            var pattern = (PatternCore)r.Pattern;
+            var clip = (ClipCore)r.Clip;
             PianoRoll.ClearClipboard();
             try
             {
@@ -342,13 +342,13 @@ namespace ReBuzz.Studio.Tests
                 r.Notes.AddNote(TB, 60);
                 r.Notes.SelectAll();
                 r.Notes.CopySelected();
-                pattern.PlayPosition = 8 * TB + 30;
+                clip.PlayPosition = 8 * TB + 30;
                 r.Roll.UpdatePlayhead();
                 Assert.That(r.Notes.PasteTime(), Is.EqualTo(8 * TB), "the playhead, on the grid");
                 r.Notes.Paste();
                 Assert.That(r.Notes.Notes.Select(n => n.Time), Is.EquivalentTo(new[] { TB, 8 * TB }));
 
-                // A note past the pattern's end is dropped, one that runs over is cut to fit.
+                // A note past the clip's end is dropped, one that runs over is cut to fit.
                 r.Notes.SelectAll();
                 r.Notes.CopySelected();
                 Assert.That(r.Notes.Paste(15 * TB), Is.True);
@@ -356,7 +356,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                pattern.PlayPosition = int.MinValue;
+                clip.PlayPosition = int.MinValue;
                 PianoRoll.ClearClipboard();
             }
         }
@@ -369,15 +369,15 @@ namespace ReBuzz.Studio.Tests
             using var r = new UxP3bTests.Rig(16);
             string dir = TestTemp.Path($"rebuzz-p3b2-{Environment.ProcessId}");
             Directory.CreateDirectory(dir);
-            var pattern = (PatternCore)r.Pattern;
+            var clip = (ClipCore)r.Clip;
             try
             {
                 string a = Path.Combine(dir, "a.nbl"), b = Path.Combine(dir, "b.nbl");
                 r.Song.Core.SaveSongCopy(a);
                 r.ShowRoll();
-                pattern.PlayPosition = 5 * TB;
+                clip.PlayPosition = 5 * TB;
                 r.Roll.UpdatePlayhead();
-                pattern.PlayPosition = int.MinValue;
+                clip.PlayPosition = int.MinValue;
                 r.Roll.UpdatePlayhead();
                 r.Roll.RefreshBars();
                 r.Notes.HandleKey(Key.C, KeyModifiers.Control);       // copying: no edit
@@ -388,7 +388,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                pattern.PlayPosition = int.MinValue;
+                clip.PlayPosition = int.MinValue;
                 try { Directory.Delete(dir, true); } catch { }
             }
         }

@@ -45,47 +45,47 @@ namespace ReBuzz.ManagedMachine
 
         private delegate string GetChannelNameDelegate(bool input, int index);
 
-        #region Pattern Editor
-        // Fork (engine-split.md S3): to the engine a pattern editor's control is an object: a WPF
+        #region Clip Editor
+        // Fork (engine-split.md S3): to the engine a clip editor's control is an object: a WPF
         // UserControl, or, for machines that do not support .NET 9.0 WPF (such as CLR), a .NET
         // Framework 4.x WinForms UserControl that the UI wraps (WrapWinFormsControl).
-        private delegate object PatternEditorControlDelegate();
+        private delegate object ClipEditorControlDelegate();
 
-        /// <summary>Wraps a WinForms pattern editor control (NativeMachineFrameworkUI in the app).</summary>
+        /// <summary>Wraps a WinForms clip editor control (NativeMachineFrameworkUI in the app).</summary>
         internal static Func<object, object> WrapWinFormsControl { get; set; }
 
-        private delegate void SetEditorPatternDelegate(IPattern pattern);
+        private delegate void SetEditorClipDelegate(IClip clip);
 
         private delegate void RecordControlChangeDelegate(IParameter parameter, int track, int value);
 
-        private delegate void CreatePatternCopyDelegate(IPattern pnew, IPattern p);
+        private delegate void CreateClipCopyDelegate(IClip pnew, IClip p);
 
-        private delegate void SetPatternEditorDataDelegate(byte[] data);
+        private delegate void SetClipEditorDataDelegate(byte[] data);
 
-        private delegate byte[] GetPatternEditorDataDelegate();
+        private delegate byte[] GetClipEditorDataDelegate();
 
         private delegate bool CanExecuteCommandDelegate(BuzzCommand cmd);
 
         private delegate void ExecuteCommandDelegate(BuzzCommand cmd);
 
-        private delegate int[] GetPatternEditorMachineMIDIEventsDelegate(IPattern pattern);
+        private delegate int[] GetClipEditorMachineMIDIEventsDelegate(IClip clip);
 
-        private delegate void SetPatternEditorMachineMIDIEventsDelegate(IPattern pattern, int[] data);
+        private delegate void SetClipEditorMachineMIDIEventsDelegate(IClip clip, int[] data);
 
-        private delegate IEnumerable<IPatternEditorColumn> GetPatternEditorEventsDelegate(IPattern pattern, int tbegin, int tend);
+        private delegate IEnumerable<IClipEditorColumn> GetClipEditorEventsDelegate(IClip clip, int tbegin, int tend);
 
         private delegate void ActivateDelegate();
 
-        // Fork (docs/specs/clips.md §6, CU3): a pattern editor that views the store (the song's clips are its data) is told when the song's clips are in it.
+        // Fork (docs/specs/clips.md §6, CU3): a clip editor that views the store (the song's clips are its data) is told when the song's clips are in it.
         private delegate void AttachClipStoreDelegate();
 
         private delegate void ReleaseDelegate();
 
-        private delegate int GetTicksPerBeatDelegate(IPattern pattern, int playPosition);
+        private delegate int GetTicksPerBeatDelegate(IClip clip, int playPosition);
 
-        private delegate void UpdateWaveReferencesDelegate(IPattern patten, IDictionary<int, int> remap);
+        private delegate void UpdateWaveReferencesDelegate(IClip patten, IDictionary<int, int> remap);
 
-        private delegate int GetEditorPatternPositionDelegate();
+        private delegate int GetEditorClipPositionDelegate();
         #endregion
 
         private ControlWorkDelegate ControlWork;
@@ -117,29 +117,29 @@ namespace ReBuzz.ManagedMachine
         private GetChannelNameDelegate GetChannelNameFunction;
 
 
-        #region Pattern Editor
+        #region Clip Editor
 
-        private PatternEditorControlDelegate PatternEditorControlFunction;
+        private ClipEditorControlDelegate ClipEditorControlFunction;
 
-        private SetEditorPatternDelegate SetEditorPatternFunction;
+        private SetEditorClipDelegate SetEditorClipFunction;
 
         private RecordControlChangeDelegate RecordControlChangeFunction;
 
-        private CreatePatternCopyDelegate CreatePatternCopyFunction;
+        private CreateClipCopyDelegate CreateClipCopyFunction;
 
-        private SetPatternEditorDataDelegate SetPatternEditorDataFunction;
+        private SetClipEditorDataDelegate SetClipEditorDataFunction;
 
-        private GetPatternEditorDataDelegate GetPatternEditorDataFunction;
+        private GetClipEditorDataDelegate GetClipEditorDataFunction;
 
         private CanExecuteCommandDelegate CanExecuteCommandFunction;
 
         private ExecuteCommandDelegate ExecuteCommandFunction;
 
-        private GetPatternEditorMachineMIDIEventsDelegate GetPatternEditorMachineMIDIEventsFunction;
+        private GetClipEditorMachineMIDIEventsDelegate GetClipEditorMachineMIDIEventsFunction;
 
-        private SetPatternEditorMachineMIDIEventsDelegate SetPatternEditorMachineMIDIEventsFunction;
+        private SetClipEditorMachineMIDIEventsDelegate SetClipEditorMachineMIDIEventsFunction;
 
-        private GetPatternEditorEventsDelegate GetPatternEditorEventsFunction;
+        private GetClipEditorEventsDelegate GetClipEditorEventsFunction;
 
         private ActivateDelegate ActivateFunction;
 
@@ -151,7 +151,7 @@ namespace ReBuzz.ManagedMachine
 
         private UpdateWaveReferencesDelegate UpdateWaveReferencesFunction;
 
-        private GetEditorPatternPositionDelegate GetEditorPatternPositionFunction;
+        private GetEditorClipPositionDelegate GetEditorClipPositionFunction;
         #endregion
 
         private IBuzzMachine machine;
@@ -234,26 +234,26 @@ namespace ReBuzz.ManagedMachine
             GetLatencyFunction = (GetLatencyDelegate)GetMethod(typeof(GetLatencyDelegate), "GetLatency");
             //Take into consideration that some more native machines may want to return System.Windows.Forms.UserControl.
             //In this situation, we can use NativeMachineFrameworkUI to wrap around the System.Windows.Forms.UserControl
-            PatternEditorControlFunction = PatternEditorControlOf(dll.machineType.GetMethod("PatternEditorControl"));
+            ClipEditorControlFunction = ClipEditorControlOf(dll.machineType.GetMethod("ClipEditorControl"));
             
-            SetEditorPatternFunction = (SetEditorPatternDelegate)GetMethod(typeof(SetEditorPatternDelegate), "SetEditorPattern");
+            SetEditorClipFunction = (SetEditorClipDelegate)GetMethod(typeof(SetEditorClipDelegate), "SetEditorClip");
             RecordControlChangeFunction = (RecordControlChangeDelegate)GetMethod(typeof(RecordControlChangeDelegate), "RecordControlChange");
-            CreatePatternCopyFunction = (CreatePatternCopyDelegate)GetMethod(typeof(CreatePatternCopyDelegate), "CreatePatternCopy");
+            CreateClipCopyFunction = (CreateClipCopyDelegate)GetMethod(typeof(CreateClipCopyDelegate), "CreateClipCopy");
             GetChannelNameFunction = (GetChannelNameDelegate)GetMethod(typeof(GetChannelNameDelegate), "GetChannelName");
-            SetPatternEditorDataFunction = (SetPatternEditorDataDelegate)GetMethod(typeof(SetPatternEditorDataDelegate), "SetPatternEditorData");
-            GetPatternEditorDataFunction = (GetPatternEditorDataDelegate)GetMethod(typeof(GetPatternEditorDataDelegate), "GetPatternEditorData");
+            SetClipEditorDataFunction = (SetClipEditorDataDelegate)GetMethod(typeof(SetClipEditorDataDelegate), "SetClipEditorData");
+            GetClipEditorDataFunction = (GetClipEditorDataDelegate)GetMethod(typeof(GetClipEditorDataDelegate), "GetClipEditorData");
             CanExecuteCommandFunction = (CanExecuteCommandDelegate)GetMethod(typeof(CanExecuteCommandDelegate), "CanExecuteCommand");
             ExecuteCommandFunction = (ExecuteCommandDelegate)GetMethod(typeof(ExecuteCommandDelegate), "ExecuteCommand");
-            GetPatternEditorMachineMIDIEventsFunction = (GetPatternEditorMachineMIDIEventsDelegate)GetMethod(typeof(GetPatternEditorMachineMIDIEventsDelegate), "GetPatternEditorMachineMIDIEvents");
-            SetPatternEditorMachineMIDIEventsFunction = (SetPatternEditorMachineMIDIEventsDelegate)GetMethod(typeof(SetPatternEditorMachineMIDIEventsDelegate), "SetPatternEditorMachineMIDIEvents");
-            GetPatternEditorEventsFunction = (GetPatternEditorEventsDelegate)GetMethod(typeof(GetPatternEditorEventsDelegate), "GetPatternEditorEvents");
+            GetClipEditorMachineMIDIEventsFunction = (GetClipEditorMachineMIDIEventsDelegate)GetMethod(typeof(GetClipEditorMachineMIDIEventsDelegate), "GetClipEditorMachineMIDIEvents");
+            SetClipEditorMachineMIDIEventsFunction = (SetClipEditorMachineMIDIEventsDelegate)GetMethod(typeof(SetClipEditorMachineMIDIEventsDelegate), "SetClipEditorMachineMIDIEvents");
+            GetClipEditorEventsFunction = (GetClipEditorEventsDelegate)GetMethod(typeof(GetClipEditorEventsDelegate), "GetClipEditorEvents");
             DescribeValueFunction = (DescribeValueDelegate)GetMethod(typeof(DescribeValueDelegate), "DescribeValue");
             ActivateFunction = (ActivateDelegate)GetMethod(typeof(ActivateDelegate), "Activate");
             AttachClipStoreFunction = (AttachClipStoreDelegate)GetMethod(typeof(AttachClipStoreDelegate), "AttachClipStore");
             ReleaseFunction = (ReleaseDelegate)GetMethod(typeof(ReleaseDelegate), "Release");
             GetTicksPerBeatFunction = (GetTicksPerBeatDelegate)GetMethod(typeof(GetTicksPerBeatDelegate), "GetTicksPerBeat");
             UpdateWaveReferencesFunction = (UpdateWaveReferencesDelegate)GetMethod(typeof(UpdateWaveReferencesDelegate), "UpdateWaveReferences");
-            GetEditorPatternPositionFunction = (GetEditorPatternPositionDelegate)GetMethod(typeof(GetEditorPatternPositionDelegate), "GetEditorPatternPosition");
+            GetEditorClipPositionFunction = (GetEditorClipPositionDelegate)GetMethod(typeof(GetEditorClipPositionDelegate), "GetEditorClipPosition");
         }
 
         public IEnumerable<IMenuItem> Commands
@@ -287,25 +287,25 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        public object PatternEditorControl
+        public object ClipEditorControl
         {
             get
             {
-                if (PatternEditorControlFunction == null)
+                if (ClipEditorControlFunction == null)
                 {
                     return null;
                 }
-                return PatternEditorControlFunction();
+                return ClipEditorControlFunction();
             }
         }
 
-        public IPattern SetEditorPattern
+        public IClip SetEditorClip
         {
             set
             {
-                if (SetEditorPatternFunction != null)
+                if (SetEditorClipFunction != null)
                 {
-                    SetEditorPatternFunction(value);
+                    SetEditorClipFunction(value);
                 }
             }
         }
@@ -389,12 +389,12 @@ namespace ReBuzz.ManagedMachine
         }
 
         /// <summary>
-        /// The machine's PatternEditorControl(): a WPF UserControl as it is, a WinForms UserControl
-        /// wrapped by the UI, or, from a portable pattern editor (declared as returning object), what
+        /// The machine's ClipEditorControl(): a WPF UserControl as it is, a WinForms UserControl
+        /// wrapped by the UI, or, from a portable clip editor (declared as returning object), what
         /// its UI makes: an Avalonia control in the studio, null without a UI (studio-mvp.md S6). Any
         /// other return type fails as binding the WPF delegate type did.
         /// </summary>
-        private PatternEditorControlDelegate PatternEditorControlOf(MethodInfo method)
+        private ClipEditorControlDelegate ClipEditorControlOf(MethodInfo method)
         {
             if (method == null)
             {
@@ -402,15 +402,15 @@ namespace ReBuzz.ManagedMachine
             }
             if (IsOrDerivesFrom(method.ReturnType, "System.Windows.Controls.UserControl"))
             {
-                return (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
+                return (ClipEditorControlDelegate)Delegate.CreateDelegate(typeof(ClipEditorControlDelegate), machine, method);
             }
             if (method.ReturnType == typeof(object))
             {
-                return (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
+                return (ClipEditorControlDelegate)Delegate.CreateDelegate(typeof(ClipEditorControlDelegate), machine, method);
             }
             if (IsOrDerivesFrom(method.ReturnType, "System.Windows.Forms.UserControl"))
             {
-                var winForms = (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
+                var winForms = (ClipEditorControlDelegate)Delegate.CreateDelegate(typeof(ClipEditorControlDelegate), machine, method);
                 return () =>
                 {
                     var control = winForms();
@@ -418,7 +418,7 @@ namespace ReBuzz.ManagedMachine
                     return wrap != null ? wrap(control) : control;
                 };
             }
-            throw new ArgumentException("PatternEditorControl must return a WPF or WinForms UserControl: " + method.ReturnType.FullName);
+            throw new ArgumentException("ClipEditorControl must return a WPF or WinForms UserControl: " + method.ReturnType.FullName);
         }
 
         static bool IsOrDerivesFrom(Type type, string fullName)
@@ -639,11 +639,11 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        internal void CreatePatternCopy(IPattern newp, IPattern p)
+        internal void CreateClipCopy(IClip newp, IClip p)
         {
-            if (CreatePatternCopyFunction != null)
+            if (CreateClipCopyFunction != null)
             {
-                CreatePatternCopyFunction(newp, p);
+                CreateClipCopyFunction(newp, p);
             }
         }
 
@@ -657,19 +657,19 @@ namespace ReBuzz.ManagedMachine
             return null;
         }
 
-        internal void SetPatternEditorData(byte[] data)
+        internal void SetClipEditorData(byte[] data)
         {
-            if (SetPatternEditorDataFunction != null)
+            if (SetClipEditorDataFunction != null)
             {
-                SetPatternEditorDataFunction(data);
+                SetClipEditorDataFunction(data);
             }
         }
 
-        internal byte[] GetPatternEditorData()
+        internal byte[] GetClipEditorData()
         {
-            if (GetPatternEditorDataFunction != null)
+            if (GetClipEditorDataFunction != null)
             {
-                return GetPatternEditorDataFunction();
+                return GetClipEditorDataFunction();
             }
 
             return null;
@@ -695,30 +695,30 @@ namespace ReBuzz.ManagedMachine
             return;
         }
 
-        internal int[] GetPatternEditorMachineMIDIEvents(PatternCore pattern)
+        internal int[] GetClipEditorMachineMIDIEvents(ClipCore clip)
         {
-            if (GetPatternEditorMachineMIDIEventsFunction != null)
+            if (GetClipEditorMachineMIDIEventsFunction != null)
             {
-                return GetPatternEditorMachineMIDIEventsFunction(pattern);
+                return GetClipEditorMachineMIDIEventsFunction(clip);
             }
             else return new int[0];
         }
 
-        internal void SetPatternEditorMachineMIDIEvents(PatternCore pattern, int[] data)
+        internal void SetClipEditorMachineMIDIEvents(ClipCore clip, int[] data)
         {
-            if (SetPatternEditorMachineMIDIEventsFunction != null)
+            if (SetClipEditorMachineMIDIEventsFunction != null)
             {
-                SetPatternEditorMachineMIDIEventsFunction(pattern, data);
+                SetClipEditorMachineMIDIEventsFunction(clip, data);
             }
         }
 
-        internal IEnumerable<IPatternEditorColumn> GetPatternCloumnEvents(PatternCore pattern, int tbegin, int tend)
+        internal IEnumerable<IClipEditorColumn> GetClipCloumnEvents(ClipCore clip, int tbegin, int tend)
         {
-            if (GetPatternEditorEventsFunction != null)
+            if (GetClipEditorEventsFunction != null)
             {
-                return GetPatternEditorEventsFunction(pattern, tbegin, tend);
+                return GetClipEditorEventsFunction(clip, tbegin, tend);
             }
-            else return new List<IPatternEditorColumn>();
+            else return new List<IClipEditorColumn>();
         }
 
         internal string DescribeParameterValue(int index, int value)
@@ -738,10 +738,10 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        internal int GetEditorPatternPosition()
+        internal int GetEditorClipPosition()
         {
-            if (GetEditorPatternPositionFunction != null)
-                return GetEditorPatternPositionFunction();
+            if (GetEditorClipPositionFunction != null)
+                return GetEditorClipPositionFunction();
             return 0;
         }
 
@@ -753,7 +753,7 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        /// <summary>Fork (clips.md §6, CU3): whether this pattern editor views the store, and tells it that the song's clips are there now.</summary>
+        /// <summary>Fork (clips.md §6, CU3): whether this clip editor views the store, and tells it that the song's clips are there now.</summary>
         internal bool HasClipStore => AttachClipStoreFunction != null;
 
         internal void AttachClipStore() => AttachClipStoreFunction?.Invoke();
@@ -841,11 +841,11 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        internal int GetTicksPerBeat(MachineCore machine, IPattern pattern, int pp)
+        internal int GetTicksPerBeat(MachineCore machine, IClip clip, int pp)
         {
             if (GetTicksPerBeatFunction != null)
             {
-                GetTicksPerBeatFunction(pattern, pp);
+                GetTicksPerBeatFunction(clip, pp);
             }
             return 4; // Buzz ticks per beat
         }
@@ -854,9 +854,9 @@ namespace ReBuzz.ManagedMachine
         {
             if (UpdateWaveReferencesFunction != null)
             {
-                foreach (var pattern in editorTargetMachine.Patterns)
+                foreach (var clip in editorTargetMachine.Clips)
                 {
-                    UpdateWaveReferencesFunction(pattern, remappedWaveReferences);
+                    UpdateWaveReferencesFunction(clip, remappedWaveReferences);
                 }
             }
         }

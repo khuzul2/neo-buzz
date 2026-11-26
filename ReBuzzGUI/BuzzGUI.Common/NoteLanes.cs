@@ -1,5 +1,5 @@
 #nullable disable
-// Fork addition (neo-buzz, docs/specs/daw-modes.md AR3, seam S7): the notes of a pattern's engine MIDI column as tracker lanes,
+// Fork addition (neo-buzz, docs/specs/daw-modes.md AR3, seam S7): the notes of a clip's engine MIDI column as tracker lanes,
 // and the edits a tracker makes to them.
 //
 // The Modern Pattern Editor draws these lanes next to its own columns ("Notes", a voice at a time: Note, Velocity, Delay and
@@ -9,13 +9,13 @@
 // this file keeps (the tracker rounds a note to 1/95 of a row, so rewriting the notes from the rows would round them all).
 //
 // The tracker's meaning of an edit, for a note on a voice:
-//  - a note typed in a cell makes a note from there to the voice's next note (or the pattern's end); a note of the voice
+//  - a note typed in a cell makes a note from there to the voice's next note (or the clip's end); a note of the voice
 //    still ringing is cut where the new one starts, as a tracker's next note does;
 //  - an off ends the ringing note at its row; on a note it removes the note;
 //  - clearing a note removes it; clearing an off lets the note ring on to the voice's next note;
 //  - a velocity, delay or cut changes that note only (the delay moves the start and keeps the end, the cut moves the end).
 //
-// Pure: no dependency but TrackerNotes, so ReBuzz.SessionTests links this file. Times are pattern time (1/240 tick).
+// Pure: no dependency but TrackerNotes, so ReBuzz.SessionTests links this file. Times are clip time (1/240 tick).
 
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ using System.Linq;
 
 namespace BuzzGUI.Common
 {
-    /// <summary>An event of the MIDI column (time, value, duration), as BuzzGUI's PatternEvent holds it; a note-on is 0x90 | note &lt;&lt; 8 | velocity &lt;&lt; 16.</summary>
+    /// <summary>An event of the MIDI column (time, value, duration), as BuzzGUI's ClipEvent holds it; a note-on is 0x90 | note &lt;&lt; 8 | velocity &lt;&lt; 16.</summary>
     public readonly record struct LaneEvent(int Time, int Value, int Duration)
     {
         public bool IsNote => (Value & 0xF0) == 0x90 && ((Value >> 16) & 0x7F) > 0;
@@ -91,13 +91,13 @@ namespace BuzzGUI.Common
         /// <summary>The voices the notes need (0 when there are no notes).</summary>
         public int Voices { get; }
 
-        /// <summary>How many notes the column holds, and how many of those the lanes don't show (past the pattern's end or above B-7).</summary>
+        /// <summary>How many notes the column holds, and how many of those the lanes don't show (past the clip's end or above B-7).</summary>
         public int NoteCount { get; }
         public int Hidden { get; }
 
         /// <param name="events">The MIDI column's events.</param>
         /// <param name="grid">The rows the lanes lie on.</param>
-        /// <param name="length">The pattern's length in pattern time.</param>
+        /// <param name="length">The clip's length in clip time.</param>
         public NoteLanes(IEnumerable<LaneEvent> events, RowGrid grid, int length, int maxVoices = 256)
         {
             this.grid = grid;
@@ -127,14 +127,14 @@ namespace BuzzGUI.Common
         /// <summary>The cell of a voice in a row, if it holds one.</summary>
         public bool TryCell(int voice, int row, out NoteCell cell) => byRow.TryGetValue((voice, row), out cell);
 
-        /// <summary>Where a row starts in pattern time.</summary>
+        /// <summary>Where a row starts in clip time.</summary>
         public int RowStart(int row) => grid.Start(row);
 
         // ------------------------------------------------------------------ edits
 
         List<int> Notes(int voice) => voice >= 0 && voice < voiceNotes.Count ? voiceNotes[voice] : new List<int>();
 
-        /// <summary>Where a note on <paramref name="voice"/> starting at <paramref name="start"/> ends: at the voice's next note, else the pattern's end.</summary>
+        /// <summary>Where a note on <paramref name="voice"/> starting at <paramref name="start"/> ends: at the voice's next note, else the clip's end.</summary>
         int EndFrom(int voice, int start, int except = -1)
         {
             int end = length;
@@ -161,7 +161,7 @@ namespace BuzzGUI.Common
             if (TryCell(voice, row, out var cell) && !cell.IsOff)
                 return Change(Events[cell.Source], Events[cell.Source].WithMidi(midi));
             int start = grid.Start(row);
-            if (start >= length) return NoteLaneEdit.Refuse("The row is past the end of the pattern.");
+            if (start >= length) return NoteLaneEdit.Refuse("The row is past the end of the clip.");
             var removed = new List<LaneEvent>();
             var added = new List<LaneEvent>();
             int ringing = Ringing(voice, start);
@@ -215,7 +215,7 @@ namespace BuzzGUI.Common
                 var note = Events[cell.Ends];
                 return Change(note, note.Ending(Math.Max(note.Time + 1, time)));
             }
-            if (time >= length) return NoteLaneEdit.Refuse("That delay is past the end of the pattern.");
+            if (time >= length) return NoteLaneEdit.Refuse("That delay is past the end of the clip.");
             var e = Events[cell.Source];
             return Change(e, e with { Time = time, Duration = Math.Max(1, e.End - time) });
         }

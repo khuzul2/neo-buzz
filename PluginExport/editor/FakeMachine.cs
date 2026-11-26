@@ -125,7 +125,7 @@ namespace NeoExport
         public ReadOnlyCollection<IAttribute> Attributes { get; } = new ReadOnlyCollection<IAttribute>(new List<IAttribute>());
         public IEnumerable<IMenuItem> Commands => Array.Empty<IMenuItem>();
         public ReadOnlyCollection<string> EnvelopeNames { get; } = new ReadOnlyCollection<string>(new List<string>());
-        public ReadOnlyCollection<IPattern> Patterns { get; } = new ReadOnlyCollection<IPattern>(new List<IPattern>());
+        public ReadOnlyCollection<IClip> Clips { get; } = new ReadOnlyCollection<IClip>(new List<IClip>());
         public bool IsControlMachine => false;
         public bool IsActive => true;
         public bool IsMuted { get; set; }
@@ -137,10 +137,10 @@ namespace NeoExport
         public int LastEngineThread => 0;
         public int Latency => 0;
         public int OverrideLatency { get; set; } = -1;
-        public IMachineDLL PatternEditorDLL => null;
+        public IMachineDLL ClipEditorDLL => null;
         public int BaseOctave { get; set; } = 4;
         public byte[] Data { get; set; }
-        public byte[] PatternEditorData => null;
+        public byte[] ClipEditorData => null;
         public IntPtr CMachinePtr => IntPtr.Zero;
         public MachinePerformanceData PerformanceData => null;
         public IBuzzMachine ManagedMachine { get; }
@@ -158,12 +158,12 @@ namespace NeoExport
         public void SendControlChanges() { }
         public void SendMIDINote(int channel, int value, int velocity) { }
         public void SendMIDIControlChange(int ctrl, int channel, int value) { }
-        public void CreatePattern(string name, int length) { }
-        public void ClonePattern(string name, IPattern p) { }
-        public void DeletePattern(IPattern p) { }
-        public void RenamePattern(IPattern p, string name) { }
-        public event Action<IPattern> PatternAdded { add { } remove { } }
-        public event Action<IPattern> PatternRemoved { add { } remove { } }
+        public void CreateClip(string name, int length) { }
+        public void CloneClip(string name, IClip p) { }
+        public void DeleteClip(IClip p) { }
+        public void RenameClip(IClip p, string name) { }
+        public event Action<IClip> ClipAdded { add { } remove { } }
+        public event Action<IClip> ClipRemoved { add { } remove { } }
         public event PropertyChangedEventHandler PropertyChanged { add { } remove { } }
     }
 }

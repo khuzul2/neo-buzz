@@ -61,7 +61,7 @@ namespace ReBuzz.Studio.Views.Session
         static readonly Dictionary<Color, IBrush> brushes = new Dictionary<Color, IBrush>();
 
         /// <summary>
-        /// Clip, track and scene colours: an index into the theme's PatternColors, the list the
+        /// Clip, track and scene colours: an index into the theme's ClipColors, the list the
         /// engine keeps as ARGB (SessionColourChoices; the Default theme's until the studio has themes).
         /// </summary>
         public static (string Name, Color Color)[] ColorChoices

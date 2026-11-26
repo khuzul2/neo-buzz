@@ -1,5 +1,5 @@
 // Fork: Space plays and stops the song in every view of the main window (Shell/TransportKeys.cs,
-// ReBuzz/Core/TransportCommands.cs), F5 and F8 still do; Shift+Space plays the pattern editor's pattern
+// ReBuzz/Core/TransportCommands.cs), F5 and F8 still do; Shift+Space plays the clip editor's clip
 // from its cursor. Not while typing in a box, and a focused button doesn't also click. Headless, with
 // the keys simulated.
 
@@ -58,7 +58,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>The transport stopped and the song left unmodified, whatever the test did.</summary>
         static void PutBack(MainWindow window)
         {
-            if (Core.SoloPattern is { } solo) solo.IsPlayingSolo = false;
+            if (Core.SoloClip is { } solo) solo.IsPlayingSolo = false;
             Core.Playing = false;
             Core.Modified = false;
             window?.Close();
@@ -66,20 +66,20 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
         }
 
-        /// <summary>A Neo Poly with a pattern, shown in the Pattern tab.</summary>
-        static IPattern PatternShown(string name)
+        /// <summary>A Neo Poly with a clip, shown in the Clip tab.</summary>
+        static IClip ClipShown(string name)
         {
             Core.SongCore.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
             var machine = Core.SongCore.MachinesList.First(m => m.Name == name);
-            machine.CreatePattern("00", 16);
-            var pattern = machine.Patterns.First(p => p.Name == "00");
-            PatternView.Edit(pattern);
+            machine.CreateClip("00", 16);
+            var clip = machine.Clips.First(p => p.Name == "00");
+            ClipView.Edit(clip);
             Settle();
-            Assert.That(PatternView.Page?.EditorControl, Is.Not.Null, "the Modern Pattern Editor's view is in the tab");
-            return pattern;
+            Assert.That(ClipView.Page?.EditorControl, Is.Not.Null, "the Modern Pattern Editor's view is in the tab");
+            return clip;
         }
 
-        static Control PatternGrid() => (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid.Body;
+        static Control ClipGridView() => (Control)((dynamic)ClipView.Page.EditorControl).TrackerGrid.Body;
 
         [AvaloniaTest]
         public void SpacePlaysAndStopsTheSongInEveryView()
@@ -87,7 +87,7 @@ namespace ReBuzz.Studio.Tests
             var (window, _) = MachineViewTests.OpenEmpty();
             try
             {
-                PatternShown("Space Poly");
+                ClipShown("Space Poly");
                 Control Target(string title)
                 {
                     window.ShowView(title);
@@ -98,12 +98,12 @@ namespace ReBuzz.Studio.Tests
                         "Machines" => ((MachineView)content).Canvas,
                         "Sequence" => (SequenceView)content,
                         "Session" => (SessionView)content,
-                        "Pattern" => PatternGrid(),
+                        "Clip" => ClipGridView(),
                         _ => throw new ArgumentException(title),
                     };
                 }
 
-                foreach (var title in new[] { "Machines", "Pattern", "Sequence", "Session" })
+                foreach (var title in new[] { "Machines", "Clip", "Sequence", "Session" })
                 {
                     var target = Target(title);
                     Focus(target);
@@ -216,34 +216,34 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ShiftSpacePlaysThePatternFromTheEditorsCursor()
+        public void ShiftSpacePlaysTheClipFromTheEditorsCursor()
         {
             var (window, _) = MachineViewTests.OpenEmpty();
             try
             {
-                var pattern = PatternShown("Preview Poly");
-                Focus(PatternGrid());
-                var play = PatternView.Page.EditorControl.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Content as string == "▶");
+                var clip = ClipShown("Preview Poly");
+                Focus(ClipGridView());
+                var play = ClipView.Page.EditorControl.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Content as string == "▶");
                 Assert.That(ToolTip.GetTip(play) as string, Does.Contain("Shift+Space"));
 
                 Space(window, RawInputModifiers.Shift);
-                Assert.That(pattern.IsPlayingSolo, Is.True, "Shift+Space plays the pattern on its own");
+                Assert.That(clip.IsPlayingSolo, Is.True, "Shift+Space plays the clip on its own");
                 Assert.That(Core.PlayRequested, Is.True);
                 Assert.That(play.IsChecked, Is.True, "the editor's ▶ is on");
                 Space(window, RawInputModifiers.Shift);
-                Assert.That(pattern.IsPlayingSolo, Is.False, "again: it stops");
+                Assert.That(clip.IsPlayingSolo, Is.False, "again: it stops");
                 Assert.That(Core.PlayRequested, Is.False);
                 Assert.That(play.IsChecked, Is.False);
 
-                // Space stops the pattern too, and its ▶ goes out (so the next Shift+Space plays again).
+                // Space stops the clip too, and its ▶ goes out (so the next Shift+Space plays again).
                 Space(window, RawInputModifiers.Shift);
-                Assert.That(pattern.IsPlayingSolo, Is.True);
+                Assert.That(clip.IsPlayingSolo, Is.True);
                 Space(window);
                 Assert.That(Core.PlayRequested, Is.False, "Space stops everything");
-                Assert.That(pattern.IsPlayingSolo, Is.False);
+                Assert.That(clip.IsPlayingSolo, Is.False);
                 Assert.That(play.IsChecked, Is.False);
                 Space(window, RawInputModifiers.Shift);
-                Assert.That(pattern.IsPlayingSolo, Is.True, "and Shift+Space plays it again at once");
+                Assert.That(clip.IsPlayingSolo, Is.True, "and Shift+Space plays it again at once");
                 Space(window, RawInputModifiers.Shift);
 
                 // Elsewhere Shift+Space isn't the transport's.
@@ -294,7 +294,7 @@ namespace ReBuzz.Studio.Tests
                 entry.Run();
                 Assert.That(Core.PlayRequested, Is.False, "and stops");
 
-                Assert.That(MainWindow.ShortcutsText(mac: false), Does.Contain("Space\tPlay or Stop").And.Contain("Shift+Space\tplay the pattern"));
+                Assert.That(MainWindow.ShortcutsText(mac: false), Does.Contain("Space\tPlay or Stop").And.Contain("Shift+Space\tplay the clip"));
                 Assert.That(MainWindow.ShortcutsText(mac: true), Does.Contain("⇧Space"));
                 // Fork (ux-overhaul.md §4): the tooltips from the keymap: the button's keys, and Space.
                 var buttons = window.Transport.GetVisualDescendants().OfType<Button>().ToList();

@@ -133,9 +133,9 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>
         /// Browser items or files dropped at a view point (tests call it), through the DropRouter: on a machine's box they replace it (hot-swap:
-        /// connections, patterns kept where they fit; a preset of its own type loads instead), an effect is added where it falls, a generator on
+        /// connections, clips kept where they fit; a preset of its own type loads instead), an effect is added where it falls, a generator on
         /// empty canvas is a new machine and track wired to the Master, audio is a new audio track (a sampler takes it as a sample), a MIDI file
-        /// is notes in a new pattern. One undo step. What can't be done says why, on the canvas, for two seconds.
+        /// is notes in a new clip. One undo step. What can't be done says why, on the canvas, for two seconds.
         /// </summary>
         internal ReBuzz.Core.Drop.DropResult DropItems(IReadOnlyList<ReBuzz.Agent.Browser.BrowserDragData> items, Point view)
         {

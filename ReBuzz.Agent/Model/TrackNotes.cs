@@ -2,7 +2,7 @@
 // Fork (docs/specs/mcp-server.md §12.2, U1): notes for machines that take them only in their Note
 // track parameter, as trackers do, not as MIDI. Notes are
 // given voices (one track each), and become per-track Note events (Buzz notes: octave << 4 | 1…12,
-// 255 = off) in the pattern's engine-played parameter columns, and are read back from them. Also
+// 255 = off) in the clip's engine-played parameter columns, and are read back from them. Also
 // the pitch offset a profiled manifest records, so the written pitch is the pitch heard. Pure.
 
 using System;
@@ -42,11 +42,11 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// The Note column events of each track: a note-on at each start, an off at each end unless
-        /// the track's next note starts there. A note that runs to the pattern's end is let go on its
+        /// the track's next note starts there. A note that runs to the clip's end is let go on its
         /// last tick (an event at the end itself would never play). Velocity, when the machine has a
         /// velocity track parameter (<paramref name="velocity"/> is its raw range), goes beside each note-on.
         /// </summary>
-        public static List<(int Track, int Time, int Note, int? Velocity)> Events(IReadOnlyList<NoteEvent> notes, int[] tracks, int patternTime, int timePerTick,
+        public static List<(int Track, int Time, int Note, int? Velocity)> Events(IReadOnlyList<NoteEvent> notes, int[] tracks, int clipTime, int timePerTick,
             (int Min, int Max)? velocity = null)
         {
             var events = new List<(int Track, int Time, int Note, int? Velocity)>();
@@ -58,7 +58,7 @@ namespace ReBuzz.Agent.Model
                     var n = notes[list[k]];
                     int? vel = velocity is (int lo, int hi) ? lo + (int)Math.Round((hi - lo) * n.Velocity / 127.0) : null;
                     events.Add((group.Key, n.Time, ToBuzz(n.Pitch), vel));
-                    int end = Math.Min(n.End, patternTime - timePerTick);
+                    int end = Math.Min(n.End, clipTime - timePerTick);
                     bool next = k + 1 < list.Count && notes[list[k + 1]].Time <= n.End;
                     if (!next && end > n.Time) events.Add((group.Key, end, Off, null));
                 }
@@ -68,9 +68,9 @@ namespace ReBuzz.Agent.Model
 
         /// <summary>
         /// Notes from per-track Note events (time, Buzz note): each note-on lasts to the track's next
-        /// event (or the pattern's end). Velocities by (track, time), when the machine has them.
+        /// event (or the clip's end). Velocities by (track, time), when the machine has them.
         /// </summary>
-        public static List<NoteEvent> Read(IEnumerable<(int Track, int Time, int Value)> noteEvents, int patternTime, int timePerTick,
+        public static List<NoteEvent> Read(IEnumerable<(int Track, int Time, int Value)> noteEvents, int clipTime, int timePerTick,
             IReadOnlyDictionary<(int Track, int Time), int> velocities = null, (int Min, int Max)? velocity = null)
         {
             var list = new List<NoteEvent>();
@@ -81,9 +81,9 @@ namespace ReBuzz.Agent.Model
                 {
                     int pitch = FromBuzz(events[i].Value);
                     if (pitch < 0) continue;
-                    int end = i + 1 < events.Count ? events[i + 1].Time : patternTime;
+                    int end = i + 1 < events.Count ? events[i + 1].Time : clipTime;
                     // Let go on its last tick (Events): read as running to the end.
-                    if (i + 1 < events.Count && events[i + 1].Value == Off && end == patternTime - timePerTick) end = patternTime;
+                    if (i + 1 < events.Count && events[i + 1].Value == Off && end == clipTime - timePerTick) end = clipTime;
                     int vel = NoteList.DefaultVelocity;
                     if (velocities != null && velocity is (int lo, int hi) && hi > lo && velocities.TryGetValue((track.Key, events[i].Time), out int raw))
                         vel = Math.Clamp((int)Math.Round((raw - lo) * 127.0 / (hi - lo)), 1, 127);

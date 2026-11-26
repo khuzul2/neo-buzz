@@ -58,7 +58,7 @@ namespace ReBuzz.Agent
                     Opt("gear_info", Object("The gear: its file, track range, how it takes notes", Req("file", String("Its DLL, under Gear")))),
                     Opt("note_map", Object("A machine that plays sounds on notes and says which keys do (a sample kit, a drum machine, a plug-in with named keys): the keys that make a sound, with their names",
                         Req("playable", Integer("How many keys make a sound")), Req("ranges", String("The playable keys as note-number ranges (\"36-40, 60\")")),
-                        Req("keys", Array(Object("A playable key", Req("key", Integer("MIDI note number, as a pattern's Note column and a note_write's pitch")), Req("note", String("Its note name")), Opt("name", String("What the machine calls it (Kick)")), Opt("group", String("Its group"))), "The playable keys, at most 64 (more: truncated)")),
+                        Req("keys", Array(Object("A playable key", Req("key", Integer("MIDI note number, as a clip's Note column and a note_write's pitch")), Req("note", String("Its note name")), Opt("name", String("What the machine calls it (Kick)")), Opt("group", String("Its group"))), "The playable keys, at most 64 (more: truncated)")),
                         Opt("truncated", Boolean("There are more keys than listed")), Req("source", String("machine or manifest")))),
                     Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
                     Req("groups", Array(String("Group"), "All parameter groups")),
@@ -177,7 +177,7 @@ namespace ReBuzz.Agent
                             o["tracks"] = m.TrackCount;
                         }
                         if (m.ParameterGroups.Count > 2 && m.ParameterGroups[2].Parameters.Any(p => p.Type == BuzzGUI.Interfaces.ParameterType.Note))
-                            o["notes"] = "Plays notes: notes_write puts them in patterns, and " + Product.Name + " sends them to it as MIDI. Neo machines and most " +
+                            o["notes"] = "Plays notes: notes_write puts them in clips, and " + Product.Name + " sends them to it as MIDI. Neo machines and most " +
                                          "managed machines play MIDI; some older native machines ignore it (render and check).";
                         return o;
                     }, c.Cancellation);

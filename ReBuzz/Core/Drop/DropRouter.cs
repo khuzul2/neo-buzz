@@ -49,12 +49,12 @@ namespace ReBuzz.Core.Drop
         AudioClips,
         /// <summary>The files as samples of a sampler.</summary>
         LoadSample,
-        /// <summary>A pattern as a clip of its machine's track.</summary>
-        PatternClip,
+        /// <summary>A clip as a clip of its machine's track.</summary>
+        Clip,
         /// <summary>A new track with the MIDI file's notes on a default instrument.</summary>
         MidiNewTrack,
-        /// <summary>The MIDI file's notes in a new pattern of the track.</summary>
-        MidiNewPattern,
+        /// <summary>The MIDI file's notes in a new clip of the track.</summary>
+        MidiNewClip,
     }
 
     /// <summary>Where a drop lands. Empty space is a target without a machine.</summary>
@@ -119,8 +119,8 @@ namespace ReBuzz.Core.Drop
         /// <summary>The machine made, changed or loaded.</summary>
         public IMachine Machine { get; init; }
 
-        /// <summary>The patterns made or placed (clips), in order.</summary>
-        public IReadOnlyList<IPattern> Patterns { get; init; } = Array.Empty<IPattern>();
+        /// <summary>The clips made or placed (clips), in order.</summary>
+        public IReadOnlyList<IClip> Clips { get; init; } = Array.Empty<IClip>();
 
         /// <summary>For an effect on a branching track: the question, and what to pick from.</summary>
         public IReadOnlyList<string> Choices { get; init; }
@@ -133,8 +133,8 @@ namespace ReBuzz.Core.Drop
         public const string SamplerName = "Neo Sampler";
         public const string DefaultInstrumentName = "Neo Poly";
 
-        /// <summary>The longest a pattern made for a MIDI file gets, in ticks.</summary>
-        public const int MaxPatternTicks = 8192;
+        /// <summary>The longest a clip made for a MIDI file gets, in ticks.</summary>
+        public const int MaxClipTicks = 8192;
 
         readonly ReBuzzCore core;
 
@@ -195,7 +195,7 @@ namespace ReBuzz.Core.Drop
                     BrowserKind.Preset => PlanPreset(first, t, machine),
                     BrowserKind.Audio => PlanAudio(items, t, machine),
                     BrowserKind.Midi => PlanMidi(first, t, machine),
-                    BrowserKind.Pattern => PlanPattern(first, t, machine),
+                    BrowserKind.Clip => PlanClip(first, t, machine),
                     _ => DropPlan.Refuse("That can't be dropped here."),
                 };
             }
@@ -317,16 +317,16 @@ namespace ReBuzz.Core.Drop
             return DropPlan.Refuse($"{machine.Name} isn't a {name}. A preset loads into its own machine: drop it on that track, or on empty space for a new one.");
         }
 
-        DropPlan PlanPattern(BrowserDragData d, DropTarget t, IMachine machine)
+        DropPlan PlanClip(BrowserDragData d, DropTarget t, IMachine machine)
         {
-            var pattern = FindPattern(d.Id, out string owner);
-            if (pattern == null) return DropPlan.Refuse($"There is no pattern “{d.Id}”.");
-            if (t.View == DropView.Machine) return DropPlan.Refuse("A pattern is a clip: drop it on the Arrangement or the Session.");
+            var clip = FindClip(d.Id, out string owner);
+            if (clip == null) return DropPlan.Refuse($"There is no clip “{d.Id}”.");
+            if (t.View == DropView.Machine) return DropPlan.Refuse("A clip is a clip: drop it on the Arrangement or the Session.");
             if (machine == null) return DropPlan.Refuse($"Drop it on {owner}'s track.");
-            if (machine != pattern.Machine) return DropPlan.Refuse($"“{pattern.Name}” belongs to {owner}: drop it on {owner}'s track.");
+            if (machine != clip.Machine) return DropPlan.Refuse($"“{clip.Name}” belongs to {owner}: drop it on {owner}'s track.");
             if (!HasSequence(machine)) return DropPlan.Refuse($"{owner} has no track.");
             if (t.View == DropView.Session && (Layout == null || Layout.FirstTrackOf(machine) < 0)) return DropPlan.Refuse($"{owner} has no Session track.");
-            return new DropPlan { Action = DropAction.PatternClip, Target = machine, Describe = $"Clip: {pattern.Name}" };
+            return new DropPlan { Action = DropAction.Clip, Target = machine, Describe = $"Clip: {clip.Name}" };
         }
 
         DropPlan PlanAudio(IReadOnlyList<BrowserDragData> items, DropTarget t, IMachine machine)
@@ -397,7 +397,7 @@ namespace ReBuzz.Core.Drop
             }
             if (!PlaysNotes(machine)) return DropPlan.Refuse($"{machine.Name} doesn't play notes. Drop on an instrument's track, or on empty space for a new one.");
             if (t.View != DropView.Machine && !HasSequence(machine)) return DropPlan.Refuse($"{machine.Name} has no track.");
-            return new DropPlan { Action = DropAction.MidiNewPattern, Target = machine, Describe = $"New pattern on {machine.Name}: {what}" };
+            return new DropPlan { Action = DropAction.MidiNewClip, Target = machine, Describe = $"New clip on {machine.Name}: {what}" };
         }
 
         // ------------------------------------------------------------------ the track's chain
@@ -488,15 +488,15 @@ namespace ReBuzz.Core.Drop
                 case DropAction.NewAudioTrack:
                 case DropAction.AudioClips: return DoAudio(plan, items, t);
                 case DropAction.LoadSample: return DoSamples(machine, items);
-                case DropAction.PatternClip: return DoPatternClip(machine, first, t);
+                case DropAction.Clip: return DropClip(machine, first, t);
                 case DropAction.MidiNewTrack:
-                case DropAction.MidiNewPattern: return DoMidi(plan, first, t);
+                case DropAction.MidiNewClip: return DoMidi(plan, first, t);
             }
             return new DropResult { Ok = false, Message = "That can't be dropped here." };
         }
 
-        DropResult Done(DropPlan plan, IMachine machine, string message, params IPattern[] patterns) =>
-            new() { Ok = true, Action = plan.Action, Machine = machine, Message = message, Patterns = patterns };
+        DropResult Done(DropPlan plan, IMachine machine, string message, params IClip[] clips) =>
+            new() { Ok = true, Action = plan.Action, Machine = machine, Message = message, Clips = clips };
 
         // ---- machines
 
@@ -507,16 +507,16 @@ namespace ReBuzz.Core.Drop
             return MachinePlacement.Free(Song.Machines, -0.8f + 0.2f * (n % 8), -0.5f + 0.25f * (n / 8 % 4));
         }
 
-        /// <summary>A machine of the gear with a first pattern, at a place; nothing else.</summary>
-        IMachine MakeMachine(IInstrument inst, float x, float y, bool pattern = true)
+        /// <summary>A machine of the gear with a first clip, at a place; nothing else.</summary>
+        IMachine MakeMachine(IInstrument inst, float x, float y, bool clip = true)
         {
             var before = Song.Machines.ToHashSet();
             (x, y) = MachinePlacement.Free(Song.Machines, x, y);
             Song.CreateMachine(inst.MachineDLL.Name, inst.Name, null, null, null, null, -1, x, y);
             var machine = Song.Machines.FirstOrDefault(m => !before.Contains(m)) ?? throw new ToolError($"{Product.Name} couldn't make {GearNames.Display(inst)}.");
-            // Through an action, so that a redo makes the pattern again with the machine (a direct CreatePattern isn't in the history).
-            if (pattern && machine.AllNonInputParameters().Any())
-                Song.ActionStack.Do(new CreatePatternAction(machine, "00", Global.GeneralSettings.PatternLength > 0 ? Global.GeneralSettings.PatternLength : 16));
+            // Through an action, so that a redo makes the clip again with the machine (a direct CreateClip isn't in the history).
+            if (clip && machine.AllNonInputParameters().Any())
+                Song.ActionStack.Do(new CreateClipAction(machine, "00", Global.GeneralSettings.ClipLength > 0 ? Global.GeneralSettings.ClipLength : 16));
             return machine;
         }
 
@@ -535,36 +535,36 @@ namespace ReBuzz.Core.Drop
             return null;
         }
 
-        DropResult DoNewTrack(IInstrument inst, string preset, DropTarget t, bool withPattern = true)
+        DropResult DoNewTrack(IInstrument inst, string preset, DropTarget t, bool withClip = true)
         {
             var (x, y) = Spot(t);
-            var machine = MakeMachine(inst, x, y, withPattern);
+            var machine = MakeMachine(inst, x, y, withClip);
             var master = Song.Machines.FirstOrDefault(m => IsMaster(m));
             if (!machine.IsControlMachine && master != null && Song.CanConnectMachines(machine, master))
                 Song.ConnectMachines(machine, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             if (!Song.Sequences.Any(s => s.Machine == machine)) Song.AddSequence(machine, Song.Sequences.Count);
             string note = preset != null ? LoadPreset(machine, preset) : null;
-            IPattern clip = null;
-            if (t.View == DropView.Arrangement && machine.Patterns.Count > 0)
+            IClip clip = null;
+            if (t.View == DropView.Arrangement && machine.Clips.Count > 0)
             {
                 var lane = Song.Sequences.First(s => s.Machine == machine);
                 int time = Math.Max(0, t.Time);
-                new ClipEditor(core).Place(lane, machine.Patterns[0], time);
-                clip = machine.Patterns[0];
+                new ClipEditor(core).Place(lane, machine.Clips[0], time);
+                clip = machine.Clips[0];
             }
-            else if (t.View == DropView.Session && Layout != null && machine.Patterns.Count > 0 && t.Scene >= 0)
+            else if (t.View == DropView.Session && Layout != null && machine.Clips.Count > 0 && t.Scene >= 0)
             {
                 int track = Layout.FirstTrackOf(machine);
-                if (track >= 0) { EnsureScenes(t.Scene); Layout.SetSlot(track, t.Scene, machine.Patterns[0]); clip = machine.Patterns[0]; }
+                if (track >= 0) { EnsureScenes(t.Scene); Layout.SetSlot(track, t.Scene, machine.Clips[0]); clip = machine.Clips[0]; }
             }
-            else if (t.View == DropView.Machine && machine.Patterns.Count > 0 && !Song.Sequences.Any(s => s.Machine == machine && s.Events.Any()))
+            else if (t.View == DropView.Machine && machine.Clips.Count > 0 && !Song.Sequences.Any(s => s.Machine == machine && s.Events.Any()))
             {
-                // No time in the Machine View: the pattern plays at the start, as a machine made there does in an empty song.
+                // No time in the Machine View: the clip plays at the start, as a machine made there does in an empty song.
                 if (Song.Machines.Count(m => !IsMaster(m)) == 1)
-                    Song.Sequences.First(s => s.Machine == machine).SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, machine.Patterns[0]));
+                    Song.Sequences.First(s => s.Machine == machine).SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, machine.Clips[0]));
             }
             string text = $"New track {machine.Name} ({GearNames.Display(inst)}){(preset != null ? ", preset " + preset : "")}." + (note != null ? " " + note : "");
-            return new DropResult { Ok = true, Action = preset != null ? DropAction.NewTrackWithPreset : DropAction.NewTrack, Machine = machine, Message = text, Patterns = clip != null ? new[] { clip } : Array.Empty<IPattern>() };
+            return new DropResult { Ok = true, Action = preset != null ? DropAction.NewTrackWithPreset : DropAction.NewTrack, Machine = machine, Message = text, Clips = clip != null ? new[] { clip } : Array.Empty<IClip>() };
         }
 
         DropResult DoAdd(IInstrument inst, string preset, DropTarget t)
@@ -591,7 +591,7 @@ namespace ReBuzz.Core.Drop
         DropResult DoInsertNote(IMachine instrument, IInstrument inst)
         {
             int have = core.NoteWires.State.ChainOf(instrument.Name).Count;
-            var insert = MakeMachine(inst, ReBuzz.Core.NoteWires.NoteInsertLayout.X(instrument.Position.Item1, have, have + 1, 0.35f), instrument.Position.Item2, pattern: false);
+            var insert = MakeMachine(inst, ReBuzz.Core.NoteWires.NoteInsertLayout.X(instrument.Position.Item1, have, have + 1, 0.35f), instrument.Position.Item2, clip: false);
             string why = core.NoteWires.AddInsert(instrument.Name, insert.Name);
             if (why != null) throw new ToolError(why);
             return new DropResult { Ok = true, Action = DropAction.InsertNote, Machine = insert, Message = $"{insert.Name} ({GearNames.Display(inst)}) added before {instrument.Name}." };
@@ -617,14 +617,14 @@ namespace ReBuzz.Core.Drop
 
         // ---- clips
 
-        IPattern FindPattern(string id, out string owner)
+        IClip FindClip(string id, out string owner)
         {
             owner = null;
             int slash = id.LastIndexOf('/');
             if (slash <= 0) return null;
             var m = Song.Machines.FirstOrDefault(x => x.Name == id[..slash]);
             owner = m?.Name;
-            return m?.Patterns.FirstOrDefault(p => p.Name == id[(slash + 1)..]);
+            return m?.Clips.FirstOrDefault(p => p.Name == id[(slash + 1)..]);
         }
 
         IWave WaveOf(string id)
@@ -644,27 +644,27 @@ namespace ReBuzz.Core.Drop
             while (layout.SceneCount <= scene) layout.InsertScene(layout.SceneCount);
         }
 
-        DropResult DoPatternClip(IMachine machine, BrowserDragData d, DropTarget t)
+        DropResult DropClip(IMachine machine, BrowserDragData d, DropTarget t)
         {
-            var pattern = FindPattern(d.Id, out _);
+            var clip = FindClip(d.Id, out _);
             if (t.View == DropView.Session)
             {
                 var layout = Layout;
                 int track = layout.FirstTrackOf(machine);
                 int scene = t.Scene >= 0 ? t.Scene : FirstEmptyScene(layout, track);
                 EnsureScenes(scene);
-                layout.SetSlot(track, scene, pattern);
-                return new DropResult { Ok = true, Action = DropAction.PatternClip, Machine = machine, Patterns = new[] { pattern }, Message = $"“{pattern.Name}” in scene {scene + 1} of {machine.Name}." };
+                layout.SetSlot(track, scene, clip);
+                return new DropResult { Ok = true, Action = DropAction.Clip, Machine = machine, Clips = new[] { clip }, Message = $"“{clip.Name}” in scene {scene + 1} of {machine.Name}." };
             }
             int time = Math.Max(0, t.Time);
-            if (new ClipEditor(core).Place(LaneOf(machine, t), pattern, time) is { } why) throw new ToolError(why);
-            return new DropResult { Ok = true, Action = DropAction.PatternClip, Machine = machine, Patterns = new[] { pattern }, Message = $"“{pattern.Name}” placed on {machine.Name} at tick {time}." };
+            if (new ClipEditor(core).Place(LaneOf(machine, t), clip, time) is { } why) throw new ToolError(why);
+            return new DropResult { Ok = true, Action = DropAction.Clip, Machine = machine, Clips = new[] { clip }, Message = $"“{clip.Name}” placed on {machine.Name} at tick {time}." };
         }
 
         static int FirstEmptyScene(SessionLayout layout, int track)
         {
             int scene = 0;
-            while (track >= 0 && layout.PatternAt(track, scene) != null) scene++;
+            while (track >= 0 && layout.ClipAt(track, scene) != null) scene++;
             return scene;
         }
 
@@ -694,7 +694,7 @@ namespace ReBuzz.Core.Drop
                 var machine = plan.Action == DropAction.AudioClips ? plan.Target : null;
                 int track = machine == null ? -1 : layout.FirstTrackOf(machine);
                 if (machine != null && track < 0) throw new ToolError($"{machine.Name} has no Session track.");
-                var made = new List<IPattern>();
+                var made = new List<IClip>();
                 int time = Math.Max(0, t.Time);
                 int scene = t.Scene >= 0 ? t.Scene : machine != null && t.View == DropView.Session ? FirstEmptyScene(layout, track) : 0;
                 if (t.View == DropView.Machine && machine != null) scene = FirstEmptyScene(layout, track);
@@ -702,10 +702,10 @@ namespace ReBuzz.Core.Drop
                 for (int i = 0; i < items.Count; i++)
                 {
                     string path = ImportPath(items[i], temps);
-                    IPattern clip;
+                    IClip clip;
                     if (arrangement)
                     {
-                        // Made in a scene of its own, which then goes (the pattern stays, on its lane), as audio_import does.
+                        // Made in a scene of its own, which then goes (the clip stays, on its lane), as audio_import does.
                         int scratch = layout.SceneCount;
                         layout.InsertScene(scratch);
                         clip = layout.ImportAudio(track, scratch, path, out string error) ?? throw new ToolError(error ?? "Couldn't import it.");
@@ -731,7 +731,7 @@ namespace ReBuzz.Core.Drop
                 string where = arrangement ? $"from tick {Math.Max(0, t.Time)}" : $"from scene {scene + 1}";
                 return new DropResult
                 {
-                    Ok = true, Action = plan.Action, Machine = machine, Patterns = made,
+                    Ok = true, Action = plan.Action, Machine = machine, Clips = made,
                     Message = $"{(plan.Action == DropAction.NewAudioTrack ? "New audio track " : "")}{machine.Name}: {made.Count} clip{(made.Count == 1 ? "" : "s")} {where}.",
                 };
             }
@@ -787,17 +787,17 @@ namespace ReBuzz.Core.Drop
             var file = ReadMidi(d.Id);
             int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
             int bar = tpb * bpb;
-            int ticks = Math.Clamp((int)Math.Ceiling(file.LengthBeats * tpb / bar) * bar, bar, Math.Max(bar, MaxPatternTicks / bar * bar));
+            int ticks = Math.Clamp((int)Math.Ceiling(file.LengthBeats * tpb / bar) * bar, bar, Math.Max(bar, MaxClipTicks / bar * bar));
             string name = Path.GetFileNameWithoutExtension(d.Id);
             IMachine machine;
-            IPattern pattern;
+            IClip clip;
             if (plan.Action == DropAction.MidiNewTrack)
                 machine = DoNewTrack(DefaultInstrument(t.DefaultInstrument), null, t, false).Machine;
             else machine = plan.Target;
 
-            string patternName = machine.GetNewPatternName();
-            Song.ActionStack.Do(new CreatePatternAction(machine, patternName, ticks));
-            pattern = machine.Patterns.First(p => p.Name == patternName);
+            string clipName = machine.GetNewClipName();
+            Song.ActionStack.Do(new CreateClipAction(machine, clipName, ticks));
+            clip = machine.Clips.First(p => p.Name == clipName);
             var added = file.Notes.Where(n => (int)Math.Round(n.Start * tpb) < ticks)
                 .Select(n => new NoteEvent(NoteList.Time(n.Start, tpb), Math.Max(1, Math.Min(NoteList.Time(n.Length, tpb), ticks * NoteList.TimeBase - NoteList.Time(n.Start, tpb))), n.Pitch, Math.Max(1, n.Velocity)))
                 .ToList();
@@ -805,22 +805,22 @@ namespace ReBuzz.Core.Drop
             var problems = new List<string>();
             var input = MachineNotes.For((MachineCore)machine);
             added.Sort(NoteList.Order);
-            MachineNotes.Replace(core, pattern, input, new List<NoteEvent>(), added, problems);
+            MachineNotes.Replace(core, clip, input, new List<NoteEvent>(), added, problems);
 
-            PlaceClip(machine, pattern, t);
+            PlaceClip(machine, clip, t);
 
             string info = (file.Bpm != null ? $"{file.Bpm:0.##} BPM" : null) + (file.Meter is { } m ? $"{(file.Bpm != null ? ", " : "")}{m.Beats}/{m.Unit}" : "");
-            string text = $"{added.Count} notes in “{pattern.Name}” on {machine.Name}" + (info.Length > 0 ? $" (the file's {info}, not applied)" : "") +
+            string text = $"{added.Count} notes in “{clip.Name}” on {machine.Name}" + (info.Length > 0 ? $" (the file's {info}, not applied)" : "") +
                           (cut > 0 ? $"; {cut} past {ticks} ticks left out" : "") + ".";
-            return new DropResult { Ok = true, Action = plan.Action, Machine = machine, Patterns = new[] { pattern }, Message = text };
+            return new DropResult { Ok = true, Action = plan.Action, Machine = machine, Clips = new[] { clip }, Message = text };
         }
 
-        void PlaceClip(IMachine machine, IPattern pattern, DropTarget t)
+        void PlaceClip(IMachine machine, IClip clip, DropTarget t)
         {
             if (t.View == DropView.Arrangement)
             {
                 var lane = LaneOf(machine, t);
-                if (new ClipEditor(core).Place(lane, pattern, Math.Max(0, t.Time)) is { } why) throw new ToolError(why);
+                if (new ClipEditor(core).Place(lane, clip, Math.Max(0, t.Time)) is { } why) throw new ToolError(why);
             }
             else if (t.View == DropView.Session && Layout != null)
             {
@@ -828,12 +828,12 @@ namespace ReBuzz.Core.Drop
                 if (track < 0) return;
                 int scene = t.Scene >= 0 ? t.Scene : FirstEmptyScene(Layout, track);
                 EnsureScenes(scene);
-                Layout.SetSlot(track, scene, pattern);
+                Layout.SetSlot(track, scene, clip);
             }
             else if (t.View == DropView.Machine && HasSequence(machine))
             {
                 var lane = Song.Sequences.First(s => s.Machine == machine);
-                if (!lane.Events.Any()) lane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+                if (!lane.Events.Any()) lane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, clip));
             }
         }
     }

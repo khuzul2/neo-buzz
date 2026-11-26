@@ -34,7 +34,7 @@ Readings (`machine_readings`): `peak_dbfs` and `rms_db` (last 3 s, a full-scale 
 
 ## Pitfalls
 
-- Sweeps follow the song's position: while the song stands still, or plays a pattern alone, a synced scope runs free at the tempo, unaligned.
+- Sweeps follow the song's position: while the song stands still, or plays a clip alone, a synced scope runs free at the tempo, unaligned.
 - A bar is 4 beats here; in another meter choose beats or a length the loop is a multiple of.
 - The trigger watches the first trace (left in L & R) with a small hysteresis (0.2 % of full scale).
 - The reading window is 3 s, tail of a render included: keep tails short.

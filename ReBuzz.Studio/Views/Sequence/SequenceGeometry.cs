@@ -1,6 +1,6 @@
 // Fork (docs/specs/studio-mvp.md S4): the sequence editor's pure logic, from the WPF editors:
 // the selection (SelectionLayer), and the layout and hit tests of the timeline (tick ↔ pixel, track
-// rows, pattern blocks and their edges, PatternResizeHelper's snapping). The time signature list
+// rows, clip blocks and their edges, ClipResizeHelper's snapping). The time signature list
 // (BuzzGUI.SequenceEditor's) that was ported here is the engine's song meter now
 // (ReBuzz/Core/SongMeter.cs, daw-modes.md S1).
 
@@ -65,7 +65,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public bool Contains(int time, int row) => time >= Time && time < End && row >= Row && row <= LastRow;
     }
 
-    /// <summary>Where a point falls on a pattern block.</summary>
+    /// <summary>Where a point falls on a clip block.</summary>
     internal enum BlockPart { None, Body, LeftEdge, RightEdge }
 
     /// <summary>
@@ -83,9 +83,9 @@ namespace ReBuzz.Studio.Views.Sequence
         public const double MinTickWidth = 0.25, MaxTickWidth = 7.75, TickWidthStep = 0.25, DefaultTickWidth = 2;
 
         /// <summary>Ticks a break, mute, thru or stop event is drawn over (ViewSettings.NonPlayPattenSpan).</summary>
-        public const int NonPatternSpan = 10;
+        public const int NonClipSpan = 10;
 
-        /// <summary>A block is at least this wide (PatternElement: Math.Max(w, 10)).</summary>
+        /// <summary>A block is at least this wide (ClipElement: Math.Max(w, 10)).</summary>
         public const double MinBlockWidth = 10;
 
         /// <summary>The bottom strip of a header holds the M, S and D buttons (16 px each).</summary>
@@ -170,8 +170,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public Rect HeaderArea(Size s) => Vertical ? new Rect(LeadX, 0, Math.Max(0, s.Width - LeadX), LeadY) : new Rect(0, LeadY, LeadX, Math.Max(0, s.Height - LeadY));
         public Rect TracksArea(Size s) => new Rect(LeadX, LeadY, Math.Max(0, s.Width - LeadX), Math.Max(0, s.Height - LeadY));
 
-        /// <summary>Ticks a block covers: the event's span, or <see cref="NonPatternSpan"/> for the other kinds.</summary>
-        public static int SpanOf(SequenceEvent e) => e.Type == SequenceEventType.PlayPattern && e.Pattern != null ? Math.Max(1, e.Span) : NonPatternSpan;
+        /// <summary>Ticks a block covers: the event's span, or <see cref="NonClipSpan"/> for the other kinds.</summary>
+        public static int SpanOf(SequenceEvent e) => e.Type == SequenceEventType.PlayClip && e.Clip != null ? Math.Max(1, e.Span) : NonClipSpan;
 
         public Rect BlockRect(int time, int row, SequenceEvent e) => Span(time, Math.Max(SpanOf(e) * PxPerTick, MinBlockWidth), row, 1, 0);
 
@@ -190,7 +190,7 @@ namespace ReBuzz.Studio.Views.Sequence
 
         /// <summary>
         /// Body or edge of a block. The edges are WPF's drag lines (8 px wide at each end), narrower
-        /// on small blocks so they keep a body; only pattern blocks resize.
+        /// on small blocks so they keep a body; only clip blocks resize.
         /// </summary>
         public static BlockPart PartAt(Rect block, Point p, bool resizable)
         {
@@ -215,7 +215,7 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>
-        /// The pattern length a right-edge drag gives (PatternResizeHelper, Right): the end goes to
+        /// The clip length a right-edge drag gives (ClipResizeHelper, Right): the end goes to
         /// the snap line at or after the pointer, at least one snap past the start.
         /// </summary>
         public static int ResizeRightLength(int eventTime, int pointerTick, int snap)
@@ -227,7 +227,7 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>
-        /// Where a left-edge drag puts the event (PatternResizeHelper, Left): the start goes to the
+        /// Where a left-edge drag puts the event (ClipResizeHelper, Left): the start goes to the
         /// nearest snap line, at most one snap before the end; the end stays.
         /// </summary>
         public static (int Time, int Length) ResizeLeft(int eventTime, int span, int pointerTick, int snap)

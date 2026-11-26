@@ -121,21 +121,21 @@ def build(c, gear, kind):
         # Chords and a bass line peaking near -10 dBFS (-20 LUFS): a part's level in a mix, with room for boosts.
         c.call("param_set", machine="Src", changes=[{"param": "Volume", "value": "-12 dB"}, {"param": "Amp release", "value": "80 ms"}])
         c.call("machine_add", gear=gear, name="M", insert_after="Src")
-        c.call("pattern_create", machine="Src", name="00", length_beats=BEATS)
+        c.call("clip_create", machine="Src", name="00", length_beats=BEATS)
         notes = []
         for start, chord in ((0, (48, 60, 64, 67)), (2, (53, 60, 65, 69)), (4, (55, 62, 67, 71)), (6, (43, 59, 62, 67))):
             for p in chord:
                 notes.append({"pitch": p, "start": start, "length": 1.0, "velocity": 100})
-        c.call("notes_write", machine="Src", pattern="00", notes=notes)
-        c.call("arrangement_place", machine="Src", pattern="00", at=0)
+        c.call("notes_write", machine="Src", clip="00", notes=notes)
+        c.call("arrangement_place", machine="Src", clip="00", at=0)
     else:
         c.call("machine_add", gear=gear, name="M", connect_to="Master")
 
 
 def phrase(c, manifest):
-    c.call("pattern_create", machine="M", name="00", length_beats=BEATS)
-    c.call("notes_write", machine="M", pattern="00", notes=notes_for(manifest))
-    c.call("arrangement_place", machine="M", pattern="00", at=0)
+    c.call("clip_create", machine="M", name="00", length_beats=BEATS)
+    c.call("notes_write", machine="M", clip="00", notes=notes_for(manifest))
+    c.call("arrangement_place", machine="M", clip="00", at=0)
 
 
 def raw_values(c):

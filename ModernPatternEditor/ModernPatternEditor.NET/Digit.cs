@@ -7,16 +7,16 @@ namespace WDE.ModernPatternEditor
 {
     public struct Digit
     {
-        public readonly PatternVM PatternVM;
+        public readonly ClipVM ClipVM;
         public readonly int ColumnSet;
         public readonly int Column;
         public readonly int Beat;
         public readonly int RowInBeat;
         public readonly int Index;
 
-        public Digit(PatternVM patternVM)
+        public Digit(ClipVM clipVM)
         {
-            this.PatternVM = patternVM;
+            this.ClipVM = clipVM;
             this.ColumnSet = 0;
             this.Column = 0;
             this.Beat = 0;
@@ -24,9 +24,9 @@ namespace WDE.ModernPatternEditor
             this.Index = 0;
         }
 
-        public Digit(PatternVM patternVM, int columnSet, int column, int beat, int rowInBeat, int index)
+        public Digit(ClipVM clipVM, int columnSet, int column, int beat, int rowInBeat, int index)
         {
-            this.PatternVM = patternVM;
+            this.ClipVM = clipVM;
             this.ColumnSet = columnSet;
             this.Column = column;
             this.Beat = beat;
@@ -34,57 +34,57 @@ namespace WDE.ModernPatternEditor
             this.Index = index;
         }
 
-        public ParameterColumn? ParameterColumn { get { return PatternVM.GetColumn(this) as ParameterColumn; } }
+        public ParameterColumn? ParameterColumn { get { return ClipVM.GetColumn(this) as ParameterColumn; } }
 
-        public MPEPatternColumnBeatRef ColumnAndBeat
+        public MPEClipColumnBeatRef ColumnAndBeat
         {
             get
             {
-                // ToDo: 1. Rename all MPEPatternColumnBeatRef to MPEMPEPatternColumnBeatRef and same with MPEPatternColumnRef
+                // ToDo: 1. Rename all MPEClipColumnBeatRef to MPEMPEClipColumnBeatRef and same with MPEClipColumnRef
                 //       2. Create new versions of these
-                //       3. Make sure MPEMPEPatternColumnBeatRef return correct index
-                return new MPEPatternColumnBeatRef(new MPEPatternColumnRef(ParameterColumn.PatternColumn), Beat);
+                //       3. Make sure MPEMPEClipColumnBeatRef return correct index
+                return new MPEClipColumnBeatRef(new MPEClipColumnRef(ParameterColumn.ClipColumn), Beat);
             }
         }
 
-        public Digit SetPatternVM(PatternVM patternVM) { return new Digit(patternVM, ColumnSet, Column, Beat, RowInBeat, Index); }
-        public Digit SetColumnSet(int columnSet) { return new Digit(PatternVM, columnSet, Column, Beat, RowInBeat, Index); }
-        public Digit SetColumn(int column) { return new Digit(PatternVM, ColumnSet, column, Beat, RowInBeat, Index); }
-        public Digit SetBeat(int beat) { return new Digit(PatternVM, ColumnSet, Column, beat, RowInBeat, Index); }
-        public Digit SetRowInBeat(int rowInBeat) { return new Digit(PatternVM, ColumnSet, Column, Beat, rowInBeat, Index); }
-        public Digit SetIndex(int index) { return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat, index); }
+        public Digit SetClipVM(ClipVM clipVM) { return new Digit(clipVM, ColumnSet, Column, Beat, RowInBeat, Index); }
+        public Digit SetColumnSet(int columnSet) { return new Digit(ClipVM, columnSet, Column, Beat, RowInBeat, Index); }
+        public Digit SetColumn(int column) { return new Digit(ClipVM, ColumnSet, column, Beat, RowInBeat, Index); }
+        public Digit SetBeat(int beat) { return new Digit(ClipVM, ColumnSet, Column, beat, RowInBeat, Index); }
+        public Digit SetRowInBeat(int rowInBeat) { return new Digit(ClipVM, ColumnSet, Column, Beat, rowInBeat, Index); }
+        public Digit SetIndex(int index) { return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat, index); }
 
-        public Digit FirstColumnSet { get { return new Digit(PatternVM, 0, Column, Beat, RowInBeat, Index); } }
-        public Digit FirstColumn { get { return new Digit(PatternVM, ColumnSet, 0, Beat, RowInBeat, Index); } }
-        public Digit FirstBeat { get { return new Digit(PatternVM, ColumnSet, Column, 0, RowInBeat, Index); } }
-        public Digit FirstRowInBeat { get { return new Digit(PatternVM, ColumnSet, Column, Beat, 0, Index); } }
-        public Digit FirstIndex { get { return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat, 0); } }
+        public Digit FirstColumnSet { get { return new Digit(ClipVM, 0, Column, Beat, RowInBeat, Index); } }
+        public Digit FirstColumn { get { return new Digit(ClipVM, ColumnSet, 0, Beat, RowInBeat, Index); } }
+        public Digit FirstBeat { get { return new Digit(ClipVM, ColumnSet, Column, 0, RowInBeat, Index); } }
+        public Digit FirstRowInBeat { get { return new Digit(ClipVM, ColumnSet, Column, Beat, 0, Index); } }
+        public Digit FirstIndex { get { return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat, 0); } }
 
-        public Digit LastColumnSet { get { return new Digit(PatternVM, PatternVM.ColumnSets.Count - 1, Column, Beat, RowInBeat, Index); } }
-        public Digit LastColumn { get { return new Digit(PatternVM, ColumnSet, PatternVM.GetColumnSet(this).Columns.Count - 1, Beat, RowInBeat, Index); } }
-        public Digit LastBeat { get { return new Digit(PatternVM, ColumnSet, Column, PatternVM.GetColumnSet(this).BeatCount - 1, RowInBeat, Index); } }
-        public Digit LastRowInBeat { get { return new Digit(PatternVM, ColumnSet, Column, Beat, PatternVM.GetBeat(this).Rows.Count - 1, Index); } }
-        public Digit LastIndex { get { return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat, PatternVM.GetColumn(this).DigitCount - 1); } }
+        public Digit LastColumnSet { get { return new Digit(ClipVM, ClipVM.ColumnSets.Count - 1, Column, Beat, RowInBeat, Index); } }
+        public Digit LastColumn { get { return new Digit(ClipVM, ColumnSet, ClipVM.GetColumnSet(this).Columns.Count - 1, Beat, RowInBeat, Index); } }
+        public Digit LastBeat { get { return new Digit(ClipVM, ColumnSet, Column, ClipVM.GetColumnSet(this).BeatCount - 1, RowInBeat, Index); } }
+        public Digit LastRowInBeat { get { return new Digit(ClipVM, ColumnSet, Column, Beat, ClipVM.GetBeat(this).Rows.Count - 1, Index); } }
+        public Digit LastIndex { get { return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat, ClipVM.GetColumn(this).DigitCount - 1); } }
 
-        public Digit PreviousColumnSet { get { return new Digit(PatternVM, ColumnSet - 1, Column, Beat, RowInBeat, Index).ConstrainedColumnSet; } }
-        public Digit PreviousColumn { get { return new Digit(PatternVM, ColumnSet, Column - 1, Beat, RowInBeat, Index).ConstrainedColumn; } }
-        public Digit PreviousBeat { get { return new Digit(PatternVM, ColumnSet, Column, Beat - 1, RowInBeat, Index).ConstrainedBeat; } }
-        public Digit PreviousRowInBeat { get { return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat - 1, Index).ConstrainedRowInBeat; } }
-        public Digit PreviousIndex { get { return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat, Index - 1).ConstrainedIndex; } }
+        public Digit PreviousColumnSet { get { return new Digit(ClipVM, ColumnSet - 1, Column, Beat, RowInBeat, Index).ConstrainedColumnSet; } }
+        public Digit PreviousColumn { get { return new Digit(ClipVM, ColumnSet, Column - 1, Beat, RowInBeat, Index).ConstrainedColumn; } }
+        public Digit PreviousBeat { get { return new Digit(ClipVM, ColumnSet, Column, Beat - 1, RowInBeat, Index).ConstrainedBeat; } }
+        public Digit PreviousRowInBeat { get { return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat - 1, Index).ConstrainedRowInBeat; } }
+        public Digit PreviousIndex { get { return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat, Index - 1).ConstrainedIndex; } }
 
-        public Digit NextColumnSet { get { return new Digit(PatternVM, ColumnSet + 1, Column, Beat, RowInBeat, Index).ConstrainedColumnSet; } }
-        public Digit NextColumn { get { return new Digit(PatternVM, ColumnSet, Column + 1, Beat, RowInBeat, Index).ConstrainedColumn; } }
-        public Digit NextBeat { get { return new Digit(PatternVM, ColumnSet, Column, Beat + 1, RowInBeat, Index).ConstrainedBeat; } }
-        public Digit NextRowInBeat { get { return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat + 1, Index).ConstrainedRowInBeat; } }
+        public Digit NextColumnSet { get { return new Digit(ClipVM, ColumnSet + 1, Column, Beat, RowInBeat, Index).ConstrainedColumnSet; } }
+        public Digit NextColumn { get { return new Digit(ClipVM, ColumnSet, Column + 1, Beat, RowInBeat, Index).ConstrainedColumn; } }
+        public Digit NextBeat { get { return new Digit(ClipVM, ColumnSet, Column, Beat + 1, RowInBeat, Index).ConstrainedBeat; } }
+        public Digit NextRowInBeat { get { return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat + 1, Index).ConstrainedRowInBeat; } }
 
         public Digit NextIndex
         {
             get
             {
-                if (PatternVM.GetColumn(this).Type == ColumnRenderer.ColumnType.Note && Index == 0)
-                    return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat, Index + 2).ConstrainedIndex;
+                if (ClipVM.GetColumn(this).Type == ColumnRenderer.ColumnType.Note && Index == 0)
+                    return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat, Index + 2).ConstrainedIndex;
                 else
-                    return new Digit(PatternVM, ColumnSet, Column, Beat, RowInBeat, Index + 1).ConstrainedIndex;
+                    return new Digit(ClipVM, ColumnSet, Column, Beat, RowInBeat, Index + 1).ConstrainedIndex;
             }
         }
 
@@ -92,7 +92,7 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                return SetColumnSet(Math.Min(Math.Max(ColumnSet, 0), PatternVM.ColumnSets.Count - 1));
+                return SetColumnSet(Math.Min(Math.Max(ColumnSet, 0), ClipVM.ColumnSets.Count - 1));
             }
         }
 
@@ -100,7 +100,7 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                var cs = PatternVM.GetColumnSet(this);
+                var cs = ClipVM.GetColumnSet(this);
                 return SetColumn(Math.Min(Math.Max(Column, 0), cs.Columns.Count - 1));
             }
         }
@@ -109,7 +109,7 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                var column = PatternVM.GetColumn(this);
+                var column = ClipVM.GetColumn(this);
                 int newIndex = Math.Min(Math.Max(Index, 0), column.DigitCount - 1);
                 if (column.Type == ColumnRenderer.ColumnType.Note && column.DigitCount == 3 && Index == 1) newIndex = 0;        // note middle digit
                 return SetIndex(newIndex);
@@ -120,7 +120,7 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                var cs = PatternVM.GetColumnSet(this);
+                var cs = ClipVM.GetColumnSet(this);
                 return SetBeat(Math.Min(Math.Max(Beat, 0), cs.BeatCount - 1));
             }
         }
@@ -129,7 +129,7 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                var beat = PatternVM.GetBeat(this);
+                var beat = ClipVM.GetBeat(this);
                 return SetRowInBeat(Math.Min(Math.Max(0, RowInBeat), beat.Rows.Count - 1));
             }
         }
@@ -138,7 +138,7 @@ namespace WDE.ModernPatternEditor
         {
             get
             {
-                if (PatternVM == null || PatternVM.ColumnSets.Count == 0) return this;
+                if (ClipVM == null || ClipVM.ColumnSets.Count == 0) return this;
                 return ConstrainedColumnSet.ConstrainedColumn.ConstrainedIndex.ConstrainedBeat.ConstrainedRowInBeat;
             }
         }
@@ -149,11 +149,11 @@ namespace WDE.ModernPatternEditor
         public bool IsFirstBeat { get { return Beat == 0; } }
         public bool IsFirstRowInBeat { get { return RowInBeat == 0; } }
 
-        public bool IsLastColumnSet { get { return ColumnSet == PatternVM.ColumnSets.Count - 1; } }
-        public bool IsLastColumn { get { return Column == PatternVM.GetColumnSet(this).Columns.Count - 1; } }
-        public bool IsLastIndex { get { return Index == PatternVM.GetColumn(this).DigitCount - 1; } }
-        public bool IsLastBeat { get { return Beat == PatternVM.GetColumnSet(this).BeatCount - 1; } }
-        public bool IsLastRowInBeat { get { return RowInBeat == PatternVM.GetBeat(this).Rows.Count - 1; } }
+        public bool IsLastColumnSet { get { return ColumnSet == ClipVM.ColumnSets.Count - 1; } }
+        public bool IsLastColumn { get { return Column == ClipVM.GetColumnSet(this).Columns.Count - 1; } }
+        public bool IsLastIndex { get { return Index == ClipVM.GetColumn(this).DigitCount - 1; } }
+        public bool IsLastBeat { get { return Beat == ClipVM.GetColumnSet(this).BeatCount - 1; } }
+        public bool IsLastRowInBeat { get { return RowInBeat == ClipVM.GetBeat(this).Rows.Count - 1; } }
 
         public Digit Down
         {
@@ -231,11 +231,11 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        public int TimeInBeat { get { return PatternVM.GetBeat(this).Rows[RowInBeat].Time; } }
+        public int TimeInBeat { get { return ClipVM.GetBeat(this).Rows[RowInBeat].Time; } }
 
         public Digit NearestRow(int time)
         {
-            return SetRowInBeat(PatternVM.GetBeat(this).Rows.IndexOfMinBy(r => Math.Abs(r.Time - time)));
+            return SetRowInBeat(ClipVM.GetBeat(this).Rows.IndexOfMinBy(r => Math.Abs(r.Time - time)));
         }
 
         public int StepsOverEnd(int dy)

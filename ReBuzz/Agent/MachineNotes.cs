@@ -1,7 +1,7 @@
 // Fork (docs/specs/mcp-server.md §12.2, U1): how a machine takes notes, as the agent's note tools
 // see it. Most machines play the engine's MIDI column; machines whose profiled manifest says
 // "tracks" (trackers; the Pedal synths until §12.15 gave them MIDI) play their Note track parameter
-// only, so their notes go into the pattern's engine-played Note columns, a voice per track. Either way the manifest's pitch
+// only, so their notes go into the clip's engine-played Note columns, a voice per track. Either way the manifest's pitch
 // offset is applied on the way in and taken off on the way out: the agent writes and reads the
 // pitch heard (A4 = 440 Hz). What the song saves is what the machine gets, as before.
 
@@ -46,23 +46,23 @@ namespace ReBuzz.Agent
             return new NoteInput(mode, offset, noteParameter, velocity, m.Name);
         }
 
-        /// <summary>The pattern's notes as the agent reads them (pitches as heard): SongNotes reads every lane of the clip.</summary>
-        public static List<NoteEvent> Read(IPattern p, NoteInput input)
+        /// <summary>The clip's notes as the agent reads them (pitches as heard): SongNotes reads every lane of the clip.</summary>
+        public static List<NoteEvent> Read(IClip p, NoteInput input)
         {
             var stored = Source(p, input)?.Notes().Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune)).ToList() ?? new List<NoteEvent>();
             if (input.Offset == 0) return stored;
             return stored.Select(n => n with { Pitch = n.Pitch - input.Offset }).Where(n => n.Pitch >= 0 && n.Pitch <= 127).ToList();
         }
 
-        /// <summary>The note source the input names, from the clip's own machine (null for a pattern that is not in a song).</summary>
-        static INoteSource Source(IPattern p, NoteInput input) =>
+        /// <summary>The note source the input names, from the clip's own machine (null for a clip that is not in a song).</summary>
+        static INoteSource Source(IClip p, NoteInput input) =>
             (p?.Machine as MachineCore)?.Graph?.Buzz is ReBuzzCore core ? SongNotes.For(core, p, input.Mode) : null;
 
         /// <summary>
         /// Replaces notes (as the agent reads them): <paramref name="removed"/> go, <paramref name="added"/> come,
         /// in one undo step with the call, through SongNotes. Track input rewrites the Note columns, raising the track count when a chord needs more voices.
         /// </summary>
-        public static void Replace(ReBuzzCore core, IPattern p, NoteInput input, IReadOnlyList<NoteEvent> removed, IReadOnlyList<NoteEvent> added, List<string> problems)
+        public static void Replace(ReBuzzCore core, IClip p, NoteInput input, IReadOnlyList<NoteEvent> removed, IReadOnlyList<NoteEvent> added, List<string> problems)
         {
             NoteEvent Sent(NoteEvent n) => input.Offset == 0 && n.Pitch <= input.Highest ? n : n with { Pitch = TrackNotes.Sent(n.Pitch, input.Offset, input.Highest, input.Machine) };
             var source = SongNotes.For(core, p, input.Mode) ?? throw new ToolError($"{p.Machine?.Name} takes no notes.");
@@ -75,8 +75,8 @@ namespace ReBuzz.Agent
         /// <summary>Whether the machine plays a sample per note now (its notes then carry a sample, an offset and a tune).</summary>
         public static bool PerNoteSamples(MachineCore m) => m.ManagedMachine is Buzz.MachineInterface.INoteSampleProvider { PlaysSamplePerNote: true };
 
-        /// <summary>Whether a pattern column holds a machine's track notes (not automation).</summary>
-        public static bool IsNoteColumn(IPatternColumn column)
+        /// <summary>Whether a clip column holds a machine's track notes (not automation).</summary>
+        public static bool IsNoteColumn(IClipColumn column)
         {
             var parameter = column.Parameter;
             if (parameter == null || parameter.Group.Type != ParameterGroupType.Track) return false;

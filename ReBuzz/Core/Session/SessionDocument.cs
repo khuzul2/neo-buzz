@@ -2,9 +2,9 @@
 // Session View layout (fork addition). See docs/specs/session-view.md, section 4.2.
 //
 // The grid as stored in a song: scenes (rows), tracks (columns, one per sequence) and which
-// pattern sits in which slot. Pure data with no ReBuzz types, so it can be unit tested on its
+// clip sits in which slot. Pure data with no ReBuzz types, so it can be unit tested on its
 // own (ReBuzz.SessionTests links this file). Tracks are identified by sequence index plus
-// machine name, clips by pattern name; SessionLayout keeps these in step with the live song.
+// machine name, clips by clip name; SessionLayout keeps these in step with the live song.
 
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ namespace ReBuzz.Core.Session
         public sealed class Scene
         {
             public string Name { get; set; } = "";
-            /// <summary>Index into the theme's pattern colours, -1 for none.</summary>
+            /// <summary>Index into the theme's clip colours, -1 for none.</summary>
             public int ColorIndex { get; set; } = -1;
             /// <summary>Tempo (BPM) set when the scene launches; 0 for none (0.5).</summary>
             public int Tempo { get; set; }
@@ -113,8 +113,8 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// Launch settings of a clip (0.5, Live's clip view): stored per pattern, since a clip is a
-        /// pattern. Ticks are pattern rows. Launch modes and quantizations are names of
+        /// Launch settings of a clip (0.5, Live's clip view): stored per clip, since a clip is a
+        /// clip. Ticks are clip rows. Launch modes and quantizations are names of
         /// ClipLaunchMode and LaunchQuantization values ("Global" for the session's).
         /// </summary>
         public sealed class ClipSettings
@@ -128,13 +128,13 @@ namespace ReBuzz.Core.Session
             /// <summary>Start marker in ticks.</summary>
             public int Start { get; set; }
             public int LoopStart { get; set; }
-            /// <summary>Loop end (or end, without loop) in ticks, exclusive; 0 for the pattern's end.</summary>
+            /// <summary>Loop end (or end, without loop) in ticks, exclusive; 0 for the clip's end.</summary>
             public int LoopEnd { get; set; }
             /// <summary>Velocity sensitivity in percent: 0 none, 100 the softest note is silent.</summary>
             public int Velocity { get; set; }
             /// <summary>Follow actions (0.6).</summary>
             public FollowSettings Follow { get; set; } = new FollowSettings();
-            /// <summary>An audio clip's audio (1.0); null for a pattern clip.</summary>
+            /// <summary>An audio clip's audio (1.0); null for a clip clip.</summary>
             public AudioSettings Audio { get; set; }
 
             public bool IsDefault =>
@@ -149,9 +149,9 @@ namespace ReBuzz.Core.Session
                 return c;
             }
 
-            internal XElement ToXml(string machine, string pattern)
+            internal XElement ToXml(string machine, string clip)
             {
-                var e = new XElement("Clip", new XAttribute("machine", machine), new XAttribute("pattern", pattern));
+                var e = new XElement("Clip", new XAttribute("machine", machine), new XAttribute("pattern", clip));
                 if (Mode != "Trigger") e.SetAttributeValue("mode", Mode);
                 if (Quantization != GlobalQuantization) e.SetAttributeValue("quantization", Quantization);
                 if (Legato) e.SetAttributeValue("legato", "true");
@@ -318,17 +318,17 @@ namespace ReBuzz.Core.Session
             static string Num(double v) => v.ToString("R", CultureInfo.InvariantCulture);
         }
 
-        /// <summary>Clip settings by (machine, pattern); patterns without an entry use the defaults.</summary>
-        public Dictionary<(string Machine, string Pattern), ClipSettings> Clips { get; } = new Dictionary<(string, string), ClipSettings>();
+        /// <summary>Clip settings by (machine, clip); clips without an entry use the defaults.</summary>
+        public Dictionary<(string Machine, string Clip), ClipSettings> Clips { get; } = new Dictionary<(string, string), ClipSettings>();
 
-        /// <summary>A pattern's clip settings (a copy; the defaults if it has none).</summary>
-        public ClipSettings GetClip(string machine, string pattern) =>
-            Clips.TryGetValue((machine ?? "", pattern ?? ""), out var c) ? c.Clone() : new ClipSettings();
+        /// <summary>A clip's clip settings (a copy; the defaults if it has none).</summary>
+        public ClipSettings GetClip(string machine, string clip) =>
+            Clips.TryGetValue((machine ?? "", clip ?? ""), out var c) ? c.Clone() : new ClipSettings();
 
-        /// <summary>Stores a pattern's clip settings; default settings remove the entry.</summary>
-        public void SetClip(string machine, string pattern, ClipSettings settings)
+        /// <summary>Stores a clip's clip settings; default settings remove the entry.</summary>
+        public void SetClip(string machine, string clip, ClipSettings settings)
         {
-            var key = (machine ?? "", pattern ?? "");
+            var key = (machine ?? "", clip ?? "");
             if (settings == null || settings.IsDefault)
                 Clips.Remove(key);
             else
@@ -340,9 +340,9 @@ namespace ReBuzz.Core.Session
             /// <summary>Index in ISong.Sequences when last reconciled.</summary>
             public int Sequence { get; set; }
             public string Machine { get; set; } = "";
-            /// <summary>Index into the theme's pattern colours, -1 for none.</summary>
+            /// <summary>Index into the theme's clip colours, -1 for none.</summary>
             public int ColorIndex { get; set; } = -1;
-            /// <summary>Scene index to pattern name.</summary>
+            /// <summary>Scene index to clip name.</summary>
             public SortedDictionary<int, string> Slots { get; } = new SortedDictionary<int, string>();
 
             public Track Clone()
@@ -356,7 +356,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>What the layout needs to know about one sequence of the song.</summary>
-        public readonly record struct SongTrack(string Machine, IReadOnlyList<string> Patterns);
+        public readonly record struct SongTrack(string Machine, IReadOnlyList<string> Clips);
 
         /// <summary>
         /// The session's settings (0.6.1): time signature and quantization, view and performance
@@ -429,9 +429,9 @@ namespace ReBuzz.Core.Session
         // ------------------------------------------------------------------ identity (0.6.1)
 
         /// <summary>
-        /// Marks a retired name: a deleted pattern's or machine's name as the layout keeps it
+        /// Marks a retired name: a deleted clip's or machine's name as the layout keeps it
         /// (in undo snapshots and the graveyard) until the object comes back, so that a new
-        /// pattern or machine reusing the name inherits nothing. A private-use character no song
+        /// clip or machine reusing the name inherits nothing. A private-use character no song
         /// uses; retired names are never written to files.
         /// </summary>
         public const char RetiredMark = '\uE000';
@@ -453,7 +453,7 @@ namespace ReBuzz.Core.Session
                 foreach (var key in t.Slots.Where(s => s.Value == retired).Select(s => s.Key).ToList())
                     t.Slots.Remove(key);
             }
-            foreach (var key in Clips.Keys.Where(k => k.Machine == retired || k.Pattern == retired).ToList())
+            foreach (var key in Clips.Keys.Where(k => k.Machine == retired || k.Clip == retired).ToList())
                 Clips.Remove(key);
             Crossfade.Remove(retired);
             Inputs.Remove(retired);
@@ -523,7 +523,7 @@ namespace ReBuzz.Core.Session
         // ------------------------------------------------------------------ building
 
         /// <summary>
-        /// Grid for a song without session data: one track per sequence, each machine's patterns
+        /// Grid for a song without session data: one track per sequence, each machine's clips
         /// down the scenes in order.
         /// </summary>
         public static SessionDocument AutoFill(IReadOnlyList<SongTrack> song)
@@ -532,9 +532,9 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < song.Count; i++)
             {
                 var track = new Track { Sequence = i, Machine = song[i].Machine ?? "" };
-                var patterns = song[i].Patterns ?? Array.Empty<string>();
-                for (int p = 0; p < patterns.Count; p++)
-                    track.Slots[p] = patterns[p];
+                var clips = song[i].Clips ?? Array.Empty<string>();
+                for (int p = 0; p < clips.Count; p++)
+                    track.Slots[p] = clips[p];
                 doc.Tracks.Add(track);
             }
             doc.EnsureScenes();
@@ -543,7 +543,7 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Brings the tracks in line with the song's sequences (same order) and drops slots whose
-        /// pattern no longer exists. A track is matched to a sequence by, in order: same index and
+        /// clip no longer exists. A track is matched to a sequence by, in order: same index and
         /// machine; same machine elsewhere (sequence moved); same index whose machine is gone from
         /// the song (machine renamed). Unmatched sequences get empty tracks; unmatched tracks go.
         /// </summary>
@@ -565,9 +565,9 @@ namespace ReBuzz.Core.Session
                 track.Sequence = i;
                 track.Machine = machine;
 
-                var patterns = new HashSet<string>(song[i].Patterns ?? Array.Empty<string>());
-                // A retired pattern keeps its place (0.6.2): an undo may bring it back there.
-                foreach (var scene in track.Slots.Where(s => !patterns.Contains(s.Value) && !IsRetired(s.Value)).Select(s => s.Key).ToList())
+                var clips = new HashSet<string>(song[i].Clips ?? Array.Empty<string>());
+                // A retired clip keeps its place (0.6.2): an undo may bring it back there.
+                foreach (var scene in track.Slots.Where(s => !clips.Contains(s.Value) && !IsRetired(s.Value)).Select(s => s.Key).ToList())
                     track.Slots.Remove(scene);
 
                 result.Add(track);
@@ -577,16 +577,16 @@ namespace ReBuzz.Core.Session
             Tracks.AddRange(result);
             EnsureScenes();
 
-            // Clip settings of deleted patterns go (machines without a track keep theirs: the
+            // Clip settings of deleted clips go (machines without a track keep theirs: the
             // track may come back with an undo).
-            var patternsByMachine = new Dictionary<string, HashSet<string>>();
+            var clipsByMachine = new Dictionary<string, HashSet<string>>();
             foreach (var t in song)
             {
-                if (!patternsByMachine.TryGetValue(t.Machine ?? "", out var set))
-                    patternsByMachine[t.Machine ?? ""] = set = new HashSet<string>();
-                set.UnionWith(t.Patterns ?? Array.Empty<string>());
+                if (!clipsByMachine.TryGetValue(t.Machine ?? "", out var set))
+                    clipsByMachine[t.Machine ?? ""] = set = new HashSet<string>();
+                set.UnionWith(t.Clips ?? Array.Empty<string>());
             }
-            foreach (var key in Clips.Keys.Where(k => !IsRetired(k.Pattern) && patternsByMachine.TryGetValue(k.Machine, out var set) && !set.Contains(k.Pattern)).ToList())
+            foreach (var key in Clips.Keys.Where(k => !IsRetired(k.Clip) && clipsByMachine.TryGetValue(k.Machine, out var set) && !set.Contains(k.Clip)).ToList())
                 Clips.Remove(key);
         }
 
@@ -602,18 +602,18 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ editing
 
-        /// <summary>The pattern in a slot, or null (a retired pattern's place counts as empty, 0.6.2).</summary>
+        /// <summary>The clip in a slot, or null (a retired clip's place counts as empty, 0.6.2).</summary>
         public string GetSlot(int track, int scene) =>
             track >= 0 && track < Tracks.Count && Tracks[track].Slots.TryGetValue(scene, out var p) && !IsRetired(p) ? p : null;
 
-        public void SetSlot(int track, int scene, string pattern)
+        public void SetSlot(int track, int scene, string clip)
         {
             if (track < 0 || track >= Tracks.Count) throw new ArgumentOutOfRangeException(nameof(track));
             if (scene < 0) throw new ArgumentOutOfRangeException(nameof(scene));
-            if (string.IsNullOrEmpty(pattern))
+            if (string.IsNullOrEmpty(clip))
                 Tracks[track].Slots.Remove(scene);
             else
-                Tracks[track].Slots[scene] = pattern;
+                Tracks[track].Slots[scene] = clip;
             EnsureScenes();
         }
 
@@ -690,10 +690,10 @@ namespace ReBuzz.Core.Session
         {
             if (track < 0 || track >= Tracks.Count || toScene < 0) return false;
             var slots = Tracks[track].Slots;
-            if (!slots.TryGetValue(fromScene, out var pattern) || IsRetired(pattern)) return false;
+            if (!slots.TryGetValue(fromScene, out var clip) || IsRetired(clip)) return false;
             if (fromScene == toScene) return true;
             if (!copy) slots.Remove(fromScene);
-            slots[toScene] = pattern;
+            slots[toScene] = clip;
             EnsureScenes();
             return true;
         }
@@ -705,7 +705,7 @@ namespace ReBuzz.Core.Session
             foreach (var s in moved) track.Slots[s.Key + delta] = s.Value;
         }
 
-        public void RenamePattern(string machine, string oldName, string newName)
+        public void RenameClip(string machine, string oldName, string newName)
         {
             foreach (var t in Tracks.Where(t => t.Machine == machine))
                 foreach (var scene in t.Slots.Where(s => s.Value == oldName).Select(s => s.Key).ToList())
@@ -721,7 +721,7 @@ namespace ReBuzz.Core.Session
             foreach (var key in Clips.Keys.Where(k => k.Machine == oldName).ToList())
             {
                 Clips.Remove(key, out var clip);
-                Clips[(newName, key.Pattern)] = clip;
+                Clips[(newName, key.Clip)] = clip;
             }
             if (Crossfade.Remove(oldName, out var side))
                 Crossfade[newName] = side;
@@ -735,8 +735,8 @@ namespace ReBuzz.Core.Session
             if (CueMachine == oldName) CueMachine = newName;
         }
 
-        /// <summary>Patterns of a scene row: (track index, pattern name) for every filled slot.</summary>
-        public IEnumerable<(int Track, string Pattern)> SceneSlots(int scene)
+        /// <summary>Clips of a scene row: (track index, clip name) for every filled slot.</summary>
+        public IEnumerable<(int Track, string Clip)> SceneSlots(int scene)
         {
             for (int i = 0; i < Tracks.Count; i++)
                 if (Tracks[i].Slots.TryGetValue(scene, out var p) && !IsRetired(p))
@@ -787,10 +787,10 @@ namespace ReBuzz.Core.Session
                     RecordBars == 0 ? null : new XAttribute("bars", RecordBars),
                     CountInBars == 0 ? null : new XAttribute("countIn", CountInBars),
                     Metronome ? new XAttribute("metronome", "true") : null),
-                !Clips.Keys.Any(k => Keep(k.Machine) && Keep(k.Pattern)) ? null : new XElement("Clips",
-                    Clips.Where(c => Keep(c.Key.Machine) && Keep(c.Key.Pattern))
-                         .OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Pattern, StringComparer.Ordinal)
-                         .Select(c => c.Value.ToXml(c.Key.Machine, c.Key.Pattern))),
+                !Clips.Keys.Any(k => Keep(k.Machine) && Keep(k.Clip)) ? null : new XElement("Clips",
+                    Clips.Where(c => Keep(c.Key.Machine) && Keep(c.Key.Clip))
+                         .OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Clip, StringComparer.Ordinal)
+                         .Select(c => c.Value.ToXml(c.Key.Machine, c.Key.Clip))),
                 SongMidi?.ToXml(),
                 !Inputs.Keys.Any(Keep) ? null : new XElement("Inputs",
                     Inputs.Where(i => Keep(i.Key) && !i.Value.IsDefault)
@@ -888,9 +888,9 @@ namespace ReBuzz.Core.Session
                 foreach (var c in root.Element("Clips")?.Elements("Clip") ?? Enumerable.Empty<XElement>())
                 {
                     string machine = (string)c.Attribute("machine");
-                    string pattern = (string)c.Attribute("pattern");
-                    if (!string.IsNullOrEmpty(machine) && !string.IsNullOrEmpty(pattern))
-                        doc.SetClip(machine, pattern, ClipSettings.FromXml(c));
+                    string clip = (string)c.Attribute("pattern");
+                    if (!string.IsNullOrEmpty(machine) && !string.IsNullOrEmpty(clip))
+                        doc.SetClip(machine, clip, ClipSettings.FromXml(c));
                 }
                 foreach (var i in root.Element("Inputs")?.Elements("Input") ?? Enumerable.Empty<XElement>())
                     if ((string)i.Attribute("machine") is string machineName && machineName.Length > 0)
@@ -906,9 +906,9 @@ namespace ReBuzz.Core.Session
                     foreach (var slot in t.Elements("Slot"))
                     {
                         int scene = IntAttr(slot, "scene", -1);
-                        string pattern = (string)slot.Attribute("pattern");
-                        if (scene >= 0 && scene < MaxScenes && !string.IsNullOrEmpty(pattern))
-                            track.Slots[scene] = pattern;
+                        string clip = (string)slot.Attribute("pattern");
+                        if (scene >= 0 && scene < MaxScenes && !string.IsNullOrEmpty(clip))
+                            track.Slots[scene] = clip;
                     }
                     doc.Tracks.Add(track);
                 }

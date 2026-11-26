@@ -7,13 +7,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using WDE.ModernPatternEditor.Actions;
 using WDE.ModernPatternEditor.MPEStructures;
-using static WDE.ModernPatternEditor.PatternEditorUtils;
+using static WDE.ModernPatternEditor.ClipEditorUtils;
 
 namespace WDE.ModernPatternEditor
 {
     internal class PlayRecordManager
     {
-        public PatternEditor Editor { get; }
+        public ClipEditor Editor { get; }
 
         Dictionary<ISequence, PlayInfo> playInfoDictionary = new Dictionary<ISequence, PlayInfo>();
         List<PlayingTrackInfo> PlayingNotesList = new List<PlayingTrackInfo>();
@@ -25,17 +25,17 @@ namespace WDE.ModernPatternEditor
         readonly List<CollectedEventState> collectEvents = new List<CollectedEventState>();
         readonly List<IMachine> controlChangeMachines = new List<IMachine>();
         readonly Stack<PlayingTrackInfo> freeTrackInfos = new Stack<PlayingTrackInfo>();
-        readonly List<PatternEvent> midiColumnEvents = new List<PatternEvent>();
+        readonly List<ClipEvent> midiColumnEvents = new List<ClipEvent>();
 
         struct PlayInfo
         {
             public int PreviousPosition;
-            public IPattern PreviousPattern { get; internal set; }
+            public IClip PreviousClip { get; internal set; }
         }
 
         internal struct MidiColumnData
         {
-            internal MPEPatternColumn column;
+            internal MPEClipColumn column;
             internal int value;
         }
 
@@ -63,11 +63,11 @@ namespace WDE.ModernPatternEditor
         {
             internal int track;
             internal int note;
-            internal IPattern pattern;
+            internal IClip clip;
             internal IParameter parameter;
             internal int channel;
         }
-        public PlayRecordManager(PatternEditor editor)
+        public PlayRecordManager(ClipEditor editor)
         {
             Editor = editor;
         }
@@ -150,13 +150,13 @@ namespace WDE.ModernPatternEditor
         }
 
 
-        internal int GetPositionInPattern(out IPattern? pat, ISequence seq, IMachine target)
+        internal int GetPositionInClip(out IClip? pat, ISequence seq, IMachine target)
         {
             pat = null;
 
-            if (seq.Machine == target && seq.PlayingPattern != null && !seq.IsDisabled)
+            if (seq.Machine == target && seq.PlayingClip != null && !seq.IsDisabled)
             {
-                pat = seq.PlayingPattern;
+                pat = seq.PlayingClip;
                 if (pat != null && pat.PlayPosition >= 0)
                 {
                     return pat.PlayPosition;
@@ -173,7 +173,7 @@ namespace WDE.ModernPatternEditor
             {
                 if (seq.Machine == target)
                 {
-                    IPattern pat = seq.PlayingPattern;
+                    IClip pat = seq.PlayingClip;
                     if (pat != null)
                     {
                         sequences.Add(seq);
@@ -183,21 +183,21 @@ namespace WDE.ModernPatternEditor
             return sequences.AsReadOnly();
         }
 
-        internal IPattern? GetPlayingPattern(IMachine target)
+        internal IClip? GetPlayingClip(IMachine target)
         {
-            IPattern? pattern = null;
+            IClip? clip = null;
             foreach (ISequence seq in Global.Buzz.Song.Sequences)
             {
                 if (seq.Machine == target)
                 {
-                    pattern = seq.PlayingPattern;
-                    if (pattern != null)
+                    clip = seq.PlayingClip;
+                    if (clip != null)
                     {
                         break;
                     }
                 }
             }
-            return pattern;
+            return clip;
         }
 
         internal void Init()
@@ -222,7 +222,7 @@ namespace WDE.ModernPatternEditor
         internal void RecordControlChange(IParameter param, int track, int value)
         {
             IMachine mac = param.Group.Machine;
-            IPattern pat = mac.Patterns.FirstOrDefault(x => x.PlayPosition >= 0);
+            IClip pat = mac.Clips.FirstOrDefault(x => x.PlayPosition >= 0);
             if (pat != null)
             {
                 int playPostion = pat.PlayPosition;
@@ -230,23 +230,23 @@ namespace WDE.ModernPatternEditor
                 {
                     //Task.Run(() =>
                     {
-                        RecordControlChangeToPattern(pat, playPostion, param, track, value);
+                        RecordControlChangeToClip(pat, playPostion, param, track, value);
                     }
                     //);
                 }
             }
         }
 
-        private void RecordControlChangeToPattern(IPattern pat, int playPosition, IParameter parameter, int track, int value)
+        private void RecordControlChangeToClip(IClip pat, int playPosition, IParameter parameter, int track, int value)
         {
-            var vmPattern = Editor.SelectedMachine.Patterns.FirstOrDefault(x => x.Pattern == pat);
+            var vmClip = Editor.SelectedMachine.Clips.FirstOrDefault(x => x.Clip == pat);
 
-            foreach (var columnSet in vmPattern.ColumnSets)
+            foreach (var columnSet in vmClip.ColumnSets)
             {
                 foreach (var column in columnSet.Columns)
                 {
                     var parameterColumn = (ParameterColumn)column;
-                    if (parameterColumn.PatternColumn.Parameter == parameter && parameterColumn.PatternColumn.Track == track)
+                    if (parameterColumn.ClipColumn.Parameter == parameter && parameterColumn.ClipColumn.Track == track)
                     {
                         // Touching so UI elements so dispatcher...
                         Editor.Dispatcher.BeginInvoke((Action)(() =>
@@ -262,17 +262,17 @@ namespace WDE.ModernPatternEditor
 
         internal void RecordPlayingMidiNote(int channel, int value, int velocity)
         {
-            foreach (var pattern in Editor.SelectedMachine.Machine.Patterns)
+            foreach (var clip in Editor.SelectedMachine.Machine.Clips)
             {
-                int playPosition = pattern.PlayPosition;
+                int playPosition = clip.PlayPosition;
                 if (playPosition >= 0)
                 {
-                    RecordPlayingMidiNotePattern(pattern, playPosition, value, velocity, channel);
+                    RecordPlayingMidiNoteClip(clip, playPosition, value, velocity, channel);
                 }
             }
         }
 
-        private void RecordPlayingMidiNotePattern(IPattern pattern, int playPosition, int value, int velocity, int channel)
+        private void RecordPlayingMidiNoteClip(IClip clip, int playPosition, int value, int velocity, int channel)
         {
             int availableTrack = -1;
             int buzzNote = -1;
@@ -288,7 +288,7 @@ namespace WDE.ModernPatternEditor
                 return;
 
             IMachine selectedColumnMachine;
-            MidiEventData machinePatternColumnData;
+            MidiEventData machineClipColumnData;
 
             // 1. Note off event. Is there a note already playing?
             if (velocity == 0)
@@ -299,18 +299,18 @@ namespace WDE.ModernPatternEditor
                 {
                     PlayingNotesList.Remove(pti);
 
-                    // Recording for the "main" pattern machine for now. ToDo: When start recording, save the target machine to Editor and reference to it here
-                    // IMachine selectedColumnMachine = Editor.patternControl.Pattern.CursorPosition.ParameterColumn.PatternColumn.Pattern.Machine;
+                    // Recording for the "main" clip machine for now. ToDo: When start recording, save the target machine to Editor and reference to it here
+                    // IMachine selectedColumnMachine = Editor.clipControl.Clip.CursorPosition.ParameterColumn.ClipColumn.Clip.Machine;
 
-                    selectedColumnMachine = pattern.Machine;
-                    machinePatternColumnData = GetMidiDataParameterIndexes(pattern, selectedColumnMachine, pti.track);
-                    RecordMidiNoteOff(pattern, playPosition, machinePatternColumnData, channel);
+                    selectedColumnMachine = clip.Machine;
+                    machineClipColumnData = GetMidiDataParameterIndexes(clip, selectedColumnMachine, pti.track);
+                    RecordMidiNoteOff(clip, playPosition, machineClipColumnData, channel);
                 }
                 return;
             }
 
             // 2. Find available track
-            for (int i = 0; i < pattern.Machine.TrackCount; i++)
+            for (int i = 0; i < clip.Machine.TrackCount; i++)
             {
                 bool trackAvailable = true;
                 foreach (var playingNote in PlayingNotesList)
@@ -352,51 +352,51 @@ namespace WDE.ModernPatternEditor
                 }
             }
 
-            selectedColumnMachine = pattern.Machine;
-            machinePatternColumnData = GetMidiDataParameterIndexes(pattern, selectedColumnMachine, availableTrack);
+            selectedColumnMachine = clip.Machine;
+            machineClipColumnData = GetMidiDataParameterIndexes(clip, selectedColumnMachine, availableTrack);
 
-            if (machinePatternColumnData.midiNote.column != null)
+            if (machineClipColumnData.midiNote.column != null)
             {
-                IParameter noteParameter = machinePatternColumnData.midiNote.column.Parameter;
+                IParameter noteParameter = machineClipColumnData.midiNote.column.Parameter;
                 Editor.Dispatcher.Invoke(() =>
                 {
                     using (new ActionGroup(Editor.EditContext.ActionStack))
                     {
                         // Note
-                        if (machinePatternColumnData.midiNote.column != null)
+                        if (machineClipColumnData.midiNote.column != null)
                         {
-                            var mpeColumn = machinePatternColumnData.midiNote.column;
+                            var mpeColumn = machineClipColumnData.midiNote.column;
                             int timeq = mpeColumn.GetTimeQuantized(playPosition);
-                            Editor.DoAction(new MPESetOrClearEventsAction(pattern, mpeColumn, new PatternEvent[] { new PatternEvent() { Time = timeq, Value = buzzNote } }, true));
+                            Editor.DoAction(new MPESetOrClearEventsAction(clip, mpeColumn, new ClipEvent[] { new ClipEvent() { Time = timeq, Value = buzzNote } }, true));
                         }
                         // Volume
-                        if (machinePatternColumnData.midiVelocity.column != null)
+                        if (machineClipColumnData.midiVelocity.column != null)
                         {
-                            var mpeColumn = machinePatternColumnData.midiVelocity.column;
+                            var mpeColumn = machineClipColumnData.midiVelocity.column;
                             int timeq = mpeColumn.GetTimeQuantized(playPosition);
                             int vol = (int)(velocity * ((mpeColumn.Parameter.MaxValue - mpeColumn.Parameter.MinValue) / 127.0));
-                            Editor.DoAction(new MPESetOrClearEventsAction(pattern, mpeColumn, new PatternEvent[] { new PatternEvent() { Time = timeq, Value = vol } }, true));
+                            Editor.DoAction(new MPESetOrClearEventsAction(clip, mpeColumn, new ClipEvent[] { new ClipEvent() { Time = timeq, Value = vol } }, true));
                         }
                         // Delay
-                        if (machinePatternColumnData.midiDelay.column != null)
+                        if (machineClipColumnData.midiDelay.column != null)
                         {
-                            var mpeColumn = machinePatternColumnData.midiDelay.column;
+                            var mpeColumn = machineClipColumnData.midiDelay.column;
                             int timeq = mpeColumn.GetTimeQuantized(playPosition);
                             int delay = (int)((mpeColumn.Parameter.MaxValue - mpeColumn.Parameter.MinValue) * mpeColumn.GetRelativeTimeInRow(playPosition));
-                            Editor.DoAction(new MPESetOrClearEventsAction(pattern, mpeColumn, new PatternEvent[] { new PatternEvent() { Time = timeq, Value = delay } }, true));
+                            Editor.DoAction(new MPESetOrClearEventsAction(clip, mpeColumn, new ClipEvent[] { new ClipEvent() { Time = timeq, Value = delay } }, true));
                         }
 
-                        if (machinePatternColumnData.midiChannel.column != null)
+                        if (machineClipColumnData.midiChannel.column != null)
                         {
-                            var mpeColumn = machinePatternColumnData.midiChannel.column;
+                            var mpeColumn = machineClipColumnData.midiChannel.column;
                             int timeq = mpeColumn.GetTimeQuantized(playPosition);
-                            Editor.DoAction(new MPESetOrClearEventsAction(pattern, mpeColumn, new PatternEvent[] { new PatternEvent() { Time = timeq, Value = channel + 1 } }, true));
+                            Editor.DoAction(new MPESetOrClearEventsAction(clip, mpeColumn, new ClipEvent[] { new ClipEvent() { Time = timeq, Value = channel + 1 } }, true));
                         }
                     }
                 });
 
                 PlayingTrackInfo ptinew = new PlayingTrackInfo();
-                ptinew.pattern = pattern;
+                ptinew.clip = clip;
                 ptinew.note = buzzNote;
                 ptinew.track = availableTrack;
                 ptinew.channel = channel;
@@ -405,11 +405,11 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        internal void RecordMidiNoteOff(IPattern pattern, int playPosition, MidiEventData machinePatternColumnData, int channel)
+        internal void RecordMidiNoteOff(IClip clip, int playPosition, MidiEventData machineClipColumnData, int channel)
         {
-            if (machinePatternColumnData.midiNote.column != null)
+            if (machineClipColumnData.midiNote.column != null)
             {
-                var columnNote = machinePatternColumnData.midiNote.column;
+                var columnNote = machineClipColumnData.midiNote.column;
 
                 int noteTimeQ = columnNote.GetTimeQuantized(playPosition);
                 var noteEvents = columnNote.GetEvents(noteTimeQ, noteTimeQ + 1);
@@ -417,7 +417,7 @@ namespace WDE.ModernPatternEditor
                 // If there is a note and playPosition > timeq + delay, then edit cut
                 int delay = 0;
                 int delayTimeQ = 0;
-                var columnDelay = machinePatternColumnData.midiDelay.column;
+                var columnDelay = machineClipColumnData.midiDelay.column;
                 if (columnDelay != null)
                 {
                     delayTimeQ = columnDelay.GetTimeQuantized(playPosition);
@@ -433,9 +433,9 @@ namespace WDE.ModernPatternEditor
 
                 if (noteEvents.Count() > 0)
                 {
-                    if (machinePatternColumnData.midiCut.column != null && playPosition > noteTimeQ + delay)
+                    if (machineClipColumnData.midiCut.column != null && playPosition > noteTimeQ + delay)
                     {
-                        var columnCut = machinePatternColumnData.midiCut.column;
+                        var columnCut = machineClipColumnData.midiCut.column;
                         if (columnCut != null)
                         {
                             int cutTimeQ = columnCut.GetTimeQuantized(playPosition);
@@ -445,7 +445,7 @@ namespace WDE.ModernPatternEditor
                                 int cutTime = columnCut.GetRelativeTimeInRowToParamValue(playPosition);
                                 Editor.Dispatcher.Invoke(() =>
                                 {
-                                    Editor.DoAction(new MPESetOrClearEventsAction(pattern, columnCut, new PatternEvent[] { new PatternEvent() { Time = cutTimeQ, Value = cutTime } }, true));
+                                    Editor.DoAction(new MPESetOrClearEventsAction(clip, columnCut, new ClipEvent[] { new ClipEvent() { Time = cutTimeQ, Value = cutTime } }, true));
                                 });
                             }
                         }
@@ -457,20 +457,20 @@ namespace WDE.ModernPatternEditor
                     {
                         using (new ActionGroup(Editor.EditContext.ActionStack))
                         {
-                            Editor.DoAction(new MPESetOrClearEventsAction(pattern, columnNote, new PatternEvent[] { new PatternEvent() { Time = noteTimeQ, Value = BuzzNote.Off } }, true));
+                            Editor.DoAction(new MPESetOrClearEventsAction(clip, columnNote, new ClipEvent[] { new ClipEvent() { Time = noteTimeQ, Value = BuzzNote.Off } }, true));
 
 
                             if (columnDelay != null)
                             {
                                 int delayTime = columnDelay.GetRelativeTimeInRowToParamValue(playPosition);
-                                Editor.DoAction(new MPESetOrClearEventsAction(pattern, columnDelay, new PatternEvent[] { new PatternEvent() { Time = delayTimeQ, Value = delayTime } }, true));
+                                Editor.DoAction(new MPESetOrClearEventsAction(clip, columnDelay, new ClipEvent[] { new ClipEvent() { Time = delayTimeQ, Value = delayTime } }, true));
                             }
 
-                            var columnChannel = machinePatternColumnData.midiChannel.column;
+                            var columnChannel = machineClipColumnData.midiChannel.column;
                             if (columnChannel != null)
                             {
                                 int channelTimeQ = columnChannel.GetTimeQuantized(playPosition);
-                                Editor.DoAction(new MPESetOrClearEventsAction(pattern, columnChannel, new PatternEvent[] { new PatternEvent() { Time = channelTimeQ, Value = channel + 1 } }, true));
+                                Editor.DoAction(new MPESetOrClearEventsAction(clip, columnChannel, new ClipEvent[] { new ClipEvent() { Time = channelTimeQ, Value = channel + 1 } }, true));
                             }
                         }
                     });
@@ -494,7 +494,7 @@ namespace WDE.ModernPatternEditor
             return null;
         }
 
-        public void UpdatePlayingNotePattern(IParameter parameter, int track, int buzzNote, int volume)
+        public void UpdatePlayingNoteClip(IParameter parameter, int track, int buzzNote, int volume)
         {
             // Stop notes on target track
             // ToDo: if midinote, always do SendMidiNote
@@ -521,7 +521,7 @@ namespace WDE.ModernPatternEditor
             if (buzzNote != BuzzNote.Off)
             {
                 PlayingTrackInfo ptinew = freeTrackInfos.Count > 0 ? freeTrackInfos.Pop() : new PlayingTrackInfo();
-                ptinew.pattern = null;
+                ptinew.clip = null;
                 ptinew.channel = 0;
                 ptinew.parameter = parameter;
                 ptinew.note = buzzNote;
@@ -545,116 +545,116 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        private MidiEventData GetMidiDataParameterIndexes(IPattern pattern, IMachine machine, int track)
+        private MidiEventData GetMidiDataParameterIndexes(IClip clip, IMachine machine, int track)
         {
             MidiEventData midiData = new MidiEventData();
 
             // If there is a midi note, then try to find rest of the midi columns.
             // Otherwise handle special cases (pVST...)
-            var mpePattern = Editor.MPEPatternsDB.GetMPEPattern(pattern);
-            var midiNote = mpePattern.GetColumn(machine, (int)InternalParameter.MidiNote, track);
+            var mpeClip = Editor.MPEClipsDB.GetMPEClip(clip);
+            var midiNote = mpeClip.GetColumn(machine, (int)InternalParameter.MidiNote, track);
             if (midiNote != null)
             {
                 midiData.midiNote.column = midiNote;
-                midiData.midiVelocity.column = mpePattern.GetColumn(machine, (int)InternalParameter.MidiVelocity, track);
-                midiData.midiCut.column = mpePattern.GetColumn(machine, (int)InternalParameter.MidiNoteCut, track);
-                midiData.midiDelay.column = mpePattern.GetColumn(machine, (int)InternalParameter.MidiNoteDelay, track);
-                midiData.midiPitchWheel.column = mpePattern.GetColumn(machine, (int)InternalParameter.MidiPitchWheel, track);
-                midiData.midiCC.column = mpePattern.GetColumn(machine, (int)InternalParameter.MidiCC, track);
+                midiData.midiVelocity.column = mpeClip.GetColumn(machine, (int)InternalParameter.MidiVelocity, track);
+                midiData.midiCut.column = mpeClip.GetColumn(machine, (int)InternalParameter.MidiNoteCut, track);
+                midiData.midiDelay.column = mpeClip.GetColumn(machine, (int)InternalParameter.MidiNoteDelay, track);
+                midiData.midiPitchWheel.column = mpeClip.GetColumn(machine, (int)InternalParameter.MidiPitchWheel, track);
+                midiData.midiCC.column = mpeClip.GetColumn(machine, (int)InternalParameter.MidiCC, track);
             }
             else
             {
                 // Maybe xml file that includes MIDI mappings...
                 if (machine.DLL.Name == "Polac VSTi 1.1")
                 {
-                    midiData.midiNote.column = mpePattern.GetColumn(machine, 0, track);
-                    midiData.midiVelocity.column = mpePattern.GetColumn(machine, 1, track);
-                    midiData.midiDelay.column = mpePattern.GetColumn(machine, 2, track);
-                    midiData.midiCut.column = mpePattern.GetColumn(machine, 3, track);
-                    midiData.midiChannel.column = mpePattern.GetColumn(machine, 8, track);
+                    midiData.midiNote.column = mpeClip.GetColumn(machine, 0, track);
+                    midiData.midiVelocity.column = mpeClip.GetColumn(machine, 1, track);
+                    midiData.midiDelay.column = mpeClip.GetColumn(machine, 2, track);
+                    midiData.midiCut.column = mpeClip.GetColumn(machine, 3, track);
+                    midiData.midiChannel.column = mpeClip.GetColumn(machine, 8, track);
                 }
             }
 
             return midiData;
         }
 
-        internal MidiEventData GetMidiDataForNote(IPattern pattern, MPEPatternColumn mpeColumn, IMachine machine, int start, int end, int track)
+        internal MidiEventData GetMidiDataForNote(IClip clip, MPEClipColumn mpeColumn, IMachine machine, int start, int end, int track)
         {
-            var machinePatternColumnData = GetMidiDataParameterIndexes(pattern, machine, track);
-            machinePatternColumnData.midiNote.value = -1;
-            machinePatternColumnData.midiVelocity.value = MPEInternalParameter.DefaultMidiVolume;
+            var machineClipColumnData = GetMidiDataParameterIndexes(clip, machine, track);
+            machineClipColumnData.midiNote.value = -1;
+            machineClipColumnData.midiVelocity.value = MPEInternalParameter.DefaultMidiVolume;
 
             // Fork (audio hygiene): each column's events into a list made once (GetEvents made an array).
             var events = midiColumnEvents;
-            if (machinePatternColumnData.midiNote.column != null)
+            if (machineClipColumnData.midiNote.column != null)
             {
-                var columnNote = machinePatternColumnData.midiNote.column;
+                var columnNote = machineClipColumnData.midiNote.column;
                 var noteEvents = columnNote.GetEventsInto(start, end, events);
-                machinePatternColumnData.midiNoteTimeQ = columnNote.GetTimeQuantized(end);
+                machineClipColumnData.midiNoteTimeQ = columnNote.GetTimeQuantized(end);
                 if (noteEvents.Count > 0)
                 {
                     int val = noteEvents[0].Value;
                     if (val == BuzzNote.Off)
-                        machinePatternColumnData.noteOff = true;
+                        machineClipColumnData.noteOff = true;
                     else
-                        machinePatternColumnData.midiNote.value = BuzzNote.ToMIDINote(noteEvents[0].Value);
+                        machineClipColumnData.midiNote.value = BuzzNote.ToMIDINote(noteEvents[0].Value);
                 }
             }
-            if (machinePatternColumnData.midiVelocity.column != null)
+            if (machineClipColumnData.midiVelocity.column != null)
             {
-                var columnVol = machinePatternColumnData.midiVelocity.column;
+                var columnVol = machineClipColumnData.midiVelocity.column;
                 var volEvents = columnVol.GetEventsInto(start, end, events);
                 if (volEvents.Count > 0)
                 {
                     int vol = volEvents[0].Value;
-                    machinePatternColumnData.midiVelocity.value = vol;
-                    machinePatternColumnData.midiVelocity.column.Parameter.SetValue(track, vol);
+                    machineClipColumnData.midiVelocity.value = vol;
+                    machineClipColumnData.midiVelocity.column.Parameter.SetValue(track, vol);
                 }
                 else
                 {
-                    machinePatternColumnData.midiVelocity.value = machinePatternColumnData.midiVelocity.column.Parameter.GetValue(track);
+                    machineClipColumnData.midiVelocity.value = machineClipColumnData.midiVelocity.column.Parameter.GetValue(track);
                 }
             }
-            if (machinePatternColumnData.midiDelay.column != null)
+            if (machineClipColumnData.midiDelay.column != null)
             {
-                var columnDelay = machinePatternColumnData.midiDelay.column;
+                var columnDelay = machineClipColumnData.midiDelay.column;
                 var delayEvents = columnDelay.GetEventsInto(start, end, events);
 
                 if (delayEvents.Count > 0)
                 {
                     int delayTimeQ = columnDelay.GetTimeQuantized(end);
                     int rowLenght = columnDelay.RowLenghtAt(delayTimeQ);
-                    machinePatternColumnData.midiDelay.value = (int)(rowLenght * (delayEvents[0].Value - columnDelay.Parameter.MinValue) / ((double)columnDelay.Parameter.MaxValue - columnDelay.Parameter.MinValue));
+                    machineClipColumnData.midiDelay.value = (int)(rowLenght * (delayEvents[0].Value - columnDelay.Parameter.MinValue) / ((double)columnDelay.Parameter.MaxValue - columnDelay.Parameter.MinValue));
                 }
             }
-            if (machinePatternColumnData.midiCut.column != null)
+            if (machineClipColumnData.midiCut.column != null)
             {
-                var columnCut = machinePatternColumnData.midiCut.column;
+                var columnCut = machineClipColumnData.midiCut.column;
                 var cutEvents = columnCut.GetEventsInto(start, end, events);
 
                 if (cutEvents.Count > 0)
                 {
                     int cutTimeQ = columnCut.GetTimeQuantized(end);
                     int rowLenght = columnCut.RowLenghtAt(cutTimeQ);
-                    machinePatternColumnData.midiCut.value = (int)(rowLenght * (cutEvents[0].Value - columnCut.Parameter.MinValue) / ((double)columnCut.Parameter.MaxValue - columnCut.Parameter.MinValue));
+                    machineClipColumnData.midiCut.value = (int)(rowLenght * (cutEvents[0].Value - columnCut.Parameter.MinValue) / ((double)columnCut.Parameter.MaxValue - columnCut.Parameter.MinValue));
                 }
             }
-            if (machinePatternColumnData.midiChannel.column != null)
+            if (machineClipColumnData.midiChannel.column != null)
             {
-                var columnChannel = machinePatternColumnData.midiChannel.column;
+                var columnChannel = machineClipColumnData.midiChannel.column;
                 var chanEvents = columnChannel.GetEventsInto(start, end, events);
                 if (chanEvents.Count > 0)
                 {
-                    machinePatternColumnData.midiChannel.value = chanEvents[0].Value;
+                    machineClipColumnData.midiChannel.value = chanEvents[0].Value;
                 }
             }
             else
             {
-                machinePatternColumnData.midiChannel.value = mpeColumn.Machine.MIDIInputChannel + 1;
+                machineClipColumnData.midiChannel.value = mpeColumn.Machine.MIDIInputChannel + 1;
             }
 
 
-            return machinePatternColumnData;
+            return machineClipColumnData;
         }
 
         internal void UpdatePlayingMidiNote(int channel, int value, int velocity)

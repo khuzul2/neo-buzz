@@ -11,20 +11,20 @@ namespace ReBuzz.Core.Actions.GraphActions
         private readonly int id = -1;
         private readonly float x;
         private readonly float y;
-        private readonly bool createSeqAndPattern;
+        private readonly bool createSeqAndClip;
         private readonly string machineLib;
         private readonly string instrument;
         private readonly string name;
         private readonly byte[] data;
-        private readonly string patterneditor;
-        private readonly byte[] patterneditordata;
+        private readonly string clipeditor;
+        private readonly byte[] clipeditordata;
         private readonly int trackcount;
 
         readonly Dictionary<int, IEnumerable<KeyValuePair<int, SequenceEventRef>>> sequences = new Dictionary<int, IEnumerable<KeyValuePair<int, SequenceEventRef>>>();
         private string actualName;
         // Fork (0.6.2): what the undo deleted, so a redo can report what stands for it now.
         IMachine removedMachine;
-        Dictionary<string, IPattern> removedPatterns;
+        Dictionary<string, IClip> removedClips;
         Dictionary<int, ISequence> removedSequences;
 
         public CreateMachineAction(ReBuzzCore buzz, int id, float x, float y)
@@ -34,18 +34,18 @@ namespace ReBuzz.Core.Actions.GraphActions
             this.x = x;
             this.y = y;
 
-            createSeqAndPattern = true;
+            createSeqAndClip = true;
         }
 
-        public CreateMachineAction(ReBuzzCore buzz, string machineLib, string instrument, string name, byte[] data, string patterneditor, byte[] patterneditordata, int trackcount, float x, float y)
+        public CreateMachineAction(ReBuzzCore buzz, string machineLib, string instrument, string name, byte[] data, string clipeditor, byte[] clipeditordata, int trackcount, float x, float y)
         {
             this.buzz = buzz;
             this.machineLib = machineLib;
             this.instrument = instrument;
             this.name = name;
             this.data = data;
-            this.patterneditor = patterneditor;
-            this.patterneditordata = patterneditordata;
+            this.clipeditor = clipeditor;
+            this.clipeditordata = clipeditordata;
             this.trackcount = trackcount;
             this.x = x;
             this.y = y;
@@ -60,7 +60,7 @@ namespace ReBuzz.Core.Actions.GraphActions
             }
             else
             {
-                machine = buzz.CreateMachine(machineLib, instrument, name, data, patterneditor, patterneditordata, trackcount, x, y);
+                machine = buzz.CreateMachine(machineLib, instrument, name, data, clipeditor, clipeditordata, trackcount, x, y);
             }
 
             this.actualName = machine.Name;
@@ -76,23 +76,23 @@ namespace ReBuzz.Core.Actions.GraphActions
                         foreach (var eventItem in seq.Value)
                         {
                             var seqEvent = eventItem.Value;
-                            machine.CreatePattern(seqEvent.PatternName, seqEvent.Span);
-                            var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == seqEvent.PatternName);
-                            SequenceEvent sequenceEvent = seqEvent.ToEvent(pattern);
+                            machine.CreateClip(seqEvent.ClipName, seqEvent.Span);
+                            var clip = machine.ClipsList.FirstOrDefault(p => p.Name == seqEvent.ClipName);
+                            SequenceEvent sequenceEvent = seqEvent.ToEvent(clip);
                             seqAdded.SetEvent(eventItem.Key, sequenceEvent);
                         }
                     }
                 }
                 else
                 {
-                    if (createSeqAndPattern)
+                    if (createSeqAndClip)
                     {
                         buzz.SongCore.AddSequence(machine, buzz.SongCore.Sequences.Count);
-                        if (machine.Patterns.Count == 0)
+                        if (machine.Clips.Count == 0)
                         {
-                            machine.CreatePattern("00", 16);
-                            var pattern = machine.Patterns.Last();
-                            SequenceEvent sequenceEvent = new SequenceEvent(SequenceEventType.PlayPattern, pattern);
+                            machine.CreateClip("00", 16);
+                            var clip = machine.Clips.Last();
+                            SequenceEvent sequenceEvent = new SequenceEvent(SequenceEventType.PlayClip, clip);
                             buzz.SongCore.Sequences.Last().SetEvent(0, sequenceEvent);
                             buzz.MIDIFocusMachine = machine;
                         }
@@ -127,7 +127,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                 }
 
                 removedMachine = machine;
-                removedPatterns = machine.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
+                removedClips = machine.Clips.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
                 removedSequences = buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => s);
                 buzz.RemoveMachine(machine);
             }
@@ -138,8 +138,8 @@ namespace ReBuzz.Core.Actions.GraphActions
         {
             if (removedMachine == null || machine == null) return;
             BuzzGUI.Common.Actions.Restorations.Report(removedMachine, machine);
-            foreach (var p in removedPatterns)
-                BuzzGUI.Common.Actions.Restorations.Report(p.Value, machine.PatternsList.FirstOrDefault(x => x.Name == p.Key));
+            foreach (var p in removedClips)
+                BuzzGUI.Common.Actions.Restorations.Report(p.Value, machine.ClipsList.FirstOrDefault(x => x.Name == p.Key));
             foreach (var s in removedSequences)
                 if (s.Key < buzz.SongCore.SequencesList.Count && buzz.SongCore.SequencesList[s.Key].Machine == machine)
                     BuzzGUI.Common.Actions.Restorations.Report(s.Value, buzz.SongCore.SequencesList[s.Key]);

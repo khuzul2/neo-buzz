@@ -23,7 +23,7 @@ namespace ReBuzz.Core.Actions.GraphActions
 
         protected override void DoAction()
         {
-            var clone = buzz.CreateMachine(mi.MachineLib, mi.Instrument, mi.Name, mi.Data, mi.PatternEditorDllName, mi.PatternEditorData, mi.TrackCount, newX, newY);
+            var clone = buzz.CreateMachine(mi.MachineLib, mi.Instrument, mi.Name, mi.Data, mi.ClipEditorDllName, mi.ClipEditorData, mi.TrackCount, newX, newY);
             this.newName = clone.Name;
 
             Dictionary<string, string> remapNames = new Dictionary<string, string>();

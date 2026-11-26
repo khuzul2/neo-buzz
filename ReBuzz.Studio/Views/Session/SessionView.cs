@@ -624,8 +624,8 @@ namespace ReBuzz.Studio.Views.Session
 
                 for (int s = 0; s < sceneCount; s++)
                 {
-                    var pattern = layout.PatternAt(t, s);
-                    var cell = new SlotCell(this, t, s, seq, pattern, midi?.Describe(SessionTarget.Slot, t, s), pattern == null ? null : layout.ClipOf(pattern));
+                    var clip = layout.ClipAt(t, s);
+                    var cell = new SlotCell(this, t, s, seq, clip, midi?.Describe(SessionTarget.Slot, t, s), clip == null ? null : layout.ClipOf(clip));
                     slots.Add(cell);
                     Place(cell, s + 1, c);
                 }

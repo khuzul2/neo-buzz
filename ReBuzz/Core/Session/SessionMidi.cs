@@ -154,7 +154,7 @@ namespace ReBuzz.Core.Session
             if (isPress)
             {
                 if (target == SessionTarget.Slot && launchMap.Track(track) is ISequence seq && launchMap.Slot(track, scene) is LaunchMap.SlotEntry slot)
-                    Remember(control, new Held { Session = true, Track = seq, Clip = slot.Pattern, Options = slot.Options });
+                    Remember(control, new Held { Session = true, Track = seq, Clip = slot.Clip, Options = slot.Options });
                 ExecuteNow(target, track, scene, launchMap, velocity);
             }
             else if (target == SessionTarget.Slot)
@@ -177,7 +177,7 @@ namespace ReBuzz.Core.Session
         {
             public bool Session;
             public ISequence Track;
-            public IPattern Clip;
+            public IClip Clip;
             public LaunchOptions Options;
             public bool Nudge;
         }
@@ -224,7 +224,7 @@ namespace ReBuzz.Core.Session
                         if (seq == null) return;
                         var slot = t.Slot(track, scene);
                         if (slot != null)
-                            session.Launch(seq, slot.Pattern, slot.OptionsAt(velocity));
+                            session.Launch(seq, slot.Clip, slot.OptionsAt(velocity));
                         else
                             session.Stop(seq);
                         AnnounceLaunch(track, scene);
@@ -278,7 +278,7 @@ namespace ReBuzz.Core.Session
             if (seq == null || slot == null) return;
             var mode = slot.Options.Mode;
             if (mode != ClipLaunchMode.Gate && mode != ClipLaunchMode.Repeat) return;
-            buzz.Session.Release(seq, slot.Pattern, slot.Options);
+            buzz.Session.Release(seq, slot.Clip, slot.Options);
         }
 
         // ------------------------------------------------------------------ learn and edit
@@ -401,9 +401,9 @@ namespace ReBuzz.Core.Session
                     {
                         var seq = layout.SequenceOf(track);
                         if (seq == null) return;
-                        var pattern = layout.PatternAt(track, scene);
-                        if (pattern != null)
-                            layout.LaunchClip(seq, pattern, 127, scene);
+                        var clip = layout.ClipAt(track, scene);
+                        if (clip != null)
+                            layout.LaunchClip(seq, clip, 127, scene);
                         else
                             session.Stop(seq);
                         break;

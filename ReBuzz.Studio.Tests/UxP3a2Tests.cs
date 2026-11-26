@@ -1,5 +1,5 @@
 // Fork (docs/specs/ux-overhaul.md P3a, second step: decisions 31-34): the browser on the left (the machines to add, the
-// patterns of the selection, a search box), the detail panel under the view (the Tracker, not a tab any more) and the
+// clips of the selection, a search box), the detail panel under the view (the Tracker, not a tab any more) and the
 // Tracker maximised over the window (F2, ⇧⌘F). Closed or open, sized and remembered like the inspector.
 
 using System;
@@ -30,7 +30,7 @@ namespace ReBuzz.Studio.Tests
             public SessionRig Song { get; }
             public MainWindow Window { get; }
             public MachineCore Drums, Bass;
-            public PatternCore Beat, Line;
+            public ClipCore Beat, Line;
             public StudioSelection Selection => StudioSelection.For(Song.Core);
             public BrowserPanel Browser => Window.Browser;
             public DetailPanel Detail => Window.Detail;
@@ -41,8 +41,8 @@ namespace ReBuzz.Studio.Tests
                 Song = new SessionRig("Drums", "Bass");
                 Drums = Song.Machine("Drums");
                 Bass = Song.Machine("Bass");
-                Beat = Song.Pattern(Drums, "Beat", 16, (0, 60), (4, 62));
-                Line = Song.Pattern(Bass, "Line", 16, (0, 48));
+                Beat = Song.Clip(Drums, "Beat", 16, (0, 60), (4, 62));
+                Line = Song.Clip(Bass, "Line", 16, (0, 48));
                 Song.Layout.SetSlot(0, 0, Beat);
                 Song.Layout.SetSlot(1, 0, Line);
                 Selection.Clear(this);
@@ -104,7 +104,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(detail.Gesture(true), Is.EqualTo(new KeyGesture(Key.D, KeyModifiers.Meta | KeyModifiers.Alt)));
             Assert.That(detail.Gesture(false), Is.EqualTo(new KeyGesture(Key.D, KeyModifiers.Control | KeyModifiers.Alt)));
             Assert.That(maximise.Gesture(true), Is.EqualTo(new KeyGesture(Key.F, KeyModifiers.Meta | KeyModifiers.Shift)));
-            Assert.That(maximise.Gestures(false).Select(g => g.Key), Is.EqualTo(new[] { Key.F, Key.F2 }), "⇧⌘F, and F2 as the old Pattern tab's key");
+            Assert.That(maximise.Gestures(false).Select(g => g.Key), Is.EqualTo(new[] { Key.F, Key.F2 }), "⇧⌘F, and F2 as the old Clip tab's key");
             Assert.That(maximise.Gesture(false).KeyModifiers, Is.EqualTo(KeyModifiers.Control | KeyModifiers.Shift));
             Assert.That(Shell.Commands.StudioKeymap.Get("view.pattern").Gesture(true), Is.EqualTo(new KeyGesture(Key.D4, KeyModifiers.Meta)), "⌘4 is still the fourth view");
         }
@@ -146,7 +146,7 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the browser
 
         [AvaloniaTest]
-        public void TheBrowserListsTheMachinesAndThePatternsOfTheSelection()
+        public void TheBrowserListsTheMachinesAndTheClipsOfTheSelection()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
@@ -154,17 +154,17 @@ namespace ReBuzz.Studio.Tests
             Settle();
             var rows = rig.Browser.Rows;
             Assert.That(rows, Does.Contain("#Synths").And.Contain("#EQ & Filter").And.Contain("gear:Neo Poly").And.Contain("gear:Neo EQ"));
-            Assert.That(rows.Any(r => r.StartsWith("#Patterns of")), Is.False, "no patterns while nothing is selected");
+            Assert.That(rows.Any(r => r.StartsWith("#Clips of")), Is.False, "no clips while nothing is selected");
 
             rig.Selection.Set(rig.Drums, null, this);
             Settle();
-            Assert.That(rig.Browser.Rows, Does.Contain("#Patterns of Drums").And.Contain("pattern:Beat"));
-            Assert.That(rig.Browser.Rows, Does.Not.Contain("pattern:Line"), "only the selected machine's");
+            Assert.That(rig.Browser.Rows, Does.Contain("#Clips of Drums").And.Contain("clip:Beat"));
+            Assert.That(rig.Browser.Rows, Does.Not.Contain("clip:Line"), "only the selected machine's");
 
             rig.Selection.Set(rig.Bass, rig.Line, this);
             Settle();
-            Assert.That(rig.Browser.Rows, Does.Contain("pattern:Line"));
-            Assert.That(((ListBoxItem)rig.Browser.List.SelectedItem!).Tag, Is.EqualTo("pattern:Line"), "the selected pattern is marked");
+            Assert.That(rig.Browser.Rows, Does.Contain("clip:Line"));
+            Assert.That(((ListBoxItem)rig.Browser.List.SelectedItem!).Tag, Is.EqualTo("clip:Line"), "the selected clip is marked");
             rig.Selection.Clear(this);
             Settle();
             Assert.That(rig.Browser.List.SelectedItem, Is.Null);
@@ -184,10 +184,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Browser.Rows.First(r => r.StartsWith("gear:")), Is.EqualTo("gear:Neo Poly"), "the name's match is the best (P3d: tags and use_for match too, below it)");
             rig.Browser.Search.Text = "line";
             Settle();
-            Assert.That(rig.Browser.Rows, Does.Contain("pattern:Line"), "patterns too");
+            Assert.That(rig.Browser.Rows, Does.Contain("clip:Line"), "clips too");
             rig.Browser.Search.Text = "qqqqzzzz";
             Settle();
-            Assert.That(rig.Browser.Rows.Where(r => !r.StartsWith("none:") && !r.StartsWith("#Patterns")), Is.Empty);
+            Assert.That(rig.Browser.Rows.Where(r => !r.StartsWith("none:") && !r.StartsWith("#Clips")), Is.Empty);
             Assert.That(rig.Browser.Rows.Count(r => r.StartsWith("none:")), Is.EqualTo(0).Or.EqualTo(1));
             rig.Browser.Search.Text = "";
             Settle();
@@ -195,27 +195,27 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AClickOnAPatternSelectsItEverywhereAndADoubleClickOpensTheTracker()
+        public void AClickOnAClipSelectsItEverywhereAndADoubleClickOpensTheTracker()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
             rig.Browser.Open();
             rig.Selection.Set(rig.Drums, null, this);
             Settle();
-            var row = rig.Row("pattern:Beat");
+            var row = rig.Row("clip:Beat");
             var p = rig.CentreOf(row);
             rig.Window.MouseDown(p, MouseButton.Left);
             rig.Window.MouseUp(p, MouseButton.Left);
             Settle();
             Assert.That(rig.Selection.Machine, Is.SameAs(rig.Drums));
-            Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Beat), "the studio's selection: the inspector and the other views follow");
-            Assert.That(rig.Window.Inspector.Facts.Single(f => f.Label == "Pattern").Value, Is.EqualTo("Beat"));
+            Assert.That(rig.Selection.Clip, Is.SameAs(rig.Beat), "the studio's selection: the inspector and the other views follow");
+            Assert.That(rig.Window.Inspector.Facts.Single(f => f.Label == "Clip").Value, Is.EqualTo("Beat"));
             Assert.That(rig.Detail.IsOpen, Is.False, "one click only selects");
 
-            DoubleClick(rig.Window, rig.CentreOf(rig.Row("pattern:Beat")));
+            DoubleClick(rig.Window, rig.CentreOf(rig.Row("clip:Beat")));
             Settle();
             Assert.That(rig.Detail.IsOpen, Is.True, "a double-click opens it in the Tracker");
-            Assert.That(PatternView.Page!.Pattern, Is.SameAs(rig.Beat));
+            Assert.That(ClipView.Page!.Clip, Is.SameAs(rig.Beat));
         }
 
         [AvaloniaTest]
@@ -274,12 +274,12 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the detail panel and the Tracker
 
         [AvaloniaTest]
-        public void ThePatternViewIsTheDetailPanelsTrackerNotATab()
+        public void TheClipViewIsTheDetailPanelsTrackerNotATab()
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
             Assert.That(rig.Window.Tabs.Items.Cast<TabItem>().Select(t => t.Header), Is.EqualTo(new[] { "Arrangement", "Session", "Machines" }));
-            Assert.That(rig.Detail.Page, Is.SameAs(PatternView.Page));
+            Assert.That(rig.Detail.Page, Is.SameAs(ClipView.Page));
             rig.Key(PhysicalKey.Digit4, Rig.Cmd);
             Assert.That(rig.Detail.IsOpen, Is.True, "⌘4: the Tracker");
             Assert.That(rig.Detail.IsMaximised, Is.False, "docked");
@@ -290,13 +290,13 @@ namespace ReBuzz.Studio.Tests
             var item = AppMenu.Find(rig.Window.MenuModel(mac: false), "View").Items().Single(e => e.Text == "Tracker");
             Assert.That(item.IsChecked(), Is.True);
 
-            // The other views and the inspector open it in the Tracker too (their own button or key), the song's pattern first.
+            // The other views and the inspector open it in the Tracker too (their own button or key), the song's clip first.
             rig.Detail.Close();
             Settle();
             rig.Selection.Set(rig.Drums, rig.Beat, this);
-            rig.Window.ShowView("Pattern");
+            rig.Window.ShowView("Clip");
             Settle();
-            Assert.That(PatternView.Page!.Pattern, Is.SameAs(rig.Beat), "it shows the selected pattern");
+            Assert.That(ClipView.Page!.Clip, Is.SameAs(rig.Beat), "it shows the selected clip");
         }
 
         [AvaloniaTest]
@@ -369,7 +369,7 @@ namespace ReBuzz.Studio.Tests
         {
             using var restore = Studio.AfterTest(PutBack);
             using var rig = new Rig();
-            rig.Window.ShowView("Pattern");
+            rig.Window.ShowView("Clip");
             Settle();
             var inside = rig.Detail.Page.GetVisualDescendants().OfType<InputElement>().First(c => c.Focusable && c.IsEffectivelyVisible);
             inside.Focus();
@@ -427,7 +427,7 @@ namespace ReBuzz.Studio.Tests
             var surface = StudioTokens.SurfacePanel;
             Assert.That(((Avalonia.Media.ISolidColorBrush)rig.Browser.Background!).Color, Is.EqualTo(surface));
             Assert.That(((Avalonia.Media.ISolidColorBrush)rig.Detail.Background!).Color, Is.EqualTo(surface));
-            Assert.That(StudioTokens.Contrast(StudioTokens.TextPrimary, surface), Is.GreaterThanOrEqualTo(4.5), "machine and pattern names");
+            Assert.That(StudioTokens.Contrast(StudioTokens.TextPrimary, surface), Is.GreaterThanOrEqualTo(4.5), "machine and clip names");
             Assert.That(StudioTokens.Contrast(StudioTokens.TextSecondary, surface), Is.GreaterThanOrEqualTo(4.5), "the group headers, the closed Tracker button");
             var fill = StudioTokens.SelectionFill;
             double a = fill.A / 255.0;

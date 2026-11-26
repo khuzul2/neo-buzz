@@ -433,7 +433,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void NoteNamesAreOneSettingThatEveryNoteDisplayReads()
         {
-            // Fork (ux-overhaul.md §3.5): MIDI 60 was "C-5" in the pattern editor, "C3" in the piano roll and "C4" on the
+            // Fork (ux-overhaul.md §3.5): MIDI 60 was "C-5" in the clip editor, "C3" in the piano roll and "C4" on the
             // machine keyboards. One setting now names notes for each of them (and MIDI mappings): Buzz, C3 = 60 (the
             // default) or scientific. A new key, display only.
             using var restore = Studio.AfterTest(CloseWhatIsOpen);
@@ -462,7 +462,7 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(NoteNames.Naming, Is.EqualTo(naming), "the displays' naming");
                     Assert.That(new GeneralSettings().NoteNames, Is.EqualTo(naming), "saved");
                     const int C5 = (5 << 4) + 1;        // Buzz's C-5: MIDI 60
-                    Assert.That(NoteNames.TryTracker(C5), Is.EqualTo(tracker), $"{naming}: the pattern editor, three characters");
+                    Assert.That(NoteNames.TryTracker(C5), Is.EqualTo(tracker), $"{naming}: the clip editor, three characters");
                     Assert.That(ReBuzz.Core.Session.ClipNotes.Name(60), Is.EqualTo(name), $"{naming}: the piano roll");
                     Assert.That(NeoBuzz.Editor.KeyboardFace.NoteName(60), Is.EqualTo(name), $"{naming}: the machine keyboards");
                     Assert.That(((ComboBoxItem)octaveBox.SelectedItem!).Content, Is.EqualTo(NoteNames.Octave(general.DefaultMachineBaseOctave, naming).ToString()),

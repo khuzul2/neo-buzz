@@ -1,9 +1,9 @@
 // Agent server (docs/specs/mcp-server.md §5.5, phase A3): note transforms for notes_transform.
 // Transpose (semitones or scale steps), quantize (grid, strength, swing), humanize (seeded), velocity
-// (set, scale, add, ramp, accent pattern), shift, stretch, reverse, invert, legato and staccato, each on
-// a selection by time range and pitch range. Notes stay inside the pattern and MIDI's range, and every
-// clip is reported. Pure: notes are NoteEvents in pattern time (240 per tick); the ReBuzz glue reads
-// and writes the pattern and makes the call one undo step.
+// (set, scale, add, ramp, accent clip), shift, stretch, reverse, invert, legato and staccato, each on
+// a selection by time range and pitch range. Notes stay inside the clip and MIDI's range, and every
+// clip is reported. Pure: notes are NoteEvents in clip time (240 per tick); the ReBuzz glue reads
+// and writes the clip and makes the call one undo step.
 
 using System;
 using System.Collections.Generic;
@@ -16,21 +16,21 @@ using static ReBuzz.Agent.Mcp.Schema;
 
 namespace ReBuzz.Agent.Model
 {
-    /// <summary>The pattern a transform works in, and the problems it reports (clipped notes, velocities, …).</summary>
+    /// <summary>The clip a transform works in, and the problems it reports (clipped notes, velocities, …).</summary>
     public sealed class TransformContext
     {
-        public TransformContext(int ticksPerBeat, int patternTicks)
+        public TransformContext(int ticksPerBeat, int clipTicks)
         {
             if (ticksPerBeat < 1) throw new ArgumentOutOfRangeException(nameof(ticksPerBeat));
-            if (patternTicks < 1) throw new ArgumentOutOfRangeException(nameof(patternTicks));
+            if (clipTicks < 1) throw new ArgumentOutOfRangeException(nameof(clipTicks));
             TicksPerBeat = ticksPerBeat;
-            PatternTicks = patternTicks;
+            ClipTicks = clipTicks;
         }
 
         public int TicksPerBeat { get; }
-        public int PatternTicks { get; }
-        /// <summary>The pattern's end in pattern time (1/240 tick).</summary>
-        public int PatternTime => PatternTicks * NoteList.TimeBase;
+        public int ClipTicks { get; }
+        /// <summary>The clip's end in clip time (1/240 tick).</summary>
+        public int ClipTime => ClipTicks * NoteList.TimeBase;
         public double TimePerBeat => TicksPerBeat * (double)NoteList.TimeBase;
         public List<string> Problems { get; } = new();
 
@@ -38,7 +38,7 @@ namespace ReBuzz.Agent.Model
         public double Beats(int time) => NoteList.Beats(time, TicksPerBeat);
     }
 
-    /// <summary>Which notes a transform changes: those starting in [From, To) (pattern time) with pitches in [Low, High].</summary>
+    /// <summary>Which notes a transform changes: those starting in [From, To) (clip time) with pitches in [Low, High].</summary>
     public sealed record NoteSelection(int? From = null, int? To = null, int? Low = null, int? High = null)
     {
         public static readonly NoteSelection All = new();
@@ -52,14 +52,14 @@ namespace ReBuzz.Agent.Model
         {
             var parts = new List<string>();
             if (From != null || To != null)
-                parts.Add($"starting at beats {NoteList.Fmt(ctx.Beats(From ?? 0))}–{NoteList.Fmt(ctx.Beats(To ?? ctx.PatternTime))}");
+                parts.Add($"starting at beats {NoteList.Fmt(ctx.Beats(From ?? 0))}–{NoteList.Fmt(ctx.Beats(To ?? ctx.ClipTime))}");
             if (Low != null || High != null)
                 parts.Add($"with pitches {Pitch.Name(Low ?? 0)}–{Pitch.Name(High ?? 127)}");
             return parts.Count == 0 ? "all notes" : "notes " + string.Join(" ", parts);
         }
     }
 
-    /// <summary>The transforms, one call each. Every one returns the pattern's notes, sorted, with the selection changed.</summary>
+    /// <summary>The transforms, one call each. Every one returns the clip's notes, sorted, with the selection changed.</summary>
     public static class Transforms
     {
         internal sealed class Item
@@ -109,9 +109,9 @@ namespace ReBuzz.Agent.Model
         public static List<NoteEvent> RampVelocity(IReadOnlyList<NoteEvent> notes, TransformContext ctx, int from, int to, NoteSelection? selection = null) =>
             One(notes, ctx, selection, "velocity", (items, _) => RampOp(items, from, to));
 
-        /// <summary>Adds <paramref name="amount"/> to notes on the pattern's 'x' steps ("x..x..x." on a grid in beats, repeating).</summary>
-        public static List<NoteEvent> Accent(IReadOnlyList<NoteEvent> notes, TransformContext ctx, string pattern, double gridBeats, int amount, NoteSelection? selection = null) =>
-            One(notes, ctx, selection, "velocity", (items, _) => AccentOp(items, ctx, AccentSteps(pattern, "accent"), gridBeats, amount));
+        /// <summary>Adds <paramref name="amount"/> to notes on the clip's 'x' steps ("x..x..x." on a grid in beats, repeating).</summary>
+        public static List<NoteEvent> Accent(IReadOnlyList<NoteEvent> notes, TransformContext ctx, string clip, double gridBeats, int amount, NoteSelection? selection = null) =>
+            One(notes, ctx, selection, "velocity", (items, _) => AccentOp(items, ctx, AccentSteps(clip, "accent"), gridBeats, amount));
 
         public static List<NoteEvent> Shift(IReadOnlyList<NoteEvent> notes, TransformContext ctx, double beats, NoteSelection? selection = null) =>
             One(notes, ctx, selection, "shift", (items, _) => ShiftOp(items, ctx.Time(beats)));
@@ -120,7 +120,7 @@ namespace ReBuzz.Agent.Model
         public static List<NoteEvent> Stretch(IReadOnlyList<NoteEvent> notes, TransformContext ctx, double factor, double? anchorBeats = null, NoteSelection? selection = null) =>
             One(notes, ctx, selection, "stretch", (items, sel) => StretchOp(items, sel, factor, anchorBeats.HasValue ? ctx.Time(anchorBeats.Value) : null));
 
-        /// <summary>Mirrors notes in time within the selection's time range (the whole pattern without one).</summary>
+        /// <summary>Mirrors notes in time within the selection's time range (the whole clip without one).</summary>
         public static List<NoteEvent> Reverse(IReadOnlyList<NoteEvent> notes, TransformContext ctx, NoteSelection? selection = null) =>
             One(notes, ctx, selection, "reverse", (items, sel) => ReverseOp(items, ctx, sel));
 
@@ -214,7 +214,7 @@ namespace ReBuzz.Agent.Model
             {
                 double dt = (random.NextDouble() * 2 - 1) * range;
                 int dv = random.Next(-velocity, velocity + 1);
-                int t = Math.Clamp((int)Math.Round(i.Note.Time + dt), 0, Math.Max(0, ctx.PatternTime - 1));
+                int t = Math.Clamp((int)Math.Round(i.Note.Time + dt), 0, Math.Max(0, ctx.ClipTime - 1));
                 i.Note = i.Note with { Time = t, Velocity = i.Note.Velocity + dv };
             }
         }
@@ -236,14 +236,14 @@ namespace ReBuzz.Agent.Model
             }
         }
 
-        internal static bool[] AccentSteps(string pattern, string what)
+        internal static bool[] AccentSteps(string clip, string what)
         {
-            if (string.IsNullOrEmpty(pattern)) throw new ToolError($"{what}: give a pattern of x (accent) and . (none), one per grid step, e.g. \"x..x..x.\".");
-            return pattern.Select(c => c switch
+            if (string.IsNullOrEmpty(clip)) throw new ToolError($"{what}: give a clip of x (accent) and . (none), one per grid step, e.g. \"x..x..x.\".");
+            return clip.Select(c => c switch
             {
                 'x' or 'X' or '>' or '!' => true,
                 '.' or '-' or '_' or 'o' => false,
-                _ => throw new ToolError($"{what}: \"{pattern}\" may only hold x (accent) and . (none), one per grid step, e.g. \"x..x..x.\"."),
+                _ => throw new ToolError($"{what}: \"{clip}\" may only hold x (accent) and . (none), one per grid step, e.g. \"x..x..x.\"."),
             }).ToArray();
         }
 
@@ -277,7 +277,7 @@ namespace ReBuzz.Agent.Model
 
         internal static void ReverseOp(List<Item> items, TransformContext ctx, NoteSelection sel)
         {
-            int r0 = sel.From ?? 0, r1 = sel.To ?? ctx.PatternTime;
+            int r0 = sel.From ?? 0, r1 = sel.To ?? ctx.ClipTime;
             foreach (var i in Chosen(items)) i.Note = i.Note with { Time = r0 + r1 - i.Note.End };
         }
 
@@ -311,7 +311,7 @@ namespace ReBuzz.Agent.Model
         }
 
         /// <summary>
-        /// Brings every note back inside MIDI's range (by octaves) and the pattern (trimmed, or removed when wholly outside),
+        /// Brings every note back inside MIDI's range (by octaves) and the clip (trimmed, or removed when wholly outside),
         /// and velocities into 1–127; each kind of clip becomes one problem line naming the notes.
         /// </summary>
         internal static void Clip(List<Item> items, TransformContext ctx, string step)
@@ -321,7 +321,7 @@ namespace ReBuzz.Agent.Model
             var early = new List<string>();
             var late = new List<string>();
             int loud = 0, soft = 0;
-            int end = ctx.PatternTime;
+            int end = ctx.ClipTime;
             foreach (var i in items)
             {
                 if (i.Dropped) continue;
@@ -347,9 +347,9 @@ namespace ReBuzz.Agent.Model
             }
             string beats = NoteList.Fmt(ctx.Beats(end));
             if (folded.Count > 0) ctx.Problems.Add($"{step}: {Count(folded.Count, "note")} left MIDI's range (C-1–G9, 0–127) and moved by octaves: {Some(folded)}.");
-            if (removed.Count > 0) ctx.Problems.Add($"{step}: {Count(removed.Count, "note")} ended up outside the pattern (beats 0–{beats}) and {Was(removed.Count)} removed: {Some(removed)}. undo reverts the call.");
-            if (early.Count > 0) ctx.Problems.Add($"{step}: {Count(early.Count, "note")} started before the pattern and {Was(early.Count)} cut to start at beat 0: {Some(early)}.");
-            if (late.Count > 0) ctx.Problems.Add($"{step}: {Count(late.Count, "note")} ran past the pattern's end (beat {beats}) and {Was(late.Count)} shortened: {Some(late)}.");
+            if (removed.Count > 0) ctx.Problems.Add($"{step}: {Count(removed.Count, "note")} ended up outside the clip (beats 0–{beats}) and {Was(removed.Count)} removed: {Some(removed)}. undo reverts the call.");
+            if (early.Count > 0) ctx.Problems.Add($"{step}: {Count(early.Count, "note")} started before the clip and {Was(early.Count)} cut to start at beat 0: {Some(early)}.");
+            if (late.Count > 0) ctx.Problems.Add($"{step}: {Count(late.Count, "note")} ran past the clip's end (beat {beats}) and {Was(late.Count)} shortened: {Some(late)}.");
             if (loud > 0) ctx.Problems.Add($"{step}: {Count(loud, "velocity", "velocities")} went above 127 and {Was(loud)} limited to 127.");
             if (soft > 0) ctx.Problems.Add($"{step}: {Count(soft, "velocity", "velocities")} went below 1 and {Was(soft)} raised to 1.");
         }
@@ -362,7 +362,7 @@ namespace ReBuzz.Agent.Model
             string.Join(", ", items.Take(max)) + (items.Count > max ? $" and {items.Count - max} more" : "");
     }
 
-    /// <summary>What a notes_transform call did: the pattern's notes after it, and what to tell the agent.</summary>
+    /// <summary>What a notes_transform call did: the clip's notes after it, and what to tell the agent.</summary>
     public sealed class TransformOutcome
     {
         public required List<NoteEvent> Notes { get; init; }
@@ -373,12 +373,12 @@ namespace ReBuzz.Agent.Model
         public int Selected { get; init; }
         /// <summary>Notes that differ from before (removed ones not counted).</summary>
         public int Changed { get; init; }
-        /// <summary>Notes removed because they ended up outside the pattern.</summary>
+        /// <summary>Notes removed because they ended up outside the clip.</summary>
         public int Removed { get; init; }
     }
 
     /// <summary>
-    /// notes_transform: its schema, its arguments and the transform engine. The ReBuzz glue reads the pattern's notes, calls
+    /// notes_transform: its schema, its arguments and the transform engine. The ReBuzz glue reads the clip's notes, calls
     /// <see cref="Run"/> (or <see cref="Apply"/>), writes the result as one undo step and answers with <see cref="Result"/>.
     /// </summary>
     public static class NotesTransform
@@ -404,23 +404,23 @@ namespace ReBuzz.Agent.Model
         static readonly string[] SelectionKeys = { "range_start", "range_end", "pitch_low", "pitch_high" };
 
         public const string Description =
-            "Edits notes already in a pattern: transpose (semitones, or steps of a key's scale), quantize (grid, strength, swing), humanize, " +
-            "velocity (set, scale, add, ramp, accent pattern), shift, stretch, reverse, invert, legato, staccato; the transforms run in order on " +
+            "Edits notes already in a clip: transpose (semitones, or steps of a key's scale), quantize (grid, strength, swing), humanize, " +
+            "velocity (set, scale, add, ramp, accent clip), shift, stretch, reverse, invert, legato, staccato; the transforms run in order on " +
             "a selection (range_start/range_end in beats, pitch_low/pitch_high) as one undo step. Use it instead of rewriting notes with notes_write; " +
-            "it keeps notes inside the pattern and MIDI's range and returns counts, the new note summary and what had to be clipped. " +
-            "Example: notes_transform(machine=\"Keys\", pattern=\"Verse\", transforms=[{\"op\": \"quantize\", \"grid\": 0.25, \"strength\": 0.8}, " +
+            "it keeps notes inside the clip and MIDI's range and returns counts, the new note summary and what had to be clipped. " +
+            "Example: notes_transform(machine=\"Keys\", clip=\"Verse\", transforms=[{\"op\": \"quantize\", \"grid\": 0.25, \"strength\": 0.8}, " +
             "{\"op\": \"velocity\", \"ramp\": [60, 110]}], range_start=0, range_end=8).";
 
         static JsonObject Position(string description) =>
-            AnyOf(description, Number("Beats from the pattern start (0 = its start)", 0), String("\"bar.beat\" in the pattern: \"2.1\" is its second bar"));
+            AnyOf(description, Number("Beats from the clip start (0 = its start)", 0), String("\"bar.beat\" in the clip: \"2.1\" is its second bar"));
 
         static JsonObject PitchArg(string description) =>
             AnyOf(description, Integer("MIDI number, 60 = C4", 0, 127), String("Name: \"C4\", \"F#3\", \"Bb2\""));
 
         static (string, JsonObject, bool)[] Selection(string scope) => new[]
         {
-            Opt("range_start", Position($"Selection{scope}: notes starting at or after this, in beats from the pattern start or \"bar.beat\" (default: the start)")),
-            Opt("range_end", Position($"Selection{scope}: notes starting before this, in beats or \"bar.beat\" (default: the pattern's end)")),
+            Opt("range_start", Position($"Selection{scope}: notes starting at or after this, in beats from the clip start or \"bar.beat\" (default: the start)")),
+            Opt("range_end", Position($"Selection{scope}: notes starting before this, in beats or \"bar.beat\" (default: the clip's end)")),
             Opt("pitch_low", PitchArg($"Selection{scope}: lowest pitch included, MIDI number or name (default: all)")),
             Opt("pitch_high", PitchArg($"Selection{scope}: highest pitch included, MIDI number or name (default: all)")),
         };
@@ -444,7 +444,7 @@ namespace ReBuzz.Agent.Model
                 Opt("scale", Number("velocity: multiply velocities (0.8 = 20% softer, 1.2 = louder)", 0)),
                 Opt("add", Integer("velocity: add to velocities, ± (−20 = softer)")),
                 Opt("ramp", Array(Integer("Velocity 1–127", 1, 127), "velocity: [from, to], a straight line from the first selected note to the last (crescendo or fade)", 2)),
-                Opt("accent", String("velocity: accent pattern, one character per grid step, repeating from the pattern start: x = accent, . = none (\"x..x..x.\" with grid 0.5)")),
+                Opt("accent", String("velocity: accent clip, one character per grid step, repeating from the clip start: x = accent, . = none (\"x..x..x.\" with grid 0.5)")),
                 Opt("amount", Integer("velocity with accent: velocity added on x steps (default 20; negative softens)")),
                 Opt("beats", Number("shift: beats to move, + later, − earlier")),
                 Opt("factor", Number("stretch: time factor (2 = twice as long, 0.5 = twice as fast); staccato: length factor 0–1 (default 0.5)", 0)),
@@ -454,23 +454,23 @@ namespace ReBuzz.Agent.Model
                 Opt("length", Number("staccato: shorten notes to at most this many beats, instead of a factor", 0)),
             }.Concat(Selection(" for this transform only (default: the call's selection)")).ToArray());
 
-        /// <summary>The tool's input schema (machine and pattern included).</summary>
+        /// <summary>The tool's input schema (machine and clip included).</summary>
         public static JsonObject Input { get; } = Object(null, new[]
         {
-            Req("machine", String("The machine whose pattern changes")),
-            Req("pattern", String("The pattern")),
+            Req("machine", String("The machine whose clip changes")),
+            Req("clip", String("The clip")),
             Req("transforms", Array(Step(), "Transforms, applied in order; one undo step for all", 1)),
         }.Concat(Selection("")).ToArray());
 
         public static JsonObject Output { get; } = Object(null,
             Req("machine", String("The machine")),
-            Req("pattern", String("The pattern")),
+            Req("clip", String("The clip")),
             Req("transforms", Array(String("What one transform did"), "One line per transform")),
             Req("selected", Integer("Notes the selection picked")),
             Req("changed", Integer("Notes that changed")),
-            Req("removed", Integer("Notes removed because they left the pattern")),
-            Req("total", Integer("Notes in the pattern now")),
-            Req("summary", String("The pattern's notes now, in short")),
+            Req("removed", Integer("Notes removed because they left the clip")),
+            Req("total", Integer("Notes in the clip now")),
+            Req("summary", String("The clip's notes now, in short")),
             Req("problems", Array(String("A problem"), "Clipped notes and velocities, notes outside the key, an empty selection")));
 
         /// <summary>The tool with the glue's handler.</summary>
@@ -485,10 +485,10 @@ namespace ReBuzz.Agent.Model
             Handler = handler,
         };
 
-        /// <summary>Runs the call's transforms on a pattern's notes: the new notes and the problems to report.</summary>
-        public static (List<NoteEvent> Result, List<string> Problems) Apply(JsonObject args, List<NoteEvent> notes, int ticksPerBeat, int patternTicks, int beatsPerBar = 4)
+        /// <summary>Runs the call's transforms on a clip's notes: the new notes and the problems to report.</summary>
+        public static (List<NoteEvent> Result, List<string> Problems) Apply(JsonObject args, List<NoteEvent> notes, int ticksPerBeat, int clipTicks, int beatsPerBar = 4)
         {
-            var o = Run(args, notes, ticksPerBeat, patternTicks, beatsPerBar);
+            var o = Run(args, notes, ticksPerBeat, clipTicks, beatsPerBar);
             return (o.Notes, o.Problems);
         }
 
@@ -497,9 +497,9 @@ namespace ReBuzz.Agent.Model
         /// these, then shift them" moves the same notes); a transform with its own range or pitch fields selects again, from the
         /// notes as they are then. All arguments are checked before anything runs; a bad one throws a ToolError.
         /// </summary>
-        public static TransformOutcome Run(JsonObject args, IReadOnlyList<NoteEvent> notes, int ticksPerBeat, int patternTicks, int beatsPerBar = 4)
+        public static TransformOutcome Run(JsonObject args, IReadOnlyList<NoteEvent> notes, int ticksPerBeat, int clipTicks, int beatsPerBar = 4)
         {
-            var ctx = new TransformContext(ticksPerBeat, patternTicks);
+            var ctx = new TransformContext(ticksPerBeat, clipTicks);
             if (args["transforms"] is not JsonArray list || list.Count == 0)
                 throw new ToolError("transforms: give a list of transforms, e.g. [{\"op\": \"transpose\", \"semitones\": 12}].");
             var selection = ParseSelection(args, "", ctx, beatsPerBar) ?? NoteSelection.All;
@@ -515,7 +515,7 @@ namespace ReBuzz.Agent.Model
             var items = Transforms.Items(notes, selection);
             int selected = items.Count(i => i.Selected);
             if (selected == 0 && steps.Any(s => s.Own == null))
-                ctx.Problems.Add($"Nothing matched the selection ({selection.Describe(ctx)}); those transforms changed nothing. notes_read shows the pattern's notes.");
+                ctx.Problems.Add($"Nothing matched the selection ({selection.Describe(ctx)}); those transforms changed nothing. notes_read shows the clip's notes.");
             var done = new List<string>();
             foreach (var s in steps)
             {
@@ -548,10 +548,10 @@ namespace ReBuzz.Agent.Model
         }
 
         /// <summary>The structured answer for a finished call.</summary>
-        public static JsonObject Report(string machine, string pattern, TransformOutcome outcome, int ticksPerBeat) => new()
+        public static JsonObject Report(string machine, string clip, TransformOutcome outcome, int ticksPerBeat) => new()
         {
             ["machine"] = machine,
-            ["pattern"] = pattern,
+            ["clip"] = clip,
             ["transforms"] = new JsonArray(outcome.Steps.Select(s => (JsonNode)s).ToArray()),
             ["selected"] = outcome.Selected,
             ["changed"] = outcome.Changed,
@@ -562,10 +562,10 @@ namespace ReBuzz.Agent.Model
         };
 
         /// <summary>The tool result: the report plus a one-paragraph summary.</summary>
-        public static ToolResult Result(string machine, string pattern, TransformOutcome outcome, int ticksPerBeat)
+        public static ToolResult Result(string machine, string clip, TransformOutcome outcome, int ticksPerBeat)
         {
-            var r = Report(machine, pattern, outcome, ticksPerBeat);
-            string text = $"{machine} \"{pattern}\": {string.Join("; ", outcome.Steps)}. Changed {outcome.Changed} of {outcome.Notes.Count + outcome.Removed} notes" +
+            var r = Report(machine, clip, outcome, ticksPerBeat);
+            string text = $"{machine} \"{clip}\": {string.Join("; ", outcome.Steps)}. Changed {outcome.Changed} of {outcome.Notes.Count + outcome.Removed} notes" +
                           (outcome.Removed > 0 ? $", removed {outcome.Removed}" : "") + $"; now {r["summary"]}." +
                           (outcome.Problems.Count > 0 ? " Problems: " + string.Join(" ", outcome.Problems) : "");
             return ToolResult.Ok(text, r);
@@ -577,10 +577,10 @@ namespace ReBuzz.Agent.Model
         {
             if (!SelectionKeys.Any(k => o[k] != null)) return null;
             int? from = null, to = null, low = null, high = null;
-            if (o["range_start"] != null) from = ctx.Time(SongTime.ParseBeats(o["range_start"]!, beatsPerBar, prefix + "range_start", "the pattern start"));
-            if (o["range_end"] != null) to = ctx.Time(SongTime.ParseBeats(o["range_end"]!, beatsPerBar, prefix + "range_end", "the pattern start"));
+            if (o["range_start"] != null) from = ctx.Time(SongTime.ParseBeats(o["range_start"]!, beatsPerBar, prefix + "range_start", "the clip start"));
+            if (o["range_end"] != null) to = ctx.Time(SongTime.ParseBeats(o["range_end"]!, beatsPerBar, prefix + "range_end", "the clip start"));
             if (from != null && to != null && to <= from)
-                throw new ToolError($"{prefix}range_end must be after {prefix}range_start (both in beats from the pattern start).");
+                throw new ToolError($"{prefix}range_end must be after {prefix}range_start (both in beats from the clip start).");
             if (o["pitch_low"] != null) low = NoteList.ParsePitch(o["pitch_low"], prefix + "pitch_low");
             if (o["pitch_high"] != null) high = NoteList.ParsePitch(o["pitch_high"], prefix + "pitch_high");
             if (low != null && high != null && high < low)
@@ -654,7 +654,7 @@ namespace ReBuzz.Agent.Model
                 case "quantize":
                 {
                     double grid = Num("grid", 0, double.PositiveInfinity, " of beats") ?? throw new ToolError($"{where}: needs grid, in beats (0.25 = 16th notes, 0.5 = 8ths, 1/3 = 8th-note triplets).");
-                    if (grid * ctx.TimePerBeat < 1) throw new ToolError($"{where}: grid {NoteList.Fmt(grid)} beats is finer than the pattern's resolution; use a grid like 0.25 (16ths).");
+                    if (grid * ctx.TimePerBeat < 1) throw new ToolError($"{where}: grid {NoteList.Fmt(grid)} beats is finer than the clip's resolution; use a grid like 0.25 (16ths).");
                     double strength = Num("strength", 0, 1) ?? 1, swing = Num("swing", 0, 1) ?? 0;
                     bool starts = Bool("starts") ?? true, ends = Bool("ends") ?? false;
                     if (!starts && !ends) throw new ToolError($"{where}: starts and ends are both false, so nothing would move; set one to true.");
@@ -706,13 +706,13 @@ namespace ReBuzz.Agent.Model
                         }
                         default:
                         {
-                            string pattern = Str("accent")!;
-                            var accents = Transforms.AccentSteps(pattern, where + ": accent");
+                            string clip = Str("accent")!;
+                            var accents = Transforms.AccentSteps(clip, where + ": accent");
                             double grid = Num("grid", 0, double.PositiveInfinity, " of beats") ?? 0.25;
-                            if (grid * ctx.TimePerBeat < 1) throw new ToolError($"{where}: grid {NoteList.Fmt(grid)} beats is finer than the pattern's resolution.");
+                            if (grid * ctx.TimePerBeat < 1) throw new ToolError($"{where}: grid {NoteList.Fmt(grid)} beats is finer than the clip's resolution.");
                             int amount = Int("amount", -126, 126) ?? 20;
                             return (op, (items, _) => Transforms.AccentOp(items, ctx, accents, grid, amount),
-                                    $"accent \"{pattern}\" every {NoteList.Fmt(grid)} beats, {Sign(amount)} velocity");
+                                    $"accent \"{clip}\" every {NoteList.Fmt(grid)} beats, {Sign(amount)} velocity");
                         }
                     }
                 }
@@ -726,7 +726,7 @@ namespace ReBuzz.Agent.Model
                 {
                     double factor = Num("factor", 0, 64) ?? throw new ToolError($"{where}: needs factor (2 = twice as long, 0.5 = twice as fast).");
                     if (factor <= 0) throw new ToolError($"{where}: factor must be more than 0 (0.5 = twice as fast).");
-                    int? anchor = step["anchor"] == null ? null : ctx.Time(SongTime.ParseBeats(step["anchor"]!, beatsPerBar, where + ": anchor", "the pattern start"));
+                    int? anchor = step["anchor"] == null ? null : ctx.Time(SongTime.ParseBeats(step["anchor"]!, beatsPerBar, where + ": anchor", "the clip start"));
                     return (op, (items, sel) => Transforms.StretchOp(items, sel, factor, anchor), $"stretch ×{NoteList.Fmt(factor)}");
                 }
                 case "reverse":

@@ -1,12 +1,12 @@
-// Fork (docs/specs/daw-modes.md AR2; clips.md §8, CU4): the song's notes of a pattern, in the store the machine plays: the one reader and
+// Fork (docs/specs/daw-modes.md AR2; clips.md §8, CU4): the song's notes of a clip, in the store the machine plays: the one reader and
 // writer of a clip's notes. The tracker's roll, the Session View, the arrangement, the agent, drops and the import and export all use it,
 // so they read and edit the same notes the clip plays:
 //  - a machine that takes its notes in its tracks (a tracker, a native synth: its Note track parameter only, no MidiNote; the
-//    Pedal synths took notes that way until U6 gave them MIDI) has them in the pattern's engine-played Note columns
+//    Pedal synths took notes that way until U6 gave them MIDI) has them in the clip's engine-played Note columns
 //    (TrackerColumnNotes, D3 A);
 //  - a machine that plays a sample per note (INoteSampleProvider, in that mode) has them in its tracks too, with the sample, offset and tune;
 //  - any other generator, and a machine with a manifest note input, plays the engine MIDI column (MidiColumnNotes, D2 B).
-// Both put each edit on the song's history. Also here: the context ghosts (other clips' notes, placed in this pattern's time).
+// Both put each edit on the song's history. Also here: the context ghosts (other clips' notes, placed in this clip's time).
 
 using System;
 using System.Collections.Generic;
@@ -22,57 +22,57 @@ namespace ReBuzz.Core.Notes
     internal static class SongNotes
     {
         /// <summary>
-        /// The pattern's note source as the machine plays it, or null when the machine takes no notes (an effect, Master). The one reader
+        /// The clip's note source as the machine plays it, or null when the machine takes no notes (an effect, Master). The one reader
         /// and writer of a clip's notes (clips.md §8): <paramref name="route"/> ("midi" or "tracks", the agent's input argument) overrides
         /// what the machine's keyboard decides.
         /// </summary>
-        public static INoteSource For(ReBuzzCore buzz, IPattern pattern, string route = null)
+        public static INoteSource For(ReBuzzCore buzz, IClip clip, string route = null)
         {
-            if (buzz == null || pattern?.Machine is not MachineCore machine || machine.DLL?.Info == null) return null;
+            if (buzz == null || clip?.Machine is not MachineCore machine || machine.DLL?.Info == null) return null;
             if (machine.DLL.Info.Type == MachineType.Master) return null;
-            if (route == "midi") return new MidiColumnNotes(buzz, pattern);
-            if (route == "tracks") return TrackerColumnNotes.For(buzz, pattern);
+            if (route == "midi") return new MidiColumnNotes(buzz, clip);
+            if (route == "tracks") return TrackerColumnNotes.For(buzz, clip);
             // How the machine takes notes is what its keyboard decides (KeyboardRoute, the agent's rule): a managed machine with
             // MidiNote takes MIDI whatever an older manifest says; one that has a Note track parameter and no MIDI plays its tracks.
             // A machine that plays a sample per note (Neo Sampler's Tracker mode, TM1) keeps its notes in its tracks: the sample, offset and tune are
             // track parameters beside the note, and the MIDI column has no room for them.
-            if (machine.ManagedMachine is INoteSampleProvider { PlaysSamplePerNote: true } && TrackerColumnNotes.For(buzz, pattern) is { PerNoteSamples: true } samples) return samples;
+            if (machine.ManagedMachine is INoteSampleProvider { PlaysSamplePerNote: true } && TrackerColumnNotes.For(buzz, clip) is { PerNoteSamples: true } samples) return samples;
             var kb = KeyboardRoute.For(machine);
-            if (kb.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, pattern) is { } tracker) return tracker;
-            if (kb.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, pattern);
+            if (kb.Input == KeyboardInput.Tracks && TrackerColumnNotes.For(buzz, clip) is { } tracker) return tracker;
+            if (kb.Input == KeyboardInput.Midi) return new MidiColumnNotes(buzz, clip);
             var manifest = SongModel.Manifest(machine);
-            if (machine.DLL.Info.Type == MachineType.Generator || manifest?.Notes != null) return new MidiColumnNotes(buzz, pattern);
+            if (machine.DLL.Info.Type == MachineType.Generator || manifest?.Notes != null) return new MidiColumnNotes(buzz, clip);
             return null;
         }
 
-        /// <summary>Whether the pattern's notes are in the engine MIDI column (the controller lanes read that column).</summary>
+        /// <summary>Whether the clip's notes are in the engine MIDI column (the controller lanes read that column).</summary>
         public static bool IsMidi(INoteSource source) => source is MidiColumnNotes;
 
         /// <summary>
-        /// The notes of the other clips around a pattern's placement, in the pattern's own time (1/240 tick; the roll draws them
-        /// faintly). <paramref name="anchor"/> is the song tick of the pattern's first tick. Only what overlaps the pattern's
+        /// The notes of the other clips around a clip's placement, in the clip's own time (1/240 tick; the roll draws them
+        /// faintly). <paramref name="anchor"/> is the song tick of the clip's first tick. Only what overlaps the clip's
         /// length is kept, cut to it. With <paramref name="otherTracks"/> the clips on the other machines' lanes count too.
         /// </summary>
-        public static List<ClipNote> Ghosts(ReBuzzCore buzz, IPattern pattern, int anchor, bool otherTracks, int limit = 4000)
+        public static List<ClipNote> Ghosts(ReBuzzCore buzz, IClip clip, int anchor, bool otherTracks, int limit = 4000)
         {
             var ghosts = new List<ClipNote>();
-            if (buzz?.Song == null || pattern == null) return ghosts;
-            int length = SessionLayout.ClipLengthOf(pattern);
-            var cache = new Dictionary<IPattern, List<ClipNote>>();
+            if (buzz?.Song == null || clip == null) return ghosts;
+            int length = SessionLayout.ClipLengthOf(clip);
+            var cache = new Dictionary<IClip, List<ClipNote>>();
             foreach (var seq in buzz.Song.Sequences)
             {
-                bool same = seq.Machine == pattern.Machine;
+                bool same = seq.Machine == clip.Machine;
                 if (!same && !otherTracks) continue;
                 foreach (var kv in seq.Events)
                 {
                     var e = kv.Value;
-                    if (e.Type != SequenceEventType.PlayPattern || e.Pattern == null || ReferenceEquals(e.Pattern, pattern)) continue;
-                    // The clip's span in this pattern's time.
+                    if (e.Type != SequenceEventType.PlayClip || e.Clip == null || ReferenceEquals(e.Clip, clip)) continue;
+                    // The clip's span in this clip's time.
                     long from = (long)(kv.Key - anchor) * ClipNotes.TimeBase, to = from + (long)Math.Max(1, e.Span) * ClipNotes.TimeBase;
                     if (to <= 0 || from >= length) continue;
-                    if (!cache.TryGetValue(e.Pattern, out var notes))
-                        cache[e.Pattern] = notes = For(buzz, e.Pattern)?.Notes() ?? new List<ClipNote>();
-                    // Pattern tick t of the other pattern is at song tick key - PlayedOffset + t.
+                    if (!cache.TryGetValue(e.Clip, out var notes))
+                        cache[e.Clip] = notes = For(buzz, e.Clip)?.Notes() ?? new List<ClipNote>();
+                    // Clip tick t of the other clip is at song tick key - PlayedOffset + t.
                     long shift = (long)(kv.Key - e.PlayedOffset - anchor) * ClipNotes.TimeBase;
                     foreach (var n in notes)
                     {

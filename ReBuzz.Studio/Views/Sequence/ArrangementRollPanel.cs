@@ -1,5 +1,5 @@
 // Fork (docs/specs/daw-modes.md AR2): the piano roll under the arrangement. A clip opened in the Arrangement mode (a double click, P)
-// shows its pattern's notes here, in the store the machine plays (SongNotes: the engine's MIDI column, or the Note columns of a
+// shows its clip's notes here, in the store the machine plays (SongNotes: the engine's MIDI column, or the Note columns of a
 // machine that takes notes in its tracks), so what is drawn plays in the clip's session slot as well. Edits are steps of the song's
 // history. It is the detail panel's piano roll control (TrackerRoll) in its song-only form: velocity and controller lanes, key and
 // scale, fold, step input and the ghosts of the other clips.
@@ -25,7 +25,7 @@ namespace ReBuzz.Studio.Views.Sequence
         readonly TrackerRoll roll;
         readonly TextBlock title = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0), FontSize = StudioTokens.FontBody, TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis };
         readonly Button close, editor;
-        IPattern pattern;
+        IClip clip;
 
         public ArrangementRollPanel(ReBuzzCore core)
         {
@@ -38,10 +38,10 @@ namespace ReBuzz.Studio.Views.Sequence
 
             close = StudioButtons.KeepFocus(StudioButtons.Icon(new Button { Content = "✕", VerticalAlignment = VerticalAlignment.Center }, "Close piano roll", "Close the piano roll"));
             close.Click += (s, e) => Close();
-            editor = StudioButtons.KeepFocus(new Button { Content = "Pattern tab", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
-            ToolTip.SetTip(editor, "Edit this pattern in the Pattern tab (Return)");
-            AutomationProperties.SetName(editor, "Edit in the Pattern tab");
-            editor.Click += (s, e) => { if (pattern != null) PatternEditorRequested?.Invoke(pattern); };
+            editor = StudioButtons.KeepFocus(new Button { Content = "Clip tab", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
+            ToolTip.SetTip(editor, "Edit this clip in the Clip tab (Return)");
+            AutomationProperties.SetName(editor, "Edit in the Clip tab");
+            editor.Click += (s, e) => { if (clip != null) ClipEditorRequested?.Invoke(clip); };
 
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { editor, close } };
             var bar = new DockPanel { Height = 30, Background = StudioTokens.SurfacePanelBrush, LastChildFill = true };
@@ -59,8 +59,8 @@ namespace ReBuzz.Studio.Views.Sequence
         /// <summary>The roll under the header (tests, hosts).</summary>
         public TrackerRoll Roll => roll;
 
-        /// <summary>The pattern the roll shows, or null when closed.</summary>
-        public IPattern Pattern => IsVisible ? pattern : null;
+        /// <summary>The clip the roll shows, or null when closed.</summary>
+        public IClip Clip => IsVisible ? clip : null;
 
         public Button CloseButton => close;
 
@@ -68,24 +68,24 @@ namespace ReBuzz.Studio.Views.Sequence
 
         public string TitleText => title.Text;
 
-        /// <summary>The pattern editor was asked for (the Pattern tab button).</summary>
-        public event Action<IPattern> PatternEditorRequested;
+        /// <summary>The clip editor was asked for (the Clip tab button).</summary>
+        public event Action<IClip> ClipEditorRequested;
 
-        /// <summary>Shows a pattern's notes.</summary>
-        public void Open(IPattern p)
+        /// <summary>Shows a clip's notes.</summary>
+        public void Open(IClip p)
         {
             if (p == null) return;
-            pattern = p;
+            clip = p;
             IsVisible = true;
             title.Text = $"Piano roll · {p.Machine?.Name} · {p.Name}";
             roll.Show(p);
             roll.FocusRoll();
         }
 
-        /// <summary>Hides the roll; it lets go of the song's pattern.</summary>
+        /// <summary>Hides the roll; it lets go of the song's clip.</summary>
         public void Close()
         {
-            pattern = null;
+            clip = null;
             IsVisible = false;
             roll.Show(null);
         }

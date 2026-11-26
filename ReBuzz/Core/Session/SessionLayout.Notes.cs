@@ -16,26 +16,26 @@ namespace ReBuzz.Core.Session
     internal sealed partial class SessionLayout
     {
         /// <summary>The clip's notes, in time order (SongNotes: the store the clip's machine plays; empty when the clip is gone).</summary>
-        public List<ClipNote> NotesOf(IPattern clip) =>
-            clip?.Machine == null || (clip is PatternCore core && core.IsDeleted) ? new List<ClipNote>() : NoteSourceOf(clip)?.Notes() ?? new List<ClipNote>();
+        public List<ClipNote> NotesOf(IClip clip) =>
+            clip?.Machine == null || (clip is ClipCore core && core.IsDeleted) ? new List<ClipNote>() : NoteSourceOf(clip)?.Notes() ?? new List<ClipNote>();
 
         /// <summary>The one reader and writer of the clip's notes: SongNotes, or the MIDI column for a machine with no note input of its own.</summary>
-        INoteSource NoteSourceOf(IPattern clip) => SongNotes.For(buzz, clip) ?? (clip?.Machine != null ? new MidiColumnNotes(buzz, clip) : null);
+        INoteSource NoteSourceOf(IClip clip) => SongNotes.For(buzz, clip) ?? (clip?.Machine != null ? new MidiColumnNotes(buzz, clip) : null);
 
         /// <summary>
         /// One edit of a clip's notes, one undo step: <paramref name="removed"/> (notes of the clip
         /// as <see cref="NotesOf"/> gave them) go, <paramref name="added"/> come.
         /// </summary>
-        public void EditNotes(IPattern clip, IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
+        public void EditNotes(IClip clip, IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
-            if (clip?.Machine == null || (clip is PatternCore core && core.IsDeleted)) return;
+            if (clip?.Machine == null || (clip is ClipCore core && core.IsDeleted)) return;
             // A pass being recorded is undone by value when it ends: an edit under it would outlive that undo.
             if (IsRecordingClip(clip)) return;
             NoteSourceOf(clip)?.Edit(removed, added);
         }
 
         /// <summary>Quantizes notes of a clip (all of them if <paramref name="notes"/> is null): one undo step.</summary>
-        public void QuantizeNotes(IPattern clip, IReadOnlyList<ClipNote> notes, int grid, double strength = 1.0, bool ends = false)
+        public void QuantizeNotes(IClip clip, IReadOnlyList<ClipNote> notes, int grid, double strength = 1.0, bool ends = false)
         {
             if (clip == null || grid <= 1) return;
             var before = (notes ?? NotesOf(clip)).ToList();
@@ -43,11 +43,11 @@ namespace ReBuzz.Core.Session
             EditNotes(clip, before, after);
         }
 
-        /// <summary>The clip's length in pattern time (1/240 tick).</summary>
-        public static int ClipLengthOf(IPattern clip) => Math.Max(1, clip?.Length ?? 1) * ClipNotes.TimeBase;
+        /// <summary>The clip's length in clip time (1/240 tick).</summary>
+        public static int ClipLengthOf(IClip clip) => Math.Max(1, clip?.Length ?? 1) * ClipNotes.TimeBase;
 
         /// <summary>Plays (or ends) a note on the clip's machine, as the piano roll is clicked.</summary>
-        public void PreviewNote(IPattern clip, int note, int velocity, bool on)
+        public void PreviewNote(IClip clip, int note, int velocity, bool on)
         {
             if (clip?.Machine is not MachineCore machine || machine.DLL == null || machine.DLL.IsMissing || machine.DLL.IsCrashed || !machine.Ready) return;
             int data = on
@@ -56,10 +56,10 @@ namespace ReBuzz.Core.Session
             buzz.MachineManager.SendMidiInput(machine, data, false);
         }
 
-        static PatternEvent ToEvent(ClipNote n)
+        static ClipEvent ToEvent(ClipNote n)
         {
             var (time, value, duration) = n.ToEvent();
-            return new PatternEvent(time, value, duration);
+            return new ClipEvent(time, value, duration);
         }
     }
 
@@ -71,12 +71,12 @@ namespace ReBuzz.Core.Session
     internal sealed class ClipEventsReplaceAction : IAction
     {
         readonly SessionLayout layout;
-        readonly IPattern clip;
+        readonly IClip clip;
         readonly ColumnKey column;
-        readonly PatternEvent[] removed;
-        readonly PatternEvent[] added;
+        readonly ClipEvent[] removed;
+        readonly ClipEvent[] added;
 
-        public ClipEventsReplaceAction(SessionLayout layout, IPattern clip, ColumnKey column, PatternEvent[] removed, PatternEvent[] added)
+        public ClipEventsReplaceAction(SessionLayout layout, IClip clip, ColumnKey column, ClipEvent[] removed, ClipEvent[] added)
         {
             this.layout = layout;
             this.clip = clip;
@@ -89,10 +89,10 @@ namespace ReBuzz.Core.Session
 
         public void Undo() => Apply(added, removed);
 
-        void Apply(PatternEvent[] take, PatternEvent[] put)
+        void Apply(ClipEvent[] take, ClipEvent[] put)
         {
             var p = layout.Current(clip);
-            if (p == null || (p is PatternCore core && core.IsDeleted)) return;
+            if (p == null || (p is ClipCore core && core.IsDeleted)) return;
             var c = SessionLayout.ColumnFor(p, column, create: put.Length > 0);
             if (c == null) return;
             if (take.Length > 0) c.SetEvents(take, false);

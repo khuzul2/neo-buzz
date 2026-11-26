@@ -274,7 +274,7 @@ namespace NeoBuzz.Patch
             d[(int)NodeKind.Macro] = new NodeDoc("Brings one of the machine's 16 Macro knobs into the patch as a control signal.",
                 new[]
                 {
-                    "Which macro (1 to 16) this node reads.|The macro is the knob that patterns, automation and MIDI can move; this node lets any wire use it.",
+                    "Which macro (1 to 16) this node reads.|The macro is the knob that clips, automation and MIDI can move; this node lets any wire use it.",
                     "Scales the macro signal, -1 to +1.|A negative amount inverts the knob; a small amount makes it a gentle influence.",
                 },
                 None, new[] { "The macro's value, 0 to 1, times the amount." });

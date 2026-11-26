@@ -30,8 +30,8 @@ namespace ReBuzz.Studio.Views.Audio
 
     internal sealed class AudioClipPage : Border, IStudioEditTarget
     {
-        /// <summary>Where the selected clip is edited from: a slot of the Session, a clip of the Arrangement, or just its pattern.</summary>
-        internal enum Where { None, Session, Arrangement, Pattern }
+        /// <summary>Where the selected clip is edited from: a slot of the Session, a clip of the Arrangement, or just its clip.</summary>
+        internal enum Where { None, Session, Arrangement, Clip }
 
         /// <summary>
         /// The warp modes the page offers, in the order it shows them: Live's four. A mode of <see cref="SessionDocument.AudioSettings.WarpModes"/> that is
@@ -52,7 +52,7 @@ namespace ReBuzz.Studio.Views.Audio
         };
 
         /// <summary>The window's hook: shows the page for a clip (a double click on an audio clip); false when there is no page to show.</summary>
-        public static Func<IPattern, bool> Opener { get; set; }
+        public static Func<IClip, bool> Opener { get; set; }
 
         readonly ReBuzzCore core;
         readonly StudioSelection selection;
@@ -81,7 +81,7 @@ namespace ReBuzz.Studio.Views.Audio
         bool loading;
         bool disposed;
 
-        IPattern shown;
+        IClip shown;
         Where where;
         ClipItem item;
         (int Track, int Scene)? slot;
@@ -141,7 +141,7 @@ namespace ReBuzz.Studio.Views.Audio
             wave.RegionCommitted += (s, ls, le) => CommitRegionTicks(s, ls, le);
             wave.ActionRequested += (request, label) => ApplyWarp(request, label);
             wave.SelectionChanged += UpdateSegments;
-            wave.AutoWarpMenu = () => AutoWarpFlow.Menu(() => shown == null ? Array.Empty<IPattern>() : new[] { shown }, RangeNow);
+            wave.AutoWarpMenu = () => AutoWarpFlow.Menu(() => shown == null ? Array.Empty<IClip>() : new[] { shown }, RangeNow);
             fit = Btn("Fit", "Zoom to show the whole clip", () => wave.Fit(), "Fit");
             follow = Check("Follow", "Scroll the waveform to keep the playing position in view", () => wave.Follow = follow.IsChecked == true);
             follow.Margin = new Thickness(4, 0, 4, 0);
@@ -255,7 +255,7 @@ namespace ReBuzz.Studio.Views.Audio
         // ------------------------------------------------------------------ for the window and the tests
 
         /// <summary>The clip shown, or null.</summary>
-        public IPattern Pattern => shown;
+        public IClip Clip => shown;
 
         internal Where Context => where;
         internal ClipItem Arranged => item;
@@ -378,47 +378,47 @@ namespace ReBuzz.Studio.Views.Audio
         public void Refresh(bool force = false)
         {
             if (disposed || Layout == null) return;
-            var pattern = selection.Pattern;
-            if (pattern != null && !Layout.IsAudioClip(pattern)) pattern = null;
+            var clip = selection.Clip;
+            if (clip != null && !Layout.IsAudioClip(clip)) clip = null;
             Where now = Where.None;
             ClipItem use = null;
             (int, int)? at = null;
-            if (pattern != null)
+            if (clip != null)
             {
-                var uses = editor.ClipsOf(pattern);
-                at = SlotOf(pattern);
+                var uses = editor.ClipsOf(clip);
+                at = SlotOf(clip);
                 bool sessionShown = ViewShown?.Invoke() == "Session";
                 if (!sessionShown && uses.Count > 0) { now = Where.Arrangement; use = uses[0]; }
                 else if (at != null) now = Where.Session;
                 else if (uses.Count > 0) { now = Where.Arrangement; use = uses[0]; }
-                else now = Where.Pattern;
+                else now = Where.Clip;
             }
-            var audio = pattern == null ? null : Layout.AudioOf(pattern);
-            var settings = pattern == null ? null : Layout.ClipOf(pattern);
-            string sig = pattern == null ? "-" :
-                $"{pattern.Machine?.Name}|{pattern.Name}|{pattern.Length}|{now}|{audio?.ToXml()}|{settings?.Loop}|{settings?.Start}|{settings?.LoopStart}|{settings?.LoopEnd}|" +
+            var audio = clip == null ? null : Layout.AudioOf(clip);
+            var settings = clip == null ? null : Layout.ClipOf(clip);
+            string sig = clip == null ? "-" :
+                $"{clip.Machine?.Name}|{clip.Name}|{clip.Length}|{now}|{audio?.ToXml()}|{settings?.Loop}|{settings?.Start}|{settings?.LoopStart}|{settings?.LoopEnd}|" +
                 (use == null ? "" : $"{use.Time}|{use.Spec.Start}|{use.Spec.LoopStart}|{use.Spec.LoopEnd}|{use.Spec.Loop}|{use.Spec.Length}") + $"|{core.TPB}";
             if (!force && sig == signature) return;
             signature = sig;
-            shown = pattern;
+            shown = clip;
             where = now;
             item = use;
             slot = at;
             Load();
         }
 
-        /// <summary>The slot of the Session that holds the pattern, or null.</summary>
-        (int Track, int Scene)? SlotOf(IPattern pattern)
+        /// <summary>The slot of the Session that holds the clip, or null.</summary>
+        (int Track, int Scene)? SlotOf(IClip clip)
         {
             var doc = Layout.Document;
-            if (doc == null || pattern?.Machine == null) return null;
+            if (doc == null || clip?.Machine == null) return null;
             if (selection.Scene is int scene && scene < doc.Scenes.Count)
                 for (int t = 0; t < Layout.TrackCount; t++)
-                    if (Layout.SequenceOf(t)?.Machine == pattern.Machine && doc.GetSlot(t, scene) == pattern.Name) return (t, scene);
+                    if (Layout.SequenceOf(t)?.Machine == clip.Machine && doc.GetSlot(t, scene) == clip.Name) return (t, scene);
             for (int t = 0; t < Layout.TrackCount; t++)
-                if (Layout.SequenceOf(t)?.Machine == pattern.Machine)
+                if (Layout.SequenceOf(t)?.Machine == clip.Machine)
                     for (int s = 0; s < doc.Scenes.Count; s++)
-                        if (doc.GetSlot(t, s) == pattern.Name) return (t, s);
+                        if (doc.GetSlot(t, s) == clip.Name) return (t, s);
             return null;
         }
 
@@ -453,7 +453,7 @@ namespace ReBuzz.Studio.Views.Audio
                 {
                     Where.Session when slot is { } s => $"Session · scene {s.Scene + 1}",
                     Where.Arrangement when item != null => $"Arrangement · {Place(item.Time)}",
-                    _ => "pattern",
+                    _ => "clip",
                 };
                 info.Text = $"{shown.Machine?.Name} · {place}" + (details is { } d ? $" · {d.Seconds:0.##} s · {d.Rate} Hz · {(d.Channels > 1 ? "stereo" : "mono")}" : " · the audio is missing");
 
@@ -520,7 +520,7 @@ namespace ReBuzz.Studio.Views.Audio
                 var session = core.Session;
                 if (where == Where.Arrangement && item != null)
                 {
-                    if (core.PlayRequested && item.Spec.PatternPositionAt(core.Song.PlayPosition) is int pos) beat = pos / (double)TicksPerBeat;
+                    if (core.PlayRequested && item.Spec.ClipPositionAt(core.Song.PlayPosition) is int pos) beat = pos / (double)TicksPerBeat;
                 }
                 else if (session != null && slot is { } s && Layout.SequenceOf(s.Track) is { } seq)
                 {
@@ -533,7 +533,7 @@ namespace ReBuzz.Studio.Views.Audio
                 beat = double.NaN;
             }
             wave.ShowPlayhead(beat);
-            axis.Playhead = double.IsNaN(beat) ? -1 : (int)Math.Round(beat * TicksPerBeat * PatternEvent.TimeBase);
+            axis.Playhead = double.IsNaN(beat) ? -1 : (int)Math.Round(beat * TicksPerBeat * ClipEvent.TimeBase);
             axis.Poll();
             if (++envelopeTick % 3 == 0) envelopes.Refresh();
         }
@@ -550,7 +550,7 @@ namespace ReBuzz.Studio.Views.Audio
 
             public int Playhead { get; set; } = -1;
 
-            double Unit => page.TicksPerBeat * (double)PatternEvent.TimeBase;
+            double Unit => page.TicksPerBeat * (double)ClipEvent.TimeBase;
 
             public double Gutter => 0;
 

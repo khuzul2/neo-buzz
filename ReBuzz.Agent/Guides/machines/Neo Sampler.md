@@ -32,7 +32,7 @@ In Tracker mode a note carries `sample`, `volume` (the note's velocity), `offset
 
 - Kits: "Kit — Electro (GM Layout)", "Kit — 808 Style (Long Kick, Cowbell)", "Kit — Tight and Dry (Short Decays)", "Kit — Lo-Fi (Pitched Down, Low-Pass 3.5 kHz)", "Kit — Percussion (Cowbell, Shaker, Clave)".
 - Your samples: import with `wave_import(path="C:/Samples/kick.wav", slot=1, name="Kick")`, then "Kit — Song Waves 1–16 (Hats in Choke 1)" (zone n plays slot n) or "Instrument — Song Waves 1–4 (Velocity Layers)". Give pitched samples a root: `root_note="C3"`.
-- A loop cut into slices: `audio_slice_to_midi(machine="Drums audio", pattern="loop")` puts up to 16 slices in the first free song waves and a new track with this sampler in Kit mode (zone n plays slot n from key 36, all in choke group 1) and a clip of one note per slice; change the notes to rearrange the loop, or the zones' waves to swap a slice.
+- A loop cut into slices: `audio_slice_to_midi(machine="Drums audio", clip="loop")` puts up to 16 slices in the first free song waves and a new track with this sampler in Kit mode (zone n plays slot n from key 36, all in choke group 1) and a clip of one note per slice; change the notes to rearrange the loop, or the zones' waves to swap a slice.
 - Instruments: "Keys — Electric Piano (Two Velocity Layers)", "Pad — Strings (Looped, Slow Attack)", "Pad — Vox Aah (Looped)", "Bass — Sub Pluck", "Bell — Glass (Long Release)", "Pluck — Nylon", "Lead — Saw (Filter Envelope)".
 - Looping: `Z1 loop` Forward with `Z1 loop start` and `Z1 loop end` in % and a `Z1 crossfade` of 10-100 ms. Layers: `wave_import(..., layer=true)` adds a file to a slot with its own root.
 

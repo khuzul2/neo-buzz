@@ -254,7 +254,7 @@ namespace ReBuzz.FileOps
             try
             {
                 List<(uint Magic, byte[] Data)> parts;
-                // Fork (clips.md §7.2, CU3): a native song holds its clips as lanes in the pattern columns, so its pattern editors' data holds no events.
+                // Fork (clips.md §7.2, CU3): a native song holds its clips as lanes in the clip columns, so its clip editors' data holds no events.
                 using (NblCoreSections.Utf8Strings())
                     parts = inner.BuildSections(true);
                 var blobs = new NblBlobSet();
@@ -323,7 +323,7 @@ namespace ReBuzz.FileOps
             }
             // Fork (clips.md §7.2, CU3): a song whose tracker data is lanes in the store (which an older build does not play: its editor data holds no events)
             // needs a reader of format 3: an older build refuses and says so, rather than open the song without them.
-            if (PatternColumnCore.PlaysEveryLane && ClipStore.HoldsTrackerLanes(buzz.SongCore))
+            if (ClipColumnCore.PlaysEveryLane && ClipStore.HoldsTrackerLanes(buzz.SongCore))
                 root["minReaderVersion"] = Math.Max((int)root["minReaderVersion"], 3);
             if (history != null) root["history"] = history;
             if (carry != null)

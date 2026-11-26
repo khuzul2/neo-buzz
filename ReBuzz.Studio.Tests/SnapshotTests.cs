@@ -97,8 +97,8 @@ namespace ReBuzz.Studio.Tests
         {
             var rig = new SessionRig(tracks);
             var m = rig.Machine(tracks[0]);
-            var p = rig.Pattern(m, "P0", SessionRig.Bar, (0, 60), (4, 64), (8, 67), (12, 72));
-            rig.Core.SongCore.SequencesList.First(s => s.Machine == m).SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+            var p = rig.Clip(m, "P0", SessionRig.Bar, (0, 60), (4, 64), (8, 67), (12, 72));
+            rig.Core.SongCore.SequencesList.First(s => s.Machine == m).SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, p));
             foreach (var name in tracks)       // analog drift is random per voice: off, so renders can be compared
                 rig.Machine(name).ParameterGroupsList[1].ParametersList.First(q => q.Name == "Drift").SetValue(0, 0);
             rig.Core.Looping = true;
@@ -157,11 +157,11 @@ namespace ReBuzz.Studio.Tests
             var before = Render(core, 300);
             Assert.That(before.Any(x => x != 0), "the song makes sound");
 
-            // Change it every way: a parameter, a machine, a pattern.
+            // Change it every way: a parameter, a machine, a clip.
             var lead = rig.Machine("Lead").ParameterGroupsList[1].ParametersList.First(p => p.Flags.HasFlag(ParameterFlags.State) && p.MaxValue - p.MinValue > 10);
             lead.SetValue(0, lead.MaxValue);
             rig.Add("Neo Poly", "Extra");
-            rig.Machine("Pad").CreatePattern("Q", 16);
+            rig.Machine("Pad").CreateClip("Q", 16);
             Assert.That(core.Snapshots.Diff(snap, null), Is.Not.Empty, "the song differs from the snapshot");
 
             core.Snapshots.Restore(snap);
@@ -217,9 +217,9 @@ namespace ReBuzz.Studio.Tests
                 core.SongCore.WavetableCore.LoadWave(1, wav, "noise", false);
                 core.Snapshots.Bind(null);
                 var a = core.Snapshots.Capture("a");
-                rig.Pattern(rig.Machine("Lead"), "P1", 16);
+                rig.Clip(rig.Machine("Lead"), "P1", 16);
                 var b = core.Snapshots.Capture("b");
-                rig.Pattern(rig.Machine("Lead"), "P2", 16);
+                rig.Clip(rig.Machine("Lead"), "P2", 16);
                 var c = core.Snapshots.Capture("c");
                 core.Snapshots.Flush();
                 var all = new[] { a, b, c };
@@ -448,7 +448,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ARenameKeepsTheSnapshotAndADiffNamesMachinesWiresAndPatterns()
+        public void ARenameKeepsTheSnapshotAndADiffNamesMachinesWiresAndClips()
         {
             using var untitled = Untitled(out _);
             using var rig = Song("Lead", "Pad");
@@ -456,13 +456,13 @@ namespace ReBuzz.Studio.Tests
             core.Snapshots.Bind(null);
             var a = core.Snapshots.Capture("a");
             rig.Add("Neo Poly", "Extra");
-            rig.Machine("Pad").CreatePattern("Q", 16);
+            rig.Machine("Pad").CreateClip("Q", 16);
             core.SongCore.MachinesList.First(m => m.Name == "Lead").Outputs.First().Amp = 0x2000;
             var b = core.Snapshots.Capture("b");
             core.Snapshots.Flush();
             var changes = core.Snapshots.Diff(a, b);
             Assert.That(changes.Any(c => c.Area == "machines" && c.Subject == "Extra" && c.Text.StartsWith("added")));
-            Assert.That(changes.Any(c => c.Area == "patterns" && c.Subject == "Pad" && c.Text.Contains("Q")));
+            Assert.That(changes.Any(c => c.Area == "clips" && c.Subject == "Pad" && c.Text.Contains("Q")));
             Assert.That(changes.Any(c => c.Area == "wires"), "the changed gain");
             Assert.That(core.Snapshots.Diff(a, a), Is.Empty);
             Assert.That(core.Snapshots.Rename(a.Id, "renamed"), Is.True);

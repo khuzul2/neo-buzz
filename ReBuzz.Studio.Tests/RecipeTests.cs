@@ -210,7 +210,7 @@ namespace ReBuzz.Studio.Tests
             var markers = Of(steps, "arrangement_markers").Data.ToJsonString();
             Assert.That(markers, Does.Contain("Intro").And.Contain("Main"));
             var get = Of(steps, "arrangement_get").Data.ToJsonString();
-            Assert.That(Regex.Matches(get, "\"pattern\":\"Line\"").Count, Is.GreaterThanOrEqualTo(3), get);
+            Assert.That(Regex.Matches(get, "\"clip\":\"Line\"").Count, Is.GreaterThanOrEqualTo(3), get);
             NotSilent(Of(steps, "render"));
         });
 

@@ -12,7 +12,7 @@ namespace ReBuzz.Agent
     {
         /// <summary>
         /// machine_swap (BR1, docs/specs/browser.md): the browser's hot-swap. Any gear in a machine's place, the Machine View's "Replace" path: connections,
-        /// position and name kept, patterns recreated by name and length, one undo step.
+        /// position and name kept, clips recreated by name and length, one undo step.
         /// </summary>
         public static void RegisterSwap(ToolRegistry tools, AgentHost host)
         {
@@ -23,7 +23,7 @@ namespace ReBuzz.Agent
                 Title = "Hot-swap a machine",
                 Description =
                     "Puts other gear in a machine's place, as dropping a browser item on a machine's box does: its connections (with their gains), position and name are kept, " +
-                    "its patterns are made again on the new machine with the same names and lengths, empty (their notes and values belong to the old machine's columns and are not converted), the arrangement's tracks are made again but not their clips, " +
+                    "its clips are made again on the new machine with the same names and lengths, empty (their notes and values belong to the old machine's columns and are not converted), the arrangement's tracks are made again but not their clips, " +
                     "one undo step. A generator can only be swapped for a generator and an effect for an effect. Same gear with another plug-in (Neo Plug) swaps the plug-in in place. " +
                     "Example: machine_swap(machine=\"Lead\", gear=\"Neo Poly\").",
                 Input = Object(null,
@@ -34,7 +34,7 @@ namespace ReBuzz.Agent
                     Req("machine", String("The machine's name (unchanged)")),
                     Req("from", String("The old gear")),
                     Req("to", String("The new gear")),
-                    Req("patterns", Integer("Patterns on the new machine"))),
+                    Req("clips", Integer("Clips on the new machine"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -56,9 +56,9 @@ namespace ReBuzz.Agent
                         string from = old.DLL.Name;
                         string name = old.Name;
                         var now = ReBuzz.Core.MachineEditing.HotSwap(core, old, dll.Name, string.IsNullOrEmpty(plugin) ? null : plugin) ?? throw new ToolError("The swap didn't leave a machine of that name; undo restores the song.");
-                        return new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["patterns"] = now.Patterns.Count };
+                        return new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["clips"] = now.Clips.Count };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"Swapped {r["machine"]} from {r["from"]} to {r["to"]}; {r["patterns"]} patterns.", r);
+                    return ToolResult.Ok($"Swapped {r["machine"]} from {r["from"]} to {r["to"]}; {r["patterns"]} clips.", r);
                 },
             });
         }

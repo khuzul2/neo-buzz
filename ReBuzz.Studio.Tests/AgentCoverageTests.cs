@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Tests
 
         static int Steps => Call("history_list")["total"]!.GetValue<int>();
 
-        static JsonArray Clips(JsonObject r) => r["clips"]!.AsArray();
+        static JsonArray Clips(JsonObject r) => r["placements"]!.AsArray();
 
         static JsonObject Lane(string machine, int lane = 0)
         {
@@ -94,7 +94,7 @@ namespace ReBuzz.Studio.Tests
             return r.Text;
         }
 
-        /// <summary>Bass with a four-beat pattern Verse; the studio open.</summary>
+        /// <summary>Bass with a four-beat clip Verse; the studio open.</summary>
         static MainWindow Song(out System.IDisposable restore)
         {
             var window = NewSong();
@@ -104,7 +104,7 @@ namespace ReBuzz.Studio.Tests
                 window.Close();
             });
             Call("machine_add", Args(("gear", "Neo Poly"), ("name", "Bass")));
-            Call("pattern_create", Args(("machine", "Bass"), ("name", "Verse"), ("length_beats", 4)));
+            Call("clip_create", Args(("machine", "Bass"), ("name", "Verse"), ("length_beats", 4)));
             Settle(window);
             return window;
         }
@@ -117,11 +117,11 @@ namespace ReBuzz.Studio.Tests
             var stack = Host.Core.SongCore.ActionStack;
 
             int steps = Steps;
-            var added = Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0), ("length_beats", 8)));
+            var added = Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("clip", "Verse"), ("at", 0), ("length_beats", 8)));
             Assert.That(Steps, Is.EqualTo(steps + 1), "one undo step, the lane included");
             Assert.That(Clips(added), Has.Count.EqualTo(1));
             Assert.That(Clips(added)[0]!["ends"]!.GetValue<double>(), Is.EqualTo(8));
-            Assert.That(Clips(added)[0]!["loop"]!["on"]!.GetValue<bool>(), Is.True, "a new clip takes the pattern's loop (on)");
+            Assert.That(Clips(added)[0]!["loop"]!["on"]!.GetValue<bool>(), Is.True, "a new clip takes the clip's loop (on)");
             var lane = Lane("Bass");
             Assert.That(lane["lane"]!.GetValue<int>(), Is.EqualTo(0));
             Assert.That(lane["role"]!.GetValue<string>(), Is.EqualTo("main"));
@@ -140,27 +140,27 @@ namespace ReBuzz.Studio.Tests
 
             var off = Call("arrangement_clip", Args(("op", "loop"), ("machine", "Bass"), ("at", 1), ("on", false)));
             Assert.That(Clips(off)[0]!["loop"]!["on"]!.GetValue<bool>(), Is.False);
-            Assert.That(Clips(off)[0]!["ends"]!.GetValue<double>(), Is.LessThanOrEqualTo(4), "a clip that doesn't loop plays its pattern once");
+            Assert.That(Clips(off)[0]!["ends"]!.GetValue<double>(), Is.LessThanOrEqualTo(4), "a clip that doesn't loop plays its clip once");
 
             var copied = Call("arrangement_clip", Args(("op", "copy"), ("machine", "Bass"), ("at", 0), ("to", 16)));
             Assert.That(Clips(copied), Has.Count.EqualTo(2));
-            string copyPattern = Clips(copied)[1]!["pattern"]!.GetValue<string>();
-            Assert.That(copyPattern, Is.Not.EqualTo("Verse"), "an independent copy has a pattern of its own");
+            string copyClip = Clips(copied)[1]!["clip"]!.GetValue<string>();
+            Assert.That(copyClip, Is.Not.EqualTo("Verse"), "an independent copy has a clip of its own");
             var linked = Call("arrangement_clip", Args(("op", "copy"), ("machine", "Bass"), ("at", 0), ("to", 24), ("link", true)));
-            Assert.That(Clips(linked)[^1]!["pattern"]!.GetValue<string>(), Is.EqualTo("Verse"), "linked: the same pattern");
+            Assert.That(Clips(linked)[^1]!["clip"]!.GetValue<string>(), Is.EqualTo("Verse"), "linked: the same clip");
 
             var moved = Call("arrangement_clip", Args(("op", "move"), ("machine", "Bass"), ("at", 24), ("to", 32)));
             Assert.That(Clips(moved).Select(c => c!["at"]!.GetValue<double>()), Does.Contain(32.0).And.Not.Contain(24.0));
 
             var unique = Call("arrangement_clip", Args(("op", "make_unique"), ("machine", "Bass"), ("at", 32)));
-            Assert.That(Clips(unique).Last()!["pattern"]!.GetValue<string>(), Is.Not.EqualTo("Verse"));
+            Assert.That(Clips(unique).Last()!["clip"]!.GetValue<string>(), Is.Not.EqualTo("Verse"));
 
             var drawn = Call("arrangement_clip", Args(("op", "draw"), ("machine", "Bass"), ("at", 40), ("length_beats", 4)));
             Assert.That(Clips(drawn).Select(c => c!["at"]!.GetValue<double>()), Does.Contain(40.0));
 
             // Refusals say where the clips are and what to do.
             Assert.That(Err("arrangement_clip", Args(("op", "split"), ("machine", "Bass"), ("at", 0), ("split_at", 500))), Does.Contain("Split inside the clip"));
-            Assert.That(Err("arrangement_clip", Args(("op", "loop"), ("machine", "Bass"), ("at", 90), ("on", true))), Does.Contain("No clip at beat 90").And.Contain("Verse"));
+            Assert.That(Err("arrangement_clip", Args(("op", "loop"), ("machine", "Bass"), ("at", 90), ("on", true))), Does.Contain("No placement at beat 90").And.Contain("Verse"));
             Assert.That(Err("arrangement_clip", Args(("op", "trim"), ("machine", "Bass"), ("at", 0))), Does.Contain("start and/or end"));
             Assert.That(Err("arrangement_clip", Args(("op", "move"), ("machine", "Bass"), ("at", 0), ("to", 4), ("to_lane", 7))), Does.Contain("lane"));
             Assert.That(Err("arrangement_clip", Args(("op", "join"), ("machine", "Bass"), ("at", 0))), Does.Contain("No clip starts where this one ends"));
@@ -172,7 +172,7 @@ namespace ReBuzz.Studio.Tests
             var window = Song(out var restore);
             using var _ = restore;
             var stack = Host.Core.SongCore.ActionStack;
-            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0)));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("clip", "Verse"), ("at", 0)));
 
             int steps = Steps;
             var added = Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass"), ("role", "take")));
@@ -205,13 +205,13 @@ namespace ReBuzz.Studio.Tests
             int steps = Steps;
             var written = Call("arrangement_automation", Args(("op", "write"), ("machine", "Bass"), ("param", param.Name), ("from", 0), ("to", 8), ("points", Points(lo, hi))));
             Assert.That(Steps, Is.EqualTo(steps + 1), "one undo step, the lane and the clip included");
-            Assert.That(written["clip"]!["points"]!.GetValue<int>(), Is.EqualTo(2));
+            Assert.That(written["written"]!["points"]!.GetValue<int>(), Is.EqualTo(2));
             Assert.That(Lane("Bass", 0)["role"]!.GetValue<string>(), Is.EqualTo("automation"), "the clip is on an automation lane");
 
             var list = Call("arrangement_automation", Args(("op", "list"), ("machine", "Bass")))["lanes"]!.AsArray();
             Assert.That(list, Has.Count.EqualTo(1));
             var seg = list[0]!["segments"]![0]!;
-            Assert.That(seg["source"]!.GetValue<string>(), Is.EqualTo("clip"));
+            Assert.That(seg["source"]!.GetValue<string>(), Is.EqualTo("automation"));
             Assert.That(seg["points"]!.AsArray(), Has.Count.EqualTo(2));
             Assert.That(seg["points"]![0]!["ramp"]!.GetValue<bool>(), Is.True, "linear: a ramp to the next point");
 
@@ -248,27 +248,27 @@ namespace ReBuzz.Studio.Tests
             int lo = param.Parameter.MinValue, hi = param.Parameter.MaxValue;
             var key = new ColumnKey(param.Group, param.Parameter.IndexInGroup, 0);
             JsonArray Points(int a, int b) => new(new JsonObject { ["at"] = 0, ["value"] = $"raw:{a}" }, new JsonObject { ["at"] = 3, ["value"] = $"raw:{b}" });
-            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0), ("length_beats", 8)));
-            var verse = machine.Patterns.Single(p => p.Name == "Verse");
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("clip", "Verse"), ("at", 0), ("length_beats", 8)));
+            var verse = machine.Clips.Single(p => p.Name == "Verse");
 
             // An arrangement clip, by a position inside it.
             int steps = Steps;
             var written = Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("lane", 0), ("at", 1), ("param", param.Name), ("points", Points(lo, hi))));
             Assert.That(Steps, Is.EqualTo(steps + 1), "one undo step");
-            Assert.That(written["pattern"]!.GetValue<string>(), Is.EqualTo("Verse"));
+            Assert.That(written["clip"]!.GetValue<string>(), Is.EqualTo("Verse"));
             Assert.That(written["envelopes"]![0]!["points"]!.AsArray(), Has.Count.EqualTo(2));
             Assert.That(written["envelopes"]![0]!["points"]![0]!["ramp"]!.GetValue<bool>(), Is.True, "linear: a ramp to the next point");
             // The lane's model holds the same points: what the agent wrote is what a person sees in the Detail lane.
             var model = ClipEnvelopes.Read(verse, key);
             Assert.That(model.Points.Select(p => p.Value), Is.EqualTo(new[] { lo, hi }));
 
-            // Read: by pattern, and the same envelope.
-            var read = Call("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("pattern", "Verse")));
+            // Read: by clip, and the same envelope.
+            var read = Call("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("clip", "Verse")));
             Assert.That(read["envelopes"]!.AsArray(), Has.Count.EqualTo(1));
             Assert.That(read["envelopes"]![0]!["param"]!.GetValue<string>(), Is.EqualTo(param.Parameter.Name));
 
             // Steps, and a second write between the same beats replaces those points (no third).
-            Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name), ("shape", "step"), ("points", Points(hi, lo))));
+            Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("clip", "Verse"), ("param", param.Name), ("shape", "step"), ("points", Points(hi, lo))));
             model = ClipEnvelopes.Read(verse, key);
             Assert.That(model.Points.Select(p => (p.Value, p.Ramp)), Is.EqualTo(new[] { (hi, false), (lo, false) }));
 
@@ -279,21 +279,21 @@ namespace ReBuzz.Studio.Tests
             var session = layout.CreateClip(track, 0);
             Assert.That(session, Is.Not.Null);
             var inSession = Call("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("scene", 1), ("param", param.Name), ("points", Points(lo, hi))));
-            Assert.That(inSession["pattern"]!.GetValue<string>(), Is.EqualTo(session.Name));
+            Assert.That(inSession["clip"]!.GetValue<string>(), Is.EqualTo(session.Name));
             Assert.That(ClipEnvelopes.Read(session, key).Points, Has.Count.EqualTo(2));
             Assert.That(ClipEnvelopes.Read(verse, key).Points.Select(p => p.Value), Is.EqualTo(new[] { hi, lo }), "the other clip is not touched");
 
             // Clear is one step; undo brings the points back.
             int before = Steps;
-            Call("clip_envelope", Args(("op", "clear"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name)));
+            Call("clip_envelope", Args(("op", "clear"), ("machine", "Bass"), ("clip", "Verse"), ("param", param.Name)));
             Assert.That(Steps, Is.EqualTo(before + 1));
             Assert.That(ClipEnvelopes.Read(verse, key).Points, Is.Empty);
             core.SongCore.ActionStack.Undo();
             Assert.That(ClipEnvelopes.Read(verse, key).Points, Has.Count.EqualTo(2), "undo");
 
             // The same refusals as the lane's limits.
-            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", param.Name), ("points", new JsonArray(new JsonObject { ["at"] = 9, ["value"] = $"raw:{lo}" })))), Does.Contain("outside the clip"));
-            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("pattern", "Verse"), ("param", "No Such Knob"), ("points", Points(lo, hi)))), Does.Contain("No Such Knob"));
+            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("clip", "Verse"), ("param", param.Name), ("points", new JsonArray(new JsonObject { ["at"] = 9, ["value"] = $"raw:{lo}" })))), Does.Contain("outside the clip"));
+            Assert.That(Err("clip_envelope", Args(("op", "write"), ("machine", "Bass"), ("clip", "Verse"), ("param", "No Such Knob"), ("points", Points(lo, hi)))), Does.Contain("No Such Knob"));
             Assert.That(Err("clip_envelope", Args(("op", "read"), ("machine", "Bass"))), Does.Contain("Say which clip"));
             Assert.That(Err("clip_envelope", Args(("op", "read"), ("machine", "Bass"), ("scene", 9))), Does.Contain("scene"));
         }
@@ -305,7 +305,7 @@ namespace ReBuzz.Studio.Tests
             using var _ = restore;
             Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass")));
             Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass"), ("role", "take")));
-            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 1), ("pattern", "Verse"), ("at", 0)));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 1), ("clip", "Verse"), ("at", 0)));
 
             int steps = Steps;
             var comp = Call("arrangement_takes", Args(("op", "comp"), ("machine", "Bass"), ("take_lane", 1), ("from", 0), ("to", 2), ("to_lane", 0)));
@@ -341,9 +341,9 @@ namespace ReBuzz.Studio.Tests
             Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass")));
             Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass"), ("role", "take")));
             Call("arrangement_lane", Args(("op", "add"), ("machine", "Bass"), ("role", "take")));
-            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 1), ("pattern", "Verse"), ("at", 0)));
-            Call("pattern_create", Args(("machine", "Bass"), ("name", "Chorus"), ("length_beats", 4)));
-            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 2), ("pattern", "Chorus"), ("at", 0)));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 1), ("clip", "Verse"), ("at", 0)));
+            Call("clip_create", Args(("machine", "Bass"), ("name", "Chorus"), ("length_beats", 4)));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("lane", 2), ("clip", "Chorus"), ("at", 0)));
 
             var list = Call("takes", Args(("op", "list"), ("machine", "Bass")));
             var takes = list["takes"]!.AsArray();
@@ -458,12 +458,12 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void MachinesAreClonedWithTheirPatternsAndGrouped()
+        public void MachinesAreClonedWithTheirClipsAndGrouped()
         {
             var window = Song(out var restore);
             using var _ = restore;
             var core = Host.Core;
-            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("pattern", "Verse"), ("at", 0), ("length_beats", 8)));
+            Call("arrangement_clip", Args(("op", "add"), ("machine", "Bass"), ("clip", "Verse"), ("at", 0), ("length_beats", 8)));
             Call("machine_add", Args(("gear", "Neo Poly"), ("name", "Pad")));
 
             int machines = core.SongCore.MachinesList.Count;
@@ -474,11 +474,11 @@ namespace ReBuzz.Studio.Tests
             core.SongCore.ActionStack.Undo();
             Assert.That(core.SongCore.MachinesList.Count, Is.EqualTo(machines), "undo takes the copy away");
 
-            var cloned = Call("machine_clone", Args(("machines", new JsonArray("Bass")), ("with_patterns", true)));
+            var cloned = Call("machine_clone", Args(("machines", new JsonArray("Bass")), ("with_clips", true)));
             string copy = cloned["copies"]![0]!["name"]!.GetValue<string>();
             Assert.That(copy, Is.Not.EqualTo("Bass"));
             var copyMachine = core.SongCore.MachinesList.Single(m => m.Name == copy);
-            Assert.That(copyMachine.Patterns.Select(p => p.Name), Does.Contain("Verse"), "its patterns");
+            Assert.That(copyMachine.Clips.Select(p => p.Name), Does.Contain("Verse"), "its clips");
             Assert.That(Lane(copy)["events"]!.AsArray(), Has.Count.GreaterThan(0), "its rows in the arrangement");
             core.SongCore.ActionStack.Undo();
             Assert.That(core.SongCore.MachinesList.Any(m => m.Name == copy), Is.False);
@@ -576,8 +576,8 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ CU4 (clips.md §8): one layer over the store
 
-        static JsonArray Notes(string machine, string pattern, string input = null) =>
-            Call("notes_read", input == null ? Args(("machine", machine), ("pattern", pattern)) : Args(("machine", machine), ("pattern", pattern), ("input", input)))["notes"]!.AsArray();
+        static JsonArray Notes(string machine, string clip, string input = null) =>
+            Call("notes_read", input == null ? Args(("machine", machine), ("clip", clip)) : Args(("machine", machine), ("clip", clip), ("input", input)))["notes"]!.AsArray();
 
         static JsonArray Note(int pitch, double start) => new(new JsonObject { ["pitch"] = pitch, ["start"] = start, ["length"] = 1 });
 
@@ -588,13 +588,13 @@ namespace ReBuzz.Studio.Tests
             using var _ = restore;
             var core = Host.Core;
             var bass = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
-            var verse = bass.Patterns.Single(p => p.Name == "Verse");
+            var verse = bass.Clips.Single(p => p.Name == "Verse");
 
             // Notes: one call is one undo step, on either route; both land in the store the clip plays.
             int steps = Steps;
-            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(60, 0))));
+            Call("notes_write", Args(("machine", "Bass"), ("clip", "Verse"), ("notes", Note(60, 0))));
             Assert.That(Steps, Is.EqualTo(steps + 1), "a MIDI note: one undo step");
-            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(64, 1)), ("input", "tracks")));
+            Call("notes_write", Args(("machine", "Bass"), ("clip", "Verse"), ("notes", Note(64, 1)), ("input", "tracks")));
             Assert.That(Steps, Is.EqualTo(steps + 2), "a track note: one undo step");
             Assert.That(Notes("Bass", "Verse"), Has.Count.EqualTo(1), "the MIDI route reads its Notes lane");
             Assert.That(Notes("Bass", "Verse", "tracks"), Has.Count.EqualTo(1));
@@ -604,39 +604,39 @@ namespace ReBuzz.Studio.Tests
             var key = new ColumnKey(2, noteParameter.IndexInGroup, 1);
             var marked = SessionLayout.ColumnFor(verse, key, create: true);
             Assert.That(marked, Is.Not.Null);
-            marked.SetEvents(new[] { new BuzzGUI.Interfaces.PatternEvent(2 * 240 * 4 / 4 * 2, BuzzGUI.Common.BuzzNote.FromMIDINote(67), 0) }, true);
+            marked.SetEvents(new[] { new BuzzGUI.Interfaces.ClipEvent(2 * 240 * 4 / 4 * 2, BuzzGUI.Common.BuzzNote.FromMIDINote(67), 0) }, true);
             var tracks = Notes("Bass", "Verse", "tracks");
             Assert.That(tracks.Select(n => n!["pitch"]!.GetValue<int>()).OrderBy(x => x), Is.EqualTo(new[] { 64, 67 }), "every lane of the Note parameter");
 
             // clip_get: the lanes with who made them, the notes, the view.
-            var got = Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse")));
+            var got = Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse")));
             Assert.That(got["input"]!.GetValue<string>(), Is.EqualTo("midi"));
             Assert.That(got["notes"]!.AsArray(), Has.Count.EqualTo(1));
             var lanes = got["lanes"]!.AsArray();
             Assert.That(lanes.Any(l => l!["kind"]!.GetValue<string>() == "notes" && l["events"]!.GetValue<int>() == 1), Is.True, "the Notes lane");
             var noteLanes = lanes.Where(l => l!["param"]?.GetValue<string>() == noteParameter.Name).ToList();
-            Assert.That(noteLanes.Select(l => l!["source"]!.GetValue<string>()).OrderBy(x => x), Is.EqualTo(new[] { "automation", "pattern" }), "the tracker's lane and the take's");
+            Assert.That(noteLanes.Select(l => l!["source"]!.GetValue<string>()).OrderBy(x => x), Is.EqualTo(new[] { "automation", "editor" }), "the tracker's lane and the take's");
             Assert.That(got["view"]!["placements"]!.GetValue<int>(), Is.EqualTo(0));
 
             // The view: a lane's rows and mute are kept with the lane.
             var lane = StoreLanes.All(verse, key).First();
             lane.Metadata[BuzzGUI.Common.ClipMeta.Grid] = "rpb=6";
             lane.Metadata[BuzzGUI.Common.ClipMeta.Mute] = "1";
-            var view = Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse")))["view"]!;
+            var view = Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse")))["view"]!;
             Assert.That(view["rows_per_beat"]!.GetValue<int>(), Is.EqualTo(6));
             Assert.That(view["muted_lanes"]!.GetValue<int>(), Is.EqualTo(1));
 
             // Automation: a parameter written by the agent (marked lane) and the tracker's lane (unmarked) read as one entry.
             var param = SongModel.Params(bass).First(q => !q.IsTrack && q.Parameter.MaxValue - q.Parameter.MinValue > 20);
             int lo = param.Parameter.MinValue, hi = param.Parameter.MaxValue;
-            Call("automation_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name), ("points", new JsonArray(
+            Call("automation_write", Args(("machine", "Bass"), ("clip", "Verse"), ("param", param.Parameter.Name), ("points", new JsonArray(
                 new JsonObject { ["at"] = 0, ["value"] = $"raw:{lo}" }, new JsonObject { ["at"] = 2, ["value"] = $"raw:{hi}" }))));
             var pkey = new ColumnKey(param.Group, param.Parameter.IndexInGroup, 0);
             Assert.That(StoreLanes.Home(verse, pkey, create: false), Is.Not.Null);
             verse.InsertColumn(verse.Columns.Count, param.Parameter, 0);
             var unmarked = StoreLanes.All(verse, pkey).First(c => !StoreLanes.IsMarked(c));
-            unmarked.SetEvents(new[] { new BuzzGUI.Interfaces.PatternEvent(3 * 240, lo, 0) }, true);
-            var read = Call("automation_read", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name)))["automation"]!.AsArray();
+            unmarked.SetEvents(new[] { new BuzzGUI.Interfaces.ClipEvent(3 * 240, lo, 0) }, true);
+            var read = Call("automation_read", Args(("machine", "Bass"), ("clip", "Verse"), ("param", param.Parameter.Name)))["automation"]!.AsArray();
             Assert.That(read, Has.Count.EqualTo(1), "one entry for the parameter");
             Assert.That(read[0]!["source"]!.GetValue<string>(), Is.EqualTo("both"));
             Assert.That(read[0]!["events"]!.GetValue<int>(), Is.GreaterThanOrEqualTo(3), "the events of both lanes");
@@ -646,23 +646,23 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ACloneWithPatternsPlaysTheOriginalsDataAndASavedClipReopensWithEveryLane()
+        public void ACloneWithClipsPlaysTheOriginalsDataAndASavedClipReopensWithEveryLane()
         {
             var window = Song(out var restore);
             using var _ = restore;
             var core = Host.Core;
-            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(60, 0))));
-            Call("notes_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("notes", Note(64, 2)), ("input", "tracks")));
+            Call("notes_write", Args(("machine", "Bass"), ("clip", "Verse"), ("notes", Note(60, 0))));
+            Call("notes_write", Args(("machine", "Bass"), ("clip", "Verse"), ("notes", Note(64, 2)), ("input", "tracks")));
             var bass = core.SongCore.MachinesList.Single(m => m.Name == "Bass");
             var param = SongModel.Params(bass).First(q => !q.IsTrack && q.Parameter.MaxValue - q.Parameter.MinValue > 20);
-            Call("automation_write", Args(("machine", "Bass"), ("pattern", "Verse"), ("param", param.Parameter.Name), ("points", new JsonArray(
+            Call("automation_write", Args(("machine", "Bass"), ("clip", "Verse"), ("param", param.Parameter.Name), ("points", new JsonArray(
                 new JsonObject { ["at"] = 0, ["value"] = $"raw:{param.Parameter.MinValue}" }, new JsonObject { ["at"] = 2, ["value"] = $"raw:{param.Parameter.MaxValue}" }))));
-            var original = Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse")));
+            var original = Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse")));
 
-            // Clone with patterns (what Copy then Paste does): the copy's clip has the same lanes and notes, so it plays them.
-            var cloned = Call("machine_clone", Args(("machines", new JsonArray("Bass")), ("with_patterns", true)));
+            // Clone with clips (what Copy then Paste does): the copy's clip has the same lanes and notes, so it plays them.
+            var cloned = Call("machine_clone", Args(("machines", new JsonArray("Bass")), ("with_clips", true)));
             string copy = cloned["copies"]![0]!["name"]!.GetValue<string>();
-            var copied = Call("clip_get", Args(("machine", copy), ("pattern", "Verse")));
+            var copied = Call("clip_get", Args(("machine", copy), ("clip", "Verse")));
             Assert.That(copied["notes"]!.ToJsonString(), Is.EqualTo(original["notes"]!.ToJsonString()), "the MIDI notes");
             Assert.That(Notes(copy, "Verse", "tracks").ToJsonString(), Is.EqualTo(Notes("Bass", "Verse", "tracks").ToJsonString()), "the track notes");
             Assert.That(copied["lanes"]!.ToJsonString(), Is.EqualTo(original["lanes"]!.ToJsonString()), "every lane, with its events");
@@ -671,12 +671,12 @@ namespace ReBuzz.Studio.Tests
             string path = NeoBuzz.TestSupport.TestTemp.Path($"cu4-lanes-{Environment.ProcessId}.nbl");
             try
             {
-                var before = (Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse"))).ToJsonString(), Call("clip_get", Args(("machine", copy), ("pattern", "Verse"))).ToJsonString());
+                var before = (Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse"))).ToJsonString(), Call("clip_get", Args(("machine", copy), ("clip", "Verse"))).ToJsonString());
                 core.SaveSongCopy(path);
                 core.Modified = false;
                 Assert.That(core.TryOpenSongFile(path), Is.True);
                 Settle(window);
-                var after = (Call("clip_get", Args(("machine", "Bass"), ("pattern", "Verse"))).ToJsonString(), Call("clip_get", Args(("machine", copy), ("pattern", "Verse"))).ToJsonString());
+                var after = (Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse"))).ToJsonString(), Call("clip_get", Args(("machine", copy), ("clip", "Verse"))).ToJsonString());
                 Assert.That(after, Is.EqualTo(before), "saved and opened: every lane, its events and its view");
             }
             finally

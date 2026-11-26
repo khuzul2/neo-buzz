@@ -15,10 +15,10 @@ namespace ReBuzz.Core.Session
         internal const string NoBeatsFound = "No beats were found in the audio (no steady pulse to follow), so the clip is as it was.";
 
         /// <summary>The beats of a clip's audio as auto-warp would mark them (null and a reason when it can't), from <paramref name="fromSeconds"/> on.</summary>
-        internal AutoWarpResult AnalyseAutoWarp(IPattern pattern, double fromSeconds, out string error)
+        internal AutoWarpResult AnalyseAutoWarp(IClip clip, double fromSeconds, out string error)
         {
             error = null;
-            var audio = AudioOf(pattern);
+            var audio = AudioOf(clip);
             var source = audio == null ? null : ClipAudioOf(audio)?.Source;
             if (source == null) { error = "The clip's audio is not there."; return null; }
             if (!double.IsFinite(fromSeconds) || fromSeconds < 0 || fromSeconds >= source.Seconds) { error = $"from_seconds: 0 to {source.Seconds:0.###} (the audio's length)."; return null; }
@@ -101,10 +101,10 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Auto-warps a clip (undoable as one step); the tempo it found, or 0 and a reason in <paramref name="error"/>.</summary>
-        public double AutoWarp(IPattern pattern, double fromSeconds, out string error, bool toGrid = false)
+        public double AutoWarp(IClip clip, double fromSeconds, out string error, bool toGrid = false)
         {
-            error = EditAudio(pattern, new AudioClipEdit { AutoWarp = true, ToGrid = toGrid, FromSeconds = fromSeconds }, null, toGrid ? "Auto-warp to grid" : "Auto-warp");
-            return error == null ? AudioOf(pattern)?.Bpm ?? 0 : 0;
+            error = EditAudio(clip, new AudioClipEdit { AutoWarp = true, ToGrid = toGrid, FromSeconds = fromSeconds }, null, toGrid ? "Auto-warp to grid" : "Auto-warp");
+            return error == null ? AudioOf(clip)?.Bpm ?? 0 : 0;
         }
 
         /// <summary>
@@ -112,10 +112,10 @@ namespace ReBuzz.Core.Session
         /// (grid, sensitivity, reach) are saved with every clip first when given. A clip with no beats found is named in the answer and left as it was; the others are done.
         /// Returns why nothing was done, or null (then <see cref="LastGridReports"/> has what "to grid" did to each).
         /// </summary>
-        internal string AutoWarpClips(IReadOnlyList<IPattern> clips, bool toGrid, AudioClipEdit options = null, string label = null, double? fromSeconds = null, double? toSeconds = null)
+        internal string AutoWarpClips(IReadOnlyList<IClip> clips, bool toGrid, AudioClipEdit options = null, string label = null, double? fromSeconds = null, double? toSeconds = null)
         {
             if (clips == null || clips.Count == 0) return "No clip.";
-            var reports = new List<(IPattern Clip, GridWarpReport Report)>();
+            var reports = new List<(IClip Clip, GridWarpReport Report)>();
             var skipped = new List<string>();
             UndoStack.BeginActionGroup();
             try
@@ -135,7 +135,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>What "to grid" did to each clip of the last <see cref="AutoWarpClips"/>.</summary>
-        internal IReadOnlyList<(IPattern Clip, GridWarpReport Report)> LastGridReports { get; private set; } = Array.Empty<(IPattern, GridWarpReport)>();
+        internal IReadOnlyList<(IClip Clip, GridWarpReport Report)> LastGridReports { get; private set; } = Array.Empty<(IClip, GridWarpReport)>();
 
         /// <summary>
         /// A file just imported (not yet in a slot) that is longer than eight bars and has a tempo is warped by its beats where they move; false when it isn't

@@ -9,7 +9,7 @@ namespace ReBuzz.Core.Session
 {
     /// <summary>
     /// Session View engine (fork addition): ReBuzz side of <see cref="SessionScheduler{TTrack,TClip}"/>.
-    /// Tracks are sequences, clips are patterns. See docs/specs/session-view.md, section 4.1.
+    /// Tracks are sequences, clips are clips. See docs/specs/session-view.md, section 4.1.
     ///
     /// Locking: the scheduler is guarded by its own small lock (<see cref="gate"/>), never by
     /// ReBuzzCore.AudioLock, so a request (UI or MIDI thread) never waits for a whole audio
@@ -26,19 +26,19 @@ namespace ReBuzz.Core.Session
     /// Engine hooks:
     ///  - <see cref="OnTick"/> from WorkManager at every tick boundary while playing
     ///  - <see cref="OnTransportStopped"/> from ReBuzzCore.Playing
-    ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnPatternDeleted"/>, <see cref="Reset"/>
+    ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnClipDeleted"/>, <see cref="Reset"/>
     /// </summary>
     internal sealed partial class SessionCore : ISession
     {
-        const int DoNotRecordFlag = 1 << 16;    // ParameterCore.SetValue: don't record into patterns
+        const int DoNotRecordFlag = 1 << 16;    // ParameterCore.SetValue: don't record into clips
         const int MidiAllNotesOff = 123;
 
         readonly ReBuzzCore buzz;
-        readonly SessionScheduler<SequenceCore, PatternCore> scheduler;
+        readonly SessionScheduler<SequenceCore, ClipCore> scheduler;
         readonly object gate = new object();
 
         // Audio thread only (OnTick): copy of the scheduler's changes, reused to avoid allocation.
-        readonly List<SessionChange<SequenceCore, PatternCore>> tickChanges = new List<SessionChange<SequenceCore, PatternCore>>(64);   // fork (follow-ups): sized ahead
+        readonly List<SessionChange<SequenceCore, ClipCore>> tickChanges = new List<SessionChange<SequenceCore, ClipCore>>(64);   // fork (follow-ups): sized ahead
 
         int beatsPerBar = 4;
         LaunchQuantization launchQuantization = LaunchQuantization.Bar;
@@ -104,11 +104,11 @@ namespace ReBuzz.Core.Session
         internal SessionCore(ReBuzzCore buzz)
         {
             this.buzz = buzz;
-            scheduler = new SessionScheduler<SequenceCore, PatternCore>(p => p.Length);
+            scheduler = new SessionScheduler<SequenceCore, ClipCore>(p => p.Length);
             // Follow actions (0.6): each track's column comes from the launch map; slot quantization codes are LaunchQuantization values.
-            scheduler.ColumnOf = seq => seq.FollowColumn as SessionScheduler<SequenceCore, PatternCore>.Slot[];
+            scheduler.ColumnOf = seq => seq.FollowColumn as SessionScheduler<SequenceCore, ClipCore>.Slot[];
             scheduler.QuantizeTicksOf = code => GetQuantizationTicks((LaunchQuantization)code);
-            // 0.6.1: deleted patterns and removed sequences can't come back through stale references.
+            // 0.6.1: deleted clips and removed sequences can't come back through stale references.
             scheduler.IsLiveClip = p => !p.IsDeleted;
             scheduler.IsLiveTrack = seq => !seq.IsRemoved;
         }
@@ -233,7 +233,7 @@ namespace ReBuzz.Core.Session
         // ------------------------------------------------------------------ requests (any thread)
 
         /// <summary>A press of the clip's launch control: launches it, or with Toggle stops it if it plays.</summary>
-        public void Launch(ISequence track, IPattern clip, LaunchOptions options = null)
+        public void Launch(ISequence track, IClip clip, LaunchOptions options = null)
         {
             var seq = ToSequence(track);
             var pat = ToClip(seq, clip);
@@ -262,7 +262,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>A queued launch of an audio clip that streams from disk: its first audio is read ahead during the quantization wait (neo-audio.md, NA1b).</summary>
-        void AnticipateAudio(PatternCore pat, LaunchOptions options)
+        void AnticipateAudio(ClipCore pat, LaunchOptions options)
         {
             var clip = pat?.SessionAudio;
             var mi = ReBuzzCore.masterInfo;
@@ -273,7 +273,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Release of the clip's launch control (0.5): Gate stops it, Repeat stops repeating.</summary>
-        public void Release(ISequence track, IPattern clip, LaunchOptions options = null)
+        public void Release(ISequence track, IClip clip, LaunchOptions options = null)
         {
             var mode = options?.Mode ?? ClipLaunchMode.Trigger;
             if (mode != ClipLaunchMode.Gate && mode != ClipLaunchMode.Repeat) return;
@@ -288,9 +288,9 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>A playing or queued clip's markers changed (clip panel): it follows at once.</summary>
-        internal void Reshape(ISequence track, IPattern clip, LaunchOptions options)
+        internal void Reshape(ISequence track, IClip clip, LaunchOptions options)
         {
-            if (track is not SequenceCore seq || clip is not PatternCore pat || options == null) return;
+            if (track is not SequenceCore seq || clip is not ClipCore pat || options == null) return;
             lock (gate)
             {
                 scheduler.Reshape(seq, pat, new ClipShape(options.Start, options.LoopStart, options.LoopEnd, options.Loop));
@@ -303,17 +303,17 @@ namespace ReBuzz.Core.Session
         /// waiting to start, as its clips replace that scene's, and it stops the tracks in
         /// <see cref="SceneOptions.StopTracks"/>. Null: a group slot, no scene settings.
         /// </summary>
-        public void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip, LaunchOptions Options)> slots, SceneOptions scene) =>
+        public void LaunchScene(IEnumerable<(ISequence Track, IClip Clip, LaunchOptions Options)> slots, SceneOptions scene) =>
             LaunchTogether(slots, scene?.Quantization, scene);
 
         /// <summary>Clips launched together with the same options (a group slot); no scene settings.</summary>
-        public void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip)> slots, LaunchOptions options = null)
+        public void LaunchScene(IEnumerable<(ISequence Track, IClip Clip)> slots, LaunchOptions options = null)
         {
             if (slots == null) throw new ArgumentNullException(nameof(slots));
             LaunchTogether(slots.Select(s => (s.Track, s.Clip, options)), options?.Quantization, null);
         }
 
-        void LaunchTogether(IEnumerable<(ISequence Track, IPattern Clip, LaunchOptions Options)> slots, LaunchQuantization? quantization, SceneOptions scene)
+        void LaunchTogether(IEnumerable<(ISequence Track, IClip Clip, LaunchOptions Options)> slots, LaunchQuantization? quantization, SceneOptions scene)
         {
             if (slots == null) throw new ArgumentNullException(nameof(slots));
             var list = slots
@@ -341,7 +341,7 @@ namespace ReBuzz.Core.Session
                 string label = scene == null ? (list.Count == 1 ? $"{list[0].Item2.Name} on {list[0].Item1.Machine?.Name}" : $"{list.Count} clips")
                              : scene.Scene >= 0 ? $"scene {scene.Scene + 1}" : "scene";
                 Remember(label, list.Select(l => (l.Item1, l.Item2, scheduler.Capture(l.Item1)))
-                                    .Concat(stops.Select(t => (t, (PatternCore)null, scheduler.Capture(t)))).ToArray(), isScene: scene != null);
+                                    .Concat(stops.Select(t => (t, (ClipCore)null, scheduler.Capture(t)))).ToArray(), isScene: scene != null);
                 var (at, grid) = scheduler.LaunchScene(list.Select(s => (s.Item1, s.Item2, SpecOf(s.Item3, quantize, forScene: true))), quantize, HeardClock());
                 foreach (var t in stops)
                     scheduler.StopAt(t, at);
@@ -369,14 +369,14 @@ namespace ReBuzz.Core.Session
         {
             public string Label;
             public bool IsScene;
-            public (SequenceCore Track, PatternCore Clip, object Before)[] Entries;
+            public (SequenceCore Track, ClipCore Clip, object Before)[] Entries;
         }
 
         const int HistoryLength = 32;
         readonly List<LaunchRecord> history = new List<LaunchRecord>();     // under the gate
 
         /// <summary>Call under the gate, before the launch.</summary>
-        void Remember(string label, (SequenceCore, PatternCore, object)[] entries, bool isScene = false)
+        void Remember(string label, (SequenceCore, ClipCore, object)[] entries, bool isScene = false)
         {
             if (entries.Length == 0) return;
             history.Add(new LaunchRecord { Label = label, Entries = entries, IsScene = isScene });
@@ -387,7 +387,7 @@ namespace ReBuzz.Core.Session
         volatile string lastLaunch;     // the newest record's label, for the UI without the gate
 
         /// <summary>Drops undo entries (under the gate); a launch left with none goes from the history.</summary>
-        void ForgetHistory(Func<(SequenceCore Track, PatternCore Clip, object Before), bool> gone)
+        void ForgetHistory(Func<(SequenceCore Track, ClipCore Clip, object Before), bool> gone)
         {
             for (int i = history.Count - 1; i >= 0; i--)
             {
@@ -492,8 +492,8 @@ namespace ReBuzz.Core.Session
             var song = buzz.SongCore;
             int songPosition = song.PlayPosition;
             int loopLength = song.LoopEnd - song.LoopStart;
-            bool launch = songTime != 0 && e != null && e.Type == SequenceEventType.PlayPattern
-                          && e.Pattern is PatternCore && e.Pattern.Machine == seq.Machine;
+            bool launch = songTime != 0 && e != null && e.Type == SequenceEventType.PlayClip
+                          && e.Clip is ClipCore && e.Clip.Machine == seq.Machine;
 
             lock (gate)
             {
@@ -510,7 +510,7 @@ namespace ReBuzz.Core.Session
                         if (delta <= 0 && loopLength > 0) delta += loopLength;
                         at = scheduler.Clock + Math.Max(1, delta);
                     }
-                    scheduler.LaunchAt(seq, (PatternCore)e.Pattern, at, loop);
+                    scheduler.LaunchAt(seq, (ClipCore)e.Clip, at, loop);
                 }
             }
             RaiseTrackStateChanged(seq);
@@ -518,11 +518,11 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ reads (any thread, lock-free)
 
-        public IPattern GetPlaying(ISequence track) => track is SequenceCore seq ? scheduler.GetPlaying(seq) : null;
+        public IClip GetPlaying(ISequence track) => track is SequenceCore seq ? scheduler.GetPlaying(seq) : null;
 
-        internal PatternCore GetPlayingCore(SequenceCore seq) => scheduler.GetPlaying(seq);
+        internal ClipCore GetPlayingCore(SequenceCore seq) => scheduler.GetPlaying(seq);
 
-        public IPattern GetQueued(ISequence track) => track is SequenceCore seq ? scheduler.GetQueued(seq) : null;
+        public IClip GetQueued(ISequence track) => track is SequenceCore seq ? scheduler.GetQueued(seq) : null;
 
         /// <summary>The slot (scene row) the playing clip was launched from, or -1 when none or not known.</summary>
         public int GetPlayingSlot(ISequence track) => track is SequenceCore seq ? scheduler.GetPlayingSlot(seq) : -1;
@@ -530,8 +530,8 @@ namespace ReBuzz.Core.Session
         /// <summary>The slot (scene row) the waiting launch comes from, or -1 when none or not known.</summary>
         public int GetQueuedSlot(ISequence track) => track is SequenceCore seq ? scheduler.GetQueuedSlot(seq) : -1;
 
-        public ClipState GetState(ISequence track, IPattern clip) =>
-            track is SequenceCore seq && clip is PatternCore pat ? (ClipState)scheduler.GetState(seq, pat) : ClipState.Stopped;
+        public ClipState GetState(ISequence track, IClip clip) =>
+            track is SequenceCore seq && clip is ClipCore pat ? (ClipState)scheduler.GetState(seq, pat) : ClipState.Stopped;
 
         public long GetClipStartClock(ISequence track) => track is SequenceCore seq ? scheduler.GetStartClock(seq) : -1;
 
@@ -738,7 +738,7 @@ namespace ReBuzz.Core.Session
         sealed class SceneLaunch
         {
             public SequenceCore[] Tracks;
-            public PatternCore[] Clips;
+            public ClipCore[] Clips;
             public LaunchSpec[] Specs;
             public SequenceCore[] Stops;
             public int Tempo;
@@ -755,20 +755,20 @@ namespace ReBuzz.Core.Session
         /// </summary>
         internal void UseLaunchMap(LaunchMap map)
         {
-            var columns = new Dictionary<SequenceCore, SessionScheduler<SequenceCore, PatternCore>.Slot[]>();
+            var columns = new Dictionary<SequenceCore, SessionScheduler<SequenceCore, ClipCore>.Slot[]>();
             for (int t = 0; t < map.Tracks.Length; t++)
             {
                 if (map.Tracks[t] is not SequenceCore seq || columns.ContainsKey(seq)) continue;
                 var entries = map.Slots[t];
-                var column = new SessionScheduler<SequenceCore, PatternCore>.Slot[entries.Length];
+                var column = new SessionScheduler<SequenceCore, ClipCore>.Slot[entries.Length];
                 for (int s = 0; s < entries.Length; s++)
                 {
                     var e = entries[s];
-                    if (e?.Pattern is not PatternCore p || p.Machine != seq.Machine) continue;
+                    if (e?.Clip is not ClipCore p || p.Machine != seq.Machine) continue;
                     // Follow actions circumvent global quantization, not a clip's own (Live).
                     var q = e.Options.Quantization;
                     int code = q == null || q == LaunchQuantization.None ? -1 : (int)q.Value;
-                    column[s] = new SessionScheduler<SequenceCore, PatternCore>.Slot(p, SpecOf(e.Options, 0, forScene: true), code);
+                    column[s] = new SessionScheduler<SequenceCore, ClipCore>.Slot(p, SpecOf(e.Options, 0, forScene: true), code);
                 }
                 columns[seq] = column;
             }
@@ -779,11 +779,11 @@ namespace ReBuzz.Core.Session
             for (int s = 0; s < scenes.Length; s++)
             {
                 var entry = map.Scenes[s];
-                var clips = entry.Clips.Where(c => c.Track is SequenceCore && c.Slot.Pattern is PatternCore).ToArray();
+                var clips = entry.Clips.Where(c => c.Track is SequenceCore && c.Slot.Clip is ClipCore).ToArray();
                 scenes[s] = new SceneLaunch
                 {
                     Tracks = clips.Select(c => (SequenceCore)c.Track).ToArray(),
-                    Clips = clips.Select(c => (PatternCore)c.Slot.Pattern).ToArray(),
+                    Clips = clips.Select(c => (ClipCore)c.Slot.Clip).ToArray(),
                     Specs = clips.Select(c => SpecOf(c.Slot.Options, 0, forScene: true)).ToArray(),
                     Stops = (entry.Options.StopTracks ?? Array.Empty<ISequence>()).OfType<SequenceCore>().ToArray(),
                     Tempo = entry.Options.Tempo,
@@ -980,7 +980,7 @@ namespace ReBuzz.Core.Session
                     {
                         var e = arranged.Events[index];
                         int time = arranged.Times[index];
-                        if (e.Type == SequenceEventType.PlayPattern && e.Pattern != null && songPosition < time + e.Span)
+                        if (e.Type == SequenceEventType.PlayClip && e.Clip != null && songPosition < time + e.Span)
                         {
                             source = e;
                             key = time;
@@ -1060,7 +1060,7 @@ namespace ReBuzz.Core.Session
             }
 
             // Launches and Repeat restarts on this tick. A late (catch-up) launch is written at its
-            // grid point, where it is heard to start. Each start carries the part of the pattern
+            // grid point, where it is heard to start. Each start carries the part of the clip
             // it plays (0.5.1: from a start marker or where legato picked it up, to the clip's
             // end marker) and its velocity, so the arrangement plays back what was heard.
             long clock = scheduler.Clock;
@@ -1109,7 +1109,7 @@ namespace ReBuzz.Core.Session
                 long stoppedAt = scheduler.Clock + (ReBuzzCore.masterInfo.PosInTick > 0 ? 1 : 0);
                 if (scheduler.IsRunning)
                     foreach (var seq in buzz.SongCore.SequencesList)
-                        if (scheduler.GetPlaying(seq) is PatternCore playing)
+                        if (scheduler.GetPlaying(seq) is ClipCore playing)
                             NoteStopped(seq, playing, stoppedAt);
                 scheduler.Halt();
                 // Fork (audio hygiene): a loop, not LINQ's Select over the changes (its generic
@@ -1137,7 +1137,7 @@ namespace ReBuzz.Core.Session
         internal void OnSequenceRemoved(SequenceCore seq)
         {
             Disarm(seq);                                     // 0.7: its machine may go next
-            PatternCore playing;
+            ClipCore playing;
             lock (gate)
             {
                 playing = scheduler.Forget(seq);
@@ -1150,15 +1150,15 @@ namespace ReBuzz.Core.Session
             seq.GainSource = null;
         }
 
-        /// <summary>A pattern was deleted (AudioLock held).</summary>
-        internal void OnPatternDeleted(PatternCore pattern)
+        /// <summary>A clip was deleted (AudioLock held).</summary>
+        internal void OnClipDeleted(ClipCore clip)
         {
             var stopped = new List<SequenceCore>();
             lock (gate)
             {
-                scheduler.ForgetClip(pattern, stopped);
-                // 0.6.1: nor a deleted pattern (launched, or what a launch replaced or cancelled).
-                ForgetHistory(e => e.Clip == pattern || scheduler.Refers(e.Before, pattern));
+                scheduler.ForgetClip(clip, stopped);
+                // 0.6.1: nor a deleted clip (launched, or what a launch replaced or cancelled).
+                ForgetHistory(e => e.Clip == clip || scheduler.Refers(e.Before, clip));
             }
             foreach (var seq in stopped)
                 Silence(seq);           // the next tick resolves the machine's gain
@@ -1166,12 +1166,12 @@ namespace ReBuzz.Core.Session
                 RaiseTrackStateChanged(stopped.ToArray());
         }
 
-        /// <summary>A pattern's length changed (any thread: native editors change it from the IPC thread).</summary>
-        internal void OnPatternLengthChanged(PatternCore pattern)
+        /// <summary>A clip's length changed (any thread: native editors change it from the IPC thread).</summary>
+        internal void OnClipLengthChanged(ClipCore clip)
         {
             lock (gate)
             {
-                scheduler.ClipLengthChanged(pattern);
+                scheduler.ClipLengthChanged(clip);
             }
         }
 
@@ -1246,12 +1246,12 @@ namespace ReBuzz.Core.Session
             throw new ArgumentException("Not a sequence of this engine.", nameof(track));
         }
 
-        static PatternCore ToClip(SequenceCore seq, IPattern clip)
+        static ClipCore ToClip(SequenceCore seq, IClip clip)
         {
-            if (clip is not PatternCore pat)
-                throw new ArgumentException("Not a pattern of this engine.", nameof(clip));
+            if (clip is not ClipCore pat)
+                throw new ArgumentException("Not a clip of this engine.", nameof(clip));
             if (pat.Machine != seq.Machine)
-                throw new ArgumentException($"Pattern '{pat.Name}' belongs to '{pat.Machine?.Name}', not to the track's machine '{seq.Machine?.Name}'.", nameof(clip));
+                throw new ArgumentException($"Clip '{pat.Name}' belongs to '{pat.Machine?.Name}', not to the track's machine '{seq.Machine?.Name}'.", nameof(clip));
             return pat;
         }
 

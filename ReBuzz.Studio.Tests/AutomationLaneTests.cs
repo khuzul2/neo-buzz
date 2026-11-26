@@ -31,7 +31,7 @@ namespace ReBuzz.Studio.Tests
 {
     public class AutomationLaneTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
         internal const string Cutoff = "F1 cutoff";
 
         internal static ReBuzzCore Core => Studio.Host.Core;
@@ -195,7 +195,7 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
-        internal static void Notes(IPattern p, int length)
+        internal static void Notes(IClip p, int length)
         {
             var notes = Enumerable.Range(0, length / 2).Select(i => new ClipNote(i * 2 * TB, TB, 48 + 3 * (i % 7), 100)).ToArray();
             Core.SessionLayout.EditNotes(p, null, notes);
@@ -310,12 +310,12 @@ namespace ReBuzz.Studio.Tests
 
             // A one-bar clip with notes, repeated to bar 16 by its right edge.
             rig.DoubleClick(rig.At(lead, 0, 2));
-            Notes(machine.Patterns.Single(), 16);
+            Notes(machine.Clips.Single(), 16);
             rig.Drag(rig.At(lead, 16, -2), rig.At(lead, 256));
             Core.SongCore.LoopEnd = 256;
             Core.SongCore.SongEnd = 256;
             Assert.That(lead.Events.Count, Is.EqualTo(16), "sixteen repeats of the bar");
-            var notesName = machine.Patterns.Single().Name;
+            var notesName = machine.Clips.Single().Name;
 
             // The sweep: a lane for the filter cutoff, a drag over 16 bars (an automation clip is drawn), a point added in the middle.
             rig.AddLane("Lead", Cutoff);
@@ -334,7 +334,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(seg.Points.Select(p => p.Ramp), Is.EqualTo(new[] { true, true, false }), "ramps to the next point");
             Assert.That(seg.Points[0].Time, Is.EqualTo(0));
             Assert.That(seg.Points[1].Time, Is.EqualTo(128 * TB));
-            Assert.That(seg.Points[2].Time, Is.EqualTo(256 * TB - 1), "the last point is the pattern's last unit");
+            Assert.That(seg.Points[2].Time, Is.EqualTo(256 * TB - 1), "the last point is the clip's last unit");
             Assert.That(seg.Points[0].Value, Is.InRange(130, 170), "drawn at about 15 %");
             Assert.That(seg.Points[1].Value, Is.InRange(270, 330));
             Assert.That(seg.Points[2].Value, Is.InRange(860, 940));
@@ -349,18 +349,18 @@ namespace ReBuzz.Studio.Tests
             var cutoff = machine.ParameterGroups[1].Parameters.First(p => p.Name == Cutoff);
             Assert.That(cutoff.GetValue(0), Is.EqualTo(seg.Points[2].Value), "the sweep ends where it was drawn to end");
 
-            // ...is, bit for bit, the render of the same points written as plain engine events: one 16-bar pattern with a ramp event
+            // ...is, bit for bit, the render of the same points written as plain engine events: one 16-bar clip with a ramp event
             // for each point, no clip id, no automation lane role, no arrangement data...
-            string clipName = autoLane.Events[0].Pattern.Name;
+            string clipName = autoLane.Events[0].Clip.Name;
             var key = rig.ParamRow("Lead", Cutoff).Param.Key;
-            var drawnEvents = SessionLayout.ColumnFor(autoLane.Events[0].Pattern, key, create: false).GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToArray();
-            machine.CreatePattern("Plain", 256);
-            var plain = machine.Patterns.First(p => p.Name == "Plain");
-            SessionLayout.ColumnFor(plain, key, create: true).SetEvents(drawnEvents.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)), true);
+            var drawnEvents = SessionLayout.ColumnFor(autoLane.Events[0].Clip, key, create: false).GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToArray();
+            machine.CreateClip("Plain", 256);
+            var plain = machine.Clips.First(p => p.Name == "Plain");
+            SessionLayout.ColumnFor(plain, key, create: true).SetEvents(drawnEvents.Select(e => new ClipEvent(e.Time, e.Value, e.Duration)), true);
             autoLane.SetEvent(0, null);
             Core.Clips.Reset();
             Core.Arrangement.SetRole(autoLane, LaneRole.Main);
-            autoLane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, plain));
+            autoLane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, plain));
             var rampedValues = new int[256];
             var asPlain = Render(256, cutoff, rampedValues);
             Assert.That(asPlain, Is.EqualTo(drawn), "the sweep as drawn renders bit for bit as the same points written as plain events");
@@ -372,11 +372,11 @@ namespace ReBuzz.Studio.Tests
             Assert.That(values[0], Is.EqualTo(seg.Points[0].Value));
             Assert.That(values[128], Is.EqualTo(seg.Points[1].Value));
             Assert.That(values[64], Is.EqualTo((seg.Points[0].Value + seg.Points[1].Value) / 2).Within(1), "a ramp is the straight line between its points");
-            machine.CreatePattern("Steps", 256);
-            var steps = machine.Patterns.First(p => p.Name == "Steps");
-            SessionLayout.ColumnFor(steps, key, create: true).SetEvents(values.Select((v, t) => new PatternEvent(t * TB, v)).Append(new PatternEvent(seg.Points[2].Time, seg.Points[2].Value)), true);      // a step each tick, and the last point
+            machine.CreateClip("Steps", 256);
+            var steps = machine.Clips.First(p => p.Name == "Steps");
+            SessionLayout.ColumnFor(steps, key, create: true).SetEvents(values.Select((v, t) => new ClipEvent(t * TB, v)).Append(new ClipEvent(seg.Points[2].Time, seg.Points[2].Value)), true);      // a step each tick, and the last point
             autoLane.SetEvent(0, null);
-            autoLane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, steps));
+            autoLane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, steps));
             var steppedValues = new int[256];
             var stepped = Render(256, cutoff, steppedValues);
             Assert.That(steppedValues, Is.EqualTo(rampedValues), "the parameter takes the same value in every tick");
@@ -476,20 +476,20 @@ namespace ReBuzz.Studio.Tests
             Assert.That((seg.Start, seg.End), Is.EqualTo((16 * TB, 48 * TB)));
             Assert.That(seg.Points[0].Value, Is.LessThan(seg.Points[1].Value), "low on the left, high on the right");
 
-            // A clip's own automation column, on its pattern: it shows on each repeat of a looped clip, stitched along the timeline.
+            // A clip's own automation column, on its clip: it shows on each repeat of a looped clip, stitched along the timeline.
             rig.DoubleClick(rig.At(lead, 64, 2));
-            var pattern = machine.Patterns.Last();
+            var clip = machine.Clips.Last();
             var key = rig.ParamRow("Lead", Cutoff).Param.Key;
-            SessionLayout.ColumnFor(pattern, key, create: true).SetEvents(new[] { new PatternEvent(0, 100), new PatternEvent(8 * TB, 700) }, true);
+            SessionLayout.ColumnFor(clip, key, create: true).SetEvents(new[] { new ClipEvent(0, 100), new ClipEvent(8 * TB, 700) }, true);
             rig.Drag(rig.At(lead, 80, -2), rig.At(lead, 128));
             var lane = rig.Read("Lead", Cutoff);
             var repeats = lane.Segments.Where(s => s.Source == AutoSource.ClipColumn).ToList();
             Assert.That(repeats.Select(s => s.Start / TB), Is.EqualTo(new[] { 64, 80, 96, 112 }), "a placement for each repeat");
             Assert.That(repeats.All(s => s.Editable), Is.True);
             Assert.That(repeats[2].ValueAt(100 * TB), Is.EqualTo(100));
-            Assert.That(repeats[2].ValueAt(105 * TB), Is.EqualTo(700), "the step at the pattern's tick 8");
+            Assert.That(repeats[2].ValueAt(105 * TB), Is.EqualTo(700), "the step at the clip's tick 8");
             var first = rig.Canvas.ItemsOf(lead)[0];
-            Assert.That(first.Pattern, Is.SameAs(pattern));
+            Assert.That(first.Clip, Is.SameAs(clip));
             rig.Canvas.Changed();
             Studio.Screenshot(rig.Window, "ar4-automation-lanes");
         }
@@ -504,15 +504,15 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig("Lead");
             var lead = rig.Lane("Lead");
             var machine = lead.Machine;
-            machine.CreatePattern("00", 16);
-            var pattern = machine.Patterns.First(p => p.Name == "00");
+            machine.CreateClip("00", 16);
+            var clip = machine.Clips.First(p => p.Name == "00");
 
-            // The tracker's data: Voice mode 2 on row 4 and 1 on row 8, typed in the Pattern tab.
+            // The tracker's data: Voice mode 2 on row 4 and 1 on row 8, typed in the Clip tab.
             rig.Window.Detail.Show(true);
             Settle();
-            PatternView.Edit(pattern);
+            ClipView.Edit(clip);
             Settle();
-            dynamic view = PatternView.Page.EditorControl;
+            dynamic view = ClipView.Page.EditorControl;
             ((Avalonia.Controls.Control)view.TrackerGrid.Body).Focus();
             Settle();
             foreach (var (rowNumber, digit) in new[] { (4, PhysicalKey.Digit2), (8, PhysicalKey.Digit1) })
@@ -524,9 +524,9 @@ namespace ReBuzz.Studio.Tests
             }
             rig.Window.Detail.Close();
             Settle();
-            Assert.That(pattern.PatternEditorMachineEvents.First(c => c.Parameter.Name == "Voice mode").Events.Select(e => (e.Time / TB, e.Value)), Is.EqualTo(new[] { (4, 2), (8, 1) }), "the tracker has its steps");
+            Assert.That(clip.ClipEditorMachineEvents.First(c => c.Parameter.Name == "Voice mode").Events.Select(e => (e.Time / TB, e.Value)), Is.EqualTo(new[] { (4, 2), (8, 1) }), "the tracker has its steps");
 
-            Assert.That(rig.Canvas.Editor.Place(lead, pattern, 0), Is.Null);
+            Assert.That(rig.Canvas.Editor.Place(lead, clip, 0), Is.Null);
             rig.Canvas.Changed();
             rig.AddLane("Lead", "Voice mode");
             var lane = rig.Read("Lead", "Voice mode");
@@ -552,7 +552,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(o.From, Is.GreaterThanOrEqualTo(4 * TB), "from the tracker's first step");
             Assert.That(lane.Overlaps.Any(x => x.From <= 4 * TB && x.To > 4 * TB), Is.True, "over the first step");
             Assert.That(lane.Overlaps.Any(x => x.From <= 8 * TB && x.To > 8 * TB), Is.True, "over the second");
-            Assert.That(lane.Overlaps.All(x => x.To <= 16 * TB), Is.True, "not past the tracker's pattern");
+            Assert.That(lane.Overlaps.All(x => x.To <= 16 * TB), Is.True, "not past the tracker's clip");
         }
 
         [AvaloniaTest]
@@ -616,7 +616,7 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
             var lane = rig.Read("Lead", Cutoff);
-            Assert.That(lane.Segments, Is.Not.Empty, $"armed {recorder.Any}; sequences {Core.Song.Sequences.Count}; status {rig.Canvas.Status}; patterns {Core.Song.Machines.First(m => m.Name == "Lead").Patterns.Count}");
+            Assert.That(lane.Segments, Is.Not.Empty, $"armed {recorder.Any}; sequences {Core.Song.Sequences.Count}; status {rig.Canvas.Status}; clips {Core.Song.Machines.First(m => m.Name == "Lead").Clips.Count}");
             var seg = lane.Segments.Single();
             Assert.That(seg.Source, Is.EqualTo(AutoSource.AutomationClip), "a clip was drawn for the pass");
             Assert.That(seg.Points.Select(p => (p.Time / TB, p.Value, p.Ramp)), Is.EqualTo(new[] { (4, 100, true), (8, 400, true), (12, 800, true) }), "a point for each move, ramps between: " + Pts(seg));
@@ -654,8 +654,8 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var poly = AddPoly("Auto Poly");
-                poly.CreatePattern("00", 16);
-                var notes = (PatternCore)poly.Patterns.First();
+                poly.CreateClip("00", 16);
+                var notes = (ClipCore)poly.Clips.First();
                 Core.SessionLayout.EditNotes(notes, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
                 Arrange(poly, notes);
                 var filter = InsertFilter(poly, "Auto Filter");
@@ -667,11 +667,11 @@ namespace ReBuzz.Studio.Tests
                 Core.SongCore.AddSequence(filter, Core.SongCore.Sequences.Count);
                 var lane = Core.SongCore.Sequences.Last();
                 Core.Arrangement.SetRole(lane, LaneRole.Automation);
-                filter.CreatePattern("Sweep", 16);
-                var sweep = filter.Patterns.First(p => p.Name == "Sweep");
+                filter.CreateClip("Sweep", 16);
+                var sweep = filter.Clips.First(p => p.Name == "Sweep");
                 var key = new ColumnKey(1, cutoff.IndexInGroup, 0);
-                SessionLayout.ColumnFor(sweep, key, create: true).SetEvents(new[] { new PatternEvent(0, low, 15 * TB), new PatternEvent(15 * TB, high) }, true);
-                lane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, sweep));
+                SessionLayout.ColumnFor(sweep, key, create: true).SetEvents(new[] { new ClipEvent(0, low, 15 * TB), new ClipEvent(15 * TB, high) }, true);
+                lane.SetEvent(0, new SequenceEvent(SequenceEventType.PlayClip, sweep));
 
                 var lfo = ModulatorOf("Auto LFO");
                 var mod = ModulationBoard.Of(lfo);
@@ -714,7 +714,7 @@ namespace ReBuzz.Studio.Tests
             using var rig = new Rig("Lead");
             var lead = rig.Lane("Lead");
             rig.DoubleClick(rig.At(lead, 0, 2));
-            Notes(lead.Machine.Patterns.Single(), 16);
+            Notes(lead.Machine.Clips.Single(), 16);
             rig.Drag(rig.At(lead, 16, -2), rig.At(lead, 64));
             Core.SongCore.SongEnd = 64;
             Core.SongCore.LoopEnd = 64;

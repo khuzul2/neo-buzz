@@ -358,8 +358,8 @@ namespace ReBuzz.Studio.Tests
             using var rig = new SessionRig("Drums", "Lead");
             var drums = rig.Machine("Drums");
             var lead = rig.Machine("Lead");
-            rig.Pattern(drums, "Beat", SessionRig.Bar, (0, 48), (4, 50), (8, 48), (12, 50));
-            rig.Pattern(lead, "Hook", SessionRig.Bar, (0, 72), (2, 76), (4, 79), (8, 84));
+            rig.Clip(drums, "Beat", SessionRig.Bar, (0, 48), (4, 50), (8, 48), (12, 50));
+            rig.Clip(lead, "Hook", SessionRig.Bar, (0, 72), (2, 76), (4, 79), (8, 84));
             rig.Layout.Ensure();
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();

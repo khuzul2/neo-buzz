@@ -39,10 +39,10 @@ namespace ReBuzz.Studio.Tests
             return file;
         }
 
-        static SessionDocument.AudioSettings AudioOf(IPattern p) => Layout.AudioOf(p)!;
+        static SessionDocument.AudioSettings AudioOf(IClip p) => Layout.AudioOf(p)!;
 
         /// <summary>A marker at 5 s (so there is something before the point that has to stay) on a clip that is straight otherwise.</summary>
-        static void SeedAt5s(Rig rig, IPattern clip)
+        static void SeedAt5s(Rig rig, IClip clip)
         {
             var src = Layout.AudioSourceOf(clip)!;
             var a = AudioOf(clip);
@@ -54,13 +54,13 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The transient nearest a time: "here" for the menu (it lands on a transient when one is near) and the sample the agent is given.</summary>
-        static double TransientNear(IPattern clip, double seconds)
+        static double TransientNear(IClip clip, double seconds)
         {
             double rate = Layout.AudioSourceOf(clip)!.SampleRate;
             return Layout.TransientsOf(clip).OrderBy(t => Math.Abs(t - seconds * rate)).First();
         }
 
-        static void Open(Rig rig, IPattern clip, AudioClipPage page)
+        static void Open(Rig rig, IClip clip, AudioClipPage page)
         {
             Settle();
             rig.WaitPeaks(clip);
@@ -150,7 +150,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(byPage.Count, Is.GreaterThan(5));
 
             string before = State("B", agentClip.Name);
-            var r = Ok(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["pattern"] = agentClip.Name, ["action"] = "warp_follow", ["sample"] = at }));
+            var r = Ok(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["clip"] = agentClip.Name, ["action"] = "warp_follow", ["sample"] = at }));
             Assert.That(r["count"]!.GetValue<int>(), Is.GreaterThan(5), "it says how many markers it made");
             var byAgent = AudioOf(agentClip).Markers.OrderBy(m => m.Beat).ToList();
             Assert.That(byAgent.Count, Is.EqualTo(byPage.Count));
@@ -163,12 +163,12 @@ namespace ReBuzz.Studio.Tests
 
             // audio_clip_set(auto_warp, from_seconds) is the same edit.
             rig.Undo();
-            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["pattern"] = viaSet.Name, ["auto_warp"] = true, ["from_seconds"] = at / rate }));
+            Ok(Tool("audio_clip_set", new JsonObject { ["machine"] = "B", ["clip"] = viaSet.Name, ["auto_warp"] = true, ["from_seconds"] = at / rate }));
             Assert.That(State("B", agentClip.Name), Is.EqualTo(after), "audio_clip_set with from_seconds gives the same clip");
 
             // A call with no position is refused and changes nothing.
             string state = State("B", agentClip.Name);
-            Assert.That(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["pattern"] = agentClip.Name, ["action"] = "warp_follow" })["isError"]?.GetValue<bool>() ?? false, Is.True);
+            Assert.That(Tool("audio_warp_markers", new JsonObject { ["machine"] = "B", ["clip"] = agentClip.Name, ["action"] = "warp_follow" })["isError"]?.GetValue<bool>() ?? false, Is.True);
             Assert.That(State("B", agentClip.Name), Is.EqualTo(state));
         }
     }

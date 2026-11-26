@@ -487,15 +487,15 @@ namespace ReBuzz.Core.Session
                 {
                     int scene = c.SceneOffset + y;
                     if (scene >= scenes) continue;
-                    var pattern = layout.PatternAt(track, scene);
-                    if (pattern == null)
+                    var clip = layout.ClipAt(track, scene);
+                    if (clip == null)
                     {
                         s.SetPad(x, y, armed ? PadState.ArmedEmpty : PadState.Empty, Rgb.Black);
                         continue;
                     }
-                    var state = layout.SlotState(seq, pattern, track, scene);
+                    var state = layout.SlotState(seq, clip, track, scene);
                     PadState pad;
-                    if (layout.IsRecordingInto(seq, pattern))
+                    if (layout.IsRecordingInto(seq, clip))
                         pad = state == BuzzGUI.Interfaces.ClipState.Playing || state == BuzzGUI.Interfaces.ClipState.Stopping ? PadState.Recording : PadState.RecordQueued;
                     else
                         pad = state switch
@@ -505,7 +505,7 @@ namespace ReBuzz.Core.Session
                             BuzzGUI.Interfaces.ClipState.Stopping => PadState.Stopping,
                             _ => PadState.Stopped,
                         };
-                    s.SetPad(x, y, pad, ColorOf(PatternColors.Get(pattern)));
+                    s.SetPad(x, y, pad, ColorOf(ClipColors.Get(clip)));
                     s.SceneHasClips[y] = true;
                     if (pad == PadState.Queued || pad == PadState.RecordQueued) s.SceneQueued[y] = true;
                 }

@@ -77,7 +77,7 @@ namespace ReBuzz.Studio.Tests
         public void TheStatusLineCountsTheMachinesYouSee()
         {
             // Gallery mac-010 ("1 machines" for the Master alone) and mac-020 ("15 machines" for the
-            // demo song's 10 and the Master, its 4 hidden pattern-editor machines counted).
+            // demo song's 10 and the Master, its 4 hidden clip-editor machines counted).
             NewSong();
             var window = Open();
             try
@@ -90,7 +90,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(window.StatusText, Does.Contain(" · 1 machine").And.Not.Contain("1 machines"));
                 song.CreateMachine("Neo Poly", null, "Bass", null, null, null, -1, -0.2f, 0.2f);
                 song.CreateMachine("Neo Poly", null, "Editor", null, null, null, -1, -0.2f, -0.2f);
-                song.MachinesList.Single(m => m.Name == "Editor").Hidden = true;      // as a song's pattern-editor machines are
+                song.MachinesList.Single(m => m.Name == "Editor").Hidden = true;      // as a song's clip-editor machines are
                 window.RefreshNow();
                 Assert.That(window.StatusText, Does.Contain(" · 2 machines"), "not the hidden one, not the Master");
                 Assert.That(song.MachinesList.Count, Is.EqualTo(4));
@@ -461,11 +461,11 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Selected(), Is.EqualTo("Arrangement"), "and back to the arrangement");
 
                 // ⌘1–⌘5 (Ctrl elsewhere), in tab order (ux-overhaul.md §4).
-                string[] order = { "Arrangement", "Session", "Machines", "Pattern" };
+                string[] order = { "Arrangement", "Session", "Machines", "Clip" };
                 for (int i = 3; i >= 0; i--)
                 {
                     window.KeyPressQwerty(PhysicalKey.Digit1 + i, Cmd);
-                    if (order[i] == "Pattern") Assert.That(window.Detail.IsOpen, Is.True, "⌘4: the Tracker, in the detail panel (P3a)");
+                    if (order[i] == "Clip") Assert.That(window.Detail.IsOpen, Is.True, "⌘4: the Tracker, in the detail panel (P3a)");
                     else Assert.That(Selected(), Is.EqualTo(order[i]), $"⌘{i + 1}");
                 }
 

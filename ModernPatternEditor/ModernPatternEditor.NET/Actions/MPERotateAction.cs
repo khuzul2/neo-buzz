@@ -4,16 +4,16 @@ using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor.Actions
 {
-    public class MPERotateAction : PatternAction
+    public class MPERotateAction : ClipAction
     {
-        MPEPattern mpePattern;
+        MPEClip mpeClip;
         private Selection selection;
         private bool down;
 
-        public MPERotateAction(MPEPattern mpePattern, Selection selection, bool down)
-            : base(mpePattern.Pattern)
+        public MPERotateAction(MPEClip mpeClip, Selection selection, bool down)
+            : base(mpeClip.Clip)
         {
-            this.mpePattern = mpePattern;
+            this.mpeClip = mpeClip;
             this.selection = selection;
             this.down = down;
         }
@@ -56,8 +56,8 @@ namespace WDE.ModernPatternEditor.Actions
                         nextBeat = nextDigit.ParameterColumn.FetchBeat(nextDigit.Beat);
 
                         // Beats can have different number of rows, so use closest time
-                        if (digitIterator.Beat * PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase + digitIterator.TimeInBeat >=
-                            endDigit.Beat * PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase + endDigit.TimeInBeat)
+                        if (digitIterator.Beat * ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase + digitIterator.TimeInBeat >=
+                            endDigit.Beat * ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase + endDigit.TimeInBeat)
                             break;
                     }
 
@@ -98,8 +98,8 @@ namespace WDE.ModernPatternEditor.Actions
                         prevDigit = digitIterator.Up;
                         prevBeat = prevDigit.ParameterColumn.FetchBeat(prevDigit.Beat);
 
-                        if (digitIterator.Beat * PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase + digitIterator.TimeInBeat <=
-                            columnIterator.Beat * PatternControl.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase + columnIterator.TimeInBeat)
+                        if (digitIterator.Beat * ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase + digitIterator.TimeInBeat <=
+                            columnIterator.Beat * ClipControl.BUZZ_TICKS_PER_BEAT * ClipEvent.TimeBase + columnIterator.TimeInBeat)
                             break;
                     }
 

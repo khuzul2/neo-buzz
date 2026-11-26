@@ -247,7 +247,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 var unused = new MenuItem { Header = "Delete unused takes", IsEnabled = takes.Any(t => !t.Used) };
                 AutomationProperties.SetName(unused, $"Delete unused takes of {machine.Name}");
                 unused.Click += (_, _) => { editor.DeleteUnusedTakes(machine); Rebuild(); };
-                var flatten = new MenuItem { Header = "Flatten comp", IsEnabled = takes.Any(t => editor.IsAudio(t.Clip.Pattern)) };
+                var flatten = new MenuItem { Header = "Flatten comp", IsEnabled = takes.Any(t => editor.IsAudio(t.Clip.Clip)) };
                 AutomationProperties.SetName(flatten, $"Flatten the comp of {machine.Name}");
                 flatten.Click += (_, _) => editor.FlattenComp(machine, null, null, out _);
                 flyout.Items.Clear();

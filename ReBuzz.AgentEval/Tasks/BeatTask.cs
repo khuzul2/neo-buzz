@@ -32,16 +32,16 @@ namespace ReBuzz.AgentEval
             Recipes.Clap(s, "Clap", -12);
             Recipes.Hat(s, "Hats", -16);
             Recipes.Preset(s, "Bass", "Bass — Classic Sub", -10);
-            Recipes.Pattern(s, "Kick", "Four", 16, Recipes.Every("F1", 16, 1, length: 0.25, velocity: 120));
-            Recipes.Pattern(s, "Clap", "Backbeat", 16, Recipes.Every("D4", 16, 2, offset: 1, length: 0.25, velocity: 110));
-            Recipes.Pattern(s, "Hats", "Offbeats", 16, Recipes.Every("C6", 16, 1, offset: 0.5, length: 0.125, velocity: 96));
+            Recipes.Clip(s, "Kick", "Four", 16, Recipes.Every("F1", 16, 1, length: 0.25, velocity: 120));
+            Recipes.Clip(s, "Clap", "Backbeat", 16, Recipes.Every("D4", 16, 2, offset: 1, length: 0.25, velocity: 110));
+            Recipes.Clip(s, "Hats", "Offbeats", 16, Recipes.Every("C6", 16, 1, offset: 0.5, length: 0.125, velocity: 96));
             // An A minor off-beat bassline: A, A, C, G per bar.
             var bass = new List<JsonObject>();
             string[] roots = { "A2", "A2", "C3", "G2" };
             for (int bar = 0; bar < 4; bar++)
                 for (int k = 0; k < 4; k++)
                     bass.Add(J.Note(roots[bar], bar * 4 + k + 0.5, 0.4, 110));
-            Recipes.Pattern(s, "Bass", "Offbeat", 16, bass);
+            Recipes.Clip(s, "Bass", "Offbeat", 16, bass);
             foreach (var (m, p) in new[] { ("Kick", "Four"), ("Clap", "Backbeat"), ("Hats", "Offbeats"), ("Bass", "Offbeat") }) Recipes.Place(s, m, p, 0);
             // Check it as the brief asks; turn everything down if it gets near clipping.
             var r = s.C.Ok("render", new JsonObject { ["tail_seconds"] = 1 });

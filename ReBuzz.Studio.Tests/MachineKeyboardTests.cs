@@ -471,7 +471,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheKeysAreNamedAsPreferencesNameNotes()
         {
-            // Fork (ux-overhaul.md §3.5): the keys, the octave and the readout name notes as the pattern editor and the piano
+            // Fork (ux-overhaul.md §3.5): the keys, the octave and the readout name notes as the clip editor and the piano
             // roll do (Preferences ▸ General ▸ Note names), and follow a change at once.
             var naming = NoteNames.Naming;
             MachineCore poly = null;
@@ -609,7 +609,7 @@ namespace ReBuzz.Studio.Tests
                 kb.Poll();
                 Assert.That(kb.Keys.ElementOf(64)!.Look.Velocity, Is.EqualTo(0), "and goes out");
 
-                // A pattern's notes: its Note track as the tick sends it.
+                // A clip's notes: its Note track as the tick sends it.
                 sh101 = Add("Keys Test", "Kb Lights Tracks");
                 var pw = Parameters(sh101);
                 var pk = KeyboardOf(pw)!;

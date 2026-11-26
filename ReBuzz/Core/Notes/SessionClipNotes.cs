@@ -11,35 +11,35 @@ namespace ReBuzz.Core.Notes
     internal sealed class SessionClipNotes : NoteSourceBase
     {
         readonly SessionLayout layout;
-        readonly IPattern original;
+        readonly IClip original;
 
-        public SessionClipNotes(SessionLayout layout, IPattern clip)
+        public SessionClipNotes(SessionLayout layout, IClip clip)
         {
             this.layout = layout;
             original = clip;
         }
 
         /// <summary>The clip, as it stands now: the session's undo may have made it again (0.7.1 hardening).</summary>
-        public override IPattern Pattern => layout.Current(original);
+        public override IClip Clip => layout.Current(original);
 
         /// <summary>Whether the clip is in the song (not deleted, or brought back by an undo).</summary>
-        public override bool IsLive => Pattern is PatternCore p && !p.IsDeleted && layout.IsInSong(p.Machine);
+        public override bool IsLive => Clip is ClipCore p && !p.IsDeleted && layout.IsInSong(p.Machine);
 
-        public override List<ClipNote> Notes() => IsLive ? layout.NotesOf(Pattern) : new List<ClipNote>();
+        public override List<ClipNote> Notes() => IsLive ? layout.NotesOf(Clip) : new List<ClipNote>();
 
         public override int RowTime => Inner()?.RowTime ?? base.RowTime;
 
-        INoteSource Inner() => Pattern is { } p ? SongNotes.For(layout.Buzz, p) : null;
+        INoteSource Inner() => Clip is { } p ? SongNotes.For(layout.Buzz, p) : null;
 
         public override string WhyNotEditable =>
             !IsLive ? "The clip was deleted: undo in the Session View brings it back."
-            : layout.IsRecordingClip(Pattern) ? "Recording: edits wait until it stops."
+            : layout.IsRecordingClip(Clip) ? "Recording: edits wait until it stops."
             : null;
 
         protected override string Apply(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added) =>
-            (Inner() ?? new MidiColumnNotes(layout.Buzz, Pattern)).Edit(removed, added);
+            (Inner() ?? new MidiColumnNotes(layout.Buzz, Clip)).Edit(removed, added);
 
-        public override void Preview(int note, int velocity, bool on) => layout.PreviewNote(Pattern, note, velocity, on);
+        public override void Preview(int note, int velocity, bool on) => layout.PreviewNote(Clip, note, velocity, on);
 
         protected override void DoUndo() => layout.Undo();
 

@@ -44,7 +44,7 @@ namespace ReBuzz.AgentEval
             s.C.Ok("song_set", new JsonObject { ["tempo_bpm"] = 120 });
             Recipes.Add(s, Recipes.Synth, "Synth", 0);
             Recipes.Set(s, "Synth", Patch);
-            Recipes.Pattern(s, "Synth", "Phrase", 8, Phrase());
+            Recipes.Clip(s, "Synth", "Phrase", 8, Phrase());
             Recipes.Place(s, "Synth", "Phrase", 0);
             var r = s.C.Ok("render", new JsonObject { ["tail_seconds"] = Tail, ["name"] = "reference" });
             File.Copy(J.Str(r["file"]), Reference(ctx), overwrite: true);
@@ -52,7 +52,7 @@ namespace ReBuzz.AgentEval
             s.New(120);
             Recipes.Add(s, Recipes.Synth, "Synth", 0);
             Recipes.Set(s, "Synth", ("Drift", "0%"));
-            Recipes.Pattern(s, "Synth", "Phrase", 8, Phrase());
+            Recipes.Clip(s, "Synth", "Phrase", 8, Phrase());
             Recipes.Place(s, "Synth", "Phrase", 0);
         }
 

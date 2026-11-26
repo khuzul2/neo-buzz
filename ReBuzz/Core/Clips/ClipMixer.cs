@@ -8,7 +8,7 @@ using System;
 namespace ReBuzz.Core.Clips
 {
     /// <summary>
-    /// A pattern's audio clip as the audio thread sees it: how it plays now (swapped whole by the
+    /// A clip's audio clip as the audio thread sees it: how it plays now (swapped whole by the
     /// UI thread when its settings or audio change; null when it is no audio clip), and its voice.
     /// </summary>
     internal sealed class ClipPlayback
@@ -41,7 +41,7 @@ namespace ReBuzz.Core.Clips
 
         volatile AudioCapture capture;
 
-        /// <summary>A take recording its track's input while this pattern plays; null when none.</summary>
+        /// <summary>A take recording its track's input while this clip plays; null when none.</summary>
         public AudioCapture Capture
         {
             get => capture;

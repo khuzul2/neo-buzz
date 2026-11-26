@@ -52,10 +52,10 @@ namespace ReBuzz.AgentEval
             return m.Success ? double.Parse(m.Groups[1].Value, J.C) * (m.Groups[2].Value.Length > 0 ? 1000 : 1) : double.NaN;
         }
 
-        static void Pattern(Studio s, string machine, string pattern, double beats, string pitch, double length = 2, double at = 0)
+        static void Clip(Studio s, string machine, string clip, double beats, string pitch, double length = 2, double at = 0)
         {
-            Recipes.Pattern(s, machine, pattern, beats, new[] { J.Note(pitch, 0, length, 100) });
-            Recipes.Place(s, machine, pattern, at);
+            Recipes.Clip(s, machine, clip, beats, new[] { J.Note(pitch, 0, length, 100) });
+            Recipes.Place(s, machine, clip, at);
         }
 
         static IEnumerable<string> Effects(Graph g) => g.Machines.Where(m => m.Kind == "effect").Select(m => m.Gear);
@@ -85,7 +85,7 @@ namespace ReBuzz.AgentEval
         {
             // ======== recipes ==========================================================================
             Recipe("hear-a-bass", "Recipe: hear a bass",
-                "Make a bass sound you can measure. Tempo 120 BPM; a Neo Poly called Bass loaded with its factory preset \"Bass — Classic Sub\"; a 4-beat pattern called Line with C2 at beat 0 and G2 at beat 2 (one beat each), placed at the start of the song. " +
+                "Make a bass sound you can measure. Tempo 120 BPM; a Neo Poly called Bass loaded with its factory preset \"Bass — Classic Sub\"; a 4-beat clip called Line with C2 at beat 0 and G2 at beat 2 (one beat each), placed at the start of the song. " +
                 "Render it to confirm it is not silent and that its true peak is below 0 dBTP.",
                 null, (s, c) => K.Replay(s, "hear-a-bass"),
                 (s, c, ck) =>
@@ -132,16 +132,16 @@ namespace ReBuzz.AgentEval
                 }),
 
             Recipe("arrange-a-section", "Recipe: arrange a section",
-                "The song has a Neo Poly called Bass with a 4-beat pattern Line placed once. Arrange it: markers Intro at the start and Main at bar 3 (beat 8); Line repeated so it plays three times back to back (beats 0, 4 and 8); and inside the pattern an automation that opens the filter (F1 cutoff) from 300 Hz to 3 kHz across the 4 beats.",
+                "The song has a Neo Poly called Bass with a 4-beat clip Line placed once. Arrange it: markers Intro at the start and Main at bar 3 (beat 8); Line repeated so it plays three times back to back (beats 0, 4 and 8); and inside the clip an automation that opens the filter (F1 cutoff) from 300 Hz to 3 kHz across the 4 beats.",
                 BassSong, (s, c) => K.Replay(s, "arrange-a-section", withNeeds: false),
                 (s, c, ck) =>
                 {
                     var markers = s.Markers();
                     ck.Add("markers", markers.Any(m => m.Name == "Intro" && m.At == 0) && markers.Any(m => m.Name == "Main" && Math.Abs(m.At - 8) < 0.01), string.Join(", ", markers.Select(m => $"{m.Name}@{m.At}")));
                     var lane = J.Objects(s.C.Ok("arrangement_get")["lanes"]).FirstOrDefault(l => J.Str(l["machine"]) == "Bass");
-                    var ats = J.Objects(lane?["events"]).Where(e => J.Str(e["pattern"]) == "Line").Select(e => J.Num(e["at"])).OrderBy(x => x).ToList();
+                    var ats = J.Objects(lane?["events"]).Where(e => J.Str(e["clip"]) == "Line").Select(e => J.Num(e["at"])).OrderBy(x => x).ToList();
                     ck.Add("repeated", ats.SequenceEqual(new[] { 0.0, 4.0, 8.0 }), "Line at " + string.Join(", ", ats));
-                    var auto = s.C.Call("automation_read", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Line" });
+                    var auto = s.C.Call("automation_read", new JsonObject { ["machine"] = "Bass", ["clip"] = "Line" });
                     var points = auto.IsError ? new List<JsonObject>() :
                         J.Objects(J.Objects(auto.Data["automation"]).FirstOrDefault(a => J.Str(a["param"]) == "F1 cutoff")?["points"]).ToList();
                     double first = points.Count > 0 ? Hz(J.Str(points[0]["value"])) : double.NaN, last = points.Count > 0 ? Hz(J.Str(points[^1]["value"])) : double.NaN;
@@ -150,7 +150,7 @@ namespace ReBuzz.AgentEval
                 }),
 
             Recipe("two-scenes", "Recipe: two scenes",
-                "The song has a Neo Poly called Bass with a pattern Line. Set up the Session View for playing live: add a Neo Drums called Drums with a 4-beat pattern Beat (a kick, note C2, at beats 0 and 2). Scene 1 is named Intro and holds Bass's Line; scene 2 is named Groove and holds Drums' Beat; both clips launch quantized to the bar.",
+                "The song has a Neo Poly called Bass with a clip Line. Set up the Session View for playing live: add a Neo Drums called Drums with a 4-beat clip Beat (a kick, note C2, at beats 0 and 2). Scene 1 is named Intro and holds Bass's Line; scene 2 is named Groove and holds Drums' Beat; both clips launch quantized to the bar.",
                 BassSong, (s, c) => K.Replay(s, "two-scenes", skipLast: 2, withNeeds: false),
                 (s, c, ck) =>
                 {
@@ -166,7 +166,7 @@ namespace ReBuzz.AgentEval
                     var notes = drums != null && beat != null && s.Notes().TryGetValue(drums, out var p) && p.TryGetValue(beat, out var ns) ? ns : new List<JsonObject>();
                     ck.Add("kick_notes", notes.Any(n => J.Num(n["start"]) == 0) && notes.Any(n => J.Num(n["start"]) == 2) && notes.All(n => (int)J.Num(n["pitch"]) == K.Pitch("C2")), $"{notes.Count} notes");
                     var quant = J.Objects(grid["tracks"]).SelectMany(t => J.Objects(t["clip_settings"])).ToList();
-                    ck.Add("bar_quantized", quant.Count >= 2 && quant.All(q => J.Str(q["quantization"]) == "Bar"), string.Join(", ", quant.Select(q => $"{J.Str(q["pattern"])} {J.Str(q["quantization"])}")));
+                    ck.Add("bar_quantized", quant.Count >= 2 && quant.All(q => J.Str(q["quantization"]) == "Bar"), string.Join(", ", quant.Select(q => $"{J.Str(q["clip"])} {J.Str(q["quantization"])}")));
                 }),
 
             Recipe("controller-for-the-cutoff", "Recipe: a controller for the cutoff",
@@ -282,13 +282,13 @@ namespace ReBuzz.AgentEval
                 }),
 
             Guide("build-a-synth", "Guide: build a synth",
-                "The song has a Neo Patch called Patch holding the \"start\" template, which is silent on purpose, and a pattern Hold that plays C3 for four beats from the start. Make Patch sound as a basic voice: the key's pitch tunes the oscillator, the oscillator goes through the amplifier (VCA) to the output. Then make the oscillator a square wave.",
+                "The song has a Neo Patch called Patch holding the \"start\" template, which is silent on purpose, and a clip Hold that plays C3 for four beats from the start. Make Patch sound as a basic voice: the key's pitch tunes the oscillator, the oscillator goes through the amplifier (VCA) to the output. Then make the oscillator a square wave.",
                 (s, c) =>
                 {
                     s.C.Ok("song_set", new JsonObject { ["tempo_bpm"] = 120 });
                     Recipes.Add(s, "Neo Patch", "Patch", 0);
                     s.C.Ok("patch_load_template", new JsonObject { ["template"] = "start" });
-                    Pattern(s, "Patch", "Hold", 4, "C3", 4);
+                    Clip(s, "Patch", "Hold", 4, "C3", 4);
                 },
                 (s, c) =>
                 {
@@ -376,7 +376,7 @@ namespace ReBuzz.AgentEval
                 {
                     Recipes.Add(s, "Dye Essence", "Dye", 0);
                     Recipes.Set(s, "Dye", ("A engine", "Analog"), ("B engine", "Modal"), ("C engine", "Harmonic"), ("Volume", "-9 dB"));
-                    Pattern(s, "Dye", "Hit", 4, "A3");
+                    Clip(s, "Dye", "Hit", 4, "A3");
                 },
                 (s, c, ck) =>
                 {
@@ -395,7 +395,7 @@ namespace ReBuzz.AgentEval
                 {
                     Recipes.Add(s, "Dye Essence", "Dye", 0);
                     s.C.Ok("preset_load", new JsonObject { ["machine"] = "Dye", ["preset"] = "Keys — Glass Marimba" });
-                    Pattern(s, "Dye", "Hit", 4, "A3");
+                    Clip(s, "Dye", "Hit", 4, "A3");
                 },
                 (s, c, ck) =>
                 {
@@ -414,7 +414,7 @@ namespace ReBuzz.AgentEval
                     Recipes.Add(s, "Neo FM6", "Bell", 0);
                     s.C.Ok("preset_load", new JsonObject { ["machine"] = "Bell", ["preset"] = "Init — Sine" });
                     Recipes.Set(s, "Bell", ("Op2 coarse", 3), ("Op2 fine", 50), ("Op2 level", 72), ("Op1 rate 4", 30));
-                    Pattern(s, "Bell", "Strike", 4, "A4");
+                    Clip(s, "Bell", "Strike", 4, "A4");
                 },
                 (s, c, ck) =>
                 {
@@ -428,19 +428,19 @@ namespace ReBuzz.AgentEval
                 }),
 
             Guide("live-performance", "Guide: live performance",
-                "The song has a Neo Poly called Bass with a pattern Line and a Neo Drums called Drums with a pattern Beat. Prepare the Session View for a live set: scene 1 named Verse holds Bass's Line; scene 2 named Chorus holds Drums' Beat, and that drum clip is a Toggle (the same launch starts and stops it) quantized to the bar. Bind MIDI controller 21 on channel 2 to Bass's F1 cutoff.",
+                "The song has a Neo Poly called Bass with a clip Line and a Neo Drums called Drums with a clip Beat. Prepare the Session View for a live set: scene 1 named Verse holds Bass's Line; scene 2 named Chorus holds Drums' Beat, and that drum clip is a Toggle (the same launch starts and stops it) quantized to the bar. Bind MIDI controller 21 on channel 2 to Bass's F1 cutoff.",
                 (s, c) =>
                 {
                     K.Replay(s, "hear-a-bass");
                     Recipes.Add(s, "Neo Drums", "Drums", 0);
-                    Recipes.Pattern(s, "Drums", "Beat", 4, new[] { J.Note("C2", 0, 0.25, 100), J.Note("C2", 2, 0.25, 100) });
+                    Recipes.Clip(s, "Drums", "Beat", 4, new[] { J.Note("C2", 0, 0.25, 100), J.Note("C2", 2, 0.25, 100) });
                 },
                 (s, c) =>
                 {
                     s.C.Ok("session_scene_set", new JsonObject { ["scene"] = 1, ["name"] = "Verse" });
                     s.C.Ok("session_scene_set", new JsonObject { ["scene"] = 2, ["name"] = "Chorus" });
-                    s.C.Ok("session_clip_set", new JsonObject { ["machine"] = "Bass", ["scene"] = 1, ["pattern"] = "Line" });
-                    s.C.Ok("session_clip_set", new JsonObject { ["machine"] = "Drums", ["scene"] = 2, ["pattern"] = "Beat", ["mode"] = "Toggle", ["quantization"] = "Bar" });
+                    s.C.Ok("session_clip_set", new JsonObject { ["machine"] = "Bass", ["scene"] = 1, ["clip"] = "Line" });
+                    s.C.Ok("session_clip_set", new JsonObject { ["machine"] = "Drums", ["scene"] = 2, ["clip"] = "Beat", ["mode"] = "Toggle", ["quantization"] = "Bar" });
                     s.C.Ok("midi_bind", new JsonObject { ["machine"] = "Bass", ["parameter"] = "F1 cutoff", ["channel"] = 2, ["controller"] = 21 });
                 },
                 (s, c, ck) =>
@@ -568,7 +568,7 @@ namespace ReBuzz.AgentEval
                     Recipes.Add(s, "Neo Poly", "Sub", 0);
                     Recipes.Set(s, "Sub", ("Voice mode", "Mono"), ("O1 shape", 0), ("F1 type", "SVF LP"), ("F1 cutoff", "2 kHz"), ("F1 env", "0%"), ("F1 key track", "0%"),
                         ("Amp attack", "3 ms"), ("Amp sustain", "100%"), ("Amp release", "40 ms"), ("Drift", "0%"), ("Volume", "-3 dB"));
-                    Pattern(s, "Sub", "Low", 4, "E1");
+                    Clip(s, "Sub", "Low", 4, "E1");
                 },
                 (s, c, ck) =>
                 {
@@ -583,12 +583,12 @@ namespace ReBuzz.AgentEval
                 }),
 
             Guide("teaching", "Guide: teaching",
-                "The song has a Neo Learn FM called Teacher with a pattern Demo (not placed in the arrangement). A beginner asks what the machine's first control does. Write the lesson into the song's notes, from what the machine itself says about that control (what it does and what you will hear). You may change the control and place the pattern to demonstrate, but leave the song as you found it: the control at its original value and nothing placed in the arrangement.",
+                "The song has a Neo Learn FM called Teacher with a clip Demo (not placed in the arrangement). A beginner asks what the machine's first control does. Write the lesson into the song's notes, from what the machine itself says about that control (what it does and what you will hear). You may change the control and place the clip to demonstrate, but leave the song as you found it: the control at its original value and nothing placed in the arrangement.",
                 (s, c) =>
                 {
                     Recipes.Add(s, "Neo Learn FM", "Teacher", 0);
                     s.C.Ok("preset_load", new JsonObject { ["machine"] = "Teacher", ["preset"] = "Keys — Glass Bell" });
-                    Recipes.Pattern(s, "Teacher", "Demo", 4, new[] { J.Note("A4", 0, 2, 100) });
+                    Recipes.Clip(s, "Teacher", "Demo", 4, new[] { J.Note("A4", 0, 2, 100) });
                 },
                 (s, c) =>
                 {
@@ -648,7 +648,7 @@ namespace ReBuzz.AgentEval
                     // A competent agent asks the catalog: the first answer that is one of ours (it runs everywhere).
                     string pick = Found(s, "bass", "generator").OrderBy(g => g).First(g => g.StartsWith("Neo "));
                     Recipes.Add(s, pick, "Low", 0);
-                    Pattern(s, "Low", "Note", 4, "C2");
+                    Clip(s, "Low", "Note", 4, "C2");
                 },
                 (s, c, ck) =>
                 {

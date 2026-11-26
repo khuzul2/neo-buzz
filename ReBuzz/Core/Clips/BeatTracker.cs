@@ -131,7 +131,7 @@ namespace ReBuzz.Core.Clips
         const double Tightness1 = 40, Tightness2 = 70;
         /// <summary>Onset strength below this (the sum of the rises of the log bands, with the audio at -20 dB RMS) is rounding: a steady tone has none.</summary>
         const double AbsoluteFloor = 0.5;
-        /// <summary>The comb over the autocorrelation: the beat, two beats and a bar of four (not three: a pattern in dotted eighths repeats every three beats).</summary>
+        /// <summary>The comb over the autocorrelation: the beat, two beats and a bar of four (not three: a clip in dotted eighths repeats every three beats).</summary>
         static readonly int[] Harmonics = { 1, 2, 4 };
         static readonly double[] HarmonicWeights = { 1.0, 0.6, 0.5 };
 

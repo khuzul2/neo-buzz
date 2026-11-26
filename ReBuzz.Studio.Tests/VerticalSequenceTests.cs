@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Tests
 
     public class VerticalSequenceTests
     {
-        const int TB = PatternEvent.TimeBase;
+        const int TB = ClipEvent.TimeBase;
 
         static ReBuzzCore Core => Studio.Host.Core;
         static ISong Song => Core.Song;
@@ -69,28 +69,28 @@ namespace ReBuzz.Studio.Tests
                 tab.IsSelected = true;
                 Settle();
                 View = (SequenceView)tab.Content!;
-                Canvas.AutoSelectPattern = true;
+                Canvas.AutoSelectClip = true;
                 Settle();
             }
 
-            public static MachineCore Machine(string name, params (string Name, int Length, int[] Notes)[] patterns)
+            public static MachineCore Machine(string name, params (string Name, int Length, int[] Notes)[] clips)
             {
                 var song = Core.SongCore;
                 song.CreateMachine("Neo Poly", null, name, null, null, null, -1, -0.3f + 0.2f * song.MachinesList.Count, 0.3f);
                 var machine = song.MachinesList.Last(m => m.Name == name);
                 var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
                 song.ConnectMachines(machine, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
-                foreach (var (pname, length, notes) in patterns)
+                foreach (var (pname, length, notes) in clips)
                 {
-                    machine.CreatePattern(pname, length);
-                    var p = machine.PatternsList.Single(x => x.Name == pname);
+                    machine.CreateClip(pname, length);
+                    var p = machine.ClipsList.Single(x => x.Name == pname);
                     if (notes.Length > 0)
                         Core.SessionLayout.EditNotes(p, null, notes.Select((t, i) => new ClipNote(t * TB, TB * 2, 60 + 3 * (i % 5), 100)).ToArray());
                 }
                 return machine;
             }
 
-            /// <summary>Two tracks, Lead and Bass, each with patterns.</summary>
+            /// <summary>Two tracks, Lead and Bass, each with clips.</summary>
             public static void TwoTracks()
             {
                 Machine("Lead", ("Hook", 16, new[] { 0, 4, 8, 12 }), ("Riff", 32, new[] { 0, 2, 6, 10, 16, 20, 26 }));
@@ -100,7 +100,7 @@ namespace ReBuzz.Studio.Tests
                 Settle();
             }
 
-            public static IPattern Pattern(string machine, string name) => Core.Song.Machines.First(m => m.Name == machine).Patterns.First(p => p.Name == name);
+            public static IClip Clip(string machine, string name) => Core.Song.Machines.First(m => m.Name == machine).Clips.First(p => p.Name == name);
 
             /// <summary>A cell in window pixels: tick, track, how far along the cell (pixels down from its start), and where across it (a fraction of the column).</summary>
             public Point At(int time, int row, double along = 6, double across = 0.6)
@@ -200,7 +200,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         static string Events(int row) => string.Join(" ", Song.Sequences[row].Events.Select(e =>
-            $"{e.Key}:{(e.Value.Type == SequenceEventType.PlayPattern ? e.Value.Pattern.Name : "<" + e.Value.Type.ToString().ToLowerInvariant() + ">")}"));
+            $"{e.Key}:{(e.Value.Type == SequenceEventType.PlayClip ? e.Value.Clip.Name : "<" + e.Value.Type.ToString().ToLowerInvariant() + ">")}"));
 
         static string Tracks => string.Join(", ", Song.Sequences.Select(s => s.Machine.Name));
 
@@ -235,7 +235,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(block.X, Is.EqualTo(SequenceGeometry.VerticalRulerWidth), "the first column starts at the ruler's edge");
                 Assert.That(block.Y, Is.EqualTo(SequenceGeometry.VerticalHeaderHeight), "time 0 is under the headers");
                 Assert.That(block.Width, Is.EqualTo(geo.TrackWidth));
-                Assert.That(block.Height, Is.EqualTo(16 * geo.PxPerTick), "a 16-tick pattern is 16 ticks tall");
+                Assert.That(block.Height, Is.EqualTo(16 * geo.PxPerTick), "a 16-tick clip is 16 ticks tall");
                 var riff = Song.Sequences[0].Events.Last();
                 Assert.That(geo.BlockRect(riff.Key, 0, riff.Value).Y, Is.EqualTo(block.Bottom), "the next bar is below");
                 Assert.That(geo.BlockRect(0, 1, Song.Sequences[1].Events.First().Value).X, Is.EqualTo(block.Right), "the next track is to the right");
@@ -290,39 +290,39 @@ namespace ReBuzz.Studio.Tests
             Rig.TwoTracks();
             var canvas = rig.Canvas;
 
-            // Keys: a pattern's key places it and the cursor moves down past it.
+            // Keys: a clip's key places it and the cursor moves down past it.
             rig.Click(rig.At(0, 0));
             Assert.That((canvas.CursorTime, canvas.CursorRow), Is.EqualTo((0, 0)));
             rig.Type("0");
-            Assert.That(canvas.CursorTime, Is.EqualTo(16), "past the pattern");
+            Assert.That(canvas.CursorTime, Is.EqualTo(16), "past the clip");
             rig.Type("1");
             Assert.That(Events(0), Is.EqualTo("0:Hook 16:Riff"));
             Assert.That(canvas.CursorTime, Is.EqualTo(48));
 
-            // The mouse: Bass's second bar, then the pattern list's Line with a double click.
+            // The mouse: Bass's second bar, then the clip list's Line with a double click.
             rig.Click(rig.At(16, 1));
             Assert.That((canvas.CursorTime, canvas.CursorRow), Is.EqualTo((16, 1)));
-            var item = rig.View.PatternList.ContainerFromIndex(0)!;
+            var item = rig.View.ClipList.ContainerFromIndex(0)!;
             rig.DoubleClick(item.TranslatePoint(new Point(20, item.Bounds.Height / 2), rig.Window)!.Value);
             Assert.That(Events(1), Is.EqualTo("16:Line"));
             Assert.That(canvas.CursorTime, Is.EqualTo(48), "past Line");
 
-            // A double click on an empty cell makes a new pattern there; on a block it chooses the pattern for editing.
+            // A double click on an empty cell makes a new clip there; on a block it chooses the clip for editing.
             rig.DoubleClick(rig.At(64, 1));
-            Assert.That(Rig.Pattern("Bass", "00").Length, Is.EqualTo(16), "the default pattern length");
+            Assert.That(Rig.Clip("Bass", "00").Length, Is.EqualTo(16), "the default clip length");
             Assert.That(Events(1), Is.EqualTo("16:Line 64:00"));
-            IPattern chosen = null;
-            Action<IPattern> handler = p => chosen = p;
-            SequenceTab.PatternChosen += handler;
+            IClip chosen = null;
+            Action<IClip> handler = p => chosen = p;
+            SequenceTab.ClipChosen += handler;
             try
             {
                 rig.DoubleClick(rig.At(16, 0, along: 12));
-                Assert.That(chosen?.Name, Is.EqualTo("Riff"), "the double-clicked block's pattern");
-                Assert.That(Core.PatternEditorPattern, Is.SameAs(chosen), "the engine's pattern editor has it");
+                Assert.That(chosen?.Name, Is.EqualTo("Riff"), "the double-clicked block's clip");
+                Assert.That(Core.ClipEditorClip, Is.SameAs(chosen), "the engine's clip editor has it");
             }
             finally
             {
-                SequenceTab.PatternChosen -= handler;
+                SequenceTab.ClipChosen -= handler;
             }
             rig.Screenshot("ar6-vertical-arranged");
 
@@ -335,12 +335,12 @@ namespace ReBuzz.Studio.Tests
             rig.Drag(rig.At(16, 0, along: 20), rig.At(96, 0, along: 20), RawInputModifiers.Alt);
             Assert.That(Events(0), Is.EqualTo("16:Riff 64:Hook 96:Riff"));
 
-            // Resize: Line's bottom edge to bar 4 (its pattern gets 48 ticks); Hook's top edge back a bar (32 ticks, from 48).
+            // Resize: Line's bottom edge to bar 4 (its clip gets 48 ticks); Hook's top edge back a bar (32 ticks, from 48).
             rig.Drag(rig.At(48, 1, along: -2), rig.At(62, 1, along: 0));
-            Assert.That(Rig.Pattern("Bass", "Line").Length, Is.EqualTo(48));
+            Assert.That(Rig.Clip("Bass", "Line").Length, Is.EqualTo(48));
             rig.Drag(rig.At(64, 0, along: 2), rig.At(48, 0, along: 2));
             Assert.That(Events(0), Is.EqualTo("16:Riff 48:Hook 96:Riff"));
-            Assert.That(Rig.Pattern("Lead", "Hook").Length, Is.EqualTo(32), "the end stays where it was");
+            Assert.That(Rig.Clip("Lead", "Hook").Length, Is.EqualTo(32), "the end stays where it was");
 
             // Delete: a click selects the block, Delete clears it.
             rig.Click(rig.At(64, 1, along: 12));
@@ -380,7 +380,7 @@ namespace ReBuzz.Studio.Tests
             rig.Undo();
             Assert.That(Events(0), Is.EqualTo("16:Riff 64:Hook 96:Riff"), "undo the top-edge resize");
             rig.Undo();
-            Assert.That(Rig.Pattern("Bass", "Line").Length, Is.EqualTo(32), "undo the bottom-edge resize");
+            Assert.That(Rig.Clip("Bass", "Line").Length, Is.EqualTo(32), "undo the bottom-edge resize");
             rig.Undo();
             rig.Undo();
             Assert.That(Events(0), Is.EqualTo("0:Hook 16:Riff"), "undo the copy and the move");
@@ -468,9 +468,9 @@ namespace ReBuzz.Studio.Tests
             rig.View.OpenMenu!.Close();
             Settle();
 
-            // Quick Create Patterns: two new patterns from the cursor, down the column.
+            // Quick Create Clips: two new clips from the cursor, down the column.
             rig.Click(rig.At(128, 1), MouseButton.Right);
-            var quick = rig.View.OpenMenu!.Items.OfType<MenuItem>().First(x => x.Header as string == "Quick Create Patterns");
+            var quick = rig.View.OpenMenu!.Items.OfType<MenuItem>().First(x => x.Header as string == "Quick Create Clips");
             var two = quick.Items.OfType<MenuItem>().First(x => x.Header as string == "2");
             two.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
             Settle();
@@ -593,7 +593,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(problems, Is.Empty);
                 Assert.That(all.Any(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Vertical tracks"), Is.True, "the toggle is named");
                 Assert.That(all.Any(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Add track"), Is.True, "the corner's controls moved to the right panel and are still there");
-                Assert.That(rig.View.AddTrackButton.TranslatePoint(new Point(), rig.View.PatternList)?.X, Is.Not.Null);
+                Assert.That(rig.View.AddTrackButton.TranslatePoint(new Point(), rig.View.ClipList)?.X, Is.Not.Null);
 
                 foreach (var theme in new[] { AppearanceTheme.Light, AppearanceTheme.Dark })
                 {

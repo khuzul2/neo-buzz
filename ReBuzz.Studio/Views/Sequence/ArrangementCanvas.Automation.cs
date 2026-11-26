@@ -1,5 +1,5 @@
 // Fork (docs/specs/daw-modes.md AR4, §3.4, §4.3): the arrangement's parameter lanes. A lane shows what writes
-// one state parameter along the timeline, stitched from the clips: automation clips (patterns on the machine's
+// one state parameter along the timeline, stitched from the clips: automation clips (clips on the machine's
 // automation lanes), the engine automation columns of the clips on its other lanes (each repeat of a looped
 // clip shows), and the tracker's parameter columns as steps. Curves are points with ramps (a straight line to
 // the next point) or steps. Overlaps, where two writers set the parameter in the same place, are marked.
@@ -26,7 +26,7 @@ namespace ReBuzz.Studio.Views.Sequence
     internal sealed partial class ArrangementCanvas
     {
         const double PointRadius = 4, PointHit = 7, RowPadding = 6;
-        const int Unit = PatternEvent.TimeBase;
+        const int Unit = ClipEvent.TimeBase;
 
         readonly Dictionary<ArrangementRow, AutoLane> lanes = new();
         AutomationEditor autoEditor;
@@ -42,13 +42,13 @@ namespace ReBuzz.Studio.Views.Sequence
         int selIndex = -1;
         // The selected point by what it is, not by where the last reading put it: an edit takes events out and puts them in
         // (two readings), and the selection finds its point again in the second.
-        (IPattern Pattern, ISequence Sequence, int EventTime, int Time)? selId;
+        (IClip Clip, ISequence Sequence, int EventTime, int Time)? selId;
 
         void SelectPoint(AutoSegment seg, int index)
         {
             selSeg = seg;
             selIndex = index;
-            selId = seg == null || index < 0 || index >= seg.Points.Count ? null : (seg.Pattern, seg.Sequence, seg.EventTime, seg.Points[index].Time);
+            selId = seg == null || index < 0 || index >= seg.Points.Count ? null : (seg.Clip, seg.Sequence, seg.EventTime, seg.Points[index].Time);
         }
 
         void ResolveSelection(IEnumerable<AutoSegment> segments)
@@ -56,7 +56,7 @@ namespace ReBuzz.Studio.Views.Sequence
             selSeg = null;
             selIndex = -1;
             if (selId is not { } id) return;
-            selSeg = segments.FirstOrDefault(s => ReferenceEquals(s.Pattern, id.Pattern) && ReferenceEquals(s.Sequence, id.Sequence) && s.EventTime == id.EventTime);
+            selSeg = segments.FirstOrDefault(s => ReferenceEquals(s.Clip, id.Clip) && ReferenceEquals(s.Sequence, id.Sequence) && s.EventTime == id.EventTime);
             selIndex = selSeg == null ? -1 : selSeg.Points.ToList().FindIndex(p => p.Time == id.Time);
             if (selIndex < 0) selSeg = null;
         }
@@ -92,28 +92,28 @@ namespace ReBuzz.Studio.Views.Sequence
             lanes.Clear();
             var paramRows = rows.Where(r => r.Kind == ArrangementRowKind.Parameter).ToList();
             if (paramRows.Count == 0 && !envelopesOn) return;
-            // The patterns of the clips are watched whether or not they hold a curve yet: a curve put in later (a redo) redraws the lane.
+            // The clips of the clips are watched whether or not they hold a curve yet: a curve put in later (a redo) redraws the lane.
             foreach (var item in items.Values.SelectMany(l => l))
             {
-                Watch(item.Pattern);
-                foreach (var column in item.Pattern.Columns) WatchColumn(column);
+                Watch(item.Clip);
+                foreach (var column in item.Clip.Columns) WatchColumn(column);
             }
             if (paramRows.Count == 0) return;
             var read = AutomationReader.ReadAll(core, paramRows.Select(r => (r.Machine, r.Param.Key)));
             for (int i = 0; i < paramRows.Count; i++)
             {
                 lanes[paramRows[i]] = read[i];
-                foreach (var seg in read[i].Segments) Watch(seg.Pattern);
+                foreach (var seg in read[i].Segments) Watch(seg.Clip);
             }
             ResolveSelection(read.SelectMany(l => l.Segments));
         }
 
-        readonly HashSet<PatternColumnCore> watchedColumns = new();
+        readonly HashSet<ClipColumnCore> watchedColumns = new();
 
-        /// <summary>A parameter column's events are listened to while the view shows its pattern: a point put in or taken out (by an undo, the recorder, the agent) redraws the lanes.</summary>
-        void WatchColumn(IPatternColumn column)
+        /// <summary>A parameter column's events are listened to while the view shows its clip: a point put in or taken out (by an undo, the recorder, the agent) redraws the lanes.</summary>
+        void WatchColumn(IClipColumn column)
         {
-            if (column is PatternColumnCore { Type: PatternColumnType.Parameter } core && watchedColumns.Add(core)) core.EventsChanged += OnColumnEvents;
+            if (column is ClipColumnCore { Type: ClipColumnType.Parameter } core && watchedColumns.Add(core)) core.EventsChanged += OnColumnEvents;
         }
 
         void UnwatchColumns()
@@ -122,7 +122,7 @@ namespace ReBuzz.Studio.Views.Sequence
             watchedColumns.Clear();
         }
 
-        void OnColumnEvents(IEnumerable<PatternEvent> events, bool set) => OnUi(() =>
+        void OnColumnEvents(IEnumerable<ClipEvent> events, bool set) => OnUi(() =>
         {
             ClearCurves();
             RefreshLanes();
@@ -155,7 +155,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 if (x1 < area.X || x0 > area.Right) continue;
                 using var clip = ctx.PushClip(new Rect(Math.Max(area.X, x0), y, Math.Max(1, Math.Min(area.Right, x1) - Math.Max(area.X, x0)), row.Height));
                 // The placement: a faint field in the clip's colour, with its start edge.
-                var colour = ColourOf(seg.Pattern);
+                var colour = ColourOf(seg.Clip);
                 using (ctx.PushOpacity(seg.Source == AutoSource.Tracker ? 0.08 : 0.2)) ctx.FillRectangle(new SolidColorBrush(colour), new Rect(x0, a.Y - 2, Math.Max(1, x1 - x0), a.Height + 4));
                 ctx.FillRectangle(Look.BarLine, new Rect(Math.Floor(x0), a.Y - 2, 1, a.Height + 4));
                 DrawCurve(ctx, row, seg, seg.Source == AutoSource.Tracker ? steps : curve);
@@ -196,7 +196,7 @@ namespace ReBuzz.Studio.Views.Sequence
                     else
                     {
                         // The ramp is cut where the placement ends: the line to there.
-                        int cut = seg.PatternTo;
+                        int cut = seg.ClipTo;
                         ctx.DrawLine(pen, new Point(x, yv), new Point(endX, YOfValue(row, AutomationMath.Ramp(p.Time, p.Value, q.Time, q.Value, cut))));
                     }
                 }
@@ -220,10 +220,10 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         /// <summary>The line of an automation clip on its own lane: its first automation column, across the clip.</summary>
-        void DrawAutomationLine(DrawingContext ctx, IPattern p, ClipSegment s, double sx, double sw, double h)
+        void DrawAutomationLine(DrawingContext ctx, IClip p, ClipSegment s, double sx, double sw, double h)
         {
             if (p.Length <= 0) return;
-            var column = p.Columns.FirstOrDefault(c => c.Type == PatternColumnType.Parameter && c.Parameter != null && c is PatternColumnCore { IsMarkedAutomation: true });
+            var column = p.Columns.FirstOrDefault(c => c.Type == ClipColumnType.Parameter && c.Parameter != null && c is ClipColumnCore { IsMarkedAutomation: true });
             if (column == null) return;
             Watch(p);
             var pts = AutomationMath.PointsOf(column.GetEvents(int.MinValue, int.MaxValue), true);
@@ -286,7 +286,7 @@ namespace ReBuzz.Studio.Views.Sequence
             {
                 var pt = hit.Seg.Points[hit.Index];
                 string text = $"{param.Name} {param.Describe(pt.Value)} · {BarBeat(hit.Seg.ToSong(pt.Time) / Unit)} · {(pt.Ramp ? "ramp" : "step")}\n{hit.Seg.Describe}";
-                return hit.Seg.Editable ? text + "\nDrag: move · Double click or Delete: remove · R: ramp or step" : text + "\nTracker steps: edit them in the Pattern tab";
+                return hit.Seg.Editable ? text + "\nDrag: move · Double click or Delete: remove · R: ramp or step" : text + "\nTracker steps: edit them in the Clip tab";
             }
             string tip = $"{param.Name} · {BarBeat(units / Unit)}";
             foreach (var o in lane.Overlaps.Where(o => units >= o.From && units < o.To).Take(1))
@@ -314,7 +314,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 }
                 if (!h.Seg.Editable)
                 {
-                    SetStatus(h.Seg.Source == AutoSource.Tracker ? "These steps are the tracker's: edit them in the Pattern tab." : "This curve can't be edited from here.");
+                    SetStatus(h.Seg.Source == AutoSource.Tracker ? "These steps are the tracker's: edit them in the Clip tab." : "This curve can't be edited from here.");
                     InvalidateVisual();
                     return true;
                 }
@@ -402,7 +402,7 @@ namespace ReBuzz.Studio.Views.Sequence
                         ? Automation.AddPoint(pdragSeg, row.Param.Key, pdragTime, pdragValue)
                         : Automation.MovePoint(pdragSeg, row.Param.Key, pdragIndex, pdragTime, pdragValue);
                     if (why == null && !pdragNew) SelectPoint(pdragSeg, pdragIndex);      // its time is the one it had; the next reading finds it moved
-                    if (why == null && !pdragNew) selId = (pdragSeg.Pattern, pdragSeg.Sequence, pdragSeg.EventTime, pdragSeg.ToPattern(pdragTime));
+                    if (why == null && !pdragNew) selId = (pdragSeg.Clip, pdragSeg.Sequence, pdragSeg.EventTime, pdragSeg.ToClip(pdragTime));
                 }
                 else
                 {

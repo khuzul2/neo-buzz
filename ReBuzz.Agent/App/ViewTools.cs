@@ -1,5 +1,5 @@
 // Agent server (docs/specs/agent-knowledge.md §5, K3): the studio window, for agents that work beside a person.
-// view_show (a view, or a pattern in the Tracker or piano roll), machine_open_editor, select, panel_set (browser,
+// view_show (a view, or a clip in the Tracker or piano roll), machine_open_editor, select, panel_set (browser,
 // inspector, detail) and window_layout. Studio mode only: elsewhere they say so. Every call is visible to the
 // person watching, and while the transport records nothing opens a window or takes the keyboard.
 
@@ -40,31 +40,31 @@ namespace ReBuzz.Agent.App
                 Name = "view_show",
                 Title = "Show a view",
                 Description =
-                    "Brings a view to the front in the studio window: Arrangement, Session or Machines. With machine and pattern it shows that pattern in the detail panel's Tracker (editor=\"tracker\", default) " +
+                    "Brings a view to the front in the studio window: Arrangement, Session or Machines. With machine and clip it shows that clip in the detail panel's Tracker (editor=\"tracker\", default) " +
                     "or piano roll (editor=\"piano_roll\"). With no arguments it just reports where the window is. Studio mode only; refused while recording. The person sees it happen. " +
-                    "Example: view_show(view=\"Session\") or view_show(machine=\"Bass\", pattern=\"Verse\", editor=\"piano_roll\").",
+                    "Example: view_show(view=\"Session\") or view_show(machine=\"Bass\", clip=\"Verse\", editor=\"piano_roll\").",
                 Input = Object(null,
                     Opt("view", String("The main view: Arrangement, Session or Machines")),
-                    Opt("machine", String("With pattern: the pattern's machine")),
-                    Opt("pattern", String("A pattern to show in the detail panel")),
-                    Opt("editor", String("For a pattern: tracker (default) or piano_roll", "tracker", "piano_roll"))),
+                    Opt("machine", String("With clip: the clip's machine")),
+                    Opt("clip", String("A clip to show in the detail panel")),
+                    Opt("editor", String("For a clip: tracker (default) or piano_roll", "tracker", "piano_roll"))),
                 Output = StateSchema(),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {
                     var v = View(app);
-                    string? view = c.String("view"), machine = c.String("machine"), pattern = c.String("pattern");
-                    if ((machine == null) != (pattern == null)) throw new ToolError("Give machine and pattern together.");
-                    if (view != null && machine != null) throw new ToolError("Give view, or machine and pattern, not both.");
+                    string? view = c.String("view"), machine = c.String("machine"), clip = c.String("clip");
+                    if ((machine == null) != (clip == null)) throw new ToolError("Give machine and clip together.");
+                    if (view != null && machine != null) throw new ToolError("Give view, or machine and clip, not both.");
                     if (view != null) view = Views.FirstOrDefault(x => x.Equals(view, StringComparison.OrdinalIgnoreCase)) ?? (view.Equals("Sequence", StringComparison.OrdinalIgnoreCase) ? "Arrangement" : throw new ToolError($"view: {string.Join(", ", Views)}."));
-                    if (machine != null) NotWhileRecording(v, "showing a pattern editor");
+                    if (machine != null) NotWhileRecording(v, "showing a clip editor");
                     var s = await app.Engine("view_show", false, () =>
                     {
                         if (view != null) v.ShowView(view);
-                        else if (machine != null) v.ShowPattern(machine, pattern!, c.String("editor") == "piano_roll");
+                        else if (machine != null) v.ShowClip(machine, clip!, c.String("editor") == "piano_roll");
                         return v.State();
                     }, c.Cancellation);
-                    return ToolResult.Ok(machine != null ? $"Showing {machine}'s {pattern} in the {(c.String("editor") == "piano_roll" ? "piano roll" : "Tracker")}. " + Line(s) : (view != null ? $"Showing {view}. " : "") + Line(s), State(s));
+                    return ToolResult.Ok(machine != null ? $"Showing {machine}'s {clip} in the {(c.String("editor") == "piano_roll" ? "piano roll" : "Tracker")}. " + Line(s) : (view != null ? $"Showing {view}. " : "") + Line(s), State(s));
                 },
             });
 
@@ -96,11 +96,11 @@ namespace ReBuzz.Agent.App
                 Name = "select",
                 Title = "Select in the studio",
                 Description =
-                    "Selects a machine (its track in the Arrangement and Session, its node in Machines), and optionally one of its patterns or a Session scene, so the inspector and the other views follow, as when a person clicks. " +
-                    "clear=true selects nothing. Studio mode only. Example: select(machine=\"Bass\", pattern=\"Verse\").",
+                    "Selects a machine (its track in the Arrangement and Session, its node in Machines), and optionally one of its clips or a Session scene, so the inspector and the other views follow, as when a person clicks. " +
+                    "clear=true selects nothing. Studio mode only. Example: select(machine=\"Bass\", clip=\"Verse\").",
                 Input = Object(null,
                     Opt("machine", String("The machine")),
-                    Opt("pattern", String("One of its patterns")),
+                    Opt("clip", String("One of its clips")),
                     Opt("scene", Integer("A Session scene (0-based)", 0, 4095)),
                     Opt("clear", Boolean("Select nothing"))),
                 Output = StateSchema(),
@@ -109,15 +109,15 @@ namespace ReBuzz.Agent.App
                 {
                     var v = View(app);
                     bool clear = c.Bool("clear") == true;
-                    string? machine = c.String("machine"), pattern = c.String("pattern");
-                    if (clear == (machine != null || pattern != null || c.Int("scene") != null)) throw new ToolError("Give a machine (with a pattern or scene), or clear=true.");
-                    if (pattern != null && machine == null) throw new ToolError("pattern goes with machine.");
+                    string? machine = c.String("machine"), clip = c.String("clip");
+                    if (clear == (machine != null || clip != null || c.Int("scene") != null)) throw new ToolError("Give a machine (with a clip or scene), or clear=true.");
+                    if (clip != null && machine == null) throw new ToolError("clip goes with machine.");
                     var s = await app.Engine("select", false, () =>
                     {
-                        v.Select(clear ? null : machine, clear ? null : pattern, c.Int("scene"));
+                        v.Select(clear ? null : machine, clear ? null : clip, c.Int("scene"));
                         return v.State();
                     }, c.Cancellation);
-                    return ToolResult.Ok(clear ? "Selection cleared. " + Line(s) : "Selected " + machine + (pattern != null ? $" / {pattern}" : "") + ". " + Line(s), State(s));
+                    return ToolResult.Ok(clear ? "Selection cleared. " + Line(s) : "Selected " + machine + (clip != null ? $" / {clip}" : "") + ". " + Line(s), State(s));
                 },
             });
 
@@ -126,7 +126,7 @@ namespace ReBuzz.Agent.App
                 Name = "panel_set",
                 Title = "Open or size a panel",
                 Description =
-                    "The studio's side panels: browser (left: machines and patterns), inspector (right: the selection and Song notes) and detail (under the view: the Tracker and piano roll). " +
+                    "The studio's side panels: browser (left: machines and clips), inspector (right: the selection and Song notes) and detail (under the view: the Tracker and piano roll). " +
                     "open shows or hides it; size is the width in pixels (the detail's height); tab picks the inspector's tab (Selection or Song); maximised stretches the detail over the window. " +
                     "Studio mode only. Example: panel_set(panel=\"inspector\", open=true, tab=\"Song\").",
                 Input = Object(null,
@@ -181,14 +181,14 @@ namespace ReBuzz.Agent.App
 
         static string Line(ViewState s) =>
             $"{s.View} view; browser {(s.BrowserOpen ? "open" : "closed")}, inspector {(s.InspectorOpen ? "open (" + s.InspectorTab + ")" : "closed")}, detail {(s.DetailOpen ? (s.DetailMaximised ? "maximised " : "open ") + s.DetailPage : "closed")}" +
-            (s.Machine != null ? $"; selected {s.Machine}" + (s.Pattern != null ? $" / {s.Pattern}" : "") : "; nothing selected") + $"; window {s.WindowWidth:0}x{s.WindowHeight:0}{(s.Maximised ? " (maximised)" : "")}.";
+            (s.Machine != null ? $"; selected {s.Machine}" + (s.Clip != null ? $" / {s.Clip}" : "") : "; nothing selected") + $"; window {s.WindowWidth:0}x{s.WindowHeight:0}{(s.Maximised ? " (maximised)" : "")}.";
 
         static JsonObject StateSchema() => Object("Where the studio window is",
             Req("view", String("The view shown: Arrangement, Session, Machines (or Song notes)")),
             Req("browser", Object(null, Req("open", Boolean("Shown")), Req("width", Number("Pixels")))),
             Req("inspector", Object(null, Req("open", Boolean("Shown")), Req("width", Number("Pixels")), Req("tab", String("Selection or Song")))),
             Req("detail", Object(null, Req("open", Boolean("Shown")), Req("height", Number("Pixels")), Req("maximised", Boolean("Over the whole window")), Req("page", String("tracker or piano_roll")))),
-            Req("selection", Object(null, Opt("machine", String("The selected machine")), Opt("pattern", String("Its selected pattern")), Opt("scene", Integer("The Session scene")))),
+            Req("selection", Object(null, Opt("machine", String("The selected machine")), Opt("clip", String("Its selected clip")), Opt("scene", Integer("The Session scene")))),
             Req("window", Object(null, Req("width", Number("Pixels")), Req("height", Number("Pixels")), Req("maximised", Boolean("Maximised")))),
             Req("recording", Boolean("The transport records: no windows open and no keyboard is taken")));
 
@@ -196,7 +196,7 @@ namespace ReBuzz.Agent.App
         {
             var sel = new JsonObject();
             if (s.Machine != null) sel["machine"] = s.Machine;
-            if (s.Pattern != null) sel["pattern"] = s.Pattern;
+            if (s.Clip != null) sel["clip"] = s.Clip;
             if (s.Scene != null) sel["scene"] = s.Scene;
             return new JsonObject
             {

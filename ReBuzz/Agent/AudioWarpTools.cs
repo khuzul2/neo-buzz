@@ -18,7 +18,7 @@ namespace ReBuzz.Agent
 {
     internal static class AudioWarpTools
     {
-        static JsonObject State(ReBuzzCore core, SessionLayout layout, MachineCore m, IPattern p, WarpResult result, string action)
+        static JsonObject State(ReBuzzCore core, SessionLayout layout, MachineCore m, IClip p, WarpResult result, string action)
         {
             var markers = result?.Markers ?? layout.WarpMarkersOf(p);
             var source = layout.AudioSourceOf(p);
@@ -36,7 +36,7 @@ namespace ReBuzz.Agent
             var r = new JsonObject
             {
                 ["machine"] = m.Name,
-                ["pattern"] = p.Name,
+                ["clip"] = p.Name,
                 ["action"] = action,
                 ["straight"] = (audio?.Markers?.Count ?? 0) < 2,
                 ["markers"] = list,
@@ -73,10 +73,10 @@ namespace ReBuzz.Agent
                     "insert_at_transients (from and to optional: a marker at each transient) · insert_every_bar (from and to optional) · delete (markers) · remove_all (back to straight at the clip's tempo) · " +
                     "quantize (markers, or from and to: markers inside, or made at the transients inside, move toward the nearest grid line by strength percent, default the song's, 100 at first; " +
                     "grid_beats, default 0.25) · quantize_strength (strength: the song's value, 0 to 100). Selecting is the page's own. " +
-                    "Example: audio_warp_markers(machine=\"Drums audio\", pattern=\"loop\", action=\"insert_at_transients\"), then action=\"quantize\" with markers=[1,2,3] and grid_beats=0.5.",
+                    "Example: audio_warp_markers(machine=\"Drums audio\", clip=\"loop\", action=\"insert_at_transients\"), then action=\"quantize\" with markers=[1,2,3] and grid_beats=0.5.",
                 Input = Object(null,
                     Req("machine", String("The Neo Audio machine (its track)")),
-                    Req("pattern", String("The audio clip's pattern")),
+                    Req("clip", String("The audio clip's clip")),
                     Req("action", String("What to do", WarpRequest.Actions)),
                     Opt("markers", Array(Integer("A marker's number", 0, 100000), "The markers it is about, by number in beat order")),
                     Opt("marker", Integer("One marker, by number (segment actions, move_along)", 0, 100000)),
@@ -91,7 +91,7 @@ namespace ReBuzz.Agent
                     Opt("strength", Number("quantize: percent, 0 to 100 (default the song's); quantize_strength: the value to keep", 0, 100)),
                     Opt("grid_beats", Number("quantize: the grid in beats (default 0.25)", 0.015625, 64))),
                 Output = Object(null,
-                    Req("machine", String("Machine")), Req("pattern", String("Pattern")), Req("action", String("The action done")),
+                    Req("machine", String("Machine")), Req("clip", String("Clip")), Req("action", String("The action done")),
                     Req("markers", Array(Object(null), "The markers now: index, sample, beat, segment_bpm, pinned")),
                     Req("straight", Boolean("Whether the clip has no markers of its own")),
                     Opt("count", Integer("How many markers the action made, moved or removed")),
@@ -106,7 +106,7 @@ namespace ReBuzz.Agent
                     {
                         var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View, so no audio clips.");
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
-                        var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                        var p = SongModel.Clip(m, c.RequiredString("clip"));
                         if (layout.ClipOf(p)?.Audio == null) throw new ToolError($"\"{p.Name}\" of {m.Name} is not an audio clip (audio_import makes one).");
                         if (!WarpRequest.Actions.Contains(action)) throw new ToolError($"action: one of {string.Join(", ", WarpRequest.Actions)}.");
                         var request = new WarpRequest
@@ -137,7 +137,7 @@ namespace ReBuzz.Agent
                         if (request.Action == WarpRequest.RemoveAll && result != null) o["count"] = result.Count;
                         return o;
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {action}, {((JsonArray)r["markers"]!).Count} markers" + (r["straight"]!.GetValue<bool>() ? " (straight)" : "") + ".", r);
+                    return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\": {action}, {((JsonArray)r["markers"]!).Count} markers" + (r["straight"]!.GetValue<bool>() ? " (straight)" : "") + ".", r);
                 },
             });
         }

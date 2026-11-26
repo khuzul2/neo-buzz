@@ -220,7 +220,7 @@ namespace ReBuzz.Core
 
         List<ParameterGroup> parameterGroups;
         // Fork (engine hardening): the copy is kept while the list holds the same groups (it was
-        // made on every call). Pattern editors set values through it, on the audio thread.
+        // made on every call). Clip editors set values through it, on the audio thread.
         ReadOnlyCollection<IParameterGroup> parameterGroupsView;
         public ReadOnlyCollection<IParameterGroup> ParameterGroups { get => ParameterGroup.ViewOf(ref parameterGroupsView, parameterGroups); }
         internal List<ParameterGroup> ParameterGroupsList { get => parameterGroups; set => parameterGroups = value; }
@@ -241,16 +241,16 @@ namespace ReBuzz.Core
 
         public ReadOnlyCollection<string> EnvelopeNames { get => envelopes.Keys.ToReadOnlyCollection(); }
 
-        List<PatternCore> patterns = new List<PatternCore>();
-        public ReadOnlyCollection<IPattern> Patterns
+        List<ClipCore> clips = new List<ClipCore>();
+        public ReadOnlyCollection<IClip> Clips
         {
             get
             {
-                return patterns.Cast<IPattern>().ToReadOnlyCollection();
+                return clips.Cast<IClip>().ToReadOnlyCollection();
             }
         }
 
-        internal List<PatternCore> PatternsList { get => patterns; set => patterns = value; }
+        internal List<ClipCore> ClipsList { get => clips; set => clips = value; }
 
         public bool IsControlMachine { get; set; }
 
@@ -602,7 +602,7 @@ namespace ReBuzz.Core
             return wet;
         }
 
-        public IMachineDLL PatternEditorDLL
+        public IMachineDLL ClipEditorDLL
         {
             get
             {
@@ -678,13 +678,13 @@ namespace ReBuzz.Core
             }
         }
 
-        /// <summary>Fork (clips.md §6, CU3): this machine's pattern editor views the store (the song's clips are lanes in the pattern's columns).</summary>
+        /// <summary>Fork (clips.md §6, CU3): this machine's clip editor views the store (the song's clips are lanes in the clip's columns).</summary>
         internal bool ClipsAttached { get; set; }
 
-        /// <summary>Fork (clips.md §7.1, CU3): for a pattern editor machine, the data the song file gave it (what the migration reads and checks the stamp of); null once the clips are in the store.</summary>
+        /// <summary>Fork (clips.md §7.1, CU3): for a clip editor machine, the data the song file gave it (what the migration reads and checks the stamp of); null once the clips are in the store.</summary>
         internal byte[] LoadedEditorData { get; set; }
 
-        public byte[] PatternEditorData
+        public byte[] ClipEditorData
         {
             get
             {
@@ -799,8 +799,8 @@ namespace ReBuzz.Core
 
         public long CMachineHost { get; internal set; }
 
-        public event Action<IPattern> PatternAdded;
-        public event Action<IPattern> PatternRemoved;
+        public event Action<IClip> ClipAdded;
+        public event Action<IClip> ClipRemoved;
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ICommand MachineMenuCommand { get; private set; }
@@ -809,7 +809,7 @@ namespace ReBuzz.Core
         public MachineCore EditorMachine { get; internal set; }
 
         /// <summary>
-        /// Fork (mac-engine.md M2): the song's pattern editor for this machine when it isn't
+        /// Fork (mac-engine.md M2): the song's clip editor for this machine when it isn't
         /// installed and no default editor replaces it (rebuzz-headless off Windows has none). It is
         /// a hidden missing machine that keeps its data; it isn't <see cref="EditorMachine"/>, which
         /// the engine drives, but the song saves back with it as the machine's editor.
@@ -874,26 +874,26 @@ namespace ReBuzz.Core
             this.dispatcher = dispatcher;
         }
 
-        public void ClonePattern(string name, IPattern p)
+        public void CloneClip(string name, IClip p)
         {
             if (p != null)
             {
-                PatternCore newp = new PatternCore(this, name, p.Length, dispatcher);
-                newp.BuiltInData = (p as PatternCore)?.BuiltInData;    // fork (mac-engine.md M2): kept contents are never changed, so the copy shares them
+                ClipCore newp = new ClipCore(this, name, p.Length, dispatcher);
+                newp.BuiltInData = (p as ClipCore)?.BuiltInData;    // fork (mac-engine.md M2): kept contents are never changed, so the copy shares them
                 lock (ReBuzzCore.AudioLock)
                 {
-                    this.patterns.Add(newp);
+                    this.clips.Add(newp);
                     var buzz = graph.Buzz as ReBuzzCore;
-                    buzz.MachineManager.CreatePatternCopy(EditorMachine, newp, p);
+                    buzz.MachineManager.CreateClipCopy(EditorMachine, newp, p);
                 }
                 // Fork (clips.md §8, CU4): the copy has the original's lanes: the clip's data is its columns in the store, whatever its editor copied.
                 // (The editor copies its view; a copy that already has columns, made by a caller, is left as it is.)
                 if (newp.Columns.Count == 0 && p.Columns.Count > 0)
                     EngineColumns.Copy(p, newp, ((graph.Buzz as ReBuzzCore)?.SongCore?.MachinesList ?? new List<MachineCore>()).Cast<IMachine>().ToList());
                 // Fork (0.4.1): events and UI after releasing AudioLock.
-                PatternAdded?.Invoke(newp);
-                PropertyChanged.Raise(this, "Patterns");
-                graph.Buzz.SetPatternEditorPattern(newp);
+                ClipAdded?.Invoke(newp);
+                PropertyChanged.Raise(this, "Clips");
+                graph.Buzz.SetClipEditorClip(newp);
                 graph.Buzz.SetModifiedFlag();
             }
         }
@@ -902,30 +902,30 @@ namespace ReBuzz.Core
         {
         }
 
-        public void CreatePattern(string name, int length)
+        public void CreateClip(string name, int length)
         {
-            PatternCore pc = new PatternCore(this, name, length, dispatcher);
+            ClipCore pc = new ClipCore(this, name, length, dispatcher);
 
             // Don't call these from "Work()"
             lock (ReBuzzCore.AudioLock)
             {
-                this.patterns.Add(pc);
+                this.clips.Add(pc);
             }
-            PatternAdded?.Invoke(pc);
-            PropertyChanged.Raise(this, "Patterns");
-            graph.Buzz.SetPatternEditorPattern(pc);
+            ClipAdded?.Invoke(pc);
+            PropertyChanged.Raise(this, "Clips");
+            graph.Buzz.SetClipEditorClip(pc);
             graph.Buzz.SetModifiedFlag();
         }
 
-        public void DeletePattern(IPattern p)
+        public void DeleteClip(IClip p)
         {
             var buzz = graph.Buzz as ReBuzzCore;
             var changedSequences = new List<SequenceCore>();
             lock (ReBuzzCore.AudioLock)
             {
-                patterns.Remove(p as PatternCore);
-                (p as PatternCore).IsDeleted = true;                    // fork (0.6.1): before the session forgets it
-                buzz.SessionCore.OnPatternDeleted(p as PatternCore);   // fork: Session View
+                clips.Remove(p as ClipCore);
+                (p as ClipCore).IsDeleted = true;                    // fork (0.6.1): before the session forgets it
+                buzz.SessionCore.OnClipDeleted(p as ClipCore);   // fork: Session View
                 // Remove from sequences
                 foreach (var seq in buzz.SongCore.SequencesList.Where(s => s.Machine == p.Machine))
                 {
@@ -934,38 +934,38 @@ namespace ReBuzz.Core
                 }
             }
             // Fork (0.4.1): events after releasing AudioLock (listeners redraw editors).
-            PatternRemoved?.Invoke(p);
-            PropertyChanged.Raise(this, "Patterns");
-            (p as PatternCore).ClearEvents();
+            ClipRemoved?.Invoke(p);
+            PropertyChanged.Raise(this, "Clips");
+            (p as ClipCore).ClearEvents();
             foreach (var seq in changedSequences)
                 seq.InvokeEvents();
         }
 
-        public void RenamePattern(IPattern p, string newName)
+        public void RenameClip(IClip p, string newName)
         {
-            if (p != null && !patterns.Any(x => x.Name == newName))
+            if (p != null && !clips.Any(x => x.Name == newName))
             {
                 string oldName = p.Name;
-                SetPatternName(p, newName);
+                SetClipName(p, newName);
                 // Fork (history-snapshots.md HS1): a rename from an editor is a step of the song's history; an undo or an
                 // action's own rename (the stack is applying) isn't recorded again.
                 var stack = (graph?.Buzz as ReBuzzCore)?.SongCore?.ActionStack;
                 if (stack != null && !stack.Applying)
-                    stack.Record(new ReBuzz.Core.Actions.GraphActions.RenamePatternStepAction(this, p, oldName, newName));
+                    stack.Record(new ReBuzz.Core.Actions.GraphActions.RenameClipStepAction(this, p, oldName, newName));
             }
         }
 
-        /// <summary>Renames a pattern with the events and flags a rename raises (no history step).</summary>
-        internal void SetPatternName(IPattern p, string newName)
+        /// <summary>Renames a clip with the events and flags a rename raises (no history step).</summary>
+        internal void SetClipName(IClip p, string newName)
         {
             if (p != null)
             {
-                (p as PatternCore).Name = newName;
-                PropertyChanged?.Raise(this, "Patterns");
+                (p as ClipCore).Name = newName;
+                PropertyChanged?.Raise(this, "Clips");
 
                 foreach (var sequence in Global.Buzz.Song.Sequences)
                 {
-                    if (sequence.Events.Values.FirstOrDefault(e => e.Pattern == p) != null)
+                    if (sequence.Events.Values.FirstOrDefault(e => e.Clip == p) != null)
                     {
                         (sequence as SequenceCore).InvokeEvents();
                     }
@@ -1150,12 +1150,12 @@ namespace ReBuzz.Core
                 case MachineDialog.Parameters:
                     OpenParameterWindow();
                     break;
-                case MachineDialog.Patterns:
-                    if (PatternsList.Count > 0)
+                case MachineDialog.Clips:
+                    if (ClipsList.Count > 0)
                     {
                         var buzz = graph.Buzz as ReBuzzCore;
-                        buzz.SetPatternEditorPattern(PatternsList[0]);
-                        buzz.ActiveView = BuzzView.PatternView;
+                        buzz.SetClipEditorClip(ClipsList[0]);
+                        buzz.ActiveView = BuzzView.ClipView;
                     }
                     break;
                 case MachineDialog.Attributes:
@@ -1673,8 +1673,8 @@ namespace ReBuzz.Core
         internal void ClearEvents()
         {
             PropertyChanged = null;
-            PatternAdded = null;
-            PatternRemoved = null;
+            ClipAdded = null;
+            ClipRemoved = null;
             foreach (var pg in parameterGroups)
             {
                 foreach (ParameterCore p in pg.ParametersList)

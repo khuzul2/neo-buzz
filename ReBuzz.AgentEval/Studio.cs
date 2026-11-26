@@ -187,32 +187,32 @@ namespace ReBuzz.AgentEval
             return (mix, audio, how);
         }
 
-        /// <summary>Every pattern's notes, by machine and pattern.</summary>
+        /// <summary>Every clip's notes, by machine and clip.</summary>
         public Dictionary<string, Dictionary<string, List<JsonObject>>> Notes()
         {
             var all = new Dictionary<string, Dictionary<string, List<JsonObject>>>(StringComparer.OrdinalIgnoreCase);
-            foreach (var m in J.Objects(C.Ok("pattern_list")["machines"]))
+            foreach (var m in J.Objects(C.Ok("clip_list")["machines"]))
             {
                 string machine = J.Str(m["machine"]);
-                var byPattern = new Dictionary<string, List<JsonObject>>();
-                foreach (var p in J.Objects(m["patterns"]))
+                var byClip = new Dictionary<string, List<JsonObject>>();
+                foreach (var p in J.Objects(m["clips"]))
                 {
-                    string pattern = J.Str(p["name"]);
-                    byPattern[pattern] = J.Objects(C.Ok("notes_read", new JsonObject { ["machine"] = machine, ["pattern"] = pattern })["notes"]).ToList();
+                    string clip = J.Str(p["name"]);
+                    byClip[clip] = J.Objects(C.Ok("notes_read", new JsonObject { ["machine"] = machine, ["clip"] = clip })["notes"]).ToList();
                 }
-                all[machine] = byPattern;
+                all[machine] = byClip;
             }
             return all;
         }
 
-        /// <summary>The notes a machine plays in the arrangement (each placed pattern's notes, whatever the place).</summary>
+        /// <summary>The notes a machine plays in the arrangement (each placed clip's notes, whatever the place).</summary>
         public List<JsonObject> PlacedNotes(string machine, JsonObject arrangement, Dictionary<string, Dictionary<string, List<JsonObject>>> notes)
         {
             var lane = J.Objects(arrangement["lanes"]).FirstOrDefault(l => string.Equals(J.Str(l["machine"]), machine, StringComparison.OrdinalIgnoreCase));
-            if (lane == null || !notes.TryGetValue(machine, out var patterns)) return new List<JsonObject>();
+            if (lane == null || !notes.TryGetValue(machine, out var clips)) return new List<JsonObject>();
             var result = new List<JsonObject>();
             foreach (var e in J.Objects(lane["events"]))
-                if (e["pattern"] is JsonNode pn && patterns.TryGetValue(J.Str(pn), out var ns))
+                if (e["clip"] is JsonNode pn && clips.TryGetValue(J.Str(pn), out var ns))
                 {
                     double at = J.Num(e["at"]), ends = J.Num(e["ends"]);
                     foreach (var n in ns)

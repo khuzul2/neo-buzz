@@ -39,6 +39,6 @@ Neo Verb for a choir hall, Neo Ensemble to widen pads, Neo Filter to sweep the w
 ## Checklist
 
 - [ ] Read each control's id, range and how/sound with `machine_describe` (ids are snake_case and also taken by `param_set`).
-- [ ] Change one control at a time with `param_set`, play a pattern (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
+- [ ] Change one control at a time with `param_set`, play a clip (`notes_write`), then `render` with probes and check `machine_readings` (rms_db, peak_db, active_voices).
 - [ ] `plot` a spectrum of the render to see the four formant peaks move with `Vowel`, and `compare` two settings.
 - [ ] Writes via `param_set` show on the Explain strip with the Agent badge.

@@ -6,8 +6,8 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 
 `render` or `analyze` reads "silent" (nothing above −90 dBFS), or a part is missing from the mix. Check in this order:
 
-1. Placed in the range? `arrangement_get(from=…, to=…)`. A pattern only plays where it is placed, and the render's range must cover it.
-2. Notes in the pattern? `pattern_list(machine=…)`, `notes_read(machine=…, pattern=…)`. Notes past the pattern's end are dropped (`notes_write` lists them under problems).
+1. Placed in the range? `arrangement_get(from=…, to=…)`. A clip only plays where it is placed, and the render's range must cover it.
+2. Notes in the clip? `clip_list(machine=…)`, `notes_read(machine=…, clip=…)`. Notes past the clip's end are dropped (`notes_write` lists them under problems).
 3. A path to Master? `machine_list`: follow the connections; a gain of −inf is silence. An effect with nothing feeding it is silent.
 4. Muted or soloed? `machine_list` shows both; `machine_set(machine=…, mute=false)`. A render's own `solo` list silences the other generators for that render. A machine marked `diverged` was muted by its guard: see "A diverged machine".
 5. The sound itself: `param_get(machine=…)`. Look for `Volume` at -inf, oscillator levels at 0 % (Neo Poly O1–O3, Neo Wave A and B), amp sustain 0 % with a very short decay, a filter cutoff near 20 Hz, Neo FM6 carriers at level 0 or switched off (`Op1 on`).
@@ -73,10 +73,10 @@ For live playing the audio drivers, buffer sizes and what they cost are in `guid
 
 ## Machines that don't play notes
 
-- `notes_write` puts notes in each pattern's engine MIDI column, and NeoBuzz Live sends them to the machine as MIDI. Neo machines play them.
+- `notes_write` puts notes in each clip's engine MIDI column, and NeoBuzz Live sends them to the machine as MIDI. Neo machines play them.
 - Check: `machine_describe(machine=…)` (its notes field), then one note rendered solo and `analyze(source=…, metrics=["pitch"])`.
-- Fix: use a Neo synth or another machine. A machine that takes notes only in its Note track parameter gets them in its Note and velocity lanes: `notes_write(…, input="tracks")`. `clip_get(machine=…, pattern=…)` shows where a clip's notes and lanes are.
-- An octave off: the tools use C4 = 60, which the Pattern View shows as C-3 by default (C-5 when Preferences ▸ General ▸ Note names is Buzz's). Some older machines play an octave away; measure the pitch and shift with `notes_transform(machine=…, pattern=…, transforms=[{"op": "transpose", "semitones": 12}])`.
+- Fix: use a Neo synth or another machine. A machine that takes notes only in its Note track parameter gets them in its Note and velocity lanes: `notes_write(…, input="tracks")`. `clip_get(machine=…, clip=…)` shows where a clip's notes and lanes are.
+- An octave off: the tools use C4 = 60, which the Clip View shows as C-3 by default (C-5 when Preferences ▸ General ▸ Note names is Buzz's). Some older machines play an octave away; measure the pitch and shift with `notes_transform(machine=…, clip=…, transforms=[{"op": "transpose", "semitones": 12}])`.
 
 ## Hanging notes
 
@@ -87,7 +87,7 @@ A note that never stops, or a tail that runs on and on.
 - Voice mode Mono or Legato with overlapping notes glides instead of starting a new note: intended for slides, a bug otherwise.
 - `tail_seconds` in `render` (default 2) only lets tails ring after the range; it doesn't hold notes.
 - In studio mode, stopping releases all voices and stopping again silences everything (a panic).
-- Fix: `notes_transform(machine=…, pattern=…, transforms=[{"op": "legato", "gap": 0.05}])` or `{"op": "staccato", "factor": 0.5}`; shorter releases; `Freeze` Off.
+- Fix: `notes_transform(machine=…, clip=…, transforms=[{"op": "legato", "gap": 0.05}])` or `{"op": "staccato", "factor": 0.5}`; shorter releases; `Freeze` Off.
 
 ## A render that differs from the last one
 

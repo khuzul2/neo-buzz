@@ -83,13 +83,13 @@ namespace ReBuzz.Studio.Tests
             var window = NewSong();
             using var restore = Studio.AfterTest(() =>
             {
-                Global.GeneralSettings.Set("PatternLength", 16);
+                Global.GeneralSettings.Set("ClipLength", 16);
                 Global.GeneralSettings.Save();
                 Dialogs.Responder = null;
                 window.Close();
             });
             var all = Call("settings_get")["settings"]!.AsArray().Select(s => s["key"]!.GetValue<string>()).ToList();
-            Assert.That(all, Does.Contain("general.PatternLength"));
+            Assert.That(all, Does.Contain("general.ClipLength"));
             Assert.That(all, Does.Contain("advanced.Multithreading"));
             Assert.That(all, Does.Contain("midi.MasterKeyboardMode"));
             Assert.That(all, Does.Contain("appearance.Theme"), "the studio's own settings");
@@ -101,17 +101,17 @@ namespace ReBuzz.Studio.Tests
             Assert.That(agentRow["type"]!.GetValue<string>(), Is.EqualTo("int"));
             Assert.That(agentRow["note"]!.GetValue<string>(), Does.Contain("ends this agent connection"));
 
-            var set = Call("settings_set", Args(("key", "general.PatternLength"), ("value", 32)));
+            var set = Call("settings_set", Args(("key", "general.ClipLength"), ("value", 32)));
             Assert.That(set["previous"]!.GetValue<string>(), Is.EqualTo("16"));
-            Assert.That(Global.GeneralSettings.PatternLength, Is.EqualTo(32), "the setting itself");
-            Assert.That(Try("settings_set", Args(("key", "general.PatternLength"), ("value", 5000))).Error, Is.True);
+            Assert.That(Global.GeneralSettings.ClipLength, Is.EqualTo(32), "the setting itself");
+            Assert.That(Try("settings_set", Args(("key", "general.ClipLength"), ("value", 5000))).Error, Is.True);
             var restartKey = Call("settings_get", Args(("search", "restart")))["settings"]!.AsArray().First(s => s["restart_required"]!.GetValue<bool>());
             Assert.That(restartKey["description"]!.GetValue<string>(), Does.Contain("estart"));
-            var history = Call("settings_history", Args(("key", "general.PatternLength")))["entries"]!.AsArray();
+            var history = Call("settings_history", Args(("key", "general.ClipLength")))["entries"]!.AsArray();
             Assert.That(history[0]!["from"]!.GetValue<string>(), Is.EqualTo("16"));
             Assert.That(history[0]!["to"]!.GetValue<string>(), Is.EqualTo("32"));
-            Call("settings_reset", Args(("key", "general.PatternLength")));
-            Assert.That(Global.GeneralSettings.PatternLength, Is.EqualTo(16));
+            Call("settings_reset", Args(("key", "general.ClipLength")));
+            Assert.That(Global.GeneralSettings.ClipLength, Is.EqualTo(16));
 
             // The safety limiter is the real one.
             var core = Host.Core;
@@ -249,13 +249,13 @@ namespace ReBuzz.Studio.Tests
             Call("select", Args(("clear", true)));
             Assert.That(ReBuzz.Studio.Views.StudioSelection.For(core).Machine, Is.Null);
 
-            var pattern = Call("pattern_create", Args(("machine", "Viewed"), ("name", "Shown"), ("length_beats", 4)));
+            var clip = Call("clip_create", Args(("machine", "Viewed"), ("name", "Shown"), ("length_beats", 4)));
             Settle(window);
-            var roll = Call("view_show", Args(("machine", "Viewed"), ("pattern", "Shown"), ("editor", "piano_roll")));
+            var roll = Call("view_show", Args(("machine", "Viewed"), ("clip", "Shown"), ("editor", "piano_roll")));
             Assert.That(roll["detail"]!["page"]!.GetValue<string>(), Is.EqualTo("piano_roll"));
             Assert.That(window.Detail.IsOpen, Is.True);
             Assert.That(window.Detail.IsPianoRoll, Is.True);
-            Call("view_show", Args(("machine", "Viewed"), ("pattern", "Shown")));
+            Call("view_show", Args(("machine", "Viewed"), ("clip", "Shown")));
             Assert.That(window.Detail.IsPianoRoll, Is.False, "the Tracker");
 
             var layout = Call("window_layout", Args(("width", 1100), ("height", 700)));
@@ -263,10 +263,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(window.Width, Is.EqualTo(1100));
             Assert.That(Call("window_layout")["window"]!["width"]!.GetValue<double>(), Is.EqualTo(window.Bounds.Width));
 
-            // Recording: no pattern editor and no machine window over the person playing.
+            // Recording: no clip editor and no machine window over the person playing.
             core.Recording = true;
             Assert.That(Call("window_layout")["recording"]!.GetValue<bool>(), Is.True);
-            Assert.That(Try("view_show", Args(("machine", "Viewed"), ("pattern", "Shown"))).Text, Does.Contain("recording"));
+            Assert.That(Try("view_show", Args(("machine", "Viewed"), ("clip", "Shown"))).Text, Does.Contain("recording"));
             Assert.That(Try("machine_open_editor", Args(("machine", "Viewed"))).Text, Does.Contain("Stop recording"));
             Assert.That(Try("view_show", Args(("view", "Session"))).Error, Is.False, "a view switch takes nothing");
             core.Recording = false;
@@ -287,9 +287,9 @@ namespace ReBuzz.Studio.Tests
                 if (Directory.Exists(folder)) Directory.Delete(folder, true);
             });
             Call("machine_add", Args(("gear", "Neo Poly"), ("name", "Exported")));
-            Call("pattern_create", Args(("machine", "Exported"), ("name", "P"), ("length_beats", 4)));
-            Call("notes_write", Args(("machine", "Exported"), ("pattern", "P"), ("notes", new JsonArray(new JsonObject { ["pitch"] = 60, ["start"] = 0.0, ["length"] = 1.0, ["velocity"] = 100 }))));
-            Call("arrangement_place", Args(("machine", "Exported"), ("pattern", "P"), ("at", 0)));
+            Call("clip_create", Args(("machine", "Exported"), ("name", "P"), ("length_beats", 4)));
+            Call("notes_write", Args(("machine", "Exported"), ("clip", "P"), ("notes", new JsonArray(new JsonObject { ["pitch"] = 60, ["start"] = 0.0, ["length"] = 1.0, ["velocity"] = 100 }))));
+            Call("arrangement_place", Args(("machine", "Exported"), ("clip", "P"), ("at", 0)));
             Settle(window);
             string path = Path.Combine(folder, "song.wav");
             var r = Call("export_audio", Args(("path", path), ("from", 0), ("to", 4), ("stems", "generators"), ("bits", 16), ("tail_seconds", 0.5)));

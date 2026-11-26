@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dogfood (docs/specs/plugin-export.md §6, PX2): the exported plug-ins loaded in NeoBuzz's own Neo Plug, on the runner's OS.
 #   null     every plug-in as CLAP and VST3 beside its native machine in rebuzz-headless, driven over MCP like an agent would
-#            (ci/null-test.py: parameters and units, patterns, automation every block, renders nulled, .nbl round trips)
+#            (ci/null-test.py: parameters and units, clips, automation every block, renders nulled, .nbl round trips)
 #   gui      every plug-in's own editor in the studio's window (Windows, macOS): screenshot, a knob dragged through the window system,
 #            the slot value that changed, resize, close, reopen, the song saved as .nbl and loaded again
 # Run from the repository root in bash (Git Bash on Windows):   PluginExport/ci/dogfood.sh <assets folder> <null|gui|both>

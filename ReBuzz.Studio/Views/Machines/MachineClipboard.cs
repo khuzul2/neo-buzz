@@ -1,7 +1,7 @@
 // Fork (docs/specs/ux-overhaul.md P6c, §9 row 14): Cut, Copy and Paste of machines, as BuzzGUI.MachineView has them (CopySelectedMachines,
 // PasteMachines). The WPF app writes a template (XML, with machine presets compressed by LZMA: WPF-only code) to the system clipboard;
-// the studio keeps the machines themselves, in this process, and pastes with the engine's own operations, the ones Clone with patterns
-// uses: each machine again with its settings, its patterns and its rows in the sequence, and the wires between the machines copied
+// the studio keeps the machines themselves, in this process, and pastes with the engine's own operations, the ones Clone with clips
+// uses: each machine again with its settings, its clips and its rows in the sequence, and the wires between the machines copied
 // together. So a paste keeps everything a clone does, in the song the machines are in; it does not reach another song, another
 // window or the WPF app, and never the system clipboard.
 //
@@ -70,7 +70,7 @@ namespace ReBuzz.Studio.Views.Machines
             List<IMachine> copies;
             using (MachineEdits.Group(core))
             {
-                copies = MachineEdits.CloneWithPatterns(core, from);
+                copies = MachineEdits.CloneWithClips(core, from);
                 if (copies.Count == 0) return copies;
                 if (at is Point p)
                 {

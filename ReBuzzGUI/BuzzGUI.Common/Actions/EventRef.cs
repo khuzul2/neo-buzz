@@ -6,37 +6,37 @@ namespace BuzzGUI.Common.Actions
     public class EventRef
     {
         public SequenceEventType Type { get; private set; }
-        public string PatternName { get; private set; }
-        public int PatternLength { get; private set; }
-        // Fork (0.5.1): the part of the pattern the event plays, and its volume.
+        public string ClipName { get; private set; }
+        public int ClipLength { get; private set; }
+        // Fork (0.5.1): the part of the clip the event plays, and its volume.
         public int Offset { get; private set; }
         public int End { get; private set; }
         public double Gain { get; private set; } = 1.0;
         // Fork (daw-modes.md S2): the arrangement clip it belongs to (0: none).
-        public int Clip { get; private set; }
+        public int PlacementId { get; private set; }
 
         public EventRef(SequenceEvent e)
         {
             Type = e.Type;
-            if (e.Type == SequenceEventType.PlayPattern)
+            if (e.Type == SequenceEventType.PlayClip)
             {
-                PatternName = e.Pattern.Name;
-                PatternLength = e.Pattern.Length;
+                ClipName = e.Clip.Name;
+                ClipLength = e.Clip.Length;
                 Offset = e.Offset;
                 End = e.End;
                 Gain = e.Gain;
-                Clip = e.Clip;
+                PlacementId = e.PlacementId;
             }
 
         }
 
         public void Set(ISequence seq, int time)
         {
-            if (Type == SequenceEventType.PlayPattern)
+            if (Type == SequenceEventType.PlayClip)
             {
-                var pat = seq.Machine.Patterns.FirstOrDefault(p => p.Name == PatternName);
+                var pat = seq.Machine.Clips.FirstOrDefault(p => p.Name == ClipName);
                 if (pat == null) return;
-                seq.SetEvent(time, new SequenceEvent(Type, pat) { Offset = Offset, End = End, Gain = Gain, Clip = Clip });
+                seq.SetEvent(time, new SequenceEvent(Type, pat) { Offset = Offset, End = End, Gain = Gain, PlacementId = PlacementId });
             }
             else
             {

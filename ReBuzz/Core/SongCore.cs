@@ -34,7 +34,7 @@ namespace ReBuzz.Core
 
                 AdjustPositionOnTick = true;
 
-                if (BuzzCore.Playing && BuzzCore.SoloPattern == null)
+                if (BuzzCore.Playing && BuzzCore.SoloClip == null)
                 {
                     PlayPositionSetNextTick = value;
                 }
@@ -376,10 +376,10 @@ namespace ReBuzz.Core
         void RaiseHistoryApplied(HistoryChange change) => HistoryApplied?.Invoke(change);
 
         /// <summary>
-        /// Fork (0.4.1): patterns given a play position in the last block, so the next block
+        /// Fork (0.4.1): clips given a play position in the last block, so the next block
         /// clears just those. Audio thread (WorkManager, under AudioLock).
         /// </summary>
-        internal readonly List<PatternCore> PositionedPatterns = new List<PatternCore>(256);   // fork (audio hygiene): room made here, not by the first play
+        internal readonly List<ClipCore> PositionedClips = new List<ClipCore>(256);   // fork (audio hygiene): room made here, not by the first play
         public bool SoloMode { get; private set; }
 
         public event Action<IMachine> MachineAdded;
@@ -460,9 +460,9 @@ namespace ReBuzz.Core
             }
         }
 
-        public void CreateMachine(string machine, string instrument, string name, byte[] data, string patterneditor, byte[] patterneditordata, int trackcount, float x, float y)
+        public void CreateMachine(string machine, string instrument, string name, byte[] data, string clipeditor, byte[] clipeditordata, int trackcount, float x, float y)
         {
-            Do(new CreateMachineAction(reBuzzCore, machine, instrument, name, data, patterneditor, patterneditordata, trackcount, x, y));
+            Do(new CreateMachineAction(reBuzzCore, machine, instrument, name, data, clipeditor, clipeditordata, trackcount, x, y));
         }
 
         public void DeleteMachines(IEnumerable<IMachine> m)

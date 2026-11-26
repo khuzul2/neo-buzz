@@ -137,7 +137,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(File.Exists(AudioCache.PathFor(asset.Id)), Is.True);
             Assert.That(asset.Recipe, Is.Not.Null, "the import file is the first way to make the cache again");
 
-            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine.Name, ["pattern"] = clip!.Name })["structuredContent"]!.AsObject();
+            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = machine.Name, ["clip"] = clip!.Name })["structuredContent"]!.AsObject();
             var audio = get["audio"]!.AsObject();
             Assert.That((string)audio["storage"], Is.EqualTo("streaming"));
             Assert.That((bool)audio["streams"], Is.True);
@@ -204,7 +204,7 @@ namespace ReBuzz.Studio.Tests
             var core = rig.Core;
             using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
             var imported = Tool("audio_import", new JsonObject { ["path"] = Tones("short.wav", 3), ["slot"] = 1 })["structuredContent"]!.AsObject();
-            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = (string)imported["machine"], ["pattern"] = (string)imported["pattern"] })["structuredContent"]!.AsObject();
+            var get = Tool("audio_clip_get", new JsonObject { ["machine"] = (string)imported["machine"], ["clip"] = (string)imported["clip"] })["structuredContent"]!.AsObject();
             Assert.That((string)get["audio"]!["storage"], Is.EqualTo("memory"));
             Assert.That((bool)get["audio"]!["streams"], Is.False);
             Assert.That(Directory.GetFiles(cache), Is.Empty, "no cache file for audio that stays in memory");
@@ -232,7 +232,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(clip, Is.Not.Null, error);
             var asset = core.AudioAssets.All.Single();
             Assert.That(WaitFor(() => asset.Storage == AssetStorage.Streaming, 60_000), Is.True);
-            var streamed = layout.ParamsOfPattern(clip!);
+            var streamed = layout.ParamsOfClip(clip!);
             Assert.That(streamed.Source.IsStreaming, Is.True, "the clip plays from the cache");
 
             var exact = ClipEditor.Exact(streamed);

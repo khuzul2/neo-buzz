@@ -25,7 +25,7 @@ namespace ReBuzz.Agent
                 Title = "Studio status",
                 Description =
                     "The state of the studio: the song's file and unsaved changes, tempo, ticks per beat, length and loop in beats, " +
-                    "sample rate, mode (studio with a window, or headless), transport, how many machines/patterns/waves, and what undo would revert; " +
+                    "sample rate, mode (studio with a window, or headless), transport, how many machines/clips/waves, and what undo would revert; " +
                     "safety: machines whose guard tripped (diverged: muted until machine_set(reset=true)), the master's latched over and whether " +
                     "the safety limiter on the audio output acted. " +
                     "Call it first in every session and whenever you're unsure what the song looks like. Example: studio_status().",
@@ -39,7 +39,7 @@ namespace ReBuzz.Agent
                     return ToolResult.Ok(
                         $"{file}{(s["song"]!["unsaved_changes"]!.GetValue<bool>() ? ", unsaved changes" : "")}; " +
                         $"{s["tempo_bpm"]} BPM, {s["ticks_per_beat"]} ticks per beat, {s["length_beats"]} beats long; " +
-                        $"{s["counts"]!["machines"]} machines, {s["counts"]!["patterns"]} patterns; {host.Mode} mode." + SafetyLine(s), s);
+                        $"{s["counts"]!["machines"]} machines, {s["counts"]!["patterns"]} clips; {host.Mode} mode." + SafetyLine(s), s);
                 },
             });
 
@@ -246,12 +246,12 @@ namespace ReBuzz.Agent
                 Name = "song_set",
                 Title = "Set song properties",
                 Description =
-                    "Changes the tempo, ticks per beat (pattern resolution), playback speed (Song Properties' Speed), song end and loop. Positions are in beats from the start " +
-                    "(rounded to the nearest tick). Change ticks_per_beat before writing patterns: patterns keep their length in ticks, so it moves " +
+                    "Changes the tempo, ticks per beat (clip resolution), playback speed (Song Properties' Speed), song end and loop. Positions are in beats from the start " +
+                    "(rounded to the nearest tick). Change ticks_per_beat before writing clips: clips keep their length in ticks, so it moves " +
                     "everything in beats. One undo step. Returns the values as they now are. Example: song_set(tempo_bpm=124, loop_start_beats=0, loop_end_beats=64).",
                 Input = Object(null,
                     Opt("tempo_bpm", Number("Tempo in beats per minute (rounded to a whole number)", 16, 500)),
-                    Opt("ticks_per_beat", Integer("Pattern rows per beat (4 = 16th notes)", 1, 32)),
+                    Opt("ticks_per_beat", Integer("Clip rows per beat (4 = 16th notes)", 1, 32)),
                     Opt("speed", Integer("Playback speed offset, as Song Properties' Speed (0 is normal)", -1000, 1000)),
                     Opt("song_end_beats", Number("Where the song ends, in beats", 0)),
                     Opt("loop_start_beats", Number("Loop start, in beats", 0)),
@@ -375,7 +375,7 @@ namespace ReBuzz.Agent
         static JsonObject StatusSchema() => Object("The studio's state",
             Req("song", Object(null, Opt("file", String("The song's file; absent when never saved")), Req("unsaved_changes", Boolean("Changes since the last save")))),
             Req("tempo_bpm", Number("Beats per minute")),
-            Req("ticks_per_beat", Integer("Pattern rows per beat")),
+            Req("ticks_per_beat", Integer("Clip rows per beat")),
             Req("beats_per_bar", Integer("Beats per bar, for \"bar.beat\" positions")),
             Opt("speed", Integer("Playback speed offset (Song Properties' Speed; 0 is normal)")),
             Req("length_beats", Number("Song end, in beats")),
@@ -383,7 +383,7 @@ namespace ReBuzz.Agent
             Req("sample_rate", Integer("Samples per second")),
             Req("mode", String("studio (window open), live (no window, an audio device plays) or headless (renders only)", "studio", "live", "headless")),
             Req("transport", Object(null, Req("playing", Boolean("Playing")), Req("recording", Boolean("Recording")), Req("position_beats", Number("Play position")))),
-            Req("counts", Object(null, Req("machines", Integer("Machines (with Master)")), Req("patterns", Integer("Patterns")), Req("waves", Integer("Waves in the wavetable")))),
+            Req("counts", Object(null, Req("machines", Integer("Machines (with Master)")), Req("clips", Integer("Clips")), Req("waves", Integer("Waves in the wavetable")))),
             Req("undo", Object(null, Req("can_undo", Boolean("Something to undo")), Req("can_redo", Boolean("Something to redo")), Opt("next_undo", String("What undo would revert, when it's an agent call")))),
             Req("agent", Object(null, Req("version", String("Server version")), Req("log", String("The agent log file")))),
             Opt("audio", Object("The audio output, when one plays (studio and live mode)",
@@ -508,7 +508,7 @@ namespace ReBuzz.Agent
                 ["counts"] = new JsonObject
                 {
                     ["machines"] = SongModel.Machines(core).Count(),
-                    ["patterns"] = SongModel.Machines(core).Sum(m => m.Patterns.Count),
+                    ["clips"] = SongModel.Machines(core).Sum(m => m.Clips.Count),
                     ["waves"] = song.Wavetable.Waves.Count(w => w != null),
                 },
                 ["undo"] = undo,

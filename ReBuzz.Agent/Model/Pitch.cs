@@ -1,6 +1,6 @@
 #nullable disable
 // Agent server (docs/specs/mcp-server.md §3.3): pitches. Agents use MIDI numbers or scientific
-// names (60 = "C4", 69 = "A4" = 440 Hz). Buzz patterns store notes as (octave << 4) | (semitone + 1)
+// names (60 = "C4", 69 = "A4" = 440 Hz). Buzz clips store notes as (octave << 4) | (semitone + 1)
 // and show them an octave higher ("C-5" for MIDI 60); the server converts and never mixes them.
 
 using System;
@@ -40,7 +40,7 @@ namespace ReBuzz.Agent.Model
             // Buzz writes "C-5" (an octave above scientific C4); scientific names only go down to octave -1.
             if (t.Length == 3 && t[1] == '-' && char.IsLetter(t[0]) && char.IsDigit(t[2]) && t[2] != '1')
             {
-                error = $"\"{text}\" looks like Buzz pattern notation; use scientific names, an octave lower (Buzz C-5 = C4 = 60), or MIDI numbers.";
+                error = $"\"{text}\" looks like Buzz clip notation; use scientific names, an octave lower (Buzz C-5 = C4 = 60), or MIDI numbers.";
                 return false;
             }
             if (t.Length < 2) { error = $"\"{text}\" isn't a pitch: use a MIDI number (60) or a name like C4, F#3, Bb2."; return false; }
