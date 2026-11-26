@@ -661,7 +661,7 @@
     "tape",
     "notes"
    ],
-   "use_for": "Cut up a track in time with the song: stutter, bar-end repeat, retrigger, tape stop and start, a 16-step gate and auto-pan, started by the beat grid or by notes, for fills, glitches and rhythmic chopping.",
+   "use_for": "Cut up a track in time with the song: stutter, bar-end repeat, retrigger, tape stop and start, a 16-step gate and auto-pan, started by the beat or by notes, for fills, glitches and chopping.",
    "note_in": true
   }
  }
