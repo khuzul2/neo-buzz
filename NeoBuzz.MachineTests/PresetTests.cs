@@ -21,6 +21,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Analyzer"] = (NeoBuzz.Analyzer.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Analyzer(v).Process(l, r, n))),
             // Neo Audio hands its input to the Session engine (the app), which has no clips here: with none playing the input goes through.
             ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, (v, x) => x),
+            // Neo Arp makes no audio (notes in, notes out): its presets are played into Neo Poly by NeoArpChainTests.
+            ["Neo Arp"] = (NeoBuzz.Arp.Params.Table, (v, x) => x),
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Drive(v).Process(l, r, n))),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Comp(v).Process(l, r, null, null, n))),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
@@ -105,6 +107,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Voice to MIDI"] = (NeoBuzz.VoiceToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.VoiceToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
             // audio-to-midi.md: Neo Audio to MIDI passes its input through at the Monitor level too.
             ["Neo Audio to MIDI"] = (NeoBuzz.AudioToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.AudioToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
+            // neo-chord.md: Neo Chord makes no audio (notes in, chords out); its presets only change which notes it sends.
+            ["Neo Chord"] = (NeoBuzz.Chord.Params.Table, (v, x) => x),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>

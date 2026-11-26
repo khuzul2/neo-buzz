@@ -280,6 +280,59 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Received(inst).Select(g => g.Note), Is.EqualTo(new[] { 60 }), "no chain: straight to the instrument as before");
         }
 
+        // ------------------------------------------------------------------ Neo Chord, the first machine that takes and sends notes (CHD1)
+
+        [AvaloniaTest]
+        public void NeoChordAsAnInsertBeforeAnInstrumentAndOnAFreeWireTurnsNotesIntoChordsAndEndsThem()
+        {
+            using var restore = Studio.AfterTest(NewSong);
+            NewSong();
+            var inst = Echo("Kinst");
+            var chord = Add("Neo Chord", "Kch");
+            Assert.That(Core.NoteWires.AddInsert("Kinst", "Kch"), Is.Null, "it takes and sends notes, so it can be an insert");
+            Pump();
+            int NoteOn(int note) => 0x90 | (note << 8) | (100 << 16);
+            (int Block, int Offset, int Kind, int Note)[] got;
+            using (var r = new Renderer(64))
+            {
+                r.Blocks(2);
+                Call(inst, "ClearLog");
+                r.Blocks(1, () => Core.MachineManager.SendMidiInput(inst, NoteOn(60), false));
+                r.Blocks(1, () => Core.MachineManager.SendTrackNoteOff(inst, 0, 60));
+                r.Blocks(2);
+                got = Received(inst);
+            }
+            Assert.That(got.Where(g => g.Kind == (int)NoteMessageKind.NoteOn).Select(g => g.Note), Is.EqualTo(new[] { 60, 64, 67 }), "a major chord reaches the instrument");
+            Assert.That(got.Where(g => g.Kind == (int)NoteMessageKind.NoteOff).Select(g => g.Note), Is.EquivalentTo(new[] { 60, 64, 67 }), "and all of it ends with the note");
+            Assert.That(got.Where(g => g.Kind == (int)NoteMessageKind.NoteOn).Select(g => g.Block).Distinct().Count(), Is.EqualTo(1), "in the block the note came in");
+
+            // Chord Off: the note passes as it was (parameters are set before the engine runs, as the other tests here do).
+            Param(chord, "Chord").SetValue(0, 0);
+            using (var r = new Renderer(64))
+            {
+                r.Blocks(2);
+                Call(inst, "ClearLog");
+                r.Blocks(1, () => Core.MachineManager.SendMidiInput(inst, NoteOn(62), false));
+                r.Blocks(1, () => Core.MachineManager.SendTrackNoteOff(inst, 0, 62));
+                r.Blocks(2);
+                Assert.That(Received(inst).Select(g => g.Note), Is.EqualTo(new[] { 62, 62 }), "Off passes the note through");
+            }
+
+            // On a free wire: the notes the machine gets are sent on to the instrument it is wired to.
+            Assert.That(Core.NoteWires.RemoveInsert("Kch"), Is.True);
+            var inst2 = Echo("Kinst2");
+            Assert.That(Core.NoteWires.Connect("Kch", "Kinst2"), Is.Null);
+            Param(chord, "Chord").SetValue(0, 2);
+            Pump();
+            using var r2 = new Renderer(64);
+            r2.Blocks(2);
+            Call(inst2, "ClearLog");
+            r2.Blocks(1, () => Core.MachineManager.SendMidiInput(chord, NoteOn(60), false));
+            r2.Blocks(2);
+            Assert.That(Received(inst2).Where(g => g.Kind == (int)NoteMessageKind.NoteOn).Select(g => g.Note), Is.EqualTo(new[] { 60, 63, 67 }), "a minor chord down the free wire");
+            Assert.That(Core.NoteWires.State.ChainOf("Kinst"), Is.Empty);
+        }
+
         // ------------------------------------------------------------------ the song
 
         static string Temp(string name) => TestTemp.Path($"note-wires-{Environment.ProcessId}-{name}");

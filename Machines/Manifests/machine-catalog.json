@@ -618,6 +618,17 @@
    "use_for": "Play a synth from a guitar, bass or keys and turn a drum kit into drum triggers: notes with velocity and pitch bend from a live mono instrument, and kick, snare and hat hits without training.",
    "note_out": true
   },
+  "Neo Chord": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "chords"
+   ],
+   "use_for": "Turn single notes into chords before a synth: 20 chord shapes or chords built in a key and scale, voicings, a bass note and a strum; sits before an instrument or on a note wire.",
+   "note_in": true,
+   "note_out": true
+  },
   "Neo Tune": {
    "category": "Modulation",
    "tags": [
@@ -663,6 +674,19 @@
    ],
    "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks, glass and struck plates; a playable instrument with no audio input.",
    "note_in": true
+  },
+  "Neo Arp": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "rhythmic",
+    "sequencer",
+    "tempo-sync"
+   ],
+   "use_for": "Turn held notes into an arpeggio or a stepped line before any synth: 12 patterns, 1/1 to 1/64 or ms rates, swing, gate, octaves, latch and a 16-step row with ties and accents.",
+   "note_in": true,
+   "note_out": true
   }
  }
 }
