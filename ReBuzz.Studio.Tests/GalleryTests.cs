@@ -2331,6 +2331,31 @@ namespace ReBuzz.Studio.Tests
                     "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
+                Try("660-neo-chord-editor", () =>
+                {
+                    var m = Add("Neo Chord", "Chord");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Diatonic seventh chords in C major, voiced Drop 2 over a root an octave down, a slow strum up; a held G (the V chord) is played through the machine's Work,
+                    // as the host calls it, so that the keyboard shows the chord it sent.
+                    Set("Mode", 1);
+                    Set("Diatonic chord", 1);
+                    Set("Spread", 2);
+                    Set("Bass note", 1);
+                    Set("Strum", 1);
+                    Set("Strum time", 800);
+                    var inst = m.ManagedMachine!;
+                    inst.GetType().GetMethod("MidiNote")!.Invoke(inst, new object[] { 0, 67, 100 });
+                    var work = inst.GetType().GetMethod("Work")!;
+                    var output = new Buzz.MachineInterface.Sample[256];
+                    for (int b = 0; b < 90; b++) work.Invoke(inst, new object[] { output, 256, Buzz.MachineInterface.WorkModes.WM_WRITE });
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "660-neo-chord-editor", "Neo Chord: the chord type and Mode on top (Diatonic, in C major with seventh chords), the keyboard lit with the chord sent for a held G (G7 voiced Drop 2 over a bass G), then Voicing, Velocity and Strum (up over 200 ms).", "Add Neo Chord, set Mode to Diatonic, play a note into it, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");

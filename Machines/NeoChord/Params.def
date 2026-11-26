@@ -1,0 +1,80 @@
+# Neo Chord parameters (docs/specs/neo-chord.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoChord
+namespace NeoBuzz.Chord
+class NeoChordMachine
+summary Turns every note it gets into a chord and passes the chord on, as a note insert before an instrument or on a note wire (it makes no sound itself). Chords: 20 shapes (triads, sevenths, ninths, sus, power, stacked fourths) or a Custom chord of up to four intervals, on any note (Fixed) or built in a key and scale from the scale degree played (Diatonic, triads or sevenths); inversion, spread (close, open, drop 2, wide), octave shift, an added bass note and a limit on the voices; velocity shaping; a strum (up, down, alternating, random) with its time, curve and a seeded humanize. Every voice ends when its note ends, and notes in the same pitch are counted so nothing sticks. Use it to play full chords from one key, to strum a pad or a guitar-like patch, and to keep a whole song in a key.
+
+group Chord
+Chord       "Chord"           0 21  1   enum Off Major Minor Power Sus2 Sus4 Diminished Augmented Major_6 Minor_6 Dominant_7 Major_7 Minor_7 Minor_7_flat_5 Diminished_7 Add_9 Minor_add_9 Dominant_9 Major_9 Minor_9 Stacked_fourths Custom   | The chord built on each note played. Off passes the notes through unchanged
+    how Chooses the chord shape put on every note you play: from Off (the note itself) through triads, sevenths and ninths to Custom.
+    sound Major and Power are bright and open, Minor and Diminished darker; sevenths and ninths add jazz colour; stacked fourths sound modern and suspended.
+Mode        "Mode"            0 1   0   enum Fixed Diatonic   | Fixed puts the same shape on any note; Diatonic builds the chord from the scale degree played, in the Key and Scale below
+    how Chooses between the same chord on every note (Fixed) and chords that follow a key and scale (Diatonic).
+    sound Diatonic gives the right major, minor or diminished chord on each key of the scale, so every note you play stays in key.
+Key         "Key"             0 11  0   enum C "C#" D "D#" E F "F#" G "G#" A "A#" B   | Diatonic: the key (the scale's first note)
+    how Sets the first note of the scale the Diatonic chords are built in.
+    sound It moves the whole set of chords up or down together; the played note picks which chord of the key sounds.
+Scale       "Scale"           0 8   0   enum Major Natural_minor Harmonic_minor Melodic_minor Dorian Phrygian Lydian Mixolydian Locrian   | Diatonic: the scale. A note that is not in the scale is taken as the scale note just below it
+    how Chooses the scale the Diatonic chords are built in.
+    sound Major is bright, natural minor dark; the modes sit in between (Dorian warm minor, Lydian dreamy major, Mixolydian bluesy major).
+DiaSize     "Diatonic chord"  0 1   0   enum Triads Sevenths   | Diatonic: three-note chords (1-3-5 of the scale) or four-note chords (1-3-5-7)
+    how Chooses triads or sevenths for the Diatonic chords.
+    sound Triads are plain and strong; sevenths are richer and a little jazzy.
+Custom1     "Custom 1"      0 49  29  enum Off -24_st -23_st -22_st -21_st -20_st -19_st -18_st -17_st -16_st -15_st -14_st -13_st -12_st -11_st -10_st -9_st -8_st -7_st -6_st -5_st -4_st -3_st -2_st -1_st 0_st +1_st +2_st +3_st +4_st +5_st +6_st +7_st +8_st +9_st +10_st +11_st +12_st +13_st +14_st +15_st +16_st +17_st +18_st +19_st +20_st +21_st +22_st +23_st +24_st   | Custom chord, interval 1 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom
+    how Adds a note the first interval, in semitones from the played note (or none when Off) to the Custom chord.
+    sound Stacks one more voice on the chord; negative values reach below the played note.
+Custom2     "Custom 2"      0 49  32  enum Off -24_st -23_st -22_st -21_st -20_st -19_st -18_st -17_st -16_st -15_st -14_st -13_st -12_st -11_st -10_st -9_st -8_st -7_st -6_st -5_st -4_st -3_st -2_st -1_st 0_st +1_st +2_st +3_st +4_st +5_st +6_st +7_st +8_st +9_st +10_st +11_st +12_st +13_st +14_st +15_st +16_st +17_st +18_st +19_st +20_st +21_st +22_st +23_st +24_st   | Custom chord, interval 2 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom
+    how Adds a note the second interval, in semitones from the played note (or none when Off) to the Custom chord.
+    sound Stacks one more voice on the chord; negative values reach below the played note.
+Custom3     "Custom 3"      0 49  0  enum Off -24_st -23_st -22_st -21_st -20_st -19_st -18_st -17_st -16_st -15_st -14_st -13_st -12_st -11_st -10_st -9_st -8_st -7_st -6_st -5_st -4_st -3_st -2_st -1_st 0_st +1_st +2_st +3_st +4_st +5_st +6_st +7_st +8_st +9_st +10_st +11_st +12_st +13_st +14_st +15_st +16_st +17_st +18_st +19_st +20_st +21_st +22_st +23_st +24_st   | Custom chord, interval 3 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom
+    how Adds a note the third interval, in semitones from the played note (or none when Off) to the Custom chord.
+    sound Stacks one more voice on the chord; negative values reach below the played note.
+Custom4     "Custom 4"      0 49  0  enum Off -24_st -23_st -22_st -21_st -20_st -19_st -18_st -17_st -16_st -15_st -14_st -13_st -12_st -11_st -10_st -9_st -8_st -7_st -6_st -5_st -4_st -3_st -2_st -1_st 0_st +1_st +2_st +3_st +4_st +5_st +6_st +7_st +8_st +9_st +10_st +11_st +12_st +13_st +14_st +15_st +16_st +17_st +18_st +19_st +20_st +21_st +22_st +23_st +24_st   | Custom chord, interval 4 in semitones (st) above the played note: -24 to +24, or Off. Used when Chord is Custom
+    how Adds a note the fourth interval, in semitones from the played note (or none when Off) to the Custom chord.
+    sound Stacks one more voice on the chord; negative values reach below the played note.
+
+group Voicing
+Inversion   "Inversion"       0 3   0   int 0   | Moves the lowest notes of the chord up an octave, one at a time (3 on a triad is the root position an octave up)
+    how Sets how many of the lowest chord notes are moved up an octave, from 0 to 3.
+    sound Inversions change which note is on the bottom, so the chord leans and moves smoothly from one to the next.
+Spread      "Spread"          0 3   0   enum Close Open Drop_2 Wide   | Close: as built. Open: every second note up an octave. Drop 2: the second note from the top down an octave. Wide: Open with the lowest note down an octave
+    how Chooses how far the notes of the chord are spread: Close, Open, Drop 2 or Wide.
+    sound Close is dense and organ-like; Open and Drop 2 are the airy voicings of a guitar or piano; Wide fills a pad's whole range.
+Octave      "Octave shift"    0 4   2   int -2 oct signed   | Moves the whole chord up or down in octaves
+    how Shifts every note of the chord by up to two octaves, down or up.
+    sound It places the chord higher or lower without changing what it is.
+Bass        "Bass note"       0 2   0   enum Off Root_1_oct_down Root_2_oct_down   | Adds the chord's root below the chord
+    how Adds the root of the chord one or two octaves below it, or nothing.
+    sound The added root gives the chord a floor, like a bass player's note under the chord.
+Voices      "Voices"          0 5   5   int 2   | The most notes the chord may have; the highest are dropped first (2 to 7)
+    how Limits how many notes the chord has, from 2 to 7, dropping the highest first.
+    sound Fewer voices thin out ninths and added basses to their lower notes.
+group Velocity
+VelTop      "Top voice"       0 1000 500 lin 0 200 % 0   | Velocity of the highest note of the chord, in percent of the played velocity
+    how Scales the velocity of the top note of the chord from 0 to 200 %.
+    sound More makes the top note ring out like a melody over the chord; less tucks it in.
+VelBass     "Bass voice"      0 1000 500 lin 0 200 % 0   | Velocity of the lowest note of the chord (the added bass, or the chord's lowest note), in percent of the played velocity
+    how Scales the velocity of the bottom note from 0 to 200 %.
+    sound More gives a firm, weighty bottom; less lets the upper notes lead.
+VelSpread   "Velocity spread" 0 1000 500 bip   | A tilt across the chord from the lowest note to the highest: plus makes the top louder, minus the bottom
+    how Tilts the velocities across the chord, from -100 % (the bottom loudest) to +100 % (the top loudest).
+    sound Plus is bright and singing; minus is dark and weighty.
+group Strum
+Strum       "Strum"           0 4   0   enum Off Up Down Alternate Random   | Plays the notes one after another instead of together: Up (lowest first), Down (highest first), Alternate (up on the first chord, then down, and so on for each new chord), Random
+    how Chooses the order the chord's notes start in, or Off to play them together.
+    sound Up and Down sound like a hand sweeping across strings; Alternate swaps between them every chord; Random is a loose, rolling arpeggio.
+StrumTime   "Strum time"      0 1000 320 lin 0 250 ms 0   | The time from the first to the last note of the chord
+    how Sets how long the strum takes from its first to its last note, from 0 to 250 ms.
+    sound Short times are a quick flick of the fingers; long times are a slow, harp-like roll.
+StrumCurve  "Strum curve"     0 1000 500 bip   | Plus: the notes come faster and faster; minus: slower and slower (0 is even)
+    how Bends the spacing of the strummed notes from slowing (-100 %) to accelerating (+100 %).
+    sound Accelerating strums rush to the top like a fast sweep; slowing ones start quickly and let the last notes trail.
+HumTime     "Humanize time"   0 1000 0   lin 0 30 ms 1   | Each note is late by a random time up to this
+    how Delays each note by a random time up to 30 ms, from the seed's random stream.
+    sound It loosens a block chord into a played one; it is a few milliseconds of looseness, not a strum.
+HumVel      "Humanize velocity" 0 1000 0 lin 0 30 % 0   | Each note's velocity changes by a random amount up to this percentage
+    how Varies each note's velocity at random by up to 30 %.
+    sound It makes the chord uneven in the way a hand is.
+Seed        "Seed"            0 99  0   int 0   | The seed of the random stream (Random strum, Humanize): the same seed gives the same notes every time
+    how Chooses which random sequence the Random strum and the Humanize controls follow.
+    sound Different seeds give different loosenesses; the same seed always repeats exactly.
