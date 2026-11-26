@@ -124,6 +124,111 @@ namespace NeoBuzz.MachineTests
         static string Slug(string s) =>
             new string(s.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Replace("--", "-").Trim('-');
 
+        /// <summary>The pack's song (drums plus pad) turned to <paramref name="peakDb"/> dBFS.</summary>
+        static (float[] L, float[] R) Song(double peakDb)
+        {
+            var (dl, dr) = DrumsSource();
+            var (cl, cr) = ChordSource();
+            var l = new float[Length];
+            var r = new float[Length];
+            double peak = 1e-9;
+            for (int i = 0; i < Length; i++)
+            {
+                l[i] = dl[i] + 0.45f * cl[i]; r[i] = dr[i] + 0.45f * cr[i];
+                peak = Math.Max(peak, Math.Max(Math.Abs(l[i]), Math.Abs(r[i])));
+            }
+            float g = (float)(Math.Pow(10, peakDb / 20) / peak);
+            for (int i = 0; i < Length; i++) { l[i] *= g; r[i] *= g; }
+            return (l, r);
+        }
+
+        static double PeakDb(float[] a, float[] b, int from, int to)
+        {
+            double pk = 1e-12;
+            for (int i = from; i < to; i++) pk = Math.Max(pk, Math.Max(Math.Abs(a[i]), Math.Abs(b[i])));
+            return 20 * Math.Log10(pk);
+        }
+
+        static double RmsDb(float[] a, float[] b, int from, int to)
+        {
+            double sq = 0;
+            for (int i = from; i < to; i++) sq += (double)a[i] * a[i] + (double)b[i] * b[i];
+            return 10 * Math.Log10(sq / (2.0 * (to - from)) + 1e-30);
+        }
+
+        /// <summary>The two Scramble presets used to turn a -3 dBFS song into +2.2 dBFS (preset 03): now they stay under -1 dBFS, and 03 keeps its level.</summary>
+        [Test]
+        public void TheScramblePresetsPeakUnderMinusOneDbfsOnThePackSong()
+        {
+            var (l, r) = Song(-3.0);
+            var lat = 4095;
+            foreach (var (name, rmsBefore) in new[] { ("Scramble — Bin Shuffle Glitch", -23.56), ("Scramble — Robot Scramble", double.NaN) })
+            {
+                var p = PresetTests.AllPresets().First(x => x.Machine == "Neo Prism" && x.Preset == name);
+                var v = new ParamValues(Params.Table);
+                foreach (var kv in p.Values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                var e = Engine(v);
+                var (wl, wr) = Render(e, l, r);
+                double pk = PeakDb(wl, wr, 0, Length), rms = RmsDb(wl, wr, lat, Length);
+                TestContext.Out.WriteLine($"{name}: peak {pk:0.00} dBFS, rms {rms:0.00} dBFS (before the fix: rms {rmsBefore:0.00})");
+                Assert.That(pk, Is.LessThanOrEqualTo(-1.0), name);
+                if (!double.IsNaN(rmsBefore)) Assert.That(Math.Abs(rms - rmsBefore), Is.LessThan(2.0), name + " keeps its level");
+            }
+        }
+
+        /// <summary>Any Scramble setting at Amount 100 % on full-scale music: the peak stays within 1 dB of the input peak.</summary>
+        [TestCase(2, 20.0, "Free", 3)]
+        [TestCase(16, 8.0, "Free", 1)]
+        [TestCase(64, 5.0, "1/8", 11)]
+        [TestCase(6, 50.0, "1/16", 5)]
+        public void AnyScrambleSettingKeepsTheSongsPeak(int width, double rate, string sync, int seed)
+        {
+            var (l, r) = Song(0.0);
+            var v = Fresh(q =>
+            {
+                Switch(q, P.ScrOn, true); Phys(q, P.ScrAmount, 100); Phys(q, P.ScrWidth, width); Choice(q, P.ScrSync, sync);
+                Phys(q, P.ScrRate, rate); Phys(q, P.ScrSeed, seed);
+            });
+            var (wl, wr) = Render(Engine(v), l, r);
+            double pin = PeakDb(l, r, 0, Length), pout = PeakDb(wl, wr, 0, Length);
+            TestContext.Out.WriteLine($"width {width}, {sync}, {rate} Hz: in {pin:0.00} dBFS, out {pout:0.00} dBFS");
+            Assert.That(pout, Is.LessThanOrEqualTo(pin + 1.0));
+        }
+
+        /// <summary>The peak guard must not pump: on a steady pad the 50 ms RMS of the scramble's output moves under 1 dB from block to block.</summary>
+        [TestCase(2, 20.0), TestCase(16, 8.0), TestCase(64, 3.0)]
+        public void TheScrambleDoesNotPumpOnASteadyPad(int width, double rate)
+        {
+            // A steady, dense pad: a bed of noise with a darker tilt (a one-pole low-pass), so every band holds energy and a shuffle itself
+            // does not move the level: any step in the output's level comes from the peak guard.
+            int len = Rate * 8;
+            var pl = new float[len];
+            var pr = new float[len];
+            var rng = new Random(4);
+            float zl = 0, zr = 0;
+            for (int i = 0; i < len; i++)
+            {
+                zl += 0.3f * ((float)(rng.NextDouble() * 2 - 1) * 0.5f - zl);
+                zr += 0.3f * ((float)(rng.NextDouble() * 2 - 1) * 0.5f - zr);
+                pl[i] = zl; pr[i] = zr;
+            }
+            var sv = Fresh(q =>
+            {
+                Switch(q, P.ScrOn, true); Phys(q, P.ScrAmount, 100); Phys(q, P.ScrWidth, width); Choice(q, P.ScrSync, "Free"); Phys(q, P.ScrRate, rate);
+            });
+            var (wl, wr) = Render(Engine(sv), pl, pr);
+            int blk = Rate / 20;
+            double prev = double.NaN, worst = 0;
+            for (int s = Rate * 2; s + blk <= len; s += blk)
+            {
+                double d = RmsDb(wl, wr, s, s + blk);
+                if (!double.IsNaN(prev)) worst = Math.Max(worst, Math.Abs(d - prev));
+                prev = d;
+            }
+            TestContext.Out.WriteLine($"width {width}, {rate} Hz: worst 50 ms RMS step {worst:0.00} dB");
+            Assert.That(worst, Is.LessThan(1.0));
+        }
+
         [Test, Explicit("writes the listening pack: set NEO_PRISM_PACK to an output folder")]
         public void WriteTheListeningPack()
         {
@@ -150,8 +255,8 @@ namespace NeoBuzz.MachineTests
             log.AppendLine();
             log.AppendLine("Each file is the machine at one factory preset. Click detector (second difference against its local mean) on every file: clicks the source itself does not have.");
             log.AppendLine();
-            log.AppendLine("| File | Preset | What to listen for | Differs from dry | Peak | Clicks |");
-            log.AppendLine("|---|---|---|---|---|---|");
+            log.AppendLine("| File | Preset | What to listen for | Differs from dry | Peak | RMS | Clicks |");
+            log.AppendLine("|---|---|---|---|---|---|---|");
             int index = 0, clicksTotal = 0;
             foreach (var p in PresetTests.AllPresets().Where(p => p.Machine == "Neo Prism"))
             {
@@ -171,11 +276,12 @@ namespace NeoBuzz.MachineTests
                 for (int i = 0; i < Length; i++) pk = Math.Max(pk, Math.Max(Math.Abs(ol[i]), Math.Abs(or[i])));
                 double d = 0, s = 0;
                 for (int i = 0; i < Length - e.Latency; i++) { double x = ol[i] - l[i]; d += x * x; s += (double)l[i] * l[i]; }
-                double trim = pk > 0.89 ? 0.89 / pk : 1.0;      // a preset that comes out hotter than -1 dBFS is turned down, not clipped
-                if (trim < 1) for (int i = 0; i < Length; i++) { ol[i] *= (float)trim; or[i] *= (float)trim; }
+                double sq = 0;
+                for (int i = 0; i < Length; i++) sq += (double)ol[i] * ol[i] + (double)or[i] * or[i];
+                double rms = Math.Sqrt(sq / (2.0 * Length));
                 string file = $"{index:00}-{Slug(p.Preset)}.wav";
                 WriteWav(Path.Combine(dir, file), ol, or);
-                log.AppendLine($"| {file} | {p.Preset} | {Comments.GetValueOrDefault(p.Preset, "")} | {10 * Math.Log10(d / s):0.0} dB | {20 * Math.Log10(pk * trim):0.0} dBFS{(trim < 1 ? $" (turned down {-20 * Math.Log10(trim):0.0} dB)" : "")} | {clicks.Count} |");
+                log.AppendLine($"| {file} | {p.Preset} | {Comments.GetValueOrDefault(p.Preset, "")} | {10 * Math.Log10(d / s):0.0} dB | {20 * Math.Log10(pk):0.0} dBFS | {20 * Math.Log10(rms):0.0} dBFS | {clicks.Count} |");
             }
             log.AppendLine();
             log.AppendLine($"Click detector, all files: {clicksTotal} clicks.");

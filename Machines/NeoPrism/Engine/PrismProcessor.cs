@@ -6,6 +6,7 @@
 //                       peak's frequency is read from the phase advance between frames, its main lobe is laid down again at the new
 //                       frequency (the sine window's lobe cos(πd)/(1 − 4d²)), the rest of its region is rotated and moved with it.
 //   2. Scramble         bins swap inside bands by a seeded shuffle; the moved bin keeps its own frequency offset, so its phase runs on.
+//                       A peak guard follows: the frame's time-domain peak out is held to the peak in (a gain that falls fast and rises slowly).
 //   3. Freeze           the spectrum is held: magnitudes kept, every peak's region turns at the peak's own frequency.
 //   4. Blur             magnitudes smoothed over time (one pole per bin) and across frequency (a box).
 //   5. Spectral delay   bins are delayed by whole frames, the time tilting from low to high frequencies, with feedback and damping.
@@ -81,6 +82,8 @@ namespace NeoBuzz.Prism
             public float[] FreqNow, FreqNext;
             // scramble
             public readonly float[] ScrPrevPh, ScrOutPh;
+            /// <summary>The peak guard's smoothed gain (1: the shuffle's frame comes out as it is).</summary>
+            public float ScrGain = 1f;
             // freeze
             public readonly float[] PrevZRe, PrevZIm, FrozenM;
             public readonly double[] FrozenPh, FrozenAdv;
@@ -107,6 +110,7 @@ namespace NeoBuzz.Prism
                 Array.Clear(PrevZRe); Array.Clear(PrevZIm); Array.Clear(FrozenM);
                 Array.Clear(FrozenPh); Array.Clear(FrozenAdv);
                 Array.Clear(Mb); Array.Clear(BPrevPh); Array.Clear(BAdv); Array.Clear(BSyn);
+                ScrGain = 1f;
                 PitchStale = ScrStale = BlurStale = true;
             }
         }
@@ -123,6 +127,8 @@ namespace NeoBuzz.Prism
         int ringSize, slot, valid;
         // scramble
         readonly int[] perm, bandOf, selScratch, valScratch;
+        readonly ComplexFft guardFft;
+        readonly float[] gRe, gIm;
         long scrEpoch = long.MinValue;
         double scrPhase;
         float permAmount = -1;
@@ -158,6 +164,8 @@ namespace NeoBuzz.Prism
             tRe = new float[Nb]; tIm = new float[Nb]; env = new float[Nb]; prefix = new float[Nb + 1];
             pk = new int[Nb]; lo = new int[Nb]; hi = new int[Nb]; lobeMark = new bool[Nb];
             lag = new int[Nb]; fbGain = new float[Nb]; pos = new float[Nb];
+            guardFft = new ComplexFft(size);
+            gRe = new float[size]; gIm = new float[size];
             perm = new int[Nb]; bandOf = new int[Nb]; selScratch = new int[Nb]; valScratch = new int[Nb];
             for (int k = 0; k < Nb; k++)
             {
@@ -308,6 +316,7 @@ namespace NeoBuzz.Prism
             if (weight[1] > 0 || target[1] > 0)
             {
                 Scramble(c, re, im, tRe, tIm);
+                PeakGuard(c, re, im, tRe, tIm);
                 Blend(re, im, tRe, tIm, weight[1]);
                 c.ScrStale = false;
             }
@@ -605,6 +614,38 @@ namespace NeoBuzz.Prism
                 }
             }
             Array.Copy(ph, c.ScrPrevPh, Nb);
+        }
+
+        /// <summary>
+        /// Keeps the shuffle from raising the peak: the frame's input and its shuffled output go back to the time domain together (one
+        /// complex transform, the input as its real part and the output as its imaginary), and when the output's peak is above the input's
+        /// the output is scaled down by the ratio (10 % tolerance). The gain falls by 70 % of the gap per frame and rises by 15 %, so it never pumps from frame
+        /// to frame (the 4x overlap of the windows crossfades it) and never boosts. A shuffle that does not raise the peak is left as it is.
+        /// </summary>
+        void PeakGuard(Chan c, float[] inRe, float[] inIm, float[] oRe, float[] oIm)
+        {
+            int n = N;
+            for (int k = 0; k < Nb; k++)
+            {
+                float ar = inRe[k], ai = inIm[k], br = oRe[k], bi = oIm[k];
+                gRe[k] = ar - bi; gIm[k] = ai + br;
+                if (k > 0 && k < n - k) { gRe[n - k] = ar + bi; gIm[n - k] = br - ai; }
+            }
+            guardFft.Transform(gRe, gIm, true);
+            float pa = 0f, pb = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                float a = Math.Abs(gRe[i]), b = Math.Abs(gIm[i]);
+                if (a > pa) pa = a;
+                if (b > pb) pb = b;
+            }
+            float want = pb > pa * 1.1f && pb > 1e-12f ? pa * 1.1f / pb : 1f;
+            if (c.ScrStale) c.ScrGain = want;
+            else if (want < c.ScrGain) c.ScrGain += (want - c.ScrGain) * 0.7f;
+            else c.ScrGain += (want - c.ScrGain) * 0.15f;
+            float g = c.ScrGain;
+            if (g < 1f)
+                for (int k = 0; k < Nb; k++) { oRe[k] *= g; oIm[k] *= g; }
         }
 
         // ------------------------------------------------------------------------------------------------ 3. freeze
