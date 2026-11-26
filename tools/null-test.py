@@ -429,6 +429,9 @@ CASES = [
     fx("chop-stutter", "Neo Chop", "Stutter — Sixteenth Stutter", beats=8),
     fx("chop-tape", "Neo Chop", "Tape — Tape Stop at the Bar", beats=18),
     fx("chop-gate", "Neo Chop", "Gate — Pumping Step Gate", beats=8),
+    # Neo Prism (docs/specs/neo-prism.md): the spectral pitch, the scramble and the delay (the FFT and the seeded shuffles are portable maths).
+    fx("prism-pitch", "Neo Prism", "Pitch — Octave Up Shimmer", beats=8),
+    fx("prism-scramble", "Neo Prism", "Scramble — Bin Shuffle Glitch", beats=8),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),

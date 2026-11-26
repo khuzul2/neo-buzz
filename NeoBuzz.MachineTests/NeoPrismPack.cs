@@ -171,9 +171,11 @@ namespace NeoBuzz.MachineTests
                 for (int i = 0; i < Length; i++) pk = Math.Max(pk, Math.Max(Math.Abs(ol[i]), Math.Abs(or[i])));
                 double d = 0, s = 0;
                 for (int i = 0; i < Length - e.Latency; i++) { double x = ol[i] - l[i]; d += x * x; s += (double)l[i] * l[i]; }
+                double trim = pk > 0.89 ? 0.89 / pk : 1.0;      // a preset that comes out hotter than -1 dBFS is turned down, not clipped
+                if (trim < 1) for (int i = 0; i < Length; i++) { ol[i] *= (float)trim; or[i] *= (float)trim; }
                 string file = $"{index:00}-{Slug(p.Preset)}.wav";
                 WriteWav(Path.Combine(dir, file), ol, or);
-                log.AppendLine($"| {file} | {p.Preset} | {Comments.GetValueOrDefault(p.Preset, "")} | {10 * Math.Log10(d / s):0.0} dB | {20 * Math.Log10(pk):0.0} dBFS | {clicks.Count} |");
+                log.AppendLine($"| {file} | {p.Preset} | {Comments.GetValueOrDefault(p.Preset, "")} | {10 * Math.Log10(d / s):0.0} dB | {20 * Math.Log10(pk * trim):0.0} dBFS{(trim < 1 ? $" (turned down {-20 * Math.Log10(trim):0.0} dB)" : "")} | {clicks.Count} |");
             }
             log.AppendLine();
             log.AppendLine($"Click detector, all files: {clicksTotal} clicks.");

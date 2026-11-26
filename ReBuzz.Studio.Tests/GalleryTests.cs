@@ -2420,6 +2420,29 @@ namespace ReBuzz.Studio.Tests
                     "Neo Chop with the preset \"Stutter — Sixteenth Stutter\" loaded: the mode row (Stutter lit, the other five dark), the Stutter page below it (Trigger, Every, Repeats, Slice and Feel, Pitch, Decay and Filter per repeat), the sixteen gate steps, and Output with Amount and Mix side by side, Smoothness, Note picks slice and the meters.");
                 ChopShot("661-neo-chop-gate", "Chop 2", new[] { 0, 0, 2, 2, 0, 3, 120, 0, 200, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 1, 0, 1, 88, 511, 1000, 25, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
                     "Neo Chop with the preset \"Gate — Pumping Step Gate\" loaded: the Gate lit in the mode row and the sixteen steps as the preset sets them (accents on the beats).");
+                // PRI1: Neo Prism's editor with a preset loaded (the values are set before the editor opens): the spectrum with the delay's time curve,
+                // the five section lights, the selected section's page and Output.
+                void PrismShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Prism", machineName);
+                        string[] names = { "Pitch", "Semitones", "Cents", "Formant keep", "Scramble", "Scramble amount", "Band width", "Scramble sync", "Scramble rate", "Scramble seed", "Freeze", "Freeze trigger", "Freeze every", "Freeze length", "Hold blend", "Blur", "Blur time", "Smear", "Delay", "Low time", "High time", "Delay sync", "Feedback", "Damping", "FFT size", "Mix", "Amount" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Prism; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                PrismShot("662-neo-prism-editor", "Prism", new[] { 1, 36, 100, 0, 0, 500, 8, 0, 565, 1, 0, 0, 2, 3, 1000, 1, 418, 4, 1, 300, 300, 0, 606, 400, 2, 600, 500 },
+                    "Neo Prism with the preset \"Pitch — Octave Up Shimmer\" loaded: the spectrum (in and out) with the delay's time curve over it, the five section lights (Pitch and Delay lit), the section page below, and Output with FFT size, Amount, Mix and the meters.");
+                PrismShot("663-neo-prism-scramble", "Prism 2", new[] { 0, 24, 100, 0, 1, 700, 6, 2, 565, 7, 0, 0, 2, 3, 1000, 0, 354, 0, 0, 224, 447, 0, 404, 300, 2, 1000, 500 },
+                    "Neo Prism with the preset \"Scramble — Bin Shuffle Glitch\" loaded: the Scramble light on and its page (synced to an eighth note).");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
