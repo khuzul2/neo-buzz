@@ -21,10 +21,8 @@ A spectral effect for one track: it listens to the sound as a short-time spectru
 | Semitones | +12 | an octave up; +7 a fifth, -12 an octave down |
 | Formant keep | On | for voices and anything with a body that should not move |
 | Scramble amount | 70% | below 30% only grit, above 80% a cloud |
-| Band width | 6 bins | narrow bands keep the pitch, 32 bins or more scatter it |
 | Freeze trigger | Synced | catch the sound at each bar line; Note freezes while a key is down |
 | Blur time | 1800 ms | a long smear; 300 ms only softens attacks |
-| Low time | 30 ms | with High time 600 ms the highs trail the lows |
 | Feedback | 55% | repeats that die away; 95% rings for a minute |
 | Mix | 70% | keep some of the dry under the effect |
 

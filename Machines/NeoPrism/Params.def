@@ -25,7 +25,7 @@ ScrOn           "Scramble"           0 1 0       switch                         
 ScrAmount       "Scramble amount"    0 1000 500  pct                                          | The share of the bins that are swapped
     how Sets the share of the bins in each band that are moved.
     sound Low values blur the detail a little, high values turn the sound into a glitchy cloud.
-ScrWidth        "Band width"         2 64 8      int 0 bins                                   | Bins that are shuffled together (a band)
+ScrWidth        "Band width"         2 64 8      int 0                                        | Bins that are shuffled together (a band)
     how Sets how many neighbouring bins are shuffled between themselves.
     sound Narrow bands keep the tone and add grit, wide ones scatter the pitch.
 ScrSync         "Scramble sync"      0 6 0       enum Free 1/16 1/8 1/4 1/2 1_bar 2_bars      | How often the shuffle changes: Free (the Rate in Hz) or a length in the song
@@ -60,7 +60,7 @@ BlurOn          "Blur"               0 1 0       switch                         
 BlurTime        "Blur time"          0 1000 354  pow 0 4000 2 ms 0                            | Smooths each bin's level over this time
     how Sets how slowly each frequency's level follows the sound.
     sound Long times wash notes into a pad that outlasts them.
-Smear           "Smear"              0 24 0      int 0 bins                                   | Smooths the level across this many bins either side
+Smear           "Smear"              0 24 0      int 0                                        | Smooths the level across this many bins either side
     how Spreads each frequency's level over its neighbours.
     sound Smear softens the tone into a wash without changing its pitch.
 group Spectral delay

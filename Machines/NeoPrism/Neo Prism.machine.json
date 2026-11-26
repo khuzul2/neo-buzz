@@ -125,7 +125,6 @@
    "default": 8,
    "kind": "int",
    "a": 0.0,
-   "unit": "bins",
    "description": "Bins that are shuffled together (a band)",
    "how": "Sets how many neighbouring bins are shuffled between themselves.",
    "sound": "Narrow bands keep the tone and add grit, wide ones scatter the pitch."
@@ -315,7 +314,6 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "unit": "bins",
    "description": "Smooths the level across this many bins either side",
    "how": "Spreads each frequency's level over its neighbours.",
    "sound": "Smear softens the tone into a wash without changing its pitch."
