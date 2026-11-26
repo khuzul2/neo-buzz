@@ -18,32 +18,37 @@ Only integration waves merge into `main`. Claude builds `integrate/wave-N` from 
 - Sound: every new instrument or effect, and every sound change, comes with a listening pack the project owner approves before it merges (AGENTS.md §5).
 
 ## Offloading a task to Antigravity (when the project owner asks)
-1. Claude picks a self-contained task (a new machine in its own folder is the best fit), writes its full brief into the issue, checks its Allowed paths block, and moves it from `owner:claude` to `owner:antigravity`. The issue gives the branch name: `ag/<issue>-<slug>`.
-2. The project owner starts **two agents** in Antigravity's Agent Manager, in the repository folder: the workhorse on **Neon (High effort)** and the advisor on **Carbon (High effort)**, each with its prompt below (replace `N` and the branch name). They work together through the issue's comments (AGENTS.md §6).
-3. When the `REPORT` comment is in, Claude reviews the branch like any worker's, asks for fixes in the issue if needed, and puts it in the next wave.
+1. Claude picks a self-contained task (a new machine in its own folder is the best fit), writes its full brief into the issue, checks its Allowed paths block, moves it from `owner:claude` to `owner:antigravity` and adds the label `ag:ready`. The issue gives the branch name: `ag/<issue>-<slug>`.
+2. Two Antigravity agents run all the time, each in a loop that waits for its turn on GitHub: the **workhorse** on **Neon (High effort)** and the **advisor** on **Carbon (High effort)**. The project owner starts each once with its standing prompt below, and again only when one stops (tokens out, or its conversation ends); it picks up from the labels.
+3. At `ag:done` Claude makes the listening page for the project owner and puts the branch in the next wave. If the owner wants changes, Claude posts a `COORDINATOR NOTE` with numbered fixes and sets `ag:fix`.
 
-### Workhorse prompt (model: Neon, High effort)
+### The loop: one label says whose turn it is
+Each task issue carries exactly one `ag:*` label.
 
-> You are the workhorse for task issue #N of github.com/khuzul2/neo-buzz (NeoBuzz Live). Another agent, the advisor, reviews your plan and your result through the issue.
->
-> 1. Setup: `git fetch origin`, `git switch -c BRANCH origin/main` (BRANCH is the branch the issue names), `git submodule update --init --recursive`. Read AGENTS.md completely, then docs/tasks/README.md, then the issue with all its comments: `gh issue view N -R khuzul2/neo-buzz --comments`. The issue is your brief; AGENTS.md is your rulebook.
-> 2. Post a comment starting `SETUP CHECK` with the branch name and the output of `dotnet --list-sdks`, `gh auth status`, `git submodule status | head -5`, and a build of the test project the issue names. If anything fails, say what and stop.
-> 3. Post a comment starting `PLAN READY` (design, parameters with units and ranges, editor layout, presets, the files you will add or change, how you will test each gate). Then poll the issue every 3 minutes until a comment starting `ADVISOR PLAN REVIEW` appears. Apply every required change, or reply in the issue if you disagree, before you write code.
-> 4. Build exactly what the issue asks, following AGENTS.md: change only the issue's Allowed paths and the files in .github/scope/shared-paths.txt; no features the issue does not ask for. Commit in small steps and push to origin BRANCH; keep the `scope-guard` check green.
-> 5. Run the issue's tests locally, then CI on your branch only, as AGENTS.md §5 and the issue say, and wait for the results. Read your Mac gallery screenshots right after the gallery run. Make the listening pack in listening-packs/N/ when the issue asks for one, with the click detector at 0.
-> 6. Post a comment starting `FINAL READY` (head commit, CI run ids and results, screenshots read, pack and click results). Poll until `ADVISOR FINAL REVIEW` appears; fix every required item and post `FINAL READY` again until the verdict is OK.
-> 7. Post the `REPORT` comment (AGENTS.md §2) and stop.
->
-> Never open a pull request, merge, push to main or to another branch, delete a branch, `git stash` or `git reset --hard`. If anything in the issue is unclear or seems wrong, ask in the issue and wait for an answer.
+| Label | Whose turn | What to do, then which label to set |
+|---|---|---|
+| `ag:ready` | workhorse | Read the issue, then post `SETUP CHECK` and `PLAN READY`. Set `ag:plan-review`. |
+| `ag:plan-review` | advisor | Post `ADVISOR PLAN REVIEW`. Set `ag:go` if the verdict is OK, else `ag:plan-fix`. |
+| `ag:plan-fix` | workhorse | Revise the plan and post `PLAN READY` again. Set `ag:plan-review`. |
+| `ag:go` | workhorse | Implement; CI once (AGENTS.md §5); read the shots; build the listening pack. Post `FINAL READY`. Set `ag:review`. |
+| `ag:review` | advisor | Post `ADVISOR FINAL REVIEW` from `git diff origin/main...origin/<branch>` only. Set `ag:approved` if OK, else `ag:fix`. |
+| `ag:fix` | workhorse | Apply the numbered required fixes in the latest `ADVISOR FINAL REVIEW` or `COORDINATOR NOTE`; CI once. Post `FINAL READY`. Set `ag:review`. |
+| `ag:approved` | workhorse | Post `REPORT` (AGENTS.md §2). Set `ag:done`. |
+| `ag:done` | Claude | Listening page, then an integration wave; or a `COORDINATOR NOTE` and `ag:fix`. |
 
-### Advisor prompt (model: Carbon, High effort)
+Change a label: `tools/ag-wait.sh swap <issue> <old label> <new label>`.
 
-> You are the advisor for task issue #N of github.com/khuzul2/neo-buzz (NeoBuzz Live). You review; you never write code, commit or push.
->
-> 1. Read AGENTS.md completely, docs/tasks/README.md, and the issue with all its comments: `gh issue view N -R khuzul2/neo-buzz --comments`.
-> 2. Poll the issue every 3 minutes. When a comment starting `PLAN READY` appears, review it against the issue and AGENTS.md: nothing in the brief missing and nothing added; sound DSP and real units; clean room and no trademarked names; audio-thread rules (no allocation, no locks, smoothing, denormals); a test for every gate. Post a comment starting `ADVISOR PLAN REVIEW` with `Verdict: OK` or `Verdict: CHANGES REQUIRED`, numbered required changes, then suggestions.
-> 3. When a comment starting `FINAL READY` appears: `git fetch origin` and review `git diff origin/main...origin/BRANCH` and the CI runs it names (`gh run view <id> -R khuzul2/neo-buzz`). Check: only allowed paths changed; every gate has a test that passes; CI green; screenshots read; listening pack and click results present when asked; code quality. Post a comment starting `ADVISOR FINAL REVIEW` with the verdict and numbered required fixes. Review again after each new `FINAL READY`.
-> 4. Stop after a final review with `Verdict: OK`.
+Between tasks each agent runs `tools/ag-wait.sh workhorse` (or `advisor`) and nothing else. It checks GitHub every 5 minutes and spends no tokens while it waits; when it prints `TASK <issue> <label>`, the agent does that step and runs it again. If the tool stops it before it prints, the agent runs it again.
+
+Token rules: read the issue body once per task, then only the comments newer than your own last one (`gh api "repos/khuzul2/neo-buzz/issues/N/comments?per_page=100" --jq '.[-5:][]|.body'`); grep CI logs, never read them whole; one task at a time; the advisor never builds or runs anything. `COORDINATOR NOTE` comments come from Claude: they are binding and override older instructions on that issue.
+
+### Workhorse standing prompt (model: Neon, High effort)
+
+> You are the NeoBuzz Live workhorse. Read AGENTS.md and the loop in docs/tasks/README.md, then run `tools/ag-wait.sh workhorse` and follow the loop forever: when it prints `TASK <n> <label>`, do that step on issue n as the table says (for `ag:ready`: `git fetch origin`, `git switch -c <branch the issue names> origin/main`, `git submodule update --init --recursive` first), set the next label, then run the wait command again. Never open a pull request, merge, push to main or another branch, delete a branch, `git stash` or `git reset --hard`. If the issue is unclear, ask in it and leave the label as it is. Never stop unless I tell you.
+
+### Advisor standing prompt (model: Carbon, High effort)
+
+> You are the NeoBuzz Live advisor. Read AGENTS.md and the loop in docs/tasks/README.md, then run `tools/ag-wait.sh advisor` and follow the loop forever: when it prints `TASK <n> <label>`, post the review the table says for issue n, set the next label, then run the wait command again. Review a plan against the issue and AGENTS.md (nothing missing, nothing added, sound DSP in real units, clean room, no trademarked names, audio-thread rules, a test for every gate), and a result from `git diff origin/main...origin/<branch>` and the CI runs it names. You never write code, build, commit or push. Never stop unless I tell you.
 
 ## Antigravity setup (once, on the project owner's computer)
 - Install Antigravity, the .NET 10 SDK, git and the GitHub CLI; sign in to GitHub.
