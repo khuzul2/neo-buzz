@@ -289,6 +289,13 @@ namespace ReBuzz.Agent
             };
             o["inputs"] = new JsonArray(m.Inputs.Where(c => !((MachineCore)c.Source).Hidden).Select(c => (JsonNode)ConnectionJson(c, from: true)).ToArray());
             o["outputs"] = new JsonArray(m.Outputs.Where(c => !((MachineCore)c.Destination).Hidden).Select(c => (JsonNode)ConnectionJson(c, from: false)).ToArray());
+            // NW1 (note-wires.md §7): the note ports, listed only where there are some; an insert says which instrument it sits before.
+            if (ReBuzz.Core.NoteWires.NoteWireStore.PortsOf(m) is { Control: false } ports && (ports.In || ports.Out))
+            {
+                if (ports.In) o["note_in"] = true;
+                if (ports.Out) o["note_out"] = true;
+                if (core.NoteWires?.State.InstrumentOf(m.Name) is { } owner) o["note_insert_of"] = owner;
+            }
             if (!IsMaster(m))
             {
                 o["muted"] = m.IsMuted;

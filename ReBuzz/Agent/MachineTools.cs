@@ -172,7 +172,7 @@ namespace ReBuzz.Agent
                 Title = "List the song's machines",
                 Description =
                     "Every machine in the song with its gear, kind, connections in and out (gain in dB, pan −1…+1), mute/solo/bypass, " +
-                    "tracks and clip count. Use it to see the signal flow before changing it. Example: machine_list().",
+                    "tracks and clip count, and its note ports (note_in: it takes notes, note_out: it sends them, note_insert_of: the instrument whose note chain it is in). Use it to see the signal flow before changing it. Example: machine_list().",
                 Input = Object(null),
                 Output = Object(null, Req("machines", Array(Object("A machine", Req("name", String("Its name")), Req("gear", String("Its gear")), Req("kind", String("master, generator or effect"))), "The machines, Master first"))),
                 Annotations = ToolAnnotations.Read,
@@ -185,7 +185,8 @@ namespace ReBuzz.Agent
                     var lines = r["machines"]!.AsArray().Select(m =>
                     {
                         var outs = m!["outputs"]!.AsArray().Select(o => $"{o!["to"]} ({o["gain_db"]} dB)");
-                        return $"{m["name"]} [{m["gear"]}]" + (outs.Any() ? " → " + string.Join(", ", outs) : "");
+                        string notes = m["note_in"] != null || m["note_out"] != null ? " (notes " + (m["note_in"] != null && m["note_out"] != null ? "in/out" : m["note_in"] != null ? "in" : "out") + ")" : "";
+                        return $"{m["name"]} [{m["gear"]}]" + notes + (outs.Any() ? " → " + string.Join(", ", outs) : "");
                     });
                     return ToolResult.Ok(string.Join("; ", lines), r);
                 },

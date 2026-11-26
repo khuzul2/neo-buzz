@@ -1,0 +1,189 @@
+# Neo Arp parameters (docs/specs/neo-arp.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoArp
+namespace NeoBuzz.Arp
+class NeoArpMachine
+summary An arpeggiator that works on note wires: it takes the notes you hold (or a chord from another note machine) and sends them on one at a time, in time with the song. Twelve patterns (up, down, up-down, converge, diverge, as played, random, random walk, a whole chord, or your own 16-step row with ties, accents and a transpose per step), a rate from 1/1 to 1/64 with dotted and triplet or a free time in milliseconds, swing, gate, one to four octaves, repeats, velocity, humanize and a latch. It makes no sound itself: put it before a synth as a note insert, or on a note wire to any machine that takes notes. Use it for arpeggios, rhythmic chord stabs, basslines and sequenced leads.
+
+group Pattern
+Pattern     "Pattern"        0 11 0     enum Up Down Up-down Up-down_ends_twice Down-up Converge Diverge As_played Random Random_walk Chord Steps | The order the held notes are played in
+    id pattern
+    how Chooses the order the held notes are played in: up, down, back and forth, from the outside in or the inside out, as you played them, at random, as a walk, all together as a chord, or by your own step row.
+    sound Up and Down make runs, Up-down a wave, Converge and Diverge a pinch or a bloom, Random a sparkle, Chord a rhythmic pulse and Steps a sequenced line.
+Octaves     "Octaves"        1 4 1      int 0                                | How many octaves the pattern climbs through (1 … 4)
+    id octaves
+    how Plays the pattern again an octave higher, up to four octaves, in the order the Octave mode says.
+    sound More octaves widen the run: a sweeping arpeggio instead of a close figure.
+OctMode     "Octave mode"    0 2 0      enum Up Down Up-down                 | The order the octaves are visited in
+    id octave_mode
+    how Chooses whether each pass of the pattern goes up an octave, down an octave or up and back down.
+    sound Up climbs away, Down falls toward the played notes, Up-down rises and returns.
+Repeats     "Repeats"        1 4 1      int 0                                | How many times each note is played before the next (1 … 4)
+    id repeats
+    how Plays each note of the pattern this many times in a row before moving on.
+    sound Higher values make the figure stutter on each note: a pulsing, slower-moving arpeggio.
+Transpose   "Transpose"      0 48 24    int -24 st signed                    | Moves every note by semitones (−24 … +24)
+    id transpose
+    how Moves every note up or down by this many semitones.
+    sound It shifts the whole arpeggio without changing the keys you hold.
+
+group Rate
+Sync        "Timing"         0 1 0      enum Song_tempo Free_time            | Whether steps follow the song's tempo or run on a time in milliseconds
+    id timing
+    how Chooses between steps locked to the song's tempo and position and steps of a fixed length in milliseconds.
+    sound Song tempo keeps the arpeggio in time with the music; Free time runs at its own speed, whatever the tempo.
+Rate        "Rate"           0 6 4      enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64  | The length of a step at the song's tempo
+    id rate
+    how Sets how long each step lasts at the song's tempo, from a whole note to a sixty-fourth.
+    sound Shorter steps make a faster, busier arpeggio.
+Feel        "Feel"           0 2 0      enum Straight Dotted Triplet         | Straight, dotted (1.5 times as long) or triplet (two thirds as long) steps
+    id feel
+    how Makes the steps straight, dotted (one and a half times as long) or triplet (two thirds as long).
+    sound Dotted steps lilt against the beat; triplets make a rolling, three-against-two feel.
+FreeMs      "Free time"      20 2000 125 lin 20 2000 ms 0                            | The length of a step in milliseconds when Timing is Free time (20 … 2000)
+    id free_time
+    how Sets the length of a step in milliseconds when Timing is Free time.
+    sound Shorter times are faster; the pattern no longer follows the song's tempo.
+Swing       "Swing"          0 75 0     int 0 %                              | Delays every second step by up to 75 % of a step
+    id swing
+    how Delays every second step by a share of a step, up to 75 %.
+    sound The arpeggio takes a shuffled, off-beat lilt.
+
+group Gate
+Gate        "Gate"           5 200 80   int 0 %                             | How long each note lasts, as a share of a step (5 … 200 %)
+    id gate
+    how Sets how long each note sounds as a share of one step; above 100 % the notes overlap.
+    sound Low values are short and detached; 100 % just touches the next note; higher values run together, legato.
+
+group Velocity
+VelMode     "Velocity"       0 2 0      enum As_played Fixed Accent         | Where the velocity of each note comes from
+    id velocity_mode
+    how Chooses the velocity: as you played each key, one fixed value, or a fixed value with the accented steps louder.
+    sound As played keeps your touch; Fixed makes every note equally loud; Accent makes the marked steps stand out.
+FixedVel    "Fixed velocity" 1 127 100  int 0                                | The velocity of Fixed and Accent modes (1 … 127)
+    id fixed_velocity
+    how Sets the velocity used by the Fixed and Accent modes.
+    sound Higher values play every note harder and brighter on most instruments.
+AccentLevel "Accent"         0 100 60   int 0 %                              | How far an accented step rises above the fixed velocity, toward 127
+    id accent_level
+    how Sets how far an accented step lifts the velocity from the fixed value toward 127 (Accent mode, Steps pattern).
+    sound Higher values make the accented steps hit harder.
+HumTime     "Humanize time"  0 20 0     lin 0 20 ms 0                             | Random lateness of each note, up to this many milliseconds
+    id humanize_time
+    how Delays each note by a random time up to this many milliseconds, the same every time the song is played.
+    sound A little looseness takes the machine-like edge off the pattern.
+HumVel      "Humanize velocity" 0 30 0  int 0 %                              | Random change of each note's velocity, up to this share
+    id humanize_velocity
+    how Changes each note's velocity by a random amount up to this share, the same every time the song is played.
+    sound A little variation makes repeated notes feel played, not stamped.
+
+group Hold
+Latch       "Latch"          0 1 0      switch                               | Keeps the notes sounding after you let go, until you play a new chord
+    id latch
+    how With Latch on, the notes stay in the arpeggio after release until a new chord is played.
+    sound You can take your hands off and the arpeggio keeps going.
+Retrigger   "Retrigger"      0 2 0      enum Free_running On_new_note On_bar | When the pattern starts over
+    id retrigger
+    how Chooses when the pattern restarts: never (it follows the song position), on each new note, or on each bar line; steps always stay on the song's grid.
+    sound Free running keeps the pattern in step with the song wherever you start; the others always begin the figure from its first note.
+
+group Steps
+StepLen     "Step count"     1 16 16    int 0                                | How many steps of the row the Steps pattern uses (1 … 16)
+    id step_count
+    how Sets how many of the 16 steps the Steps pattern plays before it starts over.
+    sound Counts that do not divide the bar make the pattern drift against it.
+S1          "Step 1"        0 3 1      enum Off On Tie Accent               | Step 1 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 1 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S2          "Step 2"        0 3 1      enum Off On Tie Accent               | Step 2 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 2 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S3          "Step 3"        0 3 1      enum Off On Tie Accent               | Step 3 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 3 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S4          "Step 4"        0 3 1      enum Off On Tie Accent               | Step 4 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 4 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S5          "Step 5"        0 3 1      enum Off On Tie Accent               | Step 5 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 5 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S6          "Step 6"        0 3 1      enum Off On Tie Accent               | Step 6 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 6 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S7          "Step 7"        0 3 1      enum Off On Tie Accent               | Step 7 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 7 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S8          "Step 8"        0 3 1      enum Off On Tie Accent               | Step 8 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 8 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S9          "Step 9"        0 3 1      enum Off On Tie Accent               | Step 9 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 9 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S10          "Step 10"        0 3 1      enum Off On Tie Accent               | Step 10 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 10 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S11          "Step 11"        0 3 1      enum Off On Tie Accent               | Step 11 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 11 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S12          "Step 12"        0 3 1      enum Off On Tie Accent               | Step 12 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 12 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S13          "Step 13"        0 3 1      enum Off On Tie Accent               | Step 13 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 13 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S14          "Step 14"        0 3 1      enum Off On Tie Accent               | Step 14 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 14 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S15          "Step 15"        0 3 1      enum Off On Tie Accent               | Step 15 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 15 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+S16          "Step 16"        0 3 1      enum Off On Tie Accent               | Step 16 of the row: Off, On, Tie (holds the note before it) or Accent
+    how Sets what step 16 of the row does in the Steps pattern: rest (Off), play a note (On), hold the note before it (Tie) or play it louder (Accent).
+    sound Ties lengthen a note across steps and accents make the marked steps stand out, which is what gives the row its rhythm.
+X1          "Step 1 transpose" 0 24 12   int -12 st signed                    | Step 1's transpose in semitones (−12 … +12)
+    how Moves the note step 1 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X2          "Step 2 transpose" 0 24 12   int -12 st signed                    | Step 2's transpose in semitones (−12 … +12)
+    how Moves the note step 2 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X3          "Step 3 transpose" 0 24 12   int -12 st signed                    | Step 3's transpose in semitones (−12 … +12)
+    how Moves the note step 3 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X4          "Step 4 transpose" 0 24 12   int -12 st signed                    | Step 4's transpose in semitones (−12 … +12)
+    how Moves the note step 4 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X5          "Step 5 transpose" 0 24 12   int -12 st signed                    | Step 5's transpose in semitones (−12 … +12)
+    how Moves the note step 5 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X6          "Step 6 transpose" 0 24 12   int -12 st signed                    | Step 6's transpose in semitones (−12 … +12)
+    how Moves the note step 6 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X7          "Step 7 transpose" 0 24 12   int -12 st signed                    | Step 7's transpose in semitones (−12 … +12)
+    how Moves the note step 7 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X8          "Step 8 transpose" 0 24 12   int -12 st signed                    | Step 8's transpose in semitones (−12 … +12)
+    how Moves the note step 8 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X9          "Step 9 transpose" 0 24 12   int -12 st signed                    | Step 9's transpose in semitones (−12 … +12)
+    how Moves the note step 9 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X10          "Step 10 transpose" 0 24 12   int -12 st signed                    | Step 10's transpose in semitones (−12 … +12)
+    how Moves the note step 10 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X11          "Step 11 transpose" 0 24 12   int -12 st signed                    | Step 11's transpose in semitones (−12 … +12)
+    how Moves the note step 11 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X12          "Step 12 transpose" 0 24 12   int -12 st signed                    | Step 12's transpose in semitones (−12 … +12)
+    how Moves the note step 12 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X13          "Step 13 transpose" 0 24 12   int -12 st signed                    | Step 13's transpose in semitones (−12 … +12)
+    how Moves the note step 13 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X14          "Step 14 transpose" 0 24 12   int -12 st signed                    | Step 14's transpose in semitones (−12 … +12)
+    how Moves the note step 14 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X15          "Step 15 transpose" 0 24 12   int -12 st signed                    | Step 15's transpose in semitones (−12 … +12)
+    how Moves the note step 15 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.
+X16          "Step 16 transpose" 0 24 12   int -12 st signed                    | Step 16's transpose in semitones (−12 … +12)
+    how Moves the note step 16 plays by this many semitones, up or down, in the Steps pattern.
+    sound Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes.

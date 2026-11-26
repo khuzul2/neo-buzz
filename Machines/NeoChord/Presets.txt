@@ -1,0 +1,84 @@
+# Neo Chord factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoChord
+machine "Neo Chord"
+
+preset "Chords — Major Triads"
+comment "Every note becomes a plain major triad, all together: bright, solid block chords."
+Chord = Major
+Mode = Fixed
+Spread = Close
+Octave = 0
+Strum = Off
+
+preset "Chords — Minor Sevenths"
+comment "Minor seventh chords in an open voicing with a root an octave below: warm and jazzy."
+Chord = Minor 7
+Mode = Fixed
+Spread = Open
+Bass = Root 1 oct down
+VelBass = 120
+Strum = Off
+
+preset "Chords — Open Fifths"
+comment "Root, fifth and octave spread wide over a low root: hollow, powerful and neither major nor minor."
+Chord = Power
+Mode = Fixed
+Spread = Open
+Bass = Root 1 oct down
+VelTop = 70
+Strum = Off
+
+preset "Diatonic — Sevenths in C"
+comment "Every white key plays the right seventh chord of C major (C major 7, D minor 7, ...), dropped-2 voiced: one finger, always in key."
+Chord = Major
+Mode = Diatonic
+Key = C
+Scale = Major
+DiaSize = Sevenths
+Spread = Drop 2
+Octave = 0
+Strum = Off
+
+preset "Strum — Slow Strum Up"
+comment "A minor ninth strummed from the bottom up over 220 ms, slowing at the top, a little loose: a harp-like roll."
+Chord = Minor 9
+Mode = Fixed
+Spread = Open
+Strum = Up
+StrumTime = 220
+StrumCurve = -50
+HumTime = 6
+HumVel = 12
+VelSpread = 25
+
+preset "Strum — Down-Up Strum"
+comment "An add-9 chord strummed fast, down on the first chord and up on the next, and so on: a driving guitar-like strum."
+Chord = Add 9
+Mode = Fixed
+Spread = Drop 2
+Strum = Alternate
+StrumTime = 70
+StrumCurve = 40
+HumTime = 4
+HumVel = 10
+VelTop = 130
+VelBass = 110
+
+preset "Voicing — Stacked Fourths"
+comment "Notes piled in perfect fourths, one octave up: an open, modern, unresolved sound with no major or minor."
+Chord = Stacked fourths
+Mode = Fixed
+Spread = Close
+Octave = 1
+Strum = Off
+
+preset "Voicing — Wide Pad Voicing"
+comment "A major ninth in the widest voicing over a root two octaves down, with a gentle upward roll: a big, slowly opening pad chord."
+Chord = Major 9
+Mode = Fixed
+Spread = Wide
+Octave = 0
+Bass = Root 2 oct down
+Strum = Up
+StrumTime = 90
+StrumCurve = 30
+VelSpread = -20

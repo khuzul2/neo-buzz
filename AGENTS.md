@@ -36,7 +36,7 @@ Follow the newest complete Neo machine as the pattern (see `docs/specs/machines.
 - **Listening packs** (every new instrument or effect, and every sound change): renders of every preset on the brief's sources, 48 kHz WAV, kept local and never committed, with a README. Run a click detector (second difference against its local mean) on every render: 0 clicks unless the sound is meant to click. Blind A/B packs put each version in slot A in exactly half the items (±1), chosen by a seeded shuffle. The user approves the sound before the machine merges.
 
 ## 6. Antigravity: models, advisor and the issue protocol
-- **Two agents per task.** The **workhorse** builds: Antigravity's **Neon (High effort)**. The **advisor** reviews and never writes code or pushes: **Carbon (High effort)**. The project owner starts both from the prompts in `docs/tasks/README.md`.
+- **Two agents per task.** The **workhorse** builds: Antigravity's **Neon (High effort)**. The **advisor** reviews and never writes code or pushes: **Carbon (High effort)**. Both run all the time in the loop of `docs/tasks/README.md`: an `ag:*` label on the task issue says whose turn it is, and each agent waits for its turn with `tools/ag-wait.sh`. The project owner starts each once with its standing prompt there.
 - They talk only through the task issue, with comments that start with these exact words:
   - `SETUP CHECK` (workhorse): branch name, `dotnet --list-sdks`, `gh auth status`, `git submodule status | head`, and the result of building the test project the issue names.
   - `PLAN READY` (workhorse): the design (approach, parameters with units and ranges, editor layout, presets), the files to add or change, and how each gate will be tested. No code before the advisor's OK.

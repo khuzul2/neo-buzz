@@ -405,6 +405,53 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest] public void AnEffectNeedsATrackAndGoesAfterTheTracksLastMachineInTheArrangement() => EffectRows("arrangement");
         [AvaloniaTest] public void AnEffectNeedsATrackAndGoesAfterTheTracksLastMachineInTheSession() => EffectRows("session");
 
+        // ------------------------------------------------------------------ note inserts (NW1)
+
+        static string Chain(string instrument) => string.Join(",", Core.NoteWires.State.ChainOf(instrument));
+
+        void NoteInsertRows(string which)
+        {
+            using var s = Open(which);
+            var lead = AddTrack("Neo Poly", "Lead");
+            Settle();
+
+            // A machine that takes and sends notes goes into the track's note chain, before the instrument: no audio wire, one undo step.
+            var plan = s.PlanTrack(lead, One(Gear("Neo Chord")));
+            Assert.That(plan.Allowed, Is.True, plan.Refusal);
+            Assert.That(plan.Action, Is.EqualTo(DropAction.InsertNote));
+            Assert.That(plan.Describe, Does.Contain("before Lead"));
+            string before = State(), chainBefore = Chain("Lead");
+            Assert.That(chainBefore, Is.Empty);
+            var made = s.OnTrack(lead, One(Gear("Neo Chord")));
+            Assert.That(made.Ok, Is.True, made.Message);
+            Assert.That(made.Action, Is.EqualTo(DropAction.InsertNote));
+            Assert.That(made.Machine.DLL.Name, Is.EqualTo("Neo Chord"));
+            Assert.That(Chain("Lead"), Is.EqualTo(made.Machine.Name));
+            Assert.That(Graph(), Does.Contain("Lead→Master"), "the track's audio is as it was");
+            Assert.That(made.Machine.Outputs.Count, Is.EqualTo(0), "no audio wire");
+            Assert.That(Core.SongCore.Sequences.Any(x => x.Machine == made.Machine), Is.False, "no track of its own");
+            AssertOneStep(before);
+            Assert.That(Chain("Lead"), Is.EqualTo(made.Machine.Name), "redo (AssertOneStep ends redone)");
+            Core.SongCore.ActionStack.Undo();
+            Settle();
+            Assert.That(Chain("Lead"), Is.Empty, "undo takes it out of the chain");
+            Assert.That(Core.SongCore.Machines.Any(m => m.DLL.Name == "Neo Chord"), Is.False, "and removes the machine");
+            Core.SongCore.ActionStack.Redo();
+            Settle();
+
+            // A second one goes after the first, still before the instrument.
+            var second = s.OnTrack(lead, One(Gear("Neo Chord")));
+            Assert.That(second.Ok, Is.True, second.Message);
+            Assert.That(Chain("Lead"), Is.EqualTo(made.Machine.Name + "," + second.Machine.Name));
+
+            // Audio drops are unchanged: an effect still goes after the track.
+            var fx = s.OnTrack(lead, One(Gear("Neo Comp")));
+            Assert.That(fx.Action, Is.EqualTo(DropAction.InsertEffect));
+        }
+
+        [AvaloniaTest] public void ANoteMachineDroppedOnATrackGoesIntoItsNoteChainInTheArrangement() => NoteInsertRows("arrangement");
+        [AvaloniaTest] public void ANoteMachineDroppedOnATrackGoesIntoItsNoteChainInTheSession() => NoteInsertRows("session");
+
         // ------------------------------------------------------------------ audio
 
         void AudioRows(string which)

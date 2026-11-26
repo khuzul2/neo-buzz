@@ -34,3 +34,7 @@ NeoLearnVector/	pattern	a rhythmic pattern of crossfades, not a clip
 NeoStep/	pattern	Neo Step is a step pattern machine: its steps are a pattern, not a clip (its parameter group is named Pattern, which a saved preset can store)
 build.ps1	Modern Pattern Editor	the machine's name: a song stores it
 NeoStep/	Pattern	Neo Step's parameter group is named Pattern (a step pattern)
+NeoArp/	pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+NeoArp/	Pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+Neo Arp	pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+Neo Arp	Pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
