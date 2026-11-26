@@ -313,7 +313,7 @@
    "kind": "int",
    "a": 1.0,
    "description": "The random stream that spreads the grains: the same seed repeats the same cloud exactly",
-   "how": "Sets which random pattern the grains follow, from 1 to 100.",
+   "how": "Sets which random sequence the grains follow, from 1 to 100.",
    "sound": "Another seed gives another cloud of the same character; the same seed always sounds the same."
   },
   {

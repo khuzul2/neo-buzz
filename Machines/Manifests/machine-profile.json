@@ -9074,6 +9074,123 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Grain": {
+   "gear": "Neo Grain",
+   "kind": "generator",
+   "load_seconds": 0.48,
+   "gear_info": {
+    "file": "Generators/Neo Grain.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 20,
+   "track_parameters": 0,
+   "inferred": 19,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 20,
+    "of": 20
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 24,
+    "cents": 0.7,
+    "heard": {
+     "A4": 45.02,
+     "A3": 32.99,
+     "A5": 57.01
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -33.5,
+     "2": -30.3,
+     "4": -27,
+     "8": -24.3
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -33,
+    "sample_peak_dbfs": -22.51,
+    "true_peak_dbtp": -22.51
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -22.1,
+     "growth_db": -0.09,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
+    }
+   },
+   "envelope": {
+    "peak_db": -29.37,
+    "attack_s": 0.14,
+    "final_db": -6.23,
+    "half_s": 0.005,
+    "length_s": null,
+    "release_s": 0.26,
+    "release_past_window": false,
+    "bright_mid_hz": 245.6,
+    "bright_early_hz": 248.5,
+    "bright_late_hz": 242.8,
+    "level_wobble_db": 1.539,
+    "bright_wobble": 0.185,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 17.42,
+    "db_per_doubling": 5.93,
+    "curve": "linear in amplitude (about 6 dB per doubling)",
+    "levels_db": {
+     "16": -47.56,
+     "32": -41.67,
+     "64": -34.81,
+     "127": -30.14
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 5.187,
+    "silent_ms_per_s": 1.305,
+    "silent_worst_ms_per_s": 2.776,
+    "windows_ms_per_s": [
+     5.187,
+     2.776,
+     1.318,
+     1.305,
+     1.306,
+     1.309,
+     1.299,
+     1.297,
+     1.303,
+     1.088,
+     1.257
+    ]
+   },
+   "seconds": 1.4,
+   "platform": "linux",
+   "date": "2026-11-26",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Multiband": {
    "gear": "Neo Multiband",
    "kind": "effect",

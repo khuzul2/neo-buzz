@@ -623,7 +623,7 @@ namespace NeoBuzz.Grain
                 p -= Math.Floor(p);
                 pp[c] = (float)p;
                 double x = (double)gN[g] / Math.Max(1, gLen[g]);
-                pl[c] = (float)Math.Sin(Math.PI * Math.Clamp(x, 0.0, 1.0));
+                pl[c] = (float)PortableMath.Sin(Math.PI * Math.Clamp(x, 0.0, 1.0));
                 c++;
             }
             dotCount[w] = c;

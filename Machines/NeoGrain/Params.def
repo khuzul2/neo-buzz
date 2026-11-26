@@ -65,7 +65,7 @@ Drone       "Drone"         0 1    0     switch                    | Plays one c
     how Turns on a cloud that plays by itself while the song plays.
     sound Gives a constant bed under the notes, such as a drone or a texture, with no note needed.
 Seed        "Seed"          0 99   0     int 1                     | The random stream that spreads the grains: the same seed repeats the same cloud exactly
-    how Sets which random pattern the grains follow, from 1 to 100.
+    how Sets which random sequence the grains follow, from 1 to 100.
     sound Another seed gives another cloud of the same character; the same seed always sounds the same.
 Volume      "Volume"        0 1000 750   db -60 12 inf             | Output level
     how Sets the final level in dB, from off to +12.
