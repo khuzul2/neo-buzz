@@ -232,7 +232,8 @@ namespace ReBuzz.Core
                             lane.Segments.Add(new AutoSegment
                             {
                                 Source = AutoSource.Tracker, Sequence = seq, EventTime = kv.Key, Clip = e.Clip, Start = start, End = end, ClipFrom = from,
-                                Points = AutomationMath.PointsOf(t.Events, false, param.Parameter.NoValue), Editable = false,
+                                // T2: where the engine plays every lane, a tracker value with a Duration above 0 is a ramp, so the tracker lane's ramps read the same here.
+                                Points = AutomationMath.PointsOf(t.Events, ClipColumnCore.PlaysEveryLane, param.Parameter.NoValue), Editable = false,
                             });
                         }
                     }
@@ -372,11 +373,14 @@ namespace ReBuzz.Core
     {
         readonly ReBuzzCore core;
         readonly ClipEditor clips;
+        readonly bool own;
 
-        public AutomationEditor(ReBuzzCore core, ClipEditor clips)
+        /// <param name="own">T2: edits are of the tracker's own lane (the unmarked one a parameter column shows), not the marked automation lane.</param>
+        public AutomationEditor(ReBuzzCore core, ClipEditor clips, bool own = false)
         {
             this.core = core;
             this.clips = clips;
+            this.own = own;
         }
 
         /// <summary>The 1/240-tick grid points live on.</summary>
@@ -400,6 +404,10 @@ namespace ReBuzz.Core
             return column == null ? Array.Empty<ClipEvent>() : column.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToArray();
         }
 
+        /// <summary>The events of the tracker's own lane of the key now, in time order (T2).</summary>
+        static ClipEvent[] OwnCurrent(IClip clip, ColumnKey key) =>
+            ReBuzz.Core.Notes.StoreLanes.OwnLane(clip, key, create: false)?.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToArray() ?? Array.Empty<ClipEvent>();
+
         static string Check(AutoSegment seg)
         {
             if (seg == null) return "There is nothing to edit here.";
@@ -410,7 +418,7 @@ namespace ReBuzz.Core
         void Do(IClip clip, ColumnKey key, ClipEvent[] removed, ClipEvent[] added)
         {
             if (removed.Length == 0 && added.Length == 0) return;
-            core.SongCore.ActionStack.Do(new ColumnEventsAction(core, clip, new[] { new ColumnEventsAction.Change(key, removed, added) }, automation: true));
+            core.SongCore.ActionStack.Do(new ColumnEventsAction(core, clip, new[] { new ColumnEventsAction.Change(key, removed, added) }, automation: !own, own: own));
             core.SetModifiedFlag();
         }
 
@@ -476,8 +484,8 @@ namespace ReBuzz.Core
         public string Edit(AutoSegment seg, ColumnKey key, Func<List<AutoPoint>, List<AutoPoint>> change)
         {
             if (Check(seg) is { } why) return why;
-            var now = Current(seg.Clip, key);
-            var points = change(AutomationMath.PointsOf(now, true)).OrderBy(p => p.Time).ToList();
+            var now = own ? OwnCurrent(seg.Clip, key) : Current(seg.Clip, key);
+            var points = change(AutomationMath.PointsOf(now, true, own ? AutomationParams.Find(seg.Clip.Machine, key)?.Parameter.NoValue ?? int.MinValue : int.MinValue)).OrderBy(p => p.Time).ToList();
             Replace(seg.Clip, key, now, points);
             return null;
         }

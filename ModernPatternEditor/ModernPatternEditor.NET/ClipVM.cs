@@ -214,7 +214,7 @@ namespace WDE.ModernPatternEditor
             withData = new HashSet<IParameter>();
             if (clip == null) return;
             foreach (var c in Editor.MPEClipsDB.GetMPEClip(clip).MPEClipColumns)
-                if (c.Parameter != null && c.HasEvents) withData.Add(c.Parameter);
+                if (c.Parameter != null && (c.HasEvents || c.LaneOpen)) withData.Add(c.Parameter);        // T2: a column whose lane is open stays shown, empty or not
         }
 
         /// <summary>A set's parameters, in the order shown, without the empty automation the user hasn't asked for.</summary>

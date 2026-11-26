@@ -16,7 +16,6 @@ namespace BuzzGUI.Interfaces
         int PlayPosition { get; }                                       // position in ClipEvent.TimeBase units or int.MinValue if not playing
         bool IsPlayingSolo { get; set; }
 
-        int[] ClipEditorMachineMIDIEvents { get; set; }                   // data from pxp or pianoroll as midi events (CMachineInterfaceEx::ExportMidiEvents)
         IEnumerable<IClipEditorColumn> ClipEditorMachineEvents { get; }   // data from pxp or pianoroll as events
 
         void InsertColumn(int index, IParameter p, int track);          // ClipColumnType.Parameter

@@ -67,6 +67,8 @@ namespace ReBuzz.Studio.Views
         public ClipPage(StudioHost host)
         {
             core = host.Core;
+            // T2: the Tracker's envelope lanes are the studio's control (the editor finds them through BuzzGUI.Common, not by reference).
+            BuzzGUI.Common.ClipLaneHost.Provider = new Detail.TrackerLaneProvider(core);
             rollView = new Detail.TrackerRoll(core) { IsVisible = false };
             empty = new Shell.EmptyState(core);
             var bar = new WrapPanel { Orientation = Orientation.Horizontal, Background = StudioTokens.SurfacePanelBrush };      // wraps in a narrow window (decision 37)
@@ -252,7 +254,7 @@ namespace ReBuzz.Studio.Views
         public IEditContext EditContext => EditorControl?.GetType().GetProperty("EditContext")?.GetValue(EditorControl) as IEditContext;
 
         // Fork (daw-modes.md AR2): the roll on the song's notes edits the song's history, which the shell's Undo reaches when this says no.
-        bool SongHistory => rollMode && (rollView.IsSongLane || rollView.EnvelopesFocused);
+        bool SongHistory => (rollMode && (rollView.IsSongLane || rollView.EnvelopesFocused)) || Detail.TrackerLane.Focused != null;     // T2: a lane beside a tracker column edits the song's history too
 
         public bool CanUndo => !SongHistory && (EditContext?.ActionStack.CanUndo == true || (rollMode && rollView.CanUndoLoop));
         public bool CanRedo => !SongHistory && (EditContext?.ActionStack.CanRedo == true || (rollMode && rollView.CanRedoLoop));

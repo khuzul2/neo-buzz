@@ -89,9 +89,6 @@ namespace WDE.ModernPatternEditor
         [BuzzSetting(false)]
         public bool FollowPlayingClip { get; set; }
 
-        [BuzzSetting(false, Description = "Save data compatible to PatternXP. Some Modern Pattern Editor data might not be saved.")]
-        public bool PXPDataFormat { get; set; }
-
         [BuzzSetting(true, Description = "Send control changes immediately. Might not work well with older machines.")]
         public bool ForceControlChange { get; set; }
 

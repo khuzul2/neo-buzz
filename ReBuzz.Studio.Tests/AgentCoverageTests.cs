@@ -625,6 +625,12 @@ namespace ReBuzz.Studio.Tests
             var view = Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse")))["view"]!;
             Assert.That(view["rows_per_beat"]!.GetValue<int>(), Is.EqualTo(6));
             Assert.That(view["muted_lanes"]!.GetValue<int>(), Is.EqualTo(1));
+            Assert.That(view["open_lanes"]!.GetValue<int>(), Is.EqualTo(0), "no envelope strip open");
+            lane.Metadata[BuzzGUI.Common.ClipMeta.Lane] = "1";
+            var strips = Call("clip_get", Args(("machine", "Bass"), ("clip", "Verse")));
+            Assert.That(strips["view"]!["open_lanes"]!.GetValue<int>(), Is.EqualTo(1), "T2: the Tracker's envelope strips are part of the view");
+            Assert.That(strips["lanes"]!.AsArray().Count(l => l!["envelope_lane"]?.GetValue<bool>() == true), Is.EqualTo(1));
+            lane.Metadata.Remove(BuzzGUI.Common.ClipMeta.Lane);
 
             // Automation: a parameter written by the agent (marked lane) and the tracker's lane (unmarked) read as one entry.
             var param = SongModel.Params(bass).First(q => !q.IsTrack && q.Parameter.MaxValue - q.Parameter.MinValue > 20);

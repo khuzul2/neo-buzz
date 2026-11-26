@@ -157,7 +157,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | audio_slice_to_midi | 2 | 2 | yes |
 | audio_status | 5 | 1 | yes |
 | audio_warp_markers | 1 | 1 | yes |
-| automation_read | 1 | 1 | yes |
+| automation_read | 2 | 1 | yes |
 | automation_write | 9 | 7 | yes |
 | browser_places | 1 | 1 | yes |
 | browser_search | 1 | 1 | yes |
