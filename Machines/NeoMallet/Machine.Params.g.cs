@@ -16,7 +16,7 @@ namespace NeoBuzz.Mallet
         [ParameterDecl(Name = "Hardness", Description = "The mallet's contact time with the body, 12 ms (a soft felt head) down to 0.3 ms (a hard stick): a short contact excites the high modes, a long one only the low", MinValue = 0, MaxValue = 1000, DefValue = 486)]
         public int Hardness { get => Values[P.Hardness]; set => Values.Set(P.Hardness, value); }
 
-        [ParameterDecl(Name = "Position", Description = "Where along the body the mallet strikes: each mode is weighed by |sin(n pi x)| (bells, glass and plates by their own shape), so a mode at a node is nearly silent", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        [ParameterDecl(Name = "Position", Description = "Where along the body the mallet strikes: each mode n is weighed by the sine of n times pi times the position (bells, glass and plates by their own shape), so a mode at a node is nearly silent", MinValue = 0, MaxValue = 1000, DefValue = 300)]
         public int Position { get => Values[P.Position]; set => Values.Set(P.Position, value); }
 
         [ParameterDecl(Name = "Velocity to hardness", Description = "How much the note's velocity changes the contact time: at 100 % a hard hit (velocity 127) is about 8 times shorter, and a soft hit 8 times longer, than the Hardness setting", MinValue = 0, MaxValue = 1000, DefValue = 600)]
@@ -43,7 +43,7 @@ namespace NeoBuzz.Mallet
         [ParameterDecl(Name = "Stretch", Description = "Custom model: each mode is this many cents higher than a harmonic series would put it, per mode number step (0 is a harmonic series, positive bends it bell-like)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Stretch { get => Values[P.Stretch]; set => Values.Set(P.Stretch, value); }
 
-        [ParameterDecl(Name = "Inharmonicity", Description = "Stiff-string and Custom models: the inharmonicity B of a stiff string, f(n) = n f(1) sqrt(1 + B n^2), with B = 0.02 times the setting squared, so B = 0.02 at 100 %", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        [ParameterDecl(Name = "Inharmonicity", Description = "Stiff-string and Custom models: the inharmonicity B of a stiff string, mode n sits at n times the fundamental times the square root of one plus B times n squared, with B = 0.02 times the setting squared, so B = 0.02 at 100 %", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int Inharm { get => Values[P.Inharm]; set => Values.Set(P.Inharm, value); }
 
         [ParameterDecl(Name = "Tremolo rate", Description = "Rate of the tremolo, the level swing of a vibraphone's rotating fans", MinValue = 0, MaxValue = 1000, DefValue = 691)]

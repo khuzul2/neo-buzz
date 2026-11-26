@@ -26,6 +26,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
             // neo-organ.md: the tonewheel organ.
             ["Neo Organ"] = (NeoBuzz.Organ.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Organ.OrganEngine(v), (e, l, r, n) => ((NeoBuzz.Organ.OrganEngine)e).Process(l, r, n), x.Length)),
+            // neo-mallet.md: the modal synth; in its Resonator source the pink noise is what rings the held chord.
+            ["Neo Mallet"] = (NeoBuzz.Mallet.Params.Table, (v, x) => RenderMallet(v, x)),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
             ["Neo FM6"] = (NeoBuzz.Fm6.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Fm6.FmEngine(v), (e, l, r, n) => ((NeoBuzz.Fm6.FmEngine)e).Process(l, r, n), x.Length)),
@@ -131,7 +133,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -268,6 +270,29 @@ namespace NeoBuzz.MachineTests
                     for (int k = 0; k < chord.Length; k++) engine.NoteOff(k);
                 int n = Math.Min(256, length - pos);
                 process(engine, l, r, n);
+                for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
+            }
+            return y;
+        }
+
+        /// <summary>Neo Mallet: the chord held for two thirds of the take; its Resonator source rings the input (<paramref name="x"/>), its Mallet source ignores it.</summary>
+        static float[] RenderMallet(ParamValues v, float[] x)
+        {
+            var engine = new NeoBuzz.Mallet.MalletEngine(v);
+            engine.SetSampleRate((float)Measure.Rate);
+            bool resonator = v[NeoBuzz.Mallet.P.Source] == 1;
+            var y = new float[x.Length];
+            var l = new float[256];
+            var r = new float[256];
+            int[] chord = NotesOverride ?? new[] { 48, 52, 55, 59 };
+            for (int k = 0; k < chord.Length; k++) engine.NoteOn(k, chord[k], 0.8f);
+            for (int pos = 0; pos < x.Length; pos += 256)
+            {
+                if (pos <= x.Length * 2 / 3 && pos + 256 > x.Length * 2 / 3)
+                    for (int k = 0; k < chord.Length; k++) engine.NoteOff(k);
+                int n = Math.Min(256, x.Length - pos);
+                for (int i = 0; i < n; i++) { l[i] = r[i] = resonator ? x[pos + i] : 0f; }
+                engine.Process(l, r, n);
                 for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
             }
             return y;

@@ -89,7 +89,7 @@
    "default": 300,
    "kind": "percent",
    "unit": "%",
-   "description": "Where along the body the mallet strikes: each mode is weighed by |sin(n pi x)| (bells, glass and plates by their own shape), so a mode at a node is nearly silent",
+   "description": "Where along the body the mallet strikes: each mode n is weighed by the sine of n times pi times the position (bells, glass and plates by their own shape), so a mode at a node is nearly silent",
    "how": "Moves the strike across the body from one end (0 %) to the other (100 %); in Resonator mode it moves the point where the modes are heard.",
    "sound": "The centre brings out the fundamental and hides the second mode; towards the ends the overtones take over and the tone turns thin and nasal."
   },
@@ -191,7 +191,6 @@
    "default": 12,
    "kind": "int",
    "a": 4.0,
-   "unit": "modes",
    "description": "How many modes each note rings, 4 to 32 (modes above 0.45 of the sample rate are dropped)",
    "how": "Sets the number of modes in each note's body, from 4 to 32.",
    "sound": "Few modes sound plain and cheap to play; many modes sound rich and complex."
@@ -222,7 +221,7 @@
    "default": 0,
    "kind": "percent",
    "unit": "%",
-   "description": "Stiff-string and Custom models: the inharmonicity B of a stiff string, f(n) = n f(1) sqrt(1 + B n^2), with B = 0.02 times the setting squared, so B = 0.02 at 100 %",
+   "description": "Stiff-string and Custom models: the inharmonicity B of a stiff string, mode n sits at n times the fundamental times the square root of one plus B times n squared, with B = 0.02 times the setting squared, so B = 0.02 at 100 %",
    "how": "Sets the stiffness of the string, from 0 (a perfect harmonic series) to 100 % (B = 0.02, a stiff piano bass string and beyond).",
    "sound": "A little makes the string sound real and slightly bright; a lot makes it clang."
   },

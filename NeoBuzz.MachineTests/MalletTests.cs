@@ -693,7 +693,7 @@ namespace NeoBuzz.MachineTests
             foreach (var p in table) { Assert.That(p.Default, Is.InRange(p.Min, p.Max), p.Id); Assert.That(p.Id, Is.Not.Empty); }
         }
 
-        static IEnumerable<(string Name, Dictionary<int, int> Values)> FactoryPresets()
+        internal static IEnumerable<(string Name, Dictionary<int, int> Values)> FactoryPresets()
         {
             var d = new DirectoryInfo(AppContext.BaseDirectory);
             while (d != null && !File.Exists(Path.Combine(d.FullName, "ReBuzz.sln"))) d = d.Parent;

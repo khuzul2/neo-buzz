@@ -29,7 +29,7 @@ Bright = 30
 Release = 900
 Modes = 16
 Spread = 60
-Volume = -9
+Volume = -13.5
 
 preset "Bars — Tremolo Bars"
 comment "Metal bars with the motor on: a long, warm ring that swells and fades at 5 Hz, as on a vibraphone."
@@ -41,7 +41,7 @@ Tilt = 30
 Release = 700
 TremRate = 5.2
 TremDepth = 70
-Volume = -2
+Volume = -5.5
 
 preset "Chimes — Hollow Tube Chimes"
 comment "A set of hollow tubes struck once: a pure, open tone with the octave and the twelfth above it, ringing for eight seconds."
@@ -54,7 +54,7 @@ Tilt = 35
 Bright = 10
 Release = 1200
 Modes = 10
-Volume = -3
+Volume = -7
 
 preset "Bells — Church Bell"
 comment "A big bell: a deep hum an octave below the note, the minor-third shimmer on top and a fourteen-second tail."
@@ -96,7 +96,7 @@ Bright = -10
 Release = 800
 Modes = 16
 Spread = 55
-Volume = -3
+Volume = 0.5
 
 preset "Resonator — Resonated Drums"
 comment "Feed it a drum loop and hold a chord: every kick and snare rings the hollow tube modes of the notes you hold, so the loop plays tuned drums."
@@ -110,4 +110,4 @@ Release = 250
 Modes = 12
 InDrive = 6
 Mix = 60
-Volume = -2
+Volume = -4

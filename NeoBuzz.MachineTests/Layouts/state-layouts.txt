@@ -37,6 +37,7 @@ NeoBuzz.Limiter	0	16	1878c7fb362efe80
 NeoBuzz.LoFi	0	17	0f9d28bd388a2cb1
 NeoBuzz.LowEnd	0	15	46b80e42facde273
 NeoBuzz.MacroMachine	0	2	157abd3715f40da3
+NeoBuzz.Mallet	0	20	efb441675f29af14
 NeoBuzz.Multiband	0	55	f3a4ac1dc49b0b56
 NeoBuzz.NeoAudio	0	2	a006a7ceaeea24e4
 NeoBuzz.Patch	0	20	bec0a8b17ee091b5

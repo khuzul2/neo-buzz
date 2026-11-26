@@ -34,6 +34,7 @@ namespace ReBuzz.Studio.Tests
         static readonly (string Machine, string Editor, string Shot, int WpfWidth, int WpfHeight)[] Editors =
         {
             ("Neo Organ", "NeoOrganEditor", "neo-organ-editor", 982, 496),
+            ("Neo Mallet", "NeoMalletEditor", "neo-mallet-editor", 1100, 520),   // MAL1: the classic editor's size is set from the first CI run
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
