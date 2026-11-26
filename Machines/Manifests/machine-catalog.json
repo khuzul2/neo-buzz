@@ -663,6 +663,18 @@
    ],
    "use_for": "Lo-fi character, zero latency: bit and rate reduction, hiss, vinyl crackle, wow, flutter and drift, for 8-bit grit, cassette, dusty vinyl, radio and telephone sounds."
   },
+  "Neo Mallet": {
+   "category": "Synths",
+   "tags": [
+    "physical-model",
+    "percussion",
+    "pluck",
+    "bright",
+    "polyphonic"
+   ],
+   "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks, glass and struck plates; a playable instrument with no audio input.",
+   "note_in": true
+  },
   "Neo Arp": {
    "category": "Control",
    "tags": [

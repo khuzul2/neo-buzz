@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Bars — Soft Wooden Bars">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="334" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="280" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="556" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="750" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="450" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="556" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="8" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="400" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="828" />
+      </Parameters>
+      <Attributes />
+      <Comment>A soft marimba-like bar struck near its centre with a felt head: a round, woody thud with a short ring, the high modes gone in a few tenths of a second.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bars — Bright Metal Bars">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="862" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="825" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="250" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="650" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="867" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="12" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="600" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="665" />
+      </Parameters>
+      <Attributes />
+      <Comment>Untuned bars of ringing metal struck with a hard stick: a bright, glassy chime with every overtone alive and a long shimmering tail.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bars — Tremolo Bars">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="486" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="330" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="867" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="300" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="825" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="12" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="737" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="700" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="400" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="778" />
+      </Parameters>
+      <Attributes />
+      <Comment>Metal bars with the motor on: a long, warm ring that swells and fades at 5 Hz, as on a vibraphone.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chimes — Hollow Tube Chimes">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="4" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="624" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="220" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="80" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="847" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="350" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="550" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="915" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="400" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="753" />
+      </Parameters>
+      <Attributes />
+      <Comment>A set of hollow tubes struck once: a pure, open tone with the octave and the twelfth above it, ringing for eight seconds.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bells — Church Bell">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="5" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="770" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="940" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="150" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="952" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="10" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="300" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="786" />
+      </Parameters>
+      <Attributes />
+      <Comment>A big bell: a deep hum an octave below the note, the minor-third shimmer on top and a fourteen-second tail.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plucked — Thumb Tines">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="376" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="200" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="400" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="694" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="550" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="683" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="700" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="839" />
+      </Parameters>
+      <Attributes />
+      <Comment>Thin steel tines plucked with a thumb, like a music box: a sweet, short ping that darkens quickly.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Glass — Glass Harmonics">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="8" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="146" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="120" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="30" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="799" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="250" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="450" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="847" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="12" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="550" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="885" />
+      </Parameters>
+      <Attributes />
+      <Comment>Wine glasses touched with a soft finger: a slow, beating, ethereal ring with the two halves of every mode drifting against each other.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plates — Struck Steel Plate">
+    <Preset Machine="Neo Mallet">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="9" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="564" />
+        <Parameter Name="Position" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Velocity to hardness" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Mallet noise" Group="1" Index="4" Track="0" Value="300" />
+        <Parameter Name="Decay" Group="1" Index="5" Track="0" Value="769" />
+        <Parameter Name="Damping tilt" Group="1" Index="6" Track="0" Value="200" />
+        <Parameter Name="Brightness" Group="1" Index="7" Track="0" Value="600" />
+        <Parameter Name="Release damping" Group="1" Index="8" Track="0" Value="799" />
+        <Parameter Name="Modes" Group="1" Index="9" Track="0" Value="20" />
+        <Parameter Name="Stretch" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Inharmonicity" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tremolo rate" Group="1" Index="12" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Stereo spread" Group="1" Index="14" Track="0" Value="650" />
+        <Parameter Name="Volume" Group="1" Index="15" Track="0" Value="735" />
+      </Parameters>
+      <Attributes />
+      <Comment>A big steel plate hit hard with a mallet: a crashing, clangorous burst of inharmonic overtones that rumbles on for five seconds like a stage thunder sheet.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

@@ -2333,6 +2333,22 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "654-neo-arp-editor", "Neo Arp: Pattern (Steps) and Rate on top, the 16-step row with ties (slim bars), accents (bright with a mark), offs (empty) and a transpose bar under each step, then Gate, Swing, Velocity (Accent) and Hold (Latch on).", "Add Neo Arp, set the Steps pattern and a step row, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                // MAL1: Neo Mallet with the Church Bell preset's values set before the editor opens: the Bell model's mode drawing, the exciter, decay and damping.
+                Try("660-neo-mallet-editor", () =>
+                {
+                    var m = Add("Neo Mallet", "Mallet");
+                    string[] names = { "Model", "Hardness", "Position", "Velocity to hardness", "Mallet noise", "Decay", "Damping tilt", "Brightness", "Release damping", "Modes", "Stretch", "Inharmonicity", "Tremolo rate", "Tremolo depth", "Stereo spread", "Volume" };
+                    int[] raws = { 5, 770, 700, 600, 150, 940, 150, 500, 952, 10, 500, 0, 691, 0, 300, 786 };
+                    var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                    for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "660-neo-mallet-editor", "Neo Mallet with the Church Bell preset: the Bell model picker and its mode drawing (a line per mode on a log axis, height = gain at the strike position), then Exciter, Decay and damping, Tremolo and Output.", "Add Neo Mallet, load Church Bell, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {
