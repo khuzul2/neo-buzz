@@ -12,6 +12,7 @@
   "lush"
  ],
  "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times.",
+ "note_in": true,
  "tracks": 1,
  "track_parameters": [
   "Note",
@@ -179,7 +180,7 @@
    "a": 0.0,
    "description": "The seed of the shuffles: the same seed always gives the same sequence",
    "how": "Picks which sequence of shuffles is used.",
-   "sound": "Different seeds give different glitch patterns; the same seed repeats exactly."
+   "sound": "Different seeds give different glitch textures; the same seed repeats exactly."
   },
   {
    "index": 10,

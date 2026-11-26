@@ -290,7 +290,7 @@ namespace NeoBuzz.Prism
             // A full-scale sine on a bin reads 0.3183·N through the √Hann window (the mean of the two channels' magnitudes).
             float scale = 0.5f / (0.3183f * N);
             for (int i = 0; i < into.Length; i++)
-                into[i] = into[i] > 1e-12f ? 20f * MathF.Log10(into[i] * scale) : -140f;
+                into[i] = into[i] > 1e-12f ? 20f * PortableMathF.Log10(into[i] * scale) : -140f;
         }
 
         void RunChannel(Chan c, float[] re, float[] im, bool capture)

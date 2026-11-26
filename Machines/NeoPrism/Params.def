@@ -36,7 +36,7 @@ ScrRate         "Scramble rate"      0 1000 565  exp 0.1 20 Hz 2                
     sound Slow rates give a stable scatter, fast rates a fizzing texture.
 ScrSeed         "Scramble seed"      0 99 1      int 0                                        | The seed of the shuffles: the same seed always gives the same sequence
     how Picks which sequence of shuffles is used.
-    sound Different seeds give different glitch patterns; the same seed repeats exactly.
+    sound Different seeds give different glitch textures; the same seed repeats exactly.
 group Freeze
 FreezeOn        "Freeze"             0 1 0       switch                                       | Holds the current spectrum (when the trigger is Switch)
     how Holds the spectrum as it is now, each partial running on at its own frequency.

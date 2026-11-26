@@ -696,7 +696,8 @@
     "pad",
     "lush"
    ],
-   "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times."
+   "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times.",
+   "note_in": true
   },
   "Neo Chop": {
    "category": "Modulation",
