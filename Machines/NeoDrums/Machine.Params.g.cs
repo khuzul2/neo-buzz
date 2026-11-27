@@ -10,7 +10,7 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 720, DefValue = 600)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "Accent gain", Description = "How much louder an accented hit plays (a hit on a row with Accent): a TR-909's accent", MinValue = 0, MaxValue = 120, DefValue = 60)]
+        [ParameterDecl(Name = "Accent gain", Description = "How much louder an accented hit plays (a hit on a row with Accent): a classic analog kit's accent", MinValue = 0, MaxValue = 120, DefValue = 60)]
         public int Accent { get => Values[P.Accent]; set => Values.Set(P.Accent, value); }
 
         [ParameterDecl(Name = "Vel → level", Description = "How much velocity sets a hit's level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every hit at full level)", MinValue = 0, MaxValue = 1000, DefValue = 700)]
@@ -34,7 +34,7 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Kick click", Description = "Level of the attack's click (a short burst of high-passed noise)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int KickClick { get => Values[P.KickClick]; set => Values.Set(P.KickClick, value); }
 
-        [ParameterDecl(Name = "Kick punch", Description = "How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "Kick punch", Description = "How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a classic analog kit's attack", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int KickPunch { get => Values[P.KickPunch]; set => Values.Set(P.KickPunch, value); }
 
         [ParameterDecl(Name = "Kick drive", Description = "Saturation of the body, its level kept", MinValue = 0, MaxValue = 240, DefValue = 30)]
@@ -91,7 +91,7 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Rim pan", Description = "Where the rim shot sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int RimPan { get => Values[P.RimPan]; set => Values.Set(P.RimPan, value); }
 
-        [ParameterDecl(Name = "Closed hat tune", Description = "Pitch of the six metallic oscillators, in semitones from the TR-808's", MinValue = 0, MaxValue = 240, DefValue = 120)]
+        [ParameterDecl(Name = "Closed hat tune", Description = "Pitch of the six metallic oscillators, in semitones from a classic analog kit's", MinValue = 0, MaxValue = 240, DefValue = 120)]
         public int ChTune { get => Values[P.ChTune]; set => Values.Set(P.ChTune, value); }
 
         [ParameterDecl(Name = "Closed hat tone", Description = "Centre of the band the hats ring in (more above it, a little across the mids): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 636)]
@@ -106,7 +106,7 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Closed hat pan", Description = "Where the closed hat sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int ChPan { get => Values[P.ChPan]; set => Values.Set(P.ChPan, value); }
 
-        [ParameterDecl(Name = "Open hat tune", Description = "Pitch of the six metallic oscillators, in semitones from the TR-808's", MinValue = 0, MaxValue = 240, DefValue = 120)]
+        [ParameterDecl(Name = "Open hat tune", Description = "Pitch of the six metallic oscillators, in semitones from a classic analog kit's", MinValue = 0, MaxValue = 240, DefValue = 120)]
         public int OhTune { get => Values[P.OhTune]; set => Values.Set(P.OhTune, value); }
 
         [ParameterDecl(Name = "Open hat tone", Description = "Centre of the band the hats ring in (more above it, a little across the mids): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 636)]
@@ -214,7 +214,7 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Velocity", IsStateless = true, MinValue = 1, MaxValue = 127, Description = "Velocity of the note on the same row (100 when empty)")]
         public void SetVelocity(int value, int track) => Notes.SetVelocity(track, value);
 
-        [ParameterDecl(Name = "Accent", IsStateless = true, Description = "Accents every hit of this tick (notes and hit columns, on any track): louder by Accent gain, and brighter as Vel → tone says, as a TR-909's accent step does")]
+        [ParameterDecl(Name = "Accent", IsStateless = true, Description = "Accents every hit of this tick (notes and hit columns, on any track): louder by Accent gain, and brighter as Vel → tone says, as a classic analog kit's accent step does")]
         public void SetAccent(bool value, int track) => OnTrackParameter(TP.Accent, track, value ? 1 : 0);
 
         [ParameterDecl(Name = "BD", IsStateless = true, MinValue = 1, MaxValue = 127, Description = "Hits the kick at this velocity (1–127)")]

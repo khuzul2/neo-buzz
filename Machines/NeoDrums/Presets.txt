@@ -3,11 +3,11 @@
 # Every kit plays the same keys (General MIDI from C2) and hit columns; the hats' choke is built in.
 machine "Neo Drums"
 
-preset "909 — Classic"
-# The defaults: voiced against the Rout 909's samples at its defaults.
+preset "Classic — Punchy Kit"
+# The defaults: voiced against a reference set of drum samples at its defaults.
 Volume = 0
 
-preset "909 — Techno"
+preset "Techno — Driving Kit"
 Volume = -2
 Accent gain = 8
 Kick tune = 50
@@ -30,8 +30,8 @@ Open hat level = -3
 Ride tone = 6500
 Ride decay = 2.4
 
-preset "808 — Classic"
-# A TR-808's manner: the long, nearly pure kick, the two-tone snare (238 and 476 Hz), the 540 and 800 Hz cowbell.
+preset "Boom — Long Kick"
+# A a classic analog kit's manner: the long, nearly pure kick, the two-tone snare (238 and 476 Hz), the 540 and 800 Hz cowbell.
 Kick tune = 49
 Kick sweep = 7
 Kick sweep time = 0.035
@@ -66,7 +66,7 @@ Cowbell decay = 0.3
 Crash tone = 8000
 Crash decay = 1.6
 
-preset "808 — Electro Boom"
+preset "Boom — Electro Sub"
 Volume = -3
 Vel → level = 50
 Kick tune = 42

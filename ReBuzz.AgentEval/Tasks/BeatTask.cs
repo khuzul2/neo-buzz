@@ -67,7 +67,7 @@ namespace ReBuzz.AgentEval
             var status = s.Status();
             f["tempo_bpm"] = J.Num(status["tempo_bpm"]);
             var g = s.Graph();
-            // The parts by name ("Kick", or anything containing it: "Kick 909").
+            // The parts by name ("Kick", or anything containing it: "Kick Long").
             var names = Parts.ToDictionary(p => p, p => g.Machines.FirstOrDefault(m => m.IsGenerator && m.Name.Contains(p == "Hats" ? "Hat" : p, StringComparison.OrdinalIgnoreCase))?.Name);
             if (names["Clap"] == null) names["Clap"] = g.Machines.FirstOrDefault(m => m.IsGenerator && m.Name.Contains("Snare", StringComparison.OrdinalIgnoreCase))?.Name;
             var found = names.Values.Where(n => n != null).ToList();

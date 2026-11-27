@@ -19,7 +19,7 @@ namespace NeoBuzz.Sampler
         /// <summary>Names, in Wave order from 201 (permanent).</summary>
         public static readonly string[] Names =
         {
-            "Kick", "Kick 808", "Snare", "Clap", "Rim", "Closed hat", "Open hat", "Low tom", "Mid tom", "High tom",
+            "Kick", "Kick long", "Snare", "Clap", "Rim", "Closed hat", "Open hat", "Low tom", "Mid tom", "High tom",
             "Crash", "Ride", "Cowbell", "Shaker", "Clave",
             "Sine", "Saw", "Square", "E-piano soft", "E-piano hard", "Strings", "Bass", "Bell", "Pluck", "Vox", "Noise",
         };
@@ -209,7 +209,7 @@ namespace NeoBuzz.Sampler
             return Fade(x, 0.01);
         }
 
-        // The 808's six square waves: a metallic cluster for hats and cymbals.
+        // Six square waves: a metallic cluster for hats and cymbals.
         static readonly double[] MetalHz = { 205.3, 304.4, 369.6, 522.7, 540.0, 800.0 };
 
         static float[] MetalRaw(int n, double[] hz, uint seed)

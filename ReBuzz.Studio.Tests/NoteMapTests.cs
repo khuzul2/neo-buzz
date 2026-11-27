@@ -46,7 +46,7 @@ namespace ReBuzz.Studio.Tests
             return roll.Map.Version != was;
         }
 
-        // The built-in samples, by their wave numbers (201 on): Kick, Kick 808, Snare, Clap, Rim, Closed hat, Open hat, …
+        // The built-in samples, by their wave numbers (201 on): Kick, Kick long, Snare, Clap, Rim, Closed hat, Open hat, …
         const int Kick = 201, Kick808 = 202, Snare = 203, Clap = 204, Rim = 205, ClosedHat = 206, OpenHat = 207;
 
         // ------------------------------------------------------------------ the model
@@ -213,7 +213,7 @@ namespace ReBuzz.Studio.Tests
             Set(sampler, "Z2 wave", Kick808);
             Assert.That(Follow(roll), Is.True, "the roll took the new map");
             Assert.That(roll.Map.Version, Is.GreaterThan(version));
-            Assert.That(roll.Map.NameOf(37), Is.EqualTo("Kick 808"));
+            Assert.That(roll.Map.NameOf(37), Is.EqualTo("Kick long"));
             Assert.That(roll.Rows, Is.EqualTo(new[] { 41, 40, 39, 38, 37, 36 }));
             Assert.That(Follow(roll), Is.False, "nothing changed since");
 

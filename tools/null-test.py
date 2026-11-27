@@ -490,7 +490,7 @@ CASES = [
     gen("sampler-kit-electro", "Neo Sampler", "Kit — Electro (GM Layout)", [],
         [n(p, i * 0.25, 0.2, 60 + (i * 13) % 67) for i, p in enumerate(["C2", "F#2", "D2", "F#2", "C2", "A#2", "D2", "F#2",
                                                                           "C2", "F#2", "D#2", "A#2", "C2", "C#3", "A2", "D#3"])]),
-    gen("sampler-kit-808-short", "Neo Sampler", "Kit — 808 Style (Long Kick, Cowbell)", [("Amp decay", "300 ms"), ("Amp sustain", "0%")],
+    gen("sampler-kit-long-kick-short", "Neo Sampler", "Kit — Long Kick (Cowbell)", [("Amp decay", "300 ms"), ("Amp sustain", "0%")],
         [n(p, i * 0.5, 0.25, 110) for i, p in enumerate(["C2", "D2", "G#2", "F#2", "C2", "A#2", "C#3", "D#3"])]),
     gen("sampler-song-waves", "Neo Sampler", None,
         [("Z1 key high", "B3"), ("Z1 loop", "Forward"), ("Z1 loop start", "20%"), ("Z1 loop end", "63.3%"), ("Z1 crossfade", "30 ms"),
@@ -513,17 +513,17 @@ CASES = [
     # Neo Drums: every voice from its General MIDI key at varied velocities (the closed hat choking the open one, the
     # crash and ride ringing out), the hit columns and Accent written as played parameters, rolls retriggering each
     # voice, and the voices' settings automated (a hit takes its tune, decay and tone as it starts; levels glide).
-    gen("drums-909-groove", "Neo Drums", "909 — Classic", [],
+    gen("drums-classic-groove", "Neo Drums", "Classic — Punchy Kit", [],
         [n(p, i * 0.25, 0.2, 50 + (i * 23) % 78) for i, p in enumerate(["C2", "F#2", "D2", "F#2", "C2", "A#2", "D#2", "F#2",
                                                                           "C2", "C#2", "D2", "A#2", "G2", "B2", "D3", "G#3"])]
         + [n("C#3", 0, 0.5, 110), n("D#3", 2, 0.5, 90), n("F#2", 1.375, 0.1, 70)], tail=2.0),
-    gen("drums-808-columns", "Neo Drums", "808 — Classic", [("Volume", "-6 dB"), ("Kick drive", "12 dB"), ("Kick pan", -30), ("Closed hat pan", 40)],
+    gen("drums-boom-columns", "Neo Drums", "Boom — Long Kick", [("Volume", "-6 dB"), ("Kick drive", "12 dB"), ("Kick pan", -30), ("Closed hat pan", 40)],
         [n("C2", 3, 0.25, 127)],
         auto=[("BD", 0, [(0, 127), (1, 100), (2, 127), (2.75, 60)]), ("SD", 0, [(1, 110), (3, 120)]),
               ("CH", 1, [(b * 0.5, 60 + (b * 29) % 67) for b in range(8)]), ("OH", 1, [(1.75, 90)]),
               ("CB", 2, [(0.75, 100), (2.25, 80)]), ("LT", 2, [(3.25, 120)]), ("MT", 2, [(3.5, 110)]), ("HT", 2, [(3.75, 100)]),
               ("CP", 3, [(1, 90), (3, 127)]), ("RS", 3, [(0.5, 100)]), ("Accent", 3, [(1, 1), (3, 1)])]),
-    gen("drums-techno-rolls", "Neo Drums", "909 — Techno", [("Accent gain", "12 dB")],
+    gen("drums-techno-rolls", "Neo Drums", "Techno — Driving Kit", [("Accent gain", "12 dB")],
         [n("C2", i * 0.125, 0.1, 40 + i * 5) for i in range(16)] + [n("D2", 2 + i * 0.0625, 0.05, 60 + i * 4) for i in range(16)]
         + [n("F#2", i * 0.25, 0.1, 100) for i in range(16)] + [n("A#2", 0.5, 0.25, 110), n("C#3", 3, 0.5, 127)],
         auto=[("Kick tune", None, [(0, "45 Hz"), (1, "60 Hz"), (1.5, "38 Hz")]), ("Kick decay", None, [(0, "0.3 s"), (1, "1.5 s")]),

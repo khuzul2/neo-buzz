@@ -45,7 +45,7 @@ namespace NeoBuzz.MachineTests
         /// <summary>Neo Drums: four bars at 112 BPM, kick, snare, closed and open hat.</summary>
         static (float[], float[]) Drums()
         {
-            var v = PresetValues(NeoBuzz.Drums.Params.Table, "Neo Drums", "909 — Classic");
+            var v = PresetValues(NeoBuzz.Drums.Params.Table, "Neo Drums", "Classic — Punchy Kit");
             var e = new NeoBuzz.Drums.DrumsEngine(v);
             e.SetSampleRate(Rate);
             int step = (int)(Rate * 60.0 / 112 / 4);
@@ -286,7 +286,7 @@ namespace NeoBuzz.MachineTests
             readme.AppendLine();
             readme.AppendLine("## Sources (all made by our own Neo machines, the dry files are `00-dry__*.wav`)");
             readme.AppendLine();
-            readme.AppendLine("- `drums`: Neo Drums, preset \"909 — Classic\", a four-bar loop at 112 BPM (kick, snare, closed and open hat).");
+            readme.AppendLine("- `drums`: Neo Drums, preset \"Classic — Punchy Kit\", a four-bar loop at 112 BPM (kick, snare, closed and open hat).");
             readme.AppendLine("- `chords`: Neo Poly, preset \"Pad — Warm Strings\", Am - F - C - G, four notes each, 2.2 s a chord.");
             readme.AppendLine("- `keys`: Neo Sampler, preset \"Keys — Electric Piano (Two Velocity Layers)\", chords and a melody, 9.5 s.");
             readme.AppendLine();

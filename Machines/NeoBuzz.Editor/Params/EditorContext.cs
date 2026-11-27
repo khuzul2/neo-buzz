@@ -152,6 +152,19 @@ namespace NeoBuzz.Editor
             bindings.Clear();
         }
 
+        /// <summary>
+        /// Shows every bound control the value its parameter has now, where a change from outside (an agent's, a MIDI map's,
+        /// automation's, a modulator's, an undo) has not been shown yet: a parameter tells its listeners in the engine's next tick, and
+        /// with the engine stopped or between ticks that is later than the person looks. The editor calls this every UI tick
+        /// (NeoEditor); a change the parameter's events then bring is not shown twice. Returns whether any control changed.
+        /// </summary>
+        public bool PollOutside()
+        {
+            bool any = false;
+            for (int i = 0; i < bindings.Count; i++) any |= bindings[i].Poll();
+            return any;
+        }
+
         /// <summary>Called when any bound parameter changes (graphs redraw).</summary>
         public event Action Changed;
 
@@ -168,6 +181,8 @@ namespace NeoBuzz.Editor
         readonly Action<IParameter, int> handler;
         readonly EditorContext owner;
         readonly int index;
+        int shown;              // the raw value the control was last given
+        bool polled;            // the poll gave it; the parameter's event for that value has not come yet
 
         public ParamBinding(IParameter parameter, ParamDef def, Action<int> onValue, EditorContext owner = null, int index = -1, int track = 0)
         {
@@ -177,9 +192,19 @@ namespace NeoBuzz.Editor
             this.onValue = onValue;
             this.owner = owner;
             this.index = index;
+            shown = Value;
             handler = (p, t) =>
             {
-                onValue(Value);
+                int now = Value;
+                // The poll showed this value already (and said who wrote it): the event that follows is not a second change.
+                if (polled && now == shown)
+                {
+                    polled = false;
+                    return;
+                }
+                polled = false;
+                shown = now;
+                onValue(now);
                 if (index >= 0) owner?.ValueArrived(index, Parameter, Track);
             };
             Parameter?.SubscribeEvents(track, handler, null);
@@ -212,7 +237,22 @@ namespace NeoBuzz.Editor
             if (index >= 0) owner?.Edits?.Touch(index);
             if (index >= 0) owner?.NoteManual(index);
             Parameter.SetValue(Track, raw);
+            shown = raw;
+            polled = false;
             onValue(raw);
+        }
+
+        /// <summary>Gives the control the parameter's value when it is not the one it has (a change from outside, seen before its event).</summary>
+        internal bool Poll()
+        {
+            if (Parameter == null) return false;
+            int now = Value;
+            if (now == shown) return false;
+            shown = now;
+            polled = true;
+            onValue(now);
+            if (index >= 0) owner?.ValueArrived(index, Parameter, Track);
+            return true;
         }
 
         public void Detach() => Parameter?.UnsubscribeEvents(Track, handler, null);

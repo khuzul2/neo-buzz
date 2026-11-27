@@ -64,11 +64,11 @@ namespace NeoBuzz.Drums
         public static readonly string[] Names = { "Kick", "Snare", "Clap", "Rim", "Closed hat", "Open hat", "Low tom", "Mid tom", "High tom", "Cowbell", "Crash", "Ride" };
         /// <summary>Their hit columns' names, as Buzz drum machines name them.</summary>
         public static readonly string[] Short = { "BD", "SD", "CP", "RS", "CH", "OH", "LT", "MT", "HT", "CB", "CC", "RC" };
-        /// <summary>Each voice's key (General MIDI from C2, as Neo Sampler's Kit mode; the toms as a TR-909's and TR-8's).</summary>
+        /// <summary>Each voice's key (General MIDI from C2, as Neo Sampler's Kit mode; the toms as a classic analog kit's).</summary>
         public static readonly int[] Keys = { 36, 38, 39, 37, 42, 46, 43, 47, 50, 56, 49, 51 };
 
         /// <summary>
-        /// The voice a MIDI note plays (−1: none): General MIDI's drum keys from B1, with the TR-909's pairs (B1 and C2 the
+        /// The voice a MIDI note plays (−1: none): General MIDI's drum keys from B1, with a classic analog kit's pairs (B1 and C2 the
         /// kick, D2 and E2 the snare, F2 and G2 the low tom, A2 and B2 the mid tom, C3 and D3 the high tom, F#2 and G#2 the
         /// closed hat), C#3 and A3 the crash, D#3 and B3 the ride, G#3 the cowbell.
         /// </summary>
@@ -113,7 +113,7 @@ namespace NeoBuzz.Drums
 
         /// <summary>
         /// Each voice's own scale: a hit at velocity 127, its level at 0 dB and the voice at its defaults, peaks about 7.5 dB
-        /// under the Rout 909's sample of it (kick −8 dBFS, snare −10, closed hat −9), so a kick, snare and hat together, or an
+        /// under the reference sample of it (kick −8 dBFS, snare −10, closed hat −9), so a kick, snare and hat together, or an
         /// accented hit, keep their headroom (machines.md, Neo Drums: Levels).
         /// </summary>
         internal static readonly float[] Scale = { 0.154f, 0.277f, 0.585f, 0.109f, 0.430f, 0.305f, 0.273f, 0.273f, 0.255f, 0.339f, 0.265f, 0.478f };

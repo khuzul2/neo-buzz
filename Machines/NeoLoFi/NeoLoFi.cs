@@ -18,6 +18,13 @@ namespace NeoBuzz.LoFi
         int rate;
         int quietBlocks;
 
+        static NeoLoFiMachine()
+        {
+            // The top of Rate's range does not reduce the rate whatever the host's: the knob says so (Rate = Off, as Bits at 24 is off).
+            var rate = Params.Table[P.Rate];
+            rate.Describer = raw => raw >= rate.Max ? "Off" : NeoBuzz.Dsp.ParamDef.Freq(rate.Value(raw));
+        }
+
         public NeoLoFiMachine(IBuzzMachineHost host) : base(host, Params.Table)
         {
             Engine = new LoFiEngine(Values);
