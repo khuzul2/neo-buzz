@@ -540,12 +540,20 @@ namespace ReBuzz.Core
             return list;
         }
 
+        /// <summary>A map's target is the control's: the same, or (a mixer control of a strip in the bank) the same control of "bank track n".</summary>
+        bool SameTarget(MapTarget mapped, MapTarget control)
+        {
+            if (mapped.Equals(control)) return true;
+            return mapped.IsMixer && control.IsMixer && mapped.Bank > 0 && control.Bank == 0 && mapped.Mix == control.Mix && mapped.Send == control.Send
+                && BankTrack(mapped.Bank)?.Id == control.Strip;
+        }
+
         /// <summary>The badge a control with this target shows, in its short form that fits a small control: "K3" (a slot), "CC74", "N36"; null when nothing maps to it.</summary>
         public string BadgeOf(MapTarget target)
         {
             if (target == null) return null;
             foreach (var i in Active())
-                if (i.Target != null && i.Target.Equals(target))
+                if (i.Target != null && SameTarget(i.Target, target))
                     return i.Slot >= 0 ? i.Short : i.Source.Compact;
             return null;
         }
@@ -555,13 +563,13 @@ namespace ReBuzz.Core
         {
             if (target == null) return null;
             foreach (var i in Active())
-                if (i.Target != null && i.Target.Equals(target))
+                if (i.Target != null && SameTarget(i.Target, target))
                     return i.Slot >= 0 ? i.Short + ": knob " + (i.Slot + 1) + " of " + (SelectedTrack?.Name ?? "the track") + "'s page" : i.Source.Short();
             return null;
         }
 
         /// <summary>The mapping a target has in force (to edit its range), or null.</summary>
-        public MapInfo InfoOf(MapTarget target) => target == null ? null : Active().FirstOrDefault(i => i.Target != null && i.Target.Equals(target));
+        public MapInfo InfoOf(MapTarget target) => target == null ? null : Active().FirstOrDefault(i => i.Target != null && SameTarget(i.Target, target));
 
         /// <summary>The page the selected track shows: each knob's slot (null: free), with the generator's pin as a fallback (marked).</summary>
         public IReadOnlyList<MapInfo> PageSlots(int count, string trackId = null)

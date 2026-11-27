@@ -165,8 +165,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(st.Layer.Spots.First(s => s.Target.Equals(fader)).Badge, Is.EqualTo("CC3"), "a mapped fader wears its badge");
 
             // The bank: map a fader onto "track 1 of the bank" and the Mixer outlines the bank's strips.
-            Assert.That(Mapping.MapControl(new MapSource("Faders", MapKind.ControlChange, 0, 4), KnobEncoding.Absolute, MapTarget.Mixer(MixerControl.Volume, "", 1), MapScope.Global).Ok, Is.True);
+            Assert.That(Mapping.MapControl(new MapSource("Faders", MapKind.ControlChange, 0, 4), KnobEncoding.Absolute, MapTarget.Mixer(MixerControl.Pan, "", 1), MapScope.Global).Ok, Is.True);
             Settle();
+            Assert.That(Mapping.BadgeOf(MapTarget.Mixer(MixerControl.Pan, "track:" + Mapping.BankTrack(1).Name)), Is.EqualTo("CC4"), "the bank's first strip wears the badge of the bank track 1 pan map");
             var strips = st.Window.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Mixer.MixerStripView>().ToList();
             Assert.That(strips.Any(x => x.IsInBank), Is.True, "the strips of the bank are outlined");
             Mapping.SetBank(0, 0);
