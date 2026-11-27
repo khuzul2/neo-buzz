@@ -57,6 +57,7 @@ NeoBuzz.Strip	0	38	bd2c4b3527061794
 NeoBuzz.Tape	0	15	c5adae7711a8f902
 NeoBuzz.Transient	0	17	03b3ae017f04a5a7
 NeoBuzz.Tune	0	20	cbee2b088009522f
+NeoBuzz.TutorialTremolo	0	6	ae4ecf4a09593708
 NeoBuzz.Utility	0	11	3eb4171cc6e8a4c2
 NeoBuzz.Verb	0	17	ee4d7f51739f6a7b
 NeoBuzz.VoiceToMidi	0	91	9871503cf4670345

@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Swell — Slow Breath">
+    <Preset Machine="Tutorial Tremolo">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="304" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="750" />
+        <Parameter Name="Shape" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Phase" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A slow, deep swell: the level falls to a quarter and comes back every two seconds.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Amp — Classic Wobble">
+    <Preset Machine="Tutorial Tremolo">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="756" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="700" />
+        <Parameter Name="Shape" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Phase" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A steady 5.5 Hz sine pulse, the sound of an old guitar amplifier.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pulse — Triangle Chop">
+    <Preset Machine="Tutorial Tremolo">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="849" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="1000" />
+        <Parameter Name="Shape" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Phase" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A fast, sharp triangle pulse at 9 Hz that goes all the way to silence.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Wide — Slow Pan">
+    <Preset Machine="Tutorial Tremolo">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="392" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="1000" />
+        <Parameter Name="Shape" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Phase" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>The two channels move in opposite directions, so the sound drifts from side to side.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

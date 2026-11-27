@@ -2,6 +2,10 @@
 
 NeoBuzz Live is a fork of [ReBuzz](https://github.com/wasteddesign/ReBuzz) (MIT, by WDE and the ReBuzz contributors). The app is NeoBuzz Live wherever it shows: its windows, menus and dialogs, the Mac app `NeoBuzz Live.app` and its disk image, the Windows `NeoBuzzLive.exe` and its zip, the MCP server `neobuzz-live`. The code keeps ReBuzz's names (`ReBuzz.sln`, the `ReBuzz.*` projects, namespaces and assemblies), its file formats, the machine names songs save ("ReBuzz Audio In"…) and its settings folders, so old songs, settings and machines carry over. New songs save in the fork's own format, `.nbl` ([`docs/specs/native-format.md`](docs/specs/native-format.md)); `.bmx`, `.bmw` and `.bmxml` are read forever. It adds:
 
+## Writing a Neo machine
+
+The SDK documentation is in [`docs/sdk/README.md`](docs/sdk/README.md): a tutorial that builds a small effect step by step, then pages on `Params.def`, the editor kit, notes, versioned state, the audio thread, plug-in export and the rules. Its tutorial machine is real, tested code (`NeoBuzz.MachineTests/Sdk/TutorialTremolo/`).
+
 ## Design principles
 
 Decided 2026-11-23 by the project owner. They rank above compatibility with ReBuzz. Detail: [`docs/specs/clips.md`](docs/specs/clips.md).

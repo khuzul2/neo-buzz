@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Tutorial Tremolo, studio flavour (docs/sdk/tutorial.md): the project a real machine has in Machines/Studio/<Name>/. It is not part of any
+    solution and not built by CI: it is here so a person can check that the machine class and the editor, which the test project cannot compile
+    (they need the Buzz and editor kits), still build:
+        dotnet build NeoBuzz.MachineTests/Sdk/TutorialTremolo/TutorialTremolo.Studio.csproj -p:GearDir=/tmp/tremolo-gear
+  -->
+  <PropertyGroup>
+    <NeoFolder>..\NeoBuzz.MachineTests\Sdk\TutorialTremolo</NeoFolder>
+    <NeoName>Tutorial Tremolo</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../../../Machines/Studio/NeoStudio.targets" />
+</Project>

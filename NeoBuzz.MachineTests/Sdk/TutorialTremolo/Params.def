@@ -1,0 +1,30 @@
+# Tutorial Tremolo parameters (docs/sdk/tutorial.md). The order changes only with a version (docs/sdk/state.md): songs and
+# presets store values by position. Regenerate: python3 NeoBuzz.MachineTests/Sdk/TutorialTremolo/regenerate.py
+# snippet ParamsHeader
+namespace NeoBuzz.TutorialTremolo
+class TutorialTremoloMachine
+summary A tremolo for the SDK tutorial: a low-frequency oscillator moves the level, with a sine or triangle shape, a phase offset between the channels and Mix and Amount. Use it for swells, pulses and a slow stereo pan.
+# end snippet ParamsHeader
+
+# snippet ParamsBody
+group Tremolo
+Rate   "Rate"   0 1000 740  exp 0.1 20 Hz 2   | Speed of the level movement
+    how Sets how many times a second the level moves down and up, from 0.1 to 20 Hz.
+    sound Slow rates swell like breathing; fast rates flutter and become a buzz.
+Depth  "Depth"  0 1000 500  pct               | How far the level moves down
+    how Sets how far the level falls at the bottom of each cycle: 0 % none, 100 % to silence.
+    sound More depth makes the pulse deeper and more obvious.
+Shape  "Shape"  0 1 0       enum Sine Triangle | Shape of the level movement
+    how Chooses the shape of the movement: Sine or Triangle.
+    sound Sine is smooth and round; Triangle is sharper and more mechanical.
+Phase  "Phase"  0 1000 0    lin 0 180 ° 0     | Phase offset of the right channel
+    how Delays the right channel's movement against the left, from 0 to 180 degrees.
+    sound At 180 degrees one side is loud while the other is quiet, so the sound pans from side to side.
+group Output
+Mix    "Mix"    0 1000 1000 pct               | Dry/wet (the effect has no latency, so the dry signal is not delayed)
+    how Blends the tremolo with the unprocessed sound.
+    sound Lower values keep the original level steady and add the pulse as a layer.
+Amount "Amount" 0 2000 1000 lin 0 200 % 1     | Effect strength: 100 % = the settings as shown, 0 % = bypass (bit for bit the input), 200 % = twice as far from neutral
+    how Scales Depth. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
+    sound Turn it down to ease the tremolo in, up to push it harder.
+# end snippet ParamsBody
