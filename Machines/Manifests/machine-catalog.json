@@ -629,6 +629,17 @@
    "note_in": true,
    "note_out": true
   },
+  "Neo Notes": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "tempo-sync"
+   ],
+   "use_for": "Change every note before a synth: transpose, snap to a key and scale, spread across octaves, shape velocity and length, add tempo-synced echoes and humanize; sits before an instrument or on a note wire.",
+   "note_in": true,
+   "note_out": true
+  },
   "Neo Tune": {
    "category": "Modulation",
    "tags": [

@@ -1,0 +1,167 @@
+# Neo Notes parameters (docs/specs/neo-notes.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoNotes
+namespace NeoBuzz.Notes
+class NeoNotesMachine
+summary A note effect: notes in, changed notes out, as a note insert before an instrument or a stage on a note wire (it makes no sound itself). Seven sections, each with its own On switch and applied in this order: Transpose (plus or minus 48 semitones); Scale (a key and one of ten scales, with the notes outside it moved to the nearest, the next one up or down, or dropped); Spread (each note moved by whole octaves in a cycle, up and down, or at random); Velocity (a soft-to-hard curve, an output range, a fixed value and a random change); Length (as played, a fixed length at the song's tempo or in milliseconds, or a minimum and maximum); Echo (up to 16 repeats at the song's tempo or in milliseconds, each quieter, shifted in pitch and shorter); Humanize (a random delay, a random velocity change, seeded). Every note it sends ends: when its source ends, by its length, or when the song stops. Use it to keep a part in key, fatten a line across octaves, shape how hard and how long every note plays, add rhythmic echoes to a lead, and loosen a machine-made part.
+
+group Transpose
+TransOn     "Transpose"       0 1 0    switch                                 | Moves every note by the semitones below when on
+    id transpose_on
+    how Switches the Transpose section on or off.
+    sound Off passes the pitch of every note on unchanged.
+Trans       "Semitones"       0 96 48  int -48 st signed                     | How far every note moves: -48 to +48 semitones (a note that leaves the keyboard's 0 to 127 is dropped)
+    id semitones
+    how Moves every note up or down by this many semitones.
+    sound Plus lifts the part, minus lowers it; 12 is an octave.
+
+group Scale
+ScaleOn     "Scale"           0 1 0    switch                                 | Moves every note into the key and scale below when on
+    id scale_on
+    how Switches the Scale section on or off.
+    sound Off leaves the notes as they are, in or out of key.
+Key         "Key"             0 11 0   enum C "C#" D "D#" E F "F#" G "G#" A "A#" B  | The scale's first note
+    id key
+    how Sets the first note of the scale.
+    sound It moves the whole scale up or down together.
+Scale       "Scale type"      0 9 1    enum Chromatic Major Natural_minor Harmonic_minor Melodic_minor Dorian Phrygian Lydian Mixolydian Locrian  | The scale: Chromatic (every note is in it) or one of nine scales
+    id scale
+    how Chooses the scale the notes are moved into.
+    sound Major is bright and natural minor dark; the modes sit between them; Chromatic changes nothing, and with Filter keeps every note.
+ScaleMode   "Out of scale"    0 3 0    enum Nearest Up Down Filter            | What happens to a note outside the scale: the nearest scale note (a tie goes down), the next one up, the next one down, or the note is dropped
+    id out_of_scale
+    how Chooses how a note that is not in the scale is treated: moved to the nearest scale note, up to the next, down to the next, or left out.
+    sound Nearest and Down keep a melody's shape, Up lifts the wrong notes, Filter plays only the notes that were already in key.
+
+group Spread
+SpreadOn    "Spread"          0 1 0    switch                                 | Moves each note by whole octaves in a pattern when on
+    id spread_on
+    how Switches the Spread section on or off.
+    sound Off keeps every note in the octave it was played in.
+SpreadRange "Range"           0 3 1    int 0 oct                              | The most octaves a note is moved by (0 to 3)
+    id spread_range
+    how Sets how many octaves the pattern may move a note, from 0 to 3.
+    sound A wider range scatters a line across the keyboard; 0 changes nothing.
+SpreadPat   "Pattern"         0 3 0    enum Up_cycle Down_cycle Up-down Random  | How the octave shift changes from note to note: climbing and starting again, falling and starting again, up then down, or a seeded random choice from minus to plus the range
+    id spread_pattern
+    how Chooses the order the octave shifts follow, note after note.
+    sound Up cycle climbs in steps and drops back, Down cycle falls, Up-down rises and returns, Random scatters notes up and down (the same every time for the same Seed).
+
+group Velocity
+VelOn       "Velocity"        0 1 0    switch                                 | Shapes the velocity of every note when on
+    id velocity_on
+    how Switches the Velocity section on or off.
+    sound Off keeps the velocity of every note as played.
+VelCurve    "Curve"           0 1000 500 bip                                  | The velocity curve from soft (-100 %) to hard (+100 %); 0 leaves the velocities as played
+    id curve
+    how Bends the velocity curve: minus pulls the middle velocities down, plus lifts them.
+    sound Soft makes only the hardest hits loud; hard makes most notes loud and punchy.
+OutMin      "Out min"         1 127 1  int 0                                  | The velocity a played velocity of 1 comes out as (1 to 127)
+    id out_min
+    how Sets the lowest velocity that comes out of the curve.
+    sound Raising it keeps the quietest notes from vanishing.
+OutMax      "Out max"         1 127 127 int 0                                 | The velocity a played velocity of 127 comes out as (1 to 127; it is never lower than Out min)
+    id out_max
+    how Sets the highest velocity that comes out of the curve.
+    sound Lowering it keeps the hardest notes from being too loud.
+VelRandom   "Random"          0 50 0   int 0 %                                | Each note's velocity changes by a random amount up to this share, from the seed
+    id velocity_random
+    how Changes each velocity by a random share, up to 50 %.
+    sound A little makes a part uneven the way a hand is; a lot makes it unpredictable.
+VelFixedOn  "Fixed"           0 1 0    switch                                 | Plays every note at the fixed velocity when on (the curve and range are skipped)
+    id fixed_on
+    how Switches the fixed velocity on, so every note comes out at the value below.
+    sound Every note is equally loud, like a drum machine.
+VelFixed    "Fixed velocity"  1 127 100 int 0                                 | The velocity of every note when Fixed is on (1 to 127)
+    id fixed_velocity
+    how Sets the velocity used when Fixed is on.
+    sound Higher plays every note harder and brighter on most instruments.
+
+group Length
+LenOn       "Length"          0 1 0    switch                                 | Shapes how long every note lasts when on
+    id length_on
+    how Switches the Length section on or off.
+    sound Off ends every note when the key is released.
+LenMode     "Mode"            0 2 0    enum As_played Fixed Clamp             | As played: the note lasts as long as it was held. Fixed: every note lasts the same time. Clamp: a short note is held to the minimum and a long one ends at the maximum
+    id length_mode
+    how Chooses between the played length, one fixed length and a minimum and maximum.
+    sound Fixed makes a part staccato or legato whatever was played; Clamp tidies a part without making it mechanical.
+LenSync     "Fixed timing"    0 1 0    enum Song_tempo Free_time              | Whether the fixed length follows the song's tempo or is a time in milliseconds
+    id fixed_timing
+    how Chooses between a fixed length at the song's tempo and one in milliseconds.
+    sound Song tempo keeps the length musical when the tempo changes; Free time keeps it the same time.
+LenRate     "Fixed rate"      0 6 3    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64    | The fixed length at the song's tempo
+    id fixed_rate
+    how Sets the fixed length at the song's tempo, from a whole note to a sixty-fourth.
+    sound Short values are staccato, long ones legato.
+LenFeel     "Fixed feel"      0 2 0    enum Straight Dotted Triplet           | Straight, dotted (1.5 times as long) or triplet (two thirds as long)
+    id fixed_feel
+    how Makes the fixed length straight, dotted or triplet.
+    sound Dotted lengths run on, triplets are shorter and lilt.
+LenMs       "Fixed time"      5 4000 250 lin 5 4000 ms 0                      | The fixed length in milliseconds when the timing is Free time (5 to 4000)
+    id fixed_time
+    how Sets the fixed length in milliseconds.
+    sound Short times are clipped and dry, long times ring.
+ClampMin    "Clamp min"       0 4000 60 lin 0 4000 ms 0                       | Clamp: a note shorter than this is held to this length (0 to 4000 ms)
+    id clamp_min
+    how Sets the shortest a note can be; the note-off waits until this time has passed.
+    sound Raising it gives quick taps some body.
+ClampMax    "Clamp max"       5 4000 800 lin 5 4000 ms 0                      | Clamp: a note longer than this ends at this length (5 to 4000 ms; never shorter than Clamp min)
+    id clamp_max
+    how Sets the longest a note can be; a held note ends when this time is up.
+    sound Lowering it keeps long held notes from smearing.
+
+group Echo
+EchoOn      "Echo"            0 1 0    switch                                 | Repeats every note when on
+    id echo_on
+    how Switches the Echo section on or off.
+    sound Off plays every note once.
+Repeats     "Repeats"         0 16 3   int 0                                  | How many times each note is repeated (0 to 16)
+    id repeats
+    how Sets how many repeats follow each note.
+    sound More repeats make a longer trail.
+EchoSync    "Echo timing"     0 1 0    enum Song_tempo Free_time              | Whether the time between repeats follows the song's tempo or is in milliseconds
+    id echo_timing
+    how Chooses between repeats at the song's tempo and repeats a fixed time apart.
+    sound Song tempo keeps the echo in time with the music; Free time ignores the tempo.
+EchoRate    "Echo rate"       0 6 3    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64    | The time between repeats at the song's tempo
+    id echo_rate
+    how Sets the time between repeats at the song's tempo, from a whole note to a sixty-fourth.
+    sound Short values make a fast flutter, long ones a slow answer.
+EchoFeel    "Echo feel"       0 2 0    enum Straight Dotted Triplet           | Straight, dotted (1.5 times as long) or triplet (two thirds as long) spacing
+    id echo_feel
+    how Makes the repeats straight, dotted or triplet.
+    sound A dotted eighth echo is the classic lilting delay.
+EchoMs      "Echo time"       10 2000 250 lin 10 2000 ms 0                    | The time between repeats in milliseconds when the timing is Free time (10 to 2000)
+    id echo_time
+    how Sets the time between repeats in milliseconds.
+    sound Short times thicken the note, long ones answer it.
+EchoDrop    "Velocity drop"   0 100 30 int 0 %                                | How much quieter each repeat is than the one before, as a share of its velocity (0 to 100 %; the echo stops when the velocity would fall below 1)
+    id velocity_drop
+    how Sets how much of its velocity each repeat loses (the feedback of the echo, read as a loss).
+    sound A small drop gives a long trail; a large drop makes the repeats die quickly.
+EchoStep    "Pitch step"      0 24 12  int -12 st signed                      | Each repeat moves this many semitones from the one before (-12 to +12; a repeat that leaves 0 to 127 is dropped)
+    id pitch_step
+    how Moves each repeat up or down from the previous one by this many semitones.
+    sound 7 makes rising fifths, -12 falling octaves, 0 a plain echo.
+EchoLen     "Echo length"     10 100 50 int 0 %                               | The length of each repeat as a share of the note's length (10 to 100 %; never longer than the time between repeats)
+    id echo_length
+    how Sets how long each repeat lasts compared with the note it repeats.
+    sound Short repeats are plucked and clear; long ones blur into each other.
+
+group Humanize
+HumOn       "Humanize"        0 1 0    switch                                 | Loosens the notes when on
+    id humanize_on
+    how Switches the Humanize section on or off.
+    sound Off keeps every note exactly on time and at its velocity.
+HumTime     "Humanize time"   0 50 0   lin 0 50 ms 0                         | Each note is late by a random time up to this (0 to 50 ms); notes are only delayed, never early
+    id humanize_time
+    how Delays each note by a random time up to 50 ms, from the seed's random stream.
+    sound A few milliseconds loosen a part; tens of milliseconds make it sloppy.
+HumVel      "Humanize velocity" 0 30 0 int 0 %                                | Each note's velocity changes by a random amount up to this share
+    id humanize_velocity
+    how Varies each note's velocity at random by up to 30 %.
+    sound It makes repeated notes uneven in the way a hand is.
+Seed        "Seed"            0 99 0   int 0                                  | The seed of the random stream (Random spread, Random velocity, Humanize): the same seed gives the same notes every time
+    id seed
+    how Chooses which random sequence the Random controls follow.
+    sound Different seeds give different loosenesses; the same seed always repeats exactly.

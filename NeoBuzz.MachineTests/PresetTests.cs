@@ -111,6 +111,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Audio to MIDI"] = (NeoBuzz.AudioToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.AudioToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
             // neo-chord.md: Neo Chord makes no audio (notes in, chords out); its presets only change which notes it sends.
             ["Neo Chord"] = (NeoBuzz.Chord.Params.Table, (v, x) => x),
+            // neo-notes.md: Neo Notes makes no audio (notes in, changed notes out); its presets only change which notes it sends.
+            ["Neo Notes"] = (NeoBuzz.Notes.Params.Table, (v, x) => x),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>

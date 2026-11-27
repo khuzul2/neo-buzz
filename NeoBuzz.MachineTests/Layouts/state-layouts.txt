@@ -43,6 +43,7 @@ NeoBuzz.MacroMachine	0	2	157abd3715f40da3
 NeoBuzz.Mallet	0	16	9a1a306465c55304
 NeoBuzz.Multiband	0	55	f3a4ac1dc49b0b56
 NeoBuzz.NeoAudio	0	2	a006a7ceaeea24e4
+NeoBuzz.Notes	0	37	a9e2d4906682183b
 NeoBuzz.Patch	0	20	bec0a8b17ee091b5
 NeoBuzz.Organ	0	32	830271717a1c8bf1
 NeoBuzz.Poly	0	91	dbaa32ac1ee1fb76
