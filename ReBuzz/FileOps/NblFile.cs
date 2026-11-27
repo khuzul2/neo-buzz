@@ -49,7 +49,7 @@ namespace ReBuzz.FileOps
         internal static readonly HashSet<string> KnownStores = new(StringComparer.Ordinal)
         {
             SessionDocument.SubSectionName, ArrangementStore.SubSectionName, ArrangementEventStore.SubSectionName,
-            SongMarkerStore.SubSectionName, SongNotesStore.SubSectionName, SongMeterStore.SubSectionName, MachinePinStore.SubSectionName, TrackColourStore.SubSectionName, MixerFoldStore.SubSectionName, MidiMapping.SubSectionName, ReBuzz.Core.NoteWires.NoteWireStore.SubSectionName,
+            SongMarkerStore.SubSectionName, SongNotesStore.SubSectionName, SongMeterStore.SubSectionName, MachinePinStore.SubSectionName, TrackColourStore.SubSectionName, MixerFoldStore.SubSectionName, EnvelopeLaneStore.SubSectionName, MidiMapping.SubSectionName, ReBuzz.Core.NoteWires.NoteWireStore.SubSectionName,
             "ModernSequenceEditor", "ModernSequenceEditorHorizontal",
         };
 

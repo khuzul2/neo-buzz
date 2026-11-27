@@ -200,7 +200,7 @@ namespace NeoBuzz.Drums
                     // then a low-pass.
                     double t = PortableMath.Exp2(s.Tune / 12.0);
                     double scale = v == DrumVoice.Ride ? 1.25 : 1.0;
-                    for (int i = 0; i < MetalBank.Max; i++) hz[i] = MetalBank.Tr808[i] * t * scale;
+                    for (int i = 0; i < MetalBank.Max; i++) hz[i] = MetalBank.SixSquares[i] * t * scale;
                     metal.Start(hz, MetalBank.StartPhases, MetalBank.Max, fs);
                     double tone = s.Tone * PortableMath.Exp2(b);
                     env1 = 1; k1 = Decay(s.Decay, fs);

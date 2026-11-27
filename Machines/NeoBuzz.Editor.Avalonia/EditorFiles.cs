@@ -63,7 +63,7 @@ namespace NeoBuzz.Editor
             }
         }
 
-        /// <summary>A WPF filter ("DX7 SysEx (*.syx)|*.syx|All files (*.*)|*.*") as Avalonia's file types.</summary>
+        /// <summary>A WPF filter ("Voice SysEx (*.syx)|*.syx|All files (*.*)|*.*") as Avalonia's file types.</summary>
         internal static List<FilePickerFileType> Types(string filter)
         {
             var types = new List<FilePickerFileType>();

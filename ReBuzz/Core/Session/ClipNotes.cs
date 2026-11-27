@@ -12,18 +12,60 @@ using System.Linq;
 namespace ReBuzz.Core.Session
 {
     /// <summary>
+    /// Where a note's extras live in its MIDI column event (the event's value is <c>0x90 | channel | note &lt;&lt; 8 | velocity &lt;&lt; 16</c>; the bits above
+    /// the velocity were always 0): bit 23 is the note's Slide flag, bits 24-31 the fine start (FU2b). The engine takes both off before a machine
+    /// is sent the note (<see cref="NoteBits.Strip"/>), so a machine that knows neither sees the plain MIDI message it always did.
+    /// A fine start of 0 is an ordinary note (on its time unit, played by the block that holds the unit). Any other value (1 to 255) marks a note on an
+    /// exact sample: it starts <c>(value - 1) / 254</c> of a unit after its time, and the engine ends a block on that sample so the note's first sample is
+    /// the block's first, even when the note sits right on a unit.
+    /// </summary>
+    internal static class NoteBits
+    {
+        /// <summary>Bit 23 of a note-on's value: the note slides into its pitch (Neo Poly glides to it at its Slide time).</summary>
+        public const int SlideBit = 1 << 23;
+
+        /// <summary>Bits 24-31: 0 for every note a song had before; 1 to 255: the note is on an exact sample, <c>(value - 1) / 254</c> of a clip time unit (1/240 tick) after its time.</summary>
+        public const int FineShift = 24;
+
+        /// <summary>The fine value's steps from the unit to the next one (value 1 is the unit itself, 255 the next).</summary>
+        public const int FineSteps = 254;
+
+        /// <summary>The part of a clip time unit after the note's time that a fine value stands for (0 to 1); 0 for none.</summary>
+        public static double FractionOf(int fine) => fine <= 0 ? 0 : Math.Min(fine - 1, FineSteps) / (double)FineSteps;
+
+        /// <summary>The value without the slide flag and the fine start: what a machine is sent.</summary>
+        public static int Strip(int value) => value & 0x7FFFFF;
+
+        public static bool IsSlide(int value) => (value & SlideBit) != 0;
+
+        public static int FineOf(int value) => (int)((uint)value >> FineShift);
+
+        public static int With(int value, bool slide, int fine) =>
+            (value & 0x7FFFFF) | (slide ? SlideBit : 0) | (int)((uint)Math.Clamp(fine, 0, 255) << FineShift);
+
+        /// <summary>A start in clip time as a (whole units, fine) pair: the unit at or before it and the fine value (1 to 255) of the rest; the note is on an exact sample.</summary>
+        public static (int Time, int Fine) Split(double units)
+        {
+            double floor = Math.Floor(units);
+            return ((int)floor, 1 + (int)Math.Round((units - floor) * FineSteps));
+        }
+    }
+
+    /// <summary>
     /// A note of a clip: where it starts and how long it lasts (1/240 tick), its pitch, velocity and channel. Notes of a machine that plays a sample per
     /// note (Neo Sampler's Tracker mode, TM1) carry that too: <see cref="Sample"/> (the number of the sample it plays; 0: none, the machine plays
     /// it as it plays any note), <see cref="Offset"/> (where in the sample it starts, in the sample's frames) and <see cref="Tune"/> (cents).
-    /// Only the tracker's store keeps them (the MIDI column has no room for them).
+    /// Only the tracker's store keeps them (the MIDI column has no room for them). <see cref="Slide"/> (FU2b) marks a note that slides into its pitch
+    /// (Neo Poly's acid slide); <see cref="Fine"/> (0: none) marks a note on an exact sample (Slice to new MIDI track) and the part of a clip time unit it starts after
+    /// <see cref="Time"/> (<see cref="NoteBits.FractionOf"/>), instead of the 1/240 tick grid. Both are in the MIDI column event's value (<see cref="NoteBits"/>).
     /// </summary>
-    internal readonly record struct ClipNote(int Time, int Duration, int Note, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0)
+    internal readonly record struct ClipNote(int Time, int Duration, int Note, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0, bool Slide = false, int Fine = 0)
     {
         public int End => Time + Duration;
 
         /// <summary>The MIDI column event it is: its note-on as the value.</summary>
         public (int Time, int Value, int Duration) ToEvent() =>
-            (Time, 0x90 | (Channel & 0x0F) | ((Note & 0x7F) << 8) | ((Velocity & 0x7F) << 16), Duration);
+            (Time, NoteBits.With(0x90 | (Channel & 0x0F) | ((Note & 0x7F) << 8) | ((Velocity & 0x7F) << 16), Slide, Fine), Duration);
 
         /// <summary>The note a MIDI column event is, if it is a note-on.</summary>
         public static bool TryFrom((int Time, int Value, int Duration) e, out ClipNote note)
@@ -36,7 +78,7 @@ namespace ReBuzz.Core.Session
                 return false;
             }
             // The event's own duration, so the note turns back into the very event (editors remove it by value).
-            note = new ClipNote(e.Time, e.Duration, (e.Value >> 8) & 0x7F, velocity, status & 0x0F);
+            note = new ClipNote(e.Time, e.Duration, (e.Value >> 8) & 0x7F, velocity, status & 0x0F, Slide: NoteBits.IsSlide(e.Value), Fine: NoteBits.FineOf(e.Value));
             return true;
         }
     }
@@ -133,7 +175,7 @@ namespace ReBuzz.Core.Session
                     end = n.End + (int)Math.Round((snapped - n.End) * strength);
                     if (end <= time) end = time + Math.Max(MinDuration, grid);     // a short note keeps a step
                 }
-                return n with { Time = time, Duration = Math.Clamp(end - time, MinDuration, Math.Max(MinDuration, clipLength - time)) };
+                return n with { Time = time, Fine = 0, Duration = Math.Clamp(end - time, MinDuration, Math.Max(MinDuration, clipLength - time)) };   // a quantized note is on the grid: no fine start
             }).ToList();
         }
 

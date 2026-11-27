@@ -3076,7 +3076,7 @@ namespace ReBuzz.Studio.Tests
                     foreach (var c in wires) level[c] = 32768f * (float)System.Math.Pow(10, -((n++ * 7) % 13) * 4.0 / 20);     // 0 to -48 dB across the wires
                     canvas.PeakSource = c => level.TryGetValue(c, out float v) ? (v, v * 0.8f) : (0, 0);
                     canvas.TickMeters(1);
-                    canvas.SetZoom(-2);                  // the whole song in the view (P SH101 was cut off by the foot of it)
+                    canvas.SetZoom(-2);                  // the whole song in the view (P mono synth was cut off by the foot of it)
                     Settle();
                     Shot(window, "343-machines-many-meters", $"The same song of every Neo machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo machine", notes: Headless);
                     canvas.SetZoom(0);
@@ -3400,8 +3400,42 @@ namespace ReBuzz.Studio.Tests
                     var session = Tab<SessionView>(window, "Session");
                     session.Rebuild();
                     Settle();
-                    Shot(window, "352-session-envelope-curves", "The Session View (EV1): a slot whose clip holds an envelope draws it as a mini curve along its bottom; the ∿ chip in the track header chooses the parameter.",
+                    Shot(window, "352-session-envelope-curves", "The Session View (EV1, FU2b): a slot whose clip holds an envelope draws it as a mini curve in a band along its bottom, on a plate with a halo, so the curve and the clip's name (now in the slot's top line) both read on any clip colour; the ∿ chip in the track header chooses the parameter.",
                         "Draw an envelope in the Detail panel's lane, then look at the Session View.");
+                });
+
+                Try("353-arrangement-roll-envelope-lanes", () =>
+                {
+                    window.ShowView("Sequence");
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    seq.SetArrangementMode(true);
+                    seq.OpenPianoRoll(hook);
+                    Settle();
+                    Assert.That(seq.RollPanel.Roll.Envelopes?.Lanes.Count ?? 0, Is.GreaterThan(0), "the panel shows the clip's envelope lanes");
+                    Shot(window, "353-arrangement-roll-envelope-lanes", "The Arrangement's piano roll panel (FU2b) with the envelope lanes the Piano roll view has: the F1 cutoff lane of Bass's Line A under the roll on its time axis, with the parameter chooser, + Envelope, Ramp and Step; one editing core serves it, the Detail panel's lane and the Tracker's lanes (Alt moves a point without snapping).",
+                        "The Arrangement, double-click a clip, then the Envelopes bar under the roll.");
+                    seq.RollPanel.Close();
+                    seq.SetArrangementMode(false);
+                });
+
+                Try("354-piano-roll-slide-flag", () =>
+                {
+                    window.ShowView("Session");
+                    window.Detail.ShowPage(true, true);
+                    Settle();
+                    Assert.That(ReBuzz.Studio.Views.Detail.EnvelopeOpener.Open(hook, param.Key), Is.True);
+                    Wait(250);
+                    var roll = ClipView.Page.Roll.Roll;
+                    Assert.That(roll, Is.Not.Null);
+                    var count = roll.Notes.Count;
+                    Assert.That(count, Is.GreaterThan(2), "the clip has notes");
+                    roll.SelectOnly(new[] { 1, count > 4 ? 4 : 2 });
+                    Assert.That(roll.ToggleSlide(), Is.True);
+                    roll.SelectOnly(new[] { 1 });
+                    Settle();
+                    Assert.That(ClipView.Page.Roll.SlideButton.IsEnabled, Is.True);
+                    Shot(window, "354-piano-roll-slide-flag", "The Detail panel's piano roll with the per-note Slide flag (FU2b): the Slide button in the toolbar (L) toggles it for the selected notes; a flagged note carries a rising wedge at its start (two notes of Bass's Line A here) and, in Neo Poly, glides into its pitch at the Slide time. In the tracker, Ctrl+L does the same in the Notes lanes.",
+                        "Detail > Piano roll, select notes, then Slide (or L).");
                 });
             }
             finally

@@ -165,7 +165,7 @@ Rules:
     <Scene />
   </Scenes>
   <Tracks>
-    <Track sequence="0" machine="Juno 1">
+    <Track sequence="0" machine="Poly 1">
       <Slot scene="0" pattern="00" />
       <Slot scene="1" pattern="01" />
     </Track>

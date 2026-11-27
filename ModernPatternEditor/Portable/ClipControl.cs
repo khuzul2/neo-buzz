@@ -441,6 +441,11 @@ namespace WDE.ModernPatternEditor
                     WriteState();
                     handled = true;
                 }
+                else if (key == EditorKey.L)
+                {
+                    ToggleSlideNoteLanes();
+                    handled = true;
+                }
                 else if (key >= EditorKey.NumPad0 && key <= EditorKey.NumPad9)
                 {
                     Editor.SelectedStepsDown = key - EditorKey.NumPad0;
@@ -1189,6 +1194,53 @@ namespace WDE.ModernPatternEditor
                 }
             }
             if (host == null) return;
+            string why = host.Apply(new NoteLaneEdit(removed, added, null));
+            if (why != null) Global.Buzz.DCWriteLine("{statusbar}" + why);
+        }
+
+        /// <summary>
+        /// Ctrl+L in the Notes lanes (FU2b): sets the Slide flag on the notes in the selection (or at the cursor), or clears it when all of them have it
+        /// already. A slide note glides into its pitch from the note before it (Neo Poly, at its Slide time). One step of the song's history.
+        /// </summary>
+        void ToggleSlideNoteLanes()
+        {
+            if (!InNoteLanes())
+            {
+                Global.Buzz.DCWriteLine("{statusbar}Slide: put the cursor on a note in a Notes lane (Ctrl+L).");
+                return;
+            }
+            Selection s = clip.Selection;
+            if (!s.Active)
+                s = Selection.Start(clip.CursorPosition).SetEnd(clip.CursorPosition);
+            var (tl, br) = s.Bounds;
+            int rpb = Math.Max(1, clip.DefaultRPB);
+            NoteLaneHost host = null;
+            var cells = new List<(NoteLanes Lanes, int Voice, int Row, bool Slide)>();
+            for (int set = tl.ColumnSet; set <= br.ColumnSet; set++)
+            {
+                if (clip.ColumnSets[set] is not NoteLaneColumnSet lanes) continue;
+                host = lanes.Host;
+                int firstColumn = set == tl.ColumnSet ? tl.Column : 0;
+                if (firstColumn > 0) continue;       // the Note column isn't in the selection
+                int firstRow = tl.Beat * rpb + tl.RowInBeat, lastRow = br.Beat * rpb + br.RowInBeat;
+                for (int row = firstRow; row <= lastRow; row++)
+                    if (host.Lanes.TryCell(lanes.Voice, row, out var cell) && !cell.IsOff)
+                        cells.Add((host.Lanes, lanes.Voice, row, host.Lanes.IsSlide(cell)));
+            }
+            if (host == null || cells.Count == 0)
+            {
+                Global.Buzz.DCWriteLine("{statusbar}Slide: no note in the selection (select the Note column).");
+                return;
+            }
+            bool on = cells.Any(c => !c.Slide);
+            var removed = new List<LaneEvent>();
+            var added = new List<LaneEvent>();
+            foreach (var c in cells)
+            {
+                var edit = c.Lanes.SetSlide(c.Voice, c.Row, on);
+                removed.AddRange(edit.Removed);
+                added.AddRange(edit.Added);
+            }
             string why = host.Apply(new NoteLaneEdit(removed, added, null));
             if (why != null) Global.Buzz.DCWriteLine("{statusbar}" + why);
         }

@@ -381,7 +381,7 @@ namespace NeoBuzz.MachineTests
                         foreach (double tone in new[] { 4000.0, 16000 })
                         {
                             double t = Math.Pow(2, tune / 12);
-                            double floor = AliasFloor(voice, tune, tone, MetalBank.Tr808.Select(f => f * t * scale).ToArray(), rate);
+                            double floor = AliasFloor(voice, tune, tone, MetalBank.SixSquares.Select(f => f * t * scale).ToArray(), rate);
                             worst = Math.Max(worst, floor);
                             if (tone == 16000 && tune == 12) lines.Add($"{DrumsEngine.Names[voice]} +12 st, tone 16 kHz, {rate / 1000.0:0.#} kHz: {floor:F1} dB");
                             Assert.That(floor, Is.LessThan(-90), $"{DrumsEngine.Names[voice]}, tune {tune} st, tone {tone} Hz, {rate} Hz");

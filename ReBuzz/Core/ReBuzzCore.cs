@@ -134,6 +134,7 @@ namespace ReBuzz.Core
         internal SongMarkerStore MarkerStore { get; set; }
         internal MachinePinStore PinStore { get; set; }         // fork (ux-overhaul.md, the parameter panel): the Inspector's pinned parameters
         internal TrackColourStore TrackColours { get; set; }    // fork (ux-overhaul.md, MX1): a colour per track
+        internal EnvelopeLaneStore EnvelopeLanes { get; set; }    // fork (clips.md, FU2b): the envelope lanes each clip shows, saved with the song
         internal MixerFoldStore MixerFolds { get; set; }          // fork (ux-overhaul.md, MX1): the groups the mixer shows folded, saved with the song
         internal ReBuzz.Core.NoteWires.NoteWireStore NoteWires { get; set; }    // fork (note-wires.md): the note wires and insert chains
 
@@ -2539,6 +2540,7 @@ namespace ReBuzz.Core
                         PinStore?.Rename(oldName, machine.Name);     // fork (ux-overhaul.md): pins and locks follow a renamed machine
                         MidiMapping?.RenameMachine(oldName, machine.Name);     // fork (midi-mapping.md): so do its mappings and its track's pages
                         TrackColours?.Rename(oldName, machine.Name);   // fork (ux-overhaul.md, MX1): and so does its track colour
+                        EnvelopeLanes?.Rename(oldName, machine.Name);   // fork (clips.md, FU2b): and its clips their envelope lanes
                         MixerFolds?.Rename(oldName, machine.Name);   // fork (ux-overhaul.md, MX1): and a group its fold
                         NoteWires?.Rename(oldName, machine.Name);      // fork (note-wires.md): and its note wires and inserts
                     }
@@ -2720,6 +2722,7 @@ namespace ReBuzz.Core
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
             PinStore?.Clear();                  // fork (ux-overhaul.md, the parameter panel)
             TrackColours?.Clear();              // fork (ux-overhaul.md, MX1)
+            EnvelopeLanes?.Clear();             // fork (clips.md, FU2b): envelope lanes of the clips
             MixerFolds?.Clear();               // fork (ux-overhaul.md, MX1): groups folded in the mixer
             NoteWires?.Clear();                 // fork (note-wires.md)
             MidiMapping?.Clear();               // fork (midi-mapping.md, MM1)

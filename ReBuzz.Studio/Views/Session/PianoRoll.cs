@@ -682,6 +682,23 @@ namespace ReBuzz.Studio.Views.Session
             if (from.Count > 0) Commit(from, ClipNotes.Move(from, deltaTime, deltaNote, 1, Length));
         }
 
+        /// <summary>Whether this roll's notes can carry the Slide flag (the MIDI column's can; a sample-note column has no such flag).</summary>
+        internal bool CanSlide => ReBuzz.Core.Notes.SongNotes.IsMidi(Source);
+
+        /// <summary>
+        /// FU2b: sets the Slide flag on the selected notes, or clears it when all of them have it. A slide note glides into its pitch from the
+        /// note before it (Neo Poly, at its Slide time; other machines play it as a plain note). One undo step; false when nothing was selected.
+        /// </summary>
+        internal bool ToggleSlide()
+        {
+            var from = SelectedNotes();
+            if (!CanSlide || from.Count == 0) return false;
+            bool on = from.Any(n => !n.Slide);
+            var to = from.Select(n => n with { Slide = on }).ToList();
+            Commit(from, to);
+            return true;
+        }
+
         internal void ChangeVelocity(int delta)
         {
             var from = SelectedNotes();
@@ -895,6 +912,15 @@ namespace ReBuzz.Studio.Views.Session
             using (dc.PushOpacity(coloured ? 0.55 + 0.45 * n.Velocity / 127.0 : 0.45 + 0.55 * n.Velocity / 127.0))
                 dc.DrawRectangle(fill, coloured ? null : NoteEdge, r, coloured ? 5 : 0, coloured ? 5 : 0);
             if (coloured && isSelected) dc.DrawRectangle(null, SelectedRing, r.Inflate(1), 5, 5);
+            if (n.Slide)
+            {
+                // FU2b: the Slide flag: a rising wedge at the note's start (a glide into it), dark under light so it reads on any note colour.
+                double w = Math.Min(10, Math.Max(4, r.Width * 0.5));
+                var a = new Point(r.X + 1, r.Bottom - 1.5);
+                var b = new Point(r.X + w, r.Y + 1.5);
+                dc.DrawLine(new Pen(SlideHalo, 4, lineCap: PenLineCap.Round), a, b);
+                dc.DrawLine(new Pen(NoteTextInk, 2, lineCap: PenLineCap.Round), a, b);
+            }
             if (samples == null || ChipRect(n) is not Rect chip) return;
             dc.DrawRectangle(SampleColours.ChipBack, null, chip, 4, 4);
             var label = SampleColours.Text(SampleColours.Label(n.Sample), Math.Min(11, chip.Height - 5), n.Sample > 0 ? SampleColours.BrushOf(n.Sample) : KeyMapInk);
@@ -910,6 +936,7 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         static readonly IBrush NoteTextInk = Brushes.White;
+        static readonly IBrush SlideHalo = new SolidColorBrush(Color.FromArgb(190, 0, 0, 0));
 
         // ------------------------------------------------------------------ pointer
 
@@ -1210,6 +1237,10 @@ namespace ReBuzz.Studio.Views.Session
                     break;
                 case Key.Q:
                     Quantize();
+                    break;
+                case Key.L when mods == KeyModifiers.None && CanSlide:
+                    // FU2b: the Slide flag of the selected notes.
+                    ToggleSlide();
                     break;
                 case Key.S when mods == KeyModifiers.None && samples != null:
                     // TM1: the sample picker for the selected notes.

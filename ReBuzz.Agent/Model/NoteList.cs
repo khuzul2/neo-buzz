@@ -14,14 +14,15 @@ namespace ReBuzz.Agent.Model
 {
     /// <summary>
     /// A note in clip time (1/240 tick). A machine that plays a sample per note (Neo Sampler's Tracker mode) has three more: the sample's number
-    /// (0: none), where in it the note starts (frames of the sample) and its tune (cents).
+    /// (0: none), where in it the note starts (frames of the sample) and its tune (cents). <see cref="Slide"/> is the per-note Slide flag (FU2b: the note glides
+    /// into its pitch; Neo Poly at its Slide time) and <see cref="Fine"/> the note's fine start (Slice to new MIDI track; kept as it is, not written by the agent).
     /// </summary>
-    public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0)
+    public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity, int Channel = 0, int Sample = 0, int Offset = 0, int Tune = 0, bool Slide = false, int Fine = 0)
     {
         public int End => Time + Duration;
 
-        /// <summary>The MIDI column event value: its note-on (channel 0 = MIDI channel 1).</summary>
-        public int Value => 0x90 | (Channel & 0x0F) | ((Pitch & 0x7F) << 8) | ((Velocity & 0x7F) << 16);
+        /// <summary>The MIDI column event value: its note-on (channel 0 = MIDI channel 1), with the Slide flag in bit 23 and the fine start in bits 24-31.</summary>
+        public int Value => 0x90 | (Channel & 0x0F) | ((Pitch & 0x7F) << 8) | ((Velocity & 0x7F) << 16) | (Slide ? 1 << 23 : 0) | ((Fine & 0xFF) << 24);
 
         /// <summary>The note a MIDI column event is, if it is a note-on.</summary>
         public static bool TryFrom(int time, int value, int duration, out NoteEvent note)
@@ -32,7 +33,7 @@ namespace ReBuzz.Agent.Model
                 note = default;
                 return false;
             }
-            note = new NoteEvent(time, duration, (value >> 8) & 0x7F, velocity, status & 0x0F);
+            note = new NoteEvent(time, duration, (value >> 8) & 0x7F, velocity, status & 0x0F, Slide: (value & (1 << 23)) != 0, Fine: (int)((uint)value >> 24));
             return true;
         }
     }
@@ -95,6 +96,13 @@ namespace ReBuzz.Agent.Model
                 }
                 if (sample == 0 && (offset != 0 || tune != 0))
                     throw new ToolError($"{at}: offset and tune belong to a sample; give the note a sample too.");
+                bool slide = false;
+                if (n["slide"] != null)
+                {
+                    if (n["slide"] is not JsonValue sv || !sv.TryGetValue(out bool flag))
+                        throw new ToolError($"{at}.slide: true or false (true: the note glides into its pitch from the note before it; Neo Poly glides at its Slide time).");
+                    slide = flag;
+                }
                 int time = Time(start, ticksPerBeat);
                 if (time >= clipTime)
                     throw new ToolError($"{at}: starts at beat {Fmt(start)}, but the clip is {Fmt(clipBeats)} beats long. " +
@@ -105,7 +113,7 @@ namespace ReBuzz.Agent.Model
                     duration = clipTime - time;
                     warnings.Add($"{at} ({Pitch.Name(pitch)} at beat {Fmt(start)}) ran past the clip's end; shortened to {Fmt(Beats(duration, ticksPerBeat))} beats.");
                 }
-                list.Add(new NoteEvent(time, duration, pitch, velocity, 0, sample, offset, tune));
+                list.Add(new NoteEvent(time, duration, pitch, velocity, 0, sample, offset, tune, slide));
             }
             list.Sort(Order);
             return list;
@@ -150,6 +158,7 @@ namespace ReBuzz.Agent.Model
                 ["velocity"] = n.Velocity,
             };
             if (n.Channel != 0) o["midi_channel"] = n.Channel + 1;   // recorded on another channel
+            if (n.Slide) o["slide"] = true;                          // the note glides into its pitch (FU2b)
             if (n.Sample > 0)
             {
                 o["sample"] = n.Sample;

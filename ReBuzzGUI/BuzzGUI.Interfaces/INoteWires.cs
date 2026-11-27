@@ -34,6 +34,15 @@ namespace BuzzGUI.Interfaces
         void ReceiveNotes(ReadOnlySpan<NoteMessage> events);
     }
 
+    /// <summary>
+    /// A machine that takes a clip note's Slide flag (FU2b): the engine calls this just before the note-on of a note that carries it, on the thread
+    /// that sends the note, and the machine slides into that one note. A machine without it is sent the note alone, as before.
+    /// </summary>
+    public interface INoteFlags
+    {
+        void NextNoteSlides();
+    }
+
     /// <summary>Implemented by the machine core: sends an event down this machine's note wires, to arrive in the same block at the same offset. Audio thread, from Work; allocates nothing.</summary>
     public interface INoteEmitter
     {

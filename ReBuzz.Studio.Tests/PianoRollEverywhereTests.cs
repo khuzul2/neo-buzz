@@ -631,6 +631,32 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void TheRollPanelHasTheEnvelopeLanesThePianoRollViewHasAndAnEditIsOneStepOfTheHistory()
+        {
+            using var rig = new Rig(("Neo Poly", "Lead"));
+            var clip = rig.DrawAndOpen(rig.Lane("Lead"), 0);
+            var stack = rig.Roll.Envelopes;
+            Assert.That(stack, Is.Not.Null, "the Arrangement's panel has the envelope lanes");
+            var key = AutomationParams.List(clip.Machine).First(p => p.Name == AutomationLaneTests.Cutoff).Key;
+            Assert.That(rig.Roll.Envelopes.IsVisible, Is.True, "the clip's machine has parameters, so the stack shows");
+            var lane = stack.AddLane(key);
+            Settle();
+            Assert.That(lane, Is.Not.Null, "a lane is added from the panel");
+            Assert.That(lane.IsEffectivelyVisible, Is.True);
+            var param = AutomationParams.Find(clip.Machine, key);
+            int undos = Undos;
+            var p = lane.TranslatePoint(lane.At(4 * TB, param.ValueAt(0.5)), rig.Window)!.Value;
+            rig.Click(p);
+            Assert.That(ClipEnvelopes.Read(clip, key).Points.Count, Is.EqualTo(1), "a click in the lane adds a point");
+            Assert.That(Undos, Is.EqualTo(undos + 1), "one step of the song's history");
+            lane.Focus();
+            rig.Key(PhysicalKey.Z, Cmd);
+            Assert.That(ClipEnvelopes.Read(clip, key).Points.Count, Is.EqualTo(0));
+            Assert.That(stack.HintText, Does.Contain("Alt"), "the hint names the no-snap gesture");
+            Studio.Screenshot(rig.Window, "fu2b-arrangement-roll-lanes");
+        }
+
+        [AvaloniaTest]
         public void EveryControlOfThePanelIsOnTheKitsStyleAndHasAName()
         {
             using var rig = new Rig(("Neo Poly", "Lead"));

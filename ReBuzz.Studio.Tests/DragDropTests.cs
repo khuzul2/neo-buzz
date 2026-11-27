@@ -662,17 +662,17 @@ namespace ReBuzz.Studio.Tests
             AssertOneStep(before);
 
             // On a track of that machine: it loads.
-            var juno = AddTrack("Neo Poly", "Juno");
+            var leadTrack = AddTrack("Neo Poly", "Preset Track");
             Settle();
-            var plain = juno.AllNonInputParameters().Select(p => p.GetValue(0)).ToList();
+            var plain = leadTrack.AllNonInputParameters().Select(p => p.GetValue(0)).ToList();
             string beforeLoad = State();
-            var r = s.OnTrack(juno, One(Preset(1)));
+            var r = s.OnTrack(leadTrack, One(Preset(1)));
             Assert.That(r.Ok, Is.True, r.Message);
             Assert.That(r.Action, Is.EqualTo(DropAction.LoadPreset));
-            Assert.That(juno.AllNonInputParameters().Select(p => p.GetValue(0)).ToList(), Is.Not.EqualTo(plain), "the preset's values are in");
+            Assert.That(leadTrack.AllNonInputParameters().Select(p => p.GetValue(0)).ToList(), Is.Not.EqualTo(plain), "the preset's values are in");
             Core.SongCore.ActionStack.Undo();
             Settle();
-            Assert.That(juno.AllNonInputParameters().Select(p => p.GetValue(0)).ToList(), Is.EqualTo(plain), "one undo step puts them back");
+            Assert.That(leadTrack.AllNonInputParameters().Select(p => p.GetValue(0)).ToList(), Is.EqualTo(plain), "one undo step puts them back");
             Core.SongCore.ActionStack.Redo();
             Settle();
 

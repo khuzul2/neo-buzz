@@ -332,6 +332,104 @@ namespace NeoBuzz.MachineTests
             Assert.Fail("the pitch should jump to the new note");
         }
 
+        // ── the per-note Slide flag (FU2b) ──────────────────────────────────
+
+        /// <summary>
+        /// Plays <paramref name="from"/>, ends it (<paramref name="overlap"/> false) or holds it, then plays <paramref name="to"/> (told it is a slide note when <paramref name="flagged"/>).
+        /// Returns the seconds the second note's pitch takes to arrive (-1: it began there) and the voice's pitch right after the note-on.
+        /// </summary>
+        static (double Seconds, float Start) FlaggedSlide(Action<ParamValues> setup, int voiceMode, bool flagged, bool overlap, int from = 36, int to = 43)
+        {
+            var v = new ParamValues(Params.Table);
+            v.Set(P.VoiceMode, voiceMode);
+            v.Set(P.Drift, 0);
+            v.Set(P.AmpS, 1000);
+            setup?.Invoke(v);
+            var e = new PolyEngine(v);
+            e.SetSampleRate(Rate);
+            var l = new float[16];
+            var r = new float[16];
+            e.NoteOn(0, from, 1f);
+            for (int i = 0; i < Rate / 4 / 16; i++) e.Process(l, r, 16);
+            if (!overlap)
+            {
+                e.NoteOff(0);
+                for (int i = 0; i < 40; i++) e.Process(l, r, 16);
+            }
+            if (flagged) e.SlideNextNote();
+            e.NoteOn(1, to, 1f);
+            int blocks = 0;
+            float start = 0;
+            bool found = false;
+            var pitch = new float[PolyEngine.VoiceCount];
+            while (blocks < Rate / 16)
+            {
+                e.Process(l, r, 16);
+                blocks++;
+                float best = float.NaN;
+                for (int i = 0; i < PolyEngine.VoiceCount; i++)
+                    if (e.Voice(i).IsActive && (float.IsNaN(best) || Math.Abs(e.Voice(i).Pitch - to) < Math.Abs(best - to))) best = e.Voice(i).Pitch;
+                if (blocks == 1) start = best;
+                if (!float.IsNaN(best) && Math.Abs(best - to) < 1e-4f) { found = true; break; }
+            }
+            return (found ? blocks * 16.0 / Rate : -1, start);
+        }
+
+        [TestCase(0, 0)]
+        [TestCase(0, 1)]
+        [TestCase(0, 2)]
+        [TestCase(1, 0)]
+        [TestCase(1, 1)]
+        [TestCase(1, 2)]
+        [TestCase(2, 0)]
+        [TestCase(2, 2)]
+        public void AFlaggedNoteGlidesIntoItsPitchAtTheSlideTimeWhateverTheGlideModeAndTheVoiceMode(int voiceMode, int glideMode)
+        {
+            foreach (bool overlap in new[] { false, true })
+            {
+                var (t, start) = FlaggedSlide(v => { v.Set(P.Slide, 1); v.Set(P.GlideMode, glideMode); v.Set(P.Glide, 900); Set(v, P.SlideTime, 0.2); }, voiceMode, true, overlap);
+                Measure.Report($"Flagged note, voice mode {voiceMode}, glide mode {glideMode}, {(overlap ? "overlapping" : "after the note ended")}: pitch arrives after {t * 1000:F1} ms, starts at {start:F2}");
+                Assert.That(t, Is.EqualTo(0.2).Within(0.2 * 0.06 + 0.001), $"the Slide time, not the glide time (voice {voiceMode}, glide {glideMode}, overlap {overlap})");
+                Assert.That(start, Is.LessThan(43f - 1f), "it starts from the note before it, not at its own pitch");
+            }
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void ANoteWithoutTheFlagIsPlayedAsItAlwaysWasAndTheFlagIsIgnoredWithTheSlideSwitchOff(int voiceMode)
+        {
+            // The glide mode is off and the note is not flagged: it jumps to its pitch (no slide from a gap).
+            var (t, _) = FlaggedSlide(v => { v.Set(P.Slide, 1); v.Set(P.GlideMode, 0); Set(v, P.SlideTime, 0.2); }, voiceMode, false, false);
+            Assert.That(t, Is.InRange(0, 0.02), "an unflagged note is on its pitch within the steal's fade, a few ms");
+            // Slide off: the flag has nothing to say.
+            var (t2, _) = FlaggedSlide(v => { v.Set(P.Slide, 0); v.Set(P.GlideMode, 0); Set(v, P.SlideTime, 0.2); }, voiceMode, true, false);
+            Assert.That(t2, Is.InRange(0, 0.02), "with Slide off, a flagged note is a plain note");
+        }
+
+        [Test]
+        public void AFlaggedNoteWithNothingBeforeItStartsAsANoteDoesAndTheFlagDoesNotLeakToTheNextNote()
+        {
+            var v = new ParamValues(Params.Table);
+            v.Set(P.VoiceMode, 1);
+            v.Set(P.Drift, 0);
+            v.Set(P.Slide, 1);
+            var e = new PolyEngine(v);
+            e.SetSampleRate(Rate);
+            var l = new float[16];
+            var r = new float[16];
+            e.SlideNextNote();
+            e.NoteOn(0, 40, 1f);
+            e.Process(l, r, 16);
+            Assert.That(e.Voice(0).Pitch, Is.EqualTo(40f).Within(1e-3f), "nothing before it: no slide");
+            for (int i = 0; i < 100; i++) e.Process(l, r, 16);
+            e.NoteOff(0);
+            for (int i = 0; i < 40; i++) e.Process(l, r, 16);
+            e.NoteOn(1, 47, 1f);        // not flagged: the flag was for the first note only
+            for (int i = 0; i < 40; i++) e.Process(l, r, 16);
+            Assert.That(e.Voice(0).Pitch, Is.EqualTo(47f).Within(1e-3f), "the flag was used up by its note: on its pitch after the steal's few ms, no 500 ms slide");
+        }
+
         // ── cost ────────────────────────────────────────────────────────────
 
         static double TimeVoices(int type, int reps)
