@@ -272,8 +272,8 @@ namespace NeoBuzz.Editor
             init.Click += (s, e) => Load("<default>");
             menu.Items.Add(init);
             menu.Items.Add(new Separator());
-            // Group by the prefix before " — " or ":" (e.g. "Pad — Lush").
-            foreach (var group in Names().GroupBy(n => GroupOf(n)))
+            // Group by the prefix before " — " or ":" (e.g. "Pad — Lush"); the user's own presets without one are in "User", and the ones with one say so (PRS1).
+            foreach (var group in Names().GroupBy(n => machine.GetPresetGroup(n)))
             {
                 var items = menu.Items;
                 if (group.Key.Length > 0)
@@ -284,7 +284,8 @@ namespace NeoBuzz.Editor
                 }
                 foreach (var n in group)
                 {
-                    var item = new MenuItem { Header = n, ToggleType = MenuItemToggleType.Radio, IsChecked = n == current };
+                    bool mine = machine.IsUserPreset(n);
+                    var item = new MenuItem { Header = mine && group.Key != "User" ? n + "  (User)" : n, ToggleType = MenuItemToggleType.Radio, IsChecked = n == current };
                     string name = n;
                     item.Click += (s, e) => Load(name);
                     items.Add(item);
@@ -295,13 +296,6 @@ namespace NeoBuzz.Editor
             menu.Placement = PlacementMode.Bottom;
             Menu = menu;
             menu.Open(this);
-        }
-
-        static string GroupOf(string name)
-        {
-            int i = name.IndexOf(" — ", StringComparison.Ordinal);
-            if (i < 0) i = name.IndexOf(": ", StringComparison.Ordinal);
-            return i > 0 ? name.Substring(0, i) : "";
         }
 
         async void Save()

@@ -137,6 +137,24 @@ namespace ReBuzz.Host
         }
 
         /// <summary>
+        /// Presets (docs/specs/machines.md §3.6): the user's live in the settings folder (the registry file's), the factory ones in Gear are read-only.
+        /// Once per machine, presets an older build saved into a Gear file move to the user's folder.
+        /// </summary>
+        static void MigratePresets(JsonRegistry registry, string buzzPath, Action<string> log)
+        {
+            try
+            {
+                if (registry?.FilePath != null) BuzzGUI.Common.Presets.PresetStore.RootFolder = Path.GetDirectoryName(Path.GetFullPath(registry.FilePath));
+                int moved = BuzzGUI.Common.Presets.PresetStore.MigrateAll(Path.Combine(buzzPath, "Gear"));
+                if (moved > 0) log?.Invoke($"Moved {moved} of your presets from the Gear folder to {BuzzGUI.Common.Presets.PresetStore.UserFolder}.");
+            }
+            catch (Exception e)
+            {
+                log?.Invoke("Presets: " + e.Message);
+            }
+        }
+
+        /// <summary>
         /// What BuzzGUIStartup.PreInit does for ReBuzz.exe, minus its settings window: unobserved
         /// task exceptions are logged, and machines' dependencies resolve from the gear folders
         /// (with this OS's path separators).
@@ -172,6 +190,7 @@ namespace ReBuzz.Host
             string buzzPath = Global.BuzzPath;
 
             PreInit(buzzPath, log);
+            MigratePresets(registry, buzzPath, log);
             var core = new ReBuzzCore(
                 Global.GeneralSettings,
                 engineSettings,

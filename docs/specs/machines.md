@@ -202,6 +202,21 @@ A machine that plays sounds on notes says which keys make a sound and what to ca
 
 The map is never saved with the song or a preset. A machine with neither has no map and the views behave as they did. Plug-ins hosted by Neo Plug provide theirs from the plug-in (`plugin-host.md` §12).
 
+### 3.4 Where presets live (PRS1)
+
+A machine's presets are two sets, listed together by the Presets dialog, the parameter window's preset list, the machine editors' preset bars, the browser's Presets source and the agent's `preset_list`:
+
+| Set | File | Written by |
+|---|---|---|
+| **Factory** | `Gear/<Kind>/<DLL name>.prs.xml`, generated from `Presets.txt`, with a verbatim copy `<DLL name>.prs.xml.factory` beside it (the factory snapshot) | the build; **never the app** (on the Mac, Gear is inside the signed app and the next DMG replaces it) |
+| **User** | `<settings folder>/Presets/<DLL name>.prs.xml` (the folder of `registry.json`: `~/Library/Application Support/ReBuzz`, `$XDG_CONFIG_HOME/rebuzz`, `%APPDATA%\ReBuzz`; the studio's `--settings` folder) | the app, atomically (a temp file, then a rename); the same file format, so Import and Export still work |
+
+- **Shown together.** A user preset is marked "User" and goes in the group "User", or keeps its own "Group — Name". A user preset with a factory preset's name is a copy that shadows it; deleting the copy brings the factory preset back. Factory presets can't be deleted or overwritten: Update on one saves a user copy (preset_save with `overwrite=true` does the same).
+- **Bad files.** A missing or corrupt user file never stops the factory set loading. A corrupt one is moved aside as `<name>.prs.xml.bad` (`.bad2`, … when one is there) and the next save starts a new file.
+- **One-time migration.** Builds before PRS1 saved user presets into the Gear file. At startup, for each machine with a factory snapshot, the entries of its Gear `.prs.xml` that the snapshot doesn't have, or has differently (the presets the user added or changed), are copied into the user file (a preset already there is never replaced), the Gear file is set back to the snapshot when it can be written (when it can't, it is left as it is), and the machine is recorded in `Presets/migrated.txt`, so it never runs twice. Without a snapshot nothing can be told from the factory set, and nothing moves. While a snapshot exists the app reads the factory set from it, so what a read-only Gear file still holds is never taken for factory presets. The snapshot is the build's copy (`NeoPortable.targets`, `AppGear.targets`).
+- **Songs** store parameter values and machine data, not preset names: a song loads the same whatever presets exist (tested).
+- Code: `BuzzGUI.Common.Presets.PresetStore` / `MachinePresets`; `MachineExtensions.GetPresets`, `IsUserPreset`, `GetPresetGroup`, `SetPreset` (null deletes the user's), `DeleteUserPreset`; the tests are `ReBuzz.Studio.Tests/PresetStoreTests.cs`.
+
 ## 4. Shared foundation (M0)
 
 **DSP library (`NeoBuzz.Dsp`)**

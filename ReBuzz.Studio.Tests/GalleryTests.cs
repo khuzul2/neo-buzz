@@ -26,6 +26,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using BuzzGUI.Common;
 using BuzzGUI.Common.InterfaceExtensions;
+using BuzzGUI.Common.Presets;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
@@ -2654,6 +2655,27 @@ namespace ReBuzz.Studio.Tests
                         ReBuzz.Studio.Parameters.ParameterVisibility.FilePath = null;
                         ReBuzz.Studio.Parameters.ParameterVisibility.Reset();
                         try { System.IO.File.Delete(hiddenFile); } catch (System.IO.IOException) { }
+                    }
+                });
+                Try("462-presets-dialog", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
+                    var factory = m.GetPresetNames().Where(n => n != "<default>").Take(6).ToList();
+                    m.SetPreset("My bright lead", new Preset(m, false, true) { Comment = "Mine: saved from the Presets dialog." });
+                    m.SetPreset(factory[2], new Preset(m, false, true) { Comment = "My copy of a factory preset; deleting it brings the factory one back." });
+                    var w = new ReBuzz.Studio.Parameters.PresetsWindow(m);
+                    try
+                    {
+                        w.Show();
+                        w.Select("My bright lead");
+                        Settle();
+                        Shot(w, "462-presets-dialog", "The Presets dialog (PRS1): the factory presets from Gear and the user's own from the settings folder, together; the user's are marked User. Delete is for the user's only (a factory preset can't be deleted); a user copy of a factory preset stands in for it until it is deleted.", "Device panel ▸ Presets ▸ Presets…");
+                    }
+                    finally
+                    {
+                        w.Close();
+                        m.SetPreset("My bright lead", null);
+                        m.SetPreset(factory[2], null);
                     }
                 });
                 Try("457-inspector-macros-and-pins", () =>

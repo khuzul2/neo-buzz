@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using BuzzGUI.Common.InterfaceExtensions;
+using BuzzGUI.Common.Presets;
 using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Browser;
 using ReBuzz.Core;
@@ -135,48 +136,37 @@ namespace ReBuzz.Studio.Views.Browser
             }
         }
 
-        // ---- presets: the .prs.xml beside each machine in Gear (names read once, lazily)
+        // ---- presets: each machine's factory presets (its .prs.xml in Gear) and the user's own (the settings folder's Presets), together
 
-        Dictionary<string, List<string>> presetNames;
+        Dictionary<string, (string Dir, string Dll)> presetGears;
 
         static string GearFolder => Path.Combine(Path.GetDirectoryName(typeof(MachineExtensions).Assembly.Location) ?? "", "Gear");
 
-        /// <summary>The factory presets of each installed machine (plug-ins' presets are not in the scan, so they are not listed).</summary>
-        Dictionary<string, List<string>> PresetNames()
+        /// <summary>The installed machines that can have presets, by entry name (plug-ins' presets are not in the scan, so they are not listed). Found once.</summary>
+        Dictionary<string, (string Dir, string Dll)> PresetGears()
         {
-            if (presetNames != null) return presetNames;
-            var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (presetGears != null) return presetGears;
+            var map = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase);
             foreach (var e in Entries.Where(x => !x.IsPlugin))
             {
                 string dll = e.Gear.Instrument.MachineDLL?.Name;
                 if (string.IsNullOrEmpty(dll) || e.Gear.Instrument.Name.Length > 0) continue;
                 string dir = Path.Combine(GearFolder, e.Gear.Instrument.Type == InstrumentType.Generator ? "Generators" : e.Gear.Instrument.Type == InstrumentType.Effect ? "Effects" : "");
-                string file = Path.Combine(dir, dll + ".prs.xml");
-                if (!File.Exists(file)) continue;
-                var names = ReadPresetNames(file);
-                if (names.Count > 0) map[e.Name] = names;
+                map[e.Name] = (dir, dll);
             }
-            return presetNames = map;
-        }
-
-        static List<string> ReadPresetNames(string file)
-        {
-            var names = new List<string>();
-            try
-            {
-                using var r = XmlReader.Create(file, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, IgnoreComments = true });
-                while (r.Read())
-                    if (r.NodeType == XmlNodeType.Element && r.Name == "Item" && r.GetAttribute("Key") is { Length: > 0 } k && k != "<default>") names.Add(k);
-            }
-            catch (Exception e) when (e is XmlException or IOException or UnauthorizedAccessException) { }
-            return names;
+            return presetGears = map;
         }
 
         public IEnumerable<BrowserItem> PresetItems()
         {
-            foreach (var (gear, names) in PresetNames().OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
-                foreach (var n in names.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
-                    yield return new BrowserItem(BrowserKind.Preset, gear, n, gear, "", "preset:" + gear + "/" + n, Preset: n, Machine: Find(gear));
+            foreach (var (gear, (dir, dll)) in PresetGears().OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                MachinePresets presets;
+                try { presets = PresetStore.For(dir, dll); }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { continue; }
+                foreach (var n in presets.Names.Where(x => x != "<default>").OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+                    yield return new BrowserItem(BrowserKind.Preset, gear, n, gear, presets.IsUser(n) ? "User" : "", "preset:" + gear + "/" + n, Preset: n, Machine: Find(gear));
+            }
         }
 
         public IEnumerable<BrowserItem> ClipItems()
