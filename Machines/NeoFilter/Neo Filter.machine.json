@@ -67,8 +67,8 @@
    "a": 20.0,
    "b": 20000.0,
    "unit": "Hz",
-   "description": "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (1 kHz: the table's own frequencies; within ±2 octaves)",
-   "how": "Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak. In Vowel it shifts all the formants up or down together (1 kHz leaves them as spoken).",
+   "description": "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (2 kHz, the default: the table's own frequencies; within ±2 octaves)",
+   "how": "Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak. In Vowel it shifts all the formants up or down together (2 kHz, the default, leaves them as spoken).",
    "sound": "Sweeping it makes the sound darker or brighter, or moves the thin band you hear."
   },
   {

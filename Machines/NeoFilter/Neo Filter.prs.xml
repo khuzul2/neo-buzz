@@ -515,7 +515,7 @@
       <Parameters>
         <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
         <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
-        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
         <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="194" />
         <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
@@ -545,7 +545,7 @@
       <Parameters>
         <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
         <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
-        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
         <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="111" />
         <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
@@ -575,7 +575,7 @@
       <Parameters>
         <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
         <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
-        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
         <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="165" />
         <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="400" />
@@ -605,7 +605,7 @@
       <Parameters>
         <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
         <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
-        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
         <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="304" />
         <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="60" />
         <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />

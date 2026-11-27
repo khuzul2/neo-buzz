@@ -347,7 +347,7 @@ namespace NeoBuzz.Filter
         }
 
         // The Vowel type's control values for a channel: the vowel (the smoothed control plus the modulation's share of it), the shift of every
-        // formant in octaves (Cutoff against 1 kHz, within ±2, plus the rest of the modulation), the bandwidth scale from Resonance; each
+        // formant in octaves (Cutoff against 2 kHz, within ±2, plus the rest of the modulation), the bandwidth scale from Resonance; each
         // formant's frequency, damping and gain, and the straight lines the coefficients take to them over the segment.
         void VowelControls(Channel ch, double modOct, bool settle)
         {

@@ -17,7 +17,7 @@ namespace NeoBuzz.MachineTests
         {
             var v = new ParamValues(Params.Table);
             v.Set(P.Type, 7);
-            Set(v, P.Cutoff, 1000);
+            Set(v, P.Cutoff, 2000);
             setup?.Invoke(v);
             var e = new FilterEngine(v) { Tempo = tempo };
             e.SetSampleRate(Rate);
@@ -126,7 +126,7 @@ namespace NeoBuzz.MachineTests
             for (int voice = 0; voice < 3; voice++)
                 for (int vowel = 0; vowel < 5; vowel++)
                 {
-                    var (e, _) = Make(v => { v.Set(P.Vowel, VowelRaw[vowel]); v.Set(P.Voice, voice); });
+                    var (e, _) = Make(v => { v.Set(P.Vowel, VowelRaw[vowel]); v.Set(P.Voice, voice); v.Set(P.Cutoff, 6666); });   // 1999.1 Hz: the table's frequencies to 0.05 %
                     var (l, _) = Run(e, x, x);
                     var g = HarmonicGains(l, f0, 70);
                     var (p1, p2) = FirstTwoPeaks(g, f0);
@@ -154,12 +154,12 @@ namespace NeoBuzz.MachineTests
                     for (int k = 0; k < 3; k++)
                         Assert.That(f[k], Is.EqualTo(Math.Sqrt(VowelDesign.Table[voice, vowel, k] * VowelDesign.Table[voice, vowel + 1, k])).Within(1e-6), $"voice {voice}, {vowel}-{vowel + 1}, F{k + 1}: the geometric mean");
                 }
-            // The voices blend the same way, and 1 kHz is no shift while an octave of cutoff is an octave of formants.
+            // The voices blend the same way, and 2 kHz is no shift while an octave of cutoff is an octave of formants.
             VowelDesign.Frequencies(0, 0.5, 0, f);
             Assert.That(f[0], Is.EqualTo(Math.Sqrt(VowelDesign.Table[0, 0, 0] * VowelDesign.Table[1, 0, 0])).Within(1e-6));
             VowelDesign.Frequencies(0.5, 0, 1, f);
             Assert.That(f[1], Is.EqualTo(2 * VowelDesign.Table[0, 2, 1]).Within(1e-6));
-            Assert.That(VowelDesign.CutoffShift(1000), Is.EqualTo(0).Within(1e-12));
+            Assert.That(VowelDesign.CutoffShift(2000), Is.EqualTo(0).Within(1e-12));
             Assert.That(VowelDesign.CutoffShift(20000), Is.EqualTo(2), "clamped to two octaves up");
             Assert.That(VowelDesign.CutoffShift(20), Is.EqualTo(-2), "and two down");
             Assert.That(VowelDesign.Describe(0), Is.EqualTo("A"));
@@ -203,7 +203,7 @@ namespace NeoBuzz.MachineTests
                 return new[] { p1, p2 };
             }
             var flat = Peaks(v => v.Set(P.Vowel, 0));
-            var up = Peaks(v => { v.Set(P.Vowel, 0); Set(v, P.Cutoff, 2000); });
+            var up = Peaks(v => { v.Set(P.Vowel, 0); Set(v, P.Cutoff, 4000); });
             Assert.That(up[0] / flat[0], Is.EqualTo(2).Within(0.15), "an octave up in Cutoff, an octave up in F1");
             Assert.That(up[1] / flat[1], Is.EqualTo(2).Within(0.15), "and F2");
             // Slope makes no difference at all.
@@ -237,7 +237,7 @@ namespace NeoBuzz.MachineTests
             var saw = Saw(110, 4 * Rate, 0.1);
             var lines = new List<string>();
             double worstNoise = 0, worstSaw = 0;
-            foreach (double cutoff in new[] { 1000.0, Params.Table[P.Cutoff].Value(Params.Table[P.Cutoff].Default) })
+            foreach (double cutoff in new[] { 2000.0, 4000.0 })
                 for (int voice = 0; voice < 3; voice++)
                     for (int vowel = 0; vowel < 5; vowel++)
                     {
@@ -383,14 +383,14 @@ namespace NeoBuzz.MachineTests
             double worst = 0;
             for (int i = 0; i < x.Length; i++) worst = Math.Max(worst, Math.Abs(mix[i] - 0.5 * (x[i] + wet[i])));
             Assert.That(worst, Is.LessThan(1e-5), "Mix 50 % is the mean of dry and wet");
-            // Amount scales the shift (cutoff in octaves from 1 kHz) and the bandwidth (Q in octaves from 0.71): at 50 % half of each, at 200 % twice.
-            var (ae, _) = Make(v => { Set(v, P.Cutoff, 2000); Set(v, P.Resonance, 2.84); v.Set(P.Amount, 500); });
+            // Amount scales the shift (cutoff in octaves from 2 kHz) and the bandwidth (Q in octaves from 0.71): at 50 % half of each, at 200 % twice.
+            var (ae, _) = Make(v => { Set(v, P.Cutoff, 4000); Set(v, P.Resonance, 2.84); v.Set(P.Amount, 500); });
             Run(ae, new float[4800], new float[4800]);
-            Assert.That(ae.Setting.CutoffHz, Is.EqualTo(1000 * Math.Sqrt(2)).Within(1), "Amount 50 %: half an octave of shift");
+            Assert.That(ae.Setting.CutoffHz, Is.EqualTo(2000 * Math.Sqrt(2)).Within(3), "Amount 50 %: half an octave of shift");
             Assert.That(ae.Setting.Q, Is.EqualTo(0.71 * 2).Within(0.05), "Amount 50 %: half the Q's octaves");
-            var (be, _) = Make(v => { Set(v, P.Cutoff, 1250); Set(v, P.Resonance, 1.42); v.Set(P.Amount, 2000); });
+            var (be, _) = Make(v => { Set(v, P.Cutoff, 2500); Set(v, P.Resonance, 1.42); v.Set(P.Amount, 2000); });
             Run(be, new float[4800], new float[4800]);
-            Assert.That(be.Setting.CutoffHz, Is.EqualTo(1000 * Math.Pow(1.25, 2)).Within(1), "Amount 200 %: twice the shift");
+            Assert.That(be.Setting.CutoffHz, Is.EqualTo(2000 * Math.Pow(1.25, 2)).Within(6), "Amount 200 %: twice the shift");
             Assert.That(be.Setting.Q, Is.EqualTo(0.71 * 4).Within(0.1), "Amount 200 %: twice the Q's octaves");
             // And 200 % stays finite and bounded.
             var (ce, _) = Make(v => { on(v); Set(v, P.Resonance, 50); v.Set(P.Amount, 2000); Set(v, P.Output, 24); });

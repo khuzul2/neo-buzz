@@ -11,8 +11,8 @@ Type      "Type"            0 7     0     enum Ladder_24 Ladder_12 SVF_LP SVF_BP
 Slope     "Slope"           0 1     0     enum 12_dB/oct 24_dB/oct      | SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it
     how Chooses a 12 or 24 dB per octave slope for the state-variable low-pass, band-pass, high-pass and notch (the ladder and peak ignore it).
     sound 24 dB per octave cuts more sharply, so the filtered range disappears faster; 12 dB is gentler and more natural.
-Cutoff    "Cutoff"          0 10000 6667  freq 20 20000                 | Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (1 kHz: the table's own frequencies; within ±2 octaves)
-    how Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak. In Vowel it shifts all the formants up or down together (1 kHz leaves them as spoken).
+Cutoff    "Cutoff"          0 10000 6667  freq 20 20000                 | Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (2 kHz, the default: the table's own frequencies; within ±2 octaves)
+    how Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak. In Vowel it shifts all the formants up or down together (2 kHz, the default, leaves them as spoken).
     sound Sweeping it makes the sound darker or brighter, or moves the thin band you hear.
 Resonance "Resonance"       0 1000  66    exp 0.5 100 2                 | Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level. Vowel: scales the formants' bandwidths, so higher values make sharper, more whistling formants (0.71: as spoken)
     how Boosts the region around the cutoff by raising Q from 0.5 to 100. In Vowel it narrows the formants.

@@ -54,7 +54,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1126, 484),   // P5a: the pads, the selected pad's panel and the mix strip (the classic editor is 1232 x 738)
-            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
+            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 880, 620),   // the WPF editor was 802 wide: the Vowel section (EXT1, #190) is 78 px more
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 341),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (956 x 277 before)
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),

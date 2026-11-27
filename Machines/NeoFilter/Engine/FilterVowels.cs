@@ -33,10 +33,10 @@ namespace NeoBuzz.Filter
         public static readonly string[] VoiceNames = { "Man", "Woman", "Child" };
 
         /// <summary>The cutoff (Hz) at which the table's frequencies stand as they are.</summary>
-        public const double ReferenceHz = 1000;
+        public const double ReferenceHz = 2000;
 
         /// <summary>log2 of <see cref="ReferenceHz"/>.</summary>
-        public const double ReferenceLog2 = 9.965784284662087;
+        public const double ReferenceLog2 = 10.965784284662087;
 
         /// <summary>F1-F3 in Hz of /ɑ ɛ i ɔ u/ (A E I O U) for men, women and children: Peterson and Barney (1952), Table II averages.</summary>
         public static readonly double[,,] Table =
@@ -100,7 +100,7 @@ namespace NeoBuzz.Filter
         /// <summary>The bandwidth scale a Resonance (Q) asks for: higher Q, sharper formants.</summary>
         public static double BandwidthScale(double q) => Math.Clamp(ReferenceQ / q, MinBandwidthScale, MaxBandwidthScale);
 
-        /// <summary>The cutoff's shift of the formants in octaves (1 kHz is none), within ±2 octaves.</summary>
+        /// <summary>The cutoff's shift of the formants in octaves (2 kHz, the default Cutoff, is none), within ±2 octaves.</summary>
         public static double CutoffShift(double cutoffHz) => Math.Clamp(Math.Log2(cutoffHz / ReferenceHz), -2.0, 2.0);
 
         /// <summary>The vowel (0 … 1: A, E, I, O, U a quarter apart) and the voice (0 … 2, between two sets a blend) at which the formants stand, in Hz (before any shift), F1-F3.</summary>

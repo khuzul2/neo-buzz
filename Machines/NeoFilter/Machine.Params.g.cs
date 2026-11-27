@@ -13,7 +13,7 @@ namespace NeoBuzz.Filter
         [ParameterDecl(Name = "Slope", Description = "SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Slope { get => Values[P.Slope]; set => Values.Set(P.Slope, value); }
 
-        [ParameterDecl(Name = "Cutoff", Description = "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (1 kHz: the table's own frequencies; within ±2 octaves)", MinValue = 0, MaxValue = 10000, DefValue = 6667)]
+        [ParameterDecl(Name = "Cutoff", Description = "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (2 kHz, the default: the table's own frequencies; within ±2 octaves)", MinValue = 0, MaxValue = 10000, DefValue = 6667)]
         public int Cutoff { get => Values[P.Cutoff]; set => Values.Set(P.Cutoff, value); }
 
         [ParameterDecl(Name = "Resonance", Description = "Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level. Vowel: scales the formants' bandwidths, so higher values make sharper, more whistling formants (0.71: as spoken)", MinValue = 0, MaxValue = 1000, DefValue = 66)]

@@ -155,8 +155,8 @@ namespace ReBuzz.Studio.Tests
             NewSong();
             try
             {
-                // Neo Poly left this list at AC1: it has a version now (1, F1 type grew a choice and the acid parameters were appended), see NeoPolyAcidSaveIsVersioned.
-                foreach (var gear in new[] { "Neo Comp", "Neo Learn FM", "Neo Filter" })
+                // Neo Poly left this list at AC1: it has a version now (1, F1 type grew a choice and the acid parameters were appended), see NeoPolyAcidSaveIsVersioned. Neo Filter has one too (1, the Vowel type and its three parameters were appended, EXT1 #190), see NeoFilterUnchangedTests and FilterMigrations.
+                foreach (var gear in new[] { "Neo Comp", "Neo Learn FM" })
                 {
                     Core.SongCore.CreateMachine(gear, null, "V0 " + gear, null, null, null, -1, 0.5f, 0.5f);
                     var m = Core.SongCore.MachinesList.Last(x => x.Name == "V0 " + gear);
