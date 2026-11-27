@@ -33,7 +33,7 @@ Tone = -8
 Volume = -10.8
 
 preset "Tine — Stereo Tremolo"
-comment "A clean, warm tine with the tremolo on and fully panned: the whole sound swings between left and right at four and a half beats a second,."
+comment "A clean, warm tine with the tremolo on and fully panned: the whole sound swings between left and right four and a half times a second."
 Model = Tine
 Hardness = 2.8
 Touch = 50
