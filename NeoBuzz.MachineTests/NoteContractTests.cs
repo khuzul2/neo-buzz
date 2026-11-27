@@ -71,7 +71,7 @@ namespace NeoBuzz.MachineTests
             } },
             new Row { Name = "Neo Wave", Make = () =>
             {
-                TableBank.GetNow(0); TableBank.GetNow(1);          // the wavetables build in the background otherwise
+                for (int i = 0; i < TableBank.Count; i++) TableBank.GetNow(i);   // every wavetable now: they build in the background otherwise, and a note on an unbuilt one is silent
                 var v = new ParamValues(NeoBuzz.Wave.Params.Table);
                 v.Set(NeoBuzz.Wave.P.Polyphony, 16); v.Set(NeoBuzz.Wave.P.Unison, 1);
                 var e = new NeoBuzz.Wave.WaveEngine(v); e.SetSampleRate(Rate);
@@ -128,6 +128,7 @@ namespace NeoBuzz.MachineTests
             {
                 var v = new ParamValues(NeoBuzz.Patch.Params.Table);
                 v.Set(NeoBuzz.Patch.P.Voices, 16);
+                for (int i = 0; i < TableBank.Count; i++) TableBank.GetNow(i);   // as for Neo Wave: a Wavetable Osc on an unbuilt table is silent
                 var e = new NeoBuzz.Patch.PatchEngine(v); e.SetSampleRate(Rate); e.SetGraph(NeoBuzz.Patch.PatchPresets.Build(0)); e.Prepare();
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 while (e.Runtime.Compiling && sw.ElapsedMilliseconds < 30000) Thread.Sleep(1);     // the patch compiles in the background
