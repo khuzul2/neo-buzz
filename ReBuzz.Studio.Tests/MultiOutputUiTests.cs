@@ -179,6 +179,11 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Category("Gallery")]
         public void TheGalleryShotsOfSeveralOutputs()
         {
+            // As GalleryTests: GALLERY_THEME=light draws the shots in the Light theme (the Mac job runs the gallery in both).
+            var theme = ReBuzz.Studio.Shell.Design.StudioTheme.Kind;
+            using var restore = Studio.AfterTest(() => ReBuzz.Studio.Shell.Design.StudioTheme.Kind = theme);
+            if (Environment.GetEnvironmentVariable("GALLERY_THEME") is { } t && t.Equals("light", StringComparison.OrdinalIgnoreCase))
+                ReBuzz.Studio.Shell.Design.StudioTheme.Kind = ReBuzz.Studio.Shell.Design.AppearanceTheme.Light;
             var (window, view) = OpenEmpty();
             try
             {
