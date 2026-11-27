@@ -960,7 +960,7 @@
    "tolerance": 0.003,
    "automationTolerance": 0.005
   },
-  "paramCount": 91,
+  "paramCount": 102,
   "params": [
    "Voice mode|0|2|0|enum",
    "Polyphony|1|16|8|int",
@@ -995,7 +995,7 @@
    "Ring 1\u00d72|0|1000|0|pct",
    "Noise|0|1000|0|pct",
    "Noise colour|0|1000|0|pct",
-   "F1 type|0|5|0|enum",
+   "F1 type|0|6|0|enum",
    "F1 cutoff|0|1000|700|freq",
    "F1 reso|0|1000|150|pct",
    "F1 drive|0|1000|0|lin",
