@@ -173,7 +173,7 @@ namespace ReBuzz.Core
             var raw = RawRangeOf(target);
             result.Changed = Edit((c, s) =>
             {
-                var d = new MapDrive { Target = target, Min = drive?.Min ?? 0, Max = drive?.Max ?? 1, Invert = drive?.Invert ?? false, Takeover = drive?.Takeover ?? Takeover.Pickup, RawMin = raw?.Min, RawMax = raw?.Max };
+                var d = new MapDrive { Target = target, Min = drive?.Min ?? 0, Max = drive?.Max ?? 1, Invert = drive?.Invert ?? false, Takeover = drive?.Takeover ?? TakeoverOf(source.Device), RawMin = raw?.Min, RawMax = raw?.Max };
                 if (scope == MapScope.Global)
                 {
                     var list = s.Global ?? c.Global;

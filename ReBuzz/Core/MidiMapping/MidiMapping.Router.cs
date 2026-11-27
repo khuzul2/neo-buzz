@@ -36,6 +36,12 @@ namespace ReBuzz.Core
             public Dictionary<string, PinnedKeys[]> Pinned;
             public string TrackName;
             public int RouteCount;
+            // MM2: what the lights read (UI thread): the lights of each controller with a profile, and the bank's tracks.
+            public DeviceFeedback[] Feedback = Array.Empty<DeviceFeedback>();
+            public string SelectedId;
+            public string[] BankIds = new string[MapTarget.BankSize];
+            public MachineCore[] BankMachines = new MachineCore[MapTarget.BankSize];
+            public IMachine[] BankGenerators = new IMachine[MapTarget.BankSize];
         }
 
         sealed class PinnedKeys
@@ -121,6 +127,15 @@ namespace ReBuzz.Core
                     case MixerControl.Mute: Volatile.Write(ref wanted, next); Notify(0, 0, 3); break;
                     default: Volatile.Write(ref wanted, next); Notify(0, 0, 4); break;
                 }
+            }
+
+            /// <summary>UI thread: where the control's value is in its range, 0 to 127 (a ring's light). 0 when it drives nothing.</summary>
+            public int Position127()
+            {
+                if (Free || (Param == null && Mix == null)) return 0;
+                if (Mix is MixerControl.Mute or MixerControl.Solo) return Read() != 0 ? 127 : 0;
+                double position = MapMath.ToPosition(Read(), PMin, PMax, RMin, RMax, Invert);
+                return (int)Math.Round(Math.Clamp(position, 0, 1) * 127);
             }
 
             /// <summary>MIDI thread: the control moved (<paramref name="value"/> of <paramref name="max"/>).</summary>
@@ -360,22 +375,27 @@ namespace ReBuzz.Core
             var page = tracks?.CurrentPage;
             var generator = GeneratorOf(entry);
             var pins = generator != null && buzz.PinStore != null ? buzz.PinStore.Get(generator.Name) : Array.Empty<string>();
+            Route KnobRoute(int i, MapSource src, KnobEncoding enc)
+            {
+                Route r;
+                if (entry != null && page != null && page.Slots.TryGetValue(i, out var drive)) r = Make(drive, src, enc);
+                else if (entry != null && generator != null && i < pins.Count && byName.TryGetValue(generator.Name, out var gm)
+                    && ResolveParam(MapTarget.Parameter(gm.Name, pins[i]), byName) is { } pinned)
+                    r = Make(new MapDrive { Target = MapTarget.Parameter(gm.Name, pinned.Name) }, src, enc);
+                else r = new Route { Owner = this, Free = true };
+                r.Slot = i;
+                r.Continuous = src.IsContinuous;
+                r.Encoding = enc;
+                return r;
+            }
             foreach (var group in computer.Groups)
             {
-                for (int i = 0; i < group.Count; i++)
+                int limit = computer.SettingOf(group.Device) is { KnobGroup: > 0 } limited ? Math.Min(group.Count, limited.KnobGroup) : group.Count;
+                for (int i = 0; i < limit; i++)
                 {
                     var src = group.Knobs[i] with { Device = group.Device };
                     var enc = i < group.Encodings.Count ? group.Encodings[i] : KnobEncoding.Absolute;
-                    Route r;
-                    if (entry != null && page != null && page.Slots.TryGetValue(i, out var drive)) r = Make(drive, src, enc);
-                    else if (entry != null && generator != null && i < pins.Count && byName.TryGetValue(generator.Name, out var gm)
-                        && ResolveParam(MapTarget.Parameter(gm.Name, pins[i]), byName) is { } pinned)
-                        r = Make(new MapDrive { Target = MapTarget.Parameter(gm.Name, pinned.Name) }, src, enc);
-                    else r = new Route { Owner = this, Free = true };
-                    r.Slot = i;
-                    r.Continuous = src.IsContinuous;
-                    r.Encoding = enc;
-                    Add(src, r);
+                    Add(src, KnobRoute(i, src, enc));
                 }
             }
             // 2. The page's direct entries.
@@ -385,6 +405,23 @@ namespace ReBuzz.Core
             // 3. Global entries.
             foreach (var e in song.Global ?? computer.Global)
                 Add(e.Source, Make(e, e.Source, e.Encoding));
+
+            // 3b. MM2: the profiles of the controllers that have one (after the person's maps, so a control they mapped is theirs).
+            s.SelectedId = entry?.Id;
+            var bankTracks = ctx.Tracks;
+            int bankAt = Volatile.Read(ref bankOffset);
+            for (int i = 0; i < MapTarget.BankSize && bankAt + i < bankTracks.Count; i++)
+            {
+                s.BankIds[i] = bankTracks[bankAt + i].Id;
+                s.BankMachines[i] = SongTracks.MachineOf(bankTracks[bankAt + i].Head) as MachineCore;
+                s.BankGenerators[i] = GeneratorOf(bankTracks[bankAt + i]);
+            }
+            var bankColumns = new int[MapTarget.BankSize];
+            for (int i = 0; i < bankColumns.Length; i++)
+                bankColumns[i] = bankAt + i < bankTracks.Count && GeneratorOf(bankTracks[bankAt + i]) is { } bgen && buzz.SessionLayout != null ? buzz.SessionLayout.FirstTrackOf(bgen) : -1;
+            bankFeed.Set(bankColumns);
+            ProfileRoutes(s, lists, Device, Add, Make, KnobRoute, ctx);
+            computerNoKeys = new HashSet<string>(computer.NoKeys.Concat(s.Devices.Keys.Concat(buzz.MidiInOutEngine?.OpenInputKeys() ?? Array.Empty<string>()).Distinct(StringComparer.OrdinalIgnoreCase).Where(d => RoleOf(d) == DeviceRole.Controls)), StringComparer.OrdinalIgnoreCase);
 
             foreach (var (key, list) in lists) s.Routes[key] = list.ToArray();
 
@@ -404,11 +441,6 @@ namespace ReBuzz.Core
             }
 
             // The bank's tracks as session tracks, for the clip grid.
-            var columns = new int[MapTarget.BankSize];
-            int bank = Volatile.Read(ref bankOffset);
-            for (int i = 0; i < columns.Length; i++)
-                columns[i] = bank + i < ctx.Tracks.Count && GeneratorOf(ctx.Tracks[bank + i]) is { } gen && layout != null ? layout.FirstTrackOf(gen) : -1;
-            bankFeed.Set(columns);
 
             // The queue has room for a pending event of every route.
             if (s.RouteCount > reservedRoutes)
@@ -472,6 +504,7 @@ namespace ReBuzz.Core
             int status = data & 0xFF;
             if (status >= 0xF0) return false;
             var s = snap;
+            NoteMessage(device, data);
             if (!MapSource.TryDecode(data, out var kind, out int channel, out int number, out int value, out int max))
                 return PinnedKeysPlay(s, device, data, status);
 
@@ -576,6 +609,8 @@ namespace ReBuzz.Core
                 case MapCommand.BankRight: MoveBank(1); break;
                 case MapCommand.BankLeft8: MoveBank(-MapTarget.BankSize); break;
                 case MapCommand.BankRight8: MoveBank(MapTarget.BankSize); break;
+                case MapCommand.KnobPan: SetKnobMode(0); break;
+                case MapCommand.KnobSend: NextKnobSend(); break;
                 case MapCommand.SceneUp: MoveScenes(-1); break;
                 case MapCommand.SceneDown: MoveScenes(1); break;
                 case MapCommand.SelectBankTrack: SelectBankTrack(r.CommandIndex); break;
@@ -656,6 +691,7 @@ namespace ReBuzz.Core
             Volatile.Write(ref bankOffset, tracks);
             Volatile.Write(ref sceneOffset, scenes);
             Rebuild();
+            InvalidateFeedback();
             BankChanged?.Invoke();
             Changed?.Invoke();
             return true;

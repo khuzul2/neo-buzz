@@ -36,6 +36,8 @@ namespace ReBuzz.Midi.Mapping
         BankLeft, BankRight, BankLeft8, BankRight8, SceneUp, SceneDown,
         // MM2: what a clip-grid controller's buttons do. Index is a bank track (1 to 8), a row of the scene window (0 from the top), or for a slot row * 8 + column.
         SelectBankTrack, ArmBankTrack, StopClipBankTrack, StopAllClips, LaunchScene, LaunchSlot,
+        // MM2: what the track knobs of a clip-grid controller drive: the pan, or the next send (A, B, C and round).
+        KnobPan, KnobSend,
     }
 
     /// <summary>MM2: what a mixer target drives: a strip's fader, pan, a send, its On (mute) or Solo, or the Master's fader.</summary>
@@ -223,6 +225,8 @@ namespace ReBuzz.Midi.Mapping
             MapCommand.ArmBankTrack => "Arm bank track " + Math.Max(1, index).ToString(CultureInfo.InvariantCulture),
             MapCommand.StopClipBankTrack => "Stop the clip of bank track " + Math.Max(1, index).ToString(CultureInfo.InvariantCulture),
             MapCommand.StopAllClips => "Stop all clips",
+            MapCommand.KnobPan => "Track knobs: pan",
+            MapCommand.KnobSend => "Track knobs: next send",
             MapCommand.LaunchScene => "Launch scene row " + (Math.Max(0, index) + 1).ToString(CultureInfo.InvariantCulture),
             _ => "Launch slot " + (Math.Max(0, index) % BankSize + 1).ToString(CultureInfo.InvariantCulture) + "/" + (Math.Max(0, index) / BankSize + 1).ToString(CultureInfo.InvariantCulture),
         };

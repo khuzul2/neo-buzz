@@ -65,6 +65,7 @@ namespace ReBuzz.Core
                 s.ConnectionRemoved += OnWire;
             }
             if (buzz.PinStore != null) buzz.PinStore.Changed += OnGraphChangedNoArg;
+            if (buzz.MidiInOutEngine != null) buzz.MidiInOutEngine.InputsChanged += OnGraphChangedNoArg;     // MM2: a controller was plugged in or out: its profile starts or ends
             if (buzz.SessionLayout != null) buzz.SessionLayout.InputsChanged += OnInputsChanged;
             Rebuild();
         }

@@ -19,7 +19,7 @@ namespace ReBuzz.Agent
         static readonly string[] Kinds = { "cc", "note", "bend", "pc" };
         static readonly string[] Encoders = { "absolute", "offset64", "twos" };
         static readonly string[] Takeovers = { "pickup", "jump", "scale" };
-        static readonly string[] Commands = { "play", "stop", "record", "loop", "previous_track", "next_track", "select_track", "arm", "mute", "solo", "bank_left", "bank_right", "bank_left_8", "bank_right_8", "scene_up", "scene_down", "select_bank_track", "arm_bank_track", "stop_clip_bank_track", "stop_all_clips", "launch_scene", "launch_slot" };
+        static readonly string[] Commands = { "play", "stop", "record", "loop", "previous_track", "next_track", "select_track", "arm", "mute", "solo", "bank_left", "bank_right", "bank_left_8", "bank_right_8", "scene_up", "scene_down", "select_bank_track", "arm_bank_track", "stop_clip_bank_track", "stop_all_clips", "launch_scene", "launch_slot", "knob_pan", "knob_send" };
         static readonly string[] MixerControls = { "volume", "pan", "send", "on", "solo", "master" };
 
         static JsonObject ControlSchema() => Object(null,
@@ -105,6 +105,8 @@ namespace ReBuzz.Agent
             MapCommand.StopAllClips => "stop_all_clips",
             MapCommand.LaunchScene => "launch_scene",
             MapCommand.LaunchSlot => "launch_slot",
+            MapCommand.KnobPan => "knob_pan",
+            MapCommand.KnobSend => "knob_send",
             _ => c.ToString().ToLowerInvariant(),
         };
 
@@ -173,6 +175,8 @@ namespace ReBuzz.Agent
                     "stop_all_clips" => MapTarget.Command(MapCommand.StopAllClips),
                     "launch_scene" => MapTarget.Command(MapCommand.LaunchScene, Math.Max(0, index - 1)),
                     "launch_slot" => MapTarget.Command(MapCommand.LaunchSlot, Math.Max(0, index - 1)),
+                    "knob_pan" => MapTarget.Command(MapCommand.KnobPan),
+                    "knob_send" => MapTarget.Command(MapCommand.KnobSend),
                     var other => throw new ToolError($"command: \"{other}\" is not one of {string.Join(", ", Commands)}."),
                 };
             }
@@ -216,7 +220,8 @@ namespace ReBuzz.Agent
                 Title = "MIDI controllers",
                 Description =
                     "The MIDI controllers: every input that is open now and every device a map, a knob group or a role names. Each is named by its port (a second one of the same name is \"Name #2\"), " +
-                    "with how many knobs its group has (0: not taught yet) and whether its keys follow the selected track. Also the selected track (what the keys and the knobs drive), whether " +
+                    "with how many knobs its group has (0: not taught yet), whether its keys follow the selected track, its profile (the data file that says what its controls do and light: the one its port name matches, " +
+                    "or the one controller_profile_set chose), its role, the output its lights go to and the last message it sent. Also the selected track (what the keys and the knobs drive), whether " +
                     "selecting a track arms it (auto-arm) and which track each device is pinned to (a track whose MIDI From names it). Nothing is specific to a model: a device with no " +
                     "group works through direct mappings. Example: controller_list().",
                 Input = Object(null),
@@ -226,6 +231,13 @@ namespace ReBuzz.Agent
                         Req("connected", Boolean("Open now")),
                         Req("knobs", Integer("Knobs in its group (0: none taught)")),
                         Req("keys", Boolean("Its notes follow the selected track")),
+                        Req("profile", String("The profile in use: its id, or none")),
+                        Opt("profile_name", String("The profile's name")),
+                        Req("profile_setting", String("What was chosen: auto, none or an id")),
+                        Req("role", String("keys, controls or both")),
+                        Opt("output", String("The MIDI output that gets its lights")),
+                        Req("takeover", String("The default takeover of its maps: pickup, jump or scale")),
+                        Opt("last_message", String("The last message it sent, as the Controllers page shows it")),
                         Opt("pinned_to", Array(String("A track"), "The tracks whose MIDI From names it"))), "The controllers")),
                     Opt("selected_track", String("The selected track's id")),
                     Req("auto_arm", Boolean("Selecting a track arms it")),
@@ -238,9 +250,20 @@ namespace ReBuzz.Agent
                         var mapping = core.MidiMapping ?? throw new ToolError("MIDI mapping is not available here.");
                         var layout = core.SessionLayout;
                         var list = new JsonArray();
-                        foreach (var (id, connected, knobs, keys) in mapping.Controllers())
+                        foreach (var row in mapping.ControllerRows())
                         {
-                            var o = new JsonObject { ["device"] = id, ["connected"] = connected, ["knobs"] = knobs, ["keys"] = keys };
+                            string id = row.Device;
+                            var o = new JsonObject
+                            {
+                                ["device"] = id, ["connected"] = row.Connected, ["knobs"] = row.Knobs, ["keys"] = row.Role != DeviceRole.Controls,
+                                ["profile"] = row.ProfileId.Length == 0 ? "none" : row.ProfileId,
+                                ["profile_setting"] = row.ProfileSet.Length == 0 ? "auto" : row.ProfileSet,
+                                ["role"] = row.Role.ToString().ToLowerInvariant(),
+                                ["takeover"] = row.Takeover.ToString().ToLowerInvariant(),
+                            };
+                            if (row.ProfileId.Length > 0) o["profile_name"] = row.ProfileName;
+                            if (row.Output.Length > 0) o["output"] = row.Output;
+                            if (row.Last.Length > 0) o["last_message"] = row.Last;
                             var pinned = core.SongCore.MachinesList.Where(m => ReBuzz.Core.Session.SessionLayout.CanArm(m) && layout != null && layout.TrackInputOf(m) is { Midi: ReBuzz.Core.Session.MidiFromKind.Device } t && string.Equals(t.Device, id, StringComparison.OrdinalIgnoreCase))
                                 .Select(m => (JsonNode)("track:" + m.Name)).ToArray();
                             if (pinned.Length > 0) o["pinned_to"] = new JsonArray(pinned);
@@ -253,6 +276,57 @@ namespace ReBuzz.Agent
                     var cs = r["controllers"]!.AsArray();
                     string text = cs.Count == 0 ? "No MIDI controllers are open." : string.Join("; ", cs.Select(x => $"{x!["device"]}" + (x["connected"]!.GetValue<bool>() ? "" : " (not connected)") + $", {x["knobs"]} knob(s)"));
                     return ToolResult.Ok(text + (r["selected_track"] != null ? $". Selected: {r["selected_track"]}." : ". No track is selected."), r);
+                },
+            });
+
+            tools.Add(new ToolDef
+            {
+                Name = "controller_profile_set",
+                Title = "Set a controller's profile",
+                Description =
+                    "Sets what the Controllers page sets for one MIDI input, as one undo step, with the same checks: its profile (auto matches its port name against the profiles in use, none uses no profile " +
+                    "so it works through maps alone, or a profile's id as controller_list shows it), its role (keys, controls, both, or auto: the profile's), the output its lights go to, the size of its " +
+                    "knob group (0: all of them) and the takeover its maps get unless they say another. Only what is given changes; a refusal changes nothing and says what to use. " +
+                    "Example: controller_profile_set(device=\"Pads\", profile=\"none\").",
+                Input = Object(null,
+                    Req("device", String("The controller (see controller_list)")),
+                    Opt("profile", String("auto, none or a profile's id")),
+                    Opt("role", String("keys, controls, both, or auto (the profile's)", "keys", "controls", "both", "auto")),
+                    Opt("output", String("A MIDI output's name; \"\" is the output of the controller's own name")),
+                    Opt("knob_group", Integer("Knobs in its group, 0 to 64 (0: all)", 0, 64)),
+                    Opt("takeover", String("pickup, jump or scale", Takeovers))),
+                Output = Object(null,
+                    Req("changed", Boolean("Whether this call changed anything")),
+                    Req("text", String("What it did")),
+                    Req("profile", String("The profile in use now: its id, or none"))),
+                Annotations = ToolAnnotations.Write,
+                Handler = async c =>
+                {
+                    var r = await host.Engine("controller_profile_set", true, _ =>
+                    {
+                        var mapping = core.MidiMapping ?? throw new ToolError("MIDI mapping is not available here.");
+                        string device = c.String("device") ?? throw new ToolError("Give the device (controller_list names them).");
+                        var change = new ReBuzz.Core.MidiMapping.ControllerChange { Profile = c.String("profile"), Output = c.String("output"), KnobGroup = c.Int("knob_group") };
+                        string role = c.String("role")?.ToLowerInvariant();
+                        if (role != null)
+                        {
+                            change.ClearRole = role == "auto";
+                            change.Role = role switch { "keys" => DeviceRole.Keys, "controls" => DeviceRole.Controls, "both" => DeviceRole.Both, "auto" => null, _ => throw new ToolError($"role: \"{role}\" is not keys, controls, both or auto.") };
+                        }
+                        string takeover = c.String("takeover")?.ToLowerInvariant();
+                        if (takeover != null)
+                            change.Takeover = takeover switch { "pickup" => Takeover.Pickup, "jump" => Takeover.Jump, "scale" => Takeover.Scale, _ => throw new ToolError($"takeover: \"{takeover}\" is not pickup, jump or scale.") };
+                        if (change.Profile == null && change.Output == null && change.KnobGroup == null && role == null && takeover == null)
+                            throw new ToolError("Give something to set: profile, role, output, knob_group or takeover.");
+                        int steps = core.SongCore?.ActionStack.Actions.Count() ?? 0;
+                        string error = mapping.SetController(device, change);
+                        if (error != null) throw new ToolError(error);
+                        bool changed = (core.SongCore?.ActionStack.Actions.Count() ?? 0) != steps || core.SongCore == null;
+                        var row = mapping.ControllerRows().FirstOrDefault(x => string.Equals(x.Device, device, StringComparison.OrdinalIgnoreCase));
+                        string profile = row == null || row.ProfileId.Length == 0 ? "none" : row.ProfileId;
+                        return new JsonObject { ["changed"] = changed, ["text"] = $"{device}: profile {profile}, role {(row?.Role ?? DeviceRole.Both).ToString().ToLowerInvariant()}.", ["profile"] = profile };
+                    }, c.Cancellation);
+                    return ToolResult.Ok(r["text"]!.GetValue<string>() + (r["changed"]!.GetValue<bool>() ? "" : " (no change)"), r);
                 },
             });
 
