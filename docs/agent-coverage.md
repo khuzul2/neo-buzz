@@ -141,7 +141,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 
 | Tool | Guides | Calls | Example |
 |---|---|---|---|
-| analyze | 58 | 114 | yes |
+| analyze | 59 | 115 | yes |
 | analyze_mix | 9 | 7 | yes |
 | app_status | 4 | 1 | yes |
 | arrangement_automation | 1 | 0 | yes |
@@ -191,14 +191,14 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_clone | 1 | 1 | yes |
 | machine_command | 1 | 1 | yes |
 | machine_data_import | 12 | 15 | yes |
-| machine_describe | 43 | 29 | yes |
+| machine_describe | 44 | 30 | yes |
 | machine_find | 2 | 2 | yes |
 | machine_group | 1 | 2 | yes |
 | machine_latency | 2 | 1 | yes |
 | machine_list | 10 | 0 | yes |
 | machine_open_editor | 3 | 2 | yes |
 | machine_pin | 1 | 2 | yes |
-| machine_readings | 56 | 48 | yes |
+| machine_readings | 57 | 49 | yes |
 | machine_remove | 2 | 0 | yes |
 | machine_set | 10 | 12 | yes |
 | machine_swap | 1 | 1 | yes |
@@ -216,8 +216,8 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | modulate | 11 | 11 | yes |
 | modulation_list | 8 | 7 | yes |
 | modulation_remove | 5 | 4 | yes |
-| note_chain | 2 | 4 | yes |
-| note_wire_connect | 3 | 4 | yes |
+| note_chain | 3 | 4 | yes |
+| note_wire_connect | 4 | 4 | yes |
 | note_wire_disconnect | 1 | 1 | yes |
 | note_wires | 2 | 1 | yes |
 | notes_read | 8 | 2 | yes |
@@ -227,7 +227,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | param_get | 18 | 26 | yes |
 | param_lock | 1 | 2 | yes |
 | param_randomize | 1 | 1 | yes |
-| param_set | 55 | 38 | yes |
+| param_set | 56 | 39 | yes |
 | patch_add_node | 2 | 1 | yes |
 | patch_connect | 2 | 3 | yes |
 | patch_describe | 3 | 1 | yes |
