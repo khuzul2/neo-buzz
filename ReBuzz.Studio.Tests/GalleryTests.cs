@@ -2517,6 +2517,9 @@ namespace ReBuzz.Studio.Tests
                         var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
                         for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
                         var inst = m.ManagedMachine!;
+                        // (the host hands the values to the machine at the song's tick; the shot does not tick, so they are set on it directly)
+                        string[] props = { "Room", "Wave", "PreDelay", "Length", "LowCut", "HighCut", "Width", "Reverse", "Mix", "Amount", "Output" };
+                        for (int k = 0; k < props.Length; k++) inst.GetType().GetProperty(props[k])!.SetValue(inst, raws[k]);
                         var busy = inst.GetType().GetProperty("Busy")!;
                         var work = inst.GetType().GetMethod("Work")!;
                         var output = new Buzz.MachineInterface.Sample[256];
@@ -2537,7 +2540,7 @@ namespace ReBuzz.Studio.Tests
                     "Neo Space with the preset \"Hall — Large Hall\" loaded: the Room section (the room, the Wave slot, Pre-delay and Length), the picture of the response (its level over time, the pre-delay as a shaded gap in front), the Tone section (low and high cut, Width, Reverse), and Output with Amount and Mix side by side, the level and the two meters.");
                 SpaceShot("663-neo-space-reverse", "Space 2", new[] { 6, 0, 0, 347, 589, 1000, 1300, 1, 600, 1000, 583 },
                     "Neo Space with the preset \"Effect — Reverse Swell\" loaded: Reverse on, so the picture rises to its end, and the Length line on it dims the part that is cut off.");
-                SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 40, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
+                SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 160, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
                     "Neo Space with Room set to Wave and slot 5 empty: the picture shows the hall that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
                 Try("456-device-list-mode", () =>
                 {

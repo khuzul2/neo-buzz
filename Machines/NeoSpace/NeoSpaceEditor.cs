@@ -94,10 +94,12 @@ namespace NeoBuzz.Space
                 g.Text($"{pre * 1000:0} ms", plot.Left + 3, plot.Top + 2, 10, Palette.DimText);
             }
             // The trim: what the Length keeps, the rest dimmed.
-            double cut = pre + seconds * lengthFraction;
+            // Reversed, the kept part is the end of the picture (the trimmed response played backwards) and the part cut away is in front of it.
+            double cut = pre + seconds * (reverse ? 1.0 - lengthFraction : lengthFraction);
             if (lengthFraction < 0.999)
             {
-                g.Rect(new NeoRect(X(cut), plot.Top, plot.Right - X(cut), plot.Height), new NeoFill(Palette.Background.WithAlpha(0xB0), default, false), NeoStroke.None);
+                if (reverse) g.Rect(new NeoRect(X(pre), plot.Top, X(cut) - X(pre), plot.Height), new NeoFill(Palette.Background.WithAlpha(0xB0), default, false), NeoStroke.None);
+                else g.Rect(new NeoRect(X(cut), plot.Top, plot.Right - X(cut), plot.Height), new NeoFill(Palette.Background.WithAlpha(0xB0), default, false), NeoStroke.None);
                 g.Line(X(cut), plot.Top, X(cut), plot.Bottom, new NeoStroke(AccentColor, 2));
             }
             string name = built?.Name ?? "…";

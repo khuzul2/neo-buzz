@@ -137,15 +137,12 @@ namespace NeoBuzz.Space
         // The builder's cache of the base response (room or wave at the host's rate).
         int cacheRoom = -1, cacheSlot, cacheVersion, cacheRate;
         float[] baseL, baseR;
-        float[] basePreview;
-        double baseSeconds;
         string baseName = "";
 
         // ---- the audio thread's
         SpaceBuilt current, old;
         int fade, fadeLength;
         bool stale;
-        long sinceInput;
         readonly float[] wetL = new float[MaxBlock], wetR = new float[MaxBlock], oldL = new float[MaxBlock], oldR = new float[MaxBlock];
         SmoothRamp dryGain, wetGain;
         bool gainsStarted;
@@ -184,7 +181,6 @@ namespace NeoBuzz.Space
             fx.Reset();
             stale = true;
             gainsStarted = false;
-            sinceInput = 0;
         }
 
         /// <summary>The effective parameter values (Amount applied: none of ours has a rule, so the raw ones).</summary>
