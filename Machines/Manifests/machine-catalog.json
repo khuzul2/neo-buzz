@@ -767,6 +767,17 @@
     "stereo-width"
    ],
    "use_for": "Convolution reverb with zero latency: nine rooms of our own or any wave of the song as the room, with pre-delay, length, low and high cut, width and reverse. Best on a send at 100% wet."
+  },
+  "Neo Vocoder": {
+   "category": "Modulation",
+   "tags": [
+    "vocal",
+    "sidechain",
+    "pad",
+    "notes"
+   ],
+   "use_for": "Channel vocoder with 8 to 40 bands: a voice or a drum loop speaks through the machine's own synth played by chords, white noise, or any machine wired into the sidechain, with formant shift, clear consonants, freeze and stereo spread.",
+   "note_in": true
   }
  }
 }
