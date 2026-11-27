@@ -108,7 +108,7 @@
     "warm",
     "saturation"
    ],
-   "use_for": "Turn a guitar or bass played through a DI into an amped sound: eight voicings from clean to high gain, a tone stack, power-stage sag, cabinets or a wave of the song as the cabinet, a noise gate and a tuner."
+   "use_for": "Turn a guitar or bass DI into an amped sound: eight voicings from clean to high gain, tone stack, power sag, cabinets or a song wave as cabinet, noise gate and tuner."
   },
   "Neo Analyzer": {
    "category": "Utility",
