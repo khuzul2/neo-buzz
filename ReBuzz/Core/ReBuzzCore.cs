@@ -1497,6 +1497,7 @@ namespace ReBuzz.Core
             SessionSync?.Dispose();        // fork (0.8): the Link helper and the clock thread end
             SessionSync = null;
             SessionControllers?.Dispose(); // fork (0.8): controllers' lights off, their own modes back
+            MidiMapping?.ReleaseControllers(); // fork (midi-mapping.md, MM2): so do the controllers a profile runs
             SessionControllers = null;
 
             timerAutomaticBackups.Stop();

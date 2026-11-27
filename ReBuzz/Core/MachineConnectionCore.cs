@@ -155,7 +155,7 @@ namespace ReBuzz.Core
                         int index = InputIndex();
                         if (index != -1)
                         {
-                            var paramAmp = Destination.ParameterGroups[0].Parameters[0];
+                            var paramAmp = Destination is MachineCore dm ? dm.ParameterGroupsList[0].ParametersList[0] : Destination.ParameterGroups[0].Parameters[0];     // fork (MM2): no facade copy, so a fader moves with 0 bytes
                             paramAmp.SetValue(index, amp);
                         }
                     }
@@ -178,7 +178,7 @@ namespace ReBuzz.Core
                         int index = InputIndex();
                         if (index != -1)
                         {
-                            var paramPan = Destination.ParameterGroups[0].Parameters[1];
+                            var paramPan = Destination is MachineCore dm ? dm.ParameterGroupsList[0].ParametersList[1] : Destination.ParameterGroups[0].Parameters[1];
                             paramPan.SetValue(index, pan);
                         }
 
