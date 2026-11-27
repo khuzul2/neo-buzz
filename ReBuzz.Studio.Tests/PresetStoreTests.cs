@@ -193,6 +193,7 @@ namespace ReBuzz.Studio.Tests
             var again = PresetStore.Migrate(gear, Dll);
             Assert.That(again.Moved, Is.Empty);
             Assert.That(again.Skipped, Is.EqualTo("done before"));
+            Assert.That(PresetStore.Migrate(gear, Dll).Moved, Is.Empty);
             Assert.That(PresetStore.MigrateAll(Path.GetDirectoryName(gear)), Is.EqualTo(0));
             Assert.That(PresetDictionary.LoadXml(Dll, PresetStore.UserFile(Dll)).Keys, Is.EquivalentTo(new[] { "Pad — Mine B" }));
         }

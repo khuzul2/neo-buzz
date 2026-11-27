@@ -154,6 +154,11 @@ namespace BuzzGUI.Common.Presets
                     string gear = Path.Combine(gearDir, dllName + ".prs.xml"), snap = SnapshotFile(gearDir, dllName);
                     if (!File.Exists(snap)) { result.Skipped = "no snapshot"; return result; }
                     if (!File.Exists(gear)) { result.Skipped = "no gear file"; return result; }
+                    // The usual start: the Gear file is the snapshot. Compared by bytes (Dye Essence's is 16 MB: parsing it costs seconds),
+                    // and remembered for this process, so a machine's reloads don't read the files again.
+                    string key = Path.GetFullPath(gear), seen = Stamp(gear, snap);
+                    if (cleanStamps.TryGetValue(key, out var before) && before == seen) { result.Skipped = "clean"; return result; }
+                    if (SameBytes(gear, snap)) { cleanStamps[key] = seen; result.Skipped = "clean"; return result; }
                     var done = Migrated();
                     if (done.Contains(dllName)) { result.Skipped = "done before"; return result; }
 
@@ -186,6 +191,7 @@ namespace BuzzGUI.Common.Presets
                         TryRestoreGear(gear, snap, result);
                     }
                     Record(done, dllName);
+                    cleanStamps[key] = Stamp(gear, snap);
                 }
                 catch (Exception e)
                 {
@@ -193,6 +199,29 @@ namespace BuzzGUI.Common.Presets
                 }
             }
             return result;
+        }
+
+        static readonly Dictionary<string, string> cleanStamps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        static bool SameBytes(string a, string b)
+        {
+            var fa = new FileInfo(a);
+            var fb = new FileInfo(b);
+            if (fa.Length != fb.Length) return false;
+            using (var x = fa.OpenRead())
+            using (var y = fb.OpenRead())
+            {
+                var bx = new byte[81920];
+                var by = new byte[81920];
+                int n;
+                while ((n = x.Read(bx, 0, bx.Length)) > 0)
+                {
+                    int m = 0;
+                    while (m < n) { int r = y.Read(by, m, n - m); if (r <= 0) return false; m += r; }
+                    for (int i = 0; i < n; i++) if (bx[i] != by[i]) return false;
+                }
+            }
+            return true;
         }
 
         static void TryRestoreGear(string gear, string snap, MigrationResult result)
