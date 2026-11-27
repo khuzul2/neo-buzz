@@ -211,6 +211,7 @@ namespace ReBuzz.Agent
                         Opt("sample", Integer("Neo Sampler in Tracker mode: the sample this note plays, 1–200 the song's waves and 201–226 the built-ins (it plays at its own speed at C-4, the pitch moves it); leave out to play the zones", 1, 254)),
                         Opt("offset", Integer("With a sample: where in it the note starts, in the sample's frames", 0, 8000000)),
                         Opt("tune", Integer("With a sample: tune in cents, 100 = a semitone", -2400, 2400)),
+                        Opt("column", Integer("The Tracker note column pair notes_read gave the note (from 1): read-only, so a read can be written back unchanged; a note shows on the lowest pair free at its time", 1, BuzzGUI.Common.NoteColumns.Max)),
                         Opt("name", String("The pitch's name, as notes_read and theory give it (pitch decides)")),
                         Opt("midi_channel", Integer("MIDI channel 1–16, as notes_read gives it (written notes use channel 1)", 1, 16))), "The notes")),
                     Opt("mode", String("add (default), replace or replace_range", "add", "replace", "replace_range")),

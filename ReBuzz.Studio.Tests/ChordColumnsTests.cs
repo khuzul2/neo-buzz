@@ -318,6 +318,10 @@ namespace ReBuzz.Studio.Tests
             Assert.That(notes.Take(3).Select(n => (int)n["column"]!), Is.EqualTo(new[] { 1, 2, 3 }), "a chord sits across three pairs");
             Assert.That((int)notes[3]["column"]!, Is.EqualTo(1), "a lone note on the first free pair");
             Assert.That((int)read["structuredContent"]!["note_columns"]!["shown"]!, Is.EqualTo(5));
+            // What notes_read gives, column and all, goes back into notes_write unchanged (the agent evaluation's round trip).
+            var back = Tool("notes_write", new JsonObject { ["machine"] = "Pad", ["clip"] = "Chords", ["mode"] = "replace", ["notes"] = read["structuredContent"]!["notes"]!.DeepClone() });
+            Assert.That(back["isError"]?.GetValue<bool>() == true, Is.False, back.ToJsonString());
+            Assert.That(SongNotes.For(core, clip).Notes().Count(), Is.EqualTo(4));
             var got = Tool("clip_get", new JsonObject { ["machine"] = "Pad", ["clip"] = "Chords" });
             Assert.That((int)got["structuredContent"]!["note_columns"]!["shown"]!, Is.EqualTo(5));
 
