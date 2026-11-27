@@ -48,7 +48,7 @@ namespace NeoBuzz.MachineTests
         /// <summary>Neo Drums: a four-bar pattern played twice.</summary>
         static (float[], float[]) DrumsSource()
         {
-            var v = PresetValues(NeoBuzz.Drums.Params.Table, "Neo Drums", "909 — Classic");
+            var v = PresetValues(NeoBuzz.Drums.Params.Table, "Neo Drums", "Classic — Punchy Kit");
             var e = new NeoBuzz.Drums.DrumsEngine(v);
             e.SetSampleRate(Rate);
             return Run((l, r, n) => e.Process(l, r, n), Length, pos =>
@@ -249,7 +249,7 @@ namespace NeoBuzz.MachineTests
             var log = new StringBuilder();
             log.AppendLine("# Neo Prism listening pack");
             log.AppendLine();
-            log.AppendLine("Source: a four-bar drum loop (Neo Drums, \"909 — Classic\") with a four-chord loop (Neo Poly, \"Pad — Warm Strings\") under it, 120 BPM in 4/4,");
+            log.AppendLine("Source: a four-bar drum loop (Neo Drums, \"Classic — Punchy Kit\") with a four-chord loop (Neo Poly, \"Pad — Warm Strings\") under it, 120 BPM in 4/4,");
             log.AppendLine($"played twice ({Bars} bars, {Length / (double)Rate:0.0} s), at -3 dBFS peak before Neo Prism. Every file: 48 kHz, 16-bit, stereo WAV. The song runs from beat 0");
             log.AppendLine($"(the synced sections follow it); Neo Prism's latency ({lat} samples at its default FFT size) is taken out of the files, as a host does. Every preset runs at its own FFT size (the default, 4096).");
             log.AppendLine();
