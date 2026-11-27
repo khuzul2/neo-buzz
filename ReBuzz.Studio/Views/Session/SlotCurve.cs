@@ -14,8 +14,8 @@ namespace ReBuzz.Studio.Views.Session
 {
     internal sealed class SlotCurve : Avalonia.Controls.Control
     {
-        public const double Height = 10;      // the strip along the slot's bottom
-        const double Pad = 3;
+        public const double Height = 9;       // the band along the slot's bottom, under the clip's name (FU2b)
+        const double Pad = 2;
 
         readonly IClip clip;
         readonly ColumnKey key;
@@ -32,7 +32,7 @@ namespace ReBuzz.Studio.Views.Session
             this.param = param;
             IsHitTestVisible = false;
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom;
-            Margin = new Thickness(0, 0, 0, 2);          // above the progress bar
+            Margin = new Thickness(1, 0, 1, 3);          // above the progress bar
             base.Height = Height;
             Read();
         }
@@ -116,8 +116,13 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 c.EndFigure(false);
             }
-            ctx.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb(120, 0, 0, 0)), 3, lineJoin: PenLineJoin.Round), g);
-            ctx.DrawGeometry(null, new Pen(brush, 1.5, fromTracker ? DashStyle.Dash : null, lineJoin: PenLineJoin.Round), g);
+            // FU2b: a plate behind the curve, a halo of the opposite shade around the line and a line of 2 px: it reads on any clip colour, light or dark.
+            var line = brush is ISolidColorBrush s ? s.Color : Colors.White;
+            bool lightLine = (0.299 * line.R + 0.587 * line.G + 0.114 * line.B) > 140;
+            var shade = lightLine ? Colors.Black : Colors.White;
+            ctx.DrawRectangle(new SolidColorBrush(Color.FromArgb(lightLine ? (byte)70 : (byte)60, shade.R, shade.G, shade.B)), null, new Rect(0, 0, w, Bounds.Height), 2, 2);
+            ctx.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb(170, shade.R, shade.G, shade.B)), 4, lineJoin: PenLineJoin.Round), g);
+            ctx.DrawGeometry(null, new Pen(brush, 2, fromTracker ? DashStyle.Dash : null, lineJoin: PenLineJoin.Round), g);
         }
     }
 }

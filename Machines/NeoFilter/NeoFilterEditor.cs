@@ -3,7 +3,8 @@
 // its response, the envelope follower, the LFO and the output. The response is the design the engine
 // runs (FilterDesign, the same function): the curve at the knobs' setting, and over it the curve where
 // the envelope and the LFO have moved the cutoff now, each channel's, with a handle on the cutoff to
-// drag (across: cutoff, up: resonance; the wheel: resonance). WPF lays the editor out; the graphs draw
+// drag (across: cutoff, up: resonance; the wheel: resonance). The Vowel type (EXT1) draws the three formants' response the same way, and
+// its section (Vowel, Voice, Vowel mod and a picture of where the vowel stands) is dimmed and left alone in the other types. WPF lays the editor out; the graphs draw
 // on the kit's canvas (INeoCanvas), so the studio's Avalonia flavour draws the same.
 
 using System;
@@ -69,6 +70,27 @@ namespace NeoBuzz.Filter
                 lfoPicture,
                 Layout.Row(new ParamKnob(ctx, P.LfoRate, "Rate"), new ParamKnob(ctx, P.LfoDepth, "Depth"), new ParamKnob(ctx, P.LfoSpread, "Spread"), new ParamKnob(ctx, P.LfoPhase, "Phase")));
 
+            var vowelPicture = new GraphView(172, 44, (g, r) => DrawVowel(g, r, ctx, machine), animate: true)
+            {
+                ToolTip = "The vowel: A, E, I, O, U along the line, and where each channel's vowel is now (left, and right in blue)",
+            };
+            ctx.Changed += vowelPicture.InvalidateVisual;
+            var vowel = Layout.Column(
+                new ParamChoice(ctx, P.Voice, "Voice", 58),
+                Layout.Gap(1, 4),
+                vowelPicture,
+                Layout.Row(new ParamKnob(ctx, P.Vowel, "Vowel"), new ParamKnob(ctx, P.VowelMod, "Mod")));
+            var vowelSection = new Section("Vowel", AccentColor, vowel);
+            void ShowVowel()
+            {
+                // Only the Vowel type uses these controls: the section stays in place, dimmed and out of reach in the others.
+                bool on = ctx.Raw(P.Type) == (int)FilterType.Vowel;
+                vowelSection.Opacity = on ? 1 : 0.38;
+                vowelSection.IsHitTestVisible = on;
+            }
+            ctx.Changed += ShowVowel;
+            ShowVowel();
+
             var output = Layout.Row(
                 Layout.Column(Layout.Row(new ParamKnob(ctx, P.Amount, diameter: 40), new ParamKnob(ctx, P.Mix, diameter: 40)), new ParamKnob(ctx, P.Output)),
                 Layout.Gap(6),
@@ -83,6 +105,7 @@ namespace NeoBuzz.Filter
                 Layout.Row(
                     new Section("Envelope", AccentColor, envelope),
                     new Section("LFO", AccentColor, lfo),
+                    vowelSection,
                     new Section("Output", AccentColor, output)));
         }
 
@@ -116,6 +139,11 @@ namespace NeoBuzz.Filter
             var s = Setting(ctx, 120);
             var st = Stages(machine, rate);
             double osc = s.SelfOsc ? 1 : 0;
+            if (s.Type == FilterType.Vowel)
+            {
+                DrawVowelResponse(g, graph, handle, ctx, engine, s, rate, st);
+                return;
+            }
             double Curve(double cutoff, double hz) => FilterDesign.Db(s.Type, s.Steep, cutoff, s.Q, hz, rate, st, osc);
             // The setting's curve, faint and filled; then where the modulation has the cutoff now, each channel's:
             // inside the plot, never over the frequency labels.
@@ -137,6 +165,56 @@ namespace NeoBuzz.Filter
                 g.Text(FilterDesign.Summary(s), graph.Plot.Left + 4, graph.Plot.Top + 2, 10, Palette.DimText);
             });
             handle.Draw(g, new[] { AccentColor });
+        }
+
+        /// <summary>The Vowel type's response: the three formants' sum at the setting (faint), and where the modulation has each channel's vowel and shift now.</summary>
+        void DrawVowelResponse(INeoCanvas g, ResponseGraph graph, BandHandleInput handle, EditorContext ctx, FilterEngine engine, FilterSetting s, double rate, IirHalfbandDesign[] st)
+        {
+            double bw = VowelDesign.BandwidthScale(s.Q);
+            Func<double, double> Curve(double pos, double shift)
+            {
+                var f = new double[3]; var k = new double[3]; var a = new double[3];
+                VowelDesign.Design(pos, s.Voice, shift, bw, rate, f, k, a);
+                return hz => 20 * Math.Log10(Math.Max(1e-15, FilterDesign.ResamplingGain(st, hz, rate) * VowelDesign.Magnitude(f, k, a, hz, rate)));
+            }
+            graph.InPlot(g, () =>
+            {
+                var set = Curve(s.VowelPos, VowelDesign.CutoffShift(s.CutoffHz));
+                g.Path(Under(graph, set), AccentColor.WithAlpha(0x28), NeoStroke.None);
+                g.Path(graph.Curve(set), NeoFill.None, new NeoStroke(AccentColor.WithAlpha(0x80), 1.2));
+                if (engine != null)
+                {
+                    var l = Curve(engine.VowelPosition(0), engine.VowelShiftNow(0));
+                    var r = Curve(engine.VowelPosition(1), engine.VowelShiftNow(1));
+                    if (Math.Abs(engine.VowelPosition(1) - engine.VowelPosition(0)) > 1e-3 || Math.Abs(engine.VowelShiftNow(1) - engine.VowelShiftNow(0)) > 1e-3)
+                        g.Path(graph.Curve(r), NeoFill.None, new NeoStroke(RightColor, 1.6));
+                    g.Path(graph.Curve(l), NeoFill.None, new NeoStroke(AccentColor, 2));
+                }
+                g.Text(FilterDesign.Summary(s), graph.Plot.Left + 4, graph.Plot.Top + 2, 10, Palette.DimText);
+            });
+            handle.Draw(g, new[] { AccentColor });
+        }
+
+        /// <summary>The vowel line: A, E, I, O, U a quarter apart, a dot for each channel's vowel now, and the name of the nearest with its blend.</summary>
+        static void DrawVowel(INeoCanvas g, NeoRect r, EditorContext ctx, NeoFilterMachine machine)
+        {
+            var s = Setting(ctx, 120);
+            var area = new NeoRect(r.X + 10, r.Y + 4, r.Width - 20, r.Height - 8);
+            double lineY = area.Y + 22;
+            g.Line(area.Left, lineY, area.Right, lineY, new NeoStroke(Palette.Track, 1));
+            for (int i = 0; i < VowelDesign.Vowels; i++)
+            {
+                double x = area.X + area.Width * i / (VowelDesign.Vowels - 1.0);
+                g.Line(x, lineY - 3, x, lineY + 3, new NeoStroke(Palette.Track, 1));
+                g.Text(VowelDesign.VowelNames[i], x, lineY + 5, 10, Palette.DimText, align: NeoAlign.Center);
+            }
+            for (int c = 1; c >= 0; c--)
+            {
+                double pos = machine != null && s.Type == FilterType.Vowel ? machine.Engine.VowelPosition(c) : s.VowelPos;
+                if (c == 1 && Math.Abs(pos - s.VowelPos) < 1e-3 && (machine == null || Math.Abs(machine.Engine.VowelPosition(0) - pos) < 1e-3)) continue;
+                g.Ellipse(new NeoPoint(area.X + pos * area.Width, lineY), 3.5, 3.5, c == 0 ? AccentColor : RightColor, NeoStroke.None);
+            }
+            g.Text(VowelDesign.Describe(s.VowelPos), area.Left, area.Y - 2, 9, Palette.DimText);
         }
 
         /// <summary>The area under a curve, down to the plot's floor.</summary>

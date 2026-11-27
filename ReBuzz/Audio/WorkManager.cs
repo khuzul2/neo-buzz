@@ -5,6 +5,7 @@ using BuzzGUI.Interfaces;
 using ReBuzz.Audio.Engine;
 using ReBuzz.Common;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 using ReBuzz.MachineManagement;
 using System;
 using System.Collections.Generic;
@@ -197,6 +198,7 @@ namespace ReBuzz.Audio
 
                     if (masterInfo.PosInTick == 0)
                     {
+                        tickCarryAtStart = tickRemainder;       // fork (FU2b): the fraction of a sample this tick starts after its whole sample (a fine note's place)
                         var grooveMul = GetGrooveMul();
                         // Fork (0.6): a held tempo nudge shortens or stretches the tick.
                         float nudge = buzzCore.TempoNudge;
@@ -250,6 +252,9 @@ namespace ReBuzz.Audio
                         if (framesToProcess < 0)
                             return 0;
                     }
+
+                    // Fork (FU2b): a block ends where a note on an exact sample starts, so the next one begins on it.
+                    framesToProcess = EndAtFineNote(framesToProcess);
 
                     // Fork (history-snapshots.md HS3): a live restore's parameter glide moves where machines take values.
                     var restore = buzzCore.ActiveRestore;
@@ -795,12 +800,15 @@ namespace ReBuzz.Audio
                     }
 
                     column.GetEventsInto(from, to, playColumnEvents);
+                    bool fineColumn = column.Type == ClipColumnType.MIDI && column is ClipColumnCore { HasFineNotes: true };
                     foreach (var pe in playColumnEvents)
                     {
                         if (column.Type == ClipColumnType.MIDI)
                         {
                             var data = pe.Value;
-                            buzzCore.MachineManager.SendMidiInput(column.Machine, data, false);
+                            // Fork (FU2b): a note on an exact sample is sent by the block that starts on it (below), not by the block that holds its time unit.
+                            if (fineColumn && IsFineNote(data)) continue;
+                            SendClipMidi(column.Machine, data);
 
                             int b = MIDI.DecodeStatus(data);
                             int data1 = MIDI.DecodeData1(data);
@@ -832,7 +840,110 @@ namespace ReBuzz.Audio
                             }
                         }
                     }
+                    if (fineColumn) PlayFineNotes(clip, column, from, sampleCount);
                 }
+            }
+        }
+
+        // ------------------------------------------------------------------ Fork (FU2b): notes on an exact sample
+
+        /// <summary>The fraction of a sample the current tick starts after its whole sample (the carry the tick length keeps), 0 when the tick length was not the tempo's.</summary>
+        double tickCarryAtStart;
+
+        static bool IsFineNote(int value) => (value & 0xF0) == 0x90 && NoteBits.FineOf(value) != 0;
+
+        /// <summary>
+        /// A note of a clip's MIDI column to a machine: a note's Slide flag and fine start (<see cref="NoteBits"/>) are taken off the message, so a machine
+        /// is sent the MIDI note it always was, and a machine that knows the flag (<see cref="INoteFlags"/>) is told of it first. Events without either bit
+        /// go through unchanged.
+        /// </summary>
+        void SendClipMidi(IMachine machine, int data)
+        {
+            if ((data >> 23) != 0 && (data & 0xF0) == 0x90)
+            {
+                buzzCore.MachineManager.SendMidiInput(machine, NoteBits.Strip(data), false, NoteBits.IsSlide(data));
+                return;
+            }
+            buzzCore.MachineManager.SendMidiInput(machine, data, false);
+        }
+
+        /// <summary>
+        /// The sample of the current tick a note on an exact sample starts at: its time unit and fine part into the tick, at the tempo's tick length with
+        /// the carry the engine's ticks keep (so a note at the beat of a clip sample S sounds at S, not up to a sample before it). A tick that was not the
+        /// tempo's (a groove, a nudge, a clock) maps by its own length.
+        /// </summary>
+        int FineSampleOf(int time, int fine, int tickBase)
+        {
+            var masterInfo = ReBuzzCore.masterInfo;
+            int spt = Math.Max(1, masterInfo.SamplesPerTick);
+            double inTick = (time - tickBase) + NoteBits.FractionOf(fine);
+            double average = masterInfo.AverageSamplesPerTick;
+            double pos = Math.Abs(spt - average) <= 1.0 ? tickCarryAtStart + inTick * average / ClipEvent.TimeBase : inTick * spt / ClipEvent.TimeBase;
+            return Math.Clamp((int)Math.Floor(pos + 0.5), 0, spt - 1);
+        }
+
+        readonly List<ClipEvent> fineEvents = new List<ClipEvent>(64);
+
+        /// <summary>The block ends where the next note on an exact sample of a playing clip starts, when that is inside it. Audio thread: allocates nothing.</summary>
+        int EndAtFineNote(int frames)
+        {
+            if (!buzzCore.Playing) return frames;
+            if (buzzCore.SoloClip != null) return EndAtFineNote(buzzCore.SoloClip, frames);
+            for (int i = 0; i < activeClips.Count; i++) frames = EndAtFineNote(activeClips[i], frames);
+            return frames;
+        }
+
+        int EndAtFineNote(IClip clip, int frames)
+        {
+            int from = clip.PlayPosition;
+            if (from == int.MinValue || frames <= 1) return frames;
+            IList<IClipColumn> columns = clip is ClipCore core ? core.ColumnsList : clip.Columns;
+            var masterInfo = ReBuzzCore.masterInfo;
+            int pos = masterInfo.PosInTick;
+            int tickBase = from - pos * ClipEvent.TimeBase / Math.Max(1, masterInfo.SamplesPerTick);
+            for (int i = 0; i < columns.Count; i++)
+            {
+                if (columns[i] is not ClipColumnCore { HasFineNotes: true } column || column.Machine == null) continue;
+                column.GetEventsInto(tickBase, tickBase + ClipEvent.TimeBase, fineEvents);
+                for (int e = 0; e < fineEvents.Count; e++)
+                {
+                    var pe = fineEvents[e];
+                    if (!IsFineNote(pe.Value)) continue;
+                    int at = FineSampleOf(pe.Time, NoteBits.FineOf(pe.Value), tickBase);
+                    if (at > pos && at < pos + frames) frames = at - pos;
+                }
+            }
+            return frames;
+        }
+
+        /// <summary>Sends the notes on an exact sample that start in this block (on its first sample, as the block was ended there).</summary>
+        void PlayFineNotes(IClip clip, IClipColumn column, int from, int sampleCount)
+        {
+            var masterInfo = ReBuzzCore.masterInfo;
+            int pos = masterInfo.PosInTick;
+            int tickBase = from - pos * ClipEvent.TimeBase / Math.Max(1, masterInfo.SamplesPerTick);
+            ((ClipColumnCore)column).GetEventsInto(tickBase, tickBase + ClipEvent.TimeBase, fineEvents);
+            for (int e = 0; e < fineEvents.Count; e++)
+            {
+                var pe = fineEvents[e];
+                if (!IsFineNote(pe.Value)) continue;
+                int at = FineSampleOf(pe.Time, NoteBits.FineOf(pe.Value), tickBase);
+                if (at < pos || at >= pos + sampleCount) continue;
+                SendClipMidi(column.Machine, pe.Value);
+                // The note's end is kept by its Time as the player sees it: a block that starts a hair before the note's own unit must not read it as not started.
+                var started = pe;
+                if (pe.Time > from)
+                {
+                    started = new ClipEvent(from, pe.Value, pe.Duration + (pe.Time - from));
+                }
+                playingEvents.Add(new PlayingEventsStruct()
+                {
+                    Pe = started,
+                    Clip = clip,
+                    Machine = column.Machine as MachineCore,
+                    Channel = MIDI.DecodeStatus(pe.Value) & 0x0F,
+                    MidiNote = MIDI.DecodeData1(pe.Value)
+                });
             }
         }
 

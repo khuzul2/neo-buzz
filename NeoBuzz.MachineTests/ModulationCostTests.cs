@@ -31,6 +31,7 @@ namespace NeoBuzz.MachineTests
         internal static readonly Dictionary<string, string> Known = new()
         {
             ["Neo EQ"] = "5.0x with all 136 parameters moving, 2.0x for ONE band's frequency or Q alone (+13 % of a core): a moving band glides its coefficients with a trigonometric design every few samples (EqEngine's b.Moving paths), by design, so that sweeps are smooth. A cheaper glide (a block-rate design with an interpolated state) changes the sound of sweeps and is its own task.",
+            ["Neo Drive"] = "1.56x (1.20x before EXT3), +22 µs a block, with Drive, Bias, Character or Amount alone (Mix, Output and the filters 1.03x): the auto-gain probe (4096 samples of the curve), re-run at most once per 1024 samples while a parameter moves, costs what it cost before; what changed is the block that stands still, which got about 20 % cheaper when the five new Modes came (Tape at 34x real time against 27x; moving 22x in both), so the ratio rose with no more work moving. A cheaper probe changes the level every saved song's Auto gain settles at, so it is its own task.",
             ["Neo Multiband"] = "1.9x, +1.6 % of a core, from the three crossover frequencies alone (1.9x each; every other parameter 1.06x): a crossover that moves designs the linear-phase split again, already spread over the blocks in steps (MultibandTests: the slowest block under 2x). Cheaper would be a shorter filter while moving, a change to its latency and its tests.",
         };
 
@@ -54,6 +55,19 @@ namespace NeoBuzz.MachineTests
                     beat += n / (Measure.Rate * 0.5);
                     if (first) { e.Process(in block, chord); first = false; }
                     else e.Process(in block, ReadOnlySpan<NeoBuzz.Arp.ArpEvent>.Empty);
+                };
+            }),
+            ["Neo Pulse"] = (NeoBuzz.Pulse.Params.Table, v =>
+            {
+                // Notes, not audio: 8-lane Euclidean rhythm engine running at 120 BPM.
+                var e = new NeoBuzz.Pulse.PulseEngine(v);
+                e.SetSampleRate(Measure.Rate);
+                double beat = 0;
+                return (l, r, n) =>
+                {
+                    var block = new NeoBuzz.Pulse.PulseBlock { Samples = n, Playing = true, Beat = beat, SamplesPerBeat = Measure.Rate * 0.5, BeatsPerBar = 4 };
+                    beat += n / (Measure.Rate * 0.5);
+                    e.Process(in block);
                 };
             }),
             ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, v => (l, r, n) => { }),   // its audio is the Session engine's (the app): nothing here to move
@@ -82,6 +96,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Lo-Fi"] = (NeoBuzz.LoFi.Params.Table, v => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, v => ChopRig.CostCall(v)),
             ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, v => PrismRig.CostCall(v)),
+            ["Neo Space"] = (NeoBuzz.Space.Params.Table, v => SpaceRig.CostCall(v)),
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, v => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Exciter"] = (NeoBuzz.Exciter.Params.Table, v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, v => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
@@ -146,6 +161,7 @@ namespace NeoBuzz.MachineTests
                     r[0] = u;
                 };
             }),
+            ["Neo Chip"] = (NeoBuzz.Chip.Params.Table, v => Synth(new NeoBuzz.Chip.ChipEngine(v), (e, l, r, n) => ((NeoBuzz.Chip.ChipEngine)e).Process(l, r, n))),
         };
 
         static Action<float[], float[], int> Learn(NeoBuzz.Learn.MacroMap map, ParamValues v)

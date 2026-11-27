@@ -168,6 +168,13 @@ namespace ReBuzz.Studio.Views.Session
                         TextTrimming = TextTrimming.CharacterEllipsis,
                         IsHitTestVisible = false
                     };
+                    // FU2b: with a curve in the slot the name sits in the slot's top line and the curve has the band under it: both read.
+                    if (curve != null)
+                    {
+                        label.VerticalAlignment = VerticalAlignment.Top;
+                        label.FontSize = 11;
+                        label.Margin = new Thickness(0, -1, 4, 0);
+                    }
                     Grid.SetColumn(label, 1);
                     grid.Children.Add(label);
                 }
@@ -317,7 +324,7 @@ namespace ReBuzz.Studio.Views.Session
                 {
                     // EV1: a double click on the mini curve opens the clip's lane in the Detail panel.
                     var at = e.GetPosition(this);
-                    if (curve != null && at.Y >= Bounds.Height - SlotCurve.Height - 2 && curve.DistanceAt(at.X, at.Y - (Bounds.Height - SlotCurve.Height - 2)) < 8
+                    if (curve != null && at.Y >= Bounds.Height - SlotCurve.Height - 5 && curve.DistanceAt(at.X, at.Y - (Bounds.Height - SlotCurve.Height - 5)) < 8
                         && Detail.EnvelopeOpener.Open?.Invoke(Clip, curve.Key) == true) { e.Handled = true; return; }
                     view.SlotDoubleClicked(this, Normalize(e.KeyModifiers));
                 }

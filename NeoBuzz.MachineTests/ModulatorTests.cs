@@ -16,6 +16,7 @@ namespace NeoBuzz.MachineTests
             public int Max { get; set; } = 1000;
             public int SafeMin { get; set; } = 0;
             public int SafeMax { get; set; } = 1000;
+            public int SpanMax { get; set; } = 1000;
             public int Value;
             public int Puts;
             public int Get() => Value;
@@ -37,6 +38,38 @@ namespace NeoBuzz.MachineTests
         }
 
         const double Dt = 64 / 44100.0;
+
+        [Test]
+        public void AChoiceListThatGrewKeepsTheSpanASavedDepthWasMadeFor()
+        {
+            // Neo Drive's Mode went from 0 … 4 to 0 … 9 (EXT3): a depth with no range of its own is still a percentage of 4; a range of its own reaches the new choices.
+            var p = new Port { Min = 0, Max = 9, SafeMin = 0, SafeMax = 9, SpanMax = 4, Value = 0 };
+            var bank = Bank(p, depth: 50, glide: 0);
+            bank.Update(1.0, Dt);
+            Assert.That(p.Value, Is.EqualTo(2), "50 % of the old span 4, not of 9");
+            var q = new Port { Min = 0, Max = 9, SafeMin = 0, SafeMax = 9, SpanMax = 4, Value = 0 };
+            var wide = Bank(q, depth: 100, rangeMin: 0, rangeMax: 9, glide: 0);
+            wide.Update(1.0, Dt);
+            Assert.That(q.Value, Is.EqualTo(9), "an explicit range reaches Transformer");
+        }
+
+        [Test]
+        public void TheChoiceListsThatGrewArePinnedToTheirOldSpan()
+        {
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax("Neo Drive", "Mode"), Is.EqualTo(4));
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax("Neo Filter", "Type"), Is.EqualTo(6), "Ladder 24 to SVF Peak, before Vowel");
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax("Neo Filter", "Cutoff"), Is.Null);
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax(null, null), Is.Null);
+            // Neo Filter's Type went from 0 … 6 to 0 … 7 (EXT1): a saved depth of 100 % still ends at SVF Peak, an explicit range reaches Vowel.
+            var p = new Port { Min = 0, Max = 7, SafeMin = 0, SafeMax = 7, SpanMax = 6, Value = 0 };
+            var bank = Bank(p, depth: 100, glide: 0);
+            bank.Update(1.0, Dt);
+            Assert.That(p.Value, Is.EqualTo(6));
+            var q = new Port { Min = 0, Max = 7, SafeMin = 0, SafeMax = 7, SpanMax = 6, Value = 0 };
+            var wide = Bank(q, depth: 100, rangeMin: 0, rangeMax: 7, glide: 0);
+            wide.Update(1.0, Dt);
+            Assert.That(q.Value, Is.EqualTo(7));
+        }
 
         [Test]
         public void TheOutputIsAddedToTheBaseByDepthAndSpan()

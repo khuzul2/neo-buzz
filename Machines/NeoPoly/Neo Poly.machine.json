@@ -1786,7 +1786,7 @@
     "On"
    ],
    "description": "Overlapping notes glide at the slide time",
-   "how": "Turns on slides: a note that starts before the previous one ends glides to its pitch in the slide time, whatever the glide mode.",
+   "how": "Turns on slides: a note that starts before the previous one ends, or a note the clip marks with its Slide flag, glides to its pitch in the slide time, whatever the glide mode.",
    "sound": "Slides join notes into the squirming, singing lines of acid bass; use Legato voice mode so they do not retrigger."
   },
   {

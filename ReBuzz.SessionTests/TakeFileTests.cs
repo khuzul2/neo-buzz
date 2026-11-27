@@ -105,8 +105,10 @@ namespace ReBuzz.SessionTests
                 Feed(capture, done, Rate);
                 // The test runs far faster than real time (a second of audio a second is all the writer has to keep up with): wait for it when it falls behind.
                 Thread.Sleep(20);                 // 20 ms a second of audio: 30 times real time, whatever else the machine is doing
+                // Wait until the writer has written every full chunk: the pass that wrote the last one made chunks SpillAheadSeconds (3 s) past it,
+                // more than the next second needs. Waiting for less let a slow runner feed two seconds between two passes and drop frames.
                 int guard = 0;
-                while (capture.Written - file.Frames > 2L * AudioCapture.ChunkFrames && guard++ < 2000) Thread.Sleep(1);
+                while (capture.Written - file.Frames >= AudioCapture.ChunkFrames && guard++ < 20000) Thread.Sleep(1);
             }
             long grown = GC.GetTotalMemory(false) - heap;
             TestContext.Out.WriteLine("10-minute take: heap growth " + grown + " bytes (" + grown / 1024 + " KiB), peak resident chunks " + capture.PeakResidentChunks + ", audio " + total * 8 / (1024 * 1024) + " MiB");

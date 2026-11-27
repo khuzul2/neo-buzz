@@ -458,7 +458,7 @@ namespace ReBuzz.MachineManagement
             }
         }
 
-        internal void SendMidiInput(IMachine machine, int data, bool polacConversion)
+        internal void SendMidiInput(IMachine machine, int data, bool polacConversion, bool slide = false)
         {
             if (machine == null)
                 return;
@@ -494,6 +494,8 @@ namespace ReBuzz.MachineManagement
                     var mmh = managedMachines[mc];
                     if (commandCode == MIDI.NoteOn)
                     {
+                        // Fork (FU2b): a clip note with its Slide flag tells a machine that knows the flag (INoteFlags) just before the note; the others are sent the note alone.
+                        if (slide && mc.ManagedMachine is INoteFlags flagged) flagged.NextNoteSlides();
                         mmh.MidiNote(channel, data1, data2);
                     }
                     else if (commandCode == MIDI.NoteOff)

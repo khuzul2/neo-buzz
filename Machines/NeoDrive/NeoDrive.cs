@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Drive
@@ -24,6 +25,8 @@ namespace NeoBuzz.Drive
         }
 
         internal DriveEngine Engine { get; }
+
+        internal override StateMigrations Migrations => DriveState.Chain;
 
         public bool Work(Sample[] output, Sample[] input, int n, WorkModes mode)
         {
@@ -67,7 +70,7 @@ namespace NeoBuzz.Drive
                 {
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
-                        "Neo Drive — saturator: tape, tube, transistor, diode and fold, oversampled with " +
+                        "Neo Drive — saturator: tape, tube, transistor, diode, fold, overdrive, fuzz, hard clip, rectify and transformer, oversampled with " +
                         "anti-derivative anti-aliasing.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Drive"),
                 },
             },

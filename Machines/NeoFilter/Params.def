@@ -2,20 +2,20 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoFilter
 namespace NeoBuzz.Filter
 class NeoFilterMachine
-summary Stereo resonant filter effect with Neo Poly's filters: the ladder (low-pass 24 or 12 dB/oct) and the state-variable filter (low-pass, band-pass, high-pass, notch, peak; 12 or 24 dB/oct), cutoff in Hz, resonance as Q up to self-oscillation that stays bounded, drive (soft saturation, oversampled), an envelope follower (attack, release, sensitivity, ± octaves) and an LFO (free or synced to the tempo, seven shapes, stereo phase, locked to the song or restarted by the input) both moving the cutoff, dry/wet mix and output. Zero latency; at Mix 0 % it passes the input bit for bit. Use it for filter sweeps, auto-wah, dub high-pass and low-pass moves, resonant tones and tempo-synced movement.
+summary Stereo resonant filter effect with Neo Poly's filters: the ladder (low-pass 24 or 12 dB/oct) and the state-variable filter (low-pass, band-pass, high-pass, notch, peak; 12 or 24 dB/oct), cutoff in Hz, resonance as Q up to self-oscillation that stays bounded, drive (soft saturation, oversampled), an envelope follower (attack, release, sensitivity, ± octaves) and an LFO (free or synced to the tempo, seven shapes, stereo phase, locked to the song or restarted by the input) both moving the cutoff, dry/wet mix and output. A Vowel type makes it a formant filter: three resonances at the frequencies of a spoken vowel (A, E, I, O, U morphed, Man, Woman or Child; Peterson and Barney's averages), moved by the envelope and the LFO. Zero latency; at Mix 0 % it passes the input bit for bit. Use it for filter sweeps, auto-wah, talking synths and choir pads, dub high-pass and low-pass moves, resonant tones and tempo-synced movement.
 
 group Filter
-Type      "Type"            0 6     0     enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch SVF_Peak | Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff)
-    how Chooses the filter: a 24 or 12 dB per octave ladder low-pass, or a state-variable low-pass, band-pass, high-pass, notch or peak.
-    sound The ladder sounds warm and thick, low-pass types remove highs, band-pass and high-pass thin the sound, notch and peak carve or boost one spot.
+Type      "Type"            0 7     0     enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch SVF_Peak Vowel | Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff); Vowel: three formant resonances at the frequencies of a spoken vowel (Vowel, Voice; Cutoff shifts them, Resonance sharpens them)
+    how Chooses the filter: a 24 or 12 dB per octave ladder low-pass, or a state-variable low-pass, band-pass, high-pass, notch or peak, or Vowel, a formant filter that makes the sound speak a vowel.
+    sound The ladder sounds warm and thick, low-pass types remove highs, band-pass and high-pass thin the sound, notch and peak carve or boost one spot, Vowel makes it sound like a voice saying A, E, I, O or U.
 Slope     "Slope"           0 1     0     enum 12_dB/oct 24_dB/oct      | SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it
     how Chooses a 12 or 24 dB per octave slope for the state-variable low-pass, band-pass, high-pass and notch (the ladder and peak ignore it).
     sound 24 dB per octave cuts more sharply, so the filtered range disappears faster; 12 dB is gentler and more natural.
-Cutoff    "Cutoff"          0 10000 6667  freq 20 20000                 | Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates
-    how Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak.
+Cutoff    "Cutoff"          0 10000 6667  freq 20 20000                 | Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (2 kHz, the default: the table's own frequencies; within ±2 octaves)
+    how Sets the filter's frequency, from 20 Hz to 20 kHz: the corner, or the centre for band-pass, notch and peak. In Vowel it shifts all the formants up or down together (2 kHz, the default, leaves them as spoken).
     sound Sweeping it makes the sound darker or brighter, or moves the thin band you hear.
-Resonance "Resonance"       0 1000  66    exp 0.5 100 2                 | Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level
-    how Boosts the region around the cutoff by raising Q from 0.5 to 100.
+Resonance "Resonance"       0 1000  66    exp 0.5 100 2                 | Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level. Vowel: scales the formants' bandwidths, so higher values make sharper, more whistling formants (0.71: as spoken)
+    how Boosts the region around the cutoff by raising Q from 0.5 to 100. In Vowel it narrows the formants.
     sound Low values sound plain, middle values add a bump, high values whistle and eventually ring on their own.
 Drive     "Drive"           0 240   0     lin 0 24 dB 1                 | Soft saturation before the filter, oversampled: quiet signals pass as they are, louder ones bend from −Drive dBFS; 0 dB is clean
     how Adds up to 24 dB of soft saturation before the filter.
@@ -66,3 +66,13 @@ group Output
 Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
     how Scales how far the filter moves the sound: the cutoff in octaves from fully open, the band types' resonance, the drive, the envelope and the LFO depth. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
     sound Turn it down to open the filter and calm its movement, up to close it further and sweep wider.
+group Vowel
+Vowel     "Vowel"           0 1000  0     pct                           | Vowel type only: the vowel, morphing A, E, I, O, U (a quarter each), the formants moving in log frequency between neighbours
+    how Picks the vowel the formant filter says, from A through E, I and O to U (0 % is A, 100 % is U), blending smoothly between neighbours.
+    sound It turns the sound into a voice: A open and bright, E and I thin and high, O and U round and dark.
+Voice     "Voice"           0 2     0     enum Man Woman Child          | Vowel type only: which speaker's formant frequencies (Peterson and Barney's averages for men, women and children): higher for smaller vocal tracts
+    how Chooses whether the vowel is spoken by a man, a woman or a child.
+    sound Man is deep and chesty, Woman brighter, Child small and nasal.
+VowelMod  "Vowel mod"       0 1000  1000  pct                           | Vowel type only: how much the envelope and the LFO move the vowel rather than the formant frequencies (one octave of their motion is one vowel step, 25 %)
+    how Sets whether the envelope and LFO depth move the vowel itself (100 %) or slide all the formants up and down together as a wah (0 %).
+    sound High values make the sound talk, A to E to I along the modulation; low values sweep the voice like a wah pedal.

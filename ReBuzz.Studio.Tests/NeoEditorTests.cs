@@ -40,6 +40,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Grain", "NeoGrainEditor", "neo-grain-editor", 856, 498),   // GRN1: Source and Grain on top, Pitch, Envelope and Output below; measured in CI (GRN1)
             ("Neo Chord", "NeoChordEditor", "neo-chord-editor", 1186, 453),   // CHD1: the chord and mode on top, the keyboard, then voicing, velocity and strum (the size the editor draws at)
             ("Neo Random", "NeoRandomEditor", "neo-random-editor", 650, 791),
+            ("Neo Pulse", "NeoPulseEditor", "neo-pulse-editor", 846, 685),   // PUL1: Clock & Probability, 8-lane Euclidean strips, synced Lane 1..8 detail pages
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
@@ -56,7 +57,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1126, 484),   // P5a: the pads, the selected pad's panel and the mix strip (the classic editor is 1232 x 738)
-            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
+            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 880, 620),   // the WPF editor was 802 wide: the Vowel section (EXT1, #190) is 78 px more
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 341),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (956 x 277 before)
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
@@ -71,10 +72,12 @@ namespace ReBuzz.Studio.Tests
             ("Neo Lo-Fi", "NeoLoFiEditor", "neo-lofi-editor", 1041, 241),   // LF2: Amount and Mix over Tone and Output (1000 x 330 with the three knobs in a column)
             ("Neo Chop", "NeoChopEditor", "neo-chop-editor", 898, 546),   // CHP1: the mode row, the mode pages, the sixteen steps and Output (the size is read from the first CI run)
             ("Neo Prism", "NeoPrismEditor", "neo-prism-editor", 754, 658),   // PRI1: the spectrum, the section lights, the section page and Output (the size is read from the first CI run)
+            ("Neo Space", "NeoSpaceEditor", "neo-space-editor", 964, 251),   // SPC1: Room, the response picture, Tone and Output (the size is read from the first CI run)
             ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 675),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (966 x 605 before)
+            ("Neo Chip", "NeoChipEditor", "neo-chip-editor", 886, 496),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;

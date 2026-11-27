@@ -80,6 +80,22 @@ namespace NeoBuzz.DyeEssence
             _ => 0,
         };
 
+        /// <summary>
+        /// Neo Filter's table with Type's range as it was before the Vowel type (0 ... 6). A slot stores a generic value that
+        /// <see cref="Map"/> spreads over the engine parameter's minimum, default and maximum, so a longer Type list would move
+        /// every stored Type above the middle to another filter in songs and presets that exist. Vowel is not offered here.
+        /// </summary>
+        static ParamDef[] MakeFilterTable()
+        {
+            var t = (ParamDef[])NeoBuzz.Filter.Params.Table.Clone();
+            var d = t[NeoBuzz.Filter.P.Type];
+            const int Max = 6;
+            var names = new string[Max + 1];
+            Array.Copy(d.Names, names, names.Length);
+            t[NeoBuzz.Filter.P.Type] = new ParamDef(d.Index, d.Id, d.Name, d.Min, Max, d.Default, d.Kind, d.A, d.B, d.Exponent, d.Unit, d.Digits, names, d.Flag, d.Group, d.Description, d.How, d.Sound, d.Detent, d.FormerNames);
+            return t;
+        }
+
         static FxParam F(int index, string label, int def = -1) => new FxParam(index, def, label);
 
         static FxTypeInfo[] Build()
@@ -96,7 +112,7 @@ namespace NeoBuzz.DyeEssence
                 F(Fq(2), "Mid 2 freq", 6990), F(Gn(2), "Mid 2 gain", 240), F(Qq(2), "Mid 2 Q", 807),
                 F(Fq(3), "High freq", 8670), F(Gn(3), "High gain", 240),
             });
-            list[(int)FxType.Filter] = new FxTypeInfo(FxType.Filter, "Filter", NeoBuzz.Filter.Params.Table, new[]
+            list[(int)FxType.Filter] = new FxTypeInfo(FxType.Filter, "Filter", MakeFilterTable(), new[]
             {
                 F(NeoBuzz.Filter.P.Type, "Type"), F(NeoBuzz.Filter.P.Slope, "Slope"), F(NeoBuzz.Filter.P.Cutoff, "Cutoff"),
                 F(NeoBuzz.Filter.P.Resonance, "Resonance"), F(NeoBuzz.Filter.P.Drive, "Drive"), F(NeoBuzz.Filter.P.EnvAmount, "Env amount"),

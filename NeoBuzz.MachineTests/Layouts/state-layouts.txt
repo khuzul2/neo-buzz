@@ -4,6 +4,8 @@
 NeoBuzz.Analyzer	0	6	d09ad78ec03ed49d
 NeoBuzz.Arp	0	51	aaa9487e4a43faf9
 NeoBuzz.AudioToMidi	0	40	f026429bd83d63bf
+NeoBuzz.Chip	0	41	5a6f97f568d7fa03
+NeoBuzz.Chip	1	42	eea71a6218c453fd
 NeoBuzz.Chord	0	23	59bb134d4b8604b5
 NeoBuzz.Chop	0	65	ac447eb70d3c1218
 NeoBuzz.Clipper	0	15	70d4b85d1bfad1fc
@@ -12,6 +14,7 @@ NeoBuzz.DeEsser	0	13	c0c0dfc6900f468a
 NeoBuzz.Delay	0	17	775610d4c531ad89
 NeoBuzz.Dither	0	5	8887b241a976e60d
 NeoBuzz.Drive	0	11	4cb09c6eac994811
+NeoBuzz.Drive	1	12	cd6b54d3ab044f91
 NeoBuzz.Drums	0	67	ba7b50d1fbac9875
 NeoBuzz.DyeEssence	0	484	e435b17e73234109
 NeoBuzz.Ensemble	0	14	dec55f5b282bf26e
@@ -19,6 +22,7 @@ NeoBuzz.EnvelopeMachine	0	9	730fc5b21a44391c
 NeoBuzz.Eq	0	195	1b8eebdd82daf7c2
 NeoBuzz.Exciter	0	15	ae9270c82c60d418
 NeoBuzz.Filter	0	18	44306d9ce552e128
+NeoBuzz.Filter	1	22	7bc4e0474f037f95
 NeoBuzz.Fm6	0	172	82815f73f6dd7eb2
 NeoBuzz.Gate	0	15	04189a5ccf665c32
 NeoBuzz.Grain	0	20	330320474c0bc614
@@ -50,9 +54,11 @@ NeoBuzz.Poly	0	91	dbaa32ac1ee1fb76
 NeoBuzz.Poly	1	98	a508931be3e215ca
 NeoBuzz.Poly	2	102	2ec93cb55f846197
 NeoBuzz.RandomMachine	0	14	b100d00a4270956f
+NeoBuzz.Pulse	0	127	ab323442e9d2dff9
 NeoBuzz.Sampler	0	325	190329edfb1c45d8
 NeoBuzz.Sampler	1	325	236bcd9389e20480
 NeoBuzz.Scope	0	11	518994d8cbae37f0
+NeoBuzz.Space	0	11	6f810c41bf800d26
 NeoBuzz.Spectral	0	14	58894f78c44e8620
 NeoBuzz.StepMachine	0	38	bf0ec39eea1e2034
 NeoBuzz.Strip	0	38	bd2c4b3527061794

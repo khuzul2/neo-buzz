@@ -48,12 +48,13 @@ namespace ReBuzz.Studio.Views.Detail
         readonly DispatcherTimer playTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(33) };
         readonly ToggleButton followBox;
         readonly Grid rollGrid = new Grid();
-        readonly EnvelopeStack envelopes;          // EV1: the clip's envelope lanes under the roll (the Detail panel's page, not the arrangement's roll panel)
+        readonly EnvelopeStack envelopes;          // EV1: the clip's envelope lanes under the roll (the Detail panel's page and the Arrangement's roll panel alike)
         readonly RollAxis axis;
         int shownPlay = int.MinValue;
         bool loopUndoable, loopRedoable;
         INoteSource source;
         readonly bool songOnly;
+        readonly Button slideButton;               // FU2b: the per-note Slide flag of the selection
         readonly ComboBox keyBox, scaleBox, foldBox, ghostBox, lowerBox;
         readonly ToggleButton stepBox, snapBox;
         ControllerLane ctrl;
@@ -91,6 +92,8 @@ namespace ReBuzz.Studio.Views.Detail
             var tools = new WrapPanel { Margin = new Thickness(8, 4, 8, 4) };
             tools.Children.Add(gridBox);
             tools.Children.Add(Tool("Quantize", "Quantize the selected notes (or all) to the grid (Q)", () => roll?.Quantize()));
+            slideButton = Tool("Slide", "Slide: the selected notes glide into their pitch from the note before (L). Neo Poly glides at its Slide time, whatever its Slide mode but Never; other machines play them as plain notes", () => roll?.ToggleSlide());
+            tools.Children.Add(slideButton);
             tools.Children.Add(Tool("Vel −", $"Softer ({mod}+Down)", () => roll?.ChangeVelocity(-8)));
             tools.Children.Add(Tool("Vel +", $"Louder ({mod}+Up)", () => roll?.ChangeVelocity(8)));
             tools.Children.Add(Tool("Delete", "Delete the selected notes (Delete)", () => roll?.DeleteSelected()));
@@ -177,9 +180,8 @@ namespace ReBuzz.Studio.Views.Detail
             rollGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
             Grid.SetRow(body, 1);
             rollGrid.Children.Add(body);
-            if (!songOnly)
             {
-                // Fork (daw-modes.md EV1): under the roll (and its velocity or controller lane), the clip's envelopes on the roll's time axis.
+                // Fork (daw-modes.md EV1; FU2b: the Arrangement's panel too): under the roll (and its velocity or controller lane), the clip's envelopes on the roll's time axis.
                 axis = new RollAxis(this);
                 envelopes = new EnvelopeStack(core, axis);
                 envelopes.LaneEdited += OnEnvelopeEdited;
@@ -367,6 +369,7 @@ namespace ReBuzz.Studio.Views.Detail
         public ComboBox FoldBox => foldBox;
         public ComboBox GhostBox => ghostBox;
         public ComboBox LowerBox => lowerBox;
+        public Button SlideButton => slideButton;
         public ToggleButton StepBox => stepBox;
         public ToggleButton SnapBox => snapBox;
 
@@ -462,6 +465,7 @@ namespace ReBuzz.Studio.Views.Detail
             if (roll != null) { roll.Changed -= UpdateSummary; roll.MapChanged -= OnMapChanged; roll.PickerRequested -= OnPickerRequested; }
             if (source != null) source.Changed -= OnSourceEdited;
             ClearFurniture();
+            slideButton.IsEnabled = false;
             roll = null;
             source = null;
             scroll.Content = null;
@@ -575,6 +579,7 @@ namespace ReBuzz.Studio.Views.Detail
         {
             if (roll == null) return;
             int count = roll.Notes.Count, sel = roll.Selection.Count;
+            slideButton.IsEnabled = roll.CanSlide && sel > 0;
             summary.Text = roll.Refusal is string why ? why
                 : roll.Source.WhyNotEditable is string waiting ? waiting
                 : count == 0 ? "No notes yet: double-click to draw one."

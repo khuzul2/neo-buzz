@@ -32,7 +32,7 @@ namespace ReBuzz.Core.Session
         public double StartBeat { get; init; }
         public double EndBeat { get; init; }
         public double BeatsPerBar { get; init; } = 4;
-        /// <summary>Note time units in a beat (ticks per beat times the clip notes' time base): the grid the slices' notes sit on.</summary>
+        /// <summary>Note time units in a beat, to put each cut on the note grid; 0 (what the song uses since FU2b) leaves each cut on its own sample and gives its note a fine start on that sample.</summary>
         public double UnitsPerBeat { get; init; }
         /// <summary>What the region is, in words: "the clip's loop", "the whole clip".</summary>
         public string Region { get; init; } = "";
@@ -150,7 +150,7 @@ namespace ReBuzz.Core.Session
             return new SliceSource
             {
                 Name = clip.Name, Clip = clip, Asset = stem.Asset, Audio = play, Map = map, Settings = audio.Clone(),
-                StartBeat = start / (double)tpb, EndBeat = end / (double)tpb, BeatsPerBar = Math.Max(1, Session?.BeatsPerBar ?? 4), UnitsPerBeat = tpb * (double)ClipNotes.TimeBase,
+                StartBeat = start / (double)tpb, EndBeat = end / (double)tpb, BeatsPerBar = Math.Max(1, Session?.BeatsPerBar ?? 4), UnitsPerBeat = 0,
                 Region = region, Onsets = onsets,
             };
         }
@@ -284,12 +284,13 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < plan.Slices.Count; i++)
             {
                 var s = plan.Slices[i];
-                int time = (int)Math.Round(s.Beat * tpb * ClipNotes.TimeBase);
+                // FU2b: the note starts at its slice's exact sample: its time unit (1/240 tick) and the fraction of it (1/256), not the nearest unit.
+                var (time, fine) = NoteBits.Split(s.Beat * tpb * ClipNotes.TimeBase);
                 int length = (int)Math.Round(s.Beats * tpb * ClipNotes.TimeBase);
                 int key = SliceKeyBase + i;
                 waves.Add(new SliceWave { Slot = slots[i] + 1, Name = names[i], Start = s.Start, Length = s.Length, Key = key, Beat = s.Beat, Beats = s.Beats });
                 if (time < 0 || time >= clipTime) continue;
-                notes.Add(new ClipNote(time, Math.Max(ClipNotes.MinDuration, Math.Min(length, clipTime - time)), key, 100));
+                notes.Add(new ClipNote(time, Math.Max(ClipNotes.MinDuration, Math.Min(length, clipTime - time)), key, 100, Fine: fine));
             }
             SourcePlace(sourceClip, out int sourceScene, out var sourceEvents, out var sourceSettings);
 

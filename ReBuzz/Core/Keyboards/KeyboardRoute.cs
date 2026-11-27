@@ -7,7 +7,7 @@
 // whatever a manifest profiled before it had it says (the Pedal synths are getting MIDI input).
 //
 // No keyboard: effects, the Master, control machines (peer controllers, LFOs, chord machines),
-// generators with no note input of any kind (audio inputs, the Session Clip Player, Rout 909's
+// generators with no note input of any kind (audio inputs, the Session Clip Player, the Rout drum machine's
 // triggers, noise generators).
 
 using System;

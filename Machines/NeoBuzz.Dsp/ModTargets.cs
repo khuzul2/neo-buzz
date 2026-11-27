@@ -12,6 +12,18 @@ using System.Runtime.CompilerServices;
 
 namespace NeoBuzz.Dsp
 {
+    /// <summary>Choice lists that grew after songs saved modulator depths on them, by machine and parameter name, with their old last choice.</summary>
+    internal static class LegacyChoiceSpans
+    {
+        /// <summary>Neo Drive's Mode was 0 … 4 before EXT3; Neo Filter's Type was 0 … 6 before EXT1's Vowel. Null for every other parameter.</summary>
+        public static int? OldMax(string machineName, string parameterName) => (machineName, parameterName) switch
+        {
+            ("Neo Drive", "Mode") => 4,
+            ("Neo Filter", "Type") => 6,
+            _ => null,
+        };
+    }
+
     /// <summary>One parameter, as the bank sees it (the host's IParameter behind it; fakes in the tests).</summary>
     internal interface IModPort
     {
@@ -20,6 +32,11 @@ namespace NeoBuzz.Dsp
         /// <summary>The range modulation may use (the manifest's safe range); the parameter's own when there is none.</summary>
         int SafeMin { get; }
         int SafeMax { get; }
+        /// <summary>
+        /// The top of the span a depth is a percentage of when a target names no range of its own: the parameter's own maximum, or the
+        /// maximum it had before a choice list grew (Neo Drive's Mode: 4), so a saved depth moves what it moved.
+        /// </summary>
+        int SpanMax => Max;
         int Get();
         void Put(int raw);
     }
@@ -96,7 +113,7 @@ namespace NeoBuzz.Dsp
         /// <summary>The span the depth is a percentage of: the range's width.</summary>
         public static int Span(ModSlot s, IModPort p)
         {
-            int lo = p.Min, hi = p.Max;
+            int lo = p.Min, hi = s.HasRange ? p.Max : Math.Min(p.Max, Math.Max(p.Min, p.SpanMax));
             if (s.HasRange)
             {
                 lo = Math.Max(lo, Math.Min(s.RangeMin, s.RangeMax));

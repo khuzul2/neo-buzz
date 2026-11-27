@@ -1,6 +1,6 @@
 // Agent server (docs/specs/mcp-server.md §5.4–5.6, A3): full composition. Song markers (named
 // sections), automation (curves the engine plays from a clip), the Session View's grid,
-// machine data imports (a wavetable for Neo Wave, a DX7 bank for Neo FM6) and renders turned
+// machine data imports (a wavetable for Neo Wave, a six-operator FM SysEx bank for Neo FM6) and renders turned
 // into samples. arrangement_markers, automation_write, automation_read, session_get,
 // session_clip_set, session_scene_set, machine_data_import, wave_from_render.
 
@@ -301,9 +301,9 @@ namespace ReBuzz.Agent
                 Name = "machine_data_import",
                 Title = "Import machine data",
                 Description =
-                    "Loads a file a machine uses as its own data: a WAV wavetable for Neo Wave (kind \"wavetable\"), a DX7 SysEx bank for Neo FM6 " +
-                    "(kind \"dx7_bank\", item picks the voice to play, 1–32). machine_describe and gear_list's manifest say what each machine " +
-                    "takes. One undo step. Example: machine_data_import(machine=\"Keys\", kind=\"dx7_bank\", path=\"C:/DX7/rom1a.syx\", item=11).",
+                    "Loads a file a machine uses as its own data: a WAV wavetable for Neo Wave (kind \"wavetable\"), a 32-voice 6-operator FM SysEx bank for Neo FM6 " +
+                    "(kind \"fm6_sysex_bank\", item picks the voice to play, 1–32). machine_describe and gear_list's manifest say what each machine " +
+                    "takes. One undo step. Example: machine_data_import(machine=\"Keys\", kind=\"fm6_sysex_bank\", path=\"C:/Banks/voices.syx\", item=11).",
                 Input = Object(null,
                     Req("machine", String("The machine")),
                     Req("kind", String("What the file is (from the machine's manifest)")),

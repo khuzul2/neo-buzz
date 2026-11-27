@@ -152,7 +152,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheKeyboardShowsUnderGeneratorsAndNotUnderEffectsOrControllers()
         {
-            MachineCore poly = null, verb = null, sh101 = null, eq = null, lfo = null, drums = null, juno = null;
+            MachineCore poly = null, verb = null, keysMono = null, eq = null, lfo = null, drums = null, keysTracks = null;
             try
             {
                 poly = Add("Neo Poly", "Kb Poly");
@@ -177,8 +177,8 @@ namespace ReBuzz.Studio.Tests
                 lfo = Add("Neo LFO", "Kb LFO", toMaster: false);
                 Assert.That(KeyboardOf(Parameters(lfo)), Is.Null, "a controller has none");
 
-                sh101 = Add("Keys Test", "Kb SH101");
-                var parameters = Parameters(sh101);
+                keysMono = Add("Keys Test", "Kb Mono");
+                var parameters = Parameters(keysMono);
                 var pk = KeyboardOf(parameters);
                 Assert.That(pk, Is.Not.Null, "a generic parameter window has it");
                 Assert.That(pk!.BadgeText, Is.EqualTo(pk.Player.Route.Input == KeyboardInput.Midi ? "MIDI" : "Note tracks"), "it says how the machine gets the notes");
@@ -186,8 +186,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(parameters.ClientSize.Width, Is.GreaterThanOrEqualTo(KeyboardLayout.MinWidth));
                 Studio.Screenshot(parameters, "keyboard-parameter-window");
 
-                juno = Add("Keys Test", "Kb Tracks");
-                var tw = Parameters(juno);
+                keysTracks = Add("Keys Test", "Kb Tracks");
+                var tw = Parameters(keysTracks);
                 Assert.That(KeyboardOf(tw)!.BadgeText, Is.EqualTo("Note tracks"), "a machine that takes notes only in its Note track");
                 Assert.That(KeyboardOf(tw)!.Player.Route.Input, Is.EqualTo(KeyboardInput.Tracks));
 
@@ -203,7 +203,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                Remove(poly, verb, sh101, eq, lfo, drums, juno);
+                Remove(poly, verb, keysMono, eq, lfo, drums, keysTracks);
             }
         }
 
@@ -360,30 +360,30 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TrackMachinesPlayAChordAcrossTheirTracksAndAMonoSynthTheLastKeyHeld()
         {
-            MachineCore juno = null, sh101 = null;
+            MachineCore keysTracks = null, keysMono = null;
             try
             {
-                juno = Add("Keys Test", "Kb Chord");
-                juno.TrackCount = 3;                // a voice per track: three for a triad
-                Parameters(juno);
-                var player = new KeyboardPlayer(juno);
+                keysTracks = Add("Keys Test", "Kb Chord");
+                keysTracks.TrackCount = 3;                // a voice per track: three for a triad
+                Parameters(keysTracks);
+                var player = new KeyboardPlayer(keysTracks);
                 Assert.That(player.Route.Input, Is.EqualTo(KeyboardInput.Tracks));
-                var note = juno.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
+                var note = keysTracks.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
                 foreach (int k in new[] { 60, 64, 67 }) Assert.That(player.On(k, 100), Is.True);
                 Assert.That(Enumerable.Range(0, 3).Select(t => note.GetValue(t)), Is.EqualTo(new[] { 60, 64, 67 }.Select(BuzzNote.FromMIDINote)),
                     "a note per track, the lowest free");
                 Render(0.3);
-                var playing = (int[])juno.ManagedMachine.GetType().GetProperty("Playing")!.GetValue(juno.ManagedMachine)!;
+                var playing = (int[])keysTracks.ManagedMachine.GetType().GetProperty("Playing")!.GetValue(keysTracks.ManagedMachine)!;
                 Assert.That(playing.Take(3), Is.All.EqualTo(100), "the machine plays all three, each at its velocity");
                 player.Off(64);
                 Assert.That(note.GetValue(1), Is.EqualTo(BuzzNote.Off), "a release lets go of its track");
                 player.AllOff();
                 Assert.That(new[] { note.GetValue(0), note.GetValue(2) }, Is.All.EqualTo(BuzzNote.Off), "every note ends");
 
-                sh101 = Add("Keys Test", "Kb Mono");          // one track: one note at a time
-                Assert.That(sh101.TrackCount, Is.EqualTo(1));
-                var mono = new KeyboardPlayer(sh101);
-                var monoNote = sh101.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
+                keysMono = Add("Keys Test", "Kb Mono");          // one track: one note at a time
+                Assert.That(keysMono.TrackCount, Is.EqualTo(1));
+                var mono = new KeyboardPlayer(keysMono);
+                var monoNote = keysMono.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
                 mono.On(60, 100);
                 mono.On(64, 100);
                 Assert.That(monoNote.GetValue(0), Is.EqualTo(BuzzNote.FromMIDINote(64)), "one track: the newer key takes it");
@@ -394,7 +394,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                Remove(juno, sh101);
+                Remove(keysTracks, keysMono);
             }
         }
 
@@ -593,7 +593,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void KeysLightUpForWhatTheMachinePlaysFromAnySource()
         {
-            MachineCore poly = null, sh101 = null;
+            MachineCore poly = null, keysMono = null;
             try
             {
                 poly = Add("Neo Poly", "Kb Lights Poly");
@@ -610,10 +610,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(kb.Keys.ElementOf(64)!.Look.Velocity, Is.EqualTo(0), "and goes out");
 
                 // A clip's notes: its Note track as the tick sends it.
-                sh101 = Add("Keys Test", "Kb Lights Tracks");
-                var pw = Parameters(sh101);
+                keysMono = Add("Keys Test", "Kb Lights Tracks");
+                var pw = Parameters(keysMono);
                 var pk = KeyboardOf(pw)!;
-                var note = sh101.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
+                var note = keysMono.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
                 note.SetValue(0, BuzzNote.FromMIDINote(57));
                 Render(0.2);
                 pk.Poll();
@@ -625,7 +625,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
-                Remove(poly, sh101);
+                Remove(poly, keysMono);
             }
         }
 

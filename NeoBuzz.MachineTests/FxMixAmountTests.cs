@@ -32,6 +32,8 @@ namespace NeoBuzz.MachineTests
             public double PeakLimit = 8;
             /// <summary>The effect has its own Mix (aligned with its own dry) instead of the shared stage's.</summary>
             public bool OwnMix;
+            /// <summary>Parameters appended after Amount by a later change (Neo Filter's Vowel, Voice and Vowel mod, EXT1): Amount is then this many before the last.</summary>
+            public int AfterAmount;
             /// <summary>What "the effect" is, when the difference from the input is not it: (input, output, latency) as one number that grows with Amount.</summary>
             public Func<float[], float[], int, double> Measured;
             /// <summary>Settings for the zipper test when <see cref="Active"/> makes steps of its own (a sample-and-hold, a quantiser): null, Active.</summary>
@@ -90,7 +92,7 @@ namespace NeoBuzz.MachineTests
             new Case { Name = "Neo Exciter", Table = NeoBuzz.Exciter.Params.Table, PeakLimit = 6,
                 Make = v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => NeoBuzz.Exciter.ExciterEngine.Latency); },
                 Active = v => { Set(v, "Amount4", 0.6); Set(v, "Amount3", 0.3); Set(v, "Drive", 12); } },
-            new Case { Name = "Neo Filter", Table = NeoBuzz.Filter.Params.Table, OwnMix = true, PeakLimit = 12,
+            new Case { Name = "Neo Filter", Table = NeoBuzz.Filter.Params.Table, OwnMix = true, PeakLimit = 12, AfterAmount = 3,
                 Make = v => { var e = new NeoBuzz.Filter.FilterEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => x.Latency); },
                 Active = v => { SetRaw(v, "Type", 0); Set(v, "Cutoff", 900); Set(v, "Resonance", 0.7); },
                 // A low-pass filter takes energy out: how much, in dB.
@@ -282,7 +284,7 @@ namespace NeoBuzz.MachineTests
                 Assert.That(mix, Is.EqualTo(t.Length - 1), "Mix is the last parameter");
                 Assert.That(amount, Is.EqualTo(t.Length - 2), "Amount is before it");
             }
-            else Assert.That(amount, Is.EqualTo(t.Length - 1), "Amount is the last parameter");
+            else Assert.That(amount, Is.EqualTo(t.Length - 1 - c.AfterAmount), c.AfterAmount == 0 ? "Amount is the last parameter" : $"Amount is followed only by the {c.AfterAmount} parameters appended later");
         }
 
         [Test]

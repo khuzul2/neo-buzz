@@ -1,6 +1,6 @@
 #nullable disable
 // Neo FM6's editor (docs/specs/machines.md §5): the algorithm as a live diagram (operators light
-// up with their level), pitch envelope, LFO, voice, output and the DX7 bank on top; the six
+// up with their level), pitch envelope, LFO, voice, output and the six-operator FM bank on top; the six
 // operators below, each with its frequency, level, envelope and keyboard scaling. WPF lays the
 // editor out; the graphs draw on the kit's canvas (INeoCanvas), the algorithm with the kit's
 // OperatorDiagram.
@@ -62,7 +62,7 @@ namespace NeoBuzz.Fm6
                 new ParamChoice(ctx, P.EngineMode, cellWidth: 56),
                 Layout.Row(new ParamKnob(ctx, P.Tone, diameter: D), new ParamKnob(ctx, P.Volume, diameter: D))), Layout.Gap(6), meter));
 
-            var bank = S("DX7 voices", BankPanel(ctx, machine));
+            var bank = S("six-operator FM voices", BankPanel(ctx, machine));
 
             var ops = new UIElement[6];
             for (int op = 0; op < 6; op++) ops[op] = Operator(ctx, machine, op);
@@ -281,7 +281,7 @@ namespace NeoBuzz.Fm6
                 Layout.Row(envelope, Layout.Gap(10), scaling)));
         }
 
-        /// <summary>A DX7 envelope: four rates and four levels; pitch envelopes centre on level 50.</summary>
+        /// <summary>A six-operator rate and level envelopes: four rates and four levels; pitch envelopes centre on level 50.</summary>
         static GraphView EnvelopeView(EditorContext ctx, int rate1, int level1, double width, double height, bool pitch)
         {
             var view = new GraphView(width, height, (c, r) =>
@@ -334,7 +334,7 @@ namespace NeoBuzz.Fm6
                 var curve = new NeoPath();
                 for (int note = 21; note <= 120; note++)
                 {
-                    int s = Dx7.ScaleLevel(note, bp, ld, rd, lc, rc);
+                    int s = SixOp.ScaleLevel(note, bp, ld, rd, lc, rc);
                     curve.LineTo(left + (note - 21) / 99.0 * w, mid - Math.Clamp(s / 127.0, -1, 1) * h);
                 }
                 c.Path(curve, NeoFill.None, new NeoStroke(ctx.Accent, 1.5));
@@ -343,7 +343,7 @@ namespace NeoBuzz.Fm6
             return view;
         }
 
-        /// <summary>Loads a DX7 bank (.syx), lists its voices, and exports the current sound as a DX7 voice.</summary>
+        /// <summary>Loads a six-operator FM bank (.syx), lists its voices, and exports the current sound as a six-operator FM voice.</summary>
         static UIElement BankPanel(EditorContext ctx, NeoFm6Machine machine)
         {
             var name = new TextBlock
@@ -371,7 +371,7 @@ namespace NeoBuzz.Fm6
             load.Click += () =>
             {
                 if (machine == null) return;
-                EditorFiles.Open(load, "Load a DX7 bank or voice", "DX7 SysEx (*.syx)|*.syx|All files (*.*)|*.*", file =>
+                EditorFiles.Open(load, "Load a six-operator FM bank or voice", "six-operator FM SysEx (*.syx)|*.syx|All files (*.*)|*.*", file =>
                 {
                     try
                     {
@@ -414,7 +414,7 @@ namespace NeoBuzz.Fm6
             export.Click += () =>
             {
                 if (machine == null) return;
-                EditorFiles.Save(export, "Export as a DX7 voice", "DX7 SysEx (*.syx)|*.syx", "Neo FM6 voice.syx", file =>
+                EditorFiles.Save(export, "Export as a six-operator FM voice", "six-operator FM SysEx (*.syx)|*.syx", "Neo FM6 voice.syx", file =>
                 {
                     try
                     {

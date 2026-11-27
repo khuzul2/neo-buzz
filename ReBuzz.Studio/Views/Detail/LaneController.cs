@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Input;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
@@ -16,6 +17,8 @@ using ReBuzz.Studio.Views.Session;
 
 namespace ReBuzz.Studio.Views.Detail
 {
+    using Control = Avalonia.Controls.Control;
+
     /// <summary>Where times and values are on a lane's screen. Times are the clip's (1/240 tick).</summary>
     internal interface ILaneGeometry
     {
@@ -33,6 +36,48 @@ namespace ReBuzz.Studio.Views.Detail
 
         /// <summary>A press on empty space here adds a point (it is inside the clip), and not outside it.</summary>
         bool InClip(Point p);
+    }
+
+    /// <summary>
+    /// The pointer and key handling of a lane, in one place: the Detail panel's lane (EnvelopeLane), the Arrangement's (the same lane under its roll)
+    /// and the tracker's (TrackerLane) all pass their events through this, so the gestures cannot differ. Alt held for a drag moves a point without
+    /// snapping, in both (Shift is the additive selection).
+    /// </summary>
+    internal static class LaneInput
+    {
+        /// <summary>The gestures, for a hint line and for the guide.</summary>
+        public const string Gestures = "Click: add a point · drag: move (Alt: no snap) · drag on empty space: select · Shift or Ctrl: add to the selection · R: ramp or step · Delete";
+
+        /// <summary>Whether a drag leaves the grid (Alt held).</summary>
+        public static bool NoSnap(KeyModifiers mods) => mods.HasFlag(KeyModifiers.Alt);
+
+        /// <summary>A press; <paramref name="minX"/> is the left edge of the drawing area (a gutter takes no press).</summary>
+        public static void Pressed(LaneController lane, Control owner, PointerPressedEventArgs e, double minX = 0)
+        {
+            if (lane.Env == null || !e.GetCurrentPoint(owner).Properties.IsLeftButtonPressed) return;
+            var p = e.GetPosition(owner);
+            if (p.X < minX) return;
+            owner.Focus();
+            var result = lane.Pressed(p, e.KeyModifiers, e.ClickCount);
+            if (result == LaneController.Press.NotHandled) return;
+            if (result == LaneController.Press.Captured) e.Pointer.Capture(owner);
+            e.Handled = true;
+        }
+
+        public static void Moved(LaneController lane, Control owner, PointerEventArgs e) => lane.PointerMoved(e.GetPosition(owner), NoSnap(e.KeyModifiers));
+
+        public static void Released(LaneController lane, Control owner, PointerReleasedEventArgs e)
+        {
+            if (e.InitialPressMouseButton != MouseButton.Left || !lane.IsDragging) return;
+            bool done = lane.Released(e.GetPosition(owner), NoSnap(e.KeyModifiers));
+            e.Pointer.Capture(null);
+            if (done) e.Handled = true;
+        }
+
+        public static void Key(LaneController lane, KeyEventArgs e)
+        {
+            if (lane.KeyDown(e.Key, e.KeyModifiers)) e.Handled = true;
+        }
     }
 
     /// <summary>The state and the edits of one lane over one envelope: shared by the Detail panel's lane (EnvelopeLane) and the tracker's (TrackerLane).</summary>
@@ -246,7 +291,7 @@ namespace ReBuzz.Studio.Views.Detail
                 }
                 if (Additive)
                 {
-                    // Shift/Ctrl/Cmd-click toggles the point; one that is now selected can be dragged at once (Shift is also "no snap" in a drag).
+                    // Shift/Ctrl/Cmd-click toggles the point; one that is now selected can be dragged at once (Alt is "no snap" in a drag).
                     if (!selected.Remove(hit)) selected.Add(hit);
                     SelectionChanged?.Invoke();
                     if (!selected.Contains(hit))

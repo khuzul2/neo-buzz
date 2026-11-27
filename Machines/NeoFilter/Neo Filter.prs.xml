@@ -22,6 +22,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -49,6 +52,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -76,6 +82,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -103,6 +112,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -130,6 +142,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -157,6 +172,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -184,6 +202,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -211,6 +232,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -238,6 +262,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -265,6 +292,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="270" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -292,6 +322,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -319,6 +352,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -346,6 +382,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -373,6 +412,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -400,6 +442,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="300" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -427,6 +472,9 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -454,9 +502,132 @@
         <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
         <Parameter Name="Output" Group="1" Index="17" Track="0" Value="180" />
         <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vowel — Talking Wah">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="194" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="12" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="200" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A man's voice that talks: the LFO, a half-note long, walks the vowel from A through E, I and O to U and back, in time with the song.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vowel — Choir Ah">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="111" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="0" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="1" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A held A in a woman's voice: the sound becomes a choir singing Ah.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vowel — Envelope Yeah">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="165" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="400" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="240" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="433" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="610" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="1" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>Each note opens from an I to an A as it gets louder and closes again as it fades: a woman's voice saying yeah on every hit.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vowel — Robot Vowels">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="7" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6667" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="304" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="6" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="5" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="400" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+        <Parameter Name="Amount" Group="1" Index="18" Track="0" Value="1000" />
+        <Parameter Name="Vowel" Group="1" Index="19" Track="0" Value="500" />
+        <Parameter Name="Voice" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Vowel mod" Group="1" Index="21" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A man's voice that jumps to a new vowel on every eighth note, with sharp formants and a little drive: a talking robot.</Comment>
     </Preset>
   </Item>
 </PresetDictionary>

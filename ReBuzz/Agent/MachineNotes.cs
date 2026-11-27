@@ -49,7 +49,7 @@ namespace ReBuzz.Agent
         /// <summary>The clip's notes as the agent reads them (pitches as heard): SongNotes reads every lane of the clip.</summary>
         public static List<NoteEvent> Read(IClip p, NoteInput input)
         {
-            var stored = Source(p, input)?.Notes().Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune)).ToList() ?? new List<NoteEvent>();
+            var stored = Source(p, input)?.Notes().Select(n => new NoteEvent(n.Time, n.Duration, n.Note, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune, n.Slide, n.Fine)).ToList() ?? new List<NoteEvent>();
             if (input.Offset == 0) return stored;
             return stored.Select(n => n with { Pitch = n.Pitch - input.Offset }).Where(n => n.Pitch >= 0 && n.Pitch <= 127).ToList();
         }
@@ -67,7 +67,7 @@ namespace ReBuzz.Agent
             NoteEvent Sent(NoteEvent n) => input.Offset == 0 && n.Pitch <= input.Highest ? n : n with { Pitch = TrackNotes.Sent(n.Pitch, input.Offset, input.Highest, input.Machine) };
             var source = SongNotes.For(core, p, input.Mode) ?? throw new ToolError($"{p.Machine?.Name} takes no notes.");
             if (source is TrackerColumnNotes tracker) tracker.AllowMoreTracks(problems);
-            ClipNote Note(NoteEvent n) => new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune);
+            ClipNote Note(NoteEvent n) => new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune, n.Slide, n.Fine);
             string refused = source.Edit(removed.Select(Sent).Select(Note).ToList(), added.Select(Sent).Select(Note).ToList());
             if (refused != null) throw new ToolError(refused);
         }

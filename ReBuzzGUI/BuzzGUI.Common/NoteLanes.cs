@@ -238,6 +238,20 @@ namespace BuzzGUI.Common
             return Change(Events[cell.Source], Events[cell.Source].WithMidi(Math.Clamp(cell.Midi + semitones, 0, MaxNote)));
         }
 
+        /// <summary>Bit 23 of a note-on's value: the note slides (the Slide flag; ReBuzz.Core.Session.NoteBits.SlideBit). Velocity is bits 16-22 and is not touched by it.</summary>
+        public const int SlideBit = 1 << 23;
+
+        /// <summary>Whether the cell's note carries the Slide flag.</summary>
+        public bool IsSlide(NoteCell cell) => !cell.IsOff && cell.Source >= 0 && (Events[cell.Source].Value & SlideBit) != 0;
+
+        /// <summary>Sets or clears the Slide flag of the cell's note (FU2b). Its pitch, velocity, timing and everything else stay as they are.</summary>
+        public NoteLaneEdit SetSlide(int voice, int row, bool slide)
+        {
+            if (!TryCell(voice, row, out var cell) || cell.IsOff) return NoteLaneEdit.Nothing;
+            var e = Events[cell.Source];
+            return Change(e, e with { Value = slide ? e.Value | SlideBit : e.Value & ~SlideBit });
+        }
+
         /// <summary>The events after an edit: one of each removed event gone (events not there are ignored), the added ones in.</summary>
         public static List<LaneEvent> Apply(IEnumerable<LaneEvent> events, NoteLaneEdit edit)
         {

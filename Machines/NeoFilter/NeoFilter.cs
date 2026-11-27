@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Filter
@@ -28,6 +29,9 @@ namespace NeoBuzz.Filter
         }
 
         internal FilterEngine Engine { get; }
+
+        // State version 1 (EXT1, the vowel mode): see FilterMigrations.
+        internal override StateMigrations Migrations => FilterMigrations.Chain;
 
         public bool Work(Sample[] output, Sample[] input, int n, WorkModes mode)
         {
@@ -92,7 +96,8 @@ namespace NeoBuzz.Filter
                         "Neo Filter — Neo Poly's filters as an effect: the ladder (low-pass 24 or 12 dB/oct) and the state-" +
                         "variable filter (low-pass, band-pass, high-pass, notch, peak; 12 or 24 dB/oct), cutoff in Hz, " +
                         "resonance as Q up to a bounded self-oscillation, oversampled drive, and an envelope follower and an " +
-                        "LFO (free or synced, locked to the song) moving the cutoff. At Mix 0 % it passes the input bit for bit.\n\n" +
+                        "LFO (free or synced, locked to the song) moving the cutoff. The Vowel type is a formant filter: three resonances at the " +
+                        "frequencies of a spoken vowel (A to U, Man, Woman or Child), moved by the envelope and the LFO. At Mix 0 % it passes the input bit for bit.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Filter"),
                 },
             },

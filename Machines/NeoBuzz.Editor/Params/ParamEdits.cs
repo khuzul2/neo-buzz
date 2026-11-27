@@ -16,7 +16,7 @@ namespace NeoBuzz.Editor
     /// Collects the parameters a gesture changes (a knob drag, a click, a handle drag, a preset) and
     /// puts them on the song's undo history as one step when the gesture ends. A write outside a
     /// gesture is a step of its own, ended when the toolkit's dispatcher next runs, so writes made
-    /// together (a DX7 voice's 150 parameters) stay one step.
+    /// together (a six-operator FM voice's 150 parameters) stay one step.
     /// </summary>
     internal sealed class ParamEdits
     {

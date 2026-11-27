@@ -10,7 +10,7 @@
 //  - Baxandall (shelves): first order, (s + √V)/(s + 1/√V) for a low shelf of gain V (V(s + 1/√V)/(s + √V) high),
 //    half the dB gain at the frequency, 6 dB/oct; one SVF section whose numerator shares the pole at −√V.
 //  - Vintage (shelves): the shelf, then a bell of half its gain the other way, Q 1, an octave above a low shelf's
-//    frequency or below a high shelf's (Pultec's boost-and-cut dip).
+//    frequency or below a high shelf's (the dip a passive boost-and-cut pair makes).
 //  - All-pass (any type): (s² − ks + 1)/(s² + ks + 1), k = 1/Q: the phase turns, the magnitude stays 1.
 
 using System;

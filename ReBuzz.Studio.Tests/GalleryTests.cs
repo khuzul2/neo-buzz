@@ -2218,6 +2218,31 @@ namespace ReBuzz.Studio.Tests
                     ModulationBoard.EndDrag(null);
                     Core.UiHost.CloseWindows(filter);
                 });
+                // EXT1 (#190): Neo Filter's Vowel type in the editor, and the same editor in another type with the vowel controls dimmed.
+                Try("493b-editor-neo-filter-vowel", () =>
+                {
+                    var m = Add("Neo Filter", "Vowel Filter");
+                    m.GetPreset("Vowel — Choir Ah").Apply(m, true);
+                    Dispatcher.UIThread.RunJobs();
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Wait(300);
+                    Shot(editor!, "493b-editor-neo-filter-vowel", "Neo Filter's editor in the Vowel type (EXT1) with the Choir Ah preset: the Vowel section (Voice, the vowel and its formant curve, Vowel, Vowel mod) is live.", "Neo Filter: Type = Vowel (or the preset Vowel — Choir Ah), then its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
+                Try("493c-editor-neo-filter-vowel-dimmed", () =>
+                {
+                    var m = Add("Neo Filter", "Ladder Filter");
+                    m.GetPreset("Sweep — Ladder Low-Pass (1 Bar)").Apply(m, true);
+                    Dispatcher.UIThread.RunJobs();
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Wait(300);
+                    Shot(editor!, "493c-editor-neo-filter-vowel-dimmed", "Neo Filter's editor in a ladder type (EXT1): the Vowel section is dimmed and does not take the pointer until Type is Vowel.", "Neo Filter: any Type but Vowel, then its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
                 Try("494-modulation-matrix", () =>
                 {
                     var lfo = Core.SongCore.MachinesList.First(m => m.Name == "LFO");
@@ -2335,6 +2360,9 @@ namespace ReBuzz.Studio.Tests
                     "Neo Verb's editor with Amount at 150 % and its own Mix at 30 %: Amount and Mix in the Output section (Width moved beside Shimmer); the decay picture follows the Amount.");
                 FxShot("653-editor-neo-utility-amount-mix", "Neo Utility", "FX Utility", new[] { ("Amount", 1000), ("Mix", 500) },
                     "Neo Utility's editor with Mix at 50 %: Amount and Mix after the channel controls, the same size and order as every Neo effect's.");
+                // EXT3: Neo Drive's Mode list with its ten characters, the last one (Transformer) chosen, so the whole list shows in the window.
+                FxShot("655-editor-neo-drive-ten-modes", "Neo Drive", "FX Drive", new[] { ("Mode", 9), ("Drive", 600) },
+                    "Neo Drive's editor with Mode at Transformer: all ten characters in the Mode list (Tape to Fold, then Overdrive, Fuzz, Hard clip, Rectify and Transformer), with Drive at 21.6 dB.");
 
                 // The generic parameter window: a Neo machine.
                 void Parameters(string id, MachineCore m, string what, string how)
@@ -2458,6 +2486,30 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "654-neo-arp-editor", "Neo Arp: Pattern (Steps) and Rate on top, the 16-step row with ties (slim bars), accents (bright with a mark), offs (empty) and a transpose bar under each step, then Gate, Swing, Velocity (Accent) and Hold (Latch on).", "Add Neo Arp, set the Steps pattern and a step row, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                Try("655-neo-pulse-editor", () =>
+                {
+                    var m = Add("Neo Pulse", "Pulse");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Four on the floor — Euclidean hats (5 active lanes with accents and swing) plus a few ticks playing so live step indicators light up.
+                    Set("Rate", 4);
+                    Set("Swing", 12);
+                    Set("Seed", 101);
+                    Set("L1 steps", 16); Set("L1 pulses", 4); Set("L1 note", 36);
+                    Set("L2 steps", 16); Set("L2 pulses", 2); Set("L2 rotation", 4); Set("L2 note", 38);
+                    Set("L3 steps", 16); Set("L3 pulses", 11); Set("L3 accent pulses", 4); Set("L3 note", 42);
+                    Set("L4 steps", 16); Set("L4 pulses", 3); Set("L4 rotation", 2); Set("L4 chance", 75); Set("L4 note", 46);
+                    Set("L5 steps", 16); Set("L5 pulses", 5); Set("L5 rotation", 1); Set("L5 chance", 60); Set("L5 note", 37);
+                    Core.Playing = true;
+                    RunTicks(6);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "655-neo-pulse-editor", "Neo Pulse: Clock & Probability (Rate, Feel, Swing, Fill, Humanize, Seed) above the eight-lane Euclidean step strips (hits, accents, live playing step, inline Steps, Pulses, Rotation, Chance, Note and Divider) and the synced Lane 1..8 detail panel.", "Add Neo Pulse, load Four on the floor — Euclidean hats, play and open its editor");
+                    Core.Playing = false;
+                    Core.UiHost.CloseWindows(m);
+                });
                 // MAL1: Neo Mallet with the Church Bell preset's values set before the editor opens: the Bell model's mode drawing, the exciter, decay and damping.
                 Try("660-neo-mallet-editor", () =>
                 {
@@ -2528,6 +2580,41 @@ namespace ReBuzz.Studio.Tests
                     "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
+                void ChipShot(string id, string name, (string Param, int Raw)[] presetValues, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Chip", name);
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        foreach (var (paramName, rawVal) in presetValues)
+                            group.Parameters.First(p => p.Name == paramName).SetValue(0, rawVal);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Chip; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                ChipShot("645-neo-chip-editor", "Gallery Neo Chip",
+                    new[]
+                    {
+                        ("P1 duty", 0), ("P2 duty", 0), ("P3 duty", 1),
+                        ("Env attack", 81), ("Env decay", 622), ("Env sustain", 12), ("Env release", 499),
+                        ("Arp mode", 1), ("Arp steps", 3), ("Arp step 1", 24), ("Arp step 2", 28), ("Arp step 3", 31), ("Arp sync", 3),
+                        ("Stereo spread", 850), ("Volume", 870),
+                    },
+                    "Neo Chip with preset \"Arp — Major sparkle\" loaded: Channels (Pulse 1–3 and Noise strips), Envelope (live 16-step ADSR picture), Arpeggio & Motion, and Output.");
+                ChipShot("646-neo-chip-hardware", "Gallery Neo Chip 2",
+                    new[]
+                    {
+                        ("Voice mode", 2), ("Detune", 520), ("Raw", 1), ("Lo-res DAC", 1),
+                        ("P1 duty", 3), ("P2 duty", 0), ("P3 duty", 1),
+                        ("Env mode", 1), ("Env sync", 5), ("Env release", 514),
+                        ("Stereo spread", 800), ("Volume", 859),
+                    },
+                    "Neo Chip with preset \"Raw — Lo-res grit\" loaded: repeating Saw down hardware envelope staircase picture, Unison mode, Raw and Lo-res DAC lit.");
                 Try("660-neo-chord-editor", () =>
                 {
                     var m = Add("Neo Chord", "Chord");
@@ -2599,6 +2686,42 @@ namespace ReBuzz.Studio.Tests
                     "Neo Prism with the preset \"Pitch — Octave Up Shimmer\" loaded: the spectrum (in and out) with the delay's time curve over it, the five section lights (Pitch and Delay lit), the section page below, and Output with FFT size, Amount, Mix and the meters.");
                 PrismShot("663-neo-prism-scramble", "Prism 2", new[] { 0, 24, 100, 0, 1, 700, 6, 2, 565, 7, 0, 0, 2, 3, 1000, 0, 354, 0, 0, 224, 447, 0, 404, 300, 2, 1000, 500 },
                     "Neo Prism with the preset \"Scramble — Bin Shuffle Glitch\" loaded: the Scramble light on and its page (synced to an eighth note).");
+                // SPC1: Neo Space's editor with a preset loaded: the room, the picture of the response with the pre-delay and the trim drawn on it,
+                // the tone and the output. The response is made in the background: the shot waits for it (Busy), then plays a few blocks.
+                void SpaceShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Space", machineName);
+                        string[] names = { "Room", "Wave", "Pre-delay", "Length", "Low cut", "High cut", "Width", "Reverse", "Mix", "Amount", "Output" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        var inst = m.ManagedMachine!;
+                        // (the host hands the values to the machine at the song's tick; the shot does not tick, so they are set on it directly)
+                        string[] props = { "Room", "Wave", "PreDelay", "Length", "LowCut", "HighCut", "Width", "Reverse", "Mix", "Amount", "Output" };
+                        for (int k = 0; k < props.Length; k++) inst.GetType().GetProperty(props[k])!.SetValue(inst, raws[k]);
+                        var busy = inst.GetType().GetProperty("Busy")!;
+                        var work = inst.GetType().GetMethod("Work")!;
+                        var output = new Buzz.MachineInterface.Sample[256];
+                        var input = new Buzz.MachineInterface.Sample[256];
+                        for (int i = 0; i < 256; i++) input[i] = new Buzz.MachineInterface.Sample((float)(System.Math.Sin(i * 0.2) * 7000), (float)(System.Math.Sin(i * 0.2) * 7000));
+                        for (int tries = 0; tries < 400 && (bool)busy.GetValue(inst)!; tries++) System.Threading.Thread.Sleep(10);
+                        for (int b = 0; b < 4; b++) lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Space; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                SpaceShot("662-neo-space-editor", "Space", new[] { 6, 0, 140, 1000, 497, 800, 1400, 0, 360, 1000, 500 },
+                    "Neo Space with the preset \"Hall — Large Hall\" loaded: the Room section (the room, the Wave slot, Pre-delay and Length), the picture of the response (its level over time, the pre-delay as a shaded gap in front), the Tone section (low and high cut, Width, Reverse), and Output with Amount and Mix side by side, the level and the two meters.");
+                SpaceShot("663-neo-space-reverse", "Space 2", new[] { 6, 0, 0, 347, 589, 1000, 1300, 1, 600, 1000, 583 },
+                    "Neo Space with the preset \"Effect — Reverse Swell\" loaded: Reverse on, so the picture rises to its end, and the Length line on it dims the part that is cut off.");
+                SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 160, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
+                    "Neo Space with Room set to Wave and slot 5 empty: the picture shows the hall that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
@@ -3169,7 +3292,7 @@ namespace ReBuzz.Studio.Tests
                     foreach (var c in wires) level[c] = 32768f * (float)System.Math.Pow(10, -((n++ * 7) % 13) * 4.0 / 20);     // 0 to -48 dB across the wires
                     canvas.PeakSource = c => level.TryGetValue(c, out float v) ? (v, v * 0.8f) : (0, 0);
                     canvas.TickMeters(1);
-                    canvas.SetZoom(-2);                  // the whole song in the view (P SH101 was cut off by the foot of it)
+                    canvas.SetZoom(-2);                  // the whole song in the view (P mono synth was cut off by the foot of it)
                     Settle();
                     Shot(window, "343-machines-many-meters", $"The same song of every Neo machine ({wires.Count} wires) with a level on every wire (P3g; the levels are set by the test: no sound is made here): the meters stay readable and the wires you can't see from far away show where the sound goes.", "Play a big song with the Machine View open.", song: "a song of every Neo machine", notes: Headless);
                     canvas.SetZoom(0);
@@ -3493,8 +3616,42 @@ namespace ReBuzz.Studio.Tests
                     var session = Tab<SessionView>(window, "Session");
                     session.Rebuild();
                     Settle();
-                    Shot(window, "352-session-envelope-curves", "The Session View (EV1): a slot whose clip holds an envelope draws it as a mini curve along its bottom; the ∿ chip in the track header chooses the parameter.",
+                    Shot(window, "352-session-envelope-curves", "The Session View (EV1, FU2b): a slot whose clip holds an envelope draws it as a mini curve in a band along its bottom, on a plate with a halo, so the curve and the clip's name (now in the slot's top line) both read on any clip colour; the ∿ chip in the track header chooses the parameter.",
                         "Draw an envelope in the Detail panel's lane, then look at the Session View.");
+                });
+
+                Try("353-arrangement-roll-envelope-lanes", () =>
+                {
+                    window.ShowView("Sequence");
+                    var seq = Tab<SequenceView>(window, "Arrangement");
+                    seq.SetArrangementMode(true);
+                    seq.OpenPianoRoll(hook);
+                    Settle();
+                    Assert.That(seq.RollPanel.Roll.Envelopes?.Lanes.Count ?? 0, Is.GreaterThan(0), "the panel shows the clip's envelope lanes");
+                    Shot(window, "353-arrangement-roll-envelope-lanes", "The Arrangement's piano roll panel (FU2b) with the envelope lanes the Piano roll view has: the F1 cutoff lane of Bass's Line A under the roll on its time axis, with the parameter chooser, + Envelope, Ramp and Step; one editing core serves it, the Detail panel's lane and the Tracker's lanes (Alt moves a point without snapping).",
+                        "The Arrangement, double-click a clip, then the Envelopes bar under the roll.");
+                    seq.RollPanel.Close();
+                    seq.SetArrangementMode(false);
+                });
+
+                Try("354-piano-roll-slide-flag", () =>
+                {
+                    window.ShowView("Session");
+                    window.Detail.ShowPage(true, true);
+                    Settle();
+                    Assert.That(ReBuzz.Studio.Views.Detail.EnvelopeOpener.Open(hook, param.Key), Is.True);
+                    Wait(250);
+                    var roll = ClipView.Page.Roll.Roll;
+                    Assert.That(roll, Is.Not.Null);
+                    var count = roll.Notes.Count;
+                    Assert.That(count, Is.GreaterThan(2), "the clip has notes");
+                    roll.SelectOnly(new[] { 1, count > 4 ? 4 : 2 });
+                    Assert.That(roll.ToggleSlide(), Is.True);
+                    roll.SelectOnly(new[] { 1 });
+                    Settle();
+                    Assert.That(ClipView.Page.Roll.SlideButton.IsEnabled, Is.True);
+                    Shot(window, "354-piano-roll-slide-flag", "The Detail panel's piano roll with the per-note Slide flag (FU2b): the Slide button in the toolbar (L) toggles it for the selected notes; a flagged note carries a rising wedge at its start (two notes of Bass's Line A here) and, in Neo Poly, glides into its pitch at the Slide time. In the tracker, Ctrl+L does the same in the Notes lanes.",
+                        "Detail > Piano roll, select notes, then Slide (or L).");
                 });
             }
             finally

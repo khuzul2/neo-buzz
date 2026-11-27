@@ -273,7 +273,7 @@ namespace ReBuzz.Agent.Model
         public string Window { get; init; } = "";
     }
 
-    /// <summary>A kind of data file a machine loads (machine_data_import): a wavetable, a DX7 bank…</summary>
+    /// <summary>A kind of data file a machine loads (machine_data_import): a wavetable, a six-operator FM bank…</summary>
     public sealed class ManifestImport
     {
         public required string Kind { get; init; }

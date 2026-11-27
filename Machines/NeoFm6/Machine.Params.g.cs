@@ -7,7 +7,7 @@ namespace NeoBuzz.Fm6
 {
     public partial class NeoFm6Machine
     {
-        [ParameterDecl(Name = "Algorithm", Description = "Which operators modulate which (the 32 DX7 algorithms)", MinValue = 0, MaxValue = 31, DefValue = 0)]
+        [ParameterDecl(Name = "Algorithm", Description = "Which operators modulate which (the 32 six-operator algorithms)", MinValue = 0, MaxValue = 31, DefValue = 0)]
         public int Algorithm { get => Values[P.Algorithm]; set => Values.Set(P.Algorithm, value); }
 
         [ParameterDecl(Name = "Feedback", Description = "Self-modulation of the feedback operator (7: near saw)", MinValue = 0, MaxValue = 7, DefValue = 0)]
@@ -109,7 +109,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "Op1 on", Description = "Operator 1 sounds (off: silent, as on the DX7)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "Op1 on", Description = "Operator 1 sounds (off: silent, as in classic six-operator FM)", MinValue = 0, MaxValue = 1, DefValue = 1)]
         public int O1On { get => Values[P.O1On]; set => Values.Set(P.O1On, value); }
 
         [ParameterDecl(Name = "Op1 level", Description = "Output level (carriers: loudness; modulators: brightness)", MinValue = 0, MaxValue = 99, DefValue = 99)]
@@ -127,7 +127,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op1 detune", Description = "Detune, −7 … +7 (about 1 cent a step at A4)", MinValue = 0, MaxValue = 14, DefValue = 7)]
         public int O1Detune { get => Values[P.O1Detune]; set => Values.Set(P.O1Detune, value); }
 
-        [ParameterDecl(Name = "Op1 wave", Description = "Operator waveform (Sine: DX7)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        [ParameterDecl(Name = "Op1 wave", Description = "Operator waveform (Sine: the classic wave)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int O1Wave { get => Values[P.O1Wave]; set => Values.Set(P.O1Wave, value); }
 
         [ParameterDecl(Name = "Op1 rate 1", Description = "Envelope rate 1 (99: fastest)", MinValue = 0, MaxValue = 99, DefValue = 99)]
@@ -178,7 +178,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op1 vel sens", Description = "How much velocity changes the level", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int O1VelSens { get => Values[P.O1VelSens]; set => Values.Set(P.O1VelSens, value); }
 
-        [ParameterDecl(Name = "Op2 on", Description = "Operator 2 sounds (off: silent, as on the DX7)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "Op2 on", Description = "Operator 2 sounds (off: silent, as in classic six-operator FM)", MinValue = 0, MaxValue = 1, DefValue = 1)]
         public int O2On { get => Values[P.O2On]; set => Values.Set(P.O2On, value); }
 
         [ParameterDecl(Name = "Op2 level", Description = "Output level (carriers: loudness; modulators: brightness)", MinValue = 0, MaxValue = 99, DefValue = 0)]
@@ -196,7 +196,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op2 detune", Description = "Detune, −7 … +7 (about 1 cent a step at A4)", MinValue = 0, MaxValue = 14, DefValue = 7)]
         public int O2Detune { get => Values[P.O2Detune]; set => Values.Set(P.O2Detune, value); }
 
-        [ParameterDecl(Name = "Op2 wave", Description = "Operator waveform (Sine: DX7)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        [ParameterDecl(Name = "Op2 wave", Description = "Operator waveform (Sine: the classic wave)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int O2Wave { get => Values[P.O2Wave]; set => Values.Set(P.O2Wave, value); }
 
         [ParameterDecl(Name = "Op2 rate 1", Description = "Envelope rate 1 (99: fastest)", MinValue = 0, MaxValue = 99, DefValue = 99)]
@@ -247,7 +247,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op2 vel sens", Description = "How much velocity changes the level", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int O2VelSens { get => Values[P.O2VelSens]; set => Values.Set(P.O2VelSens, value); }
 
-        [ParameterDecl(Name = "Op3 on", Description = "Operator 3 sounds (off: silent, as on the DX7)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "Op3 on", Description = "Operator 3 sounds (off: silent, as in classic six-operator FM)", MinValue = 0, MaxValue = 1, DefValue = 1)]
         public int O3On { get => Values[P.O3On]; set => Values.Set(P.O3On, value); }
 
         [ParameterDecl(Name = "Op3 level", Description = "Output level (carriers: loudness; modulators: brightness)", MinValue = 0, MaxValue = 99, DefValue = 0)]
@@ -265,7 +265,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op3 detune", Description = "Detune, −7 … +7 (about 1 cent a step at A4)", MinValue = 0, MaxValue = 14, DefValue = 7)]
         public int O3Detune { get => Values[P.O3Detune]; set => Values.Set(P.O3Detune, value); }
 
-        [ParameterDecl(Name = "Op3 wave", Description = "Operator waveform (Sine: DX7)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        [ParameterDecl(Name = "Op3 wave", Description = "Operator waveform (Sine: the classic wave)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int O3Wave { get => Values[P.O3Wave]; set => Values.Set(P.O3Wave, value); }
 
         [ParameterDecl(Name = "Op3 rate 1", Description = "Envelope rate 1 (99: fastest)", MinValue = 0, MaxValue = 99, DefValue = 99)]
@@ -316,7 +316,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op3 vel sens", Description = "How much velocity changes the level", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int O3VelSens { get => Values[P.O3VelSens]; set => Values.Set(P.O3VelSens, value); }
 
-        [ParameterDecl(Name = "Op4 on", Description = "Operator 4 sounds (off: silent, as on the DX7)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "Op4 on", Description = "Operator 4 sounds (off: silent, as in classic six-operator FM)", MinValue = 0, MaxValue = 1, DefValue = 1)]
         public int O4On { get => Values[P.O4On]; set => Values.Set(P.O4On, value); }
 
         [ParameterDecl(Name = "Op4 level", Description = "Output level (carriers: loudness; modulators: brightness)", MinValue = 0, MaxValue = 99, DefValue = 0)]
@@ -334,7 +334,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op4 detune", Description = "Detune, −7 … +7 (about 1 cent a step at A4)", MinValue = 0, MaxValue = 14, DefValue = 7)]
         public int O4Detune { get => Values[P.O4Detune]; set => Values.Set(P.O4Detune, value); }
 
-        [ParameterDecl(Name = "Op4 wave", Description = "Operator waveform (Sine: DX7)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        [ParameterDecl(Name = "Op4 wave", Description = "Operator waveform (Sine: the classic wave)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int O4Wave { get => Values[P.O4Wave]; set => Values.Set(P.O4Wave, value); }
 
         [ParameterDecl(Name = "Op4 rate 1", Description = "Envelope rate 1 (99: fastest)", MinValue = 0, MaxValue = 99, DefValue = 99)]
@@ -385,7 +385,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op4 vel sens", Description = "How much velocity changes the level", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int O4VelSens { get => Values[P.O4VelSens]; set => Values.Set(P.O4VelSens, value); }
 
-        [ParameterDecl(Name = "Op5 on", Description = "Operator 5 sounds (off: silent, as on the DX7)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "Op5 on", Description = "Operator 5 sounds (off: silent, as in classic six-operator FM)", MinValue = 0, MaxValue = 1, DefValue = 1)]
         public int O5On { get => Values[P.O5On]; set => Values.Set(P.O5On, value); }
 
         [ParameterDecl(Name = "Op5 level", Description = "Output level (carriers: loudness; modulators: brightness)", MinValue = 0, MaxValue = 99, DefValue = 0)]
@@ -403,7 +403,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op5 detune", Description = "Detune, −7 … +7 (about 1 cent a step at A4)", MinValue = 0, MaxValue = 14, DefValue = 7)]
         public int O5Detune { get => Values[P.O5Detune]; set => Values.Set(P.O5Detune, value); }
 
-        [ParameterDecl(Name = "Op5 wave", Description = "Operator waveform (Sine: DX7)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        [ParameterDecl(Name = "Op5 wave", Description = "Operator waveform (Sine: the classic wave)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int O5Wave { get => Values[P.O5Wave]; set => Values.Set(P.O5Wave, value); }
 
         [ParameterDecl(Name = "Op5 rate 1", Description = "Envelope rate 1 (99: fastest)", MinValue = 0, MaxValue = 99, DefValue = 99)]
@@ -454,7 +454,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op5 vel sens", Description = "How much velocity changes the level", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int O5VelSens { get => Values[P.O5VelSens]; set => Values.Set(P.O5VelSens, value); }
 
-        [ParameterDecl(Name = "Op6 on", Description = "Operator 6 sounds (off: silent, as on the DX7)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "Op6 on", Description = "Operator 6 sounds (off: silent, as in classic six-operator FM)", MinValue = 0, MaxValue = 1, DefValue = 1)]
         public int O6On { get => Values[P.O6On]; set => Values.Set(P.O6On, value); }
 
         [ParameterDecl(Name = "Op6 level", Description = "Output level (carriers: loudness; modulators: brightness)", MinValue = 0, MaxValue = 99, DefValue = 0)]
@@ -472,7 +472,7 @@ namespace NeoBuzz.Fm6
         [ParameterDecl(Name = "Op6 detune", Description = "Detune, −7 … +7 (about 1 cent a step at A4)", MinValue = 0, MaxValue = 14, DefValue = 7)]
         public int O6Detune { get => Values[P.O6Detune]; set => Values.Set(P.O6Detune, value); }
 
-        [ParameterDecl(Name = "Op6 wave", Description = "Operator waveform (Sine: DX7)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        [ParameterDecl(Name = "Op6 wave", Description = "Operator waveform (Sine: the classic wave)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int O6Wave { get => Values[P.O6Wave]; set => Values.Set(P.O6Wave, value); }
 
         [ParameterDecl(Name = "Op6 rate 1", Description = "Envelope rate 1 (99: fastest)", MinValue = 0, MaxValue = 99, DefValue = 99)]

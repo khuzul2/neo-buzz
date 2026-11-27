@@ -39,7 +39,7 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Req("machine", String("Machine")), Req("clip", String("The clip's name")), Req("length_beats", Number("The clip's length")),
                     Opt("input", String("midi or tracks: where the machine takes its notes; absent when it takes none")),
-                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127"))), "The notes")),
+                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127")), Opt("slide", Boolean("The note has the Slide flag: it glides into its pitch"))), "The notes")),
                     Req("lanes", Array(Object(null,
                         Req("kind", String("notes or parameter", "notes", "parameter")), Opt("param", String("Parameter")), Opt("machine", String("Another machine's parameter")),
                         Opt("track", Integer("Track")), Req("events", Integer("Events in the lane")),

@@ -1,0 +1,152 @@
+# Neo Drive's original five Modes, SHA-256 (first 24 hex) of the float32 render (DriveUnchangedTests). Written from origin/main before EXT3.
+mode0 q0 drive0 bias500	7fc0099cb5d2890e86c9b858
+mode0 q0 drive0 bias800	8586844366355140f5175d84
+mode0 q0 drive18 bias500	d812b8c7b45db48e3c236d9d
+mode0 q0 drive18 bias800	737460d55d7745e0b7da81f9
+mode0 q0 drive36 bias500	7c6b4b63523bbcb8743fe832
+mode0 q0 drive36 bias800	d712c2b7b1d7a05bdce24704
+mode0 q1 drive0 bias500	02191dc798a1d165d858726c
+mode0 q1 drive0 bias800	4b878ba95464ed1f10c2e7c0
+mode0 q1 drive18 bias500	861289c6cbed8b1cf8b344c7
+mode0 q1 drive18 bias800	04ca46d09b7d58f9e5a0f2e2
+mode0 q1 drive36 bias500	c9ed393ab46dfa2647c900d5
+mode0 q1 drive36 bias800	c7c074b6ce25aec996145430
+mode0 q2 drive0 bias500	be14ba545344edb28bbd67de
+mode0 q2 drive0 bias800	8ebea4912d1517977dd595f2
+mode0 q2 drive18 bias500	45b2c35e7bb6721ff04f20cb
+mode0 q2 drive18 bias800	18b2aa3f5a84e0fb4e19feff
+mode0 q2 drive36 bias500	f35af30f4385ba30620dd6f0
+mode0 q2 drive36 bias800	43b0edecb2292eecb97082a8
+mode1 q0 drive0 bias500	38a91ad8ccb6de8db46c4041
+mode1 q0 drive0 bias800	c55b4d2eae95d4825cadb9a1
+mode1 q0 drive18 bias500	69a07a107ec20f0c42834ddd
+mode1 q0 drive18 bias800	268e6cb248c32cf4e3cdb158
+mode1 q0 drive36 bias500	b8abdf98445c0e25a98b73d0
+mode1 q0 drive36 bias800	df5c81a7ca565723bec54ae1
+mode1 q1 drive0 bias500	48a6e36e07ed52fd2bac520f
+mode1 q1 drive0 bias800	d7e27ae2497bc6f54d6e034c
+mode1 q1 drive18 bias500	795348bd3abafd099172b120
+mode1 q1 drive18 bias800	792a87af4355656e01e304bb
+mode1 q1 drive36 bias500	4efe967ac796e8b4cf20b661
+mode1 q1 drive36 bias800	0d4df6cea5945d646c81739a
+mode1 q2 drive0 bias500	6b808aff2c0eb14ffb290047
+mode1 q2 drive0 bias800	2a5394628b543ef11a57cc96
+mode1 q2 drive18 bias500	989ddba0a5606984f0c0c6de
+mode1 q2 drive18 bias800	9933881de84b155b88a3e093
+mode1 q2 drive36 bias500	e3759f51247f56b65d0966cc
+mode1 q2 drive36 bias800	c5acf83221378ce01f081504
+mode2 q0 drive0 bias500	4ed8b6ed260adc104efb0dcd
+mode2 q0 drive0 bias800	a36766ff3dd8b583bb09ad71
+mode2 q0 drive18 bias500	c27b555ebc76e14554cdbec9
+mode2 q0 drive18 bias800	d9597b1f214d0e5e96c8306c
+mode2 q0 drive36 bias500	7460a56478edb106ad1e9252
+mode2 q0 drive36 bias800	c359c45e9b1f3ffb3345609d
+mode2 q1 drive0 bias500	af662271a9299ced255bc2fa
+mode2 q1 drive0 bias800	78773522544eea2ed9e2abbb
+mode2 q1 drive18 bias500	5ae8318eb477fc74e37276f5
+mode2 q1 drive18 bias800	7dda404c7f434a6da766b76a
+mode2 q1 drive36 bias500	5a79712338bf91069a24c9e7
+mode2 q1 drive36 bias800	a9bda7b3798221d7a6434d53
+mode2 q2 drive0 bias500	f264c5bf03dd266b00ead57e
+mode2 q2 drive0 bias800	936e5a36a7ae8290d977cad2
+mode2 q2 drive18 bias500	3d668e62be8817cd4e79b4ef
+mode2 q2 drive18 bias800	c21c7868441341c12ba3f7dc
+mode2 q2 drive36 bias500	95770fc5bac2743cf431a961
+mode2 q2 drive36 bias800	c7e60e750c31bd9b805902e7
+mode3 q0 drive0 bias500	ba02d14f4b2151ec8a8d6349
+mode3 q0 drive0 bias800	611cfb33f4ed3f66dd92a6bd
+mode3 q0 drive18 bias500	64960fe5cc4177de5d8d343f
+mode3 q0 drive18 bias800	71817401b1a2945dd2bc52bc
+mode3 q0 drive36 bias500	222db46c77b07535dc2ac5e7
+mode3 q0 drive36 bias800	a63ae60347f1c8d445bddd63
+mode3 q1 drive0 bias500	bdde2219af757adbe6bc70e7
+mode3 q1 drive0 bias800	ee73a9060d621530ebc293fe
+mode3 q1 drive18 bias500	66bd9536377cc37e69118aa7
+mode3 q1 drive18 bias800	21336b23878566543246eddb
+mode3 q1 drive36 bias500	ca67bbc69050442cb28a150d
+mode3 q1 drive36 bias800	c5a451013c881b00684ae498
+mode3 q2 drive0 bias500	13085df479ee6e47843d0bb0
+mode3 q2 drive0 bias800	7d3d744dc296e8196617f611
+mode3 q2 drive18 bias500	8561301a2d6d29fc1b2593e1
+mode3 q2 drive18 bias800	d5d22ac1d8b9ee2529cfb7de
+mode3 q2 drive36 bias500	c752c6aefd4d80a333caea5d
+mode3 q2 drive36 bias800	df1a92f649766cb1b0e55824
+mode4 q0 drive0 bias500	994c265a05c84690e91a34f8
+mode4 q0 drive0 bias800	0bd3bdeddc0d45b4c2f71ac0
+mode4 q0 drive18 bias500	d6dd43e758144ab855095f1b
+mode4 q0 drive18 bias800	8f3487f0fd92f319fb509cb1
+mode4 q0 drive36 bias500	4a6dfc8188d10f84df84efab
+mode4 q0 drive36 bias800	83bb4bd57d5651f743ec79f4
+mode4 q1 drive0 bias500	aa31e854587a66c4ec87db90
+mode4 q1 drive0 bias800	6f5ceb63340ba33fcb7251e7
+mode4 q1 drive18 bias500	858946b21139513a1665de9a
+mode4 q1 drive18 bias800	61413bc8961801fc7cacdf18
+mode4 q1 drive36 bias500	3411a220094dba97e933dc31
+mode4 q1 drive36 bias800	65ccc98efa1a695c34d0da40
+mode4 q2 drive0 bias500	ef656bb85bc17518715c63df
+mode4 q2 drive0 bias800	93598b47c125966bd4e8f71b
+mode4 q2 drive18 bias500	0912f2439b7a8342bad44fc3
+mode4 q2 drive18 bias800	fa75f8a2b227bd32bda6d3d2
+mode4 q2 drive36 bias500	a85a1b19835e0692d9a34a4a
+mode4 q2 drive36 bias800	37b316f8f7e3420ab75630a9
+mode0 character0 filters	0a47be5bee577bc846152c0d
+mode0 character0 nogain mix amount	a8e6a2248df5bafe3a5147db
+mode0 character0 block64	1bc35b1c22dc49e98fd24674
+mode0 character0 block100 amount	12f2c4e0d10cbc6407581f80
+mode0 character500 filters	193837c6a415969a1a307a05
+mode0 character500 nogain mix amount	11395021d4b440203d141745
+mode0 character500 block64	82183b58e0ef6d73f40326b1
+mode0 character500 block100 amount	feaa1bbd0978f465ef1d2640
+mode0 character1000 filters	4c6a3b25d14e703a521789f4
+mode0 character1000 nogain mix amount	ba7df61a0a992abb79ac5b0e
+mode0 character1000 block64	6eaa51d7029829ca427b0613
+mode0 character1000 block100 amount	94b48564e119bbcf3820d9f8
+mode1 character0 filters	66faa282db4725c08b3cd5bd
+mode1 character0 nogain mix amount	48cc11c0f4201a39117f715c
+mode1 character0 block64	3215bd3fcaf20a61d5245bac
+mode1 character0 block100 amount	71639195a8e35fa613e0ed80
+mode1 character500 filters	2c9e47dea707b534293337c9
+mode1 character500 nogain mix amount	26586654aadc633337ede7ce
+mode1 character500 block64	6b980991d78a2b150d70f573
+mode1 character500 block100 amount	14d83c747b47ea8da9cd27e1
+mode1 character1000 filters	a46a5578f8ca0eb061f2503e
+mode1 character1000 nogain mix amount	09a921ce17d481af29315a7e
+mode1 character1000 block64	b684e22f3a815b75a0e7f64d
+mode1 character1000 block100 amount	c256262accb216059289e4ae
+mode2 character0 filters	0a47be5bee577bc846152c0d
+mode2 character0 nogain mix amount	a8e6a2248df5bafe3a5147db
+mode2 character0 block64	1bc35b1c22dc49e98fd24674
+mode2 character0 block100 amount	12f2c4e0d10cbc6407581f80
+mode2 character500 filters	bcd26310f94968eeb99bee1f
+mode2 character500 nogain mix amount	630637c381a44818f3f877f8
+mode2 character500 block64	27d73636a954f1af9c45646d
+mode2 character500 block100 amount	c4c1058e8bab28f44240d3f5
+mode2 character1000 filters	cfe266b4a0d0ef8ac42be38e
+mode2 character1000 nogain mix amount	24a11874d3fca83fbb135ab9
+mode2 character1000 block64	4c9996a18f86724e2ed3c0e8
+mode2 character1000 block100 amount	859d1c4ded1f9dc8e0021935
+mode3 character0 filters	a34fc242b71a9032a347895c
+mode3 character0 nogain mix amount	dbc913c3362b1f4ea1d40ab1
+mode3 character0 block64	a1142336a0c183e3aec1a369
+mode3 character0 block100 amount	77cedca46730715e835a23d9
+mode3 character500 filters	e00bc66e7086f0a769d2f82e
+mode3 character500 nogain mix amount	c105a494067e9c0dcc00995b
+mode3 character500 block64	eddc2fc08452fe3da84d92c4
+mode3 character500 block100 amount	9f5da5deb6ab767f7700e669
+mode3 character1000 filters	1858c2310de1f6ae6e26d033
+mode3 character1000 nogain mix amount	84531a3fc73b1283c87d9e53
+mode3 character1000 block64	cbe59cceeb346660836f99c4
+mode3 character1000 block100 amount	c1f715847e3ba16d72cfdbe0
+mode4 character0 filters	0a47be5bee577bc846152c0d
+mode4 character0 nogain mix amount	a8e6a2248df5bafe3a5147db
+mode4 character0 block64	1bc35b1c22dc49e98fd24674
+mode4 character0 block100 amount	12f2c4e0d10cbc6407581f80
+mode4 character500 filters	e133e2d22ff336f54c0d789e
+mode4 character500 nogain mix amount	4b55c4f0cc33657dee451318
+mode4 character500 block64	a67ef431ec2e7f2da462f570
+mode4 character500 block100 amount	4a0b9e8f217afcfeff8c4c12
+mode4 character1000 filters	99cc1db93f0ae21eb3d58813
+mode4 character1000 nogain mix amount	636e75f3f95ed2f10f213faa
+mode4 character1000 block64	1af2cfd1405f6bc523a0a7c5
+mode4 character1000 block100 amount	db3136b15887c6ce9a225ae1
+defaults	7a044b23ffa8d291f24ec10f

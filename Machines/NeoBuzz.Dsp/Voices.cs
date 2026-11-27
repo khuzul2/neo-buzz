@@ -51,6 +51,15 @@ namespace NeoBuzz.Dsp
         bool Control(int channel, int ctrl, int value);
     }
 
+    /// <summary>
+    /// A note sink that takes a clip note's Slide flag (FU2b, Neo Poly): told just before the note-on of a flagged MIDI note. A sink without it plays
+    /// every note as it always did.
+    /// </summary>
+    internal interface ISlideNoteSink : INoteSink
+    {
+        void SlideNextNote();
+    }
+
     internal interface IVoice
     {
         /// <summary>Making sound (or about to).</summary>
@@ -151,11 +160,16 @@ namespace NeoBuzz.Dsp
             return -1;
         }
 
+        /// <summary>The next note-on carries a Slide flag (FU2b): it glides into its pitch at the slide time when <see cref="SlideOverlap"/> (the Slide switch) is on.</summary>
+        public bool FlagNext;
+
         public void NoteOn(int key, float note, float velocity)
         {
             clock++;
-            if (Mode == VoiceMode.Poly) PolyOn(key, note, velocity);
-            else MonoOn(key, note, velocity);
+            bool flagged = FlagNext && SlideOverlap;
+            FlagNext = false;
+            if (Mode == VoiceMode.Poly) PolyOn(key, note, velocity, flagged);
+            else MonoOn(key, note, velocity, flagged);
         }
 
         public void NoteOff(int key)
@@ -199,7 +213,7 @@ namespace NeoBuzz.Dsp
 
         // ── poly ────────────────────────────────────────────────────────────
 
-        void PolyOn(int key, float note, float velocity)
+        void PolyOn(int key, float note, float velocity, bool flagged)
         {
             // The same key again: its previous note is released (a track plays one note at a time).
             ReleaseKey(key);
@@ -216,6 +230,8 @@ namespace NeoBuzz.Dsp
 
             bool overlap = CountHeldKeys() > 0;
             float glideFrom = GlideAlways || (GlideLegatoOnly && overlap) ? lastNote : float.NaN;
+            // A flagged note slides in from the note before it, in the slide time, whatever the glide mode (FU2b).
+            if (flagged && !float.IsNaN(lastNote)) { glideFrom = lastNote; SlideNow = true; }
             for (int u = 0; u < unison; u++)
             {
                 int v = PickVoice();
@@ -225,6 +241,7 @@ namespace NeoBuzz.Dsp
                 sustainedVoice[v] = false;
                 voices[v].NoteOn(note, velocity, u, unison, glideFrom);
             }
+            SlideNow = false;
             lastNote = note;
         }
 
@@ -321,7 +338,7 @@ namespace NeoBuzz.Dsp
 
         // ── mono / legato ───────────────────────────────────────────────────
 
-        void MonoOn(int key, float note, float velocity)
+        void MonoOn(int key, float note, float velocity, bool flagged)
         {
             RemoveFromStack(key);
             bool wasHeld = stackCount > 0;
@@ -334,7 +351,9 @@ namespace NeoBuzz.Dsp
             }
             int unison = Math.Clamp(Unison, 1, voices.Length);
             bool slide = SlideOverlap && wasHeld && AnyMonoVoiceHeld(unison);
-            bool glide = GlideAlways || (GlideLegatoOnly && wasHeld) || slide;
+            // A flagged note slides in from the note before it even when that one has ended (FU2b); with nothing before it, it starts as a note does.
+            bool flagSlide = flagged && !slide && !float.IsNaN(lastNote);
+            bool glide = GlideAlways || (GlideLegatoOnly && wasHeld) || slide || flagSlide;
             if (wasHeld && (Mode == VoiceMode.Legato || slide) && AnyMonoVoiceHeld(unison))
             {
                 SlideNow = slide;
@@ -348,6 +367,7 @@ namespace NeoBuzz.Dsp
             else
             {
                 float from = glide ? lastNote : float.NaN;
+                SlideNow = flagSlide;
                 for (int u = 0; u < unison; u++)
                 {
                     voiceKey[u] = key;
@@ -356,6 +376,7 @@ namespace NeoBuzz.Dsp
                     sustainedVoice[u] = false;
                     voices[u].NoteOn(note, velocity, u, unison, from);
                 }
+                SlideNow = false;
                 // Voices beyond the unison count (left from a larger setting) stop.
                 for (int i = unison; i < voices.Length; i++)
                     if (voiceHeld[i]) { voiceHeld[i] = false; voices[i].NoteOff(); voiceKey[i] = -1; }

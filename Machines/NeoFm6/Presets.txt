@@ -1,4 +1,4 @@
-# Neo FM6 factory presets (original patches, DX7 values). Rebuild: python3 tools/gen-machine-presets.py Machines/NeoFm6
+# Neo FM6 factory presets (original patches, six-operator values). Rebuild: python3 tools/gen-machine-presets.py Machines/NeoFm6
 machine "Neo FM6"
 
 preset "Init — Sine"

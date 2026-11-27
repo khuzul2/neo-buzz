@@ -492,6 +492,62 @@ namespace ReBuzz.Studio.Tests
             Assert.That(worstSlice, Is.LessThan(-50), "every slice replays its part of the loop, outside 3 ms around its edges");
         }
 
+        // ------------------------------------------------------------------ sample-exact starts (FU2b)
+
+        /// <summary>FU2b: every slice's note starts on its slice's exact sample, not on the 1/240 tick grid or the engine's sub-tick: the new track played back sounds each slice within a sample of where the source has it.</summary>
+        [AvaloniaTest]
+        public void TheNewTracksNotesStartEverySliceWithinOneSampleOfItsSlicePointAtThreeTempos([Values(90, 120, 133)] int bpm, [Values(false, true)] bool stereo)
+        {
+            using var untitled = SnapshotTests.Untitled(out _);
+            using var rig = new SessionRig();
+            var core = rig.Core;
+            using var restore = Studio.AfterTest(() => { Dialogs.Responder = null; core.Modified = false; });
+            Ok(Tool("song_set", new JsonObject { ["tempo_bpm"] = bpm }));
+            double beat = 60.0 / bpm;
+            var hits = new List<(string Drum, double At)>();
+            for (int bar = 0; bar < 2; bar++)
+            {
+                double b0 = bar * 4;
+                foreach (var (drum, at) in new[] { ("kick", 0.0), ("hat", 0.5), ("snare", 1.0), ("hat", 1.5), ("kick", 2.0), ("hat", 2.5), ("snare", 3.0), ("open", 3.5) })
+                    hits.Add((drum, (b0 + at) * beat));
+            }
+            double seconds = 8 * beat;
+            var (machine, clipName, clip, rate, _) = Import(core, Wav($"exact-{bpm}-{stereo}.wav", ConvertSignals.Drums(hits, seconds), stereo: stereo), bpm: bpm, warp: "Off");
+            var o = Ok(Slice(machine, clipName));
+            Assert.That((int)o["count"], Is.InRange(14, 16), "the detector finds the hits (a very close pair can merge at a fast tempo)");
+            string slicesTrack = (string)o["machine"];
+
+            // the notes carry a fine start: they are not all on the 1/240 tick grid
+            var notes = core.SessionLayout.NotesOf(MachineNamed(core, slicesTrack).ClipsList.Single(p => !core.SessionLayout.IsAudioClip(p)));
+            Assert.That(notes.Any(n => n.Fine != 0), Is.True, "a slice that is not on a unit has a fine start");
+
+            string Render(string solo)
+            {
+                var other = solo == machine ? slicesTrack : machine;
+                var r = Ok(Tool("render", new JsonObject { ["from"] = 0, ["to"] = 8, ["tail_seconds"] = 0, ["solo"] = new JsonArray(solo), ["mute"] = new JsonArray(other), ["name"] = $"exact-{bpm}-{stereo}-" + solo.Replace(' ', '-') }));
+                return (string)r["file"]!;
+            }
+            var source = Wav_Read(Render(machine));
+            var played = Wav_Read(Render(slicesTrack));
+            int rateOut = source.Rate, guard = (int)Math.Round(0.003 * rateOut), end = (int)Math.Round(seconds * rateOut);
+            var edges = o["slices"]!.AsArray().Select(x => (long)((long)x!["start"]! / (double)rate * rateOut)).Append(end).ToList();
+            var lags = new List<int>();
+            for (int k = 0; k + 1 < edges.Count; k++)
+            {
+                int lag = 0;
+                double best = double.MinValue;
+                for (int l = -40; l <= 40; l++)
+                {
+                    double c = 0;
+                    for (long i = edges[k] + guard + 40; i < edges[k + 1] - guard - 40; i += 2) c += source.Left[i] * (double)played.Left[i + l];
+                    if (c > best) { best = c; lag = l; }
+                }
+                lags.Add(lag);
+            }
+            TestContext.Out.WriteLine($"[notice] exact starts at {bpm} BPM ({(stereo ? "stereo" : "mono")}): offsets in samples {string.Join(" ", lags)}");
+            Assert.That(lags.Select(Math.Abs).Max(), Is.LessThanOrEqualTo(1), $"every slice starts within one sample of its slice point at {bpm} BPM: {string.Join(" ", lags)}");
+        }
+
         // ------------------------------------------------------------------ save and reopen
 
         static void Reopen(ReBuzzCore core, string path)

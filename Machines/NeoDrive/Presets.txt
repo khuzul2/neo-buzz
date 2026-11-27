@@ -101,3 +101,44 @@ Mode = Transistor
 Drive = 14
 Character = 50
 Mix = 40
+
+preset "Overdrive — Warm Crunch"
+Mode = Overdrive
+Drive = 16
+Bias = 8
+Character = 45
+Low cut = 70
+Tone = -10
+High cut = 9000
+
+preset "Fuzz — Sputter Fuzz"
+Mode = Fuzz
+Drive = 28
+Bias = -6
+Character = 75
+Low cut = 110
+High cut = 7500
+Output = -3
+
+preset "Hard clip — Loud Clip"
+Mode = Hard clip
+Drive = 11
+Character = 30
+Auto gain = Off
+Tone = 15
+Output = -4
+
+preset "Rectify — Octave Grit"
+Mode = Rectify
+Drive = 14
+Character = 65
+Low cut = 60
+Tone = 10
+Mix = 75
+
+preset "Transformer — Heavy Iron"
+Mode = Transformer
+Drive = 26
+Character = 70
+Tone = -10
+Output = -1

@@ -4,7 +4,7 @@
 // page host it under their own time axis, and the Tracker can host it later with its rows as the axis.
 //
 // The parameters that hold data in the clip show by default; a lane's × takes it away from the view (its points stay in the clip) and its ▾
-// collapses it to its title. What is shown is view state kept for the clip while the song is open.
+// collapses it to its title. What is shown is view state kept for the clip with the song (EnvelopeLaneStore).
 
 using System;
 using System.Collections.Generic;
@@ -70,14 +70,6 @@ namespace ReBuzz.Studio.Views.Detail
 
     internal sealed class EnvelopeStack : DockPanel
     {
-        /// <summary>What the stack shows for a clip while the song is open.</summary>
-        sealed class ViewState
-        {
-            public readonly List<ColumnKey> Added = new();
-            public readonly HashSet<ColumnKey> Removed = new();
-            public readonly HashSet<ColumnKey> Collapsed = new();
-        }
-
         sealed class Row
         {
             public ColumnKey Key;
@@ -87,9 +79,7 @@ namespace ReBuzz.Studio.Views.Detail
             public TextBlock Title;
         }
 
-        static readonly ConditionalWeakTable<IClip, ViewState> states = new();
-
-        public const string Hint = "Click: add a point · drag: move · drag on empty space: select · Shift: no snap · R: ramp or step · Delete · each edit is one undo step";
+        public const string Hint = LaneInput.Gestures + " · each edit is one undo step";
 
         readonly ReBuzzCore core;
         readonly IEnvelopeAxis axis;
@@ -221,7 +211,9 @@ namespace ReBuzz.Studio.Views.Detail
             UpdateSelection();
         }
 
-        static ViewState StateOf(IClip clip) => states.GetValue(clip, _ => new ViewState());
+        // What the stack shows for a clip is the song's (EnvelopeLaneStore): saved with it and restored when it opens.
+        static readonly EnvelopeLaneStore.State none = new();
+        EnvelopeLaneStore.State StateOf(IClip clip) => core.EnvelopeLanes?.StateOf(clip) ?? none;
 
         List<ColumnKey> Keys()
         {
