@@ -16,13 +16,13 @@ public bool Work(Sample[] output, int n, WorkModes mode)
 }
 ```
 
-`Engine` is an `INoteSink`: `NoteOn(key, note, velocity)`, `NoteOff(key)`, `ModWheel`, `PitchBend`, `Sustain`, `Aftertouch` and `AllNotesOff(hard)`. The **key** names a note so that its note-off finds it again: a track (0 to 15) for a note from a pattern track, or `1000 +` the MIDI note for a note from MIDI.
+`Engine` is an `INoteSink`: `NoteOn(key, note, velocity)`, `NoteOff(key)`, `ModWheel`, `PitchBend`, `Sustain`, `Aftertouch` and `AllNotesOff(hard)`. The **key** names a note so that its note-off finds it again: a track (0 to 15) for a note from a clip's tracker track, or `1000 +` the MIDI note for a note from MIDI.
 
 Where notes come from:
 
 | Source | How it reaches the machine |
 |---|---|
-| A pattern track | The generated `Note` and `Velocity` track parameters (`tracks 16` in `Params.def`, [params.md](params.md#track-parameters)) call `Notes.SetNote` and `Notes.SetVelocity`. |
+| A clip's tracker track | The generated `Note` and `Velocity` track parameters (`tracks 16` in `Params.def`, [params.md](params.md#track-parameters)) call `Notes.SetNote` and `Notes.SetVelocity`. |
 | MIDI, the on-screen keyboard, the piano roll and clips | `MidiNote(channel, note, velocity)` and `MidiControlChange(...)`, which the base class passes to the queue. Velocity 0 is a note-off. |
 | A note wire | `INoteReceiver.ReceiveNotes`, which `NeoSynthBase` already implements: it queues the events as MIDI. |
 
@@ -96,7 +96,7 @@ public bool Work(Sample[] output, int n, WorkModes mode)
 
 A `NoteMessage` is a note-on (`Data1` note, `Data2` velocity), a note-off (`Data1` note), a controller (`Data1` number, `Data2` value), a pitch bend (`Data2` 0 to 16383, 8192 at the centre) or pressure (`Data2` 0 to 127). `NoteMessage.On` and `NoteMessage.Off` make the first two.
 
-The patterns both machines follow:
+The conventions both machines follow:
 
 - **Every note you send ends.** Keep a count of the notes you have started, and send a note-off for each when its source ends, even if the machine's settings changed in between. Neo Chord counts references to each output pitch, so two chords that share a pitch send one note-off, when the last ends.
 - **Stop and the transport ending release everything** (`Stop()` and `TransportStopped()`): send the note-offs, then panic.

@@ -59,7 +59,7 @@ Amount "Amount" 0 2000 1000 lin 0 200 % 1     | Effect strength: 100 % = the set
 Things to notice:
 
 - **Raw values are what songs store.** Rate's raw value 0 to 1000 is mapped to 0.1 to 20 Hz on an exponential scale (`exp 0.1 20 Hz`), so equal knob steps are equal musical steps. The default 740 is about 5 Hz. The engine never sees the raw number: it asks the table for the real value in Hz.
-- **Real units everywhere.** Phase is in degrees (`lin 0 180 °`), Amount in per cent. The units show in the editor, the pattern editor and the manifest.
+- **Real units everywhere.** Phase is in degrees (`lin 0 180 °`), Amount in per cent. The units show in the editor, the tracker and the manifest.
 - **Mix and Amount are the last two lines.** Every effect has both, and they are appended after the machine's own parameters ([params.md](params.md#appending-and-versions) says why order matters).
 - **Every enum choice is a name.** `enum Sine Triangle` has two names for the range 0 to 1; the generator checks the count.
 

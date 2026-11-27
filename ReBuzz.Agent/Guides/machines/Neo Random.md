@@ -41,7 +41,7 @@ A control modulator with no audio of its own: it moves up to 8 parameters of oth
 
 ## Pairs well with
 
-- Neo Poly, Neo Filter, Neo Wave, Neo Delay and Neo Utility as targets; Neo LFO for periodic waves and Neo Step for exact patterns.
+- Neo Poly, Neo Filter, Neo Wave, Neo Delay and Neo Utility as targets; Neo LFO for periodic waves and Neo Step for exact step sequences.
 
 ## Checklist
 

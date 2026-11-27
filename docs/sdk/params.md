@@ -91,7 +91,7 @@ Amount "Amount" 0 2000 1000 lin 0 200 % 1     | Effect strength: 100 % = the set
 
 ## Track parameters
 
-A machine with tracks (a synth that plays tracks of notes in a pattern) says `tracks 16`. The generator then writes two stateless track parameters, **Note** and **Velocity** (1 to 127, 100 when empty), in `Machine.Params.g.cs`. Notes go to `Notes.SetNote` and `Notes.SetVelocity` ([notes.md](notes.md)). More track parameters:
+A machine with tracks (a synth that plays tracks of notes in a clip) says `tracks 16`. The generator then writes two stateless track parameters, **Note** and **Velocity** (1 to 127, 100 when empty), in `Machine.Params.g.cs`. Notes go to `Notes.SetNote` and `Notes.SetVelocity` ([notes.md](notes.md)). More track parameters:
 
 ```def
 tracks 16

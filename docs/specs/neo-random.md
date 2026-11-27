@@ -15,7 +15,7 @@ Neo Random is a clean-room control machine built directly on NeoBuzz Live's shar
 
 ### 1.1 Target Model & Host Integration
 - Inherits `NeoModulatorBase` (`Kind = "RND"`): up to **8 targets** (any global or track parameter of any machine), each with depth `−100..+100 %`, polarity (`uni` or `bi`), optional range, safe-range clamping (master volume never pushed past `0 dB`, tempo refused), and curve.
-- Writes run at most once per 64-sample sub-block, slewed by `Write glide`, and use `track | (1 << 16)` so modulation never records undo steps or pattern events.
+- Writes run at most once per 64-sample sub-block, slewed by `Write glide`, and use `track | (1 << 16)` so modulation never records undo steps or clip events.
 - User edits update the target's base; removing a target or the modulator restores its base value.
 - New target slots on `Kind = "RND"` default to `uni` polarity in `ModulatorEditor`, `ModulationEdits`, and the agent `modulate` tool (selectable per target to `bi`).
 
