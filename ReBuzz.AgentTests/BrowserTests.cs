@@ -45,7 +45,7 @@ namespace ReBuzz.AgentTests
         {
             foreach (var kind in Enum.GetValues<BrowserKind>())
             {
-                var d = new BrowserDragData(kind, kind == BrowserKind.Audio ? "/Users/x/Kick 808.wav" : "Neo Poly", kind == BrowserKind.Preset ? "Warm Bass" : null, "label");
+                var d = new BrowserDragData(kind, kind == BrowserKind.Audio ? "/Users/x/Kick long.wav" : "Neo Poly", kind == BrowserKind.Preset ? "Warm Bass" : null, "label");
                 var back = BrowserDragData.Parse(d.Format());
                 Assert.That(back, Is.EqualTo(d), kind.ToString());
             }
@@ -108,17 +108,17 @@ namespace ReBuzz.AgentTests
             var index = new SampleIndex();
             index.Apply(new[]
             {
-                Entry("/r/Drums/Kick 808 Long.wav"), Entry("/r/Drums/808 Kick.wav"), Entry("/r/Bass/Sub 808.wav"), Entry("/r/Drums/Snare Tight.wav"), Entry("/r/Keys/Pad Warm.wav"),
+                Entry("/r/Drums/Kick Deep Long.wav"), Entry("/r/Drums/Deep Kick.wav"), Entry("/r/Bass/Sub Deep.wav"), Entry("/r/Drums/Snare Tight.wav"), Entry("/r/Keys/Pad Warm.wav"),
             });
-            Assert.That(index.Search("808").Count, Is.EqualTo(3));
-            var kick = index.Search("kick 808").Select(e => e.Name).ToList();
-            Assert.That(kick, Is.EquivalentTo(new[] { "Kick 808 Long", "808 Kick" }), "every word");
+            Assert.That(index.Search("deep").Count, Is.EqualTo(3));
+            var kick = index.Search("kick deep").Select(e => e.Name).ToList();
+            Assert.That(kick, Is.EquivalentTo(new[] { "Kick Deep Long", "Deep Kick" }), "every word");
             Assert.That(index.Search("kick").First().Name, Does.StartWith("Kick"), "a name that starts with the word first");
             Assert.That(index.Search("drums snare").Single().Name, Is.EqualTo("Snare Tight"), "the folder's name counts");
             Assert.That(index.Search("zzz"), Is.Empty);
             Assert.That(index.Search("", 2).Count, Is.EqualTo(2), "no words: everything, limited");
-            Assert.That(index.Search("808", kind: IndexKind.Midi), Is.Empty);
-            Assert.That(index.Search("808", root: "/elsewhere"), Is.Empty);
+            Assert.That(index.Search("deep", kind: IndexKind.Midi), Is.Empty);
+            Assert.That(index.Search("deep", root: "/elsewhere"), Is.Empty);
         }
 
         [Test]
@@ -148,7 +148,7 @@ namespace ReBuzz.AgentTests
         public void SearchOverAHundredThousandEntriesTakesUnderFiftyMilliseconds()
         {
             var rng = new Random(7);
-            string[] words = { "kick", "snare", "hat", "loop", "bass", "pad", "lead", "vocal", "fx", "perc", "808", "909", "warm", "dusty", "tight", "long", "short", "chord", "arp", "break" };
+            string[] words = { "kick", "snare", "hat", "loop", "bass", "pad", "lead", "vocal", "fx", "perc", "deep", "909", "warm", "dusty", "tight", "long", "short", "chord", "arp", "break" };
             string[] folders = { "Drums", "Bass", "Keys", "FX", "Vocals", "Loops", "OneShots", "Packs" };
             var list = new List<SampleEntry>(100_000);
             for (int i = 0; i < 100_000; i++)
@@ -353,7 +353,7 @@ namespace ReBuzz.AgentTests
             Assert.That(refused.Text, Does.Contain("Studio only"));
 
             string settings = Temp(), samples = Temp();
-            WriteWav(Path.Combine(samples, "Kick 808.wav"), 0.4);
+            WriteWav(Path.Combine(samples, "Kick long.wav"), 0.4);
             WriteWav(Path.Combine(samples, "Snare.wav"), 0.2);
             var store = new Store();
             using var lib = new BrowserLibrary(settings, store.Read, store.Write);
@@ -363,10 +363,10 @@ namespace ReBuzz.AgentTests
             Assert.That(add.Error, Is.False, add.Text);
             Assert.That(add.Data["indexed"]!.GetValue<int>(), Is.EqualTo(2), "it waited for the scan");
             Assert.That(add.Data["places"]!.AsArray().Single()!["files"]!.GetValue<int>(), Is.EqualTo(2));
-            var found = TestTools.CallTool(server, "browser_search", new JsonObject { ["query"] = "kick 808", ["kind"] = "audio" });
+            var found = TestTools.CallTool(server, "browser_search", new JsonObject { ["query"] = "kick long", ["kind"] = "audio" });
             Assert.That(found.Error, Is.False, found.Text);
             Assert.That(found.Data["count"]!.GetValue<int>(), Is.EqualTo(1));
-            Assert.That(found.Data["results"]![0]!["path"]!.GetValue<string>(), Does.EndWith("Kick 808.wav"));
+            Assert.That(found.Data["results"]![0]!["path"]!.GetValue<string>(), Does.EndWith("Kick long.wav"));
             Assert.That(TestTools.CallTool(server, "browser_search", new JsonObject { ["query"] = "kick", ["kind"] = "nonsense" }).Error, Is.True);
             Assert.That(TestTools.CallTool(server, "browser_places", new JsonObject { ["op"] = "add" }).Error, Is.True, "add needs a path");
             Assert.That(TestTools.CallTool(server, "browser_places", new JsonObject { ["op"] = "add", ["path"] = samples }).Error, Is.True, "already a place");

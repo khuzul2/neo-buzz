@@ -126,7 +126,7 @@ namespace NeoBuzz.Drums
             {
                 case DrumVoice.Kick:
                 {
-                    // A sine falling from Sweep above its tune (a TR-909's), a click of high-passed noise, drive on the body.
+                    // A sine falling from Sweep above its tune (a classic analog kit's), a click of high-passed noise, drive on the body.
                     baseHz = s.Tune;
                     sweepOct = Math.Max(0, s.A / 12.0 * (1 + 0.5 * b));
                     sweep = 1;
@@ -147,7 +147,7 @@ namespace NeoBuzz.Drums
                 }
                 case DrumVoice.Snare:
                 {
-                    // Two tones an octave apart, falling 8 st (a TR-909's: most of it in 15 ms), and the snappy noise: a band round Tone, and some across the mids.
+                    // Two tones an octave apart, falling 8 st (a classic analog kit's: most of it in 15 ms), and the snappy noise: a band round Tone, and some across the mids.
                     baseHz = s.Tune;
                     ratio = 2.0;
                     sweepOct = 8.0 / 12;
@@ -182,7 +182,7 @@ namespace NeoBuzz.Drums
                 }
                 case DrumVoice.Rim:
                 {
-                    // Three pings (a TR-909's rim shot: Tune, half and 0.22 of it) and a tick.
+                    // Three pings (a classic analog kit's rim shot: Tune, half and 0.22 of it) and a tick.
                     baseHz = s.Tune;
                     env1 = 1; k1 = Decay(s.Decay, fs);
                     env2 = 1; k2 = Decay(0.8 * s.Decay, fs);
@@ -196,7 +196,7 @@ namespace NeoBuzz.Drums
                 case DrumVoice.Crash:
                 case DrumVoice.Ride:
                 {
-                    // The TR-808's six square waves and noise through a band round Tone, some of the noise across (a cymbal's),
+                    // The a classic analog kit's six square waves and noise through a band round Tone, some of the noise across (a cymbal's),
                     // then a low-pass.
                     double t = PortableMath.Exp2(s.Tune / 12.0);
                     double scale = v == DrumVoice.Ride ? 1.25 : 1.0;
@@ -240,7 +240,7 @@ namespace NeoBuzz.Drums
                 case DrumVoice.MidTom:
                 case DrumVoice.HighTom:
                 {
-                    // A sine (and its octave, quieter) falling as a TR-909's tom does: an octave fast, then slowly, to its tune.
+                    // A sine (and its octave, quieter) falling as a classic analog kit's tom does: an octave fast, then slowly, to its tune.
                     baseHz = s.Tune;
                     sweepOct = 1.0 * (1 + 0.5 * b);
                     sweep = 1;
@@ -257,7 +257,7 @@ namespace NeoBuzz.Drums
                 }
                 case DrumVoice.Cowbell:
                 {
-                    // The TR-808's two square waves (1 : 1.48) through a band-pass, a fast attack and a tail.
+                    // The a classic analog kit's two square waves (1 : 1.48) through a band-pass, a fast attack and a tail.
                     hz[0] = s.Tune;
                     hz[1] = s.Tune * 1.48;
                     metal.Start(hz, MetalBank.StartPhases, 2, fs);

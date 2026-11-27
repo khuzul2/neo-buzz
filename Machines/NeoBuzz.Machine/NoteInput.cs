@@ -34,7 +34,8 @@ namespace NeoBuzz.Machine
         readonly object trackLock = new object();
 
         // MIDI events: (kind, a, b) ring buffer, multiple producers under a lock, one consumer.
-        const int RingSize = 1024;
+        // 4096 events; the last Reserve slots are for note-offs only, so a flood of note-ons can never leave a note stuck (G5, notes.md). Drops are counted.
+        const int RingSize = 4096, Reserve = 256;
         readonly int[] ringKind = new int[RingSize], ringA = new int[RingSize], ringB = new int[RingSize], ringC = new int[RingSize];
         int ringWrite, ringRead;
         readonly object midiLock = new object();
@@ -53,6 +54,10 @@ namespace NeoBuzz.Machine
         }
 
         public int Tracks { get; }
+
+        long dropped;
+        /// <summary>MIDI events dropped because the queue was full (a note-off only when it was completely full), for tests and diagnosis.</summary>
+        public long Dropped => Interlocked.Read(ref dropped);
 
         /// <summary>A Buzz note on a track (setter). 255 is note off.</summary>
         public void SetNote(int track, byte value)
@@ -104,7 +109,9 @@ namespace NeoBuzz.Machine
             lock (midiLock)
             {
                 int next = (ringWrite + 1) & (RingSize - 1);
-                if (next == Volatile.Read(ref ringRead)) return;   // full: drop
+                int used = (ringWrite - Volatile.Read(ref ringRead)) & (RingSize - 1);
+                bool off = kind == KindNoteOff;
+                if (next == Volatile.Read(ref ringRead) || (!off && used >= RingSize - 1 - Reserve)) { dropped++; return; }   // full (or full but for the note-offs' room): drop
                 ringKind[ringWrite] = kind;
                 ringA[ringWrite] = a;
                 ringB[ringWrite] = b;

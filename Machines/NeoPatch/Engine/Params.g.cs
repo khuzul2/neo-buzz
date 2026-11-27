@@ -28,7 +28,8 @@ namespace NeoBuzz.Patch
         public const int Macro14 = 17;
         public const int Macro15 = 18;
         public const int Macro16 = 19;
-        public const int Count = 20;
+        public const int VelLevel = 20;
+        public const int Count = 21;
     }
 
     internal static class Params
@@ -58,6 +59,7 @@ namespace NeoBuzz.Patch
             new ParamDef(P.Macro14, "macro_14", "Macro 14", 0, 1000, 500, MapKind.Percent, group: "Macros", description: "Macro 14, moves every node setting mapped to it", how: "Moves every node setting that the patch maps to macro 14, each between its own low and high value.", sound: "What it does depends on the patch; the preset's mappings are named in its description."),
             new ParamDef(P.Macro15, "macro_15", "Macro 15", 0, 1000, 500, MapKind.Percent, group: "Macros", description: "Macro 15, moves every node setting mapped to it", how: "Moves every node setting that the patch maps to macro 15, each between its own low and high value.", sound: "What it does depends on the patch; the preset's mappings are named in its description."),
             new ParamDef(P.Macro16, "macro_16", "Macro 16", 0, 1000, 500, MapKind.Percent, group: "Macros", description: "Macro 16, moves every node setting mapped to it", how: "Moves every node setting that the patch maps to macro 16, each between its own low and high value.", sound: "What it does depends on the patch; the preset's mappings are named in its description."),
+            new ParamDef(P.VelLevel, "vel_level", "Vel -> level", 0, 1000, 700, MapKind.Percent, group: "Velocity", description: "How much note velocity changes loudness", how: "Sets how strongly note velocity changes the loudness of each note, from 0 to 100 %. At 0 every note is as loud as the patch makes it.", sound: "At 70 % a soft note is clearly quieter than a hard one, as on any played instrument; 0 % ignores velocity unless the patch wires it from the Keys node."),
         };
     }
 }

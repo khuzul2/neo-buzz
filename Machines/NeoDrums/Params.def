@@ -3,10 +3,10 @@
 namespace NeoBuzz.Drums
 class NeoDrumsMachine
 tracks 16
-summary Synthesised drum kit in the TR-909 and TR-808 manner: kick, snare, clap, rim, closed and open hats (the closed one chokes the open one), low, mid and high toms, cowbell, crash and ride, each with its tune, decay, tone or snap (and the kick its sweep, click and drive), level and pan. Plays the General MIDI drum keys from C2 (kick C2, snare D2, closed hat F#2, open hat A#2), as Neo Sampler's Kit mode does, or per-track hit columns (BD, SD, … with a velocity) and an Accent column, as Buzz drum machines do. Velocity sets the level and opens the tone. Use it for drum parts.
+summary Synthesised drum kit in the classic analog manner: kick, snare, clap, rim, closed and open hats (the closed one chokes the open one), low, mid and high toms, cowbell, crash and ride, each with its tune, decay, tone or snap (and the kick its sweep, click and drive), level and pan. Plays the General MIDI drum keys from C2 (kick C2, snare D2, closed hat F#2, open hat A#2), as Neo Sampler's Kit mode does, or per-track hit columns (BD, SD, … with a velocity) and an Accent column, as Buzz drum machines do. Velocity sets the level and opens the tone. Use it for drum parts.
 
 # Each hit latches its voice's tune, decay and tone; level and pan follow while it sounds.
-track Accent "Accent" switch | Accents every hit of this tick (notes and hit columns, on any track): louder by Accent gain, and brighter as Vel → tone says, as a TR-909's accent step does
+track Accent "Accent" switch | Accents every hit of this tick (notes and hit columns, on any track): louder by Accent gain, and brighter as Vel → tone says, as a classic analog kit's accent step does
 track HitBD  "BD"  1 127 | Hits the kick at this velocity (1–127)
 track HitSD  "SD"  1 127 | Hits the snare at this velocity (1–127)
 track HitCP  "CP"  1 127 | Hits the clap at this velocity (1–127)
@@ -24,7 +24,7 @@ group Kit
 Volume      "Volume"              0 720 600   db -60 12 inf               | Output level
     how Sets the overall output level of the kit, from -60 to +12 dB, or off.
     sound Use it to place the whole kit in the mix without changing the balance between drums.
-Accent      "Accent gain"         0 120 60    db 0 12                     | How much louder an accented hit plays (a hit on a row with Accent): a TR-909's accent
+Accent      "Accent gain"         0 120 60    db 0 12                     | How much louder an accented hit plays (a hit on a row with Accent): a classic analog kit's accent
     how Sets how much louder an accented hit plays, from 0 to 12 dB.
     sound Accented steps jump out of the pattern and give it a human, driving push.
 VelLevel    "Vel → level"         0 1000 700   pct                         | How much velocity sets a hit's level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every hit at full level)
@@ -50,7 +50,7 @@ KickDecay   "Kick decay"          0 1000 525   time 0.05 4                 | Tim
 KickClick   "Kick click"          0 1000 500   pct                         | Level of the attack's click (a short burst of high-passed noise)
     how Sets the level of the noisy click at the start of the kick, from 0 to 100 %.
     sound More click makes the beater attack audible and helps the kick cut through a mix.
-KickPunch   "Kick punch"          0 1000 500   pct                         | How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack
+KickPunch   "Kick punch"          0 1000 500   pct                         | How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a classic analog kit's attack
     how Boosts the level of the kick's first moments by up to 12 dB, from 0 to 100 %.
     sound More punch gives a harder, more percussive attack that then settles into the body.
 KickDrive   "Kick drive"          0 240 30    db 0 24                     | Saturation of the body, its level kept
@@ -115,7 +115,7 @@ RimPan      "Rim pan"             0 200 100   lin -100 100 % 0            | Wher
     sound Moving it aside gives a sparse beat more width.
 
 group Closed hat
-ChTune      "Closed hat tune"     0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from the TR-808's
+ChTune      "Closed hat tune"     0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from a classic analog kit's
     how Shifts the pitch of the closed hat by up to 12 semitones either way.
     sound Lower values sound heavier and darker, and higher ones thinner and brighter.
 ChTone      "Closed hat tone"     0 1000 636   freq 2000 16000             | Centre of the band the hats ring in (more above it, a little across the mids): brighter up
@@ -132,7 +132,7 @@ ChPan       "Closed hat pan"      0 200 100   lin -100 100 % 0            | Wher
     sound Moving the hats slightly off-centre widens the top of the kit.
 
 group Open hat
-OhTune      "Open hat tune"       0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from the TR-808's
+OhTune      "Open hat tune"       0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from a classic analog kit's
     how Shifts the pitch of the open hat by up to 12 semitones either way.
     sound Lower values sound heavier and darker, and higher ones thinner and brighter.
 OhTone      "Open hat tone"       0 1000 636   freq 2000 16000             | Centre of the band the hats ring in (more above it, a little across the mids): brighter up

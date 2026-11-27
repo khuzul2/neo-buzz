@@ -560,7 +560,7 @@ def profile_generator(c, prof, info, baseline, manifest=None):
         prof.data["type"] = "unpitched"
         return
     # Pitch: A4 sent, then A3 and A5 to see that it follows the keyboard.
-    # Short, decaying notes (a 303's) are voiced for a fifth of the window: enough for a median.
+    # Short, decaying notes (an acid bass line's) are voiced for a fifth of the window: enough for a median.
     heard, voiced = heard_pitch(c, first["id"], 0.6)
     found = []
     if heard is not None and voiced >= 0.2:

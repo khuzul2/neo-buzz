@@ -24,20 +24,19 @@ namespace NeoBuzz.LoFi
         internal override UIElement BuildBody(EditorContext ctx)
         {
             var machine = ctx.Machine?.ManagedMachine as NeoLoFiMachine;
-            var picture = new GraphView(190, 120, (g, r) => DrawCrush(g, r, ctx), animate: false);
+            var picture = new GraphView(190, 150, (g, r) => DrawCrush(g, r, ctx), animate: false);
 
             var crush = Layout.Row(
                 Layout.Column(
                     Layout.Row(new ParamKnob(ctx, P.Bits, diameter: 58), new ParamKnob(ctx, P.Rate, diameter: 58), new ParamKnob(ctx, P.Jitter)),
-                    Layout.Gap(1, 4),
+                    Layout.Gap(1, 18),
                     Layout.Row(new ParamChoice(ctx, P.Dither, "Dither", 40), Layout.Gap(6), new ParamChoice(ctx, P.AntiAlias, "Anti-alias", 40))),
                 Layout.Gap(8),
                 picture);
 
             var noise = Layout.Column(
-                Layout.Row(new ParamKnob(ctx, P.Hiss), new ParamKnob(ctx, P.Crackle), new ParamKnob(ctx, P.CrackleLevel, "Crackle level", 46)),
-                Layout.Gap(1, 4),
-                new ParamChoice(ctx, P.HissFollow, "Hiss follow", 40));
+                Layout.Row(new ParamKnob(ctx, P.Hiss), new ParamKnob(ctx, P.Crackle)),
+                Layout.Row(new ParamKnob(ctx, P.CrackleLevel, "Crackle level", 46), Layout.Gap(8), new ParamChoice(ctx, P.HissFollow, "Hiss follow", 40)));
 
             var motion = Layout.Row(
                 Layout.Column(new ParamKnob(ctx, P.Wow), new ParamKnob(ctx, P.WowRate)),

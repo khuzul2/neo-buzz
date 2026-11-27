@@ -243,7 +243,8 @@ def param_check(tag):
     check(len(nat) >= spec["paramCount"], f"{tag}: {NATIVE} describes {len(nat)} parameters (the table has {spec['paramCount']})")
     for nm in outs[1:]:
         got = describe(nm)
-        named = [g for g in got if g[0] and not str(g[0]).startswith("Slot ")]
+        # the slots only: Neo Plug FX adds its own Mix after the 64 slots (wave 60), which is the host's, not the machine's
+        named = [g for g in got[:slots] if g[0] and not str(g[0]).startswith("Slot ")]
         nat_names = [n[0] for n in nat]
         diffs = [(a, b) for a, b in zip(nat, named) if a[0] != b[0] or a[1] != b[1]]
         print(f"     {tag}: {nm}: {len(named)} named parameters; differing from the native machine's names/texts: {diffs[:6] if diffs else 'none'}")

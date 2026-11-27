@@ -242,6 +242,80 @@ namespace ReBuzz.Studio.Tests
             finally { Close(window); }
         }
 
+        [AvaloniaTest]
+        public void TheCompactMixerShowsEachTracksSends()
+        {
+            var window = Open(out _);
+            try
+            {
+                PopSong();
+                Settle();
+                window.Detail.ShowMixer();
+                Settle();
+                var mixer = window.Detail.MixerPage;
+                Assert.That(mixer.Density, Is.EqualTo(MixerDensity.Compact), "docked: Compact");
+                var bass = Strip(mixer, "track:Bass");
+                Assert.That(bass.Sends, Has.Count.EqualTo(1), "Compact: a send to the return, as in Full");
+                Assert.That(Strip(mixer, "track:Pad").Sends, Has.Count.EqualTo(1), "on every track");
+                Assert.That(bass.Sends[0].IsVisible, Is.True);
+            }
+            finally { Close(window); }
+        }
+
+        [AvaloniaTest]
+        public void AGroupsFoldedStateIsSavedWithTheSongAndRestoredWhenItOpens()
+        {
+            var window = Open(out _);
+            string path = TestTemp.Path("mx1-fold-" + Guid.NewGuid().ToString("N") + ".nbl");
+            try
+            {
+                PopSong();
+                Settle();
+                window.Detail.ShowMixer();
+                Settle();
+                var mixer = window.Detail.MixerPage;
+                Assert.That(Core.MixerFolds.IsFolded("group:Bus"), Is.False, "open to start with");
+                mixer.ToggleFold("group:Bus");
+                Settle();
+                Assert.That(Core.MixerFolds.IsFolded("group:Bus"), Is.True, "the song holds it");
+                Assert.That(Ids(mixer), Does.Not.Contain("track:Kick"), "folded");
+                Core.SaveSongCopy(path);
+
+                NewSong();
+                Assert.That(Core.MixerFolds.IsFolded("group:Bus"), Is.False, "a new song has no folds");
+                Core.Modified = false;
+                Core.OpenSongFile(path);
+                Pump();
+                Assert.That(Core.MixerFolds.IsFolded("group:Bus"), Is.True, "the fold comes back with the song");
+                Assert.That(Strip(mixer, "group:Bus").Spec.Folded, Is.True, "and the mixer shows it folded");
+                Assert.That(Ids(mixer), Does.Not.Contain("track:Kick").And.Not.Contain("track:Snare"));
+
+                // Opened again, saved again, and the song reopened: the fold is gone with the choice.
+                mixer.ToggleFold("group:Bus");
+                Settle();
+                Assert.That(Ids(mixer), Does.Contain("track:Kick"));
+                string path2 = TestTemp.Path("mx1-fold2-" + Guid.NewGuid().ToString("N") + ".nbl");
+                try
+                {
+                    Core.SaveSongCopy(path2);
+                    NewSong();
+                    Core.Modified = false;
+                    Core.OpenSongFile(path2);
+                    Pump();
+                    Assert.That(Core.MixerFolds.IsFolded("group:Bus"), Is.False, "open when it was saved open");
+                    Assert.That(Ids(mixer), Does.Contain("track:Kick"));
+                }
+                finally { try { File.Delete(path2); } catch (IOException) { } }
+            }
+            finally
+            {
+                Dialogs.Responder = null;
+                try { File.Delete(path); } catch (IOException) { }
+                NewSong();
+                Close(window);
+            }
+        }
+
         // ------------------------------------------------------------------ one step per gesture
 
         [AvaloniaTest]

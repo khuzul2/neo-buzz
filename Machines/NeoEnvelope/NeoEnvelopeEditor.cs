@@ -30,6 +30,7 @@ namespace NeoBuzz.EnvelopeMachine
             new Section("Output", AccentColor, Layout.Row(
                 new ParamKnob(ctx, P.Threshold, diameter: 48),
                 new ParamKnob(ctx, P.Curve, diameter: 48),
-                new ParamKnob(ctx, P.Glide, diameter: 48))));
+                new ParamKnob(ctx, P.Glide, diameter: 48),
+                new ParamKnob(ctx, P.Velocity, diameter: 48))));
     }
 }

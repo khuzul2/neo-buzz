@@ -96,8 +96,6 @@ namespace ReBuzz.Studio.Views.Mixer
         public const double MeterFallPerSecond = 0.9;         // of the meter's 66 dB range per second
         const string Section = "Studio";
 
-        static readonly ConditionalWeakTable<ReBuzzCore, HashSet<string>> foldedGroups = new();
-
         readonly ReBuzzCore core;
         readonly ScrollViewer scroller;
         readonly StackPanel row;
@@ -201,11 +199,12 @@ namespace ReBuzz.Studio.Views.Mixer
             DeviceOpener?.Invoke(machine);
         }
 
-        HashSet<string> Folded => foldedGroups.GetValue(core, _ => new HashSet<string>());
+        // The folded groups are the song's (MixerFoldStore): saved with it, and restored when it opens.
+        ISet<string> Folded => new HashSet<string>(core.MixerFolds?.Folded ?? (IReadOnlyCollection<string>)Array.Empty<string>(), StringComparer.Ordinal);
 
         public void ToggleFold(string groupId)
         {
-            if (!Folded.Add(groupId)) Folded.Remove(groupId);
+            if (core.MixerFolds is { } store) store.Set(groupId, !store.IsFolded(groupId));
             Rebuild(true);
         }
 
@@ -226,14 +225,14 @@ namespace ReBuzz.Studio.Views.Mixer
 
         /// <summary>
         /// The parts a density shows: Full has inserts, sends and (when chosen) I/O, as the toolbar's toggles say (kept per person);
-        /// Compact has none of them. A mixer a view made with options of its own (the Session View's) keeps them.
+        /// Compact has the sends (a bar per return on every track) and none of the others. A mixer a view made with options of its own (the Session View's) keeps them.
         /// </summary>
         void ApplyDensityOptions()
         {
             if (customOptions) return;
             bool full = density == MixerDensity.Full;
             Options.Inserts = full && Read("MixerInserts", true);
-            Options.Sends = full && Read("MixerSends", true);
+            Options.Sends = !full || Read("MixerSends", true);   // Compact shows each track's sends; Full as the toolbar says
             Options.IO = full && Read("MixerIO", false);
         }
 
@@ -332,6 +331,7 @@ namespace ReBuzz.Studio.Views.Mixer
             StudioSelection.For(core).Changed += OnSelection;
             if (core.TrackColours is { } colours) colours.Changed += OnColours;
             if (core.SessionLayout is { } layout) layout.Changed += OnStructure;
+            if (core.MixerFolds is { } folds) folds.Changed += OnStructure;
             Rebuild(true);
             UpdateTicker();
         }
@@ -369,6 +369,7 @@ namespace ReBuzz.Studio.Views.Mixer
             StudioSelection.For(core).Changed -= OnSelection;
             if (core.TrackColours is { } colours) colours.Changed -= OnColours;
             if (core.SessionLayout is { } layout) layout.Changed -= OnStructure;
+            if (core.MixerFolds is { } folds) folds.Changed -= OnStructure;
             base.OnDetachedFromVisualTree(e);
         }
 

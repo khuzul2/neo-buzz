@@ -1,5 +1,5 @@
 #nullable disable
-// Neo Drums (docs/specs/machines.md §5): the metallic voices' oscillators. Up to six square waves (the TR-808's six
+// Neo Drums (docs/specs/machines.md §5): the metallic voices' oscillators. Up to six square waves (a classic analog kit's six
 // Schmitt-trigger oscillators for its hats and cymbals, two for its cowbell), each a naive ±1 square whose edges are
 // corrected with the shared band-limited steps (NeoBuzz.Dsp BlepTable, a 48-sample windowed sinc: images under about
 // −120 dB), summed into one correction buffer. The buffer runs BlepTable.Z samples late, so a hit starts the bank
@@ -78,7 +78,7 @@ namespace NeoBuzz.Drums
             return buf.Next(naive);
         }
 
-        /// <summary>The TR-808's six metallic oscillators (Hz), for its hats and cymbals.</summary>
+        /// <summary>The a classic analog kit's six metallic oscillators (Hz), for its hats and cymbals.</summary>
         public static readonly double[] Tr808 = { 205.3, 304.4, 369.6, 522.7, 540.0, 800.0 };
 
         /// <summary>Where each oscillator starts (fractions of a cycle): fixed, so every hit is the same.</summary>

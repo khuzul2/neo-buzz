@@ -2,7 +2,7 @@
 
 An envelope with no audio of its own that moves up to 8 parameters of other machines. In Note mode it opens with each note of a machine you choose: a filter that snaps open and falls, a volume swell, a pitch drop. In Follower mode it follows the loudness of a machine's output, so one machine ducks or pumps another.
 
-- `Mode` Note: an ADSR (`Attack`, `Decay`, `Sustain`, `Release`) started by the notes of the machine in `listen_machine` (and `listen_track`), or by the `Gate` switch; `Curve` bends its segments.
+- `Mode` Note: an ADSR (`Attack`, `Decay`, `Sustain`, `Release`) started by the notes of the machine in `listen_machine` (and `listen_track`), or by the `Gate` switch; `Curve` bends its segments; `Velocity` (0 % by default) lets the note's velocity set the peak, so at 100 % a soft note (30) opens it to about a quarter.
 - `Mode` Follower: the level of the listened machine's output, above `Threshold`, rising at `Attack` and falling at `Release`.
 - Per target: depth −100 … +100 % (negative depth ducks), polarity (uni by default), an optional range and curve; `Write glide` limits how fast a write moves.
 
@@ -31,7 +31,7 @@ An envelope with no audio of its own that moves up to 8 parameters of other mach
 ## Pitfalls
 
 - In Note mode with nothing listened to, only `Gate` starts it; `modulate` says so.
-- Notes played from a MIDI keyboard are not seen, only those a clip or `midi_play` send; note events arrive a few milliseconds late.
+- It hears every note the listened machine is given: a clip, the piano roll, Session, a MIDI keyboard, `midi_play` or a note wire; note events arrive a few milliseconds late. With `listen_track` set it hears that track only.
 - The follower measures the output of the listened machine's connections, one block late, and only while a follower runs; a machine with no output has no level.
 
 ## Pairs well with

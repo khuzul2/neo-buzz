@@ -135,7 +135,7 @@ namespace ReBuzz.Studio.Tests
         {
             var (window, view) = OpenEmpty();
             string samples = Temp("samples");
-            WriteSine(Path.Combine(samples, "Drums", "Kick 808.wav"), 0.5);
+            WriteSine(Path.Combine(samples, "Drums", "Kick long.wav"), 0.5);
             WriteSine(Path.Combine(samples, "Drums", "Snare.wav"), 0.3);
             try
             {
@@ -148,7 +148,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(panel.Model.Sources().Select(s => s.Title), Does.Contain(Path.GetFileName(samples)), "the folder is a place");
                 panel.SelectSource("place:" + samples);
                 Settle();
-                string kick = "audio:" + Path.Combine(samples, "Drums", "Kick 808.wav");
+                string kick = "audio:" + Path.Combine(samples, "Drums", "Kick long.wav");
                 Assert.That(panel.Rows, Does.Contain(kick));
                 Assert.That(panel.Rows.Any(r => r.StartsWith("#") && r.Contains("Drums")), Is.True, "a tree: the folder is a header");
                 panel.TreeToggle.IsChecked = false;

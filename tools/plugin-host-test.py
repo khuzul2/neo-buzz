@@ -369,6 +369,18 @@ if args.fixtures:
     check(la is not None and lb is not None and la - lb > 2.0, f"the sidechain ducks the pad: {la} LUFS without the kick, {lb} with it")
     check("latency 64" in "\n".join(stderr_lines()), "a plug-in's latency (64 samples) is read")
 
+    # --- Real notes (docs/specs/notes.md G9): a four-note chord with a velocity reaches the hosted synth with that velocity ------------
+    # (the test synth plays each voice at its note-on velocity: 127 over 30 is 12.5 dB)
+    for vname, vel in (("VelSoft", 30), ("VelLoud", 127)):
+        call("machine_add", gear="Neo Plug", plugin=resolve("Test Synth", gen_names, "instrument"), name=vname, tracks=2)
+        call("clip_create", machine=vname, name="A", length_beats=4)
+        call("notes_write", machine=vname, clip="A", notes=[{"pitch": pn, "start": 0, "length": 4, "velocity": vel} for pn in ("C3", "E3", "G3", "C4")])
+        call("arrangement_place", machine=vname, clip="A", at=[0])
+    ok, _, vr = call("render", **{"from": 0, "to": 4, "tail_seconds": 1, "probes": ["VelSoft", "VelLoud"], "name": "velocity"})
+    vl = probe_levels(vr) if ok else {}
+    soft, loud = vl.get("VelSoft", (None, None))[0], vl.get("VelLoud", (None, None))[0]
+    check(isinstance(soft, (int, float)) and isinstance(loud, (int, float)) and loud - soft >= 6.0, f"the note's velocity reaches the plug-in: a chord at 127 is {loud} LUFS, at 30 {soft} (6 dB or more apart)")
+
     # --- MIDI out: Test Octaver plays a note an octave up on the machine it is sent to --------------------------------
     call("song_new", discard_unsaved=True)
     call("song_set", tempo_bpm=120, song_end_beats=8)

@@ -92,4 +92,5 @@ The pack's residual (what is left of a render after the best gain and delay of t
 
 - The motion uses linear interpolation (a lo-fi machine; the loss at fractional positions is part of the sound) and a delay that is never negative, so it cannot be pitch-only: see section 3.
 - Amount's "exaggerated" end is a design choice, not a measurement: the caps in 2a keep 200 % usable (a 150 ms delay line, hiss no louder than -12 dBFS), not natural.
+- Rate shows "Off" at the top of its range (the engine takes the top as off whatever the host's rate), as Bits shows 24 bit; the sections' knobs are laid out so none has empty space (FU2).
 - The classic machines' pair files (what Saturn and Pedal Drum Matrix become) belong to LM3, not to this build.
