@@ -75,6 +75,7 @@ namespace ReBuzz.Studio.Tests
                 sub.CurrentSubTick = 0;
                 sub.SubTickReminderCounter = 0;
             }
+            Core.MasterVolume = 1;      // levels as the machines make them (other tests leave it lower)
             var work = new WorkManager(Core, new WorkThreadEngine(1), 0, Core.EngineSettings);
             var buffer = new float[512];
             int frames = (int)Math.Round(seconds * ReBuzzCore.masterInfo.SamplesPerSec / 256) * 256;
