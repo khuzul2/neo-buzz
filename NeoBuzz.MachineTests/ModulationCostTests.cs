@@ -31,6 +31,7 @@ namespace NeoBuzz.MachineTests
         internal static readonly Dictionary<string, string> Known = new()
         {
             ["Neo EQ"] = "5.0x with all 136 parameters moving, 2.0x for ONE band's frequency or Q alone (+13 % of a core): a moving band glides its coefficients with a trigonometric design every few samples (EqEngine's b.Moving paths), by design, so that sweeps are smooth. A cheaper glide (a block-rate design with an interpolated state) changes the sound of sweeps and is its own task.",
+            ["Neo Drive"] = "1.56x (1.20x before EXT3), +22 µs a block, with Drive, Bias, Character or Amount alone (Mix, Output and the filters 1.03x): the auto-gain probe (4096 samples of the curve), re-run at most once per 1024 samples while a parameter moves, costs what it cost before; what changed is the block that stands still, which got about 20 % cheaper when the five new Modes came (Tape at 34x real time against 27x; moving 22x in both), so the ratio rose with no more work moving. A cheaper probe changes the level every saved song's Auto gain settles at, so it is its own task.",
             ["Neo Multiband"] = "1.9x, +1.6 % of a core, from the three crossover frequencies alone (1.9x each; every other parameter 1.06x): a crossover that moves designs the linear-phase split again, already spread over the blocks in steps (MultibandTests: the slowest block under 2x). Cheaper would be a shorter filter while moving, a change to its latency and its tests.",
         };
 

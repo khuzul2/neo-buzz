@@ -38,7 +38,7 @@
    ],
    "description": "Saturation model",
    "how": "Chooses the saturation model: Tape, Tube, Transistor, Diode, Fold, Overdrive, Fuzz, Hard clip, Rectify or Transformer. A change while playing crossfades over about 10 ms.",
-   "sound": "Tape is soft and warm, Tube is rich and full, Transistor is firmer, Diode is edgy, Fold is bright and metallic, Overdrive is a mid-forward crunch, Fuzz is hard and starved, Hard clip is a loud clean clipper, Rectify adds octave-up grit and Transformer thickens the lows first."
+   "sound": "Tape is warm, Tube full, Transistor firm, Diode edgy, Fold metallic, Overdrive a mid-forward crunch, Fuzz hard and starved, Hard clip loud and clean, Rectify octave-up grit, Transformer thick in the lows."
   },
   {
    "index": 1,
@@ -81,7 +81,7 @@
    "kind": "percent",
    "unit": "%",
    "description": "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds. Overdrive: hump 500 Hz to 2 kHz. Fuzz: gating. Hard clip: knee, hard to soft. Rectify: half to full wave. Transformer: low corner 40 to 300 Hz",
-   "how": "Sets the model's special trait: tape emphasis, tube sag, transistor hardness, diode asymmetry, fold amount, the overdrive's mid hump (500 Hz to 2 kHz), the fuzz's gating and sputter, the hard clip's knee (hard to soft), the rectifier's mix from half-wave to full-wave, or the transformer's low corner (40 to 300 Hz).",
+   "how": "Sets the model's trait: tape emphasis, tube sag, transistor hardness, diode asymmetry, fold amount, overdrive hump (500 Hz to 2 kHz), fuzz gating, clip knee, rectifier half to full wave, or transformer low corner (40 to 300 Hz).",
    "sound": "Higher values make each model more pronounced and more obviously coloured: a higher mid hump, a starved and spitting fuzz, a softer knee, more octave-up, a higher corner where the lows saturate."
   },
   {
