@@ -1042,6 +1042,25 @@ namespace ReBuzz.Studio.Tests
                         window.Inspector.MidiPage.Refresh();
                         Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
                             "Select a track; the Inspector's Selection tab.");
+                        // MM2: the mixer's controls are mappable; the bank of 8 tracks a fader bank follows is outlined.
+                        window.MapLayer.Mode.Exit();
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 41), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Mixer(ReBuzz.Midi.Mapping.MixerControl.Volume, "", 1), ReBuzz.Core.MapScope.Global);
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 42), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Mixer(ReBuzz.Midi.Mapping.MixerControl.Pan, "", 1), ReBuzz.Core.MapScope.Global);
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 49), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Mixer(ReBuzz.Midi.Mapping.MixerControl.Master), ReBuzz.Core.MapScope.Global);
+                        window.ShowView("Machines");
+                        window.Detail.ShowMixer();
+                        Settle();
+                        window.ToggleMapMode();
+                        Settle();
+                        window.MapLayer.Rescan();
+                        Shot(window, "036-midi-mixer-map-mode", "MIDI map mode over the Mixer (MM2): every fader, pan, send, On and Solo outlined, the Master's fader too, badges on the mapped ones (a fader of the bank's track 1, its pan, the Master), and the strips of the current bank of eight tracks outlined.",
+                            "Edit, Map MIDI controls (Ctrl+Alt+K) with the Mixer open (Alt+Cmd+6).");
+                        window.MapLayer.Mode.Exit();
+                        window.Detail.Close();
+                        Settle();
                     }
                     finally
                     {

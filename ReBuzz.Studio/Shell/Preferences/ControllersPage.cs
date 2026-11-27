@@ -204,7 +204,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             bool on = saved.TryGetValue(card.Device, out int flags) && (flags & 1) != 0;
             bool connected = row?.Connected == true;
-            card.Use.IsChecked = on;
+            card.Use.IsChecked = on || connected;          // an input that is open is in use
             card.State.Text = !connected ? (on ? "not connected" : "") : row.Claimed ? "run by the Session View's own controller script" : "open";
             card.Last.Text = row == null || row.Last.Length == 0 ? "" : "Last: " + row.Last;
             if (row == null) row = new ControllerRow { Device = card.Device };
