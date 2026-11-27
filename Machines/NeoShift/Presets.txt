@@ -1,6 +1,6 @@
 # Neo Shift factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoShift
-# A preset that does not name a parameter takes its default (Pitch mode, Fast, Window 30 ms, Mix 100 %, Amount 100 %, Follow notes off, no cuts),
-# so each preset says which mode it wants and what it moves. Quality and Window set the latency: Fast 30 ms is 720 samples, Smooth is 2047.
+# A preset that does not name a parameter takes its default (Pitch mode, Fast, Window 40 ms, Mix 100 %, Amount 100 %, Follow notes off, no cuts),
+# so each preset says which mode it wants and what it moves. Quality and Window set the latency: Fast 40 ms is 960 samples at 48 kHz, Smooth is 2047.
 machine "Neo Shift"
 
 preset "Pitch — Octave Down"

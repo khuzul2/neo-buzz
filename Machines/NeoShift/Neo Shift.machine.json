@@ -11,7 +11,7 @@
   "notes",
   "gritty"
  ],
- "use_for": "Shift the pitch by semitones (fast or phase-vocoder smooth, with a stereo detune), shift every frequency by hertz for barber-pole and bell tones, or ring-modulate with a carrier; notes can set the shift or the carrier.",
+ "use_for": "Shift the pitch by semitones (fast or smooth, with stereo detune), shift every frequency by hertz for barber-pole and bell tones, or ring-modulate; notes can set the shift or the carrier.",
  "note_in": true,
  "tracks": 1,
  "track_parameters": [
