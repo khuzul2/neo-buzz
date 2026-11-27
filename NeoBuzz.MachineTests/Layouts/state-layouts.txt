@@ -27,6 +27,7 @@ NeoBuzz.Fm6	0	172	82815f73f6dd7eb2
 NeoBuzz.Gate	0	15	04189a5ccf665c32
 NeoBuzz.Grain	0	20	330320474c0bc614
 NeoBuzz.Imager	0	14	17e3f5ad19d4a511
+NeoBuzz.Keys	0	17	d72be52c27df6096
 NeoBuzz.LearnAdd	0	12	7ee147e298b2d95a
 NeoBuzz.LearnFm	0	12	b640e17f7493d56f
 NeoBuzz.LearnFold	0	12	0d8a62f78c92fd08

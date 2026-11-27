@@ -1,0 +1,66 @@
+# Neo Keys parameters (docs/specs/neo-keys.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoKeys
+namespace NeoBuzz.Keys
+class NeoKeysMachine
+tracks 16
+summary Electric keys by physical modelling: a hammer strikes a tine, a steel reed or a string, and a pickup reads it. The tine and the reed are decaying beam modes beside a slower tone bar or body; the string is a stiff string with a damper. The pickup is the instrument's voice: a magnetic one turns the displacement into a bark that fades as the note dies, an electrostatic one gives the reed an odd-order buzz, and the string has a neck and a bridge pickup. Hardness, touch and a velocity curve shape the hammer; key noise adds the hammer and damper thumps; a preamp drive, a tone tilt and a tremolo with auto-pan finish it. 16 voices and a sustain pedal. Use it for ballad and soul keys, barking drive keys, reedy buzz, funky plucks and muted staccato.
+
+group Model
+Model       "Model"         0 2     0     enum Tine Reed String | The instrument: a struck tine read by a magnetic pickup, a struck reed read by an electrostatic one, or a struck string with a damper read by two magnetic pickups
+    how Chooses what the hammer strikes and how it is read: a tine beside a tone bar, a steel reed, or a string.
+    sound The tine is bell-like and sweet with a bark when played hard, the reed is shorter and buzzier, the string is bright and plucky.
+group Hammer
+Hardness    "Hardness"      0 1000  380   exp 6 0.15 ms 2                 | The hammer's contact time with the tine, reed or string, 6 ms (soft felt) down to 0.15 ms (hard): a short contact excites the high modes, a long one only the low
+    how Sets how hard the hammer is, from soft felt that touches for 6 ms to a hard hammer that touches for 0.15 ms.
+    sound A soft hammer gives a round, mellow tone; a hard hammer adds a bright, metallic ping above the note.
+Touch       "Touch"         0 1000  600   pct                             | How much the velocity of a note also changes the hammer's contact time: at 100 % a hard key press (velocity 127) is about 6 times shorter, and a soft press 6 times longer, than the Hardness setting
+    how Sets how much a harder key press also makes the hammer harder, from 0 % (velocity only changes the level) to 100 %.
+    sound Soft playing is dull and quiet and hard playing is bright and loud, as on a real keyboard.
+VelCurve    "Velocity curve" 0 1000 500   bip                             | The curve from key velocity to hammer speed: speed is velocity to the power two to the setting, so 0 % is linear, +100 % needs a hard press (velocity squared) and -100 % answers to a light touch (square root)
+    how Bends the response of the keys, from -100 % (a light touch plays loud) through 0 % (linear) to +100 % (only a hard press plays loud).
+    sound A soft curve makes the keys easy to play loud, a hard curve gives a wide range from whisper to bark.
+group Pickup
+Pickup      "Pickup"        0 1000  350   pct                             | How close the pickup sits to the vibrating tine, reed or string: at 0 % it is far and reads the motion cleanly, at 100 % it is so close that the response curves and the note barks or growls
+    how Moves the pickup from far away (0 %, clean) to almost touching the tine (100 %, bark and growl).
+    sound Far is a clean, sine-like bell; close adds a bark when you play hard that smooths out as the note dies away.
+Bar         "Bar and body"  0 1000  500   pct                             | The level of the slower partial next to the note: the tone bar beside a tine, the reed's body, or the string's second polarisation, ringing about two to three times longer than the main mode
+    how Sets how loud the slow partial is, from 0 % (the tine, reed or string alone) to 100 %.
+    sound More bar gives a long, singing sustain under the quick attack; none gives a dry, short pluck.
+PickupSel   "Pickup select" 0 2     2     enum Neck Bridge Both           | String only: which magnetic pickup is read, the neck one (full, round), the bridge one (thin, twangy) or both added
+    how Chooses the neck pickup, the bridge pickup or both for the String model; the other models ignore it.
+    sound The neck pickup is warm and round, the bridge pickup is thin and sharp, both together have notches in between.
+group Decay
+Decay       "Decay"         0 1000  600   time 0.1 20                     | Decay time of the fundamental, the time it takes to fall by 60 dB (T60); the higher modes die sooner
+    how Sets how long the note's fundamental rings, as the time to fall by 60 dB, from 0.1 to 20 s.
+    sound Short times are dry and percussive, long times let the notes sing on.
+Release     "Release"       0 1000  520   exp 8 1500 ms 0                 | The damper: how fast a released note is damped, the time for it to fall by 60 dB after the key goes up
+    how Sets how quickly letting go of a key stops the sound, from 8 ms (a hard damper) to 1.5 s.
+    sound A short release is detached and percussive, a long one lets notes ring on after the key goes up.
+Mute        "Mute"          0 1    0      switch                          | String only: a muted string, the decay shortened to about an eighth and the higher partials damped much faster, for staccato
+    how Switches the string's mute on, shortening its decay and damping its high partials.
+    sound Muted notes are short, dry and percussive, like a string stopped with the palm of a hand.
+group Noise
+KeyNoise    "Key noise"     0 1000  250   pct                             | The level of the mechanical noise of the keyboard: the thump of the hammer at the start of a note and of the damper when the key goes up
+    how Sets how loud the hammer and damper thumps are, from 0 % (silent) to 100 %.
+    sound A little makes the keys feel real; a lot gives a clunky, woody action.
+group Preamp
+Drive       "Drive"         0 1000  0     db 0 30                         | The preamp: gain into a soft saturation, 0 dB is clean (the stage is bypassed), up to 30 dB for a compressed, warm overdrive
+    how Sets the gain into the preamp's soft saturation from 0 dB (clean) to 30 dB.
+    sound More drive thickens and warms the sound and adds odd harmonics, then crunches.
+Tone        "Tone"          0 1000  500   bip                             | A tilt around 1 kHz: -100 % lowers the highs by 6 dB and raises the lows by 6 dB, +100 % does the opposite
+    how Tilts the balance between low and high, from -100 % (dark) to +100 % (bright).
+    sound Down it is round and woolly, up it is thin and glassy.
+group Tremolo
+TremRate    "Tremolo rate"  0 1000  600   exp 0.5 12 Hz 2                 | Rate of the tremolo, the level swing of the instrument's vibrato circuit
+    how Sets the speed of the tremolo from 0.5 to 12 Hz.
+    sound Slow is a gentle swell, fast is a flutter.
+TremDepth   "Tremolo depth" 0 1000  0     pct                             | Depth of the tremolo: at 100 % the level swings between full and silent
+    how Sets how deeply the level swings, from 0 % (off) to 100 %.
+    sound Turn it up for the pulsing of a keyboard with its tremolo on.
+Stereo      "Auto-pan"      0 1000  0     pct                             | How much of the tremolo is a pan: at 0 % both channels swing together, at 100 % one channel is loud as the other is quiet, so the sound travels left and right
+    how Sets how much the tremolo moves the sound between left and right, from 0 % (level only) to 100 % (a full auto-pan).
+    sound At 100 % the keys sweep across the stereo field in time with the tremolo.
+group Output
+Volume      "Volume"        0 1000  790   db -60 12 inf                   | Output level
+    how Sets the final level in dB, from off to +12.
+    sound It makes the instrument louder or quieter without changing its character.

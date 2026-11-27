@@ -38,6 +38,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Organ", "NeoOrganEditor", "neo-organ-editor", 982, 496),
             ("Neo Mallet", "NeoMalletEditor", "neo-mallet-editor", 932, 544),   // MAL1: Model, Exciter and Decay on top, Tremolo and Output below
             ("Neo Grain", "NeoGrainEditor", "neo-grain-editor", 856, 498),   // GRN1: Source and Grain on top, Pitch, Envelope and Output below; measured in CI (GRN1)
+            ("Neo Keys", "NeoKeysEditor", "neo-keys-editor", 877, 482),   // KEY1: Model and pickup, Hammer, Decay on top; Preamp, Tremolo and Output below
             ("Neo Chord", "NeoChordEditor", "neo-chord-editor", 1186, 453),   // CHD1: the chord and mode on top, the keyboard, then voicing, velocity and strum (the size the editor draws at)
             ("Neo Random", "NeoRandomEditor", "neo-random-editor", 650, 791),
             ("Neo Pulse", "NeoPulseEditor", "neo-pulse-editor", 846, 685),   // PUL1: Clock & Probability, 8-lane Euclidean strips, synced Lane 1..8 detail pages
