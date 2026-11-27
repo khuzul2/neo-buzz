@@ -41,6 +41,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Chord", "NeoChordEditor", "neo-chord-editor", 1186, 453),   // CHD1: the chord and mode on top, the keyboard, then voicing, velocity and strum (the size the editor draws at)
             ("Neo Random", "NeoRandomEditor", "neo-random-editor", 650, 791),
             ("Neo Pulse", "NeoPulseEditor", "neo-pulse-editor", 846, 685),   // PUL1: Clock & Probability, 8-lane Euclidean strips, synced Lane 1..8 detail pages
+            ("Neo Notes", "NeoNotesEditor", "neo-notes-editor", 1000, 624),   // NOT1: the keyboard strip on top, then the seven sections in the order they work (the size the editor draws at)
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)

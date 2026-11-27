@@ -14796,6 +14796,39 @@
    "generated": false,
    "health": "ok"
   },
+  "Neo Notes": {
+   "gear": "Neo Notes",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.3,
+   "gear_info": {
+    "file": "Generators/Neo Notes.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 37,
+   "track_parameters": 0,
+   "inferred": 37,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 37,
+    "of": 37
+   },
+   "type": "control",
+   "seconds": 0.0,
+   "platform": "linux",
+   "date": "2026-11-27",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "a note machine (notes in, changed notes out): it makes no audio, so there is no audio test; written by hand from the manifest, not by the profiler"
+   ],
+   "generated": false,
+   "health": "ok"
+  },
   "Neo Lo-Fi": {
    "gear": "Neo Lo-Fi",
    "kind": "effect",

@@ -134,6 +134,8 @@ namespace NeoBuzz.MachineTests
                 }
                 return y;
             }),
+            // neo-notes.md: Neo Notes makes no audio (notes in, changed notes out); its presets only change which notes it sends.
+            ["Neo Notes"] = (NeoBuzz.Notes.Params.Table, (v, x) => x),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>

@@ -2640,6 +2640,31 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "660-neo-chord-editor", "Neo Chord: the chord type and Mode on top (Diatonic, in C major with seventh chords), the keyboard lit with the chord sent for a held G (G7 voiced Drop 2 over a bass G), then Voicing, Velocity and Strum (up over 200 ms).", "Add Neo Chord, set Mode to Diatonic, play a note into it, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                Try("662-neo-notes-editor", () =>
+                {
+                    var m = Add("Neo Notes", "Notes");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Every section on: Natural minor in C (the notes moved to the nearest scale note), Up-down octaves over two octaves, a hard curve, a Clamp length, a dotted eighth
+                    // echo of four repeats and a little humanize. E, G and B are played through the machine's Work, as the host calls it, so that the strip shows what it sent.
+                    Set("Scale", 1); Set("Scale type", 2);
+                    Set("Spread", 1); Set("Range", 2); Set("Pattern", 2);
+                    Set("Velocity", 1); Set("Curve", 800);
+                    Set("Length", 1); Set("Mode", 2);
+                    Set("Echo", 1); Set("Repeats", 4); Set("Echo feel", 1);
+                    Set("Humanize", 1); Set("Humanize time", 12);
+                    var inst = m.ManagedMachine!;
+                    foreach (int note in new[] { 64, 67, 71 }) inst.GetType().GetMethod("MidiNote")!.Invoke(inst, new object[] { 0, note, 100 });
+                    var work = inst.GetType().GetMethod("Work")!;
+                    var output = new Buzz.MachineInterface.Sample[256];
+                    for (int b = 0; b < 40; b++) work.Invoke(inst, new object[] { output, 256, Buzz.MachineInterface.WorkModes.WM_WRITE });
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "662-neo-notes-editor", "Neo Notes with every section on (the notes E, G and B held): the keyboard strip with the notes held above and the notes sent below (moved into C minor, spread over octaves), then Transpose, Scale, Spread, Velocity, Length, Echo and Humanize, each with its On switch.", "Add Neo Notes, switch its sections on, play notes into it, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // CHP1: Neo Chop's editor with a preset loaded (the values are set before the editor opens): the mode row with the stutter lit,
                 // the stutter's page, the sixteen steps and Output.
                 void ChopShot(string id, string machineName, int[] raws, string text)

@@ -1,0 +1,371 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Scale — Minor Snap">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="2" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="3" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="30" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every note is moved into C natural minor, the nearest scale note (a tie goes down): a major tune turns minor, its third, sixth and seventh falling a semitone.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Spread — Octave Cascade">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="1" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="3" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="3" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="30" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Each note falls by 0, 1, 2 then 3 octaves and starts again, over an octave of transpose: a tumbling, scattered line across the keyboard.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Echo — Dotted Eighth Echo">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="1" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="4" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="1" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="25" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Four repeats a dotted eighth apart at the song's tempo, each 25 % quieter and half as long as the note: the classic lilting echo.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Echo — Rising Fifths">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="1" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="5" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="15" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="19" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="70" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Five repeats an eighth apart, each a fifth above the one before and a little quieter: a shimmering climb that runs off the top of the keyboard.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Velocity — Hard Hitter">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="100" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="3" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="30" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>The curve pushed fully hard and the quietest note raised to 100: every note, even a soft one, hits loud and bright.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Velocity — Soft Touch">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="55" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="3" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="30" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>The curve pushed fully soft and the loudest note held to 55: every note, even a hard one, comes out gentle and dark.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Length — Staccato">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="1" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="5" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="3" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="30" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="0" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every note lasts a thirty-second note at the song's tempo, however long it was held: short, dry, clipped.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Humanize — Loose Player">
+    <Preset Machine="Neo Notes">
+      <Parameters>
+        <Parameter Name="Transpose" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Scale" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Key" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scale type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Out of scale" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Spread" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Range" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Pattern" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Velocity" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Curve" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Out min" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="Out max" Group="1" Index="12" Track="0" Value="127" />
+        <Parameter Name="Random" Group="1" Index="13" Track="0" Value="20" />
+        <Parameter Name="Fixed" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Fixed velocity" Group="1" Index="15" Track="0" Value="100" />
+        <Parameter Name="Length" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Fixed timing" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Fixed rate" Group="1" Index="19" Track="0" Value="3" />
+        <Parameter Name="Fixed feel" Group="1" Index="20" Track="0" Value="0" />
+        <Parameter Name="Fixed time" Group="1" Index="21" Track="0" Value="250" />
+        <Parameter Name="Clamp min" Group="1" Index="22" Track="0" Value="60" />
+        <Parameter Name="Clamp max" Group="1" Index="23" Track="0" Value="800" />
+        <Parameter Name="Echo" Group="1" Index="24" Track="0" Value="0" />
+        <Parameter Name="Repeats" Group="1" Index="25" Track="0" Value="3" />
+        <Parameter Name="Echo timing" Group="1" Index="26" Track="0" Value="0" />
+        <Parameter Name="Echo rate" Group="1" Index="27" Track="0" Value="3" />
+        <Parameter Name="Echo feel" Group="1" Index="28" Track="0" Value="0" />
+        <Parameter Name="Echo time" Group="1" Index="29" Track="0" Value="250" />
+        <Parameter Name="Velocity drop" Group="1" Index="30" Track="0" Value="30" />
+        <Parameter Name="Pitch step" Group="1" Index="31" Track="0" Value="12" />
+        <Parameter Name="Echo length" Group="1" Index="32" Track="0" Value="50" />
+        <Parameter Name="Humanize" Group="1" Index="33" Track="0" Value="1" />
+        <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="40" />
+        <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="25" />
+        <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="3" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Each hit late by up to 40 ms and 25 % louder or softer at random (seed 3), the velocity a little uneven too: a sloppy, human hand. Keep chords is on: a chord is late as one, its notes only a few ms apart, so it stays a chord.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
