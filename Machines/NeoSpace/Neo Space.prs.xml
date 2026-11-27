@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Room — Small Room">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="8" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="458" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="733" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="360" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A close living-room space: a few quick reflections from the walls around you and a tail that is gone in a third of a second, a little boxy and a touch dark, like a vocal or guitar sung in a small room.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Drum Room">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="842" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="384" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1300" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="400" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="521" />
+      </Parameters>
+      <Attributes />
+      <Comment>A big, hard, live room around the kit: bright reflections arriving at once, a tail of almost a second, wide, with the lows cleared; it makes drums bigger and further apart without a wash.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plate — Bright Plate">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="4" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="48" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="532" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1500" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="340" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A dense, bright metal plate: no room at all, just a smooth shimmering wash from the first millisecond that rings for two seconds; it sits on top of vocals and snares without moving them into a space.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chamber — Smooth Chamber">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="72" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="411" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="714" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1100" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="320" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A long stone chamber: a clear gap before the reflections, then a smooth, even tail of one and a half seconds that is warm in the lows and soft on top; it adds depth to a mix without calling attention to itself.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hall — Large Hall">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="140" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="497" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="800" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1400" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="360" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A big concert hall: a long, slow tail of nearly four seconds with a wide stereo spread, the lows cleared and the highs rolled off a little, so a chord or a voice hangs in a vast space.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Room — Ambience">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1600" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="480" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="542" />
+      </Parameters>
+      <Attributes />
+      <Comment>A dry, treated room: the first reflections only and a faint, short tail, wide and bright; it gives a sound a place to be without a tail you can hear, to glue a close-miked source into the mix.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Effect — Reverse Swell">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="347" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="589" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1300" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="600" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="583" />
+      </Parameters>
+      <Attributes />
+      <Comment>The hall played backwards: the reverb starts from nothing and swells up for about a second and a half, then stops at its loudest instant; use it on a note that ends a phrase, or a snare, for a pull towards the next beat.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tail — Dark Long Tail">
+    <Preset Machine="Neo Space">
+      <Parameters>
+        <Parameter Name="Room" Group="1" Index="0" Track="0" Value="7" />
+        <Parameter Name="Wave" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="2" Track="0" Value="240" />
+        <Parameter Name="Length" Group="1" Index="3" Track="0" Value="1000" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="354" />
+        <Parameter Name="High cut" Group="1" Index="5" Track="0" Value="306" />
+        <Parameter Name="Width" Group="1" Index="6" Track="0" Value="1700" />
+        <Parameter Name="Reverse" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="8" Track="0" Value="420" />
+        <Parameter Name="Amount" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="10" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A cathedral with the lights off: seven seconds of low, slow ringing with the highs cut at 2.5 kHz, a long gap before it starts and a very wide spread, for a drone, a pad or the last chord of a piece.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

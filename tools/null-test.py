@@ -437,6 +437,10 @@ CASES = [
     # Neo Prism (docs/specs/neo-prism.md): the spectral pitch, the scramble and the delay (the FFT and the seeded shuffles are portable maths).
     fx("prism-pitch", "Neo Prism", "Pitch — Octave Up Shimmer", beats=8),
     fx("prism-scramble", "Neo Prism", "Scramble — Bin Shuffle Glitch", beats=8),
+    # Neo Space (docs/specs/neo-space.md): the built-in rooms (the image sources, the noise tail, the shaping), the convolver and the reverse; the response is made by portable code, so both platforms get the same bits.
+    fx("space-hall", "Neo Space", "Hall — Large Hall"),
+    fx("space-plate", "Neo Space", "Plate — Bright Plate"),
+    fx("space-reverse", "Neo Space", "Effect — Reverse Swell"),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),

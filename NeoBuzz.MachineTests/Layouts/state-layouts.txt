@@ -58,6 +58,7 @@ NeoBuzz.Pulse	0	127	ab323442e9d2dff9
 NeoBuzz.Sampler	0	325	190329edfb1c45d8
 NeoBuzz.Sampler	1	325	236bcd9389e20480
 NeoBuzz.Scope	0	11	518994d8cbae37f0
+NeoBuzz.Space	0	11	6f810c41bf800d26
 NeoBuzz.Spectral	0	14	58894f78c44e8620
 NeoBuzz.StepMachine	0	38	bf0ec39eea1e2034
 NeoBuzz.Strip	0	38	bd2c4b3527061794

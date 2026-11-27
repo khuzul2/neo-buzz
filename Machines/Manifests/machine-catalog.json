@@ -758,6 +758,15 @@
    ],
    "use_for": "Cut up a track in time with the song: stutter, bar-end repeat, retrigger, tape stop and start, a 16-step gate and auto-pan, started by the beat or by notes, for fills, glitches and chopping.",
    "note_in": true
+  },
+  "Neo Space": {
+   "category": "Delay & Reverb",
+   "tags": [
+    "reverb",
+    "lush",
+    "stereo-width"
+   ],
+   "use_for": "Convolution reverb with zero latency: nine rooms of our own or any wave of the song as the room, with pre-delay, length, low and high cut, width and reverse. Best on a send at 100% wet."
   }
  }
 }
