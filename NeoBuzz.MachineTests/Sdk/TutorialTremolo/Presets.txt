@@ -1,0 +1,29 @@
+# Tutorial Tremolo factory presets (docs/sdk/tutorial.md). Rebuild: python3 NeoBuzz.MachineTests/Sdk/TutorialTremolo/regenerate.py
+# snippet PresetsFile
+machine "Tutorial Tremolo"
+
+preset "Swell — Slow Breath"
+comment "A slow, deep swell: the level falls to a quarter and comes back every two seconds."
+Rate = 0.5
+Depth = 75
+Shape = Sine
+
+preset "Amp — Classic Wobble"
+comment "A steady 5.5 Hz sine pulse, the sound of an old guitar amplifier."
+Rate = 5.5
+Depth = 70
+Shape = Sine
+
+preset "Pulse — Triangle Chop"
+comment "A fast, sharp triangle pulse at 9 Hz that goes all the way to silence."
+Rate = 9
+Depth = 100
+Shape = Triangle
+
+preset "Wide — Slow Pan"
+comment "The two channels move in opposite directions, so the sound drifts from side to side."
+Rate = 0.8
+Depth = 100
+Shape = Sine
+Phase = 180
+# end snippet PresetsFile

@@ -54,6 +54,10 @@
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\INoteWires.cs" Link="Explain\INoteWires.cs" />
     <Compile Include="..\Machines\NeoBuzz.Machine\NoteInput.cs" Link="Explain\NoteInput.cs" />
     <Compile Include="..\Machines\NeoPlug\PlugEventQueue.cs" Link="Explain\PlugEventQueue.cs" />
+    <!-- The SDK tutorial's machine (docs/sdk/tutorial.md, Sdk/TutorialTremolo): its engine is compiled and tested here, as every machine's is; its
+         machine class and editor need the Buzz and editor kits, so only its own studio project (TutorialTremolo.Studio.csproj) builds them. -->
+    <Compile Remove="Sdk\TutorialTremolo\*.cs;Sdk\TutorialTremolo\obj\**;Sdk\TutorialTremolo\bin\**" />
+    <None Remove="Sdk\TutorialTremolo\*.csproj;Sdk\TutorialTremolo\obj\**;Sdk\TutorialTremolo\bin\**" />
     <None Include="Layouts\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Golden\**" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="..\TestSupport\AllocationWindow.cs" Link="TestSupport\AllocationWindow.cs" />

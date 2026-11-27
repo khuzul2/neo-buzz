@@ -1,5 +1,7 @@
 # Neo machines — Specification
 
+To write a Neo machine, start with the SDK documentation: [`docs/sdk/README.md`](../sdk/README.md) (a tutorial that builds a small effect, then pages on `Params.def`, the editor kit, notes, versioned state, the audio thread, plug-in export and the rules).
+
 | | |
 |---|---|
 | Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04; and Neo Drums (mcp-server.md §8.2, §12.5), 2026-11-05; and Neo Filter (mcp-server.md §12.5), 2026-11-05; and Neo Clipper and Neo Limiter v2 (mastering-tools.md M2), 2026-11-06; and Neo EQ v2 (mastering-tools.md M3), 2026-11-06 |
