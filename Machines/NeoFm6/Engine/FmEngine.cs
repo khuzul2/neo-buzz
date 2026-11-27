@@ -1,6 +1,6 @@
 #nullable disable
 // Neo FM6 (docs/specs/machines.md §5): the engine. Six operators per voice wired by one of the
-// 32 DX7 algorithms, with the DX7's envelopes, scaling and tuning (Dx7.cs); one LFO for all voices
+// 32 six-operator algorithms, with classic six-operator FM's envelopes, scaling and tuning (SixOp.cs); one LFO for all voices
 // (restarted by notes when key sync is on) faded in per voice; the pitch envelope; glide and
 // unison. Voices run at twice the sample rate ("Clean", decimated by a 100 dB half-band) or at
 // the sample rate ("Raw", aliasing like the original).
@@ -80,9 +80,9 @@ namespace NeoBuzz.Fm6
         public FmEngine(ParamValues values)
         {
             this.values = values;
-            // The DX7 tables and the voices' carrier gains (static) made now, not by the first note on the audio thread
+            // The six-operator tables and the voices' carrier gains (static) made now, not by the first note on the audio thread
             // (1.6 KB and 56 bytes there before).
-            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(Dx7).TypeHandle);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(SixOp).TypeHandle);
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(FmVoice).TypeHandle);
             for (int i = 0; i < VoiceCount; i++) voices[i] = new FmVoice(this, (uint)(0x9E3779B1u * (i + 7)));
             alloc = new VoiceAllocator(voices);
@@ -159,7 +159,7 @@ namespace NeoBuzz.Fm6
             s.LfoWave = values.Choice(P.LfoWave);
             s.LfoSpeed = values[P.LfoSpeed];
             s.LfoDelay = values[P.LfoDelay];
-            (s.LfoWait, s.LfoFade) = Dx7.LfoDelay(s.LfoDelay);
+            (s.LfoWait, s.LfoFade) = SixOp.LfoDelay(s.LfoDelay);
             s.LfoPmd = values[P.LfoPmd];
             s.LfoAmd = values[P.LfoAmd];
             s.LfoSync = values.On(P.LfoSync);
@@ -263,7 +263,7 @@ namespace NeoBuzz.Fm6
 
         void AdvanceLfo(int n)
         {
-            lfoPhase += Dx7.LfoHz(S.LfoSpeed) * n / sampleRate;
+            lfoPhase += SixOp.LfoHz(S.LfoSpeed) * n / sampleRate;
             if (lfoPhase >= 1)
             {
                 lfoPhase -= Math.Floor(lfoPhase);
@@ -364,8 +364,8 @@ namespace NeoBuzz.Fm6
         const float SilentGain = 1120f / (1 << 24);   // msfa's kLevelThresh: below it an operator outputs nothing
 
         readonly FmEngine engine;
-        readonly Dx7Envelope[] env = { new(), new(), new(), new(), new(), new() };
-        readonly Dx7PitchEnvelope peg = new Dx7PitchEnvelope();
+        readonly SixOpEnvelope[] env = { new(), new(), new(), new(), new(), new() };
+        readonly SixOpPitchEnvelope peg = new SixOpPitchEnvelope();
         // Phases are 32-bit fixed point (2^32 = one cycle): they wrap by themselves and index the table directly.
         readonly uint[] phase = new uint[6], inc = new uint[6];
         readonly double[] ratio = new double[6], fixedHz = new double[6];
@@ -442,7 +442,7 @@ namespace NeoBuzz.Fm6
             for (int k = 0; k < 6; k++)
             {
                 var o = s.Ops[k];
-                env[k].Start(o.Rates, o.Levels, OutLevel(o), Dx7.ScaleRate(midiNote, o.RateScale));
+                env[k].Start(o.Rates, o.Levels, OutLevel(o), SixOp.ScaleRate(midiNote, o.RateScale));
                 if (unisonCount > 1) phase[k] = rng.NextUInt();
                 else if (s.OscSync || finished) phase[k] = 0;
                 gain[k] = 0;
@@ -460,7 +460,7 @@ namespace NeoBuzz.Fm6
         }
 
         int OutLevel(OpSettings o) =>
-            Dx7.OutLevel(o.Level, midiNote, velocity, o.Break, o.LDepth, o.RDepth, o.LCurve, o.RCurve, o.VelSens);
+            SixOp.OutLevel(o.Level, midiNote, velocity, o.Break, o.LDepth, o.RDepth, o.LCurve, o.RCurve, o.VelSens);
 
         // Ratio-mode multipliers (with detune at the note's pitch) and fixed frequencies.
         void Tune()
@@ -470,8 +470,8 @@ namespace NeoBuzz.Fm6
             for (int k = 0; k < 6; k++)
             {
                 var o = s.Ops[k];
-                ratio[k] = Dx7.Ratio(o.Coarse, o.Fine) * PortableMath.Pow(2, Dx7.DetuneOctaves(noteHz, o.Detune));
-                fixedHz[k] = Dx7.FixedHz(o.Coarse, o.Fine) * PortableMath.Pow(2, Dx7.FixedDetuneOctaves(o.Detune));
+                ratio[k] = SixOp.Ratio(o.Coarse, o.Fine) * PortableMath.Pow(2, SixOp.DetuneOctaves(noteHz, o.Detune));
+                fixedHz[k] = SixOp.FixedHz(o.Coarse, o.Fine) * PortableMath.Pow(2, SixOp.FixedDetuneOctaves(o.Detune));
                 tables[k] = FmEngine.Waves[Math.Clamp(o.Wave, 0, 3)];
             }
         }
@@ -518,7 +518,7 @@ namespace NeoBuzz.Fm6
             for (int k = 0; k < 6; k++)
             {
                 var o = s.Ops[k];
-                env[k].Update(o.Rates, o.Levels, OutLevel(o), Dx7.ScaleRate(midiNote, o.RateScale));
+                env[k].Update(o.Rates, o.Levels, OutLevel(o), SixOp.ScaleRate(midiNote, o.RateScale));
             }
             peg.Update(s.PegRates, s.PegLevels);
             Tune();
@@ -539,18 +539,18 @@ namespace NeoBuzz.Fm6
             }
             else pitch = pitchTarget;
 
-            // LFO: fades in after the delay; the wheel and aftertouch add depth (as the DX7's controllers).
+            // LFO: fades in after the delay; the wheel and aftertouch add depth (as classic six-operator FM's controllers).
             double lfo = engine.LfoValue;
             double fade = 1;
             if (s.LfoDelay > 0)
                 fade = sinceNoteOn < s.LfoWait ? 0 : s.LfoFade <= 0 ? 1 : Math.Min(1, (sinceNoteOn - s.LfoWait) / s.LfoFade);
-            double pmdLfo = Dx7.Depth(s.LfoPmd) * fade;
-            double pmdCtl = Math.Max(Dx7.Depth(s.WheelPitch) * engine.ModWheelValue, Dx7.Depth(s.AtPitch) * engine.AftertouchValue);
-            double pitchMod = Math.Max(Math.Abs(Dx7.PitchMod(pmdLfo, s.PitchSens, lfo)), Math.Abs(Dx7.PitchMod(pmdCtl, s.PitchSens, lfo)));
+            double pmdLfo = SixOp.Depth(s.LfoPmd) * fade;
+            double pmdCtl = Math.Max(SixOp.Depth(s.WheelPitch) * engine.ModWheelValue, SixOp.Depth(s.AtPitch) * engine.AftertouchValue);
+            double pitchMod = Math.Max(Math.Abs(SixOp.PitchMod(pmdLfo, s.PitchSens, lfo)), Math.Abs(SixOp.PitchMod(pmdCtl, s.PitchSens, lfo)));
             if (lfo < 0.5) pitchMod = -pitchMod;
-            // Amplitude modulation attenuates by the inverted LFO, as the DX7 (a key-synced triangle starts unattenuated).
-            double amd = Math.Max(Dx7.Depth(s.LfoAmd) / 255.0 * fade,
-                                  Math.Max(Dx7.Depth(s.WheelAmp) / 255.0 * engine.ModWheelValue, Dx7.Depth(s.AtAmp) / 255.0 * engine.AftertouchValue)) * (1 - lfo);
+            // Amplitude modulation attenuates by the inverted LFO, as classic six-operator FM (a key-synced triangle starts unattenuated).
+            double amd = Math.Max(SixOp.Depth(s.LfoAmd) / 255.0 * fade,
+                                  Math.Max(SixOp.Depth(s.WheelAmp) / 255.0 * engine.ModWheelValue, SixOp.Depth(s.AtAmp) / 255.0 * engine.AftertouchValue)) * (1 - lfo);
 
             double modOct = peg.Next(dt) + pitchMod;
             double noteHz = DspMath.NoteToHz(pitch + s.Transpose + engine.PitchBendSemis + unisonPos * s.UniDetune * 0.25f);
@@ -564,13 +564,13 @@ namespace NeoBuzz.Fm6
             {
                 var o = s.Ops[k];
                 double hz = o.Fixed ? fixedHz[k] * fixedMul : noteHz * ratio[k] * modMul;
-                // Above the Nyquist frequency an operator folds back, as on the DX7 (the phase wraps).
+                // Above the Nyquist frequency an operator folds back, as in classic six-operator FM (the phase wraps).
                 double cycles = hz / sr;
                 inc[k] = (uint)((cycles - Math.Floor(cycles)) * Cycle);
                 double level = env[k].Next(count);
-                if (o.AmpSens > 0 && amd > 0) level -= 256 * Dx7.AmpModDoublings(amd, o.AmpSens);
-                float target = o.On ? (float)Dx7Envelope.Amplitude(level) : 0f;
-                if (target < SilentGain) target = 0;   // as the DX7: an operator this quiet is silent
+                if (o.AmpSens > 0 && amd > 0) level -= 256 * SixOp.AmpModDoublings(amd, o.AmpSens);
+                float target = o.On ? (float)SixOpEnvelope.Amplitude(level) : 0f;
+                if (target < SilentGain) target = 0;   // as classic six-operator FM: an operator this quiet is silent
                 gainStep[k] = (target - gain[k]) / count;
                 if (alg.IsCarrier(k) && o.On)
                 {

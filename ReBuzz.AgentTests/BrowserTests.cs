@@ -148,7 +148,7 @@ namespace ReBuzz.AgentTests
         public void SearchOverAHundredThousandEntriesTakesUnderFiftyMilliseconds()
         {
             var rng = new Random(7);
-            string[] words = { "kick", "snare", "hat", "loop", "bass", "pad", "lead", "vocal", "fx", "perc", "deep", "909", "warm", "dusty", "tight", "long", "short", "chord", "arp", "break" };
+            string[] words = { "kick", "snare", "hat", "loop", "bass", "pad", "lead", "vocal", "fx", "perc", "deep", "punchy", "warm", "dusty", "tight", "long", "short", "chord", "arp", "break" };
             string[] folders = { "Drums", "Bass", "Keys", "FX", "Vocals", "Loops", "OneShots", "Packs" };
             var list = new List<SampleEntry>(100_000);
             for (int i = 0; i < 100_000; i++)
@@ -160,7 +160,7 @@ namespace ReBuzz.AgentTests
             index.Apply(list);
             Assert.That(index.Count, Is.EqualTo(100_000));
             index.Search("kick warm");                               // warms the JIT
-            foreach (var query in new[] { "kick", "kick warm", "drums snare 12", "qzx", "loop 808 pack5" })
+            foreach (var query in new[] { "kick", "kick warm", "drums snare 12", "qzx", "loop sub pack5" })
             {
                 var times = new List<double>();
                 for (int run = 0; run < 7; run++)

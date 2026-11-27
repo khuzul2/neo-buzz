@@ -40,7 +40,7 @@ namespace NeoBuzz.Machine
         int ringWrite, ringRead;
         readonly object midiLock = new object();
 
-        const int KindNoteOn = 1, KindNoteOff = 2, KindControl = 3, KindSample = 4;
+        const int KindNoteOn = 1, KindNoteOff = 2, KindControl = 3, KindSample = 4, KindSlide = 5;
 
         public NoteInput(int tracks)
         {
@@ -94,6 +94,9 @@ namespace NeoBuzz.Machine
             if (note < 0 || note > 127) return;
             Push(velocity > 0 ? KindNoteOn : KindNoteOff, note, velocity, channel);
         }
+
+        /// <summary>The next MIDI note-on slides (a clip note's Slide flag, FU2b): queued before it, applied just before it by a sink that takes the flag.</summary>
+        public void SlideNext() => Push(KindSlide, 0, 0, 0);
 
         /// <summary>
         /// MIDI controllers from ReBuzz (MIDI thread): CC numbers, plus pitch bend (0xE0 or 0xFF,
@@ -205,7 +208,12 @@ namespace NeoBuzz.Machine
                 var ch = sink as IChannelNoteSink;
                 switch (kind)
                 {
+                    case KindSlide:
+                        slideNext = true;
+                        break;
                     case KindNoteOn:
+                        if (slideNext && sink is ISlideNoteSink slider) slider.SlideNextNote();
+                        slideNext = false;
                         if (ch != null) ch.NoteOn(MidiKeyBase + a, a, Math.Clamp(b, 1, 127) / 127f, Math.Clamp(c, 0, 15));
                         else sink.NoteOn(MidiKeyBase + a, a, Math.Clamp(b, 1, 127) / 127f);
                         break;
@@ -224,6 +232,8 @@ namespace NeoBuzz.Machine
             }
             Volatile.Write(ref ringRead, read);
         }
+
+        bool slideNext;
 
         static void Control(INoteSink sink, int ctrl, int value)
         {

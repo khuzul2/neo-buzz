@@ -1,15 +1,15 @@
 # Neo FM6 parameters (docs/specs/machines.md §5). The order changes only with a version (machines.md §3.2): songs and presets
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoFm6
-# Operator and voice values use the DX7's own ranges (0-99 levels and rates, coarse 0-31, ...),
-# so DX7 patches, SysEx banks and DX7 know-how carry over one to one.
+# Operator and voice values use the classic six-operator FM own ranges (0-99 levels and rates, coarse 0-31, ...),
+# so six-operator FM patches, SysEx banks and six-operator know-how carry over one to one.
 namespace NeoBuzz.Fm6
 class NeoFm6Machine
 tracks 16
-summary Six-operator FM synth in the DX7 style: 32 algorithms, DX7 ranges and envelopes, loads DX7 SysEx banks. Use it for electric pianos, bells, FM basses, brass and metallic tones.
-import dx7_bank .syx | A DX7 SysEx file: a 32-voice bank or one voice. item picks the voice to play (1–32; default 1); its parameters are set.
+summary Six-operator FM synth in the classic six-operator style: 32 algorithms, rate and level envelopes, loads 32-voice six-operator FM SysEx banks. Use it for electric pianos, bells, FM basses, brass and metallic tones.
+import fm6_sysex_bank .syx | A six-operator FM SysEx file: a 32-voice bank or one voice. item picks the voice to play (1–32; default 1); its parameters are set.
 
 group Algorithm
-Algorithm   "Algorithm"     0 31   0    int 1                           | Which operators modulate which (the 32 DX7 algorithms)
+Algorithm   "Algorithm"     0 31   0    int 1                           | Which operators modulate which (the 32 six-operator algorithms)
     how Chooses which of the 32 wiring layouts decides how the six operators modulate each other and which reach the output.
     sound Different algorithms give different families of sounds, from stacked bell and organ layers to deep modulation chains for brass and basses.
 Feedback    "Feedback"      0 7    0    int 0                           | Self-modulation of the feedback operator (7: near saw)
@@ -123,7 +123,7 @@ Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output
     sound Use it to place the instrument in the mix without changing its tone.
 
 group Operator 1
-O1On      "Op1 on"       0 1    1    switch                          | Operator 1 sounds (off: silent, as on the DX7)
+O1On      "Op1 on"       0 1    1    switch                          | Operator 1 sounds (off: silent, as in classic six-operator FM)
     how Turns operator 1 on or off.
     sound Muting one operator shows what it adds to the sound.
 O1Level   "Op1 level"    0 99   99   int 0                           | Output level (carriers: loudness; modulators: brightness)
@@ -141,7 +141,7 @@ O1Fine    "Op1 fine"     0 99   0    int 0                           | Ratio +0 
 O1Detune  "Op1 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
     how Detunes operator 1 by about 7 cents either way.
     sound A little detune adds a gentle movement against the other operators.
-O1Wave    "Op1 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+O1Wave    "Op1 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: the classic wave)
     how Chooses the waveform of operator 1: sine, half sine, absolute sine or pulse sine.
     sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O1R1      "Op1 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
@@ -194,7 +194,7 @@ O1VelSens "Op1 vel sens" 0 7    0    int 0                           | How much 
     sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 2
-O2On      "Op2 on"       0 1    1    switch                          | Operator 2 sounds (off: silent, as on the DX7)
+O2On      "Op2 on"       0 1    1    switch                          | Operator 2 sounds (off: silent, as in classic six-operator FM)
     how Turns operator 2 on or off.
     sound Muting one operator shows what it adds to the sound.
 O2Level   "Op2 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
@@ -212,7 +212,7 @@ O2Fine    "Op2 fine"     0 99   0    int 0                           | Ratio +0 
 O2Detune  "Op2 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
     how Detunes operator 2 by about 7 cents either way.
     sound A little detune adds a gentle movement against the other operators.
-O2Wave    "Op2 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+O2Wave    "Op2 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: the classic wave)
     how Chooses the waveform of operator 2: sine, half sine, absolute sine or pulse sine.
     sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O2R1      "Op2 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
@@ -265,7 +265,7 @@ O2VelSens "Op2 vel sens" 0 7    0    int 0                           | How much 
     sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 3
-O3On      "Op3 on"       0 1    1    switch                          | Operator 3 sounds (off: silent, as on the DX7)
+O3On      "Op3 on"       0 1    1    switch                          | Operator 3 sounds (off: silent, as in classic six-operator FM)
     how Turns operator 3 on or off.
     sound Muting one operator shows what it adds to the sound.
 O3Level   "Op3 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
@@ -283,7 +283,7 @@ O3Fine    "Op3 fine"     0 99   0    int 0                           | Ratio +0 
 O3Detune  "Op3 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
     how Detunes operator 3 by about 7 cents either way.
     sound A little detune adds a gentle movement against the other operators.
-O3Wave    "Op3 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+O3Wave    "Op3 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: the classic wave)
     how Chooses the waveform of operator 3: sine, half sine, absolute sine or pulse sine.
     sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O3R1      "Op3 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
@@ -336,7 +336,7 @@ O3VelSens "Op3 vel sens" 0 7    0    int 0                           | How much 
     sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 4
-O4On      "Op4 on"       0 1    1    switch                          | Operator 4 sounds (off: silent, as on the DX7)
+O4On      "Op4 on"       0 1    1    switch                          | Operator 4 sounds (off: silent, as in classic six-operator FM)
     how Turns operator 4 on or off.
     sound Muting one operator shows what it adds to the sound.
 O4Level   "Op4 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
@@ -354,7 +354,7 @@ O4Fine    "Op4 fine"     0 99   0    int 0                           | Ratio +0 
 O4Detune  "Op4 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
     how Detunes operator 4 by about 7 cents either way.
     sound A little detune adds a gentle movement against the other operators.
-O4Wave    "Op4 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+O4Wave    "Op4 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: the classic wave)
     how Chooses the waveform of operator 4: sine, half sine, absolute sine or pulse sine.
     sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O4R1      "Op4 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
@@ -407,7 +407,7 @@ O4VelSens "Op4 vel sens" 0 7    0    int 0                           | How much 
     sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 5
-O5On      "Op5 on"       0 1    1    switch                          | Operator 5 sounds (off: silent, as on the DX7)
+O5On      "Op5 on"       0 1    1    switch                          | Operator 5 sounds (off: silent, as in classic six-operator FM)
     how Turns operator 5 on or off.
     sound Muting one operator shows what it adds to the sound.
 O5Level   "Op5 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
@@ -425,7 +425,7 @@ O5Fine    "Op5 fine"     0 99   0    int 0                           | Ratio +0 
 O5Detune  "Op5 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
     how Detunes operator 5 by about 7 cents either way.
     sound A little detune adds a gentle movement against the other operators.
-O5Wave    "Op5 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+O5Wave    "Op5 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: the classic wave)
     how Chooses the waveform of operator 5: sine, half sine, absolute sine or pulse sine.
     sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O5R1      "Op5 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)
@@ -478,7 +478,7 @@ O5VelSens "Op5 vel sens" 0 7    0    int 0                           | How much 
     sound Higher values make hard playing brighter or louder, depending on whether it is a modulator or a carrier.
 
 group Operator 6
-O6On      "Op6 on"       0 1    1    switch                          | Operator 6 sounds (off: silent, as on the DX7)
+O6On      "Op6 on"       0 1    1    switch                          | Operator 6 sounds (off: silent, as in classic six-operator FM)
     how Turns operator 6 on or off.
     sound Muting one operator shows what it adds to the sound.
 O6Level   "Op6 level"    0 99   0    int 0                           | Output level (carriers: loudness; modulators: brightness)
@@ -496,7 +496,7 @@ O6Fine    "Op6 fine"     0 99   0    int 0                           | Ratio +0 
 O6Detune  "Op6 detune"   0 14   7    int -7 signed                   | Detune, −7 … +7 (about 1 cent a step at A4)
     how Detunes operator 6 by about 7 cents either way.
     sound A little detune adds a gentle movement against the other operators.
-O6Wave    "Op6 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: DX7)
+O6Wave    "Op6 wave"     0 3    0    enum Sine Half_sine Abs_sine Pulse_sine | Operator waveform (Sine: the classic wave)
     how Chooses the waveform of operator 6: sine, half sine, absolute sine or pulse sine.
     sound Sine is the classic tone, and the other shapes add more harmonics and a harsher edge.
 O6R1      "Op6 rate 1"   0 99   99   int 0                           | Envelope rate 1 (99: fastest)

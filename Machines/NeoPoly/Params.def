@@ -308,7 +308,7 @@ Accent      "Accent"        0 1000 0    pct                             | Extra 
     how Adds to the filter envelope's depth on accented notes, from 0 to 100 % (100 % is six octaves at the peak).
     sound Accented notes open the filter further and bite harder than the rest of the line.
 Slide       "Slide"         0 1    0    switch                          | Overlapping notes glide at the slide time
-    how Turns on slides: a note that starts before the previous one ends glides to its pitch in the slide time, whatever the glide mode.
+    how Turns on slides: a note that starts before the previous one ends, or a note the clip marks with its Slide flag, glides to its pitch in the slide time, whatever the glide mode.
     sound Slides join notes into the squirming, singing lines of acid bass; use Legato voice mode so they do not retrigger.
 SlideTime   "Slide time"    0 1000 500  time 0.006 0.6                  | How long a slide takes
     how Sets the time a slide takes, from 6 to 600 ms, the same for any interval.

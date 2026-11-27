@@ -2,7 +2,7 @@
 // Neo machines' Buzz glue (docs/specs/machines.md §3): what the Neo synths share. Notes from
 // tracks and MIDI are queued and applied at the start of each block; the transport stopping
 // (or ReBuzz's Stop) releases every note, and Stop again once stopped silences everything (a
-// panic for sounds that ring on after release, such as DX7 patches whose level 4 isn't 0).
+// panic for sounds that ring on after release, such as six-operator FM patches whose last envelope level isn't 0).
 
 using System;
 using Buzz.MachineInterface;
@@ -11,7 +11,7 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
 {
-    public abstract class NeoSynthBase : NeoMachineBase, INoteCapable, INoteReceiver
+    public abstract class NeoSynthBase : NeoMachineBase, INoteCapable, INoteReceiver, INoteFlags
     {
         volatile bool stopRequested;
 
@@ -25,6 +25,9 @@ namespace NeoBuzz.Machine
 
         /// <summary>ReBuzz: a MIDI note for this machine (velocity 0 releases).</summary>
         public void MidiNote(int channel, int value, int velocity) => Notes.MidiNote(channel, value, velocity);
+
+        /// <summary>ReBuzz (FU2b): the MIDI note that follows is a clip note with its Slide flag. A synth that has no slide ignores it (its sink does not take the flag).</summary>
+        public void NextNoteSlides() => Notes.SlideNext();
 
         /// <summary>ReBuzz: a MIDI controller, pitch bend (0xE0/0xFF) or channel pressure (0xD0/0xFC).</summary>
         public void MidiControlChange(int ctrl, int channel, int value) => Notes.MidiControl(ctrl, channel, value);

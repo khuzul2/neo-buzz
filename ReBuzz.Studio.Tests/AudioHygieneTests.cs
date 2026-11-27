@@ -713,7 +713,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>
         /// Every Neo machine, all just created, through the transport's first play and stop: 0 bytes on the audio thread.
         /// The first play allocated about 340 KB there: Neo Wave a closure every voice block (Tables.Get), Neo Comp an
-        /// enumerator every buffer (the multi-I/O paths' ElementAt over the channel sets), Neo FM6 its DX7 tables and its
+        /// enumerator every buffer (the multi-I/O paths' ElementAt over the channel sets), Neo FM6 its six-operator tables and its
         /// voices' carrier gains (static, made by the first note), the engine its clip lists' first growth and the
         /// Playing event posted as a closure (216 bytes at every start, now on the UI event queue). The device's first
         /// buffers before the play, each machine's first Work since it was made, set it up for the rate (about 3 MB here:

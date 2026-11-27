@@ -193,7 +193,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void AGestureThatShiftHoldsMovesOffTheGrid()
+        public void AGestureThatAltHoldsMovesOffTheGrid()
         {
             using var rig = new Rig("Lead");
             var clip = EnvelopeClip.Open(rig, false);
@@ -201,15 +201,15 @@ namespace ReBuzz.Studio.Tests
             Assert.That(clip.Points(), Does.StartWith("4:"));
             var from = clip.PointP(4 * TB);
             var to = clip.P(5.4, 0.5);
-            // Shift is held for the drag (a Shift press on a point would toggle it in the selection instead).
+            // Alt is held for the drag.
             rig.Window.MouseMove(from);
             rig.Window.MouseDown(from, MouseButton.Left);
-            rig.Window.MouseMove(from + (to - from) * 0.5, RawInputModifiers.Shift | RawInputModifiers.LeftMouseButton);
-            rig.Window.MouseMove(to, RawInputModifiers.Shift | RawInputModifiers.LeftMouseButton);
-            rig.Window.MouseUp(to, MouseButton.Left, RawInputModifiers.Shift);
+            rig.Window.MouseMove(from + (to - from) * 0.5, RawInputModifiers.Alt | RawInputModifiers.LeftMouseButton);
+            rig.Window.MouseMove(to, RawInputModifiers.Alt | RawInputModifiers.LeftMouseButton);
+            rig.Window.MouseUp(to, MouseButton.Left, RawInputModifiers.Alt);
             Settle();
             var time = ClipEnvelopes.Read(clip.Clip, clip.Key).Points.Single().Time;
-            Assert.That(time % TB, Is.Not.EqualTo(0), "shift: no snap, between two ticks; time " + time + " selection " + clip.Lane.Selection.Count + " refusal " + clip.Lane.Refusal);
+            Assert.That(time % TB, Is.Not.EqualTo(0), "alt: no snap, between two ticks; time " + time + " selection " + clip.Lane.Selection.Count + " refusal " + clip.Lane.Refusal);
         }
 
         // ------------------------------------------------------------------ the files
@@ -481,6 +481,64 @@ namespace ReBuzz.Studio.Tests
             var read = rig.Read("Lead", Cutoff);
             var seg = read.Segments.Single(s => s.Source == AutoSource.ClipColumn);
             Assert.That(string.Join(" ", seg.Points.Select(p => $"{p.Time / TB}:{p.Value}")), Is.EqualTo(string.Join(" ", ClipEnvelopes.Read(session.Clip, session.Key).Points.Select(p => $"{p.Time / TB}:{p.Value}"))));
+        }
+
+        [AvaloniaTest]
+        public void TheOpenLanesAndTheirFoldsAreSavedWithTheSongAndRestored()
+        {
+            using var rig = new Rig("Lead");
+            var envClip = EnvelopeClip.Open(rig, false);
+            rig.Click(envClip.P(4, 0.5));
+            var voice = KeyOf(envClip.Machine, "Voice mode");
+            var stack = envClip.Stack;
+            stack.AddLane(voice);
+            stack.ToggleCollapsed(voice);
+            stack.RemoveLane(envClip.Key);       // the lane that holds data is taken away from the view
+            Settle();
+            Assert.That(stack.Lanes.Count, Is.EqualTo(1));
+            string name = envClip.Clip.Name;
+
+            string path = Path.Combine(Path.GetTempPath(), $"rebuzz-fu2b-lanes-{Environment.ProcessId}.nbl");
+            try
+            {
+                Core.SaveSongCopy(path);
+                Core.Modified = false;
+                Core.ExecuteCommand(BuzzCommand.NewFile);
+                Settle();
+                Assert.That(Core.EnvelopeLanes.StateOf(envClip.Clip).IsEmpty, Is.True, "a new song starts with none");
+                Core.OpenSongFile(path);
+                Settle();
+                var machine = Core.SongCore.MachinesList.Single(m => m.Name == "Lead");
+                var clip = machine.Clips.Single(p => p.Name == name);
+                var state = Core.EnvelopeLanes.StateOf(clip);
+                Assert.That(state.Added, Is.EqualTo(new[] { voice }), "the lane added comes back");
+                Assert.That(state.Collapsed, Is.EquivalentTo(new[] { voice }), "collapsed too");
+                Assert.That(state.Removed, Is.EquivalentTo(new[] { envClip.Key }), "and the one taken away");
+                // A new stack over the reopened song shows exactly that.
+                var fresh = new EnvelopeStack(Core, new FixedAxis());
+                fresh.Show(clip);
+                Assert.That(fresh.Lanes.Select(l => l.ParamKey), Is.EqualTo(new[] { voice }));
+                Assert.That(fresh.IsCollapsed(voice), Is.True);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        sealed class FixedAxis : IEnvelopeAxis
+        {
+            public double Gutter => 0;
+            public int GridUnits => ClipEvent.TimeBase;
+            public int BeatUnits => ClipEvent.TimeBase * 4;
+            public int BarUnits => ClipEvent.TimeBase * 16;
+            public (int From, int To)? Loop => null;
+            public int Playhead => -1;
+            public event Action Changed { add { } remove { } }
+            public double X(int time) => time * 0.1;
+            public int TimeAt(double x) => (int)(x / 0.1);
+            public void Zoom(double factor) { }
+            public void ScrollBy(double pixels) { }
         }
 
         [AvaloniaTest]

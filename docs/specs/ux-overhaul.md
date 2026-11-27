@@ -91,7 +91,7 @@ One per category of the machine browser (P3d); `Tokens.Identity(category)`. Each
 
 | Category | Colour | Machines |
 |---|---|---|
-| Synth | #F34C82 pink | Neo Poly, Neo FM6, Neo Wave, Dye Essence, Pedal SH101, Juno106, FM, and manifest generators |
+| Synth | #F34C82 pink | Neo Poly, Neo FM6, Neo Wave, Dye Essence, Pedal mono synth, poly synth, FM, and manifest generators |
 | Drums | #EDB235 amber | Neo Drums, drum generators ("drums", "triggered") |
 | Sampler | #CFAAF8 lavender | Neo Sampler, Pedal M1 |
 | Dynamics | #0BD1B9 teal | Neo Comp, Neo Multiband, Neo Limiter, Neo Clipper, Pedal Comp |

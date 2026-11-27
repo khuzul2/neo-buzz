@@ -3,7 +3,7 @@
 // point) or held as steps, on the time axis of the view above it. The Tracker's own column for the parameter shows as read-only steps, and
 // where it and the points both set the parameter the lane marks an overlap (AR4's rule, AutomationReader.OverlapsOf).
 //
-// Mouse: click on empty space adds a point (the grid; Shift turns it off); drag a point moves it, and a selection moves together; drag on empty
+// Mouse: click on empty space adds a point (the grid; a drag with Alt held turns it off); drag a point moves it, and a selection moves together; drag on empty
 // space draws a rubber band; Shift-, Ctrl- or Cmd-click adds to the selection; double-click a point (or Delete) removes it. Keys: R makes the
 // line after the selected points a ramp or a step, Ctrl/Cmd+A selects all, Ctrl/Cmd+C and V copy and paste points, Esc cancels a drag.
 // Every gesture is one step of the song's history (ClipEnvelopeEditor over AR4's AutomationEditor); the lane reads the clip again after it.
@@ -409,29 +409,19 @@ namespace ReBuzz.Studio.Views.Detail
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
-            if (env == null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-            var p = e.GetPosition(this);
-            if (p.X < axis.Gutter) return;
-            Focus();
-            var result = lane.Pressed(p, e.KeyModifiers, e.ClickCount);
-            if (result == LaneController.Press.NotHandled) return;
-            if (result == LaneController.Press.Captured) e.Pointer.Capture(this);
-            e.Handled = true;
+            LaneInput.Pressed(lane, this, e, axis.Gutter);
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
-            lane.PointerMoved(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+            LaneInput.Moved(lane, this, e);
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
-            if (e.InitialPressMouseButton != MouseButton.Left || !lane.IsDragging) return;
-            bool done = lane.Released(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
-            e.Pointer.Capture(null);
-            if (done) e.Handled = true;
+            LaneInput.Released(lane, this, e);
         }
 
         protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
@@ -458,7 +448,7 @@ namespace ReBuzz.Studio.Views.Detail
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
-            if (lane.KeyDown(e.Key, e.KeyModifiers)) e.Handled = true;
+            LaneInput.Key(lane, e);
         }
 
         // ------------------------------------------------------------------ edits (the keys, the buttons and the Edit commands call these)

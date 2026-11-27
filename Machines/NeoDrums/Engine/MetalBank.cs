@@ -78,8 +78,8 @@ namespace NeoBuzz.Drums
             return buf.Next(naive);
         }
 
-        /// <summary>The a classic analog kit's six metallic oscillators (Hz), for its hats and cymbals.</summary>
-        public static readonly double[] Tr808 = { 205.3, 304.4, 369.6, 522.7, 540.0, 800.0 };
+        /// <summary>The six metallic square oscillators of a classic analog kit (Hz), for its hats and cymbals.</summary>
+        public static readonly double[] SixSquares = { 205.3, 304.4, 369.6, 522.7, 540.0, 800.0 };
 
         /// <summary>Where each oscillator starts (fractions of a cycle): fixed, so every hit is the same.</summary>
         public static readonly double[] StartPhases = { 0.0, 0.37, 0.71, 0.13, 0.52, 0.89 };

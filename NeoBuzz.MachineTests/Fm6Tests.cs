@@ -75,15 +75,15 @@ namespace NeoBuzz.MachineTests
         /// <summary>An operator's peak phase deviation (radians) at an output level, full velocity insensitive, as the engine computes it.</summary>
         static double ModIndex(int level)
         {
-            int outLevel = Dx7.OutLevel(level, 60, 127, 39, 0, 0, 0, 0, 0);
-            double target = Math.Max(16, ((Dx7.ScaleOutLevel(99) >> 1) << 6) + outLevel - 4256);
-            return 2 * Math.PI * Dx7Envelope.Amplitude(target);
+            int outLevel = SixOp.OutLevel(level, 60, 127, 39, 0, 0, 0, 0, 0);
+            double target = Math.Max(16, ((SixOp.ScaleOutLevel(99) >> 1) << 6) + outLevel - 4256);
+            return 2 * Math.PI * SixOpEnvelope.Amplitude(target);
         }
 
         // ------------------------------------------------------------------ algorithms
 
         [Test]
-        public void TheAlgorithmsMatchTheDx7Chart()
+        public void TheAlgorithmsMatchTheClassicChart()
         {
             int[] carriers = { 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 3, 3, 4, 4, 4, 5, 5, 3, 3, 3, 4, 4, 5, 6 };
             string[] feedback = { "6", "2", "6", "4>6", "6", "5>6", "6", "4", "2", "3", "6", "2", "6", "6", "2", "6", "2", "3", "6", "3", "3", "6", "6", "6", "6", "6", "3", "5", "6", "5", "6", "6" };
@@ -269,7 +269,7 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AFlatSegmentHoldsForItsRate()
         {
-            // Level 1 = level 2: the DX7 holds there for a time set by rate 2 (here about half a second).
+            // Level 1 = level 2: classic six-operator FM holds there for a time set by rate 2 (here about half a second).
             var (e, _) = Make(v =>
             {
                 v.Set(P.O1R2, 40);
@@ -279,7 +279,7 @@ namespace NeoBuzz.MachineTests
             });
             e.NoteOn(0, 69, 0.8f);
             var c = Contour(Render(e, Measure.Rate * 2));
-            double hold = Dx7.StaticSamples44(40) / 44100.0;
+            double hold = SixOp.StaticSamples44(40) / 44100.0;
             Measure.Report($"Neo FM6: flat segment at rate 40 holds {hold:F2} s");
             Assert.That(c[(int)(hold * 100 * 0.8)], Is.GreaterThan(c[5] - 1), "still holding");
             Assert.That(c[(int)(hold * 100 * 1.2) + 2], Is.LessThan(c[5] - 40), "then gone");
@@ -297,8 +297,8 @@ namespace NeoBuzz.MachineTests
             }
             double loud = Level(69, 1f, v => v.Set(P.O1VelSens, 7));
             double soft = Level(69, 64 / 127f, v => v.Set(P.O1VelSens, 7));
-            double expected = (Dx7.ScaleVelocity(127, 7) - Dx7.ScaleVelocity(64, 7)) / 256.0 * 6.0206;
-            Measure.Report($"Neo FM6: velocity 127 vs 64 at sensitivity 7: {loud - soft:F2} dB (DX7: {expected:F2} dB)");
+            double expected = (SixOp.ScaleVelocity(127, 7) - SixOp.ScaleVelocity(64, 7)) / 256.0 * 6.0206;
+            Measure.Report($"Neo FM6: velocity 127 vs 64 at sensitivity 7: {loud - soft:F2} dB (six-operator FM: {expected:F2} dB)");
             Assert.That(loud - soft, Is.EqualTo(expected).Within(0.3));
             Assert.That(Math.Abs(Level(69, 1f, null) - Level(69, 64 / 127f, null)), Is.LessThan(0.1), "sensitivity 0 ignores velocity");
 
@@ -343,7 +343,7 @@ namespace NeoBuzz.MachineTests
             e.NoteOn(0, 69, 0.8f);
             var track = FrequencyTrack(Render(e, Measure.Rate * 2), 2400);
             double lo = track.Min(), hi = track.Max();
-            Measure.Report($"Neo FM6: LFO pitch depth 99, sensitivity 7: {lo:F0} … {hi:F0} Hz around 440 (LFO {Dx7.LfoHz(10):F2} Hz)");
+            Measure.Report($"Neo FM6: LFO pitch depth 99, sensitivity 7: {lo:F0} … {hi:F0} Hz around 440 (LFO {SixOp.LfoHz(10):F2} Hz)");
             Assert.That(hi / lo, Is.InRange(3.0, 4.2), "±1 octave, less the 20 ms smoothing");
         }
 
@@ -359,7 +359,7 @@ namespace NeoBuzz.MachineTests
             e.NoteOn(0, 69, 0.8f);
             var y = Render(e, Measure.Rate / 2 + Measure.N);
             double f = Measure.PeakFrequency(y, Measure.Rate / 2, Measure.N);
-            double expected = 440 * Math.Pow(2, Dx7.PitchLevelOctaves(74));
+            double expected = 440 * Math.Pow(2, SixOp.PitchLevelOctaves(74));
             Measure.Report($"Neo FM6: pitch envelope level 74 → {Measure.Cents(f, 440):F1} cents");
             Assert.That(Math.Abs(Measure.Cents(f, expected)), Is.LessThan(0.5));
         }
@@ -374,13 +374,13 @@ namespace NeoBuzz.MachineTests
             v.Set(P.O1Level, 70);
             var after = Render(e, Measure.Rate / 2);
             double drop = Measure.Db(Measure.Rms(after, Measure.Rate / 4, Measure.Rate / 4) / Measure.Rms(before, Measure.Rate / 4, Measure.Rate / 4));
-            double expected = -(Dx7.ScaleOutLevel(99) - Dx7.ScaleOutLevel(70)) * 32 / 256.0 * 6.0206;
-            Measure.Report($"Neo FM6: level 99 → 70 on a held note: {drop:F2} dB (DX7: {expected:F2} dB)");
+            double expected = -(SixOp.ScaleOutLevel(99) - SixOp.ScaleOutLevel(70)) * 32 / 256.0 * 6.0206;
+            Measure.Report($"Neo FM6: level 99 → 70 on a held note: {drop:F2} dB (six-operator FM: {expected:F2} dB)");
             Assert.That(drop, Is.EqualTo(expected).Within(0.3));
         }
 
         [Test]
-        public void TremoloStartsUnattenuatedLikeTheDx7()
+        public void TremoloStartsUnattenuatedLikeClassicSixOpFm()
         {
             var (e, _) = Make(v =>
             {
@@ -446,7 +446,7 @@ namespace NeoBuzz.MachineTests
             }, Measure.Report);
         }
 
-        // ------------------------------------------------------------------ DX7 data
+        // ------------------------------------------------------------------ six-operator FM data
 
         static byte[] RandomVoice(Random rng, string name)
         {
@@ -464,7 +464,7 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
-        public void Dx7BanksRoundTrip()
+        public void SixOpBanksRoundTrip()
         {
             var rng = new Random(7);
             var voices = new List<Sysex.Voice>();

@@ -1,9 +1,9 @@
 #nullable disable
-// Neo FM6 (docs/specs/machines.md §5): the DX7's own behaviour, after the measurements and
+// Neo FM6 (docs/specs/machines.md §5): the classic six-operator FM own behaviour, after the measurements and
 // reverse engineering published with Music Synthesizer for Android (msfa, Apache 2.0) and Dexed:
 // the log-domain operator envelope with its curved attack and "static" flat segments, output
 // level, velocity, keyboard level and rate scaling, operator frequencies, the pitch envelope and
-// the LFO. Levels are in DX7 units of 1/256 of a doubling (0.0235 dB); an operator's amplitude
+// the LFO. Levels are in six-operator units of 1/256 of a doubling (0.0235 dB); an operator's amplitude
 // is 2^(level/256 − 14), so a modulator at full level deviates the phase by about 4π.
 
 using System;
@@ -11,11 +11,11 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Fm6
 {
-    internal static class Dx7
+    internal static class SixOp
     {
         static readonly int[] LevelLut = { 0, 5, 9, 13, 17, 20, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 42, 43, 45, 46 };
 
-        /// <summary>Output level 0 … 99 → the DX7's internal 0 … 127 scale.</summary>
+        /// <summary>Output level 0 … 99 → classic six-operator FM's internal 0 … 127 scale.</summary>
         public static int ScaleOutLevel(int level)
         {
             level = Math.Clamp(level, 0, 99);
@@ -111,7 +111,7 @@ namespace NeoBuzz.Fm6
         /// <summary>Pitch envelope level 0 … 99 → octaves (50 → 0, ±4 octaves at the ends).</summary>
         public static double PitchLevelOctaves(int level) => PitchTab[Math.Clamp(level, 0, 99)] / 32.0;
 
-        // Pitch envelope speed (octaves a second ×21.3), approximating the DX7's table.
+        // Pitch envelope speed (octaves a second ×21.3), approximating classic six-operator FM's table.
         static readonly (int Rate, double Value)[] PitchRateAnchors =
         {
             (0, 1), (10, 7), (20, 10), (30, 14), (40, 21), (50, 33), (60, 50), (70, 72), (80, 110), (90, 170), (95, 211), (99, 255),
@@ -158,7 +158,7 @@ namespace NeoBuzz.Fm6
         public static double PitchMod(double depthScaled, int sensitivity, double lfo) =>
             depthScaled * PitchModSens[Math.Clamp(sensitivity, 0, 7)] * (lfo - 0.5) / 32768.0;
 
-        /// <summary>A 0 … 99 depth as the DX7 scales it (0 … 255).</summary>
+        /// <summary>A 0 … 99 depth as classic six-operator FM'scales it (0 … 255).</summary>
         public static double Depth(int depth) => (Math.Clamp(depth, 0, 99) * 165) >> 6;
 
         static readonly double[] AmpModSens = { 0, 0.2588, 0.4274, 1.0 };
@@ -175,7 +175,7 @@ namespace NeoBuzz.Fm6
     /// One operator's envelope: four rates and levels, sustain at level 3 while the key is down,
     /// release to level 4. Advanced in blocks; returns its level in 1/256 doublings.
     /// </summary>
-    internal sealed class Dx7Envelope
+    internal sealed class SixOpEnvelope
     {
         readonly int[] rates = new int[4], levels = new int[4];
         int outLevel, rateScaling, ix = 4;
@@ -238,7 +238,7 @@ namespace NeoBuzz.Fm6
 
         int TargetFor(int segment)
         {
-            int actual = ((Dx7.ScaleOutLevel(levels[segment]) >> 1) << 6) + outLevel - 4256;
+            int actual = ((SixOp.ScaleOutLevel(levels[segment]) >> 1) << 6) + outLevel - 4256;
             return actual < 16 ? 16 : actual;
         }
 
@@ -257,7 +257,7 @@ namespace NeoBuzz.Fm6
             if (Math.Abs(target - level) < 1e-9 || (ix == 0 && newLevel == 0))
             {
                 int sr = Math.Min(99, rates[ix] + rateScaling);
-                double n = Dx7.StaticSamples44(sr);
+                double n = SixOp.StaticSamples44(sr);
                 if (sr < 77 && ix == 0 && newLevel == 0) n /= 20;
                 staticLeft = Math.Max(1, n / srScale);
             }
@@ -299,7 +299,7 @@ namespace NeoBuzz.Fm6
     }
 
     /// <summary>The pitch envelope: four rates and levels (50 = no shift), starting at level 4.</summary>
-    internal sealed class Dx7PitchEnvelope
+    internal sealed class SixOpPitchEnvelope
     {
         readonly int[] rates = new int[4], levels = new int[4];
         int ix = 4;
@@ -312,7 +312,7 @@ namespace NeoBuzz.Fm6
         {
             Array.Copy(r, rates, 4);
             Array.Copy(l, levels, 4);
-            value = Dx7.PitchLevelOctaves(levels[3]);
+            value = SixOp.PitchLevelOctaves(levels[3]);
             down = true;
             Advance(0);
         }
@@ -335,9 +335,9 @@ namespace NeoBuzz.Fm6
         {
             ix = newIx;
             if (ix >= 4) return;
-            target = Dx7.PitchLevelOctaves(levels[ix]);
+            target = SixOp.PitchLevelOctaves(levels[ix]);
             rising = target > value;
-            step = Dx7.PitchRateOctavesPerSecond(rates[ix]);
+            step = SixOp.PitchRateOctavesPerSecond(rates[ix]);
         }
 
         /// <summary>Moves on by <paramref name="seconds"/>; returns octaves.</summary>

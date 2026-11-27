@@ -1,7 +1,7 @@
 #nullable disable
 // Neo FM6 (docs/specs/machines.md §5): the six-operator FM machine. 16 tracks of Note and
-// Velocity, plus MIDI. A DX7 bank loaded in the editor is kept in the machine state (so the song
-// carries it); its voices load onto the parameters, which keep the DX7's own values. DSP in
+// Velocity, plus MIDI. A six-operator FM bank loaded in the editor is kept in the machine state (so the song
+// carries it); its voices load onto the parameters, which keep the classic six-operator FM values. DSP in
 // Engine/, parameters generated from Params.def, editor in NeoFm6Editor.cs.
 
 using System;
@@ -14,7 +14,7 @@ using NeoBuzz.Machine;
 
 namespace NeoBuzz.Fm6
 {
-    /// <summary>Saved with the song: the DX7 bank loaded in the editor (155 bytes a voice, base64).</summary>
+    /// <summary>Saved with the song: the six-operator FM bank loaded in the editor (155 bytes a voice, base64).</summary>
     public class NeoFm6State
     {
         public string BankName { get; set; } = "";
@@ -81,14 +81,20 @@ namespace NeoBuzz.Fm6
             state = new NeoFm6State { BankName = Path.GetFileNameWithoutExtension(path), BankData = Convert.ToBase64String(data) };
         }
 
+        /// <summary>The data kind the manifest lists (Params.def import line).</summary>
+        public const string BankKind = "fm6_sysex_bank";
+
+        /// <summary>The kind the first release called the bank; still taken so existing agent scripts work. Not listed in the manifest.</summary>
+        public const string LegacyBankKind = "dx7_bank";
+
         /// <summary>
-        /// Agent server (mcp-server.md A3, machine_data_import): "dx7_bank" loads a .syx bank and
+        /// Agent server (mcp-server.md A3, machine_data_import): "fm6_sysex_bank" (alias "dx7_bank", kept so older agent scripts work) loads a .syx bank and
         /// plays voice <paramref name="item"/> (1–32, 0 = 1) by setting its parameters through
         /// <paramref name="setParameter"/> (index, raw value), so the host can make them undoable.
         /// </summary>
         public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
         {
-            if (kind != "dx7_bank") throw new ArgumentException($"Neo FM6 doesn't import \"{kind}\"; it takes dx7_bank.");
+            if (kind != BankKind && kind != LegacyBankKind) throw new ArgumentException($"Neo FM6 doesn't import \"{kind}\"; it takes {BankKind}.");
             LoadBank(path);
             if (bank.Count == 0) return $"Loaded {Path.GetFileName(path)}, which holds no voices.";
             int voice = item <= 0 ? 1 : item;
@@ -97,7 +103,7 @@ namespace NeoBuzz.Fm6
             return $"Loaded the bank {state.BankName} ({bank.Count} voices) and set voice {voice}, \"{bank[voice - 1].Name.Trim()}\".";
         }
 
-        /// <summary>Writes the current parameters as a DX7 single-voice .syx file.</summary>
+        /// <summary>Writes the current parameters as a six-operator single-voice .syx file.</summary>
         internal void ExportVoice(string path, string name)
         {
             File.WriteAllBytes(path, Sysex.WriteVoice(Sysex.FromParams(p => Values[p], name)));
@@ -125,9 +131,9 @@ namespace NeoBuzz.Fm6
                 {
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
-                        "Neo FM6 — six-operator FM synth: the 32 DX7 algorithms, DX7 envelopes, keyboard and " +
-                        "velocity scaling, pitch envelope and LFO with the DX7's own parameter values; loads " +
-                        "DX7 banks (.syx). Beyond the DX7: four operator waveforms, unison, glide, a tone " +
+                        "Neo FM6 — six-operator FM synth: the 32 six-operator algorithms, rate and level envelopes, keyboard and " +
+                        "velocity scaling, pitch envelope and LFO with the classic six-operator values; loads " +
+                        "32-voice SysEx banks (.syx). Beyond the classic design: four operator waveforms, unison, glide, a tone " +
                         "control and a clean 2× oversampled engine (or Raw, with the original's aliasing).\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo FM6"),
                 },

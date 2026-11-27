@@ -63,6 +63,22 @@ namespace ReBuzz.Core
         internal bool HasRamps => hasRamps;
         volatile bool hasRamps;
 
+        /// <summary>
+        /// Fork (FU2b): whether a MIDI column holds a note that starts at a fraction of a clip time unit (NoteBits.FineOf above 0), as Slice to new MIDI
+        /// track puts its notes on exact samples. The engine plays such a note in the block that starts on its sample (WorkManager); a column without
+        /// any (every song before FU2b) plays as it always did.
+        /// </summary>
+        internal bool HasFineNotes => hasFineNotes;
+        volatile bool hasFineNotes;
+
+        bool ScanFine()
+        {
+            if (Type != ClipColumnType.MIDI) return false;
+            for (int i = 0; i < clipEvents.Count; i++)
+                if (((uint)clipEvents[i].Value >> 24) != 0 && (clipEvents[i].Value & 0xF0) == 0x90) return true;
+            return false;
+        }
+
         public event Action<IEnumerable<ClipEvent>, bool> EventsChanged;
         public event Action<int> BeatSubdivisionChanged;
         public event PropertyChangedEventHandler PropertyChanged;
@@ -138,6 +154,7 @@ namespace ReBuzz.Core
                 var old = clipEvents;
                 clipEvents = events;
                 hasRamps = ramps;
+                hasFineNotes = ScanFine();
                 return old;
             }
         }
@@ -173,6 +190,7 @@ namespace ReBuzz.Core
                 for (int i = 0; i < this.clipEvents.Count && !ramps; i++)
                     ramps = this.clipEvents[i].Duration > 0;
                 hasRamps = ramps;
+                hasFineNotes = ScanFine();
             }
             EventsChanged?.Invoke(batch, set);
         }

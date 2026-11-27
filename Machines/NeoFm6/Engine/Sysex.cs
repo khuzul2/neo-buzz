@@ -1,8 +1,8 @@
 #nullable disable
-// Neo FM6 (docs/specs/machines.md §5): DX7 voice data. Reads 32-voice banks ("bulk dumps", 4104
+// Neo FM6 (docs/specs/machines.md §5): six-operator FM voice data. Reads 32-voice banks ("bulk dumps", 4104
 // bytes with the SysEx header, or the bare 4096 bytes) and single voices (163 / 155 bytes), maps a
-// voice onto Neo FM6's parameters and back, and writes banks. Voice data keeps the DX7's own order
-// (operator 6 first); the parameter values are the DX7's own, so nothing is rescaled.
+// voice onto Neo FM6's parameters and back, and writes banks. Voice data keeps the classic six-operator FM own order
+// (operator 6 first); the parameter values are the classic six-operator FM own, so nothing is rescaled.
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace NeoBuzz.Fm6
         public const int PackedSize = 128;      // a voice in a 32-voice bank
         public const int BankDataSize = 32 * PackedSize;
 
-        /// <summary>One voice: its name and 155 bytes of DX7 voice data.</summary>
+        /// <summary>One voice: its name and 155 bytes of six-operator FM voice data.</summary>
         internal sealed class Voice
         {
             public Voice(string name, byte[] data)
@@ -34,7 +34,7 @@ namespace NeoBuzz.Fm6
         public static List<Voice> Read(byte[] file)
         {
             if (file == null || file.Length == 0) throw new InvalidDataException("the file is empty");
-            // A file may hold several SysEx messages; take the first DX7 voice data in it.
+            // A file may hold several SysEx messages; take the first six-operator FM voice data in it.
             for (int at = 0; at < file.Length; at++)
             {
                 if (file[at] != 0xF0) continue;
@@ -57,7 +57,7 @@ namespace NeoBuzz.Fm6
             }
             if (file.Length == BankDataSize) return Bank(file, 0);
             if (file.Length == VoiceSize) return new List<Voice> { new Voice(NameOf(file), Clean((byte[])file.Clone())) };
-            throw new InvalidDataException("no DX7 voice data found (expected a 32-voice bank or a single voice)");
+            throw new InvalidDataException("no six-operator FM voice data found (expected a 32-voice bank or a single voice)");
         }
 
         static void Check(byte[] file, int start, int count)
@@ -92,7 +92,7 @@ namespace NeoBuzz.Fm6
             return sb.ToString().TrimEnd();
         }
 
-        // Keeps every value in its DX7 range (damaged or odd files stay playable).
+        // Keeps every value in its six-operator FM range (damaged or odd files stay playable).
         static readonly byte[] OpMax = { 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 3, 3, 7, 3, 7, 99, 1, 31, 99, 14 };
         static readonly byte[] GlobalMax = { 99, 99, 99, 99, 99, 99, 99, 99, 31, 7, 1, 99, 99, 99, 99, 1, 5, 7, 48 };
 
@@ -180,7 +180,7 @@ namespace NeoBuzz.Fm6
             return file;
         }
 
-        /// <summary>One voice as a SysEx message (163 bytes), as the DX7 sends its edit buffer.</summary>
+        /// <summary>One voice as a SysEx message (163 bytes), as classic six-operator FM'sends its edit buffer.</summary>
         public static byte[] WriteVoice(byte[] voice)
         {
             var file = new byte[6 + VoiceSize + 2];
@@ -196,7 +196,7 @@ namespace NeoBuzz.Fm6
             return file;
         }
 
-        /// <summary>The DX7's INIT VOICE: algorithm 1, operator 1 alone at full level, a plain sine.</summary>
+        /// <summary>The six-operator FM's INIT VOICE: algorithm 1, operator 1 alone at full level, a plain sine.</summary>
         public static byte[] InitVoice()
         {
             var v = new byte[VoiceSize];
@@ -240,7 +240,7 @@ namespace NeoBuzz.Fm6
         };
 
         /// <summary>
-        /// The parameter values (raw) a voice sets: every operator and voice parameter of the DX7.
+        /// The parameter values (raw) a voice sets: every operator and voice parameter of classic six-operator FM.
         /// Operators come on with a sine wave; performance settings (voice mode, glide, …) stay.
         /// </summary>
         public static List<(int Param, int Value)> ToParams(byte[] voice)
@@ -267,7 +267,7 @@ namespace NeoBuzz.Fm6
                 int u = (5 - op) * 21;
                 foreach (var (param, data) in OpFields)
                     v[u + data] = (byte)Math.Clamp(value(param - P.O1On + FmEngine.OpParam(op, 0)), 0, 127);
-                // An operator switched off is silent on the DX7 too: level 0.
+                // An operator switched off is silent on classic six-operator FM too: level 0.
                 if (value(FmEngine.OpParam(op, 0)) == 0) v[u + 16] = 0;
             }
             foreach (var (param, data) in GlobalFields) v[data] = (byte)Math.Clamp(value(param), 0, 127);

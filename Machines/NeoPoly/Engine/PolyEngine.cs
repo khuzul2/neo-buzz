@@ -60,7 +60,7 @@ namespace NeoBuzz.Poly
         public int Oversample = 2;
     }
 
-    internal sealed class PolyEngine : INoteSink
+    internal sealed class PolyEngine : INoteSink, ISlideNoteSink
     {
         public const int MaxBlock = 256;
         public const int VoiceCount = 32;
@@ -260,6 +260,8 @@ namespace NeoBuzz.Poly
         internal float NoteSweep;
         /// <summary>True while the allocator hands a slide (an overlapping note in Slide) to a voice: the voice glides in the slide time.</summary>
         internal bool SlideNow => alloc.SlideNow;
+        /// <summary>A clip note's Slide flag (FU2b): the note that follows glides in at the slide time, when the Slide switch is on.</summary>
+        public void SlideNextNote() => alloc.FlagNext = true;
         public void NoteOff(int key) => alloc.NoteOff(key);
         public void ModWheel(float value) => ModWheelValue = value;
         public void PitchBend(float value) => PitchBendSemis = value * S.BendRange;
@@ -341,6 +343,7 @@ namespace NeoBuzz.Poly
 
         // Accent: the note's flag and the sweep it carries (octaves of filter envelope depth); the peak the envelope reached, for tests and meters.
         bool accented, pendAccented;
+        bool pendSlide;                // FU2b: the note waiting for the fade-out of the old one is a flagged slide
         float accentSweep, pendSweep;
         float envPeakOct, envNowOct, envPeakLevel, depthPeak;
         // The accent follows the note's accent state smoothly: its filter depth (octaves) and its level (gain) glide to their targets
@@ -433,6 +436,7 @@ namespace NeoBuzz.Poly
         {
             pendAccented = engine.NoteAccented;
             pendSweep = engine.NoteSweep;
+            pendSlide = engine.SlideNow;
             if (ampEnv.IsActive && ampEnv.Level > 0.001f && !pending)
             {
                 // Steal: fade the old note out, then start this one.
@@ -464,7 +468,7 @@ namespace NeoBuzz.Poly
             envPeakLevel = 0;
             trackPitch = false;
             pitchTarget = n;
-            float glideTime = engine.SlideNow ? s.SlideTime : s.GlideTime;
+            float glideTime = pendSlide ? s.SlideTime : s.GlideTime;
             if (!float.IsNaN(glideFrom) && glideTime > 0.0005f)
             {
                 pitch = glideFrom;

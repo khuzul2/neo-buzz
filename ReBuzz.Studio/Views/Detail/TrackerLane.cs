@@ -3,7 +3,7 @@
 // from the parameter's minimum on the left to its maximum on the right. It draws and edits the column's own lane of the clip store (the unmarked
 // lane the column's cells are a view of), so a point placed here is a value in the column, and a value typed in the column is a point here.
 //
-// Mouse and keys are EV1's (LaneController): click on empty space adds a point (a ramp), drag a point moves it (to a row; Alt keeps it off the
+// Mouse and keys are EV1's (LaneController, through LaneInput: one core for both lanes): click on empty space adds a point (a ramp), drag a point moves it (to a row; Alt keeps it off the
 // rows), drag on empty space draws a band, R makes the selection steps or ramps, Delete removes it. Every gesture is one step of the song's
 // history. The studio's Undo reaches it while a lane has the keyboard (ClipPage.SongHistory), as it does for the Detail panel's lane.
 //
@@ -362,27 +362,19 @@ namespace ReBuzz.Studio.Views.Detail
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
-            if (lane.Env == null || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-            Focus();
-            var result = lane.Pressed(e.GetPosition(this), e.KeyModifiers, e.ClickCount);
-            if (result == LaneController.Press.NotHandled) return;
-            if (result == LaneController.Press.Captured) e.Pointer.Capture(this);
-            e.Handled = true;
+            LaneInput.Pressed(lane, this, e);
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
-            lane.PointerMoved(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+            LaneInput.Moved(lane, this, e);
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
             base.OnPointerReleased(e);
-            if (e.InitialPressMouseButton != MouseButton.Left || !lane.IsDragging) return;
-            bool done = lane.Released(e.GetPosition(this), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
-            e.Pointer.Capture(null);
-            if (done) e.Handled = true;
+            LaneInput.Released(lane, this, e);
         }
 
         protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
@@ -400,7 +392,7 @@ namespace ReBuzz.Studio.Views.Detail
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
-            if (lane.KeyDown(e.Key, e.KeyModifiers)) e.Handled = true;
+            LaneInput.Key(lane, e);
         }
 
         // ------------------------------------------------------------------ edits
