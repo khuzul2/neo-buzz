@@ -1,0 +1,411 @@
+# Neo Pulse parameters (docs/specs/neo-pulse.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoPulse
+namespace NeoBuzz.Pulse
+class NeoPulseMachine
+summary Eight-lane Euclidean and probability rhythm generator on note wires: each lane builds a Euclidean step ring (1 to 32 steps, pulses, rotation), a second Euclidean accent ring, per-hit chance, ratchets (1 to 4 repeats with ratchet chance), gate, divider (1x to 4x), note, velocity, accent velocity, MIDI channel and mute. Global clock rate (1/1 to 1/64, straight, dotted or triplet), swing, fill chance, humanize time and velocity, and a repeatable seed (0 = Free). It makes no sound itself: wire it on a note wire to Neo Drums, any synth or another note target. Use it for driving drum kits, polyrhythms, odd-meter grooves, ratcheting hats and polymetric synth lines.
+
+group Clock
+Rate        "Rate"              0 6    4    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64 | Base step length at the song tempo
+    id rate
+    how Sets the base step length at the song tempo, from a whole note down to a sixty-fourth.
+    sound Shorter steps run faster rhythms across all eight lanes.
+Feel        "Feel"              0 2    0    enum Straight Dotted Triplet        | Straight, dotted (1.5x) or triplet (2/3x) step feel
+    id feel
+    how Scales the base step length to straight, dotted (one and a half times as long) or triplet (two thirds as long).
+    sound Dotted steps add a syncopated lilt and triplets create a rolling three-against-two feel.
+Swing       "Swing"             0 75   0    int 0 %                             | Delays every odd step by up to 75 % of a step
+    id swing
+    how Delays every second step of each lane by a share of its step length, from 0 to 75 %.
+    sound Higher swing turns straight divisions into a loose, shuffled groove.
+HumTime     "Humanize time"     0 20   0    lin 0 20 ms 0                       | Random positive timing offset per hit (0 … 20 ms)
+    id humanize_time
+    how Delays each hit by a random offset up to this many milliseconds, repeatable for a fixed seed.
+    sound Small amounts soften rigid grid timing so percussion feels played by hand.
+HumVel      "Humanize velocity" 0 30   0    int 0 %                             | Random velocity variation per hit (0 … 30 %)
+    id humanize_velocity
+    how Varies each hit velocity randomly up or down by up to this percentage, repeatable for a fixed seed.
+    sound Gentle variation stops repeated hits from sounding mechanical.
+Fill        "Fill chance"       0 100  0    int 0 %                             | Probability of adding a random hit on empty steps (0 … 100 %)
+    id fill_chance
+    how Sets the probability that an empty step on any unmuted lane fires an extra random hit.
+    sound Low fill values sprinkle occasional ghost notes and high values turn sparse grooves dense.
+Seed        "Seed"              0 9999 1    int 0                               | Repeatable random seed (0 = Free, 1 … 9999 = fixed)
+    id seed
+    how Chooses the seed for chance, fill, ratchet chance and humanize rolls; 0 (Free) varies every run, while 1 to 9999 repeats identically.
+    sound A fixed seed locks probabilistic grooves so the same bar plays the same way every time.
+
+group Lane 1
+L1Steps     "L1 steps"          1 32   16   int 0                               | Lane 1 step count (1 … 32)
+    how Sets how many steps lane 1 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L1Pulses    "L1 pulses"         0 32   4    int 0                               | Lane 1 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 1 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L1Rot       "L1 rotation"       0 31   0    int 0                               | Lane 1 step rotation (0 … steps − 1)
+    how Shifts lane 1's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L1Chance    "L1 chance"         0 100  100  int 0 %                             | Lane 1 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 1 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L1AccPulses "L1 accent pulses"  0 32   0    int 0                               | Lane 1 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 1's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L1AccRot    "L1 accent rot"     0 31   0    int 0                               | Lane 1 accent ring rotation (0 … steps − 1)
+    how Shifts lane 1's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L1Note      "L1 note"           0 127  36   int 0 note                          | Lane 1 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 1 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L1Vel       "L1 velocity"       1 127  110  int 0                               | Lane 1 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 1, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L1AccVel    "L1 accent vel"     1 127  127  int 0                               | Lane 1 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 1 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L1Gate      "L1 gate"           5 100  50   int 0 %                             | Lane 1 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 1 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L1Ratchet   "L1 ratchet"        1 4    1    int 0                               | Lane 1 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 1 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L1RatchetCh "L1 ratchet chance" 0 100  100  int 0 %                             | Lane 1 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 1 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L1Div       "L1 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 1 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 1 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L1Ch        "L1 channel"        1 16   1    int 0                               | Lane 1 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 1 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L1Mute      "L1 mute"           0 1    0    switch                              | Mutes lane 1 (stops hits and fills)
+    how Silences lane 1, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 2
+L2Steps     "L2 steps"          1 32   16   int 0                               | Lane 2 step count (1 … 32)
+    how Sets how many steps lane 2 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L2Pulses    "L2 pulses"         0 32   2    int 0                               | Lane 2 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 2 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L2Rot       "L2 rotation"       0 31   4    int 0                               | Lane 2 step rotation (0 … steps − 1)
+    how Shifts lane 2's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L2Chance    "L2 chance"         0 100  100  int 0 %                             | Lane 2 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 2 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L2AccPulses "L2 accent pulses"  0 32   0    int 0                               | Lane 2 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 2's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L2AccRot    "L2 accent rot"     0 31   0    int 0                               | Lane 2 accent ring rotation (0 … steps − 1)
+    how Shifts lane 2's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L2Note      "L2 note"           0 127  38   int 0 note                          | Lane 2 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 2 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L2Vel       "L2 velocity"       1 127  105  int 0                               | Lane 2 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 2, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L2AccVel    "L2 accent vel"     1 127  127  int 0                               | Lane 2 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 2 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L2Gate      "L2 gate"           5 100  50   int 0 %                             | Lane 2 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 2 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L2Ratchet   "L2 ratchet"        1 4    1    int 0                               | Lane 2 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 2 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L2RatchetCh "L2 ratchet chance" 0 100  100  int 0 %                             | Lane 2 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 2 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L2Div       "L2 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 2 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 2 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L2Ch        "L2 channel"        1 16   1    int 0                               | Lane 2 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 2 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L2Mute      "L2 mute"           0 1    0    switch                              | Mutes lane 2 (stops hits and fills)
+    how Silences lane 2, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 3
+L3Steps     "L3 steps"          1 32   16   int 0                               | Lane 3 step count (1 … 32)
+    how Sets how many steps lane 3 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L3Pulses    "L3 pulses"         0 32   11   int 0                               | Lane 3 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 3 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L3Rot       "L3 rotation"       0 31   0    int 0                               | Lane 3 step rotation (0 … steps − 1)
+    how Shifts lane 3's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L3Chance    "L3 chance"         0 100  100  int 0 %                             | Lane 3 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 3 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L3AccPulses "L3 accent pulses"  0 32   4    int 0                               | Lane 3 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 3's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L3AccRot    "L3 accent rot"     0 31   0    int 0                               | Lane 3 accent ring rotation (0 … steps − 1)
+    how Shifts lane 3's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L3Note      "L3 note"           0 127  42   int 0 note                          | Lane 3 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 3 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L3Vel       "L3 velocity"       1 127  82   int 0                               | Lane 3 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 3, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L3AccVel    "L3 accent vel"     1 127  115  int 0                               | Lane 3 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 3 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L3Gate      "L3 gate"           5 100  35   int 0 %                             | Lane 3 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 3 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L3Ratchet   "L3 ratchet"        1 4    1    int 0                               | Lane 3 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 3 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L3RatchetCh "L3 ratchet chance" 0 100  100  int 0 %                             | Lane 3 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 3 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L3Div       "L3 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 3 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 3 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L3Ch        "L3 channel"        1 16   1    int 0                               | Lane 3 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 3 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L3Mute      "L3 mute"           0 1    0    switch                              | Mutes lane 3 (stops hits and fills)
+    how Silences lane 3, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 4
+L4Steps     "L4 steps"          1 32   16   int 0                               | Lane 4 step count (1 … 32)
+    how Sets how many steps lane 4 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L4Pulses    "L4 pulses"         0 32   0    int 0                               | Lane 4 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 4 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L4Rot       "L4 rotation"       0 31   0    int 0                               | Lane 4 step rotation (0 … steps − 1)
+    how Shifts lane 4's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L4Chance    "L4 chance"         0 100  100  int 0 %                             | Lane 4 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 4 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L4AccPulses "L4 accent pulses"  0 32   0    int 0                               | Lane 4 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 4's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L4AccRot    "L4 accent rot"     0 31   0    int 0                               | Lane 4 accent ring rotation (0 … steps − 1)
+    how Shifts lane 4's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L4Note      "L4 note"           0 127  46   int 0 note                          | Lane 4 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 4 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L4Vel       "L4 velocity"       1 127  90   int 0                               | Lane 4 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 4, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L4AccVel    "L4 accent vel"     1 127  118  int 0                               | Lane 4 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 4 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L4Gate      "L4 gate"           5 100  50   int 0 %                             | Lane 4 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 4 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L4Ratchet   "L4 ratchet"        1 4    1    int 0                               | Lane 4 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 4 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L4RatchetCh "L4 ratchet chance" 0 100  100  int 0 %                             | Lane 4 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 4 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L4Div       "L4 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 4 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 4 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L4Ch        "L4 channel"        1 16   1    int 0                               | Lane 4 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 4 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L4Mute      "L4 mute"           0 1    0    switch                              | Mutes lane 4 (stops hits and fills)
+    how Silences lane 4, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 5
+L5Steps     "L5 steps"          1 32   16   int 0                               | Lane 5 step count (1 … 32)
+    how Sets how many steps lane 5 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L5Pulses    "L5 pulses"         0 32   0    int 0                               | Lane 5 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 5 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L5Rot       "L5 rotation"       0 31   0    int 0                               | Lane 5 step rotation (0 … steps − 1)
+    how Shifts lane 5's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L5Chance    "L5 chance"         0 100  100  int 0 %                             | Lane 5 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 5 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L5AccPulses "L5 accent pulses"  0 32   0    int 0                               | Lane 5 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 5's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L5AccRot    "L5 accent rot"     0 31   0    int 0                               | Lane 5 accent ring rotation (0 … steps − 1)
+    how Shifts lane 5's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L5Note      "L5 note"           0 127  39   int 0 note                          | Lane 5 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 5 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L5Vel       "L5 velocity"       1 127  95   int 0                               | Lane 5 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 5, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L5AccVel    "L5 accent vel"     1 127  122  int 0                               | Lane 5 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 5 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L5Gate      "L5 gate"           5 100  50   int 0 %                             | Lane 5 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 5 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L5Ratchet   "L5 ratchet"        1 4    1    int 0                               | Lane 5 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 5 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L5RatchetCh "L5 ratchet chance" 0 100  100  int 0 %                             | Lane 5 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 5 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L5Div       "L5 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 5 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 5 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L5Ch        "L5 channel"        1 16   1    int 0                               | Lane 5 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 5 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L5Mute      "L5 mute"           0 1    0    switch                              | Mutes lane 5 (stops hits and fills)
+    how Silences lane 5, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 6
+L6Steps     "L6 steps"          1 32   16   int 0                               | Lane 6 step count (1 … 32)
+    how Sets how many steps lane 6 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L6Pulses    "L6 pulses"         0 32   0    int 0                               | Lane 6 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 6 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L6Rot       "L6 rotation"       0 31   0    int 0                               | Lane 6 step rotation (0 … steps − 1)
+    how Shifts lane 6's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L6Chance    "L6 chance"         0 100  100  int 0 %                             | Lane 6 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 6 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L6AccPulses "L6 accent pulses"  0 32   0    int 0                               | Lane 6 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 6's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L6AccRot    "L6 accent rot"     0 31   0    int 0                               | Lane 6 accent ring rotation (0 … steps − 1)
+    how Shifts lane 6's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L6Note      "L6 note"           0 127  37   int 0 note                          | Lane 6 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 6 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L6Vel       "L6 velocity"       1 127  88   int 0                               | Lane 6 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 6, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L6AccVel    "L6 accent vel"     1 127  116  int 0                               | Lane 6 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 6 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L6Gate      "L6 gate"           5 100  40   int 0 %                             | Lane 6 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 6 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L6Ratchet   "L6 ratchet"        1 4    1    int 0                               | Lane 6 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 6 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L6RatchetCh "L6 ratchet chance" 0 100  100  int 0 %                             | Lane 6 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 6 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L6Div       "L6 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 6 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 6 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L6Ch        "L6 channel"        1 16   1    int 0                               | Lane 6 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 6 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L6Mute      "L6 mute"           0 1    0    switch                              | Mutes lane 6 (stops hits and fills)
+    how Silences lane 6, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 7
+L7Steps     "L7 steps"          1 32   16   int 0                               | Lane 7 step count (1 … 32)
+    how Sets how many steps lane 7 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L7Pulses    "L7 pulses"         0 32   0    int 0                               | Lane 7 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 7 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L7Rot       "L7 rotation"       0 31   0    int 0                               | Lane 7 step rotation (0 … steps − 1)
+    how Shifts lane 7's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L7Chance    "L7 chance"         0 100  100  int 0 %                             | Lane 7 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 7 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L7AccPulses "L7 accent pulses"  0 32   0    int 0                               | Lane 7 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 7's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L7AccRot    "L7 accent rot"     0 31   0    int 0                               | Lane 7 accent ring rotation (0 … steps − 1)
+    how Shifts lane 7's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L7Note      "L7 note"           0 127  43   int 0 note                          | Lane 7 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 7 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L7Vel       "L7 velocity"       1 127  95   int 0                               | Lane 7 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 7, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L7AccVel    "L7 accent vel"     1 127  122  int 0                               | Lane 7 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 7 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L7Gate      "L7 gate"           5 100  60   int 0 %                             | Lane 7 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 7 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L7Ratchet   "L7 ratchet"        1 4    1    int 0                               | Lane 7 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 7 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L7RatchetCh "L7 ratchet chance" 0 100  100  int 0 %                             | Lane 7 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 7 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L7Div       "L7 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 7 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 7 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L7Ch        "L7 channel"        1 16   1    int 0                               | Lane 7 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 7 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L7Mute      "L7 mute"           0 1    0    switch                              | Mutes lane 7 (stops hits and fills)
+    how Silences lane 7, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.
+
+group Lane 8
+L8Steps     "L8 steps"          1 32   16   int 0                               | Lane 8 step count (1 … 32)
+    how Sets how many steps lane 8 cycles through before wrapping around, from 1 to 32.
+    sound Lengths that do not divide 16 create polymetric rhythms that shift against the bar.
+L8Pulses    "L8 pulses"         0 32   0    int 0                               | Lane 8 Euclidean hit count (0 … steps)
+    how Sets how many hits lane 8 distributes evenly across its steps via Bjorklund's algorithm (clamped to steps).
+    sound Zero silences the main ring while higher values build denser grooves up to every step.
+L8Rot       "L8 rotation"       0 31   0    int 0                               | Lane 8 step rotation (0 … steps − 1)
+    how Shifts lane 8's Euclidean hits forward around its step ring by this many steps (clamped to steps minus 1).
+    sound Rotating shifts downbeats into off-beats and locks interlocking lanes around each other.
+L8Chance    "L8 chance"         0 100  100  int 0 %                             | Lane 8 per-hit probability (0 … 100 %)
+    how Sets the probability that each active step on lane 8 fires its note, from 0 to 100 %.
+    sound Lowering chance drops occasional hits for breathing, evolving percussion.
+L8AccPulses "L8 accent pulses"  0 32   0    int 0                               | Lane 8 Euclidean accent count (0 … steps)
+    how Sets how many steps in lane 8's second Euclidean accent ring use the accent velocity (clamped to steps).
+    sound Accents emphasize selected hits so grooves push and pull dynamically.
+L8AccRot    "L8 accent rot"     0 31   0    int 0                               | Lane 8 accent ring rotation (0 … steps − 1)
+    how Shifts lane 8's accent ring forward around its steps by this many steps (clamped to steps minus 1).
+    sound Moving the accent ring changes which hits pop forward without changing the rhythm itself.
+L8Note      "L8 note"           0 127  56   int 0 note                          | Lane 8 MIDI note number (0 … 127)
+    how Chooses the MIDI note number lane 8 sends on the note port, from 0 to 127.
+    sound Maps the lane to a drum voice in Neo Drums or a pitch on any synth.
+L8Vel       "L8 velocity"       1 127  85   int 0                               | Lane 8 normal hit velocity (1 … 127)
+    how Sets the MIDI velocity sent for non-accented hits on lane 8, from 1 to 127.
+    sound Lower velocities sit quietly as ghost notes and higher values hit harder.
+L8AccVel    "L8 accent vel"     1 127  115  int 0                               | Lane 8 accented hit velocity (1 … 127)
+    how Sets the MIDI velocity sent when a hit on lane 8 lands on an accented step, from 1 to 127.
+    sound Setting this above the base velocity makes accented steps punch through the groove.
+L8Gate      "L8 gate"           5 100  45   int 0 %                             | Lane 8 note gate length (5 … 100 % of step)
+    how Sets how long each note from lane 8 is held as a share of its step slot, from 5 to 100 %.
+    sound Short gates make tight percussive stabs and long gates let synth notes sustain across the step.
+L8Ratchet   "L8 ratchet"        1 4    1    int 0                               | Lane 8 repeats inside one step (1 … 4)
+    how Subdivides a firing step on lane 8 into 1 to 4 rapid evenly spaced repeats when ratchet chance passes.
+    sound Adds crisp snare rolls, hi-hat flurries and rapid melodic trills inside the beat.
+L8RatchetCh "L8 ratchet chance" 0 100  100  int 0 %                             | Lane 8 probability of ratcheting a firing hit (0 … 100 %)
+    how Sets the probability that a firing hit on lane 8 triggers its ratchet repeats, from 0 to 100 %.
+    sound Moderate values add occasional surprise rolls without cluttering every hit.
+L8Div       "L8 divider"        0 3    0    enum 1x 2x 3x 4x                    | Lane 8 clock divider (1x … 4x slower)
+    how Divides the global step rate for lane 8 by 1, 2, 3 or 4 so the lane steps more slowly.
+    sound Slower dividers anchor bass notes and slow accents underneath fast percussion lanes.
+L8Ch        "L8 channel"        1 16   1    int 0                               | Lane 8 MIDI channel (1 … 16)
+    how Selects the MIDI channel lane 8 tags onto its outgoing note messages, from 1 to 16.
+    sound Useful when wiring to multi-channel instruments or splitting channels across targets.
+L8Mute      "L8 mute"           0 1    0    switch                              | Mutes lane 8 (stops hits and fills)
+    how Silences lane 8, immediately releasing any sounding note it owns and blocking both hits and fills.
+    sound Lets you drop individual voices in and out of a rhythm without losing their settings.

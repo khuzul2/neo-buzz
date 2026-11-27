@@ -2486,6 +2486,30 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "654-neo-arp-editor", "Neo Arp: Pattern (Steps) and Rate on top, the 16-step row with ties (slim bars), accents (bright with a mark), offs (empty) and a transpose bar under each step, then Gate, Swing, Velocity (Accent) and Hold (Latch on).", "Add Neo Arp, set the Steps pattern and a step row, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                Try("655-neo-pulse-editor", () =>
+                {
+                    var m = Add("Neo Pulse", "Pulse");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Four on the floor — Euclidean hats (5 active lanes with accents and swing) plus a few ticks playing so live step indicators light up.
+                    Set("Rate", 4);
+                    Set("Swing", 12);
+                    Set("Seed", 101);
+                    Set("L1 steps", 16); Set("L1 pulses", 4); Set("L1 note", 36);
+                    Set("L2 steps", 16); Set("L2 pulses", 2); Set("L2 rotation", 4); Set("L2 note", 38);
+                    Set("L3 steps", 16); Set("L3 pulses", 11); Set("L3 accent pulses", 4); Set("L3 note", 42);
+                    Set("L4 steps", 16); Set("L4 pulses", 3); Set("L4 rotation", 2); Set("L4 chance", 75); Set("L4 note", 46);
+                    Set("L5 steps", 16); Set("L5 pulses", 5); Set("L5 rotation", 1); Set("L5 chance", 60); Set("L5 note", 37);
+                    Core.Playing = true;
+                    RunTicks(6);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "655-neo-pulse-editor", "Neo Pulse: Clock & Probability (Rate, Feel, Swing, Fill, Humanize, Seed) above the eight-lane Euclidean step strips (hits, accents, live playing step, inline Steps, Pulses, Rotation, Chance, Note and Divider) and the synced Lane 1..8 detail panel.", "Add Neo Pulse, load Four on the floor — Euclidean hats, play and open its editor");
+                    Core.Playing = false;
+                    Core.UiHost.CloseWindows(m);
+                });
                 // MAL1: Neo Mallet with the Church Bell preset's values set before the editor opens: the Bell model's mode drawing, the exciter, decay and damping.
                 Try("660-neo-mallet-editor", () =>
                 {

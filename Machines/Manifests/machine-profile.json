@@ -11031,6 +11031,40 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Pulse": {
+   "gear": "Neo Pulse",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.0,
+   "gear_info": {
+    "file": "Generators/Neo Pulse.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 127,
+   "track_parameters": 0,
+   "inferred": 127,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 127,
+    "of": 127
+   },
+   "type": "control",
+   "seconds": 0.5,
+   "platform": "linux",
+   "date": "2026-11-26",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a note generator (notes out on a note wire): no audio test"
+   ],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Arp": {
    "gear": "Neo Arp",
    "kind": "generator",
