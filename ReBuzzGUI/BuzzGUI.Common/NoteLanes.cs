@@ -124,6 +124,9 @@ namespace BuzzGUI.Common
             Hidden = NoteCount - voiceNotes.Sum(l => l.Count);
         }
 
+        /// <summary>How many notes sit on a voice at or above <paramref name="voices"/>: the notes that would not be shown with that many columns.</summary>
+        public int NotesBeyond(int voices) => cells.Count(c => !c.IsOff && c.Voice >= voices);
+
         /// <summary>The cell of a voice in a row, if it holds one.</summary>
         public bool TryCell(int voice, int row, out NoteCell cell) => byRow.TryGetValue((voice, row), out cell);
 

@@ -242,8 +242,13 @@ namespace ReBuzz.Core.Notes
                     for (int t = 0; t < tracks && track < 0; t++)
                         if (Free(t, n)) track = t;
                     if (track < 0)
-                        return $"{clip.Machine.Name} plays a note per track and has {tracks} track{(tracks == 1 ? "" : "s")}: " +
-                               $"{ClipNotes.Name(n.Note)} at {n.Time / (double)ClipEvent.TimeBase:0.##} ticks needs one more at once.";
+                    {
+                        // CU6b: the limit is the machine's own MaxTracks (32 for Neo Sampler's Tracker mode), and the refusal says it.
+                        int most = Math.Max(1, Math.Max(clip.Machine.DLL?.Info.MinTracks ?? 0, clip.Machine.DLL?.Info.MaxTracks ?? 0));
+                        return $"{clip.Machine.Name} plays a note per track and has {tracks} track{(tracks == 1 ? "" : "s")} (it takes up to {most}): " +
+                               $"{ClipNotes.Name(n.Note)} at {n.Time / (double)ClipEvent.TimeBase:0.##} ticks needs one more at once" +
+                               (tracks < most ? ": add a track." : $", and {most} is the most it has.");
+                    }
                     notes.Add((n, track));
                 }
             }

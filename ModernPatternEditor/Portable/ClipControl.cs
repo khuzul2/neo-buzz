@@ -78,6 +78,8 @@ namespace WDE.ModernPatternEditor
         public ICommand WriteStateCommand { get; private set; }
         public ICommand InterpolateLinearCommand { get; private set; }
         public ICommand InterpolateExpCommand { get; private set; }
+        public ICommand AddNoteColumnCommand { get; private set; }
+        public ICommand RemoveNoteColumnCommand { get; private set; }
 
         ClipVM clip;
         MachineVM machineVM;
@@ -172,6 +174,8 @@ namespace WDE.ModernPatternEditor
             RotateCommandUp = new SimpleCommand { CanExecuteDelegate = x => HasColumns, ExecuteDelegate = x => RollSelection(true) };
             RandomizeCommand = new SimpleCommand { CanExecuteDelegate = x => HasColumns, ExecuteDelegate = x => RamdomizeSelection() };
             PropertiesCommand = new SimpleCommand { CanExecuteDelegate = x => clip != null, ExecuteDelegate = x => PropertiesRequested?.Invoke() };
+            AddNoteColumnCommand = new SimpleCommand { CanExecuteDelegate = x => clip?.CanEditNoteColumns == true, ExecuteDelegate = x => NoteColumnsStatus(clip?.AddNoteColumn()) };
+            RemoveNoteColumnCommand = new SimpleCommand { CanExecuteDelegate = x => clip?.CanEditNoteColumns == true, ExecuteDelegate = x => NoteColumnsStatus(clip?.RemoveNoteColumn()) };
 
             CutCommand = new SimpleCommand
             {
@@ -585,6 +589,9 @@ namespace WDE.ModernPatternEditor
                     case EditorKey.R: Editor.IsKeyboardMappingVisible = true; ViewRequest?.Invoke("RootNote"); return true;
                     case EditorKey.Y: Editor.IsKeyboardMappingVisible = true; ViewRequest?.Invoke("KeyboardMapping"); return true;
                     case EditorKey.N: Editor.PlayNotes ^= true; return true;
+                    // CU6b: chords. Alt+Plus adds a note+velocity column pair to the clip, Alt+Minus takes the last one off (refused while it would hide a note).
+                    case EditorKey.Add: NoteColumnsStatus(clip?.AddNoteColumn()); return true;
+                    case EditorKey.Subtract: NoteColumnsStatus(clip?.RemoveNoteColumn()); return true;
                 }
             }
             return false;
@@ -1131,6 +1138,12 @@ namespace WDE.ModernPatternEditor
                 using (new ActionGroup(Editor.EditContext.ActionStack))
                     foreach (var a in others) Editor.EditContext.ActionStack.Do(a);
             return true;
+        }
+
+        /// <summary>Says why a note column could not be added or removed in the status bar.</summary>
+        static void NoteColumnsStatus(string why)
+        {
+            if (why != null) Global.Buzz.DCWriteLine("{statusbar}" + why);
         }
 
         /// <summary>Whether the cursor, or the selection, is in or reaches over a Notes lane.</summary>

@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\AddSequenceAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\CreateClipAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\MachineActions\SetTrackCountAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\PatternActions\NoteColumnsAction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\ClipNames.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\Restorations.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Actions\SequenceAction.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)TemporaryWave.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TrackerNotes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NoteLanes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NoteColumns.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipLanes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipLaneHost.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClipBlob.cs" />

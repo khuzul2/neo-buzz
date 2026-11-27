@@ -39,7 +39,9 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Req("machine", String("Machine")), Req("clip", String("The clip's name")), Req("length_beats", Number("The clip's length")),
                     Opt("input", String("midi or tracks: where the machine takes its notes; absent when it takes none")),
-                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127"))), "The notes")),
+                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127")),
+                        Opt("column", Integer("MIDI input: the Tracker's note column pair (from 1) the note shows in"))), "The notes")),
+                    Opt("note_columns", Object("MIDI input: the Tracker's note column pairs", Req("shown", Integer("Pairs shown")), Opt("stored", Integer("The count saved with the clip")), Req("needed", Integer("Pairs the notes need at once")))),
                     Req("lanes", Array(Object(null,
                         Req("kind", String("notes or parameter", "notes", "parameter")), Opt("param", String("Parameter")), Opt("machine", String("Another machine's parameter")),
                         Opt("track", Integer("Track")), Req("events", Integer("Events in the lane")),
@@ -72,7 +74,13 @@ namespace ReBuzz.Agent
             {
                 var input = MachineNotes.For(m);
                 result["input"] = input.Mode;
-                foreach (var n in MachineNotes.Read(p, input)) notes.Add(NoteList.ToJson(n, tpb));
+                var read = MachineNotes.Read(p, input);
+                foreach (var n in read) notes.Add(NoteList.ToJson(n, tpb));
+                if (!input.Tracks)
+                {
+                    MachineNotes.AddColumns(notes, read, p, input);
+                    result["note_columns"] = MachineNotes.ColumnsOf(p);
+                }
             }
             result["notes"] = notes;
 

@@ -355,6 +355,18 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+        /// <summary>The note+velocity column pairs shown (0 while the Notes lanes are hidden).</summary>
+        public int NoteColumnCount => noteSetCount;
+
+        /// <summary>Whether a column of note+velocity pairs can be added or removed here: the clip has Notes lanes to hold them.</summary>
+        public bool CanEditNoteColumns => noteLanes != null;
+
+        /// <summary>Adds a note+velocity column pair (chords, CU6b), saved with the clip and undoable. Null when done, else why not.</summary>
+        public string AddNoteColumn() => noteLanes?.AddColumn() ?? "This clip has no Notes lanes.";
+
+        /// <summary>Removes the last note+velocity column pair, never while it would hide a note. Null when done, else why not.</summary>
+        public string RemoveNoteColumn() => noteLanes?.RemoveColumn() ?? "This clip has no Notes lanes.";
+
         /// <summary>Whether the clip's MIDI column holds notes (so the lanes show by themselves).</summary>
         public bool HasMidiNotes => noteLanes != null && noteLanes.Lanes.NoteCount > 0;
 
