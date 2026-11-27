@@ -56,10 +56,10 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void TheChoiceListsThatGrewArePinnedToTheirOldSpan()
         {
-            Assert.That(NeoBuzz.Machine.LegacyChoiceSpans.OldMax("Neo Drive", "Mode"), Is.EqualTo(4));
-            Assert.That(NeoBuzz.Machine.LegacyChoiceSpans.OldMax("Neo Filter", "Type"), Is.EqualTo(6), "Ladder 24 to SVF Peak, before Vowel");
-            Assert.That(NeoBuzz.Machine.LegacyChoiceSpans.OldMax("Neo Filter", "Cutoff"), Is.Null);
-            Assert.That(NeoBuzz.Machine.LegacyChoiceSpans.OldMax(null, null), Is.Null);
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax("Neo Drive", "Mode"), Is.EqualTo(4));
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax("Neo Filter", "Type"), Is.EqualTo(6), "Ladder 24 to SVF Peak, before Vowel");
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax("Neo Filter", "Cutoff"), Is.Null);
+            Assert.That(NeoBuzz.Dsp.LegacyChoiceSpans.OldMax(null, null), Is.Null);
             // Neo Filter's Type went from 0 … 6 to 0 … 7 (EXT1): a saved depth of 100 % still ends at SVF Peak, an explicit range reaches Vowel.
             var p = new Port { Min = 0, Max = 7, SafeMin = 0, SafeMax = 7, SpanMax = 6, Value = 0 };
             var bank = Bank(p, depth: 100, glide: 0);

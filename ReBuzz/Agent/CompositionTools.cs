@@ -319,7 +319,6 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         string kind = c.RequiredString("kind");
-                        if (string.Equals(kind, "dx7_bank", StringComparison.OrdinalIgnoreCase)) kind = "fm6_sysex_bank";   // hidden alias: the first name of Neo FM6's bank kind, kept so existing agent scripts work
                         var manifest = SongModel.Manifest(m);
                         var imports = manifest?.Imports ?? System.Array.Empty<ManifestImport>();
                         var import = imports.FirstOrDefault(i => string.Equals(i.Kind, kind, StringComparison.OrdinalIgnoreCase));

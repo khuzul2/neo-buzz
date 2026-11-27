@@ -1,4 +1,4 @@
-// Fork (FU2b, neutral names): Neo FM6's bank import kind is "fm6_sysex_bank"; the first release's "dx7_bank" is a hidden alias, so existing agent scripts still work.
+// Fork (FU2b, neutral names): Neo FM6's bank import kind is "fm6_sysex_bank", the only kind it takes (the first release's model-number name is gone: clean break).
 
 using System;
 using System.IO;
@@ -51,13 +51,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(kinds, Is.EqualTo(new[] { "fm6_sysex_bank" }), "the manifest lists the neutral kind only");
                 Assert.That(described.ToJsonString().ToLowerInvariant(), Does.Not.Contain("dx7"), "no model number in what the agent reads");
 
-                foreach (var kind in new[] { "fm6_sysex_bank", "dx7_bank" })
-                {
-                    var r = Tool("machine_data_import", new JsonObject { ["machine"] = "Keys", ["kind"] = kind, ["path"] = file, ["item"] = 1 });
-                    Assert.That(r["isError"]?.GetValue<bool>() ?? false, Is.False, kind + ": " + r.ToJsonString());
-                    Assert.That((string)r["structuredContent"]!["kind"]!, Is.EqualTo("fm6_sysex_bank"), kind + " is taken as the neutral kind");
-                    Assert.That((string)r["structuredContent"]!["summary"]!, Does.Contain("32 voices"), kind);
-                }
+                var r = Tool("machine_data_import", new JsonObject { ["machine"] = "Keys", ["kind"] = "fm6_sysex_bank", ["path"] = file, ["item"] = 1 });
+                Assert.That(r["isError"]?.GetValue<bool>() ?? false, Is.False, r.ToJsonString());
+                Assert.That((string)r["structuredContent"]!["kind"]!, Is.EqualTo("fm6_sysex_bank"));
+                Assert.That((string)r["structuredContent"]!["summary"]!, Does.Contain("32 voices"));
 
                 var refused = Tool("machine_data_import", new JsonObject { ["machine"] = "Keys", ["kind"] = "wavetable", ["path"] = file });
                 Assert.That(refused["isError"]?.GetValue<bool>(), Is.True, "another kind is still refused");

@@ -84,17 +84,14 @@ namespace NeoBuzz.Fm6
         /// <summary>The data kind the manifest lists (Params.def import line).</summary>
         public const string BankKind = "fm6_sysex_bank";
 
-        /// <summary>The kind the first release called the bank; still taken so existing agent scripts work. Not listed in the manifest.</summary>
-        public const string LegacyBankKind = "dx7_bank";
-
         /// <summary>
-        /// Agent server (mcp-server.md A3, machine_data_import): "fm6_sysex_bank" (alias "dx7_bank", kept so older agent scripts work) loads a .syx bank and
+        /// Agent server (mcp-server.md A3, machine_data_import): "fm6_sysex_bank" loads a .syx bank and
         /// plays voice <paramref name="item"/> (1–32, 0 = 1) by setting its parameters through
         /// <paramref name="setParameter"/> (index, raw value), so the host can make them undoable.
         /// </summary>
         public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
         {
-            if (kind != BankKind && kind != LegacyBankKind) throw new ArgumentException($"Neo FM6 doesn't import \"{kind}\"; it takes {BankKind}.");
+            if (kind != BankKind) throw new ArgumentException($"Neo FM6 doesn't import \"{kind}\"; it takes {BankKind}.");
             LoadBank(path);
             if (bank.Count == 0) return $"Loaded {Path.GetFileName(path)}, which holds no voices.";
             int voice = item <= 0 ? 1 : item;

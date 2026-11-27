@@ -44,18 +44,6 @@ namespace NeoBuzz.Machine
         public List<ModTargetState> Targets { get; set; } = new List<ModTargetState>();
     }
 
-    /// <summary>Choice lists that grew after songs saved modulator depths on them, by machine and parameter name, with their old last choice.</summary>
-    public static class LegacyChoiceSpans
-    {
-        /// <summary>Neo Drive's Mode was 0 … 4 before EXT3; Neo Filter's Type was 0 … 6 before EXT1's Vowel. Null for every other parameter.</summary>
-        public static int? OldMax(string machineName, string parameterName) => (machineName, parameterName) switch
-        {
-            ("Neo Drive", "Mode") => 4,
-            ("Neo Filter", "Type") => 6,
-            _ => null,
-        };
-    }
-
     /// <summary>A host parameter as a bank port.</summary>
     internal sealed class ParamPort : IModPort
     {
