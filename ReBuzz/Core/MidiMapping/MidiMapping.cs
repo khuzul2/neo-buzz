@@ -179,7 +179,7 @@ namespace ReBuzz.Core
             bool touched = false;
             void Retarget(MapDrive d)
             {
-                if (d?.Target is { IsCommand: false } t && t.Machine == oldName) { d.Target = t.OnMachine(newName); touched = true; }
+                if (d?.Target is { } t && t.Renamed(oldName, newName) is { } renamed && !renamed.Equals(t)) { d.Target = renamed; touched = true; }
             }
             foreach (var e in computer.Global) Retarget(e);
             foreach (var e in song.Global ?? new List<MapEntry>()) Retarget(e);
@@ -210,10 +210,10 @@ namespace ReBuzz.Core
             foreach (var t in kept.Tracks)
                 foreach (var p in t.Pages)
                 {
-                    foreach (var i in p.Slots.Where(s => s.Value.Target is { IsCommand: false } m && !names.Contains(m.Machine)).Select(s => s.Key).ToList()) p.Slots.Remove(i);
-                    p.Direct.RemoveAll(e => e.Target is { IsCommand: false } m && !names.Contains(m.Machine));
+                    foreach (var i in p.Slots.Where(s => s.Value.Target is { } m && !m.MachineNames().All(names.Contains)).Select(s => s.Key).ToList()) p.Slots.Remove(i);
+                    p.Direct.RemoveAll(e => e.Target is { } m && !m.MachineNames().All(names.Contains));
                 }
-            kept.Global?.RemoveAll(e => e.Target is { IsCommand: false } m && !names.Contains(m.Machine));
+            kept.Global?.RemoveAll(e => e.Target is { } m && !m.MachineNames().All(names.Contains));
             if (kept.IsEmpty) return;
             var stream = save.CreateSubSection(SubSectionName);
             if (stream == null) return;

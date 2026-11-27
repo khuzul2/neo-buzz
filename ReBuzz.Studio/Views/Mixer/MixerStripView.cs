@@ -17,6 +17,7 @@ using Avalonia.Media;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Core.Session;
+using ReBuzz.Midi.Mapping;
 using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Views.Machines;
 using ReBuzz.Studio.Views.Session;
@@ -82,6 +83,9 @@ namespace ReBuzz.Studio.Views.Mixer
         double masterHoldDb = double.NegativeInfinity;
 
         public StripSpec Spec { get; private set; }
+
+        /// <summary>MM2: the strip is one of the eight tracks of the controllers' bank (outlined).</summary>
+        internal bool IsInBank { get; private set; }
         public StripKind Kind => Spec.Kind;
         public IMachine Machine => Spec.Machine;
         public MixerDensity Density => density;
@@ -263,6 +267,7 @@ namespace ReBuzz.Studio.Views.Mixer
                 ToolTip.SetTip(pan, "Pan: the pan of the machine's output connection(s)\ndrag or wheel · Shift for fine · double-click: centre");
                 AutomationProperties.SetName(pan, $"Pan of {spec.Name}");
                 WirePan();
+                Midi.MidiMap.SetTarget(pan, () => MapTarget.Mixer(MixerControl.Pan, Spec.Id));
                 Row(pan);
             }
             else
@@ -282,6 +287,7 @@ namespace ReBuzz.Studio.Views.Mixer
                 : "Volume: the amp of the machine's output connection(s), the same as in the Machine View\ndrag or wheel · Shift for fine · double-click: 0 dB");
             AutomationProperties.SetName(fader, $"Volume of {spec.Name}");
             WireFader();
+            Midi.MidiMap.SetTarget(fader, () => master ? MapTarget.Mixer(MixerControl.Master) : MapTarget.Mixer(MixerControl.Volume, Spec.Id));
             meter = new MeterBar { Width = full ? 14 : 11, MinHeight = fader.MinHeight, Margin = new Thickness(6, 0, 0, 0) };
             var faderRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 0) };
             faderRow.Children.Add(fader);
@@ -357,6 +363,8 @@ namespace ReBuzz.Studio.Views.Mixer
                 }
                 AutomationProperties.SetName(onButton, $"On {spec.Name}");
                 AutomationProperties.SetName(soloButton, $"Solo {spec.Name}");
+                Midi.MidiMap.SetTarget(onButton, () => MapTarget.Mixer(MixerControl.Mute, Spec.Id));
+                Midi.MidiMap.SetTarget(soloButton, () => MapTarget.Mixer(MixerControl.Solo, Spec.Id));
             }
             Row(buttons);
             Child = grid;
@@ -384,6 +392,8 @@ namespace ReBuzz.Studio.Views.Mixer
             meter = meterBar;
             WireFader();
             WirePan();
+            Midi.MidiMap.SetTarget(faderBar, () => MapTarget.Mixer(MixerControl.Volume, Spec.Id));
+            Midi.MidiMap.SetTarget(panBar, () => MapTarget.Mixer(MixerControl.Pan, Spec.Id));
             row.Children.Add(faderBar);
             row.Children.Add(meterBar);
             row.Children.Add(panBar);
@@ -453,6 +463,8 @@ namespace ReBuzz.Studio.Views.Mixer
             ToolTip.SetTip(send, $"Send to {target.Name} (return {MixerModel.ReturnLetter(r)})\ndrag or wheel · Shift for fine · double-click: off");
             AutomationProperties.SetName(send, $"Send {MixerModel.ReturnLetter(r)} of {Spec.Name}");
             WireSend(send, target);
+            string returnName = target.Name;
+            Midi.MidiMap.SetTarget(send, () => MapTarget.Mixer(MixerControl.Send, Spec.Id, 0, returnName));
             sends.Add(send);
             sendTargets.Add(target);
             return send;
@@ -710,8 +722,11 @@ namespace ReBuzz.Studio.Views.Mixer
             }
             if (colourMark != null) colourMark.Background = ColourBrush();
             bool selected = Spec.Machine != null && StudioSelection.For(Core).Machine == Spec.Machine;
-            if (density != MixerDensity.Header) BorderBrush = selected ? StudioTokens.AccentBrush : StudioTokens.SurfaceBorderBrush;
-            if (density != MixerDensity.Header) BorderThickness = selected ? new Thickness(2) : new Thickness(1);
+            // MM2: the eight tracks of the controllers' bank have a dashed-looking outline of their own (a warm one: the selected strip's is the accent).
+            bool inBank = Spec.Kind == StripKind.Track && Core.MidiMapping is { } mm && mm.BankInUse && mm.IsInBank(Spec.Id);
+            if (density != MixerDensity.Header) BorderBrush = selected ? StudioTokens.AccentBrush : inBank ? StudioTokens.WarningBrush : StudioTokens.SurfaceBorderBrush;
+            if (density != MixerDensity.Header) BorderThickness = selected || inBank ? new Thickness(2) : new Thickness(1);
+            IsInBank = inBank;
         }
 
         /// <summary>Moves the meter to the latest peak; it falls by at most <paramref name="fall"/> and the held peak waits a second and a half.</summary>

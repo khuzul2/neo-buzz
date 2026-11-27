@@ -115,7 +115,7 @@ namespace ReBuzz.Studio.Views.Device
                 "Out of view while \"Show hidden\" is off (kept for this kind of machine)"));
             items.Add(new Separator());
             // Fork (MM1): the old Bind menu is the MIDI popover now (scope, range, takeover, listening); an old binding shows there as a global map on any device.
-            items.Add(Item("_Bind to MIDI Controller", () => OpenMapPopover?.Invoke(machine, p), !p.IsInput && p.Parameter.Type != ParameterType.Note && OpenMapPopover != null));
+            items.Add(Item("_Bind to MIDI Controller", () => OpenMapPopover?.Invoke(machine, p), p.Parameter.Type != ParameterType.Note && OpenMapPopover != null));
             items.Add(Item("_Unbind All", () => machine.UnbindAllMIDIControllers()));
             items.Add(new MenuItem { Header = "_Attributes", IsEnabled = machine.Attributes.Count > 0, ItemsSource = AttributeItems(machine) });
             int tracks = machine.TrackCount;

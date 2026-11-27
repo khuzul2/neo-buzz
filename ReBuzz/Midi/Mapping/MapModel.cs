@@ -29,7 +29,17 @@ namespace ReBuzz.Midi.Mapping
     /// <summary>What happens when the control and the parameter disagree: wait until the control passes the value, jump to it, or scale so both meet at the ends.</summary>
     public enum Takeover : byte { Pickup, Jump, Scale }
 
-    public enum MapCommand : byte { Play, Stop, Record, Loop, PreviousTrack, NextTrack, SelectTrack, Arm, Mute, Solo }
+    public enum MapCommand : byte
+    {
+        Play, Stop, Record, Loop, PreviousTrack, NextTrack, SelectTrack, Arm, Mute, Solo,
+        // MM2: the bank of eight tracks (and the scene window) the mixer targets "track n of the current bank" and a clip grid follow.
+        BankLeft, BankRight, BankLeft8, BankRight8, SceneUp, SceneDown,
+        // MM2: what a clip-grid controller's buttons do. Index is a bank track (1 to 8), a row of the scene window (0 from the top), or for a slot row * 8 + column.
+        SelectBankTrack, ArmBankTrack, StopClipBankTrack, StopAllClips, LaunchScene, LaunchSlot,
+    }
+
+    /// <summary>MM2: what a mixer target drives: a strip's fader, pan, a send, its On (mute) or Solo, or the Master's fader.</summary>
+    public enum MixerControl : byte { Volume, Pan, Send, Mute, Solo, Master }
 
     /// <summary>A control of a controller.</summary>
     public readonly record struct MapSource(string Device, MapKind Kind, int Channel, int Number)
@@ -115,13 +125,37 @@ namespace ReBuzz.Midi.Mapping
         /// <summary>The parameter key of a track parameter starts with this (a global's is its name), as the pins and locks do.</summary>
         public const string TrackPrefix = "T:";
 
+        /// <summary>MM2: the parameter key of an Input group parameter (the amp or pan of an input of a machine) starts with this; its track is the input's number.</summary>
+        public const string InputPrefix = "I:";
+
+        /// <summary>MM2: a bank holds this many tracks.</summary>
+        public const int BankSize = 8;
+
         MapTarget() { }
 
         public static MapTarget Parameter(string machine, string param, int track = 0) => new MapTarget { Machine = machine ?? "", Param = param ?? "", Track = Math.Max(0, track) };
 
         public static MapTarget Command(MapCommand command, int index = 0) => new MapTarget { Cmd = command, Index = Math.Max(0, index) };
 
+        /// <summary>
+        /// MM2: a control of the mixer. <paramref name="strip"/> is the strip's id in the track model ("track:Bass", "group:Drums", "return:Hall"),
+        /// or <paramref name="bank"/> (1 to 8) is "track n of the current bank" instead; <paramref name="send"/> names the return of a send.
+        /// The Master's fader needs neither.
+        /// </summary>
+        public static MapTarget Mixer(MixerControl control, string strip = "", int bank = 0, string send = "") =>
+            new MapTarget { Mix = control, Strip = control == MixerControl.Master ? "" : bank > 0 ? "" : strip ?? "", Bank = control == MixerControl.Master ? 0 : Math.Clamp(bank, 0, BankSize), Send = control == MixerControl.Send ? send ?? "" : "" };
+
         public bool IsCommand => Cmd.HasValue;
+
+        /// <summary>MM2: a mixer control (see <see cref="Mixer"/>).</summary>
+        public bool IsMixer => Mix.HasValue;
+        public MixerControl? Mix { get; private init; }
+        /// <summary>The mixer strip's id, or "" (a bank track, the Master).</summary>
+        public string Strip { get; private init; } = "";
+        /// <summary>1 to 8: track n of the current bank; 0: a fixed strip.</summary>
+        public int Bank { get; private init; }
+        /// <summary>The return machine a send goes to.</summary>
+        public string Send { get; private init; } = "";
         public MapCommand? Cmd { get; private init; }
         /// <summary>The track number of Select track (1 is the first).</summary>
         public int Index { get; private init; }
@@ -131,16 +165,41 @@ namespace ReBuzz.Midi.Mapping
 
         public bool IsTrackParam => Param.StartsWith(TrackPrefix, StringComparison.Ordinal);
 
-        /// <summary>The parameter's name without the key's prefix.</summary>
-        public string ParamName => IsTrackParam ? Param.Substring(TrackPrefix.Length) : Param;
+        /// <summary>MM2: a parameter of the machine's Input group (its Track is the input).</summary>
+        public bool IsInputParam => Param.StartsWith(InputPrefix, StringComparison.Ordinal);
 
-        public MapTarget OnMachine(string machine) => IsCommand ? this : Parameter(machine, Param, Track);
+        /// <summary>The parameter's name without the key's prefix.</summary>
+        public string ParamName => IsTrackParam ? Param.Substring(TrackPrefix.Length) : IsInputParam ? Param.Substring(InputPrefix.Length) : Param;
+
+        public MapTarget OnMachine(string machine) => IsCommand || IsMixer ? this : Parameter(machine, Param, Track);
+
+        /// <summary>The target after a machine was renamed: a mixer strip's id carries its machine's name.</summary>
+        public MapTarget Renamed(string oldName, string newName)
+        {
+            if (IsCommand) return this;
+            if (!IsMixer) return Machine == oldName ? Parameter(newName, Param, Track) : this;
+            bool stripHit = Strip.Length > 0 && Strip.Substring(Strip.IndexOf(':') + 1) == oldName;
+            bool sendHit = Send == oldName;
+            if (!stripHit && !sendHit) return this;
+            string strip = stripHit ? Strip.Substring(0, Strip.IndexOf(':') + 1) + newName : Strip;
+            return Mixer(Mix.Value, strip, Bank, sendHit ? newName : Send);
+        }
+
+        /// <summary>The names of the machines this target needs in the song (a mixer strip's, a send's return); empty for a command, the Master's fader or a bank track.</summary>
+        public IEnumerable<string> MachineNames()
+        {
+            if (IsCommand) yield break;
+            if (!IsMixer) { yield return Machine; yield break; }
+            if (Strip.Length > 0) yield return Strip.Substring(Strip.IndexOf(':') + 1);
+            if (Send.Length > 0) yield return Send;
+        }
 
         public bool Equals(MapTarget other) =>
-            other != null && Cmd == other.Cmd && Index == other.Index && Track == other.Track &&
-            string.Equals(Machine, other.Machine, StringComparison.Ordinal) && string.Equals(Param, other.Param, StringComparison.Ordinal);
+            other != null && Cmd == other.Cmd && Index == other.Index && Track == other.Track && Mix == other.Mix && Bank == other.Bank &&
+            string.Equals(Machine, other.Machine, StringComparison.Ordinal) && string.Equals(Param, other.Param, StringComparison.Ordinal) &&
+            string.Equals(Strip, other.Strip, StringComparison.Ordinal) && string.Equals(Send, other.Send, StringComparison.Ordinal);
         public override bool Equals(object obj) => Equals(obj as MapTarget);
-        public override int GetHashCode() => HashCode.Combine(Cmd, Index, Machine, Param, Track);
+        public override int GetHashCode() => HashCode.Combine(Cmd, Index, Machine, Param, Track, Mix, HashCode.Combine(Strip, Bank, Send));
 
         public static string CommandText(MapCommand command, int index = 0) => command switch
         {
@@ -153,20 +212,58 @@ namespace ReBuzz.Midi.Mapping
             MapCommand.SelectTrack => "Select track " + Math.Max(1, index).ToString(CultureInfo.InvariantCulture),
             MapCommand.Arm => "Arm the selected track",
             MapCommand.Mute => "Mute the selected track",
-            _ => "Solo the selected track",
+            MapCommand.Solo => "Solo the selected track",
+            MapCommand.BankLeft => "Bank left by 1",
+            MapCommand.BankRight => "Bank right by 1",
+            MapCommand.BankLeft8 => "Bank left by 8",
+            MapCommand.BankRight8 => "Bank right by 8",
+            MapCommand.SceneUp => "Scenes up",
+            MapCommand.SceneDown => "Scenes down",
+            MapCommand.SelectBankTrack => "Select bank track " + Math.Max(1, index).ToString(CultureInfo.InvariantCulture),
+            MapCommand.ArmBankTrack => "Arm bank track " + Math.Max(1, index).ToString(CultureInfo.InvariantCulture),
+            MapCommand.StopClipBankTrack => "Stop the clip of bank track " + Math.Max(1, index).ToString(CultureInfo.InvariantCulture),
+            MapCommand.StopAllClips => "Stop all clips",
+            MapCommand.LaunchScene => "Launch scene row " + (Math.Max(0, index) + 1).ToString(CultureInfo.InvariantCulture),
+            _ => "Launch slot " + (Math.Max(0, index) % BankSize + 1).ToString(CultureInfo.InvariantCulture) + "/" + (Math.Max(0, index) / BankSize + 1).ToString(CultureInfo.InvariantCulture),
         };
 
+        /// <summary>"Mixer · Bass · Volume", "Mixer · Bank track 3 · Send Hall", "Mixer · Master · Volume".</summary>
+        string MixerText()
+        {
+            string what = Mix.Value switch
+            {
+                MixerControl.Volume => "Volume",
+                MixerControl.Pan => "Pan",
+                MixerControl.Send => "Send " + Send,
+                MixerControl.Mute => "On",
+                MixerControl.Solo => "Solo",
+                _ => "Volume",
+            };
+            string who = Mix.Value == MixerControl.Master ? "Master" : Bank > 0 ? "Bank track " + Bank.ToString(CultureInfo.InvariantCulture) : Strip.Substring(Strip.IndexOf(':') + 1);
+            return "Mixer · " + who + " · " + what;
+        }
+
         /// <summary>"Neo Delay · Feedback", or the command's name.</summary>
-        public string Text => IsCommand ? CommandText(Cmd.Value, Index) : Machine + " · " + ParamName;
+        public string Text => IsCommand ? CommandText(Cmd.Value, Index) : IsMixer ? MixerText() : Machine + " · " + (IsInputParam ? "Input " + (Track + 1).ToString(CultureInfo.InvariantCulture) + " " : "") + ParamName;
 
         public override string ToString() => Text;
+
+        static bool TakesIndex(MapCommand c) => c is MapCommand.SelectTrack or MapCommand.SelectBankTrack or MapCommand.ArmBankTrack or MapCommand.StopClipBankTrack or MapCommand.LaunchScene or MapCommand.LaunchSlot;
 
         internal void Write(XElement e)
         {
             if (IsCommand)
             {
                 e.SetAttributeValue("command", Cmd.Value.ToString());
-                if (Cmd.Value == MapCommand.SelectTrack) e.SetAttributeValue("index", Index);
+                if (TakesIndex(Cmd.Value)) e.SetAttributeValue("index", Index);
+                return;
+            }
+            if (IsMixer)
+            {
+                e.SetAttributeValue("mixer", Mix.Value.ToString().ToLowerInvariant());
+                if (Strip.Length > 0) e.SetAttributeValue("strip", Strip);
+                if (Bank > 0) e.SetAttributeValue("bank", Bank);
+                if (Send.Length > 0) e.SetAttributeValue("send", Send);
                 return;
             }
             e.SetAttributeValue("machine", Machine);
@@ -178,7 +275,16 @@ namespace ReBuzz.Midi.Mapping
         {
             string command = (string)e.Attribute("command");
             if (command != null)
-                return Enum.TryParse<MapCommand>(command, out var c) ? Command(c, Math.Max(1, MapXml.Int(e, "index", 1))) : null;
+                return Enum.TryParse<MapCommand>(command, out var c) ? Command(c, !TakesIndex(c) ? 0 : Math.Max(c is MapCommand.LaunchScene or MapCommand.LaunchSlot ? 0 : 1, MapXml.Int(e, "index", 1))) : null;
+            if ((string)e.Attribute("mixer") is { } mixer)
+            {
+                if (!Enum.TryParse<MixerControl>(mixer, true, out var control)) return null;
+                string strip = (string)e.Attribute("strip") ?? "", send = (string)e.Attribute("send") ?? "";
+                int bank = Math.Clamp(MapXml.Int(e, "bank", 0), 0, BankSize);
+                if (control != MixerControl.Master && bank == 0 && strip.IndexOf(':') < 0) return null;
+                if (control == MixerControl.Send && send.Length == 0) return null;
+                return Mixer(control, strip, bank, send);
+            }
             string machine = (string)e.Attribute("machine"), param = (string)e.Attribute("param");
             if (string.IsNullOrEmpty(machine) || string.IsNullOrEmpty(param)) return null;
             return Parameter(machine, param, Math.Clamp(MapXml.Int(e, "track", 0), 0, 255));
@@ -198,6 +304,14 @@ namespace ReBuzz.Midi.Mapping
         public bool Invert { get; set; }
         public Takeover Takeover { get; set; } = Takeover.Pickup;
 
+        /// <summary>
+        /// MM2 (map version 2): the target's own range, as it was when the map was saved: <see cref="Min"/> and <see cref="Max"/> are shares of it.
+        /// When the parameter's range grows later (an enum gains values at its end) the map keeps landing on the same raw values. Null (a version 1
+        /// map, a mixer target, a command): the range the parameter has now.
+        /// </summary>
+        public int? RawMin { get; set; }
+        public int? RawMax { get; set; }
+
         public bool IsFullRange => Min <= 0 && Max >= 1;
 
         public virtual MapDrive CloneDrive() => (MapDrive)MemberwiseClone();
@@ -212,6 +326,11 @@ namespace ReBuzz.Midi.Mapping
             if (Max < 1) e.SetAttributeValue("max", Max.ToString("0.####", CultureInfo.InvariantCulture));
             if (Invert) e.SetAttributeValue("invert", "true");
             if (Takeover != Takeover.Pickup) e.SetAttributeValue("takeover", Takeover.ToString().ToLowerInvariant());
+            if (RawMin.HasValue && RawMax.HasValue)
+            {
+                e.SetAttributeValue("rawmin", RawMin.Value);
+                e.SetAttributeValue("rawmax", RawMax.Value);
+            }
         }
 
         internal void ReadDrive(XElement e)
@@ -221,6 +340,12 @@ namespace ReBuzz.Midi.Mapping
             if (Max < Min) (Min, Max) = (Max, Min);
             Invert = (string)e.Attribute("invert") == "true";
             Takeover = Enum.TryParse<Takeover>((string)e.Attribute("takeover"), true, out var t) ? t : Takeover.Pickup;
+            RawMin = RawMax = null;
+            if (e.Attribute("rawmin") != null && e.Attribute("rawmax") != null)
+            {
+                int lo = MapXml.Int(e, "rawmin", 0), hi = MapXml.Int(e, "rawmax", -1);
+                if (hi >= lo) { RawMin = lo; RawMax = hi; }
+            }
         }
     }
 
@@ -338,7 +463,8 @@ namespace ReBuzz.Midi.Mapping
     /// <summary>What is saved in a song: the track pages, and (when the song has its own) the global entries.</summary>
     public sealed class SongMap
     {
-        public const int FormatVersion = 1;
+        /// <summary>2 (MM2): maps may carry the target's raw range, mixer targets and the bank commands. A version 1 map reads as it did.</summary>
+        public const int FormatVersion = 2;
 
         public List<TrackPages> Tracks { get; } = new List<TrackPages>();
 
@@ -436,11 +562,17 @@ namespace ReBuzz.Midi.Mapping
         /// <summary>Devices whose notes do not follow the selected track (control surfaces, pad-only devices).</summary>
         public HashSet<string> NoKeys { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>MM2: what a person set per controller (Preferences ▸ Controllers): role, profile, output, knob group size, takeover. A controller with none is all defaults.</summary>
+        public List<DeviceSetting> Devices { get; } = new List<DeviceSetting>();
+
+        public DeviceSetting SettingOf(string device) => Devices.FirstOrDefault(d => string.Equals(d.Device, device, StringComparison.OrdinalIgnoreCase));
+
         public ComputerMap Clone()
         {
             var c = new ComputerMap();
             c.Global.AddRange(Global.Select(e => e.Clone()));
             c.Groups.AddRange(Groups.Select(g => g.Clone()));
+            c.Devices.AddRange(Devices.Select(d => d.Clone()));
             foreach (var d in NoKeys) c.NoKeys.Add(d);
             return c;
         }
@@ -464,6 +596,16 @@ namespace ReBuzz.Midi.Mapping
                 root.Add(group);
             }
             foreach (var d in NoKeys.OrderBy(d => d, StringComparer.OrdinalIgnoreCase)) root.Add(new XElement("NoKeys", new XAttribute("device", d)));
+            foreach (var d in Devices.Where(d => !d.IsDefault).OrderBy(d => d.Device, StringComparer.OrdinalIgnoreCase))
+            {
+                var e = new XElement("Controller", new XAttribute("device", d.Device));
+                if (d.Role.HasValue) e.SetAttributeValue("role", d.Role.Value.ToString().ToLowerInvariant());
+                if (d.Profile != DeviceSetting.AutoProfile) e.SetAttributeValue("profile", d.Profile);
+                if (d.Output.Length > 0) e.SetAttributeValue("output", d.Output);
+                if (d.KnobGroup > 0) e.SetAttributeValue("knobs", d.KnobGroup);
+                if (d.Takeover != Takeover.Pickup) e.SetAttributeValue("takeover", d.Takeover.ToString().ToLowerInvariant());
+                root.Add(e);
+            }
             return root;
         }
 
@@ -492,6 +634,20 @@ namespace ReBuzz.Midi.Mapping
                     if (group.Count > 0) map.Groups.Add(group);
                 }
                 foreach (var n in root.Elements("NoKeys")) if ((string)n.Attribute("device") is { Length: > 0 } d) map.NoKeys.Add(d);
+                foreach (var n in root.Elements("Controller"))
+                {
+                    if ((string)n.Attribute("device") is not { Length: > 0 } device || map.SettingOf(device) != null) continue;
+                    var setting = new DeviceSetting
+                    {
+                        Device = device,
+                        Profile = (string)n.Attribute("profile") ?? DeviceSetting.AutoProfile,
+                        Output = (string)n.Attribute("output") ?? "",
+                        KnobGroup = Math.Clamp(MapXml.Int(n, "knobs", 0), 0, 64),
+                        Takeover = Enum.TryParse<Takeover>((string)n.Attribute("takeover"), true, out var tk) ? tk : Takeover.Pickup,
+                    };
+                    if (Enum.TryParse<DeviceRole>((string)n.Attribute("role"), true, out var role)) setting.Role = role;
+                    map.Devices.Add(setting);
+                }
             }
             catch (System.Xml.XmlException)
             {

@@ -19,7 +19,8 @@ namespace ReBuzz.Agent
         static readonly string[] Kinds = { "cc", "note", "bend", "pc" };
         static readonly string[] Encoders = { "absolute", "offset64", "twos" };
         static readonly string[] Takeovers = { "pickup", "jump", "scale" };
-        static readonly string[] Commands = { "play", "stop", "record", "loop", "previous_track", "next_track", "select_track", "arm", "mute", "solo" };
+        static readonly string[] Commands = { "play", "stop", "record", "loop", "previous_track", "next_track", "select_track", "arm", "mute", "solo", "bank_left", "bank_right", "bank_left_8", "bank_right_8", "scene_up", "scene_down", "select_bank_track", "arm_bank_track", "stop_clip_bank_track", "stop_all_clips", "launch_scene", "launch_slot" };
+        static readonly string[] MixerControls = { "volume", "pan", "send", "on", "solo", "master" };
 
         static JsonObject ControlSchema() => Object(null,
             Opt("device", String("The controller's name as controller_list gives it (\"\" or none: any device)")),
@@ -41,6 +42,11 @@ namespace ReBuzz.Agent
             Opt("machine", String("The machine")),
             Opt("parameter", String("The parameter (a track parameter as \"T:Name\")")),
             Opt("command", String("The command")),
+            Opt("index", Integer("The number a command carries (select_track, the bank commands, launch_scene, launch_slot)")),
+            Opt("mixer", String("The mixer control: volume, pan, send, on, solo or master")),
+            Opt("strip", String("The mixer strip of the mapping (track:Name, group:Name or return:Name)")),
+            Opt("bank", Integer("Track n (1 to 8) of the current bank")),
+            Opt("send", String("The return of a send")),
             Req("range", String("The part of the parameter's range the control covers")),
             Req("invert", Boolean("Reversed")),
             Req("takeover", String("pickup, jump or scale")),
@@ -69,7 +75,13 @@ namespace ReBuzz.Agent
                 o["channel"] = i.Source.Channel + 1;
                 o["number"] = i.Source.Number;
             }
-            if (i.Target is { IsCommand: true } c) o["command"] = CommandName(c.Cmd!.Value);
+            if (i.Target is { IsCommand: true } c) { o["command"] = CommandName(c.Cmd!.Value); if (c.Index > 0) o["index"] = c.Index; }
+            else if (i.Target is { IsMixer: true } mx)
+            {
+                o["mixer"] = MixerName(mx.Mix!.Value);
+                if (mx.Bank > 0) o["bank"] = mx.Bank; else if (mx.Strip.Length > 0) o["strip"] = mx.Strip;
+                if (mx.Send.Length > 0) o["send"] = mx.Send;
+            }
             else if (i.Target != null) { o["machine"] = i.Target.Machine; o["parameter"] = i.Target.Param; if (i.Target.IsTrackParam) o["track"] = i.Target.Track; }
             if (i.Fallback) o["fallback"] = true;
             if (i.Legacy) o["legacy"] = true;
@@ -81,8 +93,22 @@ namespace ReBuzz.Agent
             MapCommand.PreviousTrack => "previous_track",
             MapCommand.NextTrack => "next_track",
             MapCommand.SelectTrack => "select_track",
+            MapCommand.BankLeft => "bank_left",
+            MapCommand.BankRight => "bank_right",
+            MapCommand.BankLeft8 => "bank_left_8",
+            MapCommand.BankRight8 => "bank_right_8",
+            MapCommand.SceneUp => "scene_up",
+            MapCommand.SceneDown => "scene_down",
+            MapCommand.SelectBankTrack => "select_bank_track",
+            MapCommand.ArmBankTrack => "arm_bank_track",
+            MapCommand.StopClipBankTrack => "stop_clip_bank_track",
+            MapCommand.StopAllClips => "stop_all_clips",
+            MapCommand.LaunchScene => "launch_scene",
+            MapCommand.LaunchSlot => "launch_slot",
             _ => c.ToString().ToLowerInvariant(),
         };
+
+        static string MixerName(MixerControl m) => m == MixerControl.Mute ? "on" : m.ToString().ToLowerInvariant();
 
         static MapSource SourceOf(ToolContext c)
         {
@@ -135,13 +161,42 @@ namespace ReBuzz.Agent
                     "arm" => MapTarget.Command(MapCommand.Arm),
                     "mute" => MapTarget.Command(MapCommand.Mute),
                     "solo" => MapTarget.Command(MapCommand.Solo),
+                    "bank_left" => MapTarget.Command(MapCommand.BankLeft),
+                    "bank_right" => MapTarget.Command(MapCommand.BankRight),
+                    "bank_left_8" => MapTarget.Command(MapCommand.BankLeft8),
+                    "bank_right_8" => MapTarget.Command(MapCommand.BankRight8),
+                    "scene_up" => MapTarget.Command(MapCommand.SceneUp),
+                    "scene_down" => MapTarget.Command(MapCommand.SceneDown),
+                    "select_bank_track" => MapTarget.Command(MapCommand.SelectBankTrack, index),
+                    "arm_bank_track" => MapTarget.Command(MapCommand.ArmBankTrack, index),
+                    "stop_clip_bank_track" => MapTarget.Command(MapCommand.StopClipBankTrack, index),
+                    "stop_all_clips" => MapTarget.Command(MapCommand.StopAllClips),
+                    "launch_scene" => MapTarget.Command(MapCommand.LaunchScene, Math.Max(0, index - 1)),
+                    "launch_slot" => MapTarget.Command(MapCommand.LaunchSlot, Math.Max(0, index - 1)),
                     var other => throw new ToolError($"command: \"{other}\" is not one of {string.Join(", ", Commands)}."),
                 };
             }
+            string mixer = text("mixer");
+            if (mixer.Length > 0)
+            {
+                var control = mixer.ToLowerInvariant() switch
+                {
+                    "volume" => MixerControl.Volume,
+                    "pan" => MixerControl.Pan,
+                    "send" => MixerControl.Send,
+                    "on" or "mute" => MixerControl.Mute,
+                    "solo" => MixerControl.Solo,
+                    "master" => MixerControl.Master,
+                    var other => throw new ToolError($"mixer: \"{other}\" is not one of {string.Join(", ", MixerControls)}."),
+                };
+                return MapTarget.Mixer(control, text("strip"), (int?)Num(args["bank"]) ?? 0, text("send"));
+            }
             string machine = text("machine"), parameter = text("parameter");
-            if (machine.Length == 0 || parameter.Length == 0) throw new ToolError("Give a target: machine and parameter, or a command.");
+            if (machine.Length == 0 || parameter.Length == 0) throw new ToolError("Give a target: machine and parameter, a mixer control or a command.");
             var m = SongModel.Machine(core, machine);
             int track = (int?)Num(args["track"]) ?? 0;
+            if (parameter.StartsWith(MapTarget.InputPrefix, StringComparison.Ordinal))
+                return MapTarget.Parameter(m.Name, parameter, track);
             var p = SongModel.Param(m, SongModel.Params(m), parameter, track > 0);
             return MapTarget.Parameter(m.Name, p.IsTrack ? MapTarget.TrackPrefix + p.Name : p.Name, p.IsTrack ? track : 0);
         }
@@ -260,7 +315,11 @@ namespace ReBuzz.Agent
                     Opt("parameter", String("The target parameter (a name, or #index)")),
                     Opt("track", Integer("Track of a track parameter (default 0)", 0, 255)),
                     Opt("command", String("A command instead of a parameter", Commands)),
-                    Opt("index", Integer("The track number of select_track (from 1)", 1, 255)),
+                    Opt("index", Integer("The track number of select_track and the bank commands (from 1); launch_scene's row and launch_slot's slot (row * 8 + column + 1)", 1, 255)),
+                    Opt("mixer", String("A mixer control instead of a parameter: volume, pan, send, on, solo (of a strip) or master (the Master's fader)", MixerControls)),
+                    Opt("strip", String("The mixer strip: track:Name, group:Name or return:Name")),
+                    Opt("bank", Integer("Instead of a strip: track n (1 to 8) of the current bank of eight tracks the bank commands move", 1, 8)),
+                    Opt("send", String("The return a send goes to (mixer=send)")),
                     Opt("min", Number("Low end of the part of the range, 0..1 (default 0)", 0, 1)),
                     Opt("max", Number("High end, 0..1 (default 1)", 0, 1)),
                     Opt("invert", Boolean("Reverse the control")),
@@ -345,6 +404,10 @@ namespace ReBuzz.Agent
                     Opt("track", Integer("Track of a track parameter", 0, 255)),
                     Opt("command", String("A command target", Commands)),
                     Opt("index", Integer("select_track's number", 1, 255)),
+                    Opt("mixer", String("A mixer control target", MixerControls)),
+                    Opt("strip", String("The mixer strip (track:Name, group:Name, return:Name)")),
+                    Opt("bank", Integer("Track n of the current bank (1 to 8)", 1, 8)),
+                    Opt("send", String("The return of a send")),
                     Opt("all", Boolean("Empty the scope")),
                     Opt("scope", String("track or global (with all)", "track", "global")),
                     Opt("track_id", String("With all and scope track: the track (\"*\": every track)"))),
