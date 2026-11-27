@@ -86,6 +86,9 @@
     <!-- The timing probe's machine (TestMachines/ClipProbe, docs/specs/clips.md §5.6), the same way. -->
     <MSBuild Projects="TestMachines\ClipProbe\ClipProbe.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_ClipProbeRestore=true" />
     <MSBuild Projects="TestMachines\ClipProbe\ClipProbe.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <!-- The several-output proof machine (TestMachines/MultiOut, docs/specs/multi-output.md), the same way. -->
+    <MSBuild Projects="TestMachines\MultiOut\MultiOut.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_MultiOutRestore=true" />
+    <MSBuild Projects="TestMachines\MultiOut\MultiOut.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
   <!-- The versioned state tests' effect with three state versions (docs/specs/machines.md §3.4), in the tests' Gear/Effects the same way. -->

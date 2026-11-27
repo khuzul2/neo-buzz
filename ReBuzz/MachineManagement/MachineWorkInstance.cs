@@ -104,6 +104,19 @@ namespace ReBuzz.MachineManagement
         // Fork (mastering-tools.md §4.1): this block goes through the latency-keeping bypass (MachineCore.BypassLatent).
         bool bypassLatent;
 
+        /// <summary>
+        /// Fork (docs/specs/multi-output.md): makes the buffers of every output the machine has (up to <see cref="MAX_MULTI_IO_CHANNELS"/>),
+        /// on the thread that makes or changes a connection, so the audio thread never allocates one the first time a connection uses an
+        /// output. Idempotent: a buffer that exists stays. Safe to call from any non-audio thread (the audio thread only reads the slots).
+        /// </summary>
+        internal void PrepareOutputs()
+        {
+            int outputs = Math.Min(Machine.OutputChannelCount, MAX_MULTI_IO_CHANNELS);
+            for (int i = 0; i < outputs && i < multiSamplesOutBuffers.Length; i++)
+                if (multiSamplesOutBuffers[i] == null)
+                    multiSamplesOutBuffers[i] = new Sample[256];
+        }
+
         readonly List<Sample[]> multiSamplesOut = new List<Sample[]>();
         readonly Sample[][] multiSamplesOutBuffers = new Sample[256][];
         readonly Sample[] silentBuffer = new Sample[256];
@@ -143,8 +156,9 @@ namespace ReBuzz.MachineManagement
                     for (int channelIndex = 0; channelIndex < channels.Length; channelIndex++)
                     {
                         int channel = channels[channelIndex];
-                        if (multiSamplesOutBuffers[channel] == null)
-                            multiSamplesOutBuffers[channel] = new Sample[256];
+                        // Fork (docs/specs/multi-output.md): an output's buffer is made when its connection is (PrepareOutputs, on the
+                        // UI or loading thread), never here: a channel the machine doesn't have, or has not had prepared, is silent.
+                        if (channel >= multiSamplesOut.Count || multiSamplesOutBuffers[channel] == null) continue;
 
                         multiSamplesOut[channel] = multiSamplesOutBuffers[channel];
                     }
@@ -190,7 +204,7 @@ namespace ReBuzz.MachineManagement
                     {
                         if (output.Destination.InputChannelCount == 0 || (output.Destination as MachineCore).Hidden) continue;
                         var outputConn = output as MachineConnectionCore;
-                        if (multiSamplesOut[outputConn.SourceChannel] != null)
+                        if (outputConn.SourceChannel < multiSamplesOut.Count && multiSamplesOut[outputConn.SourceChannel] != null)
                         {
                             outputConn.DoTap(multiSamplesOut[outputConn.SourceChannel], nSamples, true, buzz);
                         }

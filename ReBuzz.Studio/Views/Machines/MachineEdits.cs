@@ -103,12 +103,23 @@ namespace ReBuzz.Studio.Views.Machines
             if (mm.Count > 0) core.SongCore.MoveMachines(mm);
         }
 
-        /// <summary>A new wire, at 0 dB and centred (MachineControl's connect drag); false if Buzz's rules say no.</summary>
-        public static bool Connect(ReBuzzCore core, IMachine src, IMachine dst)
+        /// <summary>
+        /// A new wire, at 0 dB and centred (MachineControl's connect drag); false if Buzz's rules say no. <paramref name="output"/> is the
+        /// source's output it leaves from, 0-based (docs/specs/multi-output.md): 0, the main one, for a plain connect from the menu or a drop.
+        /// </summary>
+        public static bool Connect(ReBuzzCore core, IMachine src, IMachine dst, int output = 0)
         {
             if (src == null || dst == null || !core.SongCore.CanConnectMachines(src, dst)) return false;
-            core.SongCore.ConnectMachines(src, dst, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            if (output < 0 || output >= Math.Max(1, src.OutputChannelCount)) output = 0;
+            core.SongCore.ConnectMachines(src, dst, new[] { output }, new[] { 0 }, 0x4000, 0x4000);
             return true;
+        }
+
+        /// <summary>The wire to another output of its source (the Inspector's From output picker), one undo step.</summary>
+        public static void SetWireOutput(ReBuzzCore core, IMachineConnection wire, int output)
+        {
+            if (wire == null || output < 0 || output >= Math.Max(1, wire.Source.OutputChannelCount)) return;
+            AgentActions.SetConnectionOutput(core, wire, output);
         }
 
         /// <summary>Why Buzz's rules refuse a wire from src to dst, in plain words, or null if they allow it (P3d: shown when a drag is refused).</summary>
@@ -137,9 +148,11 @@ namespace ReBuzz.Studio.Views.Machines
                 Move(core, new[] { (machine, x, y) });
                 var src = wire.Source;
                 var dst = wire.Destination;
-                int srcChannel = wire.SourceChannel, dstChannel = wire.DestinationChannel, amp = wire.Amp;
+                // Fork (docs/specs/multi-output.md): the wire in front of the new machine keeps the output the old wire left from (all of them, if it read several).
+                var srcChannels = wire.SourceChannels.ToArray();
+                int dstChannel = wire.DestinationChannel, amp = wire.Amp;
                 core.SongCore.DisconnectMachines(wire);
-                core.SongCore.ConnectMachines(src, machine, new[] { srcChannel }, new[] { 0 }, amp, 0x4000);
+                core.SongCore.ConnectMachines(src, machine, srcChannels, new[] { 0 }, amp, 0x4000);
                 core.SongCore.ConnectMachines(machine, dst, new[] { 0 }, new[] { dstChannel }, 0x4000, 0x4000);
             }
         }
