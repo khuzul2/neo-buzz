@@ -1,0 +1,78 @@
+# Neo Prism factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoPrism
+# A preset that does not name a parameter takes its default (every section off, FFT 4096, Mix 100 %, Amount 100 %), so each preset says which
+# sections it wants on. The synced ones (Freeze every, Scramble sync) follow the song; with the song stopped they follow the tempo.
+machine "Neo Prism"
+
+preset "Freeze — Frozen Chord"
+comment "At the start of every bar the spectrum is caught and held for the whole bar, so whatever was playing turns into a steady, endless chord that steps to the next one on the bar line."
+Freeze trigger = Synced
+Freeze every = 1 bar
+Freeze length = 1 bar
+Hold blend = 100
+
+preset "Blur — Long Spectral Smear"
+comment "Every frequency's level follows the sound over almost two seconds: attacks soften into swells and every note leaves a long, ghostly tail behind it."
+Blur = On
+Blur time = 1800
+Smear = 2
+
+preset "Scramble — Bin Shuffle Glitch"
+comment "Seven in ten of the bins in each narrow band swap places, and the shuffle changes on every eighth note: the tone stays roughly where it is but breaks into a grainy, stepping glitch in time with the song."
+Scramble = On
+Scramble amount = 70
+Band width = 6
+Scramble sync = 1/8
+Scramble seed = 7
+
+preset "Pitch — Octave Up Shimmer"
+comment "Everything is shifted an octave up, smeared a little and sent through a dark 180 ms spectral echo that repeats, so each note blooms into a high, shimmering halo mixed in with the original."
+Pitch = On
+Semitones = 12
+Blur = On
+Blur time = 700
+Smear = 4
+Delay = On
+Low time = 180
+High time = 180
+Feedback = 60
+Damping = 40
+Mix = 60
+
+preset "Pitch — Formant Kept Fifth Down"
+comment "Every partial moves down a fifth while the broad spectral envelope stays put, so voices and instruments keep their body instead of turning into a growl; the shifted sound sits under the dry one."
+Pitch = On
+Semitones = -7
+Formant keep = On
+Mix = 70
+
+preset "Delay — Rising Spectral Echo"
+comment "The lows come back after 30 ms and the highs after 600 ms, over and over with a darker tail: every hit is followed by a bright echo that climbs up through the spectrum."
+Delay = On
+Low time = 30
+High time = 600
+Feedback = 55
+Damping = 25
+Mix = 70
+
+preset "Blur — Washed Pad"
+comment "A near four-second blur, a wide smear across frequency and a soft 120 ms echo melt any sound into a slow, wide pad with no attack and a long, even tail."
+Blur = On
+Blur time = 3800
+Smear = 20
+Delay = On
+Low time = 120
+High time = 120
+Feedback = 45
+Damping = 30
+Mix = 85
+
+preset "Scramble — Robot Scramble"
+comment "Neighbouring bins are swapped on every one of twenty shuffles a second and the whole spectrum is moved down a fourth and a bit: voices and beats turn metallic and robotic."
+Scramble = On
+Scramble amount = 100
+Band width = 3
+Scramble sync = Free
+Scramble rate = 20
+Scramble seed = 3
+Pitch = On
+Semitones = -5
