@@ -21,15 +21,14 @@ A guitar or bass amp for a DI signal: noise gate, preamp, tone stack, power stag
 |---|---|---|
 | Voicing | Classic rock | pick by gain; the knobs then fine-tune |
 | Gain | 20 dB | how hard the later stages are driven: 0-40 dB |
-| Bass, Mid, Treble | 50 % | the tone stack; a low Mid scoops, a high one pushes forward |
-| Sag | 30 % | power-supply droop: a slow compression that makes chords bloom |
-| Presence, Resonance | 40 %, 30 % | highs and lows of the power stage |
+| Bass | 50 % | the tone stack's low knob; the stack's knobs interact like the real thing |
+| Mid | 50 % | a low value scoops the middle, a high one pushes it forward |
+| Treble | 50 % | bite and sparkle |
 | Master | 60 % | how hard the power stage is driven; its level is made up |
 | Cabinet | Closed 4x12 | six made by code; Wave uses the song's wave in slot `Wave` as the cabinet |
-| Mic position | 30 % | 0 is the centre of the cone (bright), 100 % the edge (dark) |
-| Gate | -60 dB | opens at the level, closes 6 dB lower; the lowest setting is off |
-| Trim | 0 dB | the level into the amp; the editor's meter shows it |
 | Tuner | Off | On mutes the output and reads the note and cents (the editor shows them) |
+
+`Sag` (power-supply droop, a slow compression that makes chords bloom), `Presence` and `Resonance` (the highs and lows of the power stage), `Mic position` (0 the centre of the cone, bright; 100 % the edge, dark), `Gate` (about -60 dB for high gain: it opens at the level and closes 6 dB lower; the lowest setting is off) and `Trim` (the level into the amp; the editor's meter shows it) shape the rest.
 
 `Amount` (default 100 %) scales the drive: 0 % is the bypass (bit for bit the input, delayed by the latency), 200 % doubles the Gain in dB and `Master`. `Mix` blends the dry input in, delayed to match. `Output` sets the level in dB.
 
