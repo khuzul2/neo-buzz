@@ -590,14 +590,14 @@ namespace NeoBuzz.MachineTests
             }
 
             Assert.That(transitions.Count, Is.GreaterThanOrEqualTo(totalSteps));
-            int[] pattern = { 0, 7, 12 };
+            int[] cycle = { 0, 7, 12 };
             double worstErr = 0;
             for (int k = 0; k < totalSteps; k++)
             {
                 double ideal = k * expectedStepSamples;
                 double err = Math.Abs(transitions[k].Sample - ideal);
                 worstErr = Math.Max(worstErr, err);
-                Assert.That(transitions[k].Offset, Is.EqualTo(pattern[k % 3]), $"step {k} offset");
+                Assert.That(transitions[k].Offset, Is.EqualTo(cycle[k % 3]), $"step {k} offset");
                 Assert.That(err, Is.LessThanOrEqualTo(1.0), $"step {k} at {bpm} BPM landed at {transitions[k].Sample} vs ideal {ideal:F2}");
             }
             Measure.Report($"Neo Chip arp 1/32 at {bpm:F0} BPM ({expectedStepSamples:F2} smp/step): max step error {worstErr:F2} samples over {totalSteps} steps");
