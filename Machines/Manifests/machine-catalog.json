@@ -455,6 +455,18 @@
    "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords.",
    "note_in": true
   },
+  "Neo Pulse": {
+   "category": "Control",
+   "tags": [
+    "midi",
+    "notes",
+    "rhythmic",
+    "sequencer",
+    "tempo-sync"
+   ],
+   "use_for": "Eight-lane Euclidean and probability rhythm generator on note wires: 1 to 32 steps, accents, ratchets, dividers, swing, fill and seeded humanize for drums or synths.",
+   "note_out": true
+  },
   "Neo Sampler": {
    "category": "Samplers",
    "tags": [
