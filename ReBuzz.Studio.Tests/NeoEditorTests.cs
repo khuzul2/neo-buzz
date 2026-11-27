@@ -75,6 +75,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 675),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (966 x 605 before)
+            ("Neo Chip", "NeoChipEditor", "neo-chip-editor", 886, 496),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;

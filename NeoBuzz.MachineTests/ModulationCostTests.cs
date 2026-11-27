@@ -146,6 +146,7 @@ namespace NeoBuzz.MachineTests
                     r[0] = u;
                 };
             }),
+            ["Neo Chip"] = (NeoBuzz.Chip.Params.Table, v => Synth(new NeoBuzz.Chip.ChipEngine(v), (e, l, r, n) => ((NeoBuzz.Chip.ChipEngine)e).Process(l, r, n))),
         };
 
         static Action<float[], float[], int> Learn(NeoBuzz.Learn.MacroMap map, ParamValues v)

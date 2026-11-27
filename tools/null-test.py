@@ -146,6 +146,11 @@ CASES = [
     gen("poly-svf-parallel", "Neo Poly", None,
         [("F1 type", "SVF BP"), ("F1 reso", "70%"), ("F2 type", "HP"), ("F2 reso", "60%"), ("Routing", "Parallel"),
          ("Noise", "30%"), ("Noise colour", "100%"), ("O1 shape", 3), ("O2 level", "50%"), ("FM 1 → 2", 1.5)], KEYS),
+    # Neo Chip: BLEP/raw pulses, 15/7-bit LFSR noise, 16-step and hardware envelopes, tempo-synced arp, 4-bit DAC.
+    gen("chip-lead", "Neo Chip", "Lead — Square hero", [], LEAD),
+    gen("chip-arp", "Neo Chip", "Arp — Major sparkle", [], CHORDS),
+    gen("chip-raw-dac", "Neo Chip", "Raw — Lo-res grit", [], BASS),
+    gen("chip-noise-snare", "Neo Chip", "Drums — Noise snare", [], [n("C4", 0, 0.5), n("E4", 1, 0.5), n("G4", 2, 0.5)]),
     # Neo Organ (docs/specs/neo-organ.md): the tonewheel generator, percussion, the scanner, the drive and the rotary speaker.
     gen("organ-gospel", "Neo Organ", "Full — Full Gospel", [], CHORDS),
     gen("organ-jazz", "Neo Organ", "Jazz — Jazz Trio", [], CHORDS),

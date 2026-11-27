@@ -2528,6 +2528,41 @@ namespace ReBuzz.Studio.Tests
                     "Neo Lo-Fi with the retuned preset \"Vinyl — Dusty vinyl\" loaded: the four sections (Crush with the picture of a sine through the hold and the bit reduction, Noise, Motion, Output with Amount and Mix side by side, Amount first, over Tone and Output).");
                 LoFiShot("641-neo-lofi-amount", "LoFi 2", new[] { 400, 0, 562, 0, 100, 0, 0, 0, 300, 0, 402, 0, 0, 500, 1000, 458, 750 },
                     "Neo Lo-Fi with the retuned preset \"Crush — Crushed drums\" at an Amount of 150 %: the picture shows the crush the Amount makes (fewer bits, a lower hold) rather than the stored settings.");
+                void ChipShot(string id, string name, (string Param, int Raw)[] presetValues, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Chip", name);
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        foreach (var (paramName, rawVal) in presetValues)
+                            group.Parameters.First(p => p.Name == paramName).SetValue(0, rawVal);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Chip; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                ChipShot("645-neo-chip-editor", "Gallery Neo Chip",
+                    new[]
+                    {
+                        ("P1 duty", 0), ("P2 duty", 0), ("P3 duty", 1),
+                        ("Env attack", 81), ("Env decay", 622), ("Env sustain", 12), ("Env release", 499),
+                        ("Arp mode", 1), ("Arp steps", 3), ("Arp step 1", 24), ("Arp step 2", 28), ("Arp step 3", 31), ("Arp sync", 3),
+                        ("Stereo spread", 850), ("Volume", 870),
+                    },
+                    "Neo Chip with preset \"Arp — Major sparkle\" loaded: Channels (Pulse 1–3 and Noise strips), Envelope (live 16-step ADSR picture), Arpeggio & Motion, and Output.");
+                ChipShot("646-neo-chip-hardware", "Gallery Neo Chip 2",
+                    new[]
+                    {
+                        ("Voice mode", 2), ("Detune", 520), ("Raw", 1), ("Lo-res DAC", 1),
+                        ("P1 duty", 3), ("P2 duty", 0), ("P3 duty", 1),
+                        ("Env mode", 1), ("Env sync", 5), ("Env release", 514),
+                        ("Stereo spread", 800), ("Volume", 859),
+                    },
+                    "Neo Chip with preset \"Raw — Lo-res grit\" loaded: repeating Saw down hardware envelope staircase picture, Unison mode, Raw and Lo-res DAC lit.");
                 Try("660-neo-chord-editor", () =>
                 {
                     var m = Add("Neo Chord", "Chord");

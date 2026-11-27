@@ -113,6 +113,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Voice to MIDI"] = (NeoBuzz.VoiceToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.VoiceToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
             // audio-to-midi.md: Neo Audio to MIDI passes its input through at the Monitor level too.
             ["Neo Audio to MIDI"] = (NeoBuzz.AudioToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.AudioToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
+            // docs/specs/neo-chip.md: 3 pulse voices + LFSR noise; MIDI ch 1 drives pulse presets and noise-only drum presets (Noise MIDI ch = All).
+            ["Neo Chip"] = (NeoBuzz.Chip.Params.Table, (v, x) => RenderChip(v, x.Length)),
             // neo-chord.md: Neo Chord makes no audio (notes in, chords out); its presets only change which notes it sends.
             ["Neo Chord"] = (NeoBuzz.Chord.Params.Table, (v, x) => x),
             // neo-random.md: Neo Random is a control modulator; drive RandomEngine per 64-sample block and scale x cleanly inside [0.35, 1.0].
@@ -158,6 +160,7 @@ namespace NeoBuzz.MachineTests
         }
 
         static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Grain", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Neo Chip", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -200,6 +203,27 @@ namespace NeoBuzz.MachineTests
             for (int k = 0; k < notes.Length; k++) e.NoteOn(k, notes[k], 0.8f);
             for (int pos = 0; pos < length; pos += 256)
             {
+                int n = Math.Min(256, length - pos);
+                e.Process(l, r, n);
+                for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
+            }
+            return y;
+        }
+
+        /// <summary>Neo Chip: 3-note MIDI chord on channel 1 (melodic presets play pulse 1–3; drum presets with Noise MIDI ch = All play noise).</summary>
+        static float[] RenderChip(ParamValues v, int length)
+        {
+            var e = new NeoBuzz.Chip.ChipEngine(v);
+            e.SetSampleRate(Measure.Rate);
+            var y = new float[length];
+            var l = new float[256];
+            var r = new float[256];
+            int[] notes = { 57, 61, 64 };
+            for (int k = 0; k < notes.Length; k++) e.NoteOn(1000 + notes[k], notes[k], 0.8f, 0);
+            for (int pos = 0; pos < length; pos += 256)
+            {
+                if (pos <= length * 2 / 3 && pos + 256 > length * 2 / 3)
+                    for (int k = 0; k < notes.Length; k++) e.NoteOff(1000 + notes[k], notes[k], 0);
                 int n = Math.Min(256, length - pos);
                 e.Process(l, r, n);
                 for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
