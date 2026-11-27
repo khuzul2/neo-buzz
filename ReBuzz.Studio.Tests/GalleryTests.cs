@@ -2657,7 +2657,7 @@ namespace ReBuzz.Studio.Tests
                         try { System.IO.File.Delete(hiddenFile); } catch (System.IO.IOException) { }
                     }
                 });
-                Try("462-presets-dialog", () =>
+                Try("498-presets-dialog", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
                     var factory = m.GetPresetNames().Where(n => n != "<default>").Take(6).ToList();
@@ -2669,7 +2669,7 @@ namespace ReBuzz.Studio.Tests
                         w.Show();
                         w.Select("My bright lead");
                         Settle();
-                        Shot(w, "462-presets-dialog", "The Presets dialog (PRS1): the factory presets from Gear and the user's own from the settings folder, together; the user's are marked User. Delete is for the user's only (a factory preset can't be deleted); a user copy of a factory preset stands in for it until it is deleted.", "Device panel ▸ Presets ▸ Presets…");
+                        Shot(w, "498-presets-dialog", "The Presets dialog (PRS1): the factory presets from Gear and the user's own from the settings folder, together; the user's are marked User. Delete is for the user's only (a factory preset can't be deleted); a user copy of a factory preset stands in for it until it is deleted.", "Device panel ▸ Presets ▸ Presets…");
                     }
                     finally
                     {

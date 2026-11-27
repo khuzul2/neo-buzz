@@ -48,9 +48,6 @@
     </ItemGroup>
     <Copy SourceFiles="@(_FactoryGenerators)" DestinationFolder="$(OutDir)Gear/Generators" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(_FactoryEffects)" DestinationFolder="$(OutDir)Gear/Effects" SkipUnchangedFiles="true" />
-    <!-- The factory snapshot beside each (docs/specs/machines.md §3.6): see NeoPortable.targets. -->
-    <Copy SourceFiles="@(_FactoryGenerators)" DestinationFiles="@(_FactoryGenerators->'$(OutDir)Gear/Generators/%(Filename)%(Extension).factory')" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(_FactoryEffects)" DestinationFiles="@(_FactoryEffects->'$(OutDir)Gear/Effects/%(Filename)%(Extension).factory')" SkipUnchangedFiles="true" />
   </Target>
 
   <!-- The Link helper, once built with CMake (LinkHelper/CMakeLists.txt, into build/LinkHelper), beside

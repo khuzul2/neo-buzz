@@ -136,22 +136,10 @@ namespace ReBuzz.Host
             registry.Write("SampleRate", audio.Rate ?? 0, PortAudioDriver.Section);
         }
 
-        /// <summary>
-        /// Presets (docs/specs/machines.md §3.6): the user's live in the settings folder (the registry file's), the factory ones in Gear are read-only.
-        /// Once per machine, presets an older build saved into a Gear file move to the user's folder.
-        /// </summary>
-        static void MigratePresets(JsonRegistry registry, string buzzPath, Action<string> log)
+        /// <summary>Presets (docs/specs/machines.md §3.4): the user's live in the settings folder (the registry file's); the factory ones in Gear are never written.</summary>
+        static void UsePresetFolder(JsonRegistry registry)
         {
-            try
-            {
-                if (registry?.FilePath != null) BuzzGUI.Common.Presets.PresetStore.RootFolder = Path.GetDirectoryName(Path.GetFullPath(registry.FilePath));
-                int moved = BuzzGUI.Common.Presets.PresetStore.MigrateAll(Path.Combine(buzzPath, "Gear"));
-                if (moved > 0) log?.Invoke($"Moved {moved} of your presets from the Gear folder to {BuzzGUI.Common.Presets.PresetStore.UserFolder}.");
-            }
-            catch (Exception e)
-            {
-                log?.Invoke("Presets: " + e.Message);
-            }
+            if (registry?.FilePath != null) BuzzGUI.Common.Presets.PresetStore.RootFolder = Path.GetDirectoryName(Path.GetFullPath(registry.FilePath));
         }
 
         /// <summary>
@@ -190,7 +178,7 @@ namespace ReBuzz.Host
             string buzzPath = Global.BuzzPath;
 
             PreInit(buzzPath, log);
-            MigratePresets(registry, buzzPath, log);
+            UsePresetFolder(registry);
             var core = new ReBuzzCore(
                 Global.GeneralSettings,
                 engineSettings,

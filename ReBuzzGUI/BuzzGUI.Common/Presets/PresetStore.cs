@@ -9,10 +9,8 @@
 // factory preset back. Factory presets can't be deleted or overwritten. A missing or corrupt user file never stops the factory
 // set loading (a corrupt one is kept aside as .bad).
 //
-// The one-time migration (Migrate) moves presets an older build wrote into the Gear file into the user file. It tells factory
-// from user by the factory snapshot the build ships beside each Gear file, "<DLL name>.prs.xml.factory", a verbatim copy.
-// While a snapshot exists the app reads the factory set from it, so entries left in the Gear file (read-only Gear) are never
-// taken for factory presets.
+// Presets an older install saved into its Gear file come back through Import (a machine's .prs.xml from that install): the
+// entries that are not identical to a factory preset of the same name become user presets.
 
 using System;
 using System.Collections.Generic;
@@ -43,9 +41,6 @@ namespace BuzzGUI.Common.Presets
             }
         }
 
-        /// <summary>Tests: the Gear folder can't be written (the migration then leaves the Gear file as it is), as an OS keeps a normal user out of a read-only app folder. A root user can write anywhere, so a test can't count on the OS.</summary>
-        public static bool GearWritesBlocked { get; set; }
-
         /// <summary>The folder of every user preset file.</summary>
         public static string UserFolder => Path.Combine(string.IsNullOrEmpty(RootFolder) ? DefaultSettingsFolder : RootFolder, "Presets");
 
@@ -56,9 +51,6 @@ namespace BuzzGUI.Common.Presets
             var bad = Path.GetInvalidFileNameChars();
             return new string(dllName.Select(c => Array.IndexOf(bad, c) >= 0 ? '_' : c).ToArray());
         }
-
-        /// <summary>The factory snapshot beside a Gear preset file.</summary>
-        public static string SnapshotFile(string gearDir, string dllName) => Path.Combine(gearDir, dllName + ".prs.xml.factory");
 
         /// <summary>A machine's presets: factory (its Gear folder) and the user's. Cached; reloaded when either file changed.</summary>
         public static MachinePresets For(string gearDir, string dllName, IMachine machine = null)
@@ -84,7 +76,7 @@ namespace BuzzGUI.Common.Presets
             string fallback = InterfaceExtensions.MachineExtensions.GetDirectory(machine);
             string name = machine.DLL.Name;
             foreach (var dir in new[] { dll, fallback })
-                if (!string.IsNullOrEmpty(dir) && (File.Exists(Path.Combine(dir, name + ".prs.xml")) || File.Exists(SnapshotFile(dir, name)) || File.Exists(Path.Combine(dir, name + ".prs"))))
+                if (!string.IsNullOrEmpty(dir) && (File.Exists(Path.Combine(dir, name + ".prs.xml")) || File.Exists(Path.Combine(dir, name + ".prs"))))
                     return dir;
             return dll ?? fallback;
         }
@@ -99,165 +91,6 @@ namespace BuzzGUI.Common.Presets
 
         /// <summary>The group the user's presets without one of their own are listed in.</summary>
         public const string UserGroup = "User";
-
-        // ---------------------------------------------------------------- migration
-
-        /// <summary>What <see cref="Migrate"/> did.</summary>
-        public sealed class MigrationResult
-        {
-            /// <summary>The presets copied into the user file.</summary>
-            public List<string> Moved { get; } = new List<string>();
-            /// <summary>The Gear file was set back to the factory snapshot (it could be written).</summary>
-            public bool GearRestored { get; set; }
-            /// <summary>Why nothing was done: "", "done before", "no snapshot", "no gear file", or an error.</summary>
-            public string Skipped { get; set; } = "";
-        }
-
-        static string MigratedFile => Path.Combine(UserFolder, "migrated.txt");
-
-        static HashSet<string> Migrated()
-        {
-            try { return File.Exists(MigratedFile) ? new HashSet<string>(File.ReadAllLines(MigratedFile).Where(l => l.Length > 0), StringComparer.OrdinalIgnoreCase) : new HashSet<string>(StringComparer.OrdinalIgnoreCase); }
-            catch (Exception) { return new HashSet<string>(StringComparer.OrdinalIgnoreCase); }
-        }
-
-        static void Record(HashSet<string> done, string dllName)
-        {
-            done.Add(dllName);
-            Directory.CreateDirectory(UserFolder);
-            string tmp = MigratedFile + "." + Guid.NewGuid().ToString("N").Substring(0, 8) + ".tmp";
-            try
-            {
-                File.WriteAllLines(tmp, done.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
-                File.Move(tmp, MigratedFile, true);
-            }
-            catch
-            {
-                try { File.Delete(tmp); } catch (Exception) { }
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Moves the presets an older build saved into a Gear .prs.xml (the ones its factory snapshot doesn't have, or has differently)
-        /// into the user file, once per machine. Never overwrites or deletes a preset already in the user file. When Gear can be
-        /// written the Gear file is then set back to the snapshot; when it can't, it is left as it is (the copy is done).
-        /// Without a snapshot nothing can be told from the factory set, so nothing happens (and it is tried again later).
-        /// </summary>
-        public static MigrationResult Migrate(string gearDir, string dllName)
-        {
-            var result = new MigrationResult();
-            lock (Gate)
-            {
-                try
-                {
-                    string gear = Path.Combine(gearDir, dllName + ".prs.xml"), snap = SnapshotFile(gearDir, dllName);
-                    if (!File.Exists(snap)) { result.Skipped = "no snapshot"; return result; }
-                    if (!File.Exists(gear)) { result.Skipped = "no gear file"; return result; }
-                    // The usual start: the Gear file is the snapshot. Compared by bytes (Dye Essence's is 16 MB: parsing it costs seconds),
-                    // and remembered for this process, so a machine's reloads don't read the files again.
-                    string key = Path.GetFullPath(gear), seen = Stamp(gear, snap);
-                    if (cleanStamps.TryGetValue(key, out var before) && before == seen) { result.Skipped = "clean"; return result; }
-                    if (SameBytes(gear, snap)) { cleanStamps[key] = seen; result.Skipped = "clean"; return result; }
-                    var done = Migrated();
-                    if (done.Contains(dllName)) { result.Skipped = "done before"; return result; }
-
-                    var factory = PresetDictionary.LoadXml(dllName, snap);
-                    var found = PresetDictionary.LoadXml(dllName, gear);
-                    var extra = new List<KeyValuePair<string, Preset>>();
-                    foreach (var kv in found)
-                    {
-                        if (kv.Key == "<default>") continue;
-                        var f = factory[kv.Key];
-                        if (f == null || f.ToXml() != kv.Value.ToXml()) extra.Add(kv);
-                    }
-
-                    if (extra.Count > 0)
-                    {
-                        var user = LoadUser(dllName, out _);
-                        foreach (var kv in extra)
-                        {
-                            if (user.ContainsKey(kv.Key)) continue;     // theirs already: never replaced
-                            user[kv.Key] = kv.Value;
-                            result.Moved.Add(kv.Key);
-                        }
-                        if (result.Moved.Count > 0)
-                        {
-                            user.Save(UserFile(dllName));
-                            // Read it back: the Gear file is only touched once the copy is known to be whole.
-                            var back = PresetDictionary.LoadXml(dllName, UserFile(dllName));
-                            if (result.Moved.Any(k => back[k] == null)) throw new IOException("the user preset file didn't read back whole");
-                        }
-                        TryRestoreGear(gear, snap, result);
-                    }
-                    Record(done, dllName);
-                    cleanStamps[key] = Stamp(gear, snap);
-                }
-                catch (Exception e)
-                {
-                    result.Skipped = "error: " + e.Message;
-                }
-            }
-            return result;
-        }
-
-        static readonly Dictionary<string, string> cleanStamps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        static bool SameBytes(string a, string b)
-        {
-            var fa = new FileInfo(a);
-            var fb = new FileInfo(b);
-            if (fa.Length != fb.Length) return false;
-            using (var x = fa.OpenRead())
-            using (var y = fb.OpenRead())
-            {
-                var bx = new byte[81920];
-                var by = new byte[81920];
-                int n;
-                while ((n = x.Read(bx, 0, bx.Length)) > 0)
-                {
-                    int m = 0;
-                    while (m < n) { int r = y.Read(by, m, n - m); if (r <= 0) return false; m += r; }
-                    for (int i = 0; i < n; i++) if (bx[i] != by[i]) return false;
-                }
-            }
-            return true;
-        }
-
-        static void TryRestoreGear(string gear, string snap, MigrationResult result)
-        {
-            string tmp = gear + "." + Guid.NewGuid().ToString("N").Substring(0, 8) + ".tmp";
-            try
-            {
-                if (GearWritesBlocked) throw new UnauthorizedAccessException("the Gear folder is read-only");
-                File.Copy(snap, tmp, true);
-                File.Move(tmp, gear, true);
-                result.GearRestored = true;
-            }
-            catch (Exception)
-            {
-                try { File.Delete(tmp); } catch (Exception) { }
-            }
-        }
-
-        /// <summary>Migrates every machine with a factory snapshot under a Gear folder (and its Generators and Effects), as the app starts. Returns how many presets moved.</summary>
-        public static int MigrateAll(string gearRoot)
-        {
-            int moved = 0;
-            if (string.IsNullOrEmpty(gearRoot)) return 0;
-            foreach (var dir in new[] { gearRoot, Path.Combine(gearRoot, "Generators"), Path.Combine(gearRoot, "Effects") })
-            {
-                string[] snaps;
-                try { snaps = Directory.Exists(dir) ? Directory.GetFiles(dir, "*.prs.xml.factory") : Array.Empty<string>(); }
-                catch (Exception) { continue; }
-                foreach (var s in snaps)
-                {
-                    string name = Path.GetFileName(s);
-                    moved += Migrate(dir, name.Substring(0, name.Length - ".prs.xml.factory".Length)).Moved.Count;
-                }
-            }
-            return moved;
-        }
 
         /// <summary>The user's file for a machine; a corrupt one is set aside as .bad and an empty set returned.</summary>
         internal static PresetDictionary LoadUser(string dllName, out string problem)
@@ -299,7 +132,7 @@ namespace BuzzGUI.Common.Presets
     /// <summary>One machine's presets: the factory set (read-only) and the user's, together.</summary>
     public sealed class MachinePresets
     {
-        static object Gate => PresetStore.Gate;   // the store's own lock (For and Migrate hold it)
+        static object Gate => PresetStore.Gate;   // the store's own lock (For holds it)
 
         readonly List<string> problems = new List<string>();
         PresetDictionary factory = new PresetDictionary();
@@ -321,7 +154,7 @@ namespace BuzzGUI.Common.Presets
             DllName = dllName;
         }
 
-        string[] Files => new[] { FactoryFile, PresetStore.SnapshotFile(GearDir, DllName), Path.Combine(GearDir, DllName + ".prs"), UserFile };
+        string[] Files => new[] { FactoryFile, Path.Combine(GearDir, DllName + ".prs"), UserFile };
 
         DateTime checkedAt = DateTime.MinValue;
         IReadOnlyList<string> names = Array.Empty<string>();
@@ -343,11 +176,8 @@ namespace BuzzGUI.Common.Presets
         {
             problems.Clear();
             binaryLoaded = false;
-            if (Directory.Exists(GearDir)) PresetStore.Migrate(GearDir, DllName);
-
             factory = new PresetDictionary();
-            string snap = PresetStore.SnapshotFile(GearDir, DllName);
-            string source = File.Exists(snap) ? snap : FactoryFile;
+            string source = FactoryFile;
             if (File.Exists(source))
             {
                 try { factory = PresetDictionary.LoadXml(DllName, source) ?? new PresetDictionary(); }
@@ -443,7 +273,7 @@ namespace BuzzGUI.Common.Presets
             }
         }
 
-        /// <summary>Adds presets from an imported file that this machine doesn't have yet (by name, user or factory). Returns how many.</summary>
+        /// <summary>Adds the presets of an imported file as user presets, except one identical to the factory preset of its name and one the user already has by name. Returns how many.</summary>
         public int Import(PresetDictionary imported)
         {
             lock (Gate)
@@ -451,7 +281,9 @@ namespace BuzzGUI.Common.Presets
                 var added = new List<string>();
                 foreach (var kv in imported)
                 {
-                    if (user.ContainsKey(kv.Key) || factory.ContainsKey(kv.Key)) continue;
+                    if (user.ContainsKey(kv.Key)) continue;
+                    var f = factory[kv.Key];
+                    if (f != null && f.ToXml() == kv.Value.ToXml()) continue;     // the factory preset itself (an older install's Gear file)
                     user[kv.Key] = kv.Value;
                     added.Add(kv.Key);
                 }

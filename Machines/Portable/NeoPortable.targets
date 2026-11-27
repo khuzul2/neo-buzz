@@ -30,8 +30,6 @@
     <Compile Include="$(M)NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(M)NeoBuzz.Editor\Core\**\*.cs" Link="Shared\EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />
     <None Include="$(M)$(NeoFolder)\$(NeoName).prs.xml" Link="$(NeoName).prs.xml" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(M)$(NeoFolder)\$(NeoName).prs.xml')" />
-    <!-- The factory snapshot (docs/specs/machines.md §3.6): a verbatim copy the app reads the factory presets from and the one-time migration compares a Gear file against. -->
-    <None Include="$(M)$(NeoFolder)\$(NeoName).prs.xml" Link="$(NeoName).prs.xml.factory" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(M)$(NeoFolder)\$(NeoName).prs.xml')" />
     <None Include="$(M)$(NeoFolder)\$(NeoName).machine.json" Link="$(NeoName).machine.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

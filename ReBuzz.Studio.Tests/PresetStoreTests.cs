@@ -34,14 +34,12 @@ namespace ReBuzz.Studio.Tests
             gear = TestTemp.Path("prs1-" + id, "Gear", "Effects");
             Directory.CreateDirectory(gear);
             PresetStore.RootFolder = root;
-            PresetStore.GearWritesBlocked = false;
         }
 
         [TearDown]
         public void TearDown()
         {
             PresetStore.RootFolder = oldRoot;
-            PresetStore.GearWritesBlocked = false;
             Unlock(gear);
         }
 
@@ -57,7 +55,7 @@ namespace ReBuzz.Studio.Tests
             Attributes = new List<Preset.Attribute>(),
         };
 
-        /// <summary>A Gear folder as the build ships it: the machine's .prs.xml and its factory snapshot, the same bytes.</summary>
+        /// <summary>A Gear folder as the build ships it: the machine's .prs.xml.</summary>
         string ShipGear(params string[] names)
         {
             var d = new PresetDictionary();
@@ -65,7 +63,6 @@ namespace ReBuzz.Studio.Tests
             foreach (var n in names) d[n] = Make("factory " + n, 100 + i++);
             string file = Path.Combine(gear, Dll + ".prs.xml");
             d.Save(file);
-            File.Copy(file, PresetStore.SnapshotFile(gear, Dll), true);
             return file;
         }
 
@@ -168,85 +165,51 @@ namespace ReBuzz.Studio.Tests
             Assert.That(presets.Delete("nothing"), Is.False);
         }
 
-        // ------------------------------------------------------------------ gate: migration
+        // ------------------------------------------------------------------ gate: Gear is never written; Import brings an older install's presets
 
         [Test]
-        public void MigrationMovesExactlyTheTwoPresetsAnOlderBuildAddedAndNothingMovesTwice()
+        public void ImportingAnOlderInstallsGearFileWithTwoAddedPresetsImportsExactlyTwo()
         {
-            string file = ShipGear("Pad — Warm", "Bass");
-            byte[] factoryBytes = File.ReadAllBytes(file);
-            OldBuildSaved(file, "Mine A", "Pad — Mine B");
-
-            var presets = PresetStore.For(gear, Dll);       // the first start of the machine: the migration runs
-
-            var user = PresetDictionary.LoadXml(Dll, PresetStore.UserFile(Dll));
-            Assert.That(user.Keys, Is.EquivalentTo(new[] { "Mine A", "Pad — Mine B" }), "exactly the two");
-            Assert.That(user["Mine A"].Comment, Is.EqualTo("mine Mine A"));
-            Assert.That(presets.Names, Is.EquivalentTo(new[] { "Pad — Warm", "Bass", "Mine A", "Pad — Mine B" }));
-            Assert.That(presets.IsUser("Mine A") && presets.IsUser("Pad — Mine B"), Is.True);
-            Assert.That(presets.IsFactory("Mine A"), Is.False);
-            Assert.That(File.ReadAllBytes(file), Is.EqualTo(factoryBytes), "writable Gear is set back to the factory set");
-
-            // The second start moves nothing: the record says so, and a preset the user deleted meanwhile stays deleted.
-            presets.Delete("Mine A");
-            OldBuildSaved(file, "Mine A");                  // (as if it came back: a second run would move it again)
-            var again = PresetStore.Migrate(gear, Dll);
-            Assert.That(again.Moved, Is.Empty);
-            Assert.That(again.Skipped, Is.EqualTo("done before"));
-            Assert.That(PresetStore.Migrate(gear, Dll).Moved, Is.Empty);
-            Assert.That(PresetStore.MigrateAll(Path.GetDirectoryName(gear)), Is.EqualTo(0));
-            Assert.That(PresetDictionary.LoadXml(Dll, PresetStore.UserFile(Dll)).Keys, Is.EquivalentTo(new[] { "Pad — Mine B" }));
-        }
-
-        [Test]
-        public void MigrationAlsoMovesAFactoryPresetTheUserChangedAndKeepsAUserPresetAlreadyInTheUserFile()
-        {
-            string file = ShipGear("Pad — Warm", "Bass");
-            var d = PresetDictionary.LoadXml(Dll, file);
-            d["Bass"] = Make("my changed bass", 55);        // a changed factory preset
-            d["Mine"] = Make("old mine", 1);
-            d.Save(file);
-            new PresetDictionary { ["Mine"] = Make("new mine", 2) }.Save(PresetStore.UserFile(Dll));    // already theirs
-
-            var result = PresetStore.Migrate(gear, Dll);
-
-            Assert.That(result.Moved, Is.EquivalentTo(new[] { "Bass" }), "the changed one moved; Mine was theirs already");
-            var presets = PresetStore.For(gear, Dll);
-            Assert.That(presets["Mine"].Comment, Is.EqualTo("new mine"), "never replaced");
-            Assert.That(presets["Bass"].Comment, Is.EqualTo("my changed bass"));
-            Assert.That(presets.Shadows("Bass"), Is.True, "a user copy of the factory preset");
-        }
-
-        [Test]
-        public void MigrationDoesNothingWithoutAFactorySnapshotAndTriesAgainLater()
-        {
-            string file = ShipGear("Bass");
-            File.Delete(PresetStore.SnapshotFile(gear, Dll));
-            OldBuildSaved(file, "Mine");
-            Assert.That(PresetStore.Migrate(gear, Dll).Skipped, Is.EqualTo("no snapshot"));
-            Assert.That(File.Exists(PresetStore.UserFile(Dll)), Is.False, "nothing can be told from the factory set: nothing moves");
-            File.Copy(file, PresetStore.SnapshotFile(gear, Dll));    // (a snapshot with everything: nothing is extra)
-            Assert.That(PresetStore.Migrate(gear, Dll).Moved, Is.Empty);
-        }
-
-        [Test]
-        public void NothingIsLostWhenGearIsReadOnlyTheUserPresetsAreCopiedAndTheGearFileIsLeftAsItIs()
-        {
-            string file = ShipGear("Bass");
-            OldBuildSaved(file, "Mine A", "Mine B");
+            ShipGear("Pad — Warm", "Bass");
+            string old = Path.Combine(TestTemp.Path("prs1-old-" + Guid.NewGuid().ToString("N").Substring(0, 6)), Dll + ".prs.xml");
+            File.Copy(Path.Combine(gear, Dll + ".prs.xml"), (Directory.CreateDirectory(Path.GetDirectoryName(old)), old).Item2);
+            OldBuildSaved(old, "Mine A", "Pad — Mine B");
             string before = GearState();
-            Lock(gear);
-            if (!Enforced(gear)) PresetStore.GearWritesBlocked = true;      // a root user can write anywhere: stand in for the OS
-
             var presets = PresetStore.For(gear, Dll);
 
-            Assert.That(GearState(), Is.EqualTo(before), "the Gear file is left as it is");
-            Assert.That(PresetDictionary.LoadXml(Dll, PresetStore.UserFile(Dll)).Keys, Is.EquivalentTo(new[] { "Mine A", "Mine B" }), "copied");
-            Assert.That(presets.IsUser("Mine A") && presets.IsUser("Mine B"), Is.True);
-            Assert.That(presets.IsFactory("Mine A"), Is.False, "what the Gear file still holds is not taken for factory presets");
-            Assert.That(presets.Delete("Mine A"), Is.True);
-            Assert.That(presets.Names, Is.EquivalentTo(new[] { "Bass", "Mine B" }), "and deleting it removes it");
-            Assert.That(PresetStore.Migrate(gear, Dll).Moved, Is.Empty, "not again");
+            Assert.That(presets.Import(PresetDictionary.LoadXml(Dll, old)), Is.EqualTo(2), "the factory ones are skipped");
+
+            Assert.That(PresetDictionary.LoadXml(Dll, PresetStore.UserFile(Dll)).Keys, Is.EquivalentTo(new[] { "Mine A", "Pad — Mine B" }));
+            Assert.That(presets.IsUser("Mine A") && presets.IsUser("Pad — Mine B") && !presets.IsUser("Bass"), Is.True);
+            Assert.That(presets.Import(PresetDictionary.LoadXml(Dll, old)), Is.EqualTo(0), "again: nothing new");
+            Assert.That(GearState(), Is.EqualTo(before), "Gear is never written");
+        }
+
+        [Test]
+        public void ImportKeepsAChangedFactoryPresetAsAUserCopyAndAUserPresetAlreadyThere()
+        {
+            string file = ShipGear("Bass");
+            new PresetDictionary { ["Mine"] = Make("new mine", 2) }.Save(PresetStore.UserFile(Dll));
+            var d = PresetDictionary.LoadXml(Dll, file);
+            d["Bass"] = Make("my changed bass", 55);
+            d["Mine"] = Make("old mine", 1);
+            var presets = PresetStore.For(gear, Dll);
+            Assert.That(presets.Import(d), Is.EqualTo(1));
+            Assert.That(presets["Mine"].Comment, Is.EqualTo("new mine"));
+            Assert.That(presets["Bass"].Comment, Is.EqualTo("my changed bass"));
+            Assert.That(presets.Shadows("Bass"), Is.True);
+        }
+
+        [Test]
+        public void ALeftoverEntryInAGearFileIsJustAFactoryPresetAndGearIsNeverWrittenAtStartOrLater()
+        {
+            string file = ShipGear("Bass");
+            OldBuildSaved(file, "Extra");
+            string before = GearState();
+            var presets = PresetStore.For(gear, Dll);
+            Assert.That(presets.IsFactory("Extra"), Is.True, "Gear is the factory set as shipped");
+            Assert.That(presets.Delete("Extra"), Is.False);
+            Assert.That(GearState(), Is.EqualTo(before));
         }
 
         // ------------------------------------------------------------------ gate: a corrupt user file
@@ -282,7 +245,6 @@ namespace ReBuzz.Studio.Tests
         public void ACorruptFactoryFileDoesNotStopTheUsersPresets()
         {
             string file = ShipGear("Bass");
-            File.Delete(PresetStore.SnapshotFile(gear, Dll));
             File.WriteAllText(file, "garbage");
             new PresetDictionary { ["Mine"] = Make("mine", 2) }.Save(PresetStore.UserFile(Dll));
             var presets = PresetStore.For(gear, Dll);
@@ -339,7 +301,6 @@ namespace ReBuzz.Studio.Tests
             {
                 string gearFile = GearFileOf(m);
                 Assert.That(File.Exists(gearFile), Is.True, "the build ships the factory file");
-                Assert.That(File.Exists(PresetStore.SnapshotFile(PresetStore.GearFolderOf(m), m.DLL.Name)), Is.True, "and its factory snapshot");
                 string hash = Hash(gearFile);
                 var factory = m.GetPresetNames().ToList();
                 Assert.That(factory.Count, Is.GreaterThan(3));
