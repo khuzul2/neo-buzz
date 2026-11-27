@@ -1755,6 +1755,14 @@ namespace ReBuzz.Studio.Tests
                 AudioPage.InputSource = () => new[] { "PortAudio: MacBook Pro Microphone (Core Audio)" };
                 AudioPage.ReopenHook = _ => { };
                 const string Devices = "Device lists injected (headless has no audio devices; on a Mac PortAudio lists CoreAudio's).";
+                // MM2: the Controllers page lists the MIDI inputs: three scripted ones (the clip-grid controller and the keyboard are matched by their port names), a few messages heard.
+                ReBuzz.Midi.MidiEngine.SimulatedInputs = new[] { "APC40 mkII", "MPK225 Port 1", "Faders" };
+                var controllersMm = Core.MidiMapping;
+                controllersMm.OnMidiThread(new ReBuzz.Midi.MidiDevice(1, "APC40 mkII"), 0xB0 | (7 << 8) | (96 << 16));
+                controllersMm.OnMidiThread(new ReBuzz.Midi.MidiDevice(2, "MPK225 Port 1"), 0x90 | (60 << 8) | (88 << 16));
+                controllersMm.OnMidiThread(new ReBuzz.Midi.MidiDevice(3, "Faders"), 0xB0 | (21 << 8) | (40 << 16));
+                controllersMm.SetControllerTakeover("Faders", ReBuzz.Midi.Mapping.Takeover.Jump);
+                controllersMm.SetControllerProfile("Faders", "none");
                 var prefs = PreferencesWindow.Open(Studio.Host, PreferencesWindow.AudioPageName);
                 Settle();
                 string[] pages = prefs.Pages.Select(p => p.Title).ToArray();
@@ -1781,6 +1789,8 @@ namespace ReBuzz.Studio.Tests
                         }
                     });
                 }
+                ReBuzz.Midi.MidiEngine.SimulatedInputs = null;
+                controllersMm.Edit((c, sg) => c.Devices.Clear());
                 Try("304-prefs-autowarp", () =>
                 {
                     prefs.ShowPage("Audio");

@@ -82,6 +82,10 @@ namespace ReBuzz.SessionTests
             Assert.That(g.Look("playing").Channel, Is.InRange(6, 10), "pulses");
             Assert.That(g.Look("queued").Channel, Is.InRange(11, 15), "blinks");
             Assert.That(g.Look("stopped").Channel, Is.EqualTo(0));
+            // Every clip state has its look: the eight states the lights know.
+            foreach (var state in new[] { "empty", "armedEmpty", "stopped", "queued", "playing", "stopping", "recording", "recordQueued" })
+                Assert.That(g.States.ContainsKey(state), Is.True, state);
+            Assert.That(new[] { "empty", "armedEmpty", "stopped", "queued", "playing", "stopping", "recording", "recordQueued" }.Select(x => (g.Look(x).Velocity, g.Look(x).Channel, g.Look(x).BaseVelocity)).Distinct().Count(), Is.EqualTo(8), "each state looks different");
             Assert.That(One("trackknob", 1).Led.TypeValue, Is.EqualTo(2), "ring type 2 is a volume bar");
             Assert.That(One("trackknob", 1).Led.TypePanValue, Is.EqualTo(3), "ring type 3 is a pan");
         }

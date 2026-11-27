@@ -31,7 +31,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         /// <summary>The window while it is open.</summary>
         public static PreferencesWindow Current { get; private set; }
 
-        public const string AudioPageName = "Audio", MidiPageName = "MIDI", SyncPageName = "Sync", AgentPageName = "Agent", GeneralPageName = "General", AppearancePageName = "Appearance", SafetyPageName = "Safety", AdvancedPageName = "Advanced";
+        public const string AudioPageName = "Audio", MidiPageName = "MIDI", ControllersPageName = "Controllers", SyncPageName = "Sync", AgentPageName = "Agent", GeneralPageName = "General", AppearancePageName = "Appearance", SafetyPageName = "Safety", AdvancedPageName = "Advanced";
 
         PreferencesWindow(StudioHost host)
         {
@@ -47,6 +47,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             pages.Add(new GeneralPage(model));
             pages.Add(new AudioPage(core, host.Registry, model));
             pages.Add(new MidiPage(core.MidiInOutEngine, host.Registry, model));
+            if (core.MidiMapping != null) pages.Add(new ControllersPage(core.MidiMapping, core.MidiInOutEngine, host.Registry, model));
             if (core.SessionSync != null) pages.Add(new SyncPage(core.SessionSync, model));
             pages.Add(new AppearancePage(model));
             if (host.Agent != null) pages.Add(new AgentPage(host.Agent, model));
