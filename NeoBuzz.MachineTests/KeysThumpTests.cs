@@ -72,12 +72,12 @@ namespace NeoBuzz.MachineTests
                 Assert.That(Db(b10, tot), Is.LessThanOrEqualTo(-60), "above 10 kHz");
             }
         }
-        // The presets Alessandro sent back after listening round 1, with the band above 10 kHz at the loudest onset of the phrase and the worst onset (dB under the total) as round 1 had them.
+        // The presets sent back after listening round 1, with the band above 10 kHz at the loudest onset of the phrase and the worst onset (dB under the total) as round 1 had them.
         // Bark Drive's bark is the sound itself: it stays 24 dB under with Key noise at 0 % (the hammer at 0.7 ms into the driven preamp), so it has its own limit; see the issue.
         static readonly (string Name, double Limit, double Round1Worst)[] SentBack =
         {
             ("Tine — Classic Ballad", -35, -20.1), ("Tine — Bark Drive", -20, -23.6), ("Tine — Stereo Tremolo", -35, -24.1),
-            ("Reed — Soul Keys", -35, -24.1), ("Reed — Gritty", -35, -23.8),
+            ("Reed — Soul Keys", -35, -24.1),
         };
 
         [Test]

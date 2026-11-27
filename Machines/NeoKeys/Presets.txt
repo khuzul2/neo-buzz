@@ -65,21 +65,6 @@ TremDepth = 40
 Stereo = 30
 Volume = -4.5
 
-preset "Reed — Gritty"
-comment "The reed played hard with the pickup almost touching it and the preamp pushed: an angry, reedy, odd-harmonic buzz that crunches on every key and dies in under a second."
-Model = Reed
-Hardness = 0.45
-Touch = 78
-VelCurve = 20
-Pickup = 96
-Bar = 18
-Decay = 0.9
-Release = 55
-KeyNoise = 46
-Drive = 19
-Tone = -14
-Volume = -8.4
-
 preset "String — Funky Pluck"
 comment "A struck string read by the bridge pickup only: a thin, snappy, twangy pluck with a loud hammer click and a damper that cuts the note the moment the key goes up."
 Model = String

@@ -30,7 +30,7 @@ It is a normal instrument: a generator that plays by notes (keyboard, MIDI, a no
 ## Starting points
 
 - "Tine — Classic Ballad", "Tine — Bark Drive", "Tine — Stereo Tremolo", "Tine — Glass Bells".
-- "Reed — Soul Keys", "Reed — Gritty", "String — Funky Pluck", "String — Muted Staccato".
+- "Reed — Soul Keys", "String — Funky Pluck", "String — Muted Staccato".
 
 ## Pitfalls
 

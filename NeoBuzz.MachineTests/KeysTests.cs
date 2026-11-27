@@ -624,7 +624,7 @@ namespace NeoBuzz.MachineTests
         public void TheFactoryPresetsAreAudibleAndClearlyDifferent()
         {
             var presets = FactoryPresets().ToList();
-            Assert.That(presets.Count, Is.EqualTo(8), "eight presets");
+            Assert.That(presets.Count, Is.EqualTo(7), "seven presets");
             int len = Rate * 4;
             var bands = new List<double[]>();
             var names = new List<string>();

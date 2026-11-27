@@ -45,7 +45,7 @@ House style (NeoEditor): Model and pickup (Model, Pickup select, Mute, the picku
 
 ## 7. Presets
 
-Eight, generic names, each levelled so that the chord C3 E3 G3 B3 at velocity 0.8 has its loudest 50 ms at -22 dB RMS (within 1 dB): Tine - Classic Ballad, Bark Drive, Stereo Tremolo, Glass Bells; Reed - Soul Keys, Gritty; String - Funky Pluck, Muted Staccato.
+Seven, generic names, each levelled so that the chord C3 E3 G3 B3 at velocity 0.8 has its loudest 50 ms at -22 dB RMS (within 1 dB): Tine - Classic Ballad, Bark Drive, Stereo Tremolo, Glass Bells; Reed - Soul Keys; String - Funky Pluck, Muted Staccato. A second reed preset, Gritty, was dropped after listening round 2: it sounded the same as Soul Keys.
 The default patch sits at -22.0 dB as well.
 
 ## 8. Gates, as tested (`KeysTests`)

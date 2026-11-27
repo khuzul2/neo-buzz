@@ -100,31 +100,6 @@
       <Comment>A steel reed read by the electrostatic pickup: short, woody and slightly buzzy with a quick decay, a touch of warm drive and a light tremolo, for chords with a little grease.</Comment>
     </Preset>
   </Item>
-  <Item Key="Reed — Gritty">
-    <Preset Machine="Neo Keys">
-      <Parameters>
-        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="1" />
-        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="702" />
-        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="780" />
-        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="600" />
-        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="960" />
-        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="180" />
-        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
-        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="415" />
-        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="368" />
-        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
-        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="460" />
-        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="633" />
-        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="430" />
-        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
-        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="0" />
-        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="0" />
-        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="717" />
-      </Parameters>
-      <Attributes />
-      <Comment>The reed played hard with the pickup almost touching it and the preamp pushed: an angry, reedy, odd-harmonic buzz that crunches on every key and dies in under a second.</Comment>
-    </Preset>
-  </Item>
   <Item Key="String — Funky Pluck">
     <Preset Machine="Neo Keys">
       <Parameters>
