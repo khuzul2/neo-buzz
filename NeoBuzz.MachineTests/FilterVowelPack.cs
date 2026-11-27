@@ -135,11 +135,11 @@ namespace NeoBuzz.MachineTests
             log.AppendLine("# Neo Filter vowel mode: listening pack (EXT1, #190)");
             log.AppendLine();
             log.AppendLine($"The four \"Vowel\" presets of Neo Filter, each on two sources, at 120 BPM in 4/4: {Bars} bars, {Length / (double)Rate:0.0} s each, every file 48 kHz, 16-bit, stereo WAV.");
-            log.AppendLine("Each source is scaled to -6 dBFS peak before the filter. The song plays from beat 0 (the presets' LFOs follow the song).");
+            log.AppendLine("Each source is scaled to -6 dBFS peak before the filter, and each output file is then brought to -3 dBFS peak (the gain is in the table: the vowel filter's level against a source differs by about 20 dB between the drums and the riff). The song plays from beat 0 (the presets' LFOs follow the song).");
             log.AppendLine("Click detector (second difference against its local mean, `ClickDetector`) on the output; \"new clicks\" are those the dry source does not have within 2 ms.");
             log.AppendLine();
-            log.AppendLine("| File | Preset | Source | What to listen for | Peak | RMS | Clicks | New clicks |");
-            log.AppendLine("|---|---|---|---|---|---|---|---|");
+            log.AppendLine("| File | Preset | Source | What to listen for | Peak | RMS | Gain applied | Clicks | New clicks |");
+            log.AppendLine("|---|---|---|---|---|---|---|---|---|");
             int index = 0, newTotal = 0;
             foreach (var p in PresetTests.AllPresets().Where(p => p.Machine == "Neo Filter" && p.Preset.StartsWith("Vowel")))
                 foreach (var (name, detail, audio) in sources)
@@ -169,6 +169,15 @@ namespace NeoBuzz.MachineTests
                         Array.Copy(bl, 0, ol, pos, n);
                         Array.Copy(br, 0, or, pos, n);
                     }
+                    // Each file is brought to -3 dBFS peak (the vowel filter's level against a source varies by 20 dB between the drums and the riff), the same gain on the dry source for the click comparison.
+                    double raw = 1e-9, rawSq = 0;
+                    for (int i = 0; i < Length; i++)
+                    {
+                        raw = Math.Max(raw, Math.Max(Math.Abs(ol[i]), Math.Abs(or[i])));
+                        rawSq += 0.5 * ((double)ol[i] * ol[i] + (double)or[i] * or[i]);
+                    }
+                    float g2 = (float)(Math.Pow(10, -3.0 / 20) / raw);
+                    for (int i = 0; i < Length; i++) { ol[i] *= g2; or[i] *= g2; dl[i] *= g2; dr[i] *= g2; }
                     var clicks = ClickDetector.Find(ol, or);
                     var own = ClickDetector.Find(dl, dr);
                     var fresh = clicks.Where(c => !own.Any(o => Math.Abs(o - c) <= 96)).ToList();
@@ -181,7 +190,7 @@ namespace NeoBuzz.MachineTests
                     }
                     string file = $"{index:00}-{Slug(p.Preset)}-{name}.wav";
                     WriteWav(Path.Combine(dir, file), ol, or);
-                    log.AppendLine($"| {file} | {p.Preset} | {detail} | {Listen.GetValueOrDefault(p.Preset, "")} | {20 * Math.Log10(pk):0.0} dBFS | {10 * Math.Log10(sq / Length):0.0} dBFS | {clicks.Count} | {fresh.Count} |");
+                    log.AppendLine($"| {file} | {p.Preset} | {detail} | {Listen.GetValueOrDefault(p.Preset, "")} | {20 * Math.Log10(pk):0.0} dBFS | {10 * Math.Log10(sq / Length):0.0} dBFS | {20 * Math.Log10(g2):+0.0;-0.0} dB (the filter alone: peak {20 * Math.Log10(raw):0.0} dBFS, RMS {10 * Math.Log10(rawSq / Length):0.0} dBFS) | {clicks.Count} | {fresh.Count} |");
                     TestContext.Out.WriteLine($"{file}: peak {20 * Math.Log10(pk):0.0} dBFS, rms {10 * Math.Log10(sq / Length):0.0} dBFS, clicks {clicks.Count} (new {fresh.Count}; source's own {own.Count})");
                 }
             log.AppendLine();

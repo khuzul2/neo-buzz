@@ -62,6 +62,8 @@ namespace NeoBuzz.Filter
         internal const int Segment = 16;
         internal const int Os = FilterDesign.Oversampling;
         const double SmoothSeconds = 0.02, SwitchSeconds = 0.005;
+        /// <summary>A change to the Vowel type fades in over this long: its narrow resonances start from silence and ring for several milliseconds, which the slower fade keeps from clicking.</summary>
+        const double VowelFadeInSeconds = 0.025;
         /// <summary>The input is limited to this (+60 dBFS): every state stays finite whatever comes in.</summary>
         const float InputLimit = 1000f;
 
@@ -123,7 +125,7 @@ namespace NeoBuzz.Filter
         // The filter in use and the one asked for: a change fades the filter out over 5 ms, switches and fades it back in.
         FilterType activeType;
         bool activeSteep;
-        float fade = 1, fadeStep;
+        float fade = 1, fadeStep, fadeInVowelStep;
         LinearRamp mix, gain;
         Smoother cutLog, qLog, osc, driveDb, envOct, envSens, lfoOct, vowelPos, voiceSm, vowelMod;
         // The vowel design's scratch (control rate only): frequencies, dampings and gains of the three formants.
@@ -201,6 +203,7 @@ namespace NeoBuzz.Filter
             gain.Setup(SmoothSeconds, sr);
             segC = 1 - PortableMath.Exp(-Segment / (SmoothSeconds * sr));
             fadeStep = (float)(1 / (SwitchSeconds * sr));
+            fadeInVowelStep = (float)(1 / (VowelFadeInSeconds * sr));
             InMeter.SetSampleRate(sr);
             OutMeter.SetSampleRate(sr);
             Update(true);
@@ -466,7 +469,7 @@ namespace NeoBuzz.Filter
                         Switch();
                     }
                 }
-                else if (fade < 1) fade = MathF.Min(1, fade + fadeStep);
+                else if (fade < 1) fade = MathF.Min(1, fade + (s.Type == FilterType.Vowel ? fadeInVowelStep : fadeStep));
 
                 float yl = Run(L, cl), yr = Run(R, cr);
                 float wl = yl * fade, wr = yr * fade;

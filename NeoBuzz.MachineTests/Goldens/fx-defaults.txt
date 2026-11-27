@@ -152,6 +152,10 @@ Neo Filter	Mix — Gentle Top Cut (12 kHz)	3d5e01945c74843f	d10f3257e2918827
 Neo Filter	Mix — Telephone Band	88a59b1505177fac	98dcc2bb0acbb8a5
 Neo Filter	Notch — Swept Notch (2 Bars)	f72c964466dadccc	cd15dd540c511a33
 Neo Filter	Peak — Resonant Peak Sweep (1 Bar)	f883a0b5380c2f1b	631f667f4952f8dd
+Neo Filter	Vowel — Talking Wah	befa8fcbab2ba00a	9f42025cc1c080db
+Neo Filter	Vowel — Choir Ah	b736bb216f4fe3b7	3382556a3a6e0481
+Neo Filter	Vowel — Envelope Yeah	4fa2a2edbc89aa84	a4db67d01df9b280
+Neo Filter	Vowel — Robot Vowels	db3fe7f3f730104b	74c2b860cf460fce
 Neo Gate	(defaults)	b795c8ef5c74c6d8	01e01776521a4cf8
 Neo Gate	Drums — Snare, Tight	78ade679982132cf	8226b1781864cb3e
 Neo Gate	Drums — Kick, Clean the Spill	e25f5f04c9e3f41f	500115d71b5579e6
