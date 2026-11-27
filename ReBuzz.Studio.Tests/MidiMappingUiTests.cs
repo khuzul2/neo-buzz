@@ -168,6 +168,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Mapping.MapControl(new MapSource("Faders", MapKind.ControlChange, 0, 4), KnobEncoding.Absolute, MapTarget.Mixer(MixerControl.Pan, "", 1), MapScope.Global).Ok, Is.True);
             Settle();
             Assert.That(Mapping.BadgeOf(MapTarget.Mixer(MixerControl.Pan, "track:" + Mapping.BankTrack(1).Name)), Is.EqualTo("CC4"), "the bank's first strip wears the badge of the bank track 1 pan map");
+            st.Window.Detail.MixerPage.Refresh();          // the mixer follows the meters' timer; the test does not wait for it
             var strips = st.Window.GetVisualDescendants().OfType<ReBuzz.Studio.Views.Mixer.MixerStripView>().ToList();
             Assert.That(strips.Any(x => x.IsInBank), Is.True, "the strips of the bank are outlined");
             Mapping.SetBank(0, 0);
