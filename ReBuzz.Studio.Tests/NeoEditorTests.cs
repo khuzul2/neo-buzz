@@ -37,7 +37,7 @@ namespace ReBuzz.Studio.Tests
         {
             ("Neo Organ", "NeoOrganEditor", "neo-organ-editor", 982, 496),
             ("Neo Mallet", "NeoMalletEditor", "neo-mallet-editor", 932, 544),   // MAL1: Model, Exciter and Decay on top, Tremolo and Output below
-            ("Neo Keys", "NeoKeysEditor", "neo-keys-editor", 1010, 520),   // KEY1: Model and pickup, Hammer, Decay on top; Preamp, Tremolo and Output below (the size is read from the first CI run)
+            ("Neo Keys", "NeoKeysEditor", "neo-keys-editor", 877, 482),   // KEY1: Model and pickup, Hammer, Decay on top; Preamp, Tremolo and Output below
             ("Neo Chord", "NeoChordEditor", "neo-chord-editor", 1186, 453),   // CHD1: the chord and mode on top, the keyboard, then voicing, velocity and strum (the size the editor draws at)
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
