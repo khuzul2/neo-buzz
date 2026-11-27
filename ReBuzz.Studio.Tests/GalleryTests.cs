@@ -2218,6 +2218,31 @@ namespace ReBuzz.Studio.Tests
                     ModulationBoard.EndDrag(null);
                     Core.UiHost.CloseWindows(filter);
                 });
+                // EXT1 (#190): Neo Filter's Vowel type in the editor, and the same editor in another type with the vowel controls dimmed.
+                Try("493b-editor-neo-filter-vowel", () =>
+                {
+                    var m = Add("Neo Filter", "Vowel Filter");
+                    m.GetPreset("Vowel — Choir Ah").Apply(m, true);
+                    Dispatcher.UIThread.RunJobs();
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Wait(300);
+                    Shot(editor!, "493b-editor-neo-filter-vowel", "Neo Filter's editor in the Vowel type (EXT1) with the Choir Ah preset: the Vowel section (Voice, the vowel and its formant curve, Vowel, Vowel mod) is live.", "Neo Filter: Type = Vowel (or the preset Vowel — Choir Ah), then its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
+                Try("493c-editor-neo-filter-vowel-dimmed", () =>
+                {
+                    var m = Add("Neo Filter", "Ladder Filter");
+                    m.GetPreset("Sweep — Ladder Low-Pass (1 Bar)").Apply(m, true);
+                    Dispatcher.UIThread.RunJobs();
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Wait(300);
+                    Shot(editor!, "493c-editor-neo-filter-vowel-dimmed", "Neo Filter's editor in a ladder type (EXT1): the Vowel section is dimmed and does not take the pointer until Type is Vowel.", "Neo Filter: any Type but Vowel, then its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
                 Try("494-modulation-matrix", () =>
                 {
                     var lfo = Core.SongCore.MachinesList.First(m => m.Name == "LFO");

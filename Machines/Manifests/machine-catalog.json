@@ -230,7 +230,7 @@
     "wah",
     "tempo-sync"
    ],
-   "use_for": "Resonant ladder or state-variable filter with drive, envelope follower and tempo-synced LFO."
+   "use_for": "Resonant ladder or state-variable filter with drive, envelope follower and tempo-synced LFO, and a Vowel type that makes a sound speak A, E, I, O or U."
   },
   "Neo FM6": {
    "category": "Synths",

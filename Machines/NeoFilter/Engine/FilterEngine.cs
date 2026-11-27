@@ -62,6 +62,8 @@ namespace NeoBuzz.Filter
         internal const int Segment = 16;
         internal const int Os = FilterDesign.Oversampling;
         const double SmoothSeconds = 0.02, SwitchSeconds = 0.005;
+        /// <summary>A change to the Vowel type fades in over this long: its narrow resonances start from silence and ring for several milliseconds, which the slower fade keeps from clicking.</summary>
+        const double VowelFadeInSeconds = 0.025;
         /// <summary>The input is limited to this (+60 dBFS): every state stays finite whatever comes in.</summary>
         const float InputLimit = 1000f;
 
@@ -69,12 +71,16 @@ namespace NeoBuzz.Filter
         {
             public IirHalfband Up1, Up2, Down1, Down2;
             public Ladder Ladder;
-            public SvfCore Svf1, Svf2;
+            public SvfCore Svf1, Svf2, Svf3;
             // The drive's antiderivative anti-aliasing: the last input, its scaled value and √(1 + u²).
             public double XPrev, UPrev, FPrev = 1;
             // The filter's prewarped frequency and damping (or loop gain), moving in straight lines over a segment.
             public double G, GStep, K, KStep;
             public bool LadderSet;     // the ladder's coefficients follow G and K
+            // Vowel type: the three formants' prewarped frequency, damping and signed gain, moving in straight lines over a segment.
+            public readonly double[] FG = new double[3], FGStep = new double[3], FK = new double[3], FKStep = new double[3], FA = new double[3], FAStep = new double[3];
+            public double VowelPos;    // 0 … 1 now (the modulation's included), for the editor
+            public double VowelShift;  // octaves now, for the editor
             public double Cutoff;      // Hz, for the editor
             public float Lfo;          // −1 … 1, for the editor
 
@@ -84,6 +90,7 @@ namespace NeoBuzz.Filter
                 Ladder.Reset();
                 Svf1.Reset();
                 Svf2.Reset();
+                Svf3.Reset();
                 XPrev = UPrev = 0;
                 FPrev = 1;
                 LadderSet = false;
@@ -95,6 +102,7 @@ namespace NeoBuzz.Filter
                 Ladder.Flush();
                 Svf1.Flush();
                 Svf2.Flush();
+                Svf3.Flush();
                 XPrev = DspMath.Flush(XPrev);
                 UPrev = DspMath.Flush(UPrev);
             }
@@ -117,9 +125,13 @@ namespace NeoBuzz.Filter
         // The filter in use and the one asked for: a change fades the filter out over 5 ms, switches and fades it back in.
         FilterType activeType;
         bool activeSteep;
-        float fade = 1, fadeStep;
+        float fade = 1, fadeStep, fadeInVowelStep;
         LinearRamp mix, gain;
-        Smoother cutLog, qLog, osc, driveDb, envOct, envSens, lfoOct;
+        Smoother cutLog, qLog, osc, driveDb, envOct, envSens, lfoOct, vowelPos, voiceSm, vowelMod;
+        // The vowel design's scratch (control rate only): frequencies, dampings and gains of the three formants.
+        readonly double[] vf = new double[3], vk = new double[3], va = new double[3];
+        /// <summary>The Vowel type's SVF sections never limit: a formant is linear (its input is limited to ±1000, the damping to 1/250).</summary>
+        const double VowelThreshold = 1e9;
         double segC;
         int segmentLeft;
         float threshold;
@@ -143,6 +155,7 @@ namespace NeoBuzz.Filter
                 int type = raw.Choice(P.Type);
                 if (type == 0 || type == 1 || type == 2) return 20000 * PortableMath.Pow(c / 20000, a);
                 if (type == 4) return 20 * PortableMath.Pow(c / 20, a);
+                if (type == 7) return VowelDesign.ReferenceHz * PortableMath.Pow(c / VowelDesign.ReferenceHz, a);   // the formants' shift in octaves
                 return c;
             }),
             // Resonance of the band, notch and peak types scales in octaves from the lowest Q.
@@ -150,6 +163,7 @@ namespace NeoBuzz.Filter
             {
                 double q = raw.Value(P.Resonance);
                 int type = raw.Choice(P.Type);
+                if (type == 7) return VowelDesign.ReferenceQ * PortableMath.Pow(q / VowelDesign.ReferenceQ, a);    // the formants' bandwidth in octaves from the table's
                 return type == 3 || type == 6 ? 0.5 * PortableMath.Pow(q / 0.5, a) : q;
             }),
             AmountRule.Lin(P.Drive, 0), AmountRule.Lin(P.EnvAmount, 0), AmountRule.Lin(P.LfoDepth, 0),
@@ -189,6 +203,7 @@ namespace NeoBuzz.Filter
             gain.Setup(SmoothSeconds, sr);
             segC = 1 - PortableMath.Exp(-Segment / (SmoothSeconds * sr));
             fadeStep = (float)(1 / (SwitchSeconds * sr));
+            fadeInVowelStep = (float)(1 / (VowelFadeInSeconds * sr));
             InMeter.SetSampleRate(sr);
             OutMeter.SetSampleRate(sr);
             Update(true);
@@ -223,6 +238,9 @@ namespace NeoBuzz.Filter
             envOct.Target = (float)s.EnvOctaves;
             envSens.Target = (float)s.EnvSensitivityDb;
             lfoOct.Target = (float)s.LfoOctaves;
+            vowelPos.Target = (float)s.VowelPos;
+            voiceSm.Target = (float)s.Voice;
+            vowelMod.Target = (float)s.VowelMod;
             envAttack = (float)(1 - PortableMath.Exp(-1 / (Math.Max(1e-5, s.EnvAttack) * sampleRate)));
             envRelease = (float)(1 - PortableMath.Exp(-1 / (Math.Max(1e-5, s.EnvRelease) * sampleRate)));
             if (force)
@@ -251,6 +269,9 @@ namespace NeoBuzz.Filter
             envOct.Reset(envOct.Target);
             envSens.Reset(envSens.Target);
             lfoOct.Reset(lfoOct.Target);
+            vowelPos.Reset(vowelPos.Target);
+            voiceSm.Reset(voiceSm.Target);
+            vowelMod.Reset(vowelMod.Target);
             segmentLeft = 0;
             Controls(0, settle: true);
         }
@@ -272,6 +293,9 @@ namespace NeoBuzz.Filter
             Step(ref envOct, segC);
             Step(ref envSens, segC);
             Step(ref lfoOct, segC);
+            Step(ref vowelPos, segC);
+            Step(ref voiceSm, segC);
+            Step(ref vowelMod, segC);
             Controls(offset, settle: false);
         }
 
@@ -293,19 +317,23 @@ namespace NeoBuzz.Filter
                 double hz = PortableMath.Exp2(cutLog.Value + envOct.Value * envLevel + lfoOct.Value * ch.Lfo);
                 hz = FilterDesign.Reach(hz, sampleRate);
                 ch.Cutoff = hz;
-                double g = FilterDesign.Prewarp(hz, sampleRate);
-                if (settle)
-                {
-                    ch.G = g;
-                    ch.K = k;
-                    ch.GStep = ch.KStep = 0;
-                }
+                if (activeType == FilterType.Vowel) VowelControls(ch, envOct.Value * envLevel + lfoOct.Value * ch.Lfo, settle);
                 else
                 {
-                    ch.GStep = (g - ch.G) / (Segment * Os);
-                    ch.KStep = (k - ch.K) / (Segment * Os);
-                    if (ch.GStep == 0) ch.G = g;
-                    if (ch.KStep == 0) ch.K = k;
+                    double g = FilterDesign.Prewarp(hz, sampleRate);
+                    if (settle)
+                    {
+                        ch.G = g;
+                        ch.K = k;
+                        ch.GStep = ch.KStep = 0;
+                    }
+                    else
+                    {
+                        ch.GStep = (g - ch.G) / (Segment * Os);
+                        ch.KStep = (k - ch.K) / (Segment * Os);
+                        if (ch.GStep == 0) ch.G = g;
+                        if (ch.KStep == 0) ch.K = k;
+                    }
                 }
                 // The drive's history rescaled to the new drive, so its anti-aliasing stays exact across the change.
                 if (d != driveD || settle)
@@ -316,6 +344,39 @@ namespace NeoBuzz.Filter
             }
             driveD = d;
             driveShare = share;
+        }
+
+        // The Vowel type's control values for a channel: the vowel (the smoothed control plus the modulation's share of it), the shift of every
+        // formant in octaves (Cutoff against 2 kHz, within ±2, plus the rest of the modulation), the bandwidth scale from Resonance; each
+        // formant's frequency, damping and gain, and the straight lines the coefficients take to them over the segment.
+        void VowelControls(Channel ch, double modOct, bool settle)
+        {
+            double vm = vowelMod.Value;
+            double shift = Math.Clamp(Math.Clamp(cutLog.Value - VowelDesign.ReferenceLog2, -2.0, 2.0) + modOct * (1 - vm), -4.0, 4.0);
+            double pos = Math.Clamp(vowelPos.Value + 0.25 * modOct * vm, 0.0, 1.0);
+            ch.VowelPos = pos;
+            ch.VowelShift = shift;
+            ch.Cutoff = VowelDesign.ReferenceHz * PortableMath.Exp2(shift);
+            VowelDesign.Design(pos, voiceSm.Value, shift, VowelDesign.BandwidthScale(PortableMath.Exp2(qLog.Value)), sampleRate, vf, vk, va);
+            for (int i = 0; i < VowelDesign.Formants; i++)
+            {
+                double g = FilterDesign.Prewarp(vf[i], sampleRate);
+                if (settle)
+                {
+                    ch.FG[i] = g; ch.FK[i] = vk[i]; ch.FA[i] = va[i];
+                    ch.FGStep[i] = ch.FKStep[i] = ch.FAStep[i] = 0;
+                }
+                else
+                {
+                    double n = Segment * Os;
+                    ch.FGStep[i] = (g - ch.FG[i]) / n;
+                    ch.FKStep[i] = (vk[i] - ch.FK[i]) / n;
+                    ch.FAStep[i] = (va[i] - ch.FA[i]) / n;
+                    if (ch.FGStep[i] == 0) ch.FG[i] = g;
+                    if (ch.FKStep[i] == 0) ch.FK[i] = vk[i];
+                    if (ch.FAStep[i] == 0) ch.FA[i] = va[i];
+                }
+            }
         }
 
         // The LFO at this segment: its phase (free, from the song's position, or restarted by the envelope) and each channel's value.
@@ -408,7 +469,7 @@ namespace NeoBuzz.Filter
                         Switch();
                     }
                 }
-                else if (fade < 1) fade = MathF.Min(1, fade + fadeStep);
+                else if (fade < 1) fade = MathF.Min(1, fade + (s.Type == FilterType.Vowel ? fadeInVowelStep : fadeStep));
 
                 float yl = Run(L, cl), yr = Run(R, cr);
                 float wl = yl * fade, wr = yr * fade;
@@ -434,8 +495,16 @@ namespace NeoBuzz.Filter
         {
             bool wasLadder = FilterDesign.IsLadder(activeType);
             bool ladder = FilterDesign.IsLadder(s.Type);
+            bool wasVowel = activeType == FilterType.Vowel, vowel = s.Type == FilterType.Vowel;
             foreach (var c in channels)
             {
+                // To or from the formants: all three sections start clean.
+                if (wasVowel != vowel)
+                {
+                    c.Svf1.Reset();
+                    c.Svf2.Reset();
+                    c.Svf3.Reset();
+                }
                 c.LadderSet = false;
                 if (ladder && !wasLadder) c.Ladder.Reset();
                 if (!ladder && wasLadder) c.Svf1.Reset();
@@ -451,6 +520,9 @@ namespace NeoBuzz.Filter
                 c.K = k;
                 c.KStep = 0;
             }
+            // The formants for the new type at once (the segment's lines start from them).
+            if (vowel)
+                foreach (var c in channels) VowelControls(c, envOct.Value * envLevel + lfoOct.Value * c.Lfo, true);
         }
 
         // One base-rate sample of a channel: up four times, drive and filter each, back down.
@@ -498,6 +570,20 @@ namespace NeoBuzz.Filter
                         c.LadderSet = true;
                     }
                     return c.Ladder.Process((float)x, 1f, activeType == FilterType.Ladder12);
+                case FilterType.Vowel:
+                {
+                    // Three band-passes in parallel at the formants, each with its unity-peak scaling (damping times the band) and signed gain.
+                    for (int i = 0; i < VowelDesign.Formants; i++)
+                    {
+                        c.FG[i] += c.FGStep[i];
+                        c.FK[i] += c.FKStep[i];
+                        c.FA[i] += c.FAStep[i];
+                    }
+                    c.Svf1.Step(x, c.FG[0], c.FK[0], VowelThreshold, out _, out double b1, out _);
+                    c.Svf2.Step(x, c.FG[1], c.FK[1], VowelThreshold, out _, out double b2, out _);
+                    c.Svf3.Step(x, c.FG[2], c.FK[2], VowelThreshold, out _, out double b3, out _);
+                    return (float)(c.FA[0] * c.FK[0] * b1 + c.FA[1] * c.FK[1] * b2 + c.FA[2] * c.FK[2] * b3);
+                }
                 default:
                 {
                     double y = Section(ref c.Svf1, x, c.G, c.K);
@@ -533,6 +619,10 @@ namespace NeoBuzz.Filter
         /// <summary>A channel's cutoff now (Hz, the modulation's included), for the editor.</summary>
         public double Cutoff(int channel) => channels[channel].Cutoff;
 
+        /// <summary>A channel's vowel now (0 … 1, the modulation's included) and the formants' shift in octaves, for the editor (Vowel type).</summary>
+        public double VowelPosition(int channel) => channels[channel].VowelPos;
+        public double VowelShiftNow(int channel) => channels[channel].VowelShift;
+
         /// <summary>A channel's LFO now (−1 … 1).</summary>
         public float LfoValue(int channel) => channels[channel].Lfo;
 
@@ -554,6 +644,7 @@ namespace NeoBuzz.Filter
         {
             foreach (var c in channels)
                 if (double.IsSubnormal(c.Svf1.Ic1) || double.IsSubnormal(c.Svf1.Ic2) || double.IsSubnormal(c.Svf2.Ic1) || double.IsSubnormal(c.Svf2.Ic2)
+                    || double.IsSubnormal(c.Svf3.Ic1) || double.IsSubnormal(c.Svf3.Ic2)
                     || double.IsSubnormal(c.XPrev) || double.IsSubnormal(c.UPrev)) return true;
             return float.IsSubnormal(env);
         }
@@ -563,6 +654,7 @@ namespace NeoBuzz.Filter
         {
             foreach (var c in channels)
                 if (!double.IsFinite(c.Svf1.Ic1) || !double.IsFinite(c.Svf1.Ic2) || !double.IsFinite(c.Svf2.Ic1) || !double.IsFinite(c.Svf2.Ic2)
+                    || !double.IsFinite(c.Svf3.Ic1) || !double.IsFinite(c.Svf3.Ic2)
                     || !double.IsFinite(c.G) || !double.IsFinite(c.K) || !double.IsFinite(c.UPrev)) return true;
             return !float.IsFinite(env);
         }

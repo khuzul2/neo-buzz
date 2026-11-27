@@ -1,0 +1,38 @@
+preset Sweep — Ladder Low-Pass (1 Bar)	87ecd8208e53914c34241bd9214f29347f097d13b584563470e5d92a2f097f41
+preset Sweep — Slow Rise (4 Bars, Saw)	db0d105883b795d403f6cc2b4c57e3faa5353becf7f75875c03f171a82460454
+preset Sweep — High-Pass Build (8 Bars)	bd113fb1ff07cacfca4d4b39418b9825bcb367b0985ed80db28a3aa6208b373d
+preset Auto-Wah — Funky (Band-Pass)	5b7bf18933cc76ab8d010ff056b9d2567f89b1c535fdd641a4e9b93eea148aa1
+preset Auto-Wah — Bass (Ladder 12)	d6e23dab59159db4b7206c2f9b3429c80013126da29dbcf49416f6e189477aa0
+preset Auto-Wah — Closing (Low-Pass, Envelope Down)	2a52fcf39ad78d07462c73ce4a2e0ed686b995ce093f631f6a3cfb795edd792c
+preset Dub — High-Pass Throw	5fc421626fca17f348e793cefaff91f32c44c6cfd2d831dbc5680e6a137b4dc4
+preset Dub — Resonant Low-Pass Siren (1/4)	1d0fd80063351c0c2ad37f43e710ae6550a2045976d62bf749f7df4ffc4b962c
+preset Resonant — Ladder Low-Pass	ec8dfaa9ad404943838bc7c13c69c06f4ae6df31e80035f17b6bea7377ed99df
+preset Resonant — Acid (Ladder, Drive, Envelope)	036ba4555ccbea4e2ed518bc3caf7f75bed693c386a9119290b34bff225e498a
+preset LFO — Stepped Filter (1/8, Square)	19a31e4ae0b36e9abc43ed4a377a286ed8b5dc213aa3a3315eea4982f0ac2e1c
+preset LFO — Stereo Sweep (1/2, 90°)	ba03cefc9ca456df72ea067475c27dd3d3bdd142ec05aa2b33bed0c5470e102d
+preset LFO — Sample and Hold (1/16)	1c2c7524a79404e41bd78c1cc5e84715813244cbdc7b35710134a01ed74f557f
+preset Mix — Gentle Top Cut (12 kHz)	08736e86097a27e4c7fbc47de295e57727795e3d7941f7c3723a95357bb5b853
+preset Mix — Telephone Band	95cd3c501c14fcf686fe010c4a05ca8ddaab189ae46c6cef050f7a6f9b49433e
+preset Notch — Swept Notch (2 Bars)	afcaf137ec263c108affc4d10c27c39f6abb5fa94eb2f027b472c2441233449b
+preset Peak — Resonant Peak Sweep (1 Bar)	e6f1e3c071c705c97bd17d2e69eb855e8203c5fbc1bc6df2e797108a6e7033d0
+case default	1757f32eff052aaa02ceeea59e8885bb22eb9940cb33bd9c66ecf9e1186d6ac1
+case type-0-slope-0	b1942ba46a998f0ed920b73aafe6c1e4acee4878c3454ffc7b72f86dc933d804
+case type-0-slope-1	b1942ba46a998f0ed920b73aafe6c1e4acee4878c3454ffc7b72f86dc933d804
+case type-1-slope-0	1ee7dc77263226cdb671a5210e84fbe64cb6eb0167d3c85e82989433bdc6f83c
+case type-1-slope-1	1ee7dc77263226cdb671a5210e84fbe64cb6eb0167d3c85e82989433bdc6f83c
+case type-2-slope-0	0cf504189091f2f172c56af2a37ebb315f3ed2df14c5c6e8c7880dc767782ba3
+case type-2-slope-1	74d9f8e3d03e8f2ea69292b8f4f2ea3cba7725f0678e5e75ee5a1d2734897f5c
+case type-3-slope-0	eca1bce5f1fb25d84a2f7ba3397ee28037e336b988e711e1e03ec785fe9d423b
+case type-3-slope-1	999da50fdf36873a4fa8af5d3269a46ccf251bff64aabe1285c221d8c8adb27d
+case type-4-slope-0	b502f4d73245649137f4297d1ca403de1294a855e099500877f2d36a4ae0b2b6
+case type-4-slope-1	a3c9e6cc96e35d0f9e315120e2fb176cceaba01b7f3db87ee2b9a63760ccb1b9
+case type-5-slope-0	5c0197ca99490cb733e868598daca7ca175dba6b000f73912c1d109e62bd33d6
+case type-5-slope-1	07ec85058a2d7303f0563e66e554e7108d486de7a42669e013bf963d0085bd26
+case type-6-slope-0	952799bfb24049616b40b599f4df36843814c437cda54524e1c20b95c46d2cff
+case type-6-slope-1	952799bfb24049616b40b599f4df36843814c437cda54524e1c20b95c46d2cff
+case env-lfo-retrig-env	3827ab65f9068ae5f4c8e2afb8dd069944a1994c630ce58b787601537162f27d
+case lfo-free-spread	c0388deb3a0a90c79cb1447362607e31345a611fef5d549f45b4572974cc3166
+case self-oscillation	4721eb10b185c5e1d4a709a082b2d600ba0a7e26d16cd51a913b928a50df53fd
+case amount-mix	65047586250a3396688a046fc84a9e0414c81bdbeec3856cac538041c6c998b7
+case automate-type	5f84e5db8ea67ef9d46b8290fa46c95d45eb9f97e932a903dd2b4826e5661839
+case automate-type-slope	7512b1ea164eb26f55856bfb81fbc857fa398beb638dfc9ef985c05eaf360373

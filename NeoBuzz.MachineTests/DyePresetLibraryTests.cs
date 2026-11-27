@@ -246,6 +246,36 @@ namespace NeoBuzz.MachineTests
             File.WriteAllText(path, sb.ToString());
         }
 
+        /// <summary>
+        /// A Filter effect slot keeps the range its Type had before Neo Filter gained Vowel (EXT1, #190): a slot stores a generic value
+        /// 0 ... 1000 that is mapped through the engine parameter's minimum, default and maximum, so a longer Type list would move every
+        /// stored Type to another filter. Every preset with a Filter slot renders the same bits as on origin/integrate/wave-68
+        /// (Golden/dye-filter-slot-baseline.txt, written from that code). Regenerate only on purpose: NEO_WRITE_DYE_GOLDEN=&lt;file&gt;.
+        /// </summary>
+        [Test]
+        public void EveryPresetWithAFilterSlotRendersWhatItRenderedBefore()
+        {
+            var type = FxTypes.Info(FxType.Filter).Table[NeoBuzz.Filter.P.Type];
+            Assert.That(type.Max, Is.EqualTo(6), "the slot's Type keeps its old range (no Vowel)");
+            Assert.That(FxTypes.Map(type, type.Default, 1000), Is.EqualTo(6));
+            Assert.That(FxTypes.Map(type, type.Default, 750), Is.EqualTo(3), "the same map as before the Vowel type");
+            var lines = new List<string>();
+            foreach (var e in Library.Value)
+            {
+                bool uses = false;
+                for (int n = 1; n <= 10; n++) if (e.Values.TryGetValue(Index($"FX{n} type"), out int raw) && raw == (int)FxType.Filter) uses = true;
+                if (!uses) continue;
+                var y = PresetTests.RenderDyePreset(PresetFile(), e.Name, e.Values);
+                lines.Add(e.Name + "\t" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Runtime.InteropServices.MemoryMarshal.AsBytes(y.AsSpan()))).ToLowerInvariant());
+            }
+            string write = Environment.GetEnvironmentVariable("NEO_WRITE_DYE_GOLDEN");
+            if (!string.IsNullOrEmpty(write)) { File.WriteAllLines(write, lines); Assert.Pass($"wrote {lines.Count} lines"); }
+            var golden = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, "Golden", "dye-filter-slot-baseline.txt"));
+            TestContext.Out.WriteLine($"{lines.Count} presets with a Filter slot");
+            Assert.That(lines.Count, Is.GreaterThan(0));
+            Assert.That(lines, Is.EqualTo(golden), "the presets with a Filter slot render as they did");
+        }
+
         [Test]
         public void GeneratedPresetsAreLevelledToMinus22AndDoNotClip()
         {

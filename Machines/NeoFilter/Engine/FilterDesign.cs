@@ -26,7 +26,7 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Filter
 {
-    internal enum FilterType { Ladder24, Ladder12, LowPass, BandPass, HighPass, Notch, Peak }
+    internal enum FilterType { Ladder24, Ladder12, LowPass, BandPass, HighPass, Notch, Peak, Vowel }
 
     internal enum FilterLfoShape { Sine, Triangle, SawUp, SawDown, Square, SampleHold, SmoothRandom }
 
@@ -50,6 +50,9 @@ namespace NeoBuzz.Filter
         public LfoRetrig Retrig;
         public double LfoPhase;               // cycles
         public double Mix, Gain;
+        public double VowelPos;               // 0 … 1: A, E, I, O, U a quarter apart (Vowel type)
+        public double Voice;                  // 0 Man, 1 Woman, 2 Child
+        public double VowelMod;               // 0 … 1: the share of the modulation that moves the vowel rather than the formants
     }
 
     /// <summary>Where the song is (valid in Work): its tick, the samples into it, the tick's length and the tempo.</summary>
@@ -129,6 +132,9 @@ namespace NeoBuzz.Filter
                 LfoPhase = v.Value(P.LfoPhase) / 360.0,
                 Mix = v.Value(P.Mix),
                 Gain = DspMath.DbToGain(v.Value(P.Output)),
+                VowelPos = v.Value(P.Vowel),
+                Voice = v.Choice(P.Voice),
+                VowelMod = v.Value(P.VowelMod),
             };
         }
 
@@ -315,8 +321,11 @@ namespace NeoBuzz.Filter
                 FilterType.BandPass => "SVF band-pass",
                 FilterType.HighPass => "SVF high-pass",
                 FilterType.Notch => "SVF notch",
+                FilterType.Vowel => "Vowel " + VowelDesign.Describe(s.VowelPos) + " · " + VowelDesign.VoiceNames[Math.Clamp((int)s.Voice, 0, VowelDesign.Voices - 1)],
                 _ => "SVF peak",
             };
+            if (s.Type == FilterType.Vowel)
+                return $"{type} · shift {VowelDesign.CutoffShift(s.CutoffHz):+0.0;-0.0;0.0} oct · Q {s.Q.ToString(s.Q < 10 ? "0.00" : "0.0", System.Globalization.CultureInfo.InvariantCulture)}";
             if (TakesSlope(s.Type)) type += s.Steep ? " 24" : " 12";
             string q = s.SelfOsc ? "self-osc" : "Q " + s.Q.ToString(s.Q < 10 ? "0.00" : "0.0", System.Globalization.CultureInfo.InvariantCulture);
             return $"{type} · {ParamDef.Freq(s.CutoffHz)} · {q}";
