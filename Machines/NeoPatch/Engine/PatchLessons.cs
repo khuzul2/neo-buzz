@@ -38,7 +38,7 @@ namespace NeoBuzz.Patch
         public static int Count => Slugs.Length;
 
         /// <summary>The Out level that puts each template at -22 dB (the chord, loudest 50 ms; NeoPatchTemplateTests measures and prints them).</summary>
-        static readonly float[] Levels = { 0.2628f, 0.3202f, 0.1783f, 0.2245f, 0.1733f, 0.2787f, 0.2352f, 0.0851f, 0.2268f, 0.3568f };
+        static readonly float[] Levels = { 0.3056f, 0.3723f, 0.2074f, 0.2611f, 0.2015f, 0.3241f, 0.2735f, 0.0989f, 0.2637f, 0.4148f };
 
         /// <summary>A template's index from its slug or its title (case does not matter), or -1.</summary>
         public static int Find(string name)

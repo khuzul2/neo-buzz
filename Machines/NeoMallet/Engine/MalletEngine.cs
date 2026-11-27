@@ -98,6 +98,9 @@ namespace NeoBuzz.Mallet
             }
         }
 
+        /// <summary>Notes held now (gate on), for the note contract tests (docs/specs/notes.md).</summary>
+        public int HeldNotes { get { int n = 0; for (int v = 0; v < Voices; v++) if (state[v] == Held) n++; return n; } }
+
         /// <summary>Voices sounding now.</summary>
         public int ActiveVoices
         {

@@ -15,6 +15,8 @@ namespace NeoBuzz.EnvelopeMachine
         bool gate;
         bool manualWas;
         double follow;
+        // The velocity gain of the note that last began (1 - Velocity * (1 - v)); a note with no velocity (a Note-parameter event, the Gate switch) is at full.
+        double velScale = 1.0;
         int rate = 44100;
 
         public EnvelopeEngine(ParamValues values)
@@ -34,8 +36,12 @@ namespace NeoBuzz.EnvelopeMachine
         }
 
         /// <summary>A note began (Note mode): the envelope attacks from where it is.</summary>
-        public void NoteOn()
+        public void NoteOn() => NoteOn(127);
+
+        /// <summary>A note with its velocity (1 ... 127) began: the envelope attacks from where it is, as high as the Velocity amount lets that velocity.</summary>
+        public void NoteOn(int velocity)
         {
+            velScale = 1.0 - v.F(P.Velocity) * (1.0 - Math.Clamp(velocity, 1, 127) / 127.0);
             gate = true;
             adsr.Set((float)v.Value(P.Attack), (float)v.Value(P.Decay), v.F(P.Sustain), (float)v.Value(P.Release));
             adsr.Gate(true);
@@ -55,6 +61,7 @@ namespace NeoBuzz.EnvelopeMachine
             gate = false;
             adsr.Reset();
             follow = 0;
+            velScale = 1.0;
         }
 
         /// <summary>
@@ -84,7 +91,7 @@ namespace NeoBuzz.EnvelopeMachine
                 manualWas = manual;
                 adsr.Set((float)v.Value(P.Attack), (float)v.Value(P.Decay), v.F(P.Sustain), (float)v.Value(P.Release));
                 for (int i = 0; i < samples; i++) adsr.Next();
-                y = adsr.Level;
+                y = adsr.Level * velScale;
             }
             return (float)Curved(y, v.Value(P.Curve));
         }

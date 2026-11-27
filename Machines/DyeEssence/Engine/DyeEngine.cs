@@ -156,6 +156,9 @@ namespace NeoBuzz.DyeEssence
         /// <summary>The table slot <paramref name="osc"/> plays now (null while a built-in one is still being built).</summary>
         public TableArena TableFor(int osc) => Bank.S.Osc[osc].Table;
 
+        /// <summary>Notes held now (gate on), for the note contract tests (docs/specs/notes.md).</summary>
+        public int HeldNotes => alloc.HeldNotes;
+
         public int ActiveNotes => Bank.ActiveNotes;
 
         void Update(bool force)

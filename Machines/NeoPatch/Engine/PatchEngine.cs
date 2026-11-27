@@ -85,6 +85,7 @@ namespace NeoBuzz.Patch
             rt.Volume = double.IsNegativeInfinity(vol) ? 0f : (float)DspMath.DbToGain(vol);
             rt.Voices = (int)values.Value(P.Voices);
             rt.Glide = (float)values.Value(P.Glide);
+            rt.VelLevel = values.F(P.VelLevel);
             rt.AudioRateModulation = values.On(P.AudioMod);
             for (int m = 0; m < 16; m++) rt.SetMacro(m, values.F(P.Macro1 + m));
         }

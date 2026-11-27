@@ -76,7 +76,7 @@ namespace NeoBuzz.Machine
         }
     }
 
-    public abstract class NeoModulatorBase : NeoMachineBase, IModulator, IDisposable
+    public abstract class NeoModulatorBase : NeoMachineBase, IModulator, INoteTap, IDisposable
     {
         /// <summary>The smallest block a write is made for (docs/specs/neo-patch.md decision 8).</summary>
         internal const int SubBlock = 64;
@@ -100,6 +100,9 @@ namespace NeoBuzz.Machine
 
         // Notes heard on the listened machine (counted where the host raises them, taken by Work).
         int noteOns, noteOffs;
+        // The velocity of the last note heard through the machine's notes (INoteTap), 0 when the note came as a Note parameter (no velocity there: full).
+        int noteVelocity;
+        INoteTapSource tapped;
         readonly List<(IParameter Parameter, int Track, Action<IParameter, int> Handler)> watched = new List<(IParameter, int, Action<IParameter, int>)>();
         IMachine watchedMachine;
         int watchedTrack = -2;
@@ -125,6 +128,9 @@ namespace NeoBuzz.Machine
 
         /// <summary>The machine heard a note on the listened machine (or the follower started): its own reaction.</summary>
         protected virtual void NoteOn() { }
+
+        /// <summary>The same with the velocity (1 ... 127) of the note, when the machine heard it as a note (a clip, the roll, Session, MIDI, a wire); the default is <see cref="NoteOn()"/>.</summary>
+        protected virtual void NoteOn(int velocity) => NoteOn();
         protected virtual void NoteOff() { }
 
         /// <summary>Whether the machine wants the listened machine's output level (the Envelope's follower).</summary>
@@ -215,7 +221,8 @@ namespace NeoBuzz.Machine
             int offs = Interlocked.Exchange(ref noteOffs, 0);
             int ons = Interlocked.Exchange(ref noteOns, 0);
             if (offs > 0 && ons == 0) NoteOff();
-            if (ons > 0) NoteOn();
+            int vel = Interlocked.Exchange(ref noteVelocity, 0);
+            if (ons > 0) { if (vel > 0) NoteOn(vel); else NoteOn(); }
 
             float u = Advance(samples, dt);
             if (!(u >= 0f)) u = 0f;
@@ -534,9 +541,14 @@ namespace NeoBuzz.Machine
                 {
                     foreach (var (p, t, h) in watched) { try { p.UnsubscribeEvents(t, h, null); } catch (Exception) { } }
                     watched.Clear();
+                    try { tapped?.RemoveNoteTap(this); } catch (Exception) { }
+                    tapped = null;
                     watchedMachine = m;
                     watchedTrack = listenTrack;
                     if (m != null) WatchNotes(m);
+                    // The notes the machine is given as notes (clips, the roll, Session, live MIDI, wires: docs/specs/notes.md G1). They carry no track:
+                    // listening to one track hears its Note parameter only.
+                    if (m is INoteTapSource source && listenTrack < 0) { source.AddNoteTap(this); tapped = source; }
                 }
             }
 
@@ -557,6 +569,15 @@ namespace NeoBuzz.Machine
                 if (want) ModulationBoard.FollowerStarted(); else ModulationBoard.FollowerStopped();
             }
         }
+
+        // INoteTap: the machine's own notes (any thread; counts only, as the Note-parameter handler does).
+        void INoteTap.TapNoteOn(int note, int velocity)
+        {
+            Volatile.Write(ref noteVelocity, Math.Clamp(velocity, 1, 127));
+            Interlocked.Increment(ref noteOns);
+        }
+
+        void INoteTap.TapNoteOff(int note) => Interlocked.Increment(ref noteOffs);
 
         void WatchNotes(IMachine m)
         {
@@ -602,6 +623,8 @@ namespace NeoBuzz.Machine
                     try { p.UnsubscribeEvents(t, h, null); } catch (Exception) { }
                 }
                 watched.Clear();
+                try { tapped?.RemoveNoteTap(this); } catch (Exception) { }
+                tapped = null;
             }
             if (following)
             {

@@ -33,5 +33,8 @@ namespace NeoBuzz.EnvelopeMachine
 
         [ParameterDecl(Name = "Write glide", Description = "Time a target takes to cross its whole range: no write moves further than this allows", MinValue = 0, MaxValue = 1000, DefValue = 408)]
         public int Glide { get => Values[P.Glide]; set => Values.Set(P.Glide, value); }
+
+        [ParameterDecl(Name = "Velocity", Description = "Note mode: how much a note's velocity scales the output (0 %: every note opens it fully)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int Velocity { get => Values[P.Velocity]; set => Values.Set(P.Velocity, value); }
     }
 }

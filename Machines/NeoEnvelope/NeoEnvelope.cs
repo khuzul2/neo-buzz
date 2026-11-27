@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.EnvelopeMachine
@@ -23,6 +24,9 @@ namespace NeoBuzz.EnvelopeMachine
 
         internal EnvelopeEngine Engine => engine;
 
+        // State version 1 (notes.md G4): Velocity was appended; see EnvelopeMigrations.
+        internal override StateMigrations Migrations => EnvelopeMigrations.Chain;
+
         /// <summary>ReBuzz: the control machine's block.</summary>
         public void Work() => Run();
 
@@ -36,6 +40,8 @@ namespace NeoBuzz.EnvelopeMachine
         protected override double TargetGlide => engine.Glide;
 
         protected override void NoteOn() { if (!engine.Following) engine.NoteOn(); }
+
+        protected override void NoteOn(int velocity) { if (!engine.Following) engine.NoteOn(velocity); }
 
         protected override void NoteOff() { if (!engine.Following) engine.NoteOff(); }
 

@@ -92,6 +92,12 @@ Macro16      "Macro 16"      0 1000 500  pct                             | Macro
     how Moves every node setting that the patch maps to macro 16, each between its own low and high value.
     sound What it does depends on the patch; the preset's mappings are named in its description.
 
+group Velocity
+VelLevel    "Vel -> level"  0 1000 700  pct                            | How much note velocity changes loudness
+    id vel_level
+    how Sets how strongly note velocity changes the loudness of each note, from 0 to 100 %. At 0 every note is as loud as the patch makes it.
+    sound At 70 % a soft note is clearly quieter than a hard one, as on any played instrument; 0 % ignores velocity unless the patch wires it from the Keys node.
+
 # What the machine measures (NeoPatchMachine.Readings, machine_readings): the output after Volume, in dBFS.
 reading rms_db dB | The output's RMS over about half a second (-inf: silence)
 reading peak_db dB | The output's peak, falling 20 dB a second (-inf: silence)

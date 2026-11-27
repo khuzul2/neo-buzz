@@ -67,6 +67,9 @@ namespace NeoBuzz.Patch
         [ParameterDecl(Name = "Macro 16", Description = "Macro 16, moves every node setting mapped to it", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Macro16 { get => Values[P.Macro16]; set => Values.Set(P.Macro16, value); }
 
+        [ParameterDecl(Name = "Vel -> level", Description = "How much note velocity changes loudness", MinValue = 0, MaxValue = 1000, DefValue = 700)]
+        public int VelLevel { get => Values[P.VelLevel]; set => Values.Set(P.VelLevel, value); }
+
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);
 

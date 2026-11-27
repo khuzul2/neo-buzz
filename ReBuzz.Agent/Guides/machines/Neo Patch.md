@@ -13,6 +13,7 @@ Sounds the fixed-architecture synths cannot make: your own FM routings, filter f
 - `Voices` is how many notes sound at once (1 to 16). `Glide` slides the pitch between notes.
 - `Macro 1` to `Macro 16` each move every node setting the patch maps to them, between a low and a high value the patch sets.
 - `Audio-rate mod` reads control inputs (cutoff, level, delay time) for every sample instead of every 16 samples with smoothing: switch it on for metallic filter FM; it costs more CPU.
+- `Vel -> level` (default 70 %, 0 % in songs saved before it) sets how much a note's velocity changes its level, as in the other synths; the `Keys` node's velocity output is still there for wiring to anything else.
 - 16 tracks of Note and Velocity, plus MIDI; MPE channels give each note its own bend, pressure (channel pressure) and slide (CC 74), which the Keys node outputs.
 
 ## Starting points

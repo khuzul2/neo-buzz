@@ -43,3 +43,7 @@ Glide     "Write glide" 0 1000 408 time 0.001 1                | Time a target t
     id glide
     how Limits how fast a target may move: it takes at least this long to cross its whole range.
     sound A short glide keeps fast modulation clean; a long one smooths and slows it.
+Velocity  "Velocity"    0 1000 0   pct                         | Note mode: how much a note's velocity scales the output (0 %: every note opens it fully)
+    id velocity
+    how Sets how much the velocity of the note changes the height of the envelope in Note mode, from 0 % (every note as high as the next) to 100 % (a soft note moves its targets far less than a hard one).
+    sound At 0 % a quiet note and a hard note open a filter alike; at 100 % the filter opens in step with how hard each note was played.

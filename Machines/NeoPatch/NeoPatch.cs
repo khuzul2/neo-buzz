@@ -44,6 +44,9 @@ namespace NeoBuzz.Patch
 
         internal PatchEngine Engine { get; }
 
+        // State version 1 (notes.md G2, CU6a): see PatchMigrations.
+        internal override StateMigrations Migrations => PatchMigrations.Chain;
+
         /// <summary>The inner canvas's view (zoom and pan) as text; the editor keeps it here and the song saves it.</summary>
         internal string View { get; set; } = "";
 
