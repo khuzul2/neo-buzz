@@ -132,9 +132,10 @@ namespace NeoBuzz.Shift
 
             int mode = Math.Clamp(ctx.Raw(P.Mode), 0, 2);
             if (machine != null) machine.Engine.ReadView(view);
-            else
+            bool live = machine != null && view.Live;
+            if (!live)
             {
-                // No machine behind the editor (the gallery): a plain shape so the picture reads.
+                // Nothing has played through the machine yet (or none is behind the editor, as in the gallery): a plain shape so the picture reads.
                 for (int b = 0; b < ShiftView.Bands; b++)
                 {
                     double f = lo * Math.Pow(hi / lo, (b + 0.5) / ShiftView.Bands);
@@ -158,9 +159,9 @@ namespace NeoBuzz.Shift
             g.Path(outPath, AccentColor.WithAlpha(0x55), new NeoStroke(AccentColor, 1.5));
 
             // The shift itself: what the engine runs now (the effective values: Amount and the notes included).
-            double ratio = machine != null ? machine.Engine.Ratio : Math.Pow(2, ctx.Value(P.Pitch) / 12.0);
-            double shiftHz = machine != null ? machine.Engine.ShiftHz : ctx.Value(P.Shift) + ctx.Value(P.ShiftFine);
-            double carrier = machine != null ? machine.Engine.CarrierHz : ctx.Value(P.Carrier);
+            double ratio = live ? machine.Engine.Ratio : Math.Pow(2, (ctx.Value(P.Pitch) + ctx.Value(P.Fine) / 100.0) / 12.0);
+            double shiftHz = live ? machine.Engine.ShiftHz : ctx.Value(P.Shift) + ctx.Value(P.ShiftFine);
+            double carrier = live ? machine.Engine.CarrierHz : ctx.Value(P.Carrier);
             double value = mode == 0 ? ratio : mode == 1 ? shiftHz : carrier;
             if (mode == 2)
             {

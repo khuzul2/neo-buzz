@@ -26,11 +26,15 @@ namespace NeoBuzz.Shift
         public const int Bands = 120;
         public readonly float[] In = new float[Bands], Out = new float[Bands];
         public int Mode;
+        /// <summary>True once the engine has published a spectrum (before that the arrays hold silence).</summary>
+        public bool Live;
+        public ShiftView() { Array.Fill(In, -120f); Array.Fill(Out, -120f); }
         public void CopyTo(ShiftView o)
         {
             Array.Copy(In, o.In, Bands);
             Array.Copy(Out, o.Out, Bands);
             o.Mode = Mode;
+            o.Live = Live;
         }
     }
 
@@ -426,6 +430,7 @@ namespace NeoBuzz.Shift
             Bands(ringIn, vw.In);
             Bands(ringOut, vw.Out);
             vw.Mode = raw.Choice(P.Mode);
+            vw.Live = true;
             view.Publish();
         }
 
