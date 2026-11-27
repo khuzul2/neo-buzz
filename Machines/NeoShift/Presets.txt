@@ -1,0 +1,66 @@
+# Neo Shift factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoShift
+# A preset that does not name a parameter takes its default (Pitch mode, Fast, Window 30 ms, Mix 100 %, Amount 100 %, Follow notes off, no cuts),
+# so each preset says which mode it wants and what it moves. Quality and Window set the latency: Fast 30 ms is 720 samples, Smooth is 2047.
+machine "Neo Shift"
+
+preset "Pitch — Octave Down"
+comment "The whole sound moves an octave down and replaces the original: a lead turns into a bass line, a voice into a growl, with the harmonics kept in tune. A long 60 ms window keeps low notes smooth."
+Mode = Pitch
+Pitch = -12
+Window = 60
+Low cut = 30
+
+preset "Pitch — Fifth Up"
+comment "A seven-semitone shift on the phase vocoder, mixed under the original: every note gets a second voice a perfect fifth above, so single lines turn into power-chord harmonies."
+Mode = Pitch
+Quality = Smooth
+Pitch = 7
+Mix = 55
+
+preset "Pitch — Wide Double"
+comment "No shift, only a stereo detune: the left side drops 35 cents and the right rises 35 cents, mixed with the dry sound, so a mono part opens into a wide, slowly beating double."
+Mode = Pitch
+Quality = Smooth
+Pitch = 0
+Stereo detune = 35
+Mix = 60
+
+preset "Frequency — Rising Barber Pole"
+comment "Every repeat is shifted another 45 Hz up and fed back at 80 percent, so each note climbs away in a ring of ever higher, bell-like echoes that never seems to reach the top."
+Mode = Frequency
+Shift = 45
+Feedback = 80
+High cut = 8000
+Mix = 70
+
+preset "Frequency — Gentle Wide Shift"
+comment "The left side is moved 18 Hz up and the right side 18 Hz down: harmonics slide out of tune with each other into a slow, swirling, detuned stereo shimmer with no echoes."
+Mode = Frequency
+Shift = 18
+Spread = 100
+Mix = 100
+
+preset "Ring — Metal Bell"
+comment "The sound is multiplied by a 523 Hz sine: the original disappears and only the sum and difference tones are left, a clangorous, inharmonic bell that rings on whatever you play."
+Mode = Ring
+Carrier = 523
+Shape = Sine
+Depth = 100
+High cut = 12000
+
+preset "Ring — Slow Throb"
+comment "A 4 Hz sine carrier at zero depth is plain amplitude modulation: the sound stays where it is but swells and fades four times a second, a deep, pulsing tremolo."
+Mode = Ring
+Carrier = 4
+Shape = Sine
+Depth = 0
+
+preset "Ring — Note Ring"
+comment "Follow notes is on: each note you play sets the carrier of a square-wave ring modulator to that note's frequency, so the sound is turned into a buzzing, tuned metallic tone that plays along with the keys."
+Mode = Ring
+Shape = Square
+Depth = 100
+Carrier = 220
+Follow notes = On
+Low cut = 80
+High cut = 9000

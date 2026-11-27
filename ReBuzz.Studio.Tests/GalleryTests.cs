@@ -2686,6 +2686,31 @@ namespace ReBuzz.Studio.Tests
                     "Neo Prism with the preset \"Pitch — Octave Up Shimmer\" loaded: the spectrum (in and out) with the delay's time curve over it, the five section lights (Pitch and Delay lit), the section page below, and Output with FFT size, Amount, Mix and the meters.");
                 PrismShot("663-neo-prism-scramble", "Prism 2", new[] { 0, 24, 100, 0, 1, 700, 6, 2, 565, 7, 0, 0, 2, 3, 1000, 0, 354, 0, 0, 224, 447, 0, 404, 300, 2, 1000, 500 },
                     "Neo Prism with the preset \"Scramble — Bin Shuffle Glitch\" loaded: the Scramble light on and its page (synced to an eighth note).");
+                // SHF1: Neo Shift's editor with a preset loaded (the values are set before the editor opens): the spectrum with the picture of the shift
+                // (the input's line moved, or the carrier), the mode tabs with the mode's page, Follow notes and Root, and Output.
+                void ShiftShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Shift", machineName);
+                        string[] names = { "Mode", "Pitch", "Fine", "Quality", "Window", "Stereo detune", "Shift", "Shift fine", "Feedback", "Spread", "Carrier", "Shape", "Depth", "Follow notes", "Root", "Low cut", "High cut", "Mix", "Amount", "Output" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Shift; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                ShiftShot("670-neo-shift-pitch", "Shift", new[] { 0, 12, 100, 0, 50, 0, 2000, 500, 500, 0, 4286, 0, 1000, 0, 60, 239, 1000, 1000, 500, 500 },
+                    "Neo Shift with the preset \"Pitch — Octave Down\" loaded: the spectrum (in and out) with the input's line moved an octave down over it, the Pitch tab selected (Pitch, Fine, Stereo detune, Quality, Window), Follow notes and Root, and Output with the cuts, Amount, Mix and the meters.");
+                ShiftShot("671-neo-shift-frequency", "Shift 2", new[] { 1, 12, 100, 0, 30, 0, 2045, 500, 921, 0, 4286, 0, 1000, 0, 60, 0, 673, 700, 500, 500 },
+                    "Neo Shift with the preset \"Frequency — Rising Barber Pole\" loaded: the Frequency tab (Shift, Shift fine, Feedback, Spread) and the input's line moved 45 Hz up.");
+                ShiftShot("672-neo-shift-ring", "Shift 3", new[] { 2, 12, 100, 0, 30, 0, 2000, 500, 500, 0, 4410, 0, 1000, 0, 60, 0, 804, 1000, 500, 500 },
+                    "Neo Shift with the preset \"Ring — Metal Bell\" loaded: the Ring tab (Carrier, Shape, Depth) and the carrier's marker line on the spectrum at 523 Hz.");
                 // SPC1: Neo Space's editor with a preset loaded: the room, the picture of the response with the pre-delay and the trim drawn on it,
                 // the tone and the output. The response is made in the background: the shot waits for it (Busy), then plays a few blocks.
                 void SpaceShot(string id, string machineName, int[] raws, string text)
