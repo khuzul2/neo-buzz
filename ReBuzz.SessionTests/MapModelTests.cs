@@ -14,6 +14,53 @@ namespace ReBuzz.SessionTests
         static int Cc(int channel, int number, int value) => 0xB0 | channel | (number << 8) | (value << 16);
         static int NoteOn(int channel, int note, int velocity = 100) => 0x90 | channel | (note << 8) | (velocity << 16);
 
+
+        // ------------------------------------------------------------------ MM2: map version 2
+
+        [Test]
+        public void AVersionTwoMapKeepsTheRawRangeAndMixerTargetsAndAVersionOneMapReadsAsBefore()
+        {
+            var song = new SongMap();
+            song.Global = new List<MapEntry>
+            {
+                new MapEntry { Source = new MapSource("A", MapKind.ControlChange, 0, 1), Target = MapTarget.Parameter("Lead", "Wave"), RawMin = 0, RawMax = 4 },
+                new MapEntry { Source = new MapSource("A", MapKind.ControlChange, 0, 2), Target = MapTarget.Mixer(MixerControl.Volume, "track:Bass") },
+                new MapEntry { Source = new MapSource("A", MapKind.ControlChange, 0, 3), Target = MapTarget.Mixer(MixerControl.Send, "", 3, "Hall") },
+                new MapEntry { Source = new MapSource("A", MapKind.ControlChange, 0, 4), Target = MapTarget.Mixer(MixerControl.Master) },
+                new MapEntry { Source = new MapSource("A", MapKind.Note, 0, 5), Target = MapTarget.Command(MapCommand.BankRight8) },
+                new MapEntry { Source = new MapSource("A", MapKind.Note, 0, 6), Target = MapTarget.Parameter("Master", "I:Amp", 2) },
+            };
+            var xml = song.ToXml();
+            Assert.That((int)xml.Attribute("version")!, Is.EqualTo(2));
+            var back = SongMap.FromXml(System.Xml.Linq.XElement.Parse(xml.ToString()), out bool newer);
+            Assert.That(newer, Is.False);
+            Assert.That(back.Global!.Select(e => e.Target), Is.EqualTo(song.Global.Select(e => e.Target)));
+            Assert.That((back.Global[0].RawMin, back.Global[0].RawMax), Is.EqualTo((0, 4)));
+            Assert.That(back.Global[1].RawMin, Is.Null, "a mixer target has no raw range");
+            Assert.That(back.Global[2].Target.Text, Is.EqualTo("Mixer · Bank track 3 · Send Hall"));
+            Assert.That(back.Global[5].Target.IsInputParam && back.Global[5].Target.Track == 2, Is.True);
+
+            var v1 = SongMap.FromXml(System.Xml.Linq.XElement.Parse(
+                "<MidiMap version=\"1\"><Global><Map device=\"A\" kind=\"cc\" channel=\"1\" number=\"7\" machine=\"Lead\" param=\"Wave\" takeover=\"jump\"/></Global></MidiMap>"), out newer);
+            Assert.That(newer, Is.False, "a version 1 map loads");
+            Assert.That((v1.Global![0].RawMin, v1.Global[0].RawMax, v1.Global[0].Takeover), Is.EqualTo(((int?)null, (int?)null, Takeover.Jump)));
+            Assert.That(SongMap.FromXml(System.Xml.Linq.XElement.Parse("<MidiMap version=\"3\"/>"), out newer).IsEmpty, Is.True);
+            Assert.That(newer, Is.True, "a newer format than this build knows is not read");
+        }
+
+        [Test]
+        public void AMixerTargetKnowsItsMachinesAndFollowsARename()
+        {
+            var t = MapTarget.Mixer(MixerControl.Send, "track:Bass", 0, "Hall");
+            Assert.That(t.MachineNames(), Is.EquivalentTo(new[] { "Bass", "Hall" }));
+            Assert.That(t.Renamed("Bass", "Sub").Strip, Is.EqualTo("track:Sub"));
+            Assert.That(t.Renamed("Hall", "Plate").Send, Is.EqualTo("Plate"));
+            Assert.That(t.Renamed("Other", "X"), Is.SameAs(t));
+            Assert.That(MapTarget.Mixer(MixerControl.Volume, "track:A", 4).Strip, Is.EqualTo(""), "a bank track has no fixed strip");
+            Assert.That(MapTarget.Mixer(MixerControl.Master, "track:A", 4).Equals(MapTarget.Mixer(MixerControl.Master)), Is.True);
+            Assert.That(MapTarget.Mixer(MixerControl.Volume, "track:A").Equals(MapTarget.Mixer(MixerControl.Pan, "track:A")), Is.False);
+        }
+
         // ------------------------------------------------------------------ sources
 
         [Test]

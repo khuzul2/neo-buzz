@@ -43,6 +43,8 @@
   <ItemGroup>
     <EmbeddedResource Include="$(EngineRoot)BuildNumber.txt" LogicalName="ReBuzz.BuildNumber.txt" Link="BuildNumber.txt" />
     <EmbeddedResource Include="$(EngineRoot)BuildDate.txt" LogicalName="ReBuzz.BuildDate.txt" Link="BuildDate.txt" />
+    <!-- Fork (docs/specs/midi-mapping.md, MM2): the built-in controller profiles, data files like any a person adds. -->
+    <EmbeddedResource Include="$(EngineRoot)Midi\Profiles\*.json" LogicalName="ReBuzz.Profiles.%(Filename)%(Extension)" Link="Midi\Profiles\%(Filename)%(Extension)" />
   </ItemGroup>
   <!-- The build date is stamped here (it was ReBuzz.csproj's pre-build step): the engine builds first. -->
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">

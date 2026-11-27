@@ -21,6 +21,7 @@ NeoBuzz.Exciter	0	15	ae9270c82c60d418
 NeoBuzz.Filter	0	18	44306d9ce552e128
 NeoBuzz.Fm6	0	172	82815f73f6dd7eb2
 NeoBuzz.Gate	0	15	04189a5ccf665c32
+NeoBuzz.Grain	0	20	330320474c0bc614
 NeoBuzz.Imager	0	14	17e3f5ad19d4a511
 NeoBuzz.LearnAdd	0	12	7ee147e298b2d95a
 NeoBuzz.LearnFm	0	12	b640e17f7493d56f
@@ -48,6 +49,7 @@ NeoBuzz.Organ	0	32	830271717a1c8bf1
 NeoBuzz.Poly	0	91	dbaa32ac1ee1fb76
 NeoBuzz.Poly	1	98	a508931be3e215ca
 NeoBuzz.Poly	2	102	2ec93cb55f846197
+NeoBuzz.RandomMachine	0	14	b100d00a4270956f
 NeoBuzz.Sampler	0	325	190329edfb1c45d8
 NeoBuzz.Sampler	1	325	236bcd9389e20480
 NeoBuzz.Scope	0	11	518994d8cbae37f0
@@ -57,7 +59,9 @@ NeoBuzz.Strip	0	38	bd2c4b3527061794
 NeoBuzz.Tape	0	15	c5adae7711a8f902
 NeoBuzz.Transient	0	17	03b3ae017f04a5a7
 NeoBuzz.Tune	0	20	cbee2b088009522f
+NeoBuzz.TutorialTremolo	0	6	ae4ecf4a09593708
 NeoBuzz.Utility	0	11	3eb4171cc6e8a4c2
 NeoBuzz.Verb	0	17	ee4d7f51739f6a7b
 NeoBuzz.VoiceToMidi	0	91	9871503cf4670345
 NeoBuzz.Wave	0	83	744dec7ce1d8d67c
+NeoBuzz.Prism	0	27	58a0b9f7dfee3eda

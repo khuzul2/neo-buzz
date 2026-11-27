@@ -1,0 +1,51 @@
+{
+  "id": "clip-grid-8x5",
+  "name": "Clip-grid controller (8 x 5)",
+  "description": "A controller with a grid of 8 by 5 clip pads, 8 track faders and a master fader, 8 device knobs and 8 track knobs with rings, and buttons for each track.",
+  "match": ["APC40 mkII"],
+  "role": "controls",
+  "knobs": 8,
+  "takeover": "pickup",
+  "sources": ["docs/specs/midi-mapping.md, MM2: the maker's published communications protocol, version 1.2"],
+  "enter": ["F0 47 7F 29 60 00 04 41 08 02 01 F7"],
+  "exit": ["F0 47 7F 29 60 00 04 40 08 02 01 F7"],
+  "controls": [
+    { "id": "Track fader", "action": "volume", "kind": "cc", "channel": 0, "number": 7, "count": 8, "channelStep": 1, "index": 1 },
+    { "id": "Master fader", "action": "master", "kind": "cc", "channel": 0, "number": 14 },
+    { "id": "Device knob", "action": "knob", "kind": "cc", "channel": 0, "number": 16, "count": 8, "numberStep": 1, "index": 1,
+      "led": { "typeNumber": 24, "typeValue": 2 } },
+    { "id": "Track knob", "action": "trackknob", "kind": "cc", "channel": 0, "number": 48, "count": 8, "numberStep": 1, "index": 1,
+      "led": { "typeNumber": 56, "typeValue": 2, "typePanValue": 3 } },
+    { "id": "Track select", "action": "select", "kind": "note", "channel": 0, "number": 51, "count": 8, "channelStep": 1, "index": 1, "led": { "on": 127, "off": 0 } },
+    { "id": "Mute", "action": "mute", "kind": "note", "channel": 0, "number": 50, "count": 8, "channelStep": 1, "index": 1, "led": { "on": 127, "off": 0 } },
+    { "id": "Solo", "action": "solo", "kind": "note", "channel": 0, "number": 49, "count": 8, "channelStep": 1, "index": 1, "led": { "on": 127, "off": 0 } },
+    { "id": "Arm", "action": "arm", "kind": "note", "channel": 0, "number": 48, "count": 8, "channelStep": 1, "index": 1, "led": { "on": 127, "off": 0 } },
+    { "id": "Clip stop", "action": "clipstop", "kind": "note", "channel": 0, "number": 52, "count": 8, "channelStep": 1, "index": 1, "led": { "on": 1, "off": 0 } },
+    { "id": "Stop all clips", "action": "stopall", "kind": "note", "number": 81 },
+    { "id": "Scene launch", "action": "scene", "kind": "note", "number": 82, "count": 5, "numberStep": 1, "index": 1 },
+    { "id": "Pan", "action": "knobmode.pan", "kind": "note", "number": 87, "led": { "on": 127, "off": 0 } },
+    { "id": "Sends", "action": "knobmode.send", "kind": "note", "number": 88, "led": { "on": 127, "off": 0 } },
+    { "id": "Play", "action": "play", "kind": "note", "number": 91, "led": { "on": 127, "off": 0 } },
+    { "id": "Stop", "action": "stop", "kind": "note", "number": 92 },
+    { "id": "Record", "action": "record", "kind": "note", "number": 93, "led": { "on": 127, "off": 0 } },
+    { "id": "Up", "action": "sceneup", "kind": "note", "number": 94 },
+    { "id": "Down", "action": "scenedown", "kind": "note", "number": 95 },
+    { "id": "Right", "action": "bankright", "kind": "note", "number": 96 },
+    { "id": "Left", "action": "bankleft", "kind": "note", "number": 97 },
+    { "id": "Bank left", "action": "bankleft8", "kind": "note", "number": 60 },
+    { "id": "Bank right", "action": "bankright8", "kind": "note", "number": 61 }
+  ],
+  "grid": {
+    "cols": 8, "rows": 5, "kind": "note", "channel": 0, "first": 0, "rowStride": 8, "bottomRowFirst": true,
+    "states": {
+      "empty": { "velocity": 0 },
+      "armedEmpty": { "velocity": 6 },
+      "stopped": { "velocity": "clip" },
+      "queued": { "velocity": 21, "channel": 14, "base": "clip" },
+      "playing": { "velocity": 21, "channel": 9, "base": 22 },
+      "stopping": { "velocity": 21, "channel": 14, "base": 0 },
+      "recording": { "velocity": 5, "channel": 9, "base": 6 },
+      "recordQueued": { "velocity": 5, "channel": 14, "base": 0 }
+    }
+  }
+}

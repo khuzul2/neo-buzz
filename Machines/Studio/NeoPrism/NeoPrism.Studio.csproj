@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Prism, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoPrism</NeoFolder>
+    <NeoName>Neo Prism</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+</Project>

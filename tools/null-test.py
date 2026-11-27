@@ -429,6 +429,9 @@ CASES = [
     fx("chop-stutter", "Neo Chop", "Stutter — Sixteenth Stutter", beats=8),
     fx("chop-tape", "Neo Chop", "Tape — Tape Stop at the Bar", beats=18),
     fx("chop-gate", "Neo Chop", "Gate — Pumping Step Gate", beats=8),
+    # Neo Prism (docs/specs/neo-prism.md): the spectral pitch, the scramble and the delay (the FFT and the seeded shuffles are portable maths).
+    fx("prism-pitch", "Neo Prism", "Pitch — Octave Up Shimmer", beats=8),
+    fx("prism-scramble", "Neo Prism", "Scramble — Bin Shuffle Glitch", beats=8),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),
@@ -559,6 +562,8 @@ CASES = [
     # moving a filter by the level of the source. The song position drives them, so every render is the same.
     mods(fx("mod-lfo-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "900 Hz"), ("Resonance", "40%")]),
          ("Neo LFO", "Mod", [("Shape", "Triangle"), ("Sync", "1/4"), ("Write glide", "50 ms")], [("Fx1", "Cutoff", 50, "bi")], None)),
+    mods(fx("mod-random-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "900 Hz"), ("Resonance", "40%")]),
+         ("Neo Random", "Mod", [("Mode", "Random"), ("Sync", "1/8"), ("Seed", 102), ("Write glide", "20 ms")], [("Fx1", "Cutoff", 50, "bi")], None)),
     mods(fx("mod-step-filter", "Neo Filter", None, [("Type", "SVF LP"), ("Cutoff", "600 Hz"), ("Resonance", "30%")]),
          ("Neo Step", "Mod", [("Steps", 4), ("Rate", "1/8"), ("Step 1", "100%"), ("Step 2", "20%"), ("Step 3", "70%"), ("Step 4", "0%"), ("Write glide", "40 ms")],
           [("Fx1", "Cutoff", 60, "uni")], None)),

@@ -100,17 +100,21 @@ namespace ReBuzz.Core
         {
             if (target == null) return "Nothing to map to.";
             if (target.IsCommand)
-                return target.Cmd == MapCommand.SelectTrack && target.Index < 1 ? "Select track needs a track number from 1." : null;
+                return target.Cmd is MapCommand.SelectTrack or MapCommand.SelectBankTrack or MapCommand.ArmBankTrack or MapCommand.StopClipBankTrack && target.Index < 1
+                    ? "That command needs a track number from 1." : null;
             var core = buzz.SongCore;
+            if (target.IsMixer) return ValidateMixer(target, core);
             var machine = core?.MachinesList.FirstOrDefault(m => m.Name == target.Machine);
             if (machine == null) return $"The song has no machine named \"{target.Machine}\".";
             var p = ResolveParam(target, core.MachinesList.ToDictionary(m => m.Name, m => m, StringComparer.Ordinal));
             if (p == null)
-                return target.IsTrackParam && target.Track >= machine.ParameterGroupsList[2].TrackCount
+                return target.IsInputParam && target.Track >= machine.ParameterGroupsList[0].TrackCount
+                    ? $"{machine.Name} has {machine.ParameterGroupsList[0].TrackCount} input(s): there is no input {target.Track}."
+                    : target.IsTrackParam && target.Track >= machine.ParameterGroupsList[2].TrackCount
                     ? $"{machine.Name} has {machine.ParameterGroupsList[2].TrackCount} track(s): there is no track {target.Track}."
-                    : $"{machine.Name} has no parameter \"{target.ParamName}\"" + (target.IsTrackParam ? " (a track parameter)." : " (a global one; track parameters are written \"T:Name\").");
+                    : $"{machine.Name} has no parameter \"{target.ParamName}\"" + (target.IsTrackParam ? " (a track parameter)." : target.IsInputParam ? " (an input parameter; the track is the input's number)." : " (a global one; track parameters are written \"T:Name\", input ones \"I:Name\").");
             if (p.Type == ParameterType.Note) return $"\"{p.Name}\" is a note parameter: notes play the machine, they are not mapped.";
-            if (trackId != null)
+            if (trackId != null && !target.IsInputParam)
             {
                 var model = Model;
                 var entry = EntryById(trackId, model);
@@ -119,6 +123,31 @@ namespace ReBuzz.Core
             }
             return null;
         }
+
+        /// <summary>The mixer target's strip and return must exist; a bank track is 1 to 8 (it may be empty now: the bank moves).</summary>
+        string ValidateMixer(MapTarget t, SongCore core)
+        {
+            if (core == null) return "There is no song.";
+            if (t.Mix == MixerControl.Master) return null;
+            if (t.Bank > MapTarget.BankSize) return "A bank holds tracks 1 to 8.";
+            if (t.Bank == 0)
+            {
+                var entry = EntryById(t.Strip);
+                string name = t.Strip.Substring(t.Strip.IndexOf(':') + 1);
+                if (entry == null && !core.MachinesList.Any(m => m.Name == name))
+                    return $"The mixer has no strip \"{t.Strip}\" (strips are written track:Name, group:Name or return:Name).";
+            }
+            if (t.Mix == MixerControl.Send)
+            {
+                if (t.Send.Length == 0) return "A send needs the return it goes to.";
+                if (!ReturnsOf(core, Model).Any(m => m.Name == t.Send)) return $"The song has no return named \"{t.Send}\".";
+            }
+            return null;
+        }
+
+        /// <summary>The raw range a parameter target has now (what a version 2 map keeps), or null: not a parameter.</summary>
+        (int Min, int Max)? RawRangeOf(MapTarget target) =>
+            target != null && !target.IsCommand && !target.IsMixer && ParameterOf(target) is { } p ? (p.MinValue, p.MaxValue) : null;
 
         static bool SameControl(MapSource a, MapSource b) =>
             a.Kind == b.Kind && a.Channel == b.Channel && a.Number == b.Number &&
@@ -136,19 +165,20 @@ namespace ReBuzz.Core
             var result = new MapResult { Scope = scope, Source = source, Target = target };
             if (scope == MapScope.Track) trackId ??= SelectedTrackId;
             if (scope == MapScope.Track && trackId == null) { result.Error = "No track is selected: select a track first, or map in the global scope."; return result; }
-            result.Error = Validate(target, scope == MapScope.Track && !target.IsCommand ? trackId : null);
+            result.Error = Validate(target, scope == MapScope.Track && !target.IsCommand && !target.IsMixer ? trackId : null);
             if (result.Error != null) return result;
             if (drive != null && (drive.Min < 0 || drive.Max > 1 || drive.Min > drive.Max)) { result.Error = "The range runs from 0 to 1 of the parameter's span, low end first."; return result; }
             result.TrackId = trackId;
             string text = null;
+            var raw = RawRangeOf(target);
             result.Changed = Edit((c, s) =>
             {
-                var d = new MapDrive { Target = target, Min = drive?.Min ?? 0, Max = drive?.Max ?? 1, Invert = drive?.Invert ?? false, Takeover = drive?.Takeover ?? Takeover.Pickup };
+                var d = new MapDrive { Target = target, Min = drive?.Min ?? 0, Max = drive?.Max ?? 1, Invert = drive?.Invert ?? false, Takeover = drive?.Takeover ?? TakeoverOf(source.Device), RawMin = raw?.Min, RawMax = raw?.Max };
                 if (scope == MapScope.Global)
                 {
                     var list = s.Global ?? c.Global;
                     list.RemoveAll(e => SameControl(e.Source, source) || (!target.IsCommand && e.Target.Equals(target)));
-                    list.Add(new MapEntry { Source = source, Encoding = encoding, Target = d.Target, Min = d.Min, Max = d.Max, Invert = d.Invert, Takeover = d.Takeover });
+                    list.Add(new MapEntry { Source = source, Encoding = encoding, Target = d.Target, Min = d.Min, Max = d.Max, Invert = d.Invert, Takeover = d.Takeover, RawMin = d.RawMin, RawMax = d.RawMax });
                     text = source.Short() + " → " + target.Text;
                     return;
                 }
@@ -166,7 +196,7 @@ namespace ReBuzz.Core
                 }
                 else
                 {
-                    page.Direct.Add(new MapEntry { Source = source, Encoding = encoding, Target = d.Target, Min = d.Min, Max = d.Max, Invert = d.Invert, Takeover = d.Takeover });
+                    page.Direct.Add(new MapEntry { Source = source, Encoding = encoding, Target = d.Target, Min = d.Min, Max = d.Max, Invert = d.Invert, Takeover = d.Takeover, RawMin = d.RawMin, RawMax = d.RawMax });
                     text = source.Short() + " → " + target.Text + " on " + trackId.Substring(trackId.IndexOf(':') + 1);
                 }
             });
@@ -182,10 +212,11 @@ namespace ReBuzz.Core
             if (EntryById(trackId) == null) { result.Error = $"The song has no track \"{trackId}\"."; return result; }
             if (target != null)
             {
-                result.Error = Validate(target, target.IsCommand ? null : trackId);
+                result.Error = Validate(target, target.IsCommand || target.IsMixer ? null : trackId);
                 if (result.Error == null && target.IsCommand) result.Error = "A slot holds a parameter; commands are mapped to a control.";
                 if (result.Error != null) return result;
             }
+            var raw = RawRangeOf(target);
             result.Changed = Edit((c, s) =>
             {
                 var pages = s.Ensure(trackId);
@@ -193,7 +224,7 @@ namespace ReBuzz.Core
                 var p = pages.Pages[page];
                 if (target == null) { p.Slots.Remove(slot); return; }
                 foreach (var gone in p.Slots.Where(kv => kv.Key != slot && kv.Value.Target != null && kv.Value.Target.Equals(target)).Select(kv => kv.Key).ToList()) p.Slots.Remove(gone);
-                p.Slots[slot] = new MapDrive { Target = target, Min = drive?.Min ?? 0, Max = drive?.Max ?? 1, Invert = drive?.Invert ?? false, Takeover = drive?.Takeover ?? Takeover.Pickup };
+                p.Slots[slot] = new MapDrive { Target = target, Min = drive?.Min ?? 0, Max = drive?.Max ?? 1, Invert = drive?.Invert ?? false, Takeover = drive?.Takeover ?? Takeover.Pickup, RawMin = raw?.Min, RawMax = raw?.Max };
             });
             result.Text = target == null ? "K" + (slot + 1) + " is free" : "K" + (slot + 1) + " → " + target.Text;
             return result;
@@ -335,7 +366,7 @@ namespace ReBuzz.Core
         {
             var result = new MapResult { Scope = scope, Target = target };
             if (scope == MapScope.Track && SelectedTrackId == null) { result.Error = "No track is selected: select a track first, or map in the global scope."; return result; }
-            result.Error = Validate(target, scope == MapScope.Track && !target.IsCommand ? SelectedTrackId : null);
+            result.Error = Validate(target, scope == MapScope.Track && !target.IsCommand && !target.IsMixer ? SelectedTrackId : null);
             if (result.Error != null) return result;
             capture = new Listening { Target = target, Scope = scope, Drive = drive, Label = label ?? target.Text };
             Changed?.Invoke();
@@ -509,12 +540,20 @@ namespace ReBuzz.Core
             return list;
         }
 
+        /// <summary>A map's target is the control's: the same, or (a mixer control of a strip in the bank) the same control of "bank track n".</summary>
+        bool SameTarget(MapTarget mapped, MapTarget control)
+        {
+            if (mapped.Equals(control)) return true;
+            return mapped.IsMixer && control.IsMixer && mapped.Bank > 0 && control.Bank == 0 && mapped.Mix == control.Mix && mapped.Send == control.Send
+                && BankTrack(mapped.Bank)?.Id == control.Strip;
+        }
+
         /// <summary>The badge a control with this target shows, in its short form that fits a small control: "K3" (a slot), "CC74", "N36"; null when nothing maps to it.</summary>
         public string BadgeOf(MapTarget target)
         {
             if (target == null) return null;
             foreach (var i in Active())
-                if (i.Target != null && i.Target.Equals(target))
+                if (i.Target != null && SameTarget(i.Target, target))
                     return i.Slot >= 0 ? i.Short : i.Source.Compact;
             return null;
         }
@@ -524,13 +563,13 @@ namespace ReBuzz.Core
         {
             if (target == null) return null;
             foreach (var i in Active())
-                if (i.Target != null && i.Target.Equals(target))
+                if (i.Target != null && SameTarget(i.Target, target))
                     return i.Slot >= 0 ? i.Short + ": knob " + (i.Slot + 1) + " of " + (SelectedTrack?.Name ?? "the track") + "'s page" : i.Source.Short();
             return null;
         }
 
         /// <summary>The mapping a target has in force (to edit its range), or null.</summary>
-        public MapInfo InfoOf(MapTarget target) => target == null ? null : Active().FirstOrDefault(i => i.Target != null && i.Target.Equals(target));
+        public MapInfo InfoOf(MapTarget target) => target == null ? null : Active().FirstOrDefault(i => i.Target != null && SameTarget(i.Target, target));
 
         /// <summary>The page the selected track shows: each knob's slot (null: free), with the generator's pin as a fallback (marked).</summary>
         public IReadOnlyList<MapInfo> PageSlots(int count, string trackId = null)
@@ -613,9 +652,9 @@ namespace ReBuzz.Core
         public static MapTarget TargetOf(IParameter parameter, int track)
         {
             var machine = parameter?.Group?.Machine;
-            if (machine == null || parameter.Group.Type == ParameterGroupType.Input) return null;
-            bool isTrack = parameter.Group.Type == ParameterGroupType.Track;
-            return MapTarget.Parameter(machine.Name, (isTrack ? MapTarget.TrackPrefix : "") + parameter.Name, isTrack ? track : 0);
+            if (machine == null) return null;
+            bool isTrack = parameter.Group.Type == ParameterGroupType.Track, isInput = parameter.Group.Type == ParameterGroupType.Input;
+            return MapTarget.Parameter(machine.Name, (isTrack ? MapTarget.TrackPrefix : isInput ? MapTarget.InputPrefix : "") + parameter.Name, isTrack || isInput ? track : 0);
         }
     }
 }

@@ -1042,6 +1042,25 @@ namespace ReBuzz.Studio.Tests
                         window.Inspector.MidiPage.Refresh();
                         Shot(window, "036-midi-track-page", "The Inspector's MIDI page for Lead's track (MM1): slots laid out as the knobs, the parameter and its value, a grey ring where the generator's pin answers, the controllers and their keys role.",
                             "Select a track; the Inspector's Selection tab.");
+                        // MM2: the mixer's controls are mappable; the bank of 8 tracks a fader bank follows is outlined.
+                        window.MapLayer.Mode.Exit();
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 41), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Mixer(ReBuzz.Midi.Mapping.MixerControl.Volume, "", 1), ReBuzz.Core.MapScope.Global);
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 42), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Mixer(ReBuzz.Midi.Mapping.MixerControl.Pan, "", 1), ReBuzz.Core.MapScope.Global);
+                        mm.MapControl(new ReBuzz.Midi.Mapping.MapSource("Faders", ReBuzz.Midi.Mapping.MapKind.ControlChange, 0, 49), ReBuzz.Midi.Mapping.KnobEncoding.Absolute,
+                            ReBuzz.Midi.Mapping.MapTarget.Mixer(ReBuzz.Midi.Mapping.MixerControl.Master), ReBuzz.Core.MapScope.Global);
+                        window.ShowView("Machines");
+                        window.Detail.ShowMixer();
+                        Settle();
+                        window.ToggleMapMode();
+                        Settle();
+                        window.MapLayer.Rescan();
+                        Shot(window, "036-midi-mixer-map-mode", "MIDI map mode over the Mixer (MM2): every fader, pan, send, On and Solo outlined, the Master's fader too, badges on the mapped ones (a fader of the bank's track 1, its pan, the Master), and the strips of the current bank of eight tracks outlined.",
+                            "Edit, Map MIDI controls (Ctrl+Alt+K) with the Mixer open (Alt+Cmd+6).");
+                        window.MapLayer.Mode.Exit();
+                        window.Detail.Close();
+                        Settle();
                     }
                     finally
                     {
@@ -1755,6 +1774,14 @@ namespace ReBuzz.Studio.Tests
                 AudioPage.InputSource = () => new[] { "PortAudio: MacBook Pro Microphone (Core Audio)" };
                 AudioPage.ReopenHook = _ => { };
                 const string Devices = "Device lists injected (headless has no audio devices; on a Mac PortAudio lists CoreAudio's).";
+                // MM2: the Controllers page lists the MIDI inputs: three scripted ones (the clip-grid controller and the keyboard are matched by their port names), a few messages heard.
+                ReBuzz.Midi.MidiEngine.SimulatedInputs = new[] { "APC40 mkII", "MPK225 Port 1", "Faders" };
+                var controllersMm = Core.MidiMapping;
+                controllersMm.OnMidiThread(new ReBuzz.Midi.MidiDevice(1, "APC40 mkII"), 0xB0 | (7 << 8) | (96 << 16));
+                controllersMm.OnMidiThread(new ReBuzz.Midi.MidiDevice(2, "MPK225 Port 1"), 0x90 | (60 << 8) | (88 << 16));
+                controllersMm.OnMidiThread(new ReBuzz.Midi.MidiDevice(3, "Faders"), 0xB0 | (21 << 8) | (40 << 16));
+                controllersMm.SetControllerTakeover("Faders", ReBuzz.Midi.Mapping.Takeover.Jump);
+                controllersMm.SetControllerProfile("Faders", "none");
                 var prefs = PreferencesWindow.Open(Studio.Host, PreferencesWindow.AudioPageName);
                 Settle();
                 string[] pages = prefs.Pages.Select(p => p.Title).ToArray();
@@ -1781,6 +1808,8 @@ namespace ReBuzz.Studio.Tests
                         }
                     });
                 }
+                ReBuzz.Midi.MidiEngine.SimulatedInputs = null;
+                controllersMm.Edit((c, sg) => c.Devices.Clear());
                 Try("304-prefs-autowarp", () =>
                 {
                     prefs.ShowPage("Audio");
@@ -2379,6 +2408,31 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "650-neo-organ-editor", "Neo Organ: the nine drawbars with their footage labels (set to a full registration), then Percussion, Key, Vibrato, Drive, Rotary (the Speed switch at Fast, with the two rotors' live speeds) and Output.", "Add Neo Organ, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                Try("651-neo-random-editor", () =>
+                {
+                    var poly = Add("Neo Poly", "Rnd Poly");
+                    var rnd = Add("Neo Random", "Random");
+                    void Set(string name, int raw) => rnd.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Load Lorenz swirl settings and attach Neo Poly's F1 cutoff target before opening the editor.
+                    Set("Mode", 3);          // Chaos
+                    Set("Rate", 528);        // ~1.10 Hz
+                    Set("Chaos", 920);       // 92 %
+                    Set("Smooth", 1000);     // 100 %
+                    Set("Seed", 110);
+                    Set("Write glide", 435); // ~20 ms
+                    var mod = ModulationBoard.Of(rnd)!;
+                    var cutoff = poly.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "F1 cutoff");
+                    Assert.That(ReBuzz.Agent.ModulationEdits.Add(Core, mod, poly, cutoff, 0, 65, bipolar: true), Is.Null);
+                    // Render a few ticks offline so the live scope draws an active Lorenz trajectory.
+                    RunTicks(24);
+                    Core.UiHost.OpenGui(rnd, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(rnd);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "651-neo-random-editor", "Neo Random: Source (Mode Chaos, Sync, Feel, Rate, Probability, Chaos), Shape (Range, Smooth, Depth, Bias, Quantise) and Behaviour (Retrigger, Seed, Write glide) beside the live Output scope and Retrigger picker, above the Targets table with Neo Poly's F1 cutoff assigned.", "Add Neo Random, load Lorenz swirl, assign a target, open its editor");
+                    Core.UiHost.CloseWindows(rnd);
+                });
                 Try("654-neo-arp-editor", () =>
                 {
                     var m = Add("Neo Arp", "Arp");
@@ -2433,6 +2487,22 @@ namespace ReBuzz.Studio.Tests
                     Dispatcher.UIThread.RunJobs();
                     Wait(200);
                     Shot(editor!, "661-neo-envelope-editor", "Neo Envelope in Note mode with a pluck shape (short Attack, Decay to a low Sustain, a bent Curve) and Velocity at 70 %: the Velocity knob is the last in the Output section, after Threshold, Curve and Glide; at 0 % every note opens the envelope fully, at 100 % a soft note opens it only a little.", "Add Neo Envelope; open its editor.");
+                    Core.UiHost.CloseWindows(m);
+                });
+                // GRN1: Neo Grain with the Glitter Cloud preset's values set before the editor opens: the bells' waveform with the Position and Spray range on it, Grain, Pitch, Envelope and Output.
+                Try("662-neo-grain-editor", () =>
+                {
+                    var m = Add("Neo Grain", "Grain");
+                    string[] names = { "Source", "Wave", "Grain size", "Density", "Position", "Spray", "Scan speed", "Window", "Align", "Pitch", "Pitch spray", "Reverse chance", "Pan spread", "Attack", "Decay", "Sustain", "Release", "Drone", "Seed", "Volume" };
+                    int[] raws = { 1, 0, 349, 904, 500, 800, 550, 2, 0, 750, 0, 0, 900, 189, 593, 700, 593, 0, 0, 924 };
+                    var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                    for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "662-neo-grain-editor", "Neo Grain with the Glitter Cloud preset: the built-in bells' waveform with the Position line and the Spray range on it, then Grain (size, density, position, spray, scan, align, seed, window), Pitch, the ADSR and Output.", "Add Neo Grain, load Glitter Cloud, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
@@ -2506,6 +2576,29 @@ namespace ReBuzz.Studio.Tests
                     "Neo Chop with the preset \"Stutter — Sixteenth Stutter\" loaded: the mode row (Stutter lit, the other five dark), the Stutter page below it (Trigger, Every, Repeats, Slice and Feel, Pitch, Decay and Filter per repeat), the sixteen gate steps, and Output with Amount and Mix side by side, Smoothness, Note picks slice and the meters.");
                 ChopShot("661-neo-chop-gate", "Chop 2", new[] { 0, 0, 2, 2, 0, 3, 120, 0, 200, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 1, 0, 1, 88, 511, 1000, 25, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
                     "Neo Chop with the preset \"Gate — Pumping Step Gate\" loaded: the Gate lit in the mode row and the sixteen steps as the preset sets them (accents on the beats).");
+                // PRI1: Neo Prism's editor with a preset loaded (the values are set before the editor opens): the spectrum with the delay's time curve,
+                // the five section lights, the selected section's page and Output.
+                void PrismShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Prism", machineName);
+                        string[] names = { "Pitch", "Semitones", "Cents", "Formant keep", "Scramble", "Scramble amount", "Band width", "Scramble sync", "Scramble rate", "Scramble seed", "Freeze", "Freeze trigger", "Freeze every", "Freeze length", "Hold blend", "Blur", "Blur time", "Smear", "Delay", "Low time", "High time", "Delay sync", "Feedback", "Damping", "FFT size", "Mix", "Amount" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Prism; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                PrismShot("662-neo-prism-editor", "Prism", new[] { 1, 36, 100, 0, 0, 500, 8, 0, 565, 1, 0, 0, 2, 3, 1000, 1, 418, 4, 1, 300, 300, 0, 606, 400, 2, 600, 500 },
+                    "Neo Prism with the preset \"Pitch — Octave Up Shimmer\" loaded: the spectrum (in and out) with the delay's time curve over it, the five section lights (Pitch and Delay lit), the section page below, and Output with FFT size, Amount, Mix and the meters.");
+                PrismShot("663-neo-prism-scramble", "Prism 2", new[] { 0, 24, 100, 0, 1, 700, 6, 2, 565, 7, 0, 0, 2, 3, 1000, 0, 354, 0, 0, 224, 447, 0, 404, 300, 2, 1000, 500 },
+                    "Neo Prism with the preset \"Scramble — Bin Shuffle Glitch\" loaded: the Scramble light on and its page (synced to an eighth note).");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");

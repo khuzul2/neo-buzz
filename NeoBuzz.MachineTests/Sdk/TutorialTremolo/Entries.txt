@@ -1,0 +1,111 @@
+# What a real machine adds to the shared files, the commands the tutorial runs, and excerpts of the generated files. Every block is a region
+# that docs/sdk/tutorial.md quotes (SdkDocTests checks it byte for byte); regenerate.py reads the Catalog entry. A region after a "from:" line is
+# an excerpt that must appear, line by line, in that generated file.
+
+# snippet GenerateCommands
+python3 tools/gen-machine-params.py Machines/NeoTremolo
+python3 tools/gen-machine-presets.py Machines/NeoTremolo
+# end snippet GenerateCommands
+
+# from: Engine/Params.g.cs
+# snippet GeneratedIndices
+internal static class P
+{
+    public const int Rate = 0;
+    public const int Depth = 1;
+    public const int Shape = 2;
+    public const int Phase = 3;
+    public const int Mix = 4;
+    public const int Amount = 5;
+    public const int Count = 6;
+}
+# end snippet GeneratedIndices
+
+# from: Engine/Params.g.cs
+# snippet GeneratedEntry
+new ParamDef(P.Shape, "Shape", "Shape", 0, 1, 0, MapKind.Enum, names: new[] { "Sine", "Triangle" }, group: "Tremolo", description: "Shape of the level movement", how: "Chooses the shape of the movement: Sine or Triangle.", sound: "Sine is smooth and round; Triangle is sharper and more mechanical."),
+# end snippet GeneratedEntry
+
+# from: Machine.Params.g.cs
+# snippet GeneratedProperty
+[ParameterDecl(Name = "Depth", Description = "How far the level moves down", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+public int Depth { get => Values[P.Depth]; set => Values.Set(P.Depth, value); }
+# end snippet GeneratedProperty
+
+# from: Tutorial Tremolo.machine.json
+# snippet ManifestExcerpt
+"index": 3,
+"id": "Phase",
+"name": "Phase",
+"group": "Tremolo",
+"min": 0,
+"max": 1000,
+"default": 0,
+"kind": "linear",
+"a": 0.0,
+"b": 180.0,
+"unit": "°",
+"description": "Phase offset of the right channel",
+# end snippet ManifestExcerpt
+
+# from: Tutorial Tremolo.prs.xml
+# snippet PresetXml
+<Item Key="Swell — Slow Breath">
+  <Preset Machine="Tutorial Tremolo">
+    <Parameters>
+      <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="304" />
+      <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="750" />
+# end snippet PresetXml
+
+# snippet StudioProject
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Tremolo, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoTremolo</NeoFolder>
+    <NeoName>Neo Tremolo</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+</Project>
+# end snippet StudioProject
+
+# snippet PortableProject
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Tremolo, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoTremolo</NeoFolder>
+    <NeoName>Neo Tremolo</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+</Project>
+# end snippet PortableProject
+
+# snippet Catalog
+{
+ "category": "Modulation",
+ "tags": [
+  "rhythmic",
+  "stereo-width"
+ ],
+ "use_for": "Swells, pulses and slow stereo pans: moves the level up and down in time."
+}
+# end snippet Catalog
+
+# snippet CatalogCommand
+python3 tools/machine_catalog.py
+# end snippet CatalogCommand
+
+# snippet LayoutLine
+NeoBuzz.TutorialTremolo	0	6	ae4ecf4a09593708
+# end snippet LayoutLine
+
+# snippet BuildCommands
+dotnet build Machines/Studio/Studio.proj -p:GearDir=/tmp/gear
+dotnet build Machines/Portable/Portable.proj -p:GearDir=/tmp/gear-portable
+# end snippet BuildCommands
+
+# snippet TestCommands
+dotnet test NeoBuzz.MachineTests --filter "FullyQualifiedName~TutorialTremolo"
+dotnet test NeoBuzz.MachineTests
+# end snippet TestCommands

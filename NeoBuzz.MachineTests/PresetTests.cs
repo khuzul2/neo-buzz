@@ -30,6 +30,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Organ"] = (NeoBuzz.Organ.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Organ.OrganEngine(v), (e, l, r, n) => ((NeoBuzz.Organ.OrganEngine)e).Process(l, r, n), x.Length)),
             // neo-mallet.md: the modal synth; in its Resonator source the pink noise is what rings the held chord.
             ["Neo Mallet"] = (NeoBuzz.Mallet.Params.Table, (v, x) => RenderMallet(v, x)),
+            // neo-grain.md: the granular synth; its presets read built-in sources, so the render needs no song.
+            ["Neo Grain"] = (NeoBuzz.Grain.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Grain.GrainEngine(v), (e, l, r, n) => ((NeoBuzz.Grain.GrainEngine)e).Process(l, r, n), x.Length)),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
             ["Neo FM6"] = (NeoBuzz.Fm6.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Fm6.FmEngine(v), (e, l, r, n) => ((NeoBuzz.Fm6.FmEngine)e).Process(l, r, n), x.Length)),
@@ -102,6 +104,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Lo-Fi"] = (NeoBuzz.LoFi.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // neo-chop.md: the stutter, repeat, retrigger, tape stop, gate and pan, played with the song running from the second beat.
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, (v, x) => ChopRig.PresetRender(v, x)),
+            // neo-prism.md: the spectral effect, its song running from beat 0 (the synced sections follow it).
+            ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, (v, x) => PrismRig.PresetRender(v, x)),
             // neo-tune.md: the pitch corrector.
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
@@ -111,6 +115,20 @@ namespace NeoBuzz.MachineTests
             ["Neo Audio to MIDI"] = (NeoBuzz.AudioToMidi.Params.Table, (v, x) => { float g = (float)v.Value(NeoBuzz.AudioToMidi.P.Monitor); var y = new float[x.Length]; for (int i = 0; i < x.Length; i++) y[i] = x[i] * g; return y; }),
             // neo-chord.md: Neo Chord makes no audio (notes in, chords out); its presets only change which notes it sends.
             ["Neo Chord"] = (NeoBuzz.Chord.Params.Table, (v, x) => x),
+            // neo-random.md: Neo Random is a control modulator; drive RandomEngine per 64-sample block and scale x cleanly inside [0.35, 1.0].
+            ["Neo Random"] = (NeoBuzz.RandomMachine.Params.Table, (v, x) =>
+            {
+                var e = new NeoBuzz.RandomMachine.RandomEngine(v);
+                var y = new float[x.Length];
+                double dt = 64.0 / Measure.Rate;
+                float g = 0.7f;
+                for (int i = 0; i < x.Length; i++)
+                {
+                    if ((i & 63) == 0) g = 0.35f + 0.65f * e.Step(dt, i / (double)Measure.Rate * 2.0, true, 120.0);
+                    y[i] = x[i] * g;
+                }
+                return y;
+            }),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>
@@ -139,7 +157,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Grain", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that

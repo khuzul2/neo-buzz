@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Freeze — Frozen Chord">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="24" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="8" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="4" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="354" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="224" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="447" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="404" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>At the start of every bar the spectrum is caught and held for the whole bar, so whatever was playing turns into a steady, endless chord that steps to the next one on the bar line.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Blur — Long Spectral Smear">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="24" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="8" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="1" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="671" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="2" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="224" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="447" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="404" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every frequency's level follows the sound over almost two seconds: attacks soften into swells and every note leaves a long, ghostly tail behind it.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Scramble — Bin Shuffle Glitch">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="24" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="700" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="6" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="7" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="354" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="224" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="447" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="404" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Seven in ten of the bins in each narrow band swap places, and the shuffle changes on every eighth note: the tone stays roughly where it is but breaks into a grainy, stepping glitch in time with the song.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pitch — Octave Up Shimmer">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="36" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="8" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="1" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="418" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="4" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="1" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="300" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="300" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="606" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="400" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="600" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Everything is shifted an octave up, smeared a little and sent through a dark 180 ms spectral echo that repeats, so each note blooms into a high, shimmering halo mixed in with the original.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pitch — Formant Kept Fifth Down">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="17" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="8" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="354" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="224" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="447" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="404" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="700" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every partial moves down a fifth while the broad spectral envelope stays put, so voices and instruments keep their body instead of turning into a growl; the shifted sound sits under the dry one.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Delay — Rising Spectral Echo">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="24" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="8" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="354" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="1" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="122" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="548" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="556" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="250" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="700" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>The lows come back after 30 ms and the highs after 600 ms, over and over with a darker tail: every hit is followed by a bright echo that climbs up through the spectrum.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Blur — Washed Pad">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="24" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="8" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="565" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="1" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="975" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="20" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="1" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="245" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="245" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="455" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="850" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>A near four-second blur, a wide smear across frequency and a soft 120 ms echo melt any sound into a slow, wide pad with no attack and a long, even tail.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Scramble — Robot Scramble">
+    <Preset Machine="Neo Prism">
+      <Parameters>
+        <Parameter Name="Pitch" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Semitones" Group="1" Index="1" Track="0" Value="19" />
+        <Parameter Name="Cents" Group="1" Index="2" Track="0" Value="100" />
+        <Parameter Name="Formant keep" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Scramble" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Scramble amount" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Band width" Group="1" Index="6" Track="0" Value="3" />
+        <Parameter Name="Scramble sync" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="Scramble rate" Group="1" Index="8" Track="0" Value="1000" />
+        <Parameter Name="Scramble seed" Group="1" Index="9" Track="0" Value="3" />
+        <Parameter Name="Freeze" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Freeze trigger" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Freeze every" Group="1" Index="12" Track="0" Value="2" />
+        <Parameter Name="Freeze length" Group="1" Index="13" Track="0" Value="3" />
+        <Parameter Name="Hold blend" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Blur" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Blur time" Group="1" Index="16" Track="0" Value="354" />
+        <Parameter Name="Smear" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Low time" Group="1" Index="19" Track="0" Value="224" />
+        <Parameter Name="High time" Group="1" Index="20" Track="0" Value="447" />
+        <Parameter Name="Delay sync" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Feedback" Group="1" Index="22" Track="0" Value="404" />
+        <Parameter Name="Damping" Group="1" Index="23" Track="0" Value="300" />
+        <Parameter Name="FFT size" Group="1" Index="24" Track="0" Value="2" />
+        <Parameter Name="Mix" Group="1" Index="25" Track="0" Value="1000" />
+        <Parameter Name="Amount" Group="1" Index="26" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment>Neighbouring bins are swapped on every one of twenty shuffles a second and the whole spectrum is moved down a fourth and a bit: voices and beats turn metallic and robotic.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

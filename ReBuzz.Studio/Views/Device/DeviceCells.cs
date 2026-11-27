@@ -259,7 +259,7 @@ namespace ReBuzz.Studio.Views.Device
             Width = p.Kind == DeviceKind.Slider || face.Width < CellWidth ? CellWidth : face.Width + 4;     // a knob is one column wide: a wider one wraps the last knob of a row (PP3)
             Height = p.Kind == DeviceKind.Slider ? Math.Max(face.Height, DeviceKnob.Diameter + 18) : face.Height + 4;
             // Fork (MM1): a parameter a controller can drive: map mode outlines the cell, the MIDI button and the badge sit on it, and Alt+drag carries it to an Inspector MIDI page slot.
-            if (p.Parameter != null && !p.IsInput && p.Parameter.Type != ParameterType.Note)
+            if (p.Parameter != null && p.Parameter.Type != ParameterType.Note)
             {
                 ReBuzz.Studio.Views.Midi.MidiMap.SetTarget(this, () => ReBuzz.Core.MidiMapping.TargetOf(p.Parameter, p.Track));
                 AddHandler(PointerPressedEvent, OnAltPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);

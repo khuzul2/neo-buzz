@@ -1,0 +1,15 @@
+{
+  "id": "keys-knobs-pads-25",
+  "name": "25-key keyboard with 8 knobs and 8 pads",
+  "description": "A 25-key keyboard with 8 knobs and 8 drum pads. The keys and the pads play notes. The knobs are a knob group: turn them once in order (Inspector, MIDI page, Teach knobs) and they drive the page of the selected track. The transport buttons send controller messages (set the keyboard's transport type to MIDI CC).",
+  "match": ["MPK225"],
+  "role": "both",
+  "knobs": 8,
+  "takeover": "pickup",
+  "sources": ["docs/specs/midi-mapping.md, MM2: the maker's published transport controls MIDI details (controller numbers of its CC mode)"],
+  "controls": [
+    { "id": "Stop", "action": "stop", "kind": "cc", "anyChannel": true, "number": 117 },
+    { "id": "Play", "action": "play", "kind": "cc", "anyChannel": true, "number": 118 },
+    { "id": "Record", "action": "record", "kind": "cc", "anyChannel": true, "number": 119 }
+  ]
+}

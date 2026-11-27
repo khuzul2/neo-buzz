@@ -151,6 +151,7 @@ namespace ReBuzz.Midi
                     midiIns[selectedDeviceIndex] = midiIn;
                     deviceKeys[selectedDeviceIndex] = device.Id;
                 }
+                InputsChanged?.Invoke();
             }
             catch (Exception e)
             {
@@ -159,6 +160,36 @@ namespace ReBuzz.Midi
         }
 
         readonly Dictionary<int, string> deviceKeys = new Dictionary<int, string>();
+
+        /// <summary>Fork (midi-mapping.md, MM2): an input opened or the inputs were closed (any thread): a controller's profile starts or ends.</summary>
+        internal event Action InputsChanged;
+
+        /// <summary>Fork (midi-mapping.md, MM2): the names of the outputs the system has (what a controller's lights can go to).</summary>
+        internal IReadOnlyList<string> OutputNames()
+        {
+            var names = new List<string>();
+            try { for (int i = 0; i < backend.OutputCount; i++) { string n = backend.OutputName(i); if (!string.IsNullOrEmpty(n) && !names.Contains(n)) names.Add(n); } }
+            catch (Exception) { }
+            return names;
+        }
+
+        /// <summary>Fork (midi-mapping.md, MM2): opens the output of a name when it is not open (a controller's lights); its index, or -1.</summary>
+        internal int EnsureOutput(string name)
+        {
+            try
+            {
+                for (int i = 0; i < backend.OutputCount; i++)
+                {
+                    if (backend.OutputName(i) != name) continue;
+                    bool open;
+                    lock (midiOutLock) open = midiOuts.ContainsKey(i);
+                    if (!open) CreateMidiOut(i);
+                    return i;
+                }
+            }
+            catch (Exception) { }
+            return -1;
+        }
 
         /// <summary>Fork (midi-mapping.md, MM1): the identity (name, " #2" for a duplicate) of every MIDI input that is open now.</summary>
         public IReadOnlyList<string> OpenInputKeys()
@@ -185,6 +216,7 @@ namespace ReBuzz.Midi
             {
                 md.Close();
             }
+            InputsChanged?.Invoke();
         }
 
         public void CreateMidiOut(int selectedDeviceIndex)

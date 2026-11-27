@@ -81,12 +81,14 @@ namespace NeoBuzz.MachineTests
             ["Neo Spectral"] = (NeoBuzz.Spectral.Params.Table, v => { var e = new NeoBuzz.Spectral.SpectralEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Lo-Fi"] = (NeoBuzz.LoFi.Params.Table, v => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, v => ChopRig.CostCall(v)),
+            ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, v => PrismRig.CostCall(v)),
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, v => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Exciter"] = (NeoBuzz.Exciter.Params.Table, v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, v => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, v => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Organ"] = (NeoBuzz.Organ.Params.Table, v => Synth(new NeoBuzz.Organ.OrganEngine(v), (e, l, r, n) => ((NeoBuzz.Organ.OrganEngine)e).Process(l, r, n))),
             ["Neo Mallet"] = (NeoBuzz.Mallet.Params.Table, v => Synth(new NeoBuzz.Mallet.MalletEngine(v), (e, l, r, n) => ((NeoBuzz.Mallet.MalletEngine)e).Process(l, r, n))),
+            ["Neo Grain"] = (NeoBuzz.Grain.Params.Table, v => Synth(new NeoBuzz.Grain.GrainEngine(v), (e, l, r, n) => ((NeoBuzz.Grain.GrainEngine)e).Process(l, r, n))),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, v => Synth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n))),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, v =>
             {
@@ -131,6 +133,19 @@ namespace NeoBuzz.MachineTests
             }),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, v => Learn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v)),
             ["Neo Learn Subtractive"] = (NeoBuzz.LearnSub.Params.Table, v => Learn(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v)),
+            ["Neo Random"] = (NeoBuzz.RandomMachine.Params.Table, v =>
+            {
+                var e = new NeoBuzz.RandomMachine.RandomEngine(v);
+                double beats = 0.0;
+                return (l, r, n) =>
+                {
+                    double dt = n / (double)Measure.Rate;
+                    beats += dt * 2.0;
+                    float u = e.Step(dt, beats, true, 120.0);
+                    l[0] = u;
+                    r[0] = u;
+                };
+            }),
         };
 
         static Action<float[], float[], int> Learn(NeoBuzz.Learn.MacroMap map, ParamValues v)

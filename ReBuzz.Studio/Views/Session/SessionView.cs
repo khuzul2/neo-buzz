@@ -699,6 +699,8 @@ namespace ReBuzz.Studio.Views.Session
         void UpdateRings()
         {
             var rings = buzz.SessionControllers?.Rings.ToList() ?? new List<(int, int, int, int)>();
+            // MM2: the window the MIDI mapping's bank and scenes cover (a clip-grid controller's, or a moved bank).
+            if (buzz.MidiMapping is { } bank) rings.AddRange(bank.BankWindow);
             string key = string.Join(";", rings);
             if (key == shownRings) return;
             shownRings = key;

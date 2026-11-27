@@ -455,6 +455,16 @@
    "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords.",
    "note_in": true
   },
+  "Neo Random": {
+   "category": "Control",
+   "tags": [
+    "modulation",
+    "automation",
+    "tempo-sync",
+    "rhythmic"
+   ],
+   "use_for": "Move any machine's parameters with random steps, sample-and-hold, 1/f drift or chaos: up to 8 targets, smoothly, with probability, quantisation and reproducible seeds."
+  },
   "Neo Sampler": {
    "category": "Samplers",
    "tags": [
@@ -675,6 +685,18 @@
    "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks, glass and struck plates; a playable instrument with no audio input.",
    "note_in": true
   },
+  "Neo Grain": {
+   "category": "Synths",
+   "tags": [
+    "granular",
+    "pad",
+    "lush",
+    "sampler",
+    "polyphonic"
+   ],
+   "use_for": "Granular synth for frozen pads, glittering clouds, slow evolving textures, stutters and drones made from a wave of the song or a built-in chord, bells or noise; played by notes or as a drone.",
+   "note_in": true
+  },
   "Neo Arp": {
    "category": "Control",
    "tags": [
@@ -687,6 +709,17 @@
    "use_for": "Turn held notes into an arpeggio or a stepped line before any synth: 12 patterns, 1/1 to 1/64 or ms rates, swing, gate, octaves, latch and a 16-step row with ties and accents.",
    "note_in": true,
    "note_out": true
+  },
+  "Neo Prism": {
+   "category": "Modulation",
+   "tags": [
+    "spectral",
+    "pitch-shift",
+    "pad",
+    "lush"
+   ],
+   "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times.",
+   "note_in": true
   },
   "Neo Chop": {
    "category": "Modulation",

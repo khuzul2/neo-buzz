@@ -1,0 +1,223 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Gentle drift">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="377" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="450" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="650" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="101" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="634" />
+      </Parameters>
+      <Attributes />
+      <Comment>Slow 1/f-like bounded wandering with soft smoothing and a long glide: subtle organic breathing on pads or filter cutoff.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Random filter steps">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="7" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="102" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="360" />
+      </Parameters>
+      <Attributes />
+      <Comment>Crisp tempo-synced eighth-note uniform steps across the full span for punchy rhythmic filter movement.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sample and hold sync 1/16">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="8" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="103" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="301" />
+      </Parameters>
+      <Attributes />
+      <Comment>Classic rapid sixteenth-note sample-and-hold stepping locked to the grid with a tight write glide.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Probability glitch">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="8" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="280" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="104" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="233" />
+      </Parameters>
+      <Attributes />
+      <Comment>Sparse sixteenth-note sample-and-hold at 28 % probability: holds steady then snaps unexpectedly for glitchy accents.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chaos wobble">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="713" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="820" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="750" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="950" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="105" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="333" />
+      </Parameters>
+      <Attributes />
+      <Comment>Fast chaotic Lorenz modulation at 4.5 Hz with 75 % smoothing: expressive, non-repeating filter wobble.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Slow wander bar">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="850" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="106" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="693" />
+      </Parameters>
+      <Attributes />
+      <Comment>Bar-locked random waypoints joined by full 100 % raised-cosine curves and a lazy glide for evolving sweeps.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Humanise pan">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="592" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="350" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="107" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="534" />
+      </Parameters>
+      <Attributes />
+      <Comment>Narrow-depth 1/f drift centred at zero bias for gentle stereo pan or micro-parameter humanisation.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Stepped pitch 12 steps">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="7" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="12" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="108" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="259" />
+      </Parameters>
+      <Attributes />
+      <Comment>Eighth-note triplet random steps snapped to 12 exact evenly spaced levels for chromatic-style stepped modulation.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Random gate">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="8" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="650" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="2" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="109" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="201" />
+      </Parameters>
+      <Attributes />
+      <Comment>Dotted sixteenth-note unipolar binary sample-and-hold (2 quantised levels, 65 % probability) for rhythmic gating.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lorenz swirl">
+    <Preset Machine="Neo Random">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="527" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Probability" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Chaos" Group="1" Index="5" Track="0" Value="920" />
+        <Parameter Name="Smooth" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Depth" Group="1" Index="7" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Quantise" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Seed" Group="1" Index="11" Track="0" Value="110" />
+        <Parameter Name="Retrigger" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="13" Track="0" Value="434" />
+      </Parameters>
+      <Attributes />
+      <Comment>Continuous double-scroll Lorenz attractor at 1.1 Hz with 100 % flow smoothing: fluid chaotic orbits across both wings.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
