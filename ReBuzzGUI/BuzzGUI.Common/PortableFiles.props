@@ -55,6 +55,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Presets\Ascii85.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Presets\Preset.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Presets\PresetDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Presets\PresetStore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Presets\SerializableDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PropertyChangedRaiser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IRegistryStore.cs" />
