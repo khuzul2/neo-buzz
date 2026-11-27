@@ -294,8 +294,15 @@ namespace BuzzGUI.Common.Presets
 
         string[] Files => new[] { FactoryFile, PresetStore.SnapshotFile(GearDir, DllName), Path.Combine(GearDir, DllName + ".prs"), UserFile };
 
+        DateTime checkedAt = DateTime.MinValue;
+        IReadOnlyList<string> names = Array.Empty<string>();
+
         internal void Refresh(IMachine machine)
         {
+            // A machine's editors ask often (every repaint of a preset bar): look at the files at most four times a second.
+            // Callers without a machine (the browser, the manual, tests) always look.
+            if (machine != null && stamp != null && (DateTime.UtcNow - checkedAt).TotalMilliseconds < 250 && (binaryLoaded || !File.Exists(Path.Combine(GearDir, DllName + ".prs")))) return;
+            checkedAt = DateTime.UtcNow;
             string now = PresetStore.Stamp(Files);
             if (now == stamp && (machine == null || binaryLoaded || !File.Exists(Path.Combine(GearDir, DllName + ".prs")))) return;
             Load(machine);
@@ -334,24 +341,21 @@ namespace BuzzGUI.Common.Presets
             user = PresetStore.LoadUser(DllName, out var problem);
             if (problem != null) problems.Add(problem);
             stamp = PresetStore.Stamp(Files);
+            Renamed();
+        }
+
+        void Renamed()
+        {
+            var all = new SortedSet<string>(factory.Keys);
+            all.UnionWith(user.Keys);
+            names = all.ToList();
         }
 
         /// <summary>What went wrong reading the files (the sets are loaded as far as they could be).</summary>
         public IReadOnlyList<string> Problems { get { lock (Gate) return problems.ToList(); } }
 
         /// <summary>Every preset name, factory and user, once each.</summary>
-        public IReadOnlyList<string> Names
-        {
-            get
-            {
-                lock (Gate)
-                {
-                    var all = new SortedSet<string>(factory.Keys);
-                    all.UnionWith(user.Keys);
-                    return all.ToList();
-                }
-            }
-        }
+        public IReadOnlyList<string> Names { get { lock (Gate) return names; } }
 
         public int Count => Names.Count;
 
@@ -438,6 +442,7 @@ namespace BuzzGUI.Common.Presets
             user.Filename = UserFile;
             user.Save(UserFile);
             stamp = PresetStore.Stamp(Files);
+            Renamed();
         }
     }
 }
