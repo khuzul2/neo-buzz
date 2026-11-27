@@ -40,7 +40,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Patch | generator | Modular synth (box name Patch; docs/specs/neo-patch.md, neo-patch-engine.md): a patch of up to 128 nodes (band-limited and wavetable oscillators, sample, noise, envelopes, LFO, random, slew, sample and hold, SVF and ladder filters, shaper, delay, mixer, math, crossfade, macro, Voice sum) wired in a graph, per-voice or global nodes, 16 voices, MPE, 16 macros; the patch is the machine state (one line of text), presets carry it; the device view is the generic parameters until the canvas editor (NP2) |
 | Neo Learn Additive | generator | Teaching synth (box name Learn Add): one Dye Essence patch behind 12 controls (tilt, odd/even, partial count, inharmonicity, spectral comb, partial shimmer, ADSR, unison, output) with an Explain strip |
 | Neo Wave | generator | Wavetable synth: 2 morphing oscillators with warp modes, table import, mod matrix |
-| Neo FM6 | generator | 6-operator FM: the 32 DX7 algorithms, DX7 envelopes, DX7 SysEx import |
+| Neo FM6 | generator | 6-operator FM: the 32 six-operator algorithms, six-operator rate and level envelopes, six-operator FM SysEx import |
 
 **Second batch (mix and master, for the agent server: docs/specs/mcp-server.md §8.2)**
 
@@ -210,7 +210,7 @@ The map is never saved with the song or a preset. A machine with neither has no 
 | Wavetables | frames with per-octave band-limited mipmaps built by FFT; morphing reads |
 | Filters | zero-delay-feedback SVF (LP/BP/HP/notch/peak/allpass/shelves), nonlinear ZDF ladder (LP24/LP12), one-pole, RBJ biquads, DC blocker; (M3) a double-precision TPT section for equalisers and crossovers (`SvfSection`, with its exact magnitude response) and Butterworth cascades (12/24/48 dB/oct) |
 | Resampling | linear-phase FIR halfband (2×/4×/8×, fixed latency), polyphase IIR halfband (synths) |
-| Modulation | analog-style ADSR, DX7 rate/level envelope, LFO (7 shapes, tempo sync, fade-in), 8-slot mod matrix |
+| Modulation | analog-style ADSR, six-operator rate and level envelope, LFO (7 shapes, tempo sync, fade-in), 8-slot mod matrix |
 | Voices | allocator: poly with stealing (released first, then oldest; stolen voices fade), mono/legato with note stack, glide, unison |
 | Delay | fractional delay lines (cubic/allpass), modulated allpass diffusers |
 | Analysis | peak/RMS meters for the editors; (A4) a lock-free triple buffer that hands whole snapshots from the audio thread to readers (`TripleBuffer`) |
@@ -366,15 +366,15 @@ Two wavetable oscillators (frame position with morphing, warp: bend ±, squeeze,
 
 ### Neo FM6 (6-operator FM)
 
-DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed frequency, detune, rate/level envelopes, rate and level scaling, velocity, amp-mod sensitivity; pitch envelope; LFO; plus four operator waveforms (sine, half sine, abs sine, pulse sine), operator on/off, unison, glide and a tone control. 2× oversampling (switchable to 1×, "Raw", for the original's aliasing). Parameters keep the DX7's own values (0–99 levels and rates, coarse 0–31, …), so patches and DX7 knowledge carry over. DX7 behaviour follows the measurements published with Music Synthesizer for Android (msfa) and Dexed: fixed-frequency operators follow pitch bend only, tremolo starts unattenuated, operators above Nyquist fold back, a held note follows level edits; the pitch envelope's rate table is fitted, not exact. DX7 SysEx: 32-voice banks and single voices in, single voices out; a loaded bank is kept in the song.
+Six-operator architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed frequency, detune, rate/level envelopes, rate and level scaling, velocity, amp-mod sensitivity; pitch envelope; LFO; plus four operator waveforms (sine, half sine, abs sine, pulse sine), operator on/off, unison, glide and a tone control. 2× oversampling (switchable to 1×, "Raw", for the original's aliasing). Parameters keep the classic six-operator FM own values (0–99 levels and rates, coarse 0–31, …), so patches and six-operator FM knowledge carry over. six-operator FM behaviour follows the measurements published with Music Synthesizer for Android (msfa) and Dexed: fixed-frequency operators follow pitch bend only, tremolo starts unattenuated, operators above Nyquist fold back, a held note follows level edits; the pitch envelope's rate table is fitted, not exact. six-operator FM SysEx: 32-voice banks and single voices in, single voices out; a loaded bank is kept in the song.
 
 | Criterion | Target | Measured |
 |---|---|---|
-| Algorithms | each of the 32 matches the DX7 chart (carriers, modulators, feedback) | passes |
-| Frequency | ratio and fixed modes within 0.1 cent of the DX7 formulas | within 0.05 cent; detune ±7 = ±6.8 cents at A4 |
+| Algorithms | each of the 32 matches the classic algorithm chart (carriers, modulators, feedback) | passes |
+| Frequency | ratio and fixed modes within 0.1 cent of the classic formulas | within 0.05 cent; detune ±7 = ±6.8 cents at A4 |
 | Modulation | sidebands of a sine modulator follow Bessel functions of the operator's index | within 0.01 dB (index 1.0 and π/2) |
 | Envelope | level steps 0.75 dB; decays are straight lines in dB; flat segments hold for their rate | straight within 0.15 dB; a rate-40 hold lasts 0.51 s |
-| Velocity and scaling | velocity and keyboard level scaling follow the DX7 tables | velocity 127 vs 64 at sensitivity 7: 15.80 dB, as the table |
+| Velocity and scaling | velocity and keyboard level scaling follow the six-operator tables | velocity 127 vs 64 at sensitivity 7: 15.80 dB, as the table |
 | SysEx | a 32-voice bank imports; parameters round-trip unchanged | bank → voices → parameters → voice is exact; damaged checksums are refused |
 | Alias floor | single sine, 2×: ≤ −90 dB; full-depth 1:1 FM at C7, Clean: ≤ −80 dB | sine −135 dB; FM at C7 −93.4 dB (Raw −3.9 dB) |
 | CPU | 16 voices × 6 operators, 2×: ≥ 7.9× on x64, ≥ 7× on arm64 (a throughput guard, §4: × real time at the reference's speed; on the Linux, Windows and macOS runners and locally, 20 runs quiet and 20 with every core busy each); was ≥ 2× as timed | Linux 9.2–11.7, Windows 9.1–12.4, macOS 9.8–10.1, locally 13.2–13.6; twice the work at most 6.8 |

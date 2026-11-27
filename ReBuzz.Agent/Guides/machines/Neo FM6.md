@@ -1,6 +1,6 @@
 ## How it sounds
 
-A six-operator FM synth: glassy electric pianos, bells, mallets, punchy basses, brass and organs, and metallic or inharmonic tones a filter synth cannot make. Six sine operators (or half, absolute or pulse sine) modulate each other; `Algorithm` (1-32) decides which are heard (carriers) and which only modulate. Levels and rates run 0-99, coarse 0-31 and detune +-7, the common values of this synth family, so patches and know-how carry over, and `kind="dx7_bank"` imports voice banks in that format. Clean by default (2x oversampled); `Engine` Raw 1x brings back aliasing grit.
+A six-operator FM synth: glassy electric pianos, bells, mallets, punchy basses, brass and organs, and metallic or inharmonic tones a filter synth cannot make. Six sine operators (or half, absolute or pulse sine) modulate each other; `Algorithm` (1-32) decides which are heard (carriers) and which only modulate. Levels and rates run 0-99, coarse 0-31 and detune +-7, the common values of this synth family, so patches and know-how carry over, and `kind="fm6_sysex_bank"` imports 32-voice 6-operator FM SysEx banks. Clean by default (2x oversampled); `Engine` Raw 1x brings back aliasing grit.
 
 - Operator level 0-99: on a carrier it is loudness (about 0.75 dB a step near the top); on a modulator it is brightness.
 - Ratio: `OpN coarse` 0 = 0.5, 1-31 = x1 to x31; `OpN fine` adds 0-99 %. Fixed mode picks 1, 10, 100 or 1000 Hz.
@@ -35,7 +35,7 @@ A six-operator FM synth: glassy electric pianos, bells, mallets, punchy basses, 
 
 - "Init — Sine" (algorithm 1, operator 1 alone: build two-operator sounds from here), "Keys — Tine Piano", "Keys — Clav Funk", "Bell — Glass Bell", "Mallet — Marimba", "Pluck — Harp".
 - "Bass — Solid", "Bass — Wood Mono", "Brass — Bright Section", "Pad — FM Strings", "Organ — Drawbars", "Lead — Saw Lead", "Texture — Metal Sweep".
-- A bank: `machine_data_import(machine="FM6", kind="dx7_bank", path="C:/Banks/voices.syx", item=11)` sets every parameter from voice 11 of the bank.
+- A bank: `machine_data_import(machine="FM6", kind="fm6_sysex_bank", path="C:/Banks/voices.syx", item=11)` sets every parameter from voice 11 of the bank.
 - Brightness over time is the modulator's envelope: a modulator that decays makes a sound that darkens as it rings.
 
 ## Pitfalls

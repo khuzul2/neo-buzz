@@ -1,5 +1,5 @@
 #nullable disable
-// Neo FM6 (docs/specs/machines.md §5): the 32 algorithms of the DX7 — which operator modulates
+// Neo FM6 (docs/specs/machines.md §5): the 32 algorithms of classic six-operator FM — which operator modulates
 // which, which are carriers (heard), and where the feedback loop is. In every algorithm a
 // modulator has a higher number than what it modulates, so operators run 6 → 1 each sample.
 

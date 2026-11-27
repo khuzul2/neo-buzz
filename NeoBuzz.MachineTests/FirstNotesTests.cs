@@ -4,7 +4,7 @@ namespace NeoBuzz.MachineTests
 {
     /// <summary>
     /// Fork (audio hygiene, docs/specs/machines.md §3): a Neo synth's first notes allocate nothing on the audio thread.
-    /// What its voices need (Neo Wave's tables, Neo FM6's DX7 tables and carrier gains) is made with the engine, not by
+    /// What its voices need (Neo Wave's tables, Neo FM6's six-operator tables and carrier gains) is made with the engine, not by
     /// the first blocks that play: the transport's first play allocated about 340 KB on the audio thread, 221 KB of it
     /// Neo Wave's (a closure every voice block). Measured from the engine's very first block, notes starting and ending.
     /// The studio's AudioHygieneTests.TheFirstPlayOfEveryNeoMachineAllocatesNothing measures the machines in ReBuzz.

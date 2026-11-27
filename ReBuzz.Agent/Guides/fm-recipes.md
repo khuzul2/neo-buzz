@@ -4,7 +4,7 @@ Recipes with exact values for Neo FM6: electric piano, bell, FM bass, metallic p
 
 ## Neo FM6
 
-A DX7 in DX7 units: six operators, the 32 algorithms, rate/level envelopes, DX7 SysEx banks.
+Classic six-operator FM in its own units: six operators, the 32 algorithms, rate/level envelopes, 32-voice 6-operator FM SysEx banks.
 
 - **Carriers** are heard; **modulators** set brightness. `OpN level` 0–99, about 0.75 dB per step near the top (8 steps ≈ 6 dB).
 - **Ratio**: `OpN coarse` 0 = 0.5, 1–31 = ×1 … ×31; `OpN fine` adds 0–99 % of it (coarse 3, fine 50 = 3.5). Carrier 1 with a modulator at 1 sounds saw-like (all harmonics), at 2 square-like (odd harmonics); non-integer ratios are inharmonic (bells, metal).
@@ -12,7 +12,7 @@ A DX7 in DX7 units: six operators, the 32 algorithms, rate/level envelopes, DX7 
 - **Envelope**: on a note the level moves to level 1 at rate 1, level 2 at rate 2, level 3 at rate 3 and holds; on release to level 4 at rate 4. Rate 99 is instant; about 6 rate steps halve or double a segment's time.
 - **Velocity sensitivity** 0–7 per operator: on modulators, harder notes are brighter (the electric piano's bark). **Rate scaling** 0–7: higher notes decay faster (3–4 for pianos and plucks). Level scaling: break point 39 is C4.
 - **Detune** −7 … +7, about 1 cent a step at A4. **Feedback** 0–7 on the algorithm's feedback operator; 6–7 approach a saw.
-- `Algorithm` takes 1–32 as the DX7 numbers them. `Engine` Clean 2× (oversampled) or Raw 1× (the original's aliasing). `Tone`: a gentle low-pass, 20 kHz is open.
+- `Algorithm` takes 1–32 as the classic algorithm chart numbers them. `Engine` Clean 2× (oversampled) or Raw 1× (the original's aliasing). `Tone`: a gentle low-pass, 20 kHz is open.
 - A freshly added Neo FM6 (or "Init — Sine") is algorithm 1 with only operator 1 sounding: a sine. In algorithm 1, operator 2 modulates operator 1, so a two-operator patch only needs operator 2's level, ratio and envelope.
 
 | Algorithm | Carriers | Modulation | Good for |
@@ -27,7 +27,7 @@ A DX7 in DX7 units: six operators, the 32 algorithms, rate/level envelopes, DX7 
 
 Read one operator at a time: `machine_describe(machine="Keys", group="Operator 2")`.
 
-DX7 banks: `machine_data_import(machine="Keys", kind="dx7_bank", path="C:/DX7/rom1a.syx", item=11)` loads a voice into every parameter. In the original ROM1A bank: 1 BRASS 1, 4 STRINGS 1, 11 E.PIANO 1, 15 BASS 1, 22 MARIMBA, 26 TUB BELLS.
+6-operator FM SysEx banks: `machine_data_import(machine="Keys", kind="fm6_sysex_bank", path="C:/Banks/voices.syx", item=11)` loads a voice into every parameter. In a typical factory-style bank: 1 BRASS 1, 4 STRINGS 1, 11 E.PIANO 1, 15 BASS 1, 22 MARIMBA, 26 TUB BELLS.
 
 ### Electric piano: the tine
 
