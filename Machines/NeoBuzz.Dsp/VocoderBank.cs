@@ -70,6 +70,9 @@ namespace NeoBuzz.Dsp
         readonly float[] whiteGain = new float[MaxBands];     // 1 / the carrier band's RMS for unit white noise, times the nominal carrier's reciprocal
         readonly float[] pL = new float[MaxBands], pR = new float[MaxBands], sL = new float[MaxBands], sR = new float[MaxBands], pFast = new float[MaxBands];
         readonly float[] env = new float[MaxBands];
+        bool captured, frozen, freezeSeen;
+        int designTick;
+        int armed;
         readonly float[] trim = new float[MaxBands], detect = new float[MaxBands], detect2 = new float[MaxBands], detectCoef = new float[MaxBands];
         readonly float[] outLevel = new float[MaxBands];
         readonly float[] centres = new float[MaxBands];
@@ -128,7 +131,7 @@ namespace NeoBuzz.Dsp
             Array.Clear(lz, 0, lz.Length);
             Array.Clear(rz, 0, rz.Length);
             Array.Clear(env, 0, env.Length);
-            Array.Clear(detect, 0, detect.Length); Array.Clear(detect2, 0, detect2.Length);
+            Array.Clear(detect, 0, detect.Length); Array.Clear(detect2, 0, detect2.Length); captured = false; armed = 0; freezeSeen = false;
             Array.Clear(pL, 0, pL.Length);
             Array.Clear(pR, 0, pR.Length);
             Array.Clear(sL, 0, sL.Length);
@@ -270,10 +273,12 @@ namespace NeoBuzz.Dsp
                     Array.Clear(sR, 0, sR.Length);
                     changed = true;
                 }
-                changed |= Glide(ref low, LowHz);
-                changed |= Glide(ref high, HighHz);
-                changed |= Glide(ref width, WidthFraction);
-                changed |= Glide(ref shift, ShiftSemitones);
+                bool moved = Glide(ref low, LowHz);
+                moved |= Glide(ref high, HighHz);
+                moved |= Glide(ref width, WidthFraction);
+                moved |= Glide(ref shift, ShiftSemitones);
+                // A glide steps every 16 samples but the filters are redesigned every 64 (the design is most of the cost of a moving control), and at its end.
+                if (moved && (++designTick >= 4 || !Moving)) { designTick = 0; changed = true; }
                 if (changed) Design();
             }
             if (AttackMs != builtAttack || ReleaseMs != builtRelease)
@@ -317,6 +322,15 @@ namespace NeoBuzz.Dsp
                     sinceTick = 0;
                 }
                 int m = Math.Min(Control - sinceTick, n - done);
+                // Freeze holds the band levels; with nothing heard yet it waits for the first sound and holds what its first 150 ms showed.
+                if (!Freeze) { captured = false; armed = 0; freezeSeen = false; }
+                else if (!freezeSeen) { freezeSeen = true; captured = MaxLevel > 1e-3f; }   // switched on over a sound: hold it at once
+                else if (!captured)
+                {
+                    if (MaxLevel > 1e-3f) armed += m;
+                    if (armed >= (int)(0.15 * rate)) captured = true;
+                }
+                frozen = Freeze && captured;
                 Run(mod, carL, carR, oddL, evenL, oddR, evenR, done, done + m);
                 done += m;
                 sinceTick += m;
@@ -327,7 +341,7 @@ namespace NeoBuzz.Dsp
         void Run(float[] mod, float[] carL, float[] carR, float[] oddL, float[] evenL, float[] oddR, float[] evenR, int from, int to)
         {
             int bands = builtBands;
-            bool freeze = Freeze, equalise = Equalise;
+            bool freeze = frozen, equalise = Equalise;
             float atk = attackCoef, rel = releaseCoef, ps = pSlow, os = outSmooth;
             const float floor = 1e-8f;
             for (int i = from; i < to; i++)

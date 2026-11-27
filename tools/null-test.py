@@ -441,6 +441,9 @@ CASES = [
     fx("space-hall", "Neo Space", "Hall — Large Hall"),
     fx("space-plate", "Neo Space", "Plate — Bright Plate"),
     fx("space-reverse", "Neo Space", "Effect — Reverse Swell"),
+    # Neo Vocoder (docs/specs/neo-vocoder.md): the band filters, the followers, the formant shift and the noise carrier (no notes in these cases, so the noise carrier is the one that sounds); portable maths only.
+    fx("vocoder-whisper", "Neo Vocoder", "Whisper — Noise Carrier"),
+    fx("vocoder-bright-shift", "Neo Vocoder", "Bright — 40 Band Detail", [("Carrier", "Noise"), ("Formant", "5")]),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),

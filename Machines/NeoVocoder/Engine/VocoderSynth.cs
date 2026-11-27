@@ -181,13 +181,14 @@ namespace NeoBuzz.Vocoder
         public const int Voices = 8;
         public const int MaxBlock = 256;
         /// <summary>The tone's level: with it a note at full velocity gives the bands about a white carrier at the nominal level (measured, neo-vocoder.md §3).</summary>
-        public const float ToneScale = 3.1f;
+        public const float ToneScale = 2.65f;
         public const float NoiseScale = 0.5f * VocoderBank.CarrierNominal / 0.2886751f;   // uniform ±1 has RMS 0.5774; ×0.5 makes ±0.5, RMS 0.2887
         const double BendRange = 2.0;
 
         readonly VocoderVoice[] voices = new VocoderVoice[Voices];
         readonly VoiceAllocator alloc;
         readonly float[] toneL = new float[MaxBlock], toneR = new float[MaxBlock], noiseSum = new float[MaxBlock];
+        float polyGain = 1;                // 1 / sqrt(voices sounding), smoothed: a chord is as loud as a note, give or take what its notes add up to
         float preL, preR;                  // the pre-emphasis's memory (the last tone sample)
         double rate = 48000;
         float bend, bendTarget, bendStep;
@@ -229,7 +230,7 @@ namespace NeoBuzz.Vocoder
         {
             alloc.AllNotesOff(true);
             foreach (var v in voices) v.Reset();
-            preL = preR = 0;
+            preL = preR = 0; polyGain = 1;
             bend = bendTarget = 0;
         }
 
@@ -275,6 +276,10 @@ namespace NeoBuzz.Vocoder
             Array.Clear(toneR, 0, n);
             bool wantNoise = Noise > 0f;
             if (wantNoise) Array.Clear(noiseSum, 0, n);
+            int sounding = 0;
+            for (int v = 0; v < Voices; v++) if (voices[v].IsActive) sounding++;
+            float polyTarget = 1f / MathF.Sqrt(Math.Max(1, sounding));
+            float polyStep = (float)(1 - PortableMath.Exp(-n / (0.05 * rate)));
             double detuneRatio = PortableMath.Pow(2, DetuneCents / 2400.0);
             for (int from = 0; from < n; from += Tick)
             {
@@ -293,12 +298,13 @@ namespace NeoBuzz.Vocoder
             float zl = preL, zr = preR;
             for (int i = 0; i < n; i++)
             {
+                polyGain += (polyTarget - polyGain) * (polyStep / n);
                 float xl = toneL[i], xr = toneR[i];
                 float yl = xl - k * zl, yr = xr - k * zr;
                 zl = xl; zr = xr;
                 float nz = wantNoise ? noiseSum[i] * NoiseScale : 0f;
-                left[i] = tb * yl * ToneScale + nb * nz;
-                right[i] = tb * yr * ToneScale + nb * nz;
+                left[i] = (tb * yl * ToneScale + nb * nz) * polyGain;
+                right[i] = (tb * yr * ToneScale + nb * nz) * polyGain;
             }
             preL = DspMath.Flush(zl); preR = DspMath.Flush(zr);
         }

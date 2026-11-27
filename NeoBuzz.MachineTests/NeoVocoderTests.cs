@@ -366,5 +366,48 @@ namespace NeoBuzz.MachineTests
             TestContext.Out.WriteLine($"Neo Vocoder 40 bands: {mine * 100:0.0} % of one core; Dye Essence vocoder FX (its most, 32 bands): {theirs * 100:0.0} %; ratio {mine / theirs:0.0}");
             Assert.That(mine, Is.LessThan(0.25));
         }
+    
+        [Test]
+        public void ANoteOrAChordOnTheSynthIsAsLoudAsTheNoiseCarrierWithinFourDb()
+        {
+            int len = Rate * 6;
+            var mod = ShapedNoise(len, Profile, 0.1);
+            var eN = Engine(Setup("Noise", 16));
+            var (n, _) = Render(eN, mod, (float[])mod.Clone());
+            TestContext.Out.WriteLine($"noise carrier rms {Rms(n, Rate, len):0.0000}");
+            foreach (int[] keys in new[] { new[] { 48 }, new[] { 60 }, new[] { 72 }, new[] { 48, 55, 60, 64 }, new[] { 36, 48, 55, 60, 64, 67, 72, 76 } })
+            {
+                var e = Engine(Setup("Synth", 16));
+                var (o, _) = Render(e, mod, (float[])mod.Clone(), notes: keys.Select(k => new Note(0, true, k, 127)).ToList());
+                double db = 20 * Math.Log10(Rms(o, Rate, len) / Rms(n, Rate, len));
+                TestContext.Out.WriteLine($"synth keys {string.Join(",", keys)}: {db:+0.0;-0.0} dB against the noise carrier");
+                Assert.That(db, Is.InRange(-4.0, 4.0));
+            }
+        }
+    
+        [Test]
+        public void FreezeHoldsTheBandLevelsAfterTheModulatorStopsAlsoWhenItIsOnFromTheStart()
+        {
+            int len = Rate * 4;
+            var mod = ShapedNoise(len, Profile, 0.2);
+            for (int i = Rate; i < len; i++) mod[i] = 0;
+            foreach (bool fromStart in new[] { true, false })
+            {
+                var e = Engine(Setup("Noise", 16, p => { if (fromStart) Switch(p, P.Freeze, true); }));
+                var v = e.Effective;
+                var (ol, _) = Render(e, mod, (float[])mod.Clone(), atBlock: pos => { });
+                // Turned on during the sound, the hold is immediate.
+                if (!fromStart)
+                {
+                    var e2 = Engine(Setup("Noise", 16));
+                    var raw = Fresh(p => { Choice(p, P.Carrier, "Noise"); Phys(p, P.Bands, 16); Phys(p, P.Sibilance, 0); Phys(p, P.Attack, 30); Phys(p, P.Release, 30); });
+                    e2 = Engine(raw);
+                    (ol, _) = Render(e2, mod, (float[])mod.Clone(), atBlock: pos => { if (pos >= Rate / 2) Switch(raw, P.Freeze, true); });
+                }
+                double held = Rms(ol, Rate * 2, Rate * 4);
+                TestContext.Out.WriteLine($"{(fromStart ? "on from the start" : "switched on at 0.5 s")}: held level {held:0.0000}");
+                Assert.That(held, Is.GreaterThan(0.01));
+            }
+        }
     }
 }

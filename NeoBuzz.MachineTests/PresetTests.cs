@@ -109,6 +109,8 @@ namespace NeoBuzz.MachineTests
             // neo-prism.md: the spectral effect, its song running from beat 0 (the synced sections follow it).
             ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, (v, x) => PrismRig.PresetRender(v, x)),
             ["Neo Space"] = (NeoBuzz.Space.Params.Table, (v, x) => SpaceRig.PresetRender(v, x)),
+            // neo-vocoder.md: the synth carrier plays a chord (the Sidechain preset is fed a saw pad), the noise is the modulator.
+            ["Neo Vocoder"] = (NeoBuzz.Vocoder.Params.Table, (v, x) => VocoderRig.PresetRender(v, x)),
             // neo-tune.md: the pitch corrector.
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),

@@ -97,6 +97,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, v => ChopRig.CostCall(v)),
             ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, v => PrismRig.CostCall(v)),
             ["Neo Space"] = (NeoBuzz.Space.Params.Table, v => SpaceRig.CostCall(v)),
+            ["Neo Vocoder"] = (NeoBuzz.Vocoder.Params.Table, v => VocoderRig.CostCall(v)),
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, v => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Exciter"] = (NeoBuzz.Exciter.Params.Table, v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, v => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
