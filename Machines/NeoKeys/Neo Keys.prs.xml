@@ -13,7 +13,7 @@
         <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="738" />
         <Parameter Name="Release" Group="1" Index="8" Track="0" Value="665" />
         <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
-        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="220" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="360" />
         <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="550" />
         <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
@@ -63,7 +63,7 @@
         <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
         <Parameter Name="Release" Group="1" Index="8" Track="0" Value="757" />
         <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
-        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="140" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="60" />
         <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="530" />
         <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="691" />

@@ -31,6 +31,9 @@ namespace NeoBuzz.Keys
         /// <summary>A voice's output gain: the level of a note at the hammer speed 1 before the master.</summary>
         const float VoiceGain = 0.085f;
         const float ThumpGain = 0.9f;
+        /// <summary>The knock's resonance (a Tine's and a Reed's, Hz; Q about 2.5 with the thump's decay) and the levels of its two parts (re <see cref="ThumpGain"/>).</summary>
+        static readonly double[] KnockHz = { 120.0, 180.0, 0.0 };
+        static readonly float[] KnockRes = { 0.24f, 0.29f, 0f }, KnockNoise = { 0.4f, 0.5f, 0f };
 
         const int Free = 0, Held = 1, Released = 2, Fading = 3;
 
@@ -56,14 +59,17 @@ namespace NeoBuzz.Keys
         readonly bool[] hasPending = new bool[Voices];
         readonly int[] pendKey = new int[Voices];
         readonly float[] pendNote = new float[Voices], pendVel = new float[Voices];
-        // The thump: two one-poles in a row (an alpha function, so it starts smoothly), through noise low-passed per model.
+        // The thump: two one-poles in a row (an alpha function, so it starts smoothly). A String's is noise through one low-pass. A Tine's and a Reed's is a knock:
+        // a short decaying low resonance (thZr, thZi, smoothed by thLp) plus a little noise through a 4th-order low-pass (four one-poles, thN) under the same alpha envelope, so no hiss.
         readonly float[] th1 = new float[Voices], th2 = new float[Voices], thIn = new float[Voices], thLp = new float[Voices], thAmp = new float[Voices];
+        readonly float[] thZr = new float[Voices], thZi = new float[Voices], thN = new float[Voices * 4];
         readonly bool[] thOn = new bool[Voices];
         readonly Rng[] noise = new Rng[Voices];
         long clock;
         bool sustainDown;
         float releaseCoef = 0.999f;
         readonly float[] thRho = new float[3], thLpK = new float[3], thNorm = new float[3];
+        readonly float[] thRc = new float[3], thRs = new float[3], thNzK = new float[3];
 
         // Per voice per mode (voice * Modes + mode): the state and the coefficients the loop reads (float), and the double ones they follow.
         readonly float[] zr = new float[Voices * Modes], zi = new float[Voices * Modes];
@@ -128,6 +134,9 @@ namespace NeoBuzz.Keys
                 thRho[m] = (float)PortableMath.Exp(-1.0 / (tau[m] * rate));
                 thLpK[m] = (float)(1.0 - PortableMath.Exp(-2.0 * Math.PI * cutoff[m] / rate));
                 thNorm[m] = (float)(Math.E / (tau[m] * rate));      // a peak of 1 for the alpha function n rho^n
+                double kw = 2.0 * Math.PI * KnockHz[m] / rate, rr = PortableMath.Exp(-1.0 / (tau[m] * rate));
+                thRc[m] = (float)(rr * PortableMath.Cos(kw)); thRs[m] = (float)(rr * PortableMath.Sin(kw));
+                thNzK[m] = thLpK[m];                                // the knock's noise: four of these in a row, at the model's cutoff
             }
             OutMeter.SetSampleRate(rate);
             AllNotesOff(true);
@@ -224,6 +233,7 @@ namespace NeoBuzz.Keys
             state[v] = Released;
             // The damper's thump.
             thIn[v] += 0.6f * thAmp[v] * thNorm[vmodel[v]];
+            if (vmodel[v] != (int)KeysModel.String) thZr[v] += 0.6f * thAmp[v] * KnockRes[vmodel[v]];
             thOn[v] = thAmp[v] > 0f;
         }
 
@@ -310,6 +320,9 @@ namespace NeoBuzz.Keys
             float kn = values.F(P.KeyNoise);
             thAmp[v] = kn * ThumpGain * (float)PortableMath.Pow(sp, 1.2);
             th1[v] = th2[v] = thLp[v] = 0f;
+            thZr[v] = thZi[v] = 0f;
+            for (int j = 0; j < 4; j++) thN[v * 4 + j] = 0f;
+            if (model != (int)KeysModel.String) thZr[v] = thAmp[v] * KnockRes[model];
             thIn[v] = thAmp[v] * thNorm[model];
             thOn[v] = thAmp[v] > 0f;
         }
@@ -498,6 +511,8 @@ namespace NeoBuzz.Keys
                 bool thump = thOn[v];
                 float rho = thRho[vmodel[v]], lpk = thLpK[vmodel[v]];
                 float t1 = th1[v], t2 = th2[v], tl = thLp[v];
+                float kr = thZr[v], ki = thZi[v], rc = thRc[vmodel[v]], rs = thRs[vmodel[v]], nk = thNzK[vmodel[v]], ng = KnockNoise[vmodel[v]];
+                float n1 = thN[v * 4], n2 = thN[v * 4 + 1], n3 = thN[v * 4 + 2], n4 = thN[v * 4 + 3];
                 if (thump) { t1 += thIn[v]; thIn[v] = 0f; }
                 var rng = noise[v];
                 for (int i = 0; i < m; i++)
@@ -522,8 +537,23 @@ namespace NeoBuzz.Keys
                     {
                         t1 *= rho;
                         t2 = t2 * rho + t1;
-                        tl += lpk * (rng.NextBipolar() - tl);
-                        o += tl * t2 * tmul[i];
+                        if (isString)
+                        {
+                            tl += lpk * (rng.NextBipolar() - tl);
+                            o += tl * t2 * tmul[i];
+                        }
+                        else
+                        {
+                            // The knock: the resonance rings down; the noise is under the alpha envelope, through four one-poles.
+                            float nkr = rc * kr - rs * ki;
+                            ki = rs * kr + rc * ki; kr = nkr;
+                            n1 += nk * (rng.NextBipolar() - n1);
+                            n2 += nk * (n1 - n2);
+                            n3 += nk * (n2 - n3);
+                            n4 += nk * (n3 - n4);
+                            tl += lpk * (ki - tl);                    // a smoother start for the resonance
+                            o += (tl + ng * n4 * t2) * tmul[i];
+                        }
                     }
                     mix[i] += o;
                 }
@@ -532,7 +562,12 @@ namespace NeoBuzz.Keys
                 if (thump)
                 {
                     th1[v] = t1; th2[v] = t2; thLp[v] = tl;
-                    if (t1 < 1e-6f && t2 < 1e-6f && thIn[v] == 0f) { thOn[v] = false; th1[v] = th2[v] = 0f; }
+                    thZr[v] = kr; thZi[v] = ki; thN[v * 4] = n1; thN[v * 4 + 1] = n2; thN[v * 4 + 2] = n3; thN[v * 4 + 3] = n4;
+                    if (t1 < 1e-6f && t2 < 1e-6f && thIn[v] == 0f && Math.Abs(kr) < 1e-6f && Math.Abs(ki) < 1e-6f)
+                    {
+                        thOn[v] = false; th1[v] = th2[v] = 0f; thZr[v] = thZi[v] = 0f;
+                        for (int j = 0; j < 4; j++) thN[v * 4 + j] = 0f;
+                    }
                 }
 
                 // The end of the chunk: a fade that has landed starts the pending note or frees the voice; quiet voices are freed.

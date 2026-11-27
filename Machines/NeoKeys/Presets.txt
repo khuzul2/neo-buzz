@@ -13,7 +13,7 @@ Pickup = 28
 Bar = 62
 Decay = 5
 Release = 260
-KeyNoise = 22
+KeyNoise = 36
 Tone = 10
 Volume = -0.9
 
@@ -41,7 +41,7 @@ Pickup = 22
 Bar = 72
 Decay = 6
 Release = 420
-KeyNoise = 14
+KeyNoise = 6
 Tone = 6
 TremRate = 4.5
 TremDepth = 78

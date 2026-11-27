@@ -38,7 +38,7 @@ It is a normal instrument: a generator that plays by notes (keyboard, MIDI, a no
 - Pickup select and Mute act on the String model only.
 - A close Pickup and a high Drive on a full-velocity chord is loud and gritty: lower Volume and check `peak_db`.
 - The sustain pedal holds notes until it lifts; a long Release makes the same ringing without it.
-- Key noise is a thump on the key going up, so a note that has already died has none.
+- Key noise is a soft low knock at the strike and on the key going up; a note that has already died has no key-up knock. It never hisses.
 
 ## Pairs well with
 
