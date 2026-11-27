@@ -92,6 +92,12 @@ namespace NeoBuzz.MachineTests
                 var e = new NeoBuzz.Mallet.MalletEngine(v); e.SetSampleRate(Rate);
                 return Of(e.Process, e, () => e.HeldNotes, () => e.ActiveVoices);
             }, Max = 16 },
+            new Row { Name = "Neo Keys", Make = () =>
+            {
+                var v = new ParamValues(NeoBuzz.Keys.Params.Table);
+                var e = new NeoBuzz.Keys.KeysEngine(v); e.SetSampleRate(Rate);
+                return Of(e.Process, e, () => e.HeldNotes, () => e.ActiveVoices);
+            }, Max = 16 },
             new Row { Name = "Neo Organ (velocity-blind by design: a tonewheel organ's keys are not touch sensitive)", Make = () =>
             {
                 var v = new ParamValues(NeoBuzz.Organ.Params.Table);

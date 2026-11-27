@@ -2420,6 +2420,22 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "660-neo-mallet-editor", "Neo Mallet with the Church Bell preset: the Bell model picker and its mode drawing (a line per mode on a log axis, height = gain at the strike position), then Exciter, Decay and damping, Tremolo and Output.", "Add Neo Mallet, load Church Bell, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                // KEY1: Neo Keys with the Bark Drive preset's values set before the editor opens: the pickup's curve and its harmonics, the hammer, the damper, the preamp.
+                Try("662-neo-keys-editor", () =>
+                {
+                    var m = Add("Neo Keys", "Keys");
+                    string[] names = { "Model", "Hardness", "Touch", "Velocity curve", "Pickup", "Bar and body", "Pickup select", "Decay", "Release", "Mute", "Key noise", "Drive", "Tone", "Tremolo rate", "Tremolo depth", "Auto-pan", "Volume" };
+                    int[] raws = { 0, 582, 800, 575, 880, 340, 2, 654, 501, 0, 380, 433, 460, 600, 0, 0, 683 };
+                    var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                    for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "662-neo-keys-editor", "Neo Keys with the Bark Drive preset: the Model and pickup section with the pickup's flux curve and the harmonics it makes of a hard note, then Hammer, Decay and damper, Preamp, Tremolo and Output.", "Add Neo Keys, load Bark Drive, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // CU6a: Neo Envelope's editor with the new Velocity depth in its Output section (Note mode, a snappy pluck shape, Velocity at 70 %).
                 Try("661-neo-envelope-editor", () =>
                 {

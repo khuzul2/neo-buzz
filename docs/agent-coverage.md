@@ -135,7 +135,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 
 | Tool | Guides | Calls | Example |
 |---|---|---|---|
-| analyze | 54 | 109 | yes |
+| analyze | 55 | 110 | yes |
 | analyze_mix | 9 | 7 | yes |
 | app_status | 4 | 1 | yes |
 | arrangement_automation | 1 | 0 | yes |
@@ -191,7 +191,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | machine_list | 10 | 0 | yes |
 | machine_open_editor | 3 | 2 | yes |
 | machine_pin | 1 | 2 | yes |
-| machine_readings | 52 | 45 | yes |
+| machine_readings | 53 | 46 | yes |
 | machine_remove | 2 | 0 | yes |
 | machine_set | 10 | 12 | yes |
 | machine_swap | 1 | 1 | yes |
@@ -220,7 +220,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | param_get | 17 | 25 | yes |
 | param_lock | 1 | 2 | yes |
 | param_randomize | 1 | 1 | yes |
-| param_set | 52 | 35 | yes |
+| param_set | 53 | 36 | yes |
 | patch_add_node | 2 | 1 | yes |
 | patch_connect | 2 | 3 | yes |
 | patch_describe | 3 | 1 | yes |
@@ -235,7 +235,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | preset_load | 20 | 20 | yes |
 | preset_save | 2 | 3 | yes |
 | redo | 0 | 0 | yes |
-| render | 56 | 77 | yes |
+| render | 57 | 78 | yes |
 | select | 3 | 3 | yes |
 | session_clip_set | 5 | 4 | yes |
 | session_get | 5 | 1 | yes |

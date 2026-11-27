@@ -1,0 +1,125 @@
+# Neo Keys factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoKeys
+# A preset that does not name a parameter takes its default: Model Tine, Hardness 1.5 ms, Touch 60 %, Velocity curve 0, Pickup 35 %, Bar and body 50 %,
+# Pickup select Both, Decay 2.4 s, Release 120 ms, Mute off, Key noise 25 %, Drive 0 dB, Tone 0, Tremolo depth 0, Auto-pan 0 (see Params.def).
+# Every preset is levelled so that the chord C3 E3 G3 B3 at velocity 0.8 has its loudest 50 ms at -22 dB RMS, within 1 dB.
+machine "Neo Keys"
+
+preset "Tine — Classic Ballad"
+comment "A soft hammer on a tine with a tone bar beside it and the pickup a little away: a round, bell-like electric piano that sings for five seconds, with a gentle bark only when you lean on the keys."
+Model = Tine
+Hardness = 2.4
+Touch = 55
+Pickup = 28
+Bar = 62
+Decay = 5
+Release = 260
+KeyNoise = 22
+Tone = 10
+Volume = -0.9
+
+preset "Tine — Bark Drive"
+comment "A hard hammer and the pickup right at the tine, into a driven preamp: the notes bark and growl when played hard, then clean up as they die away."
+Model = Tine
+Hardness = 0.7
+Touch = 80
+VelCurve = 15
+Pickup = 88
+Bar = 34
+Decay = 3.2
+Release = 110
+KeyNoise = 38
+Drive = 13
+Tone = -8
+Volume = -10.8
+
+preset "Tine — Stereo Tremolo"
+comment "A clean, warm tine with the tremolo on and fully panned: the whole sound swings between left and right at four and a half beats a second,."
+Model = Tine
+Hardness = 2.8
+Touch = 50
+Pickup = 22
+Bar = 72
+Decay = 6
+Release = 420
+KeyNoise = 14
+Tone = 6
+TremRate = 4.5
+TremDepth = 78
+Stereo = 100
+Volume = 0.4
+
+preset "Reed — Soul Keys"
+comment "A steel reed read by the electrostatic pickup: short, woody and slightly buzzy with a quick decay, a touch of warm drive and a light tremolo, for chords with a little grease."
+Model = Reed
+Hardness = 0.6
+Touch = 60
+Pickup = 90
+Bar = 42
+Decay = 0.75
+Release = 85
+KeyNoise = 30
+Drive = 8
+Tone = 40
+TremRate = 5.6
+TremDepth = 40
+Stereo = 30
+Volume = -4.5
+
+preset "Reed — Gritty"
+comment "The reed played hard with the pickup almost touching it and the preamp pushed: an angry, reedy, odd-harmonic buzz that crunches on every key and dies in under a second."
+Model = Reed
+Hardness = 0.45
+Touch = 78
+VelCurve = 20
+Pickup = 96
+Bar = 18
+Decay = 0.9
+Release = 55
+KeyNoise = 46
+Drive = 19
+Tone = -14
+Volume = -8.4
+
+preset "String — Funky Pluck"
+comment "A struck string read by the bridge pickup only: a thin, snappy, twangy pluck with a loud hammer click and a damper that cuts the note the moment the key goes up."
+Model = String
+Hardness = 0.42
+Touch = 70
+Pickup = 62
+Bar = 24
+PickupSel = Bridge
+Decay = 1.3
+Release = 22
+KeyNoise = 42
+Drive = 5
+Tone = 22
+Volume = -9.2
+
+preset "String — Muted Staccato"
+comment "The string with its mute on and both pickups together: short, dry, percussive chops with a hard click and no ring, made for sixteenth-note chords."
+Model = String
+Hardness = 0.6
+Touch = 55
+Pickup = 44
+Bar = 8
+PickupSel = Both
+Decay = 2.2
+Release = 14
+Mute = On
+KeyNoise = 52
+Drive = 7
+Tone = 6
+Volume = -2.2
+
+preset "Tine — Glass Bells"
+comment "A hard hammer on a tine far from the pickup with the tone bar full up: a pure, glassy, bell-like tone with no bark that rings for nine seconds, for slow, shimmering chords."
+Model = Tine
+Hardness = 0.35
+Touch = 25
+Pickup = 4
+Bar = 100
+Decay = 9
+Release = 700
+KeyNoise = 6
+Tone = 32
+Volume = -9.1

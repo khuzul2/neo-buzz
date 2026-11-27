@@ -675,6 +675,18 @@
    "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks, glass and struck plates; a playable instrument with no audio input.",
    "note_in": true
   },
+  "Neo Keys": {
+   "category": "Synths",
+   "tags": [
+    "physical-model",
+    "keys",
+    "vintage",
+    "gritty",
+    "polyphonic"
+   ],
+   "use_for": "Electric keys by physical modelling: a struck tine, reed or string read by a pickup that barks when played hard, for ballad and soul keys, drive and growl, reedy buzz, funky plucks and muted staccato; a playable instrument with no audio input.",
+   "note_in": true
+  },
   "Neo Arp": {
    "category": "Control",
    "tags": [
