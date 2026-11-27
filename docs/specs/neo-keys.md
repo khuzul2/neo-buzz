@@ -74,11 +74,11 @@ The default patch sits at -22.0 dB as well.
 The tine, reed and string are modal approximations: no hammer-string nonlinearity beyond the contact time, no sympathetic resonance, no detune between voices. The pickup is a memoryless curve of displacement, so there is no pickup inductance or cable. The Reed's brightness changes with velocity mostly through its odd harmonics.
 The levels were set on the chord, so a single loud high note can be 10 dB above it.
 
-## 10. Literature (for the owner to verify; written from memory, no other product's code, tables or presets used)
+## 10. Literature (checked against the publishers' records on 2026-11-27; no other product's code, tables or presets used)
 
 - Adrien, J.-M., 1991, in *Representations of Musical Signals*, MIT Press: modal synthesis as a bank of decaying resonators.
 - Fletcher, H., 1964, *J. Acoust. Soc. Am.* 36, 203: normal vibration frequencies of a stiff string (the inharmonicity of the String model).
 - Fletcher, N. H. and Rossing, T. D., 1998, *The Physics of Musical Instruments*, 2nd ed., Springer: the clamped-free bar's modes and mode shapes (ch. 2), the string and its double decay (ch. 12).
-- Horton, M. and Moore, R., 2009, *Am. J. Phys.* 77, 144: the voltage of a magnetic pickup from the flux through its coil as a vibrating string moves (the flux curve of the Tine and String pickups).
-- Parker, J. D., Esqueda, F., Bergner, A., 2016, *Proc. DAFx*: antiderivative anti-aliasing of memoryless nonlinearities (first-order form for the pickup curve and the Drive).
+- Horton, N. G. and Moore, T. R., 2009, "Modeling the magnetic pickup of an electric guitar", *Am. J. Phys.* 77(2), 144–150: the voltage of a magnetic pickup from the flux through its coil as a vibrating string moves (the flux curve of the Tine and String pickups).
+- Parker, J. D., Zavalishin, V. and Le Bivic, E., 2016, "Reducing the aliasing of nonlinear waveshaping using continuous-time convolution", *Proc. DAFx-16*, Brno: antiderivative anti-aliasing of memoryless nonlinearities (first-order form for the pickup curve and the Drive).
 - Cook, P. R., 2002, *Real Sound Synthesis for Interactive Applications*, A K Peters: struck-object synthesis with decaying resonators.
