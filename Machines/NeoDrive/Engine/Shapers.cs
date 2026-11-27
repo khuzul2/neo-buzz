@@ -9,15 +9,18 @@ using System.Runtime.CompilerServices;
 
 namespace NeoBuzz.Drive
 {
-    internal enum DriveMode { Tape, Tube, Transistor, Diode, Fold }
+    internal enum DriveMode { Tape, Tube, Transistor, Diode, Fold, Overdrive, Fuzz, HardClip, Rectify, Transformer }
 
     /// <summary>A memoryless curve f with its antiderivative F (F(0) = 0).</summary>
     internal struct Shaper
     {
         public DriveMode Mode;
-        /// <summary>Transistor: blend towards a hard clip. Fold: blend towards the sine fold (0 … 1).</summary>
+        /// <summary>
+        /// Transistor: blend towards a hard clip. Fold: blend towards the sine fold (0 … 1). Hard clip: the knee's half width (0 hard …
+        /// 1 soft). Rectify: 0 = half-wave … 1 = full-wave.
+        /// </summary>
         public double Hardness;
-        /// <summary>Diode and Tube: the negative side's saturation level (≤ 1: asymmetric).</summary>
+        /// <summary>Diode, Tube, Overdrive and Fuzz: the negative side's saturation level (≤ 1: asymmetric).</summary>
         public double NegLevel;
 
         public static double LogCosh(double x)
@@ -62,13 +65,58 @@ namespace NeoBuzz.Drive
                     double a = NegLevel;
                     return a * Asinh(x / a);
                 }
-                default:
+                case DriveMode.Fold:
                 {
                     double m = Hardness;
                     return (1 - m) * PortableMath.Tanh(x) + m * PortableMath.Sin(x);
                 }
+                case DriveMode.Overdrive:
+                {
+                    // Algebraic soft clip x / √(1 + x²) (slow approach to the rail), squeezed on the negative side.
+                    if (x >= 0) return x / Math.Sqrt(1 + x * x);
+                    double a = NegLevel;
+                    double u = x / a;
+                    return a * (u / Math.Sqrt(1 + u * u));
+                }
+                case DriveMode.Fuzz:
+                    // A hard cubic clip, level 1 above and NegLevel below the centre.
+                    return x >= 0 ? CubicClip(x, 1) : -CubicClip(-x, NegLevel);
+                case DriveMode.HardClip:
+                {
+                    double w = KneeWidth(Hardness);
+                    double a = Math.Abs(x);
+                    double y = a <= 1 - w ? a : a < 1 + w ? a - (a - (1 - w)) * (a - (1 - w)) / (4 * w) : 1;
+                    return x < 0 ? -y : y;
+                }
+                case DriveMode.Rectify:
+                {
+                    // tanh, then a blend of the half-wave (the positive part) and the full-wave (the magnitude) rectified result.
+                    double g = PortableMath.Tanh(x);
+                    return 0.5 * (1 - Hardness) * g + 0.5 * (1 + Hardness) * Math.Abs(g);
+                }
+                default:   // Transformer: the core is a tanh (the frequency dependence is in the engine)
+                    return PortableMath.Tanh(x);
             }
         }
+
+        /// <summary>Slope 1 at 0 and level <paramref name="level"/> from |x| = 1.5 · level: C1, hard-kneed.</summary>
+        static double CubicClip(double x, double level)
+        {
+            double k = 1.5 * level;
+            double u = x / k;
+            return u >= 1 ? level : level * (1.5 * u - 0.5 * u * u * u);
+        }
+
+        /// <summary>∫₀ˣ CubicClip for x ≥ 0.</summary>
+        static double CubicClipIntegral(double x, double level)
+        {
+            double k = 1.5 * level;
+            double u = x / k;
+            return u >= 1 ? level * (x - 0.375 * k) : level * k * (0.75 * u * u - 0.125 * u * u * u * u);
+        }
+
+        /// <summary>The hard clip's half knee width for a Character 0 … 1 (a hair above 0 keeps the maths finite).</summary>
+        public static double KneeWidth(double character) => 0.002 + 0.998 * character;
 
         /// <summary>Antiderivative of <see cref="F"/>, zero at 0.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,11 +146,41 @@ namespace NeoBuzz.Drive
                     double a = NegLevel;
                     return a * a * AsinhIntegral(x / a);
                 }
-                default:
+                case DriveMode.Fold:
                 {
                     double m = Hardness;
                     return (1 - m) * LogCosh(x) + m * (1 - PortableMath.Cos(x));
                 }
+                case DriveMode.Overdrive:
+                {
+                    if (x >= 0) return Math.Sqrt(1 + x * x) - 1;
+                    double a = NegLevel;
+                    double u = x / a;
+                    return a * a * (Math.Sqrt(1 + u * u) - 1);
+                }
+                case DriveMode.Fuzz:
+                    return x >= 0 ? CubicClipIntegral(x, 1) : CubicClipIntegral(-x, NegLevel);
+                case DriveMode.HardClip:
+                {
+                    double w = KneeWidth(Hardness);
+                    double a = Math.Abs(x);
+                    double h = 1 - w;
+                    if (a <= h) return 0.5 * a * a;
+                    if (a < 1 + w)
+                    {
+                        double t = a - h;
+                        return 0.5 * h * h + h * t + 0.5 * t * t - t * t * t / (12 * w);
+                    }
+                    return 0.5 * h * h + 2 * w - (2.0 / 3.0) * w * w + (a - (1 + w));
+                }
+                case DriveMode.Rectify:
+                {
+                    // ∫ tanh = ln cosh; ∫ |tanh| = sign(x) · ln cosh.
+                    double l = LogCosh(x);
+                    return 0.5 * (1 - Hardness) * l + 0.5 * (1 + Hardness) * (x < 0 ? -l : l);
+                }
+                default:   // Transformer
+                    return LogCosh(x);
             }
         }
     }

@@ -300,4 +300,104 @@
       <Comment></Comment>
     </Preset>
   </Item>
+  <Item Key="Overdrive — Warm Crunch">
+    <Preset Machine="Neo Drive">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="5" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="444" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="540" />
+        <Parameter Name="Character" Group="1" Index="3" Track="0" Value="450" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="423" />
+        <Parameter Name="Tone" Group="1" Index="5" Track="0" Value="450" />
+        <Parameter Name="High cut" Group="1" Index="6" Track="0" Value="711" />
+        <Parameter Name="Output" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Quality" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Amount" Group="1" Index="11" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Fuzz — Sputter Fuzz">
+    <Preset Machine="Neo Drive">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="778" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="470" />
+        <Parameter Name="Character" Group="1" Index="3" Track="0" Value="750" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="521" />
+        <Parameter Name="Tone" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="High cut" Group="1" Index="6" Track="0" Value="652" />
+        <Parameter Name="Output" Group="1" Index="7" Track="0" Value="438" />
+        <Parameter Name="Auto gain" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Quality" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Amount" Group="1" Index="11" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hard clip — Loud Clip">
+    <Preset Machine="Neo Drive">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="7" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="306" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Character" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="5" Track="0" Value="575" />
+        <Parameter Name="High cut" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="7" Track="0" Value="417" />
+        <Parameter Name="Auto gain" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Quality" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Amount" Group="1" Index="11" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Rectify — Octave Grit">
+    <Preset Machine="Neo Drive">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="8" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="389" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Character" Group="1" Index="3" Track="0" Value="650" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="389" />
+        <Parameter Name="Tone" Group="1" Index="5" Track="0" Value="550" />
+        <Parameter Name="High cut" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="9" Track="0" Value="750" />
+        <Parameter Name="Quality" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Amount" Group="1" Index="11" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Transformer — Heavy Iron">
+    <Preset Machine="Neo Drive">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="9" />
+        <Parameter Name="Drive" Group="1" Index="1" Track="0" Value="722" />
+        <Parameter Name="Bias" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Character" Group="1" Index="3" Track="0" Value="700" />
+        <Parameter Name="Low cut" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="5" Track="0" Value="450" />
+        <Parameter Name="High cut" Group="1" Index="6" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="7" Track="0" Value="479" />
+        <Parameter Name="Auto gain" Group="1" Index="8" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="9" Track="0" Value="1000" />
+        <Parameter Name="Quality" Group="1" Index="10" Track="0" Value="1" />
+        <Parameter Name="Amount" Group="1" Index="11" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
 </PresetDictionary>

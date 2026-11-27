@@ -20,6 +20,11 @@ namespace NeoBuzz.Dsp
         /// <summary>The range modulation may use (the manifest's safe range); the parameter's own when there is none.</summary>
         int SafeMin { get; }
         int SafeMax { get; }
+        /// <summary>
+        /// The top of the span a depth is a percentage of when a target names no range of its own: the parameter's own maximum, or the
+        /// maximum it had before a choice list grew (Neo Drive's Mode: 4), so a saved depth moves what it moved.
+        /// </summary>
+        int SpanMax => Max;
         int Get();
         void Put(int raw);
     }
@@ -96,7 +101,7 @@ namespace NeoBuzz.Dsp
         /// <summary>The span the depth is a percentage of: the range's width.</summary>
         public static int Span(ModSlot s, IModPort p)
         {
-            int lo = p.Min, hi = p.Max;
+            int lo = p.Min, hi = s.HasRange ? p.Max : Math.Min(p.Max, Math.Max(p.Min, p.SpanMax));
             if (s.HasRange)
             {
                 lo = Math.Max(lo, Math.Min(s.RangeMin, s.RangeMax));

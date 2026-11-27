@@ -20,7 +20,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 
 | Machine | Kind | One line |
 |---|---|---|
-| Neo Drive | effect | Saturator: tape, tube, transistor, diode and fold, oversampled and anti-aliased |
+| Neo Drive | effect | Saturator: tape, tube, transistor, diode, fold, overdrive, fuzz, hard clip, rectify and transformer, oversampled and anti-aliased |
 | Neo Comp | effect | Compressor: clean VCA, glue bus, FET and opto, with sidechain filter, lookahead and mix |
 | Neo Verb | effect | Algorithmic reverb: hall, room, chamber and plate, modulated, with freeze and shimmer |
 | Neo Poly | generator | Polyphonic virtual analog: 3 oscillators with sync, FM and ring, 2 filters, mod matrix |
@@ -258,7 +258,16 @@ Tests run at 48 kHz unless noted. "Alias floor" is the loudest component that is
 
 Drive → pre-emphasis → oversampled shaper with first-order anti-derivative anti-aliasing (ADAA) → de-emphasis → DC block → tone → output; dry/wet mix delayed to match the latency.
 
-Modes: **Tape** (pre/de-emphasis, soft symmetric curve, head bump), **Tube** (asymmetric, bias that sags with level → even harmonics), **Transistor** (harder knee), **Diode** (asymmetric exponential), **Fold** (sine wavefolder). Parameters: Mode, Drive (0–36 dB), Bias, Character, Tone, Low cut, Output, Auto gain, Mix, Quality (2×/4×/8×).
+Modes: **Tape** (pre/de-emphasis, soft symmetric curve, head bump), **Tube** (asymmetric, bias that sags with level → even harmonics), **Transistor** (harder knee), **Diode** (asymmetric exponential), **Fold** (sine wavefolder), and, from EXT3 (issue #192), appended at the end of the Mode list so the old indices keep their meaning: **Overdrive**, **Fuzz**, **Hard clip**, **Rectify** and **Transformer** (below). Parameters: Mode, Drive (0–36 dB), Bias, Character, Tone, Low cut, Output, Auto gain, Mix, Quality (2×/4×/8×), Amount.
+
+**The five added Modes (EXT3).** Clean room: each is a published circuit idea or plain waveshaping maths; no product's code, curves or presets. Bias, the Tone filters, Auto gain, Quality, Mix, Output and Amount work for each as for the old ones; every curve has slope 1 at 0 except Rectify, and the engine's first-order ADAA runs on each.
+- *Overdrive.* The algebraic soft clip x/√(1 + x²), squeezed to 0.7 on the negative side (soft, asymmetric), after a peaking hump (Q 0.8, +10 dB before the clip, −4 dB taken back after). Character moves the hump's centre from 500 Hz to 2 kHz (500 · 4^c).
+- *Fuzz.* A hard cubic clip (slope 1 at 0, flat from 1.5 × the level), level 1 above and 0.55 below the centre, with bias starvation: the input's 20 ms envelope e sets how far the bias is pushed towards the rail, depth · 3 / (1 + 6e), so a decaying note is gated; 45 Hz noise on that offset, strongest where e is small and gone in a loud note and in silence, makes the gate sputter where it opens and shuts. Character is the depth (0 % is a plain asymmetric hard clip). The level probe runs the same starvation, so Auto gain counts the gating.
+- *Hard clip.* A clean clipper: linear to 1 − w, a quadratic knee to 1 + w, flat beyond (C1). Character sets w from 0.002 (hard) to 1 (soft). No emphasis, no sag.
+- *Rectify.* g = tanh(x), then ½(1 − c) · g + ½(1 + c) · |g|: Character c goes from the half-wave (the positive half) to the full-wave (the magnitude; no fundamental, octave up). The kink is what ADAA is for; the DC is blocked after the curve.
+- *Transformer.* The flux is the input low-passed by one pole at the corner (40 Hz to 300 Hz, 40 · 7.5^c), boosted three times and run through a tanh, so the lows reach the curve first; the rest (input minus flux) passes a soft saturation of its own (tanh at 2) scaled by 0.6 + 0.4 × the flux curve's slope. A slow memory of how far the flux is compressed (a one-pole at 0.7 × the corner) is taken off the flux by 0.25, so the curve differs rising and falling (a gentle hysteresis loop). At rest the output is the input.
+- *Mode changes.* A change of Mode (a pattern value or an automation lane) fades the wet share of Mix out over 5 ms through the dry signal (delayed to match), switches the Mode and its filters' state, and fades back in over 5 ms: no click, about 10 ms in all, whatever the block size. The old five Modes still render bit for bit when the Mode does not change.
+- *State.* Version 1: Mode grew from five choices to ten; nothing a song saved moves. MIDI maps store a fraction of a parameter's range, so a controller mapped to Mode now steps through the longer list (a map saved before lands on a different Mode); saved songs and presets are unaffected. MM2 fixes map storage. Where our own data maps a fraction onto Mode's range it was checked: automation points, clip envelopes, Neo Patch and canvas-modulator ranges and Neo Strip's Drive mode store raw values, and no Neo machine, song template or Dye Essence slot targets Neo Drive; the one place a fraction of the range meets Mode is a canvas modulator's depth (a percentage of the target's span), which keeps the old span of 4 for a target with no range of its own (`IModPort.SpanMax`; a target with its own range reaches the new Modes; `ModulatorTests`). Plug-in export host automation and other DAWs' stored automation are normalised and shift (a limit, with MIDI maps).
 
 | Criterion | Target | Measured |
 |---|---|---|
@@ -267,6 +276,10 @@ Modes: **Tape** (pre/de-emphasis, soft symmetric curve, head bump), **Tube** (as
 | Drive 0 dB, −12 dBFS | THD ≤ 1 % (Tube ≤ 2 %: its even-order character is the point) | Tape 0.34 %, Transistor 0.37 %, Tube 1.44 % |
 | Tube | 2nd harmonic ≥ 3rd harmonic (even-order character) | passes |
 | Auto gain | output RMS within ±1.5 dB of input across 0–36 dB drive (pink noise; Fold to 24 dB) | passes |
+| Auto gain, the five added Modes | output RMS within ±2 dB of input across Drive 0–36 dB, pink noise at −18 dBFS | worst deviation Overdrive 0.74 dB, Fuzz 1.01, Hard clip 0.93, Rectify 1.39, Transformer 0.73 |
+| Alias floor, the added Modes, 8×, Drive 24 dB, 1–10 kHz (eleven sines) | Hard clip and Fuzz at least 60 dB below the fundamental | Hard clip −105.7 dB, Fuzz −71.5, Overdrive −99.6, Rectify −69.7, Transformer −127.9 |
+| Mode change | automated switch through all ten Modes and back: 0 clicks; about 10 ms | 0 clicks at 256, 2400 and 5000 samples between changes and at random every 768; 10.7 ms at 32, 64 and 256-sample blocks |
+| The old five Modes | render the same bits as origin/main | 151 renders (every Mode, quality, drive, bias, character, filters, Mix, Amount, block size) and the 15 factory presets: identical |
 | Latency | constant across Quality settings, reported to ReBuzz | 62 samples at every setting; ReBuzz sees it |
 
 ### Neo Comp (compressor)

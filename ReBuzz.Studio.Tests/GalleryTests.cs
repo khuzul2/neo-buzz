@@ -2360,6 +2360,9 @@ namespace ReBuzz.Studio.Tests
                     "Neo Verb's editor with Amount at 150 % and its own Mix at 30 %: Amount and Mix in the Output section (Width moved beside Shimmer); the decay picture follows the Amount.");
                 FxShot("653-editor-neo-utility-amount-mix", "Neo Utility", "FX Utility", new[] { ("Amount", 1000), ("Mix", 500) },
                     "Neo Utility's editor with Mix at 50 %: Amount and Mix after the channel controls, the same size and order as every Neo effect's.");
+                // EXT3: Neo Drive's Mode list with its ten characters, the last one (Transformer) chosen, so the whole list shows in the window.
+                FxShot("655-editor-neo-drive-ten-modes", "Neo Drive", "FX Drive", new[] { ("Mode", 9), ("Drive", 600) },
+                    "Neo Drive's editor with Mode at Transformer: all ten characters in the Mode list (Tape to Fold, then Overdrive, Fuzz, Hard clip, Rectify and Transformer), with Drive at 21.6 dB.");
 
                 // The generic parameter window: a Neo machine.
                 void Parameters(string id, MachineCore m, string what, string how)

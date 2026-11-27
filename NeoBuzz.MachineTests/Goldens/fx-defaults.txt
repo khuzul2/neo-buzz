@@ -74,6 +74,11 @@ Neo Drive	Fold — West Coast	f819d2e38230bec1	5279fc308d287617
 Neo Drive	Fold — Harmonic Bloom	be76ee01621ba237	9458a088c2de7d34
 Neo Drive	Utility — Subtle Glue	db83f7deccc59833	7a8d4d248dcebd47
 Neo Drive	Utility — Bass Grit	c9ab6d14abc6e2b5	80c90a96f206d10b
+Neo Drive	Overdrive — Warm Crunch	bc675d99adf64687	4619c05039754de7
+Neo Drive	Fuzz — Sputter Fuzz	78494692de771d19	e0e4ee3decbac070
+Neo Drive	Hard clip — Loud Clip	318d57b4eb234e05	8d4b8eb10e2484d3
+Neo Drive	Rectify — Octave Grit	d1b90466691e2e67	21fc2c8f296845ee
+Neo Drive	Transformer — Heavy Iron	632b035c16795de9	f9c49f6c2007efe5
 Neo EQ	(defaults)	f649f96ead527a25	bb58432187874b88
 Neo EQ	Mixing — Vocal Clarity	cdc5c8bf411b4512	2c9c2dfe98f0de9c
 Neo EQ	Mixing — Kick Punch	5a245ad14906aaf2	2c20f84801547516
