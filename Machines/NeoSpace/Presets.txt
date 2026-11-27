@@ -1,0 +1,83 @@
+# Neo Space factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoSpace
+# A preset that does not name a parameter takes its default: the Hall, 40 ms of pre-delay, the whole response, no cuts, Width 100 %, Reverse off,
+# Mix 30 %, Amount 100 % and Output 0 dB. Every preset names the room, so it plays the same whatever was loaded before it.
+machine "Neo Space"
+
+preset "Room — Small Room"
+comment "A close living-room space: a few quick reflections from the walls around you and a tail that is gone in a third of a second, a little boxy and a touch dark, like a vocal or guitar sung in a small room."
+Room = Small room
+Pre-delay = 2
+Length = 100
+Low cut = 120
+High cut = 9000
+Width = 100
+Mix = 36
+
+preset "Drums — Drum Room"
+comment "A big, hard, live room around the kit: bright reflections arriving at once, a tail of almost a second, wide, with the lows cleared; it makes drums bigger and further apart without a wash."
+Room = Drum room
+Pre-delay = 0
+Length = 85
+Low cut = 90
+Width = 130
+Mix = 40
+Output = 1
+
+preset "Plate — Bright Plate"
+comment "A dense, bright metal plate: no room at all, just a smooth shimmering wash from the first millisecond that rings for two seconds; it sits on top of vocals and snares without moving them into a space."
+Room = Plate
+Pre-delay = 12
+Length = 100
+Low cut = 160
+Width = 150
+Mix = 34
+
+preset "Chamber — Smooth Chamber"
+comment "A long stone chamber: a clear gap before the reflections, then a smooth, even tail of one and a half seconds that is warm in the lows and soft on top; it adds depth to a mix without calling attention to itself."
+Room = Chamber
+Pre-delay = 18
+Length = 100
+Low cut = 100
+High cut = 8500
+Width = 110
+Mix = 32
+
+preset "Hall — Large Hall"
+comment "A big concert hall: a long, slow tail of nearly four seconds with a wide stereo spread, the lows cleared and the highs rolled off a little, so a chord or a voice hangs in a vast space."
+Room = Large hall
+Pre-delay = 35
+Length = 100
+Low cut = 140
+High cut = 11000
+Width = 140
+Mix = 36
+
+preset "Room — Ambience"
+comment "A dry, treated room: the first reflections only and a faint, short tail, wide and bright; it gives a sound a place to be without a tail you can hear, to glue a close-miked source into the mix."
+Room = Ambience
+Pre-delay = 0
+Length = 100
+Width = 160
+Mix = 48
+Output = 2
+
+preset "Effect — Reverse Swell"
+comment "The hall played backwards: the reverb starts from nothing and swells up for about a second and a half, then stops at its loudest instant; use it on a note that ends a phrase, or a snare, for a pull towards the next beat."
+Room = Large hall
+Pre-delay = 0
+Length = 38
+Reverse = On
+Low cut = 200
+Width = 130
+Mix = 60
+Output = 4
+
+preset "Tail — Dark Long Tail"
+comment "A cathedral with the lights off: seven seconds of low, slow ringing with the highs cut at 2.5 kHz, a long gap before it starts and a very wide spread, for a drone, a pad or the last chord of a piece."
+Room = Cathedral
+Pre-delay = 60
+Length = 100
+Low cut = 80
+High cut = 2500
+Width = 170
+Mix = 42

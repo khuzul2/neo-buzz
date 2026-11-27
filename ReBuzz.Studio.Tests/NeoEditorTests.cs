@@ -68,6 +68,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Voice to MIDI", "NeoVoiceToMidiEditor", "neo-voice-to-midi-editor", 1200, 836),   // the live view, key, pitch, triggers with the Train panel, chords and expression
             ("Neo Lo-Fi", "NeoLoFiEditor", "neo-lofi-editor", 1041, 241),   // LF2: Amount and Mix over Tone and Output (1000 x 330 with the three knobs in a column)
             ("Neo Chop", "NeoChopEditor", "neo-chop-editor", 898, 546),   // CHP1: the mode row, the mode pages, the sixteen steps and Output (the size is read from the first CI run)
+            ("Neo Space", "NeoSpaceEditor", "neo-space-editor", 900, 300),   // SPC1: Room, the response picture, Tone and Output (the size is read from the first CI run)
             ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),

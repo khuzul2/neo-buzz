@@ -102,6 +102,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Lo-Fi"] = (NeoBuzz.LoFi.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // neo-chop.md: the stutter, repeat, retrigger, tape stop, gate and pan, played with the song running from the second beat.
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, (v, x) => ChopRig.PresetRender(v, x)),
+            ["Neo Space"] = (NeoBuzz.Space.Params.Table, (v, x) => SpaceRig.PresetRender(v, x)),
             // neo-tune.md: the pitch corrector.
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),

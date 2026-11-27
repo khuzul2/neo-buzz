@@ -2506,6 +2506,39 @@ namespace ReBuzz.Studio.Tests
                     "Neo Chop with the preset \"Stutter — Sixteenth Stutter\" loaded: the mode row (Stutter lit, the other five dark), the Stutter page below it (Trigger, Every, Repeats, Slice and Feel, Pitch, Decay and Filter per repeat), the sixteen gate steps, and Output with Amount and Mix side by side, Smoothness, Note picks slice and the meters.");
                 ChopShot("661-neo-chop-gate", "Chop 2", new[] { 0, 0, 2, 2, 0, 3, 120, 0, 200, 0, 0, 0, 1000, 2, 1, 0, 0, 0, 0, 2, 3, 1, 0, 0, 0, 0, 2, 0, 642, 1000, 0, 300, 1, 0, 1, 88, 511, 1000, 25, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 2, 0, 3, 500, 1000, 0, 0, 301, 0, 1000, 500 },
                     "Neo Chop with the preset \"Gate — Pumping Step Gate\" loaded: the Gate lit in the mode row and the sixteen steps as the preset sets them (accents on the beats).");
+                // SPC1: Neo Space's editor with a preset loaded: the room, the picture of the response with the pre-delay and the trim drawn on it,
+                // the tone and the output. The response is made in the background: the shot waits for it (Busy), then plays a few blocks.
+                void SpaceShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Space", machineName);
+                        string[] names = { "Room", "Wave", "Pre-delay", "Length", "Low cut", "High cut", "Width", "Reverse", "Mix", "Amount", "Output" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        var inst = m.ManagedMachine!;
+                        var busy = inst.GetType().GetProperty("Busy")!;
+                        var work = inst.GetType().GetMethod("Work")!;
+                        var output = new Buzz.MachineInterface.Sample[256];
+                        var input = new Buzz.MachineInterface.Sample[256];
+                        for (int i = 0; i < 256; i++) input[i] = new Buzz.MachineInterface.Sample((float)(System.Math.Sin(i * 0.2) * 7000), (float)(System.Math.Sin(i * 0.2) * 7000));
+                        for (int tries = 0; tries < 400 && (bool)busy.GetValue(inst)!; tries++) System.Threading.Thread.Sleep(10);
+                        for (int b = 0; b < 4; b++) lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Space; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                SpaceShot("662-neo-space-editor", "Space", new[] { 6, 0, 140, 1000, 497, 800, 1400, 0, 360, 1000, 500 },
+                    "Neo Space with the preset \"Hall — Large Hall\" loaded: the Room section (the room, the Wave slot, Pre-delay and Length), the picture of the response (its level over time, the pre-delay as a shaded gap in front), the Tone section (low and high cut, Width, Reverse), and Output with Amount and Mix side by side, the level and the two meters.");
+                SpaceShot("663-neo-space-reverse", "Space 2", new[] { 6, 0, 0, 347, 589, 1000, 1300, 1, 600, 1000, 583 },
+                    "Neo Space with the preset \"Effect — Reverse Swell\" loaded: Reverse on, so the picture rises to its end, and the Length line on it dims the part that is cut off.");
+                SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 40, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
+                    "Neo Space with Room set to Wave and slot 5 empty: the picture shows the hall that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
