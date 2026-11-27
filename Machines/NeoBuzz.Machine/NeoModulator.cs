@@ -60,7 +60,17 @@ namespace NeoBuzz.Machine
             Max = parameter.MaxValue;
             SafeMin = Math.Max(Min, safeMin);
             SafeMax = Math.Min(Max, safeMax);
+            SpanMax = LegacyMax(machine, parameter) is int legacy ? Math.Min(Max, legacy) : Max;
         }
+
+        /// <summary>
+        /// Choice lists that grew after songs saved depths on them: a depth is a percentage of the old span, so the song moves what it did.
+        /// A target that names its own range (RangeMin and RangeMax) reaches the new choices.
+        /// </summary>
+        internal static int? LegacyMax(IMachine machine, IParameter parameter) =>
+            machine?.DLL?.Name == "Neo Drive" && parameter?.Name == "Mode" ? 4 : (int?)null;
+
+        public int SpanMax { get; }
 
         public int Min { get; }
         public int Max { get; }
