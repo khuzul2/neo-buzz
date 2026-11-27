@@ -20,7 +20,7 @@ Width = 100
 Attack = 3
 Release = 60
 Formant = 0
-Sibilance = 45
+Sibilance = 30
 Spread = 0
 
 preset "Choir — Wide Chord Pad"
@@ -40,6 +40,7 @@ Release = 300
 Formant = 0
 Sibilance = 15
 Spread = 100
+Output = 4
 
 preset "Whisper — Noise Carrier"
 comment "A breathy whisper: noise stands in for the voice's pitch, so the words are there but nothing is sung and no note is needed; 20 bands, fast followers and a good deal of the original highs on top for clarity."
@@ -51,8 +52,9 @@ Width = 90
 Attack = 2
 Release = 40
 Formant = 0
-Sibilance = 55
+Sibilance = 35
 Spread = 40
+Output = -2
 
 preset "Bright — 40 Band Detail"
 comment "The most detail the vocoder has: 40 narrow bands from 80 Hz to 16 kHz with very fast followers and a little noise in the carrier, so fast consonants and the airy top of the voice stay readable; bright and sharp."
@@ -69,8 +71,9 @@ Width = 70
 Attack = 1
 Release = 25
 Formant = 0
-Sibilance = 60
+Sibilance = 25
 Spread = 20
+Output = -3
 
 preset "Deep — Formant Down"
 comment "A giant's voice: a hollow pulse carrier with the formants moved seven semitones down, so the same words sound huge, dark and slow-mouthed; 20 bands from 60 Hz, a little detune, the highs kept back."
@@ -89,6 +92,7 @@ Release = 100
 Formant = -7
 Sibilance = 20
 Spread = 0
+Output = -2
 
 preset "Small — Formant Up"
 comment "A tiny, squeaky creature: a bright saw carrier with the formants moved eight semitones up, so the voice sounds small, thin and fast, with the lowest bands cut away; 16 bands from 200 Hz."
@@ -105,8 +109,9 @@ Width = 100
 Attack = 2
 Release = 50
 Formant = 8
-Sibilance = 35
+Sibilance = 20
 Spread = 10
+Output = -2
 
 preset "Drone — Frozen Vowel"
 comment "One vowel held for ever: Freeze catches the first sound you speak and keeps its band levels, so a long, slowly swelling carrier chord sings that single vowel in wide stereo for as long as the notes are held."
@@ -126,6 +131,7 @@ Formant = -2
 Sibilance = 0
 Freeze = 1
 Spread = 80
+Output = 9
 
 preset "Sidechain — Synth Carrier"
 comment "The vocoder with another machine as the carrier: wire a synth or a pad into the second input and the main input's words are cut into it; 24 bands, the carrier's own level evened out inside every band; with nothing wired it is silent."
