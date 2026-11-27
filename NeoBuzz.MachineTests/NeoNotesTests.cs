@@ -841,7 +841,7 @@ namespace NeoBuzz.MachineTests
             var loose = S("Humanize — Loose Player");
             var late = dry.Select(d => loose.Where(l => l.Note == d.Note && l.Start >= d.Start).Min(l => l.Start) - d.Start).ToList();
             Assert.That(late.Average(), Is.GreaterThanOrEqualTo(48000 * 0.010), "late by 10 ms or more on average");
-            Assert.That(late.Max(), Is.LessThanOrEqualTo(48000 * 0.040), "never later than the setting");
+            Assert.That(late.Max(), Is.LessThanOrEqualTo(48000 * 0.048), "never later than the setting plus the chord spread of 8 ms");
             Assert.That(loose.Select(s => s.Vel).Distinct().Count(), Is.GreaterThan(dry.Select(s => s.Vel).Distinct().Count()), "the velocities are uneven");
         }
     }

@@ -79,6 +79,9 @@ namespace NeoBuzz.Notes
             public double EchoSamples, EchoVel, Drop, EchoLength;
             public bool HumOn;
             public double HumSamples, HumVel;
+            /// <summary>Keep chords: the chord this note belongs to (notes that began on the same sample), and the most its own spread may add, in samples.</summary>
+            public bool Keep;
+            public long ChordId, SpreadSamples;
         }
 
         readonly ParamValues v;
@@ -109,6 +112,12 @@ namespace NeoBuzz.Notes
         uint rng;
         int seededWith = -1;
         int spreadStep;
+        // Keep chords: the sample of the last note on, the chord it began, and that chord's shared delay (a note on at the same sample joins it).
+        long lastBeginT = long.MinValue, chordId, chordDelay;
+        // Keep chords and echo: repeat k of a chord's notes shares one delay too (a small ring of the latest chords).
+        const int ChordRing = 64;
+        readonly long[] ringChord = new long[ChordRing], ringDelay = new long[ChordRing];
+        readonly int[] ringK = new int[ChordRing];
 
         public NotesEngine(ParamValues values)
         {
@@ -193,6 +202,7 @@ namespace NeoBuzz.Notes
             now = 0;
             panic = false;
             spreadStep = 0;
+            ForgetChords();
             seededWith = -1;
             Seed();
         }
@@ -409,6 +419,17 @@ namespace NeoBuzz.Notes
             freeCount = MaxSources;
             Array.Fill(slotOf, (short)-1);
             if (resetPattern) spreadStep = 0;
+            ForgetChords();
+        }
+
+        void ForgetChords()
+        {
+            lastBeginT = long.MinValue;
+            chordId = 0;
+            chordDelay = 0;
+            Array.Fill(ringChord, -1L);
+            Array.Clear(ringDelay);
+            Array.Clear(ringK);
         }
 
         // ---------------------------------------------------------------------------------------------------------------- sources
@@ -500,6 +521,19 @@ namespace NeoBuzz.Notes
             double humSamples = hum ? v.Value(P.HumTime) * 0.001 * rate : 0;
             double humVel = hum ? v.Value(P.HumVel) * 0.01 : 0;
             long delay = hum ? (long)(rTime * (1.0 / 4294967296.0) * humSamples) : 0;
+            // Keep chords: a note on at the same sample as the one before joins its chord and shares its delay; each note adds its own spread, 0 to min(8 ms, Humanize time).
+            // (A fifth draw, only with Keep chords on: Off takes exactly the draws it always took.)
+            bool keep = hum && On(P.HumChord);
+            long spreadSamples = 0;
+            if (keep)
+            {
+                uint rSpreadT = Next();
+                spreadSamples = (long)Math.Min(0.008 * rate, humSamples);
+                if (t != lastBeginT) { chordId++; chordDelay = delay; }
+                lastBeginT = t;
+                delay = chordDelay + (long)(rSpreadT * (1.0 / 4294967296.0) * spreadSamples);
+            }
+            else lastBeginT = long.MinValue;
             if (hum && humVel > 0) vel = Math.Clamp(Math.Round(vel * (1 + (rHumVel * (2.0 / 4294967296.0) - 1) * humVel)), 1, 127);
 
             // ---- length
@@ -552,6 +586,9 @@ namespace NeoBuzz.Notes
             src.HumOn = hum;
             src.HumSamples = humSamples;
             src.HumVel = humVel;
+            src.Keep = keep;
+            src.ChordId = chordId;
+            src.SpreadSamples = spreadSamples;
             slotOf[key] = (short)slot;
 
             src.Outstanding++;
@@ -585,6 +622,15 @@ namespace NeoBuzz.Notes
 
             uint rTime = Next(), rVel = Next();
             long delay = s.HumOn ? (long)(rTime * (1.0 / 4294967296.0) * s.HumSamples) : 0;
+            if (s.Keep)
+            {
+                // Keep chords: repeat k of every note of a chord shares one delay (the first note's draw), each note adding its own spread.
+                uint rSpreadT = Next();
+                int ring = (int)(s.ChordId & (ChordRing - 1));
+                if (ringChord[ring] == s.ChordId && ringK[ring] == k) delay = ringDelay[ring];
+                else { ringChord[ring] = s.ChordId; ringK[ring] = k; ringDelay[ring] = delay; }
+                delay += (long)(rSpreadT * (1.0 / 4294967296.0) * s.SpreadSamples);
+            }
             double vel = s.EchoVel;
             if (s.HumOn && s.HumVel > 0) vel *= 1 + (rVel * (2.0 / 4294967296.0) - 1) * s.HumVel;
             int velocity = (int)Math.Clamp(Math.Round(vel), 1, 127);

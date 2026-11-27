@@ -165,3 +165,8 @@ Seed        "Seed"            0 99 0   int 0                                  | 
     id seed
     how Chooses which random sequence the Random controls follow.
     sound Different seeds give different loosenesses; the same seed always repeats exactly.
+# Appended (state version 1): a song saved before has Keep chords Off, which plays exactly as before.
+HumChord    "Keep chords"     0 1 0    switch                                 | Notes that start on the same sample share one random delay, with only a few ms of spread between them, so a chord stays a chord (Off: every note has its own delay)
+    id keep_chords
+    how Notes that start together are delayed together: the chord gets one random delay up to Humanize time, and each note adds its own 0 to 8 ms (never more than Humanize time); lengths are kept.
+    sound On keeps a chord tight while the whole hand is still loose; Off smears a chord's notes by up to Humanize time.

@@ -45,7 +45,8 @@ namespace NeoBuzz.Notes
         public const int HumTime = 34;
         public const int HumVel = 35;
         public const int Seed = 36;
-        public const int Count = 37;
+        public const int HumChord = 37;
+        public const int Count = 38;
     }
 
     internal static class Params
@@ -92,6 +93,7 @@ namespace NeoBuzz.Notes
             new ParamDef(P.HumTime, "humanize_time", "Humanize time", 0, 50, 0, MapKind.Linear, a: 0, b: 50, unit: "ms", digits: 0, group: "Humanize", description: "Each note is late by a random time up to this (0 to 50 ms); notes are only delayed, never early", how: "Delays each note by a random time up to 50 ms, from the seed's random stream.", sound: "A few milliseconds loosen a part; tens of milliseconds make it sloppy."),
             new ParamDef(P.HumVel, "humanize_velocity", "Humanize velocity", 0, 30, 0, MapKind.Int, a: 0, b: 0, unit: "%", group: "Humanize", description: "Each note's velocity changes by a random amount up to this share", how: "Varies each note's velocity at random by up to 30 %.", sound: "It makes repeated notes uneven in the way a hand is."),
             new ParamDef(P.Seed, "seed", "Seed", 0, 99, 0, MapKind.Int, a: 0, b: 0, group: "Humanize", description: "The seed of the random stream (Random spread, Random velocity, Humanize): the same seed gives the same notes every time", how: "Chooses which random sequence the Random controls follow.", sound: "Different seeds give different loosenesses; the same seed always repeats exactly."),
+            new ParamDef(P.HumChord, "keep_chords", "Keep chords", 0, 1, 0, MapKind.Switch, group: "Humanize", description: "Notes that start on the same sample share one random delay, with only a few ms of spread between them, so a chord stays a chord (Off: every note has its own delay)", how: "Notes that start together are delayed together: the chord gets one random delay up to Humanize time, and each note adds its own 0 to 8 ms (never more than Humanize time); lengths are kept.", sound: "On keeps a chord tight while the whole hand is still loose; Off smears a chord's notes by up to Humanize time."),
         };
     }
 }

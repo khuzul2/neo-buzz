@@ -40,6 +40,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Every note is moved into C natural minor, the nearest scale note (a tie goes down): a major tune turns minor, its third, sixth and seventh falling a semitone.</Comment>
@@ -85,6 +86,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Each note falls by 0, 1, 2 then 3 octaves and starts again, over an octave of transpose: a tumbling, scattered line across the keyboard.</Comment>
@@ -130,6 +132,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Four repeats a dotted eighth apart at the song's tempo, each 25 % quieter and half as long as the note: the classic lilting echo.</Comment>
@@ -175,6 +178,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Five repeats an eighth apart, each a fifth above the one before and a little quieter: a shimmering climb that runs off the top of the keyboard.</Comment>
@@ -220,6 +224,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>The curve pushed fully hard and the quietest note raised to 100: every note, even a soft one, hits loud and bright.</Comment>
@@ -265,6 +270,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>The curve pushed fully soft and the loudest note held to 55: every note, even a hard one, comes out gentle and dark.</Comment>
@@ -310,6 +316,7 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="0" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="0" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="0" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Every note lasts a thirty-second note at the song's tempo, however long it was held: short, dry, clipped.</Comment>
@@ -355,9 +362,10 @@
         <Parameter Name="Humanize time" Group="1" Index="34" Track="0" Value="40" />
         <Parameter Name="Humanize velocity" Group="1" Index="35" Track="0" Value="25" />
         <Parameter Name="Seed" Group="1" Index="36" Track="0" Value="3" />
+        <Parameter Name="Keep chords" Group="1" Index="37" Track="0" Value="1" />
       </Parameters>
       <Attributes />
-      <Comment>Each note late by up to 40 ms and 25 % louder or softer at random (seed 3), the velocity a little uneven too: a sloppy, human hand.</Comment>
+      <Comment>Each hit late by up to 40 ms and 25 % louder or softer at random (seed 3), the velocity a little uneven too: a sloppy, human hand. Keep chords is on: a chord is late as one, its notes only a few ms apart, so it stays a chord.</Comment>
     </Preset>
   </Item>
 </PresetDictionary>

@@ -137,6 +137,57 @@ namespace NeoBuzz.MachineTests
             }
         }
 
+        /// <summary>Round 2 (NOT1b, issue #189): Humanize "Loose Player" with Keep chords, against its round 1 settings. Writes the folder named in NOTES_PACK2.</summary>
+        [Test, Explicit("writes the local round 2 listening pack")]
+        public void PackRound2()
+        {
+            var dir = Environment.GetEnvironmentVariable("NOTES_PACK2");
+            Assert.That(dir, Is.Not.Null.And.Not.Empty, "NOTES_PACK2 names the folder");
+            Directory.CreateDirectory(dir!);
+            var loose = Presets().First(p => p.Name == "Humanize — Loose Player").Values;
+            var old = new Dictionary<int, int>(loose) { [P.HumChord] = 0 };
+            Assert.That(loose[P.HumChord], Is.EqualTo(1));
+            var inv = CultureInfo.InvariantCulture;
+            long processedStart = PhraseLength + Gap;
+            var runs = new[] { ("01-humanize-loose-player-keep-chords.wav", "the new preset (Keep chords on)", loose), ("02-humanize-loose-player-old.wav", "the round 1 settings (Keep chords off)", old) };
+            var renders = runs.Select(r => (r.Item1, r.Item2, R: Render(r.Item3))).ToList();
+            float loudest = renders.Max(x => Math.Max(x.R.L.Max(Math.Abs), x.R.R.Max(Math.Abs)));
+            float gain = 0.708f / loudest;
+            var readme = new StringBuilder();
+            readme.AppendLine("Neo Notes listening pack, round 2 (NOT1b, issue #189): Humanize - Loose Player with Keep chords");
+            readme.AppendLine("========================================================================================");
+            readme.AppendLine();
+            readme.AppendLine("Two files, same phrase and same Neo Poly pluck patch as round 1 (100 BPM, 48 kHz, 16-bit stereo WAV, 15 s). Each plays the phrase dry first, then a 0.5 s gap, then through the machine.");
+            readme.AppendLine($"Dry phrase starts at 0.0 s (it lasts {PhraseLength / (double)Rate:F1} s); the processed phrase starts at {processedStart / (double)Rate:F1} s (sample {processedStart}).");
+            readme.AppendLine($"One gain for both files: {20 * Math.Log10(gain):F1} dB (the louder peaks at -3 dBFS). The phrase has three chords: C major triad (beat 2), F major triad (beat 4), G chord of four notes (beat 6).");
+            readme.AppendLine();
+            foreach (var (file, what, (l, r, rig)) in renders)
+            {
+                var mono = Mono(l, r);
+                int clicks = ClickDetector.Find(mono).Count;
+                Assert.That(clicks, Is.EqualTo(0), file + ": clicks");
+                WriteWav(Path.Combine(dir!, file), l, r, gain);
+                // The chords' note-on gaps: for each chord of the phrase, the first and last note on of its notes (the first on of each note at or after its nominal sample).
+                var ons = rig.Ons.ToList();
+                var gaps = new List<double>();
+                var lates = new List<double>();
+                foreach (var (beat, len, notes, vel) in NotesPhrase.Items)
+                {
+                    if (notes.Length < 3) continue;
+                    long nominal = processedStart + (long)Math.Round(beat * NotesPhrase.SamplesPerBeat);
+                    var t = notes.Select(n => ons.First(o => o.Note == n && o.T >= nominal).T).ToList();
+                    gaps.Add((t.Max() - t.Min()) * 1000.0 / Rate);
+                    lates.Add((t.Min() - nominal) * 1000.0 / Rate);
+                }
+                readme.AppendLine($"{file}: {what}.");
+                readme.AppendLine($"  chord gaps (first to last note on), the three chords: {string.Join(", ", gaps.Select(g => g.ToString("F1", inv) + " ms"))}; largest {gaps.Max().ToString("F1", inv)} ms;");
+                readme.AppendLine($"  chord lateness (earliest note of each chord after its nominal time): {string.Join(", ", lates.Select(g => g.ToString("F1", inv) + " ms"))};");
+                readme.AppendLine($"  clicks (second difference against its local mean): {clicks}.");
+                TestContext.Out.WriteLine($"PACK2 {file}: chord gaps {string.Join(", ", gaps.Select(g => g.ToString("F2", inv)))} ms, clicks {clicks}");
+            }
+            File.WriteAllText(Path.Combine(dir!, "README.txt"), readme.ToString());
+        }
+
         [Test, Explicit("writes the local listening pack")]
         public void Pack()
         {

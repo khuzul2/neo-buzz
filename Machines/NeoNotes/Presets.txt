@@ -61,10 +61,11 @@ LenRate = 1/32
 LenFeel = Straight
 
 preset "Humanize — Loose Player"
-comment "Each note late by up to 40 ms and 25 % louder or softer at random (seed 3), the velocity a little uneven too: a sloppy, human hand."
+comment "Each hit late by up to 40 ms and 25 % louder or softer at random (seed 3), the velocity a little uneven too: a sloppy, human hand. Keep chords is on: a chord is late as one, its notes only a few ms apart, so it stays a chord."
 HumOn = On
 HumTime = 40
 HumVel = 25
 Seed = 3
+HumChord = On
 VelOn = On
 VelRandom = 20

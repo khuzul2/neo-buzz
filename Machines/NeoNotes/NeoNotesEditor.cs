@@ -73,7 +73,8 @@ namespace NeoBuzz.Notes
                     new ParamKnob(ctx, P.EchoDrop, diameter: D), new ParamKnob(ctx, P.EchoStep, diameter: D), new ParamKnob(ctx, P.EchoLen, diameter: D))));
             var humanize = S("7  Humanize", Layout.Row(
                 Sw(P.HumOn),
-                new ParamKnob(ctx, P.HumTime, diameter: D), new ParamKnob(ctx, P.HumVel, diameter: D), new ParamKnob(ctx, P.Seed, diameter: D)));
+                new ParamKnob(ctx, P.HumTime, diameter: D), new ParamKnob(ctx, P.HumVel, diameter: D), new ParamKnob(ctx, P.Seed, diameter: D), Layout.Gap(8),
+                new ParamChoice(ctx, P.HumChord, "Keep chords")));
 
             return Layout.Column(
                 keys,

@@ -117,5 +117,8 @@ namespace NeoBuzz.Notes
 
         [ParameterDecl(Name = "Seed", Description = "The seed of the random stream (Random spread, Random velocity, Humanize): the same seed gives the same notes every time", MinValue = 0, MaxValue = 99, DefValue = 0)]
         public int Seed { get => Values[P.Seed]; set => Values.Set(P.Seed, value); }
+
+        [ParameterDecl(Name = "Keep chords", Description = "Notes that start on the same sample share one random delay, with only a few ms of spread between them, so a chord stays a chord (Off: every note has its own delay)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int HumChord { get => Values[P.HumChord]; set => Values.Set(P.HumChord, value); }
     }
 }
