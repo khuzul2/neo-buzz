@@ -7,7 +7,7 @@ namespace NeoBuzz.Drive
 {
     public partial class NeoDriveMachine
     {
-        [ParameterDecl(Name = "Mode", Description = "Saturation model", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        [ParameterDecl(Name = "Mode", Description = "Saturation model", MinValue = 0, MaxValue = 9, DefValue = 0)]
         public int Mode { get => Values[P.Mode]; set => Values.Set(P.Mode, value); }
 
         [ParameterDecl(Name = "Drive", Description = "Gain into the saturation", MinValue = 0, MaxValue = 1000, DefValue = 250)]
@@ -16,7 +16,7 @@ namespace NeoBuzz.Drive
         [ParameterDecl(Name = "Bias", Description = "Shifts the curve off centre: even harmonics", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Bias { get => Values[P.Bias]; set => Values.Set(P.Bias, value); }
 
-        [ParameterDecl(Name = "Character", Description = "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "Character", Description = "Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds. Overdrive: hump 500 Hz to 2 kHz. Fuzz: gating. Hard clip: knee, hard to soft. Rectify: half to full wave. Transformer: low corner 40 to 300 Hz", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int Character { get => Values[P.Character]; set => Values.Set(P.Character, value); }
 
         [ParameterDecl(Name = "Low cut", Description = "High-pass before the saturation", MinValue = 0, MaxValue = 1000, DefValue = 0)]

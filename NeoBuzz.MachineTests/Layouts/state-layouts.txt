@@ -12,6 +12,7 @@ NeoBuzz.DeEsser	0	13	c0c0dfc6900f468a
 NeoBuzz.Delay	0	17	775610d4c531ad89
 NeoBuzz.Dither	0	5	8887b241a976e60d
 NeoBuzz.Drive	0	11	4cb09c6eac994811
+NeoBuzz.Drive	1	12	cd6b54d3ab044f91
 NeoBuzz.Drums	0	67	ba7b50d1fbac9875
 NeoBuzz.DyeEssence	0	484	e435b17e73234109
 NeoBuzz.Ensemble	0	14	dec55f5b282bf26e
