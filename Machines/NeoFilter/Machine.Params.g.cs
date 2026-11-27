@@ -7,16 +7,16 @@ namespace NeoBuzz.Filter
 {
     public partial class NeoFilterMachine
     {
-        [ParameterDecl(Name = "Type", Description = "Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff)", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        [ParameterDecl(Name = "Type", Description = "Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff); Vowel: three formant resonances at the frequencies of a spoken vowel (Vowel, Voice; Cutoff shifts them, Resonance sharpens them)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int Type { get => Values[P.Type]; set => Values.Set(P.Type, value); }
 
         [ParameterDecl(Name = "Slope", Description = "SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Slope { get => Values[P.Slope]; set => Values.Set(P.Slope, value); }
 
-        [ParameterDecl(Name = "Cutoff", Description = "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates", MinValue = 0, MaxValue = 10000, DefValue = 6667)]
+        [ParameterDecl(Name = "Cutoff", Description = "Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates. Vowel: shifts every formant together (1 kHz: the table's own frequencies; within ±2 octaves)", MinValue = 0, MaxValue = 10000, DefValue = 6667)]
         public int Cutoff { get => Values[P.Cutoff]; set => Values.Set(P.Cutoff, value); }
 
-        [ParameterDecl(Name = "Resonance", Description = "Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level", MinValue = 0, MaxValue = 1000, DefValue = 66)]
+        [ParameterDecl(Name = "Resonance", Description = "Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level. Vowel: scales the formants' bandwidths, so higher values make sharper, more whistling formants (0.71: as spoken)", MinValue = 0, MaxValue = 1000, DefValue = 66)]
         public int Resonance { get => Values[P.Resonance]; set => Values.Set(P.Resonance, value); }
 
         [ParameterDecl(Name = "Drive", Description = "Soft saturation before the filter, oversampled: quiet signals pass as they are, louder ones bend from −Drive dBFS; 0 dB is clean", MinValue = 0, MaxValue = 240, DefValue = 0)]
@@ -63,5 +63,14 @@ namespace NeoBuzz.Filter
 
         [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
         public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
+
+        [ParameterDecl(Name = "Vowel", Description = "Vowel type only: the vowel, morphing A, E, I, O, U (a quarter each), the formants moving in log frequency between neighbours", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int Vowel { get => Values[P.Vowel]; set => Values.Set(P.Vowel, value); }
+
+        [ParameterDecl(Name = "Voice", Description = "Vowel type only: which speaker's formant frequencies (Peterson and Barney's averages for men, women and children): higher for smaller vocal tracts", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int Voice { get => Values[P.Voice]; set => Values.Set(P.Voice, value); }
+
+        [ParameterDecl(Name = "Vowel mod", Description = "Vowel type only: how much the envelope and the LFO move the vowel rather than the formant frequencies (one octave of their motion is one vowel step, 25 %)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int VowelMod { get => Values[P.VowelMod]; set => Values.Set(P.VowelMod, value); }
     }
 }

@@ -19,6 +19,7 @@ NeoBuzz.EnvelopeMachine	0	9	730fc5b21a44391c
 NeoBuzz.Eq	0	195	1b8eebdd82daf7c2
 NeoBuzz.Exciter	0	15	ae9270c82c60d418
 NeoBuzz.Filter	0	18	44306d9ce552e128
+NeoBuzz.Filter	1	22	7bc4e0474f037f95
 NeoBuzz.Fm6	0	172	82815f73f6dd7eb2
 NeoBuzz.Gate	0	15	04189a5ccf665c32
 NeoBuzz.Imager	0	14	17e3f5ad19d4a511

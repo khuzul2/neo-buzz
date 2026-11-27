@@ -375,9 +375,9 @@
    ],
    "settle": 0.5
   },
-  "paramCount": 19,
+  "paramCount": 22,
   "params": [
-   "Type|0|6|0|enum",
+   "Type|0|7|0|enum",
    "Slope|0|1|0|enum",
    "Cutoff|0|10000|6667|freq",
    "Resonance|0|1000|66|exp",
@@ -395,7 +395,10 @@
    "LFO phase|0|360|0|lin",
    "Mix|0|1000|1000|pct",
    "Output|0|480|240|db",
-   "Amount|0|2000|1000|lin"
+   "Amount|0|2000|1000|lin",
+   "Vowel|0|1000|0|pct",
+   "Voice|0|2|0|enum",
+   "Vowel mod|0|1000|1000|pct"
   ],
   "latencyDependsOnParams": false
  },
