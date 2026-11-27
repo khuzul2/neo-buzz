@@ -827,7 +827,7 @@
         <Parameter Name="L1 accent pulses" Group="1" Index="11" Track="0" Value="0" />
         <Parameter Name="L1 accent rot" Group="1" Index="12" Track="0" Value="0" />
         <Parameter Name="L1 note" Group="1" Index="13" Track="0" Value="36" />
-        <Parameter Name="L1 velocity" Group="1" Index="14" Track="0" Value="116" />
+        <Parameter Name="L1 velocity" Group="1" Index="14" Track="0" Value="104" />
         <Parameter Name="L1 accent vel" Group="1" Index="15" Track="0" Value="127" />
         <Parameter Name="L1 gate" Group="1" Index="16" Track="0" Value="50" />
         <Parameter Name="L1 ratchet" Group="1" Index="17" Track="0" Value="1" />
@@ -842,7 +842,7 @@
         <Parameter Name="L2 accent pulses" Group="1" Index="26" Track="0" Value="0" />
         <Parameter Name="L2 accent rot" Group="1" Index="27" Track="0" Value="0" />
         <Parameter Name="L2 note" Group="1" Index="28" Track="0" Value="38" />
-        <Parameter Name="L2 velocity" Group="1" Index="29" Track="0" Value="104" />
+        <Parameter Name="L2 velocity" Group="1" Index="29" Track="0" Value="94" />
         <Parameter Name="L2 accent vel" Group="1" Index="30" Track="0" Value="127" />
         <Parameter Name="L2 gate" Group="1" Index="31" Track="0" Value="50" />
         <Parameter Name="L2 ratchet" Group="1" Index="32" Track="0" Value="1" />
@@ -857,7 +857,7 @@
         <Parameter Name="L3 accent pulses" Group="1" Index="41" Track="0" Value="4" />
         <Parameter Name="L3 accent rot" Group="1" Index="42" Track="0" Value="0" />
         <Parameter Name="L3 note" Group="1" Index="43" Track="0" Value="43" />
-        <Parameter Name="L3 velocity" Group="1" Index="44" Track="0" Value="98" />
+        <Parameter Name="L3 velocity" Group="1" Index="44" Track="0" Value="86" />
         <Parameter Name="L3 accent vel" Group="1" Index="45" Track="0" Value="115" />
         <Parameter Name="L3 gate" Group="1" Index="46" Track="0" Value="35" />
         <Parameter Name="L3 ratchet" Group="1" Index="47" Track="0" Value="1" />
@@ -872,7 +872,7 @@
         <Parameter Name="L4 accent pulses" Group="1" Index="56" Track="0" Value="0" />
         <Parameter Name="L4 accent rot" Group="1" Index="57" Track="0" Value="0" />
         <Parameter Name="L4 note" Group="1" Index="58" Track="0" Value="47" />
-        <Parameter Name="L4 velocity" Group="1" Index="59" Track="0" Value="94" />
+        <Parameter Name="L4 velocity" Group="1" Index="59" Track="0" Value="84" />
         <Parameter Name="L4 accent vel" Group="1" Index="60" Track="0" Value="118" />
         <Parameter Name="L4 gate" Group="1" Index="61" Track="0" Value="50" />
         <Parameter Name="L4 ratchet" Group="1" Index="62" Track="0" Value="1" />
@@ -887,7 +887,7 @@
         <Parameter Name="L5 accent pulses" Group="1" Index="71" Track="0" Value="0" />
         <Parameter Name="L5 accent rot" Group="1" Index="72" Track="0" Value="0" />
         <Parameter Name="L5 note" Group="1" Index="73" Track="0" Value="50" />
-        <Parameter Name="L5 velocity" Group="1" Index="74" Track="0" Value="92" />
+        <Parameter Name="L5 velocity" Group="1" Index="74" Track="0" Value="82" />
         <Parameter Name="L5 accent vel" Group="1" Index="75" Track="0" Value="122" />
         <Parameter Name="L5 gate" Group="1" Index="76" Track="0" Value="50" />
         <Parameter Name="L5 ratchet" Group="1" Index="77" Track="0" Value="1" />
@@ -902,8 +902,8 @@
         <Parameter Name="L6 accent pulses" Group="1" Index="86" Track="0" Value="4" />
         <Parameter Name="L6 accent rot" Group="1" Index="87" Track="0" Value="0" />
         <Parameter Name="L6 note" Group="1" Index="88" Track="0" Value="42" />
-        <Parameter Name="L6 velocity" Group="1" Index="89" Track="0" Value="76" />
-        <Parameter Name="L6 accent vel" Group="1" Index="90" Track="0" Value="112" />
+        <Parameter Name="L6 velocity" Group="1" Index="89" Track="0" Value="70" />
+        <Parameter Name="L6 accent vel" Group="1" Index="90" Track="0" Value="98" />
         <Parameter Name="L6 gate" Group="1" Index="91" Track="0" Value="40" />
         <Parameter Name="L6 ratchet" Group="1" Index="92" Track="0" Value="1" />
         <Parameter Name="L6 ratchet chance" Group="1" Index="93" Track="0" Value="100" />
@@ -917,7 +917,7 @@
         <Parameter Name="L7 accent pulses" Group="1" Index="101" Track="0" Value="0" />
         <Parameter Name="L7 accent rot" Group="1" Index="102" Track="0" Value="0" />
         <Parameter Name="L7 note" Group="1" Index="103" Track="0" Value="56" />
-        <Parameter Name="L7 velocity" Group="1" Index="104" Track="0" Value="88" />
+        <Parameter Name="L7 velocity" Group="1" Index="104" Track="0" Value="78" />
         <Parameter Name="L7 accent vel" Group="1" Index="105" Track="0" Value="122" />
         <Parameter Name="L7 gate" Group="1" Index="106" Track="0" Value="60" />
         <Parameter Name="L7 ratchet" Group="1" Index="107" Track="0" Value="1" />

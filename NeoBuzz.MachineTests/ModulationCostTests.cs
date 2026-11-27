@@ -56,6 +56,19 @@ namespace NeoBuzz.MachineTests
                     else e.Process(in block, ReadOnlySpan<NeoBuzz.Arp.ArpEvent>.Empty);
                 };
             }),
+            ["Neo Pulse"] = (NeoBuzz.Pulse.Params.Table, v =>
+            {
+                // Notes, not audio: 8-lane Euclidean rhythm engine running at 120 BPM.
+                var e = new NeoBuzz.Pulse.PulseEngine(v);
+                e.SetSampleRate(Measure.Rate);
+                double beat = 0;
+                return (l, r, n) =>
+                {
+                    var block = new NeoBuzz.Pulse.PulseBlock { Samples = n, Playing = true, Beat = beat, SamplesPerBeat = Measure.Rate * 0.5, BeatsPerBar = 4 };
+                    beat += n / (Measure.Rate * 0.5);
+                    e.Process(in block);
+                };
+            }),
             ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, v => (l, r, n) => { }),   // its audio is the Session engine's (the app): nothing here to move
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, v => { var e = new NeoBuzz.Drive.DriveEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, v => { var e = new NeoBuzz.Comp.CompEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, null, null, n); }),

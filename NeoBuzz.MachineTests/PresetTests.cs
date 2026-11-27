@@ -23,6 +23,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Audio"] = (NeoBuzz.NeoAudio.Params.Table, (v, x) => x),
             // Neo Arp makes no audio (notes in, notes out): its presets are played into Neo Poly by NeoArpChainTests.
             ["Neo Arp"] = (NeoBuzz.Arp.Params.Table, (v, x) => x),
+            // Neo Pulse makes no audio (notes out): its presets are played into Neo Drums and Neo Poly by NeoPulseChainTests.
+            ["Neo Pulse"] = (NeoBuzz.Pulse.Params.Table, (v, x) => x),
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Drive(v).Process(l, r, n))),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Comp(v).Process(l, r, null, null, n))),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
