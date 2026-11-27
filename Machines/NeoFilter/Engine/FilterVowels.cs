@@ -78,7 +78,7 @@ namespace NeoBuzz.Filter
             var t = new double[Voices, Vowels, Formants];
             for (int v = 0; v < Voices; v++)
                 for (int w = 0; w < Vowels; w++)
-                    for (int f = 0; f < Formants; f++) t[v, w, f] = Math.Log2(Table[v, w, f]);
+                    for (int f = 0; f < Formants; f++) t[v, w, f] = PortableMath.Log2(Table[v, w, f]);
             return t;
         }
 
@@ -101,7 +101,7 @@ namespace NeoBuzz.Filter
         public static double BandwidthScale(double q) => Math.Clamp(ReferenceQ / q, MinBandwidthScale, MaxBandwidthScale);
 
         /// <summary>The cutoff's shift of the formants in octaves (2 kHz, the default Cutoff, is none), within ±2 octaves.</summary>
-        public static double CutoffShift(double cutoffHz) => Math.Clamp(Math.Log2(cutoffHz / ReferenceHz), -2.0, 2.0);
+        public static double CutoffShift(double cutoffHz) => Math.Clamp(PortableMath.Log2(cutoffHz / ReferenceHz), -2.0, 2.0);
 
         /// <summary>The vowel (0 … 1: A, E, I, O, U a quarter apart) and the voice (0 … 2, between two sets a blend) at which the formants stand, in Hz (before any shift), F1-F3.</summary>
         public static void Frequencies(double pos, double voice, double shiftOctaves, double[] f)
