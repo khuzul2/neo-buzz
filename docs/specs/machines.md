@@ -75,6 +75,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Envelope | control | An ADSR started by the notes of a chosen machine (or its Gate switch), or a follower of a machine's output level; moves up to 8 parameters. |
 | Neo Step | control | A 1 to 32 step value sequencer at a synced rate with swing, glide and a random amount; moves up to 8 parameters. |
 | Neo Macro | control | One knob (a parameter: automatable, bindable) that moves up to 8 parameters at once, each by its own depth, range and curve. |
+| Neo Random | control | A stochastic and chaotic modulator that moves up to 8 parameters of other machines (docs/specs/neo-random.md): Random steps or curves, Sample and hold with probability, bounded 1/f-like Drift, and Lorenz Chaos; free rate or tempo-synced (8 bars to 1/64, straight, dotted, triplet), quantisation (1 to 32 levels), depth, signed bias, unipolar/bipolar range, reproducible seeds and beat/bar/note retriggering; no audio, no undo steps. |
 
 **Third batch (successors: machine-safety.md §4)**
 

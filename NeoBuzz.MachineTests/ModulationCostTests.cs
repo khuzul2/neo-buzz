@@ -133,6 +133,19 @@ namespace NeoBuzz.MachineTests
             }),
             ["Neo Learn Sampler"] = (NeoBuzz.LearnSampler.Params.Table, v => Learn(new NeoBuzz.Learn.SamplerMap(NeoBuzz.LearnSampler.Params.Table), v)),
             ["Neo Learn Subtractive"] = (NeoBuzz.LearnSub.Params.Table, v => Learn(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v)),
+            ["Neo Random"] = (NeoBuzz.RandomMachine.Params.Table, v =>
+            {
+                var e = new NeoBuzz.RandomMachine.RandomEngine(v);
+                double beats = 0.0;
+                return (l, r, n) =>
+                {
+                    double dt = n / (double)Measure.Rate;
+                    beats += dt * 2.0;
+                    float u = e.Step(dt, beats, true, 120.0);
+                    l[0] = u;
+                    r[0] = u;
+                };
+            }),
         };
 
         static Action<float[], float[], int> Learn(NeoBuzz.Learn.MacroMap map, ParamValues v)

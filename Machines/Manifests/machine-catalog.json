@@ -455,6 +455,16 @@
    "use_for": "Warm analog-style polysynth for pads, basses, leads, plucks and chords.",
    "note_in": true
   },
+  "Neo Random": {
+   "category": "Control",
+   "tags": [
+    "modulation",
+    "automation",
+    "tempo-sync",
+    "rhythmic"
+   ],
+   "use_for": "Move any machine's parameters with random steps, sample-and-hold, 1/f drift or chaos: up to 8 targets, smoothly, with probability, quantisation and reproducible seeds."
+  },
   "Neo Sampler": {
    "category": "Samplers",
    "tags": [
