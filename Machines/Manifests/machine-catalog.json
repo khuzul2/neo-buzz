@@ -675,6 +675,18 @@
    "use_for": "Modal synth for marimba, vibraphone and glockenspiel bars, chimes, bells, tines, plucks, glass and struck plates; a playable instrument with no audio input.",
    "note_in": true
   },
+  "Neo Grain": {
+   "category": "Synths",
+   "tags": [
+    "granular",
+    "pad",
+    "lush",
+    "sampler",
+    "polyphonic"
+   ],
+   "use_for": "Granular synth for frozen pads, glittering clouds, slow evolving textures, stutters and drones made from a wave of the song or a built-in chord, bells or noise; played by notes or as a drone.",
+   "note_in": true
+  },
   "Neo Arp": {
    "category": "Control",
    "tags": [

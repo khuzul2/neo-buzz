@@ -2435,6 +2435,22 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "661-neo-envelope-editor", "Neo Envelope in Note mode with a pluck shape (short Attack, Decay to a low Sustain, a bent Curve) and Velocity at 70 %: the Velocity knob is the last in the Output section, after Threshold, Curve and Glide; at 0 % every note opens the envelope fully, at 100 % a soft note opens it only a little.", "Add Neo Envelope; open its editor.");
                     Core.UiHost.CloseWindows(m);
                 });
+                // GRN1: Neo Grain with the Glitter Cloud preset's values set before the editor opens: the bells' waveform with the Position and Spray range on it, Grain, Pitch, Envelope and Output.
+                Try("662-neo-grain-editor", () =>
+                {
+                    var m = Add("Neo Grain", "Grain");
+                    string[] names = { "Source", "Wave", "Grain size", "Density", "Position", "Spray", "Scan speed", "Window", "Align", "Pitch", "Pitch spray", "Reverse chance", "Pan spread", "Attack", "Decay", "Sustain", "Release", "Drone", "Seed", "Volume" };
+                    int[] raws = { 1, 0, 349, 904, 500, 800, 550, 2, 0, 750, 0, 0, 900, 189, 593, 700, 593, 0, 0, 924 };
+                    var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                    for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "662-neo-grain-editor", "Neo Grain with the Glitter Cloud preset: the built-in bells' waveform with the Position line and the Spray range on it, then Grain (size, density, position, spray, scan, align, seed, window), Pitch, the ADSR and Output.", "Add Neo Grain, load Glitter Cloud, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // LF2: the editor with a retuned preset loaded (the values are set before the editor opens), at its own Amount and at 150 %.
                 void LoFiShot(string id, string machineName, int[] raws, string text)
                 {

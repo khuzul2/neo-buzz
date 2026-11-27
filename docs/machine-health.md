@@ -44,6 +44,7 @@ Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named
 | Neo Verb | windows | hot with every parameter at its maximum at once (+2.6 dBFS peak), but with no parameter alone |  |
 | Neo Drums | linux | hot (loud but steady) with Volume at its maximum (+12.0 dB): +0.8 dBFS peak |  |
 | Neo FM6 | windows | hot (loud but steady) with Volume at its maximum (+6.0 dB): +8.5 dBFS peak |  |
+| Neo Grain | polysynth | midi | +24 | 8 | -33 | 5.93 | 140 ms / 260 ms / — | 0.0 | 1.305 | ok |
 | Neo Learn Additive | linux | hot with every parameter at its maximum at once (+1.8 dBFS peak over 30 s), but with no parameter alone |  |
 | Neo Learn FM | linux | hot with every parameter at its maximum at once (+5.0 dBFS peak over 30 s), but with no parameter alone |  |
 | Neo Learn Formant | linux | hot (loud but steady) with Output at its maximum (+12.0 dB): +3.3 dBFS peak |  |
