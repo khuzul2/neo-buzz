@@ -85,7 +85,8 @@ namespace NeoBuzz.Editor
             if (!Model.IsFree(division.Value, mode?.Value ?? 0)) lastDivision = division.Value;
         }
 
-        public string FreeText => rate != null ? rate.Def.Describe(rate.Value) : "";
+        // Free: the rate knob under it already says its value, so the line stays empty (no second copy of the same number).
+        public string FreeText => "";
 
         public string Readout() => Model.Readout(DivisionRaw, FeelRaw, ModeRaw, Tempo, FreeText);
 
