@@ -2722,6 +2722,56 @@ namespace ReBuzz.Studio.Tests
                     "Neo Space with the preset \"Effect — Reverse Swell\" loaded: Reverse on, so the picture rises to its end, and the Length line on it dims the part that is cut off.");
                 SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 160, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
                     "Neo Space with Room set to Wave and slot 5 empty: the picture shows the hall that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
+                // SPL1: Neo Split's editor in its three modes, with a few blocks of a chord run through it so that the meters show what each output carries.
+                void SplitShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Split", machineName);
+                        string[] names = { "Mode", "Bands", "Slope", "Crossover 1", "Crossover 2", "Crossover 3", "Sensitivity", "Transient length", "Body smoothing" };
+                        string[] props = { "Mode", "Bands", "Slope", "Xo1", "Xo2", "Xo3", "Sensitivity", "Length", "Smoothing" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        var inst = m.ManagedMachine!;
+                        for (int k = 0; k < names.Length; k++)
+                        {
+                            group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                            inst.GetType().GetProperty(props[k])!.SetValue(inst, raws[k]);     // (the host hands the values over at the song's tick; the shot does not tick)
+                        }
+                        var work = inst.GetType().GetMethod("Work")!;
+                        var outputs = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]>();
+                        for (int o = 0; o < 4; o++) outputs.Add(new Buzz.MachineInterface.Sample[256]);
+                        var inputs = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]> { new Buzz.MachineInterface.Sample[256] };
+                        double[] hz = { 70, 110, 330, 900, 2400, 7000 };
+                        for (int b = 0; b < 40; b++)
+                        {
+                            for (int i = 0; i < 256; i++)
+                            {
+                                double t = (b * 256 + i) / 44100.0, l = 0, r = 0;
+                                for (int h = 0; h < hz.Length; h++)
+                                {
+                                    double v = System.Math.Sin(6.283185307179586 * hz[h] * t) * 3000 / (1 + h * 0.4);
+                                    l += v * (h % 2 == 0 ? 1.0 : 0.4);
+                                    r += v * (h % 2 == 0 ? 0.4 : 1.0);
+                                }
+                                inputs[0][i] = new Buzz.MachineInterface.Sample((float)l, (float)r);
+                            }
+                            lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { outputs, inputs, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Split; set its mode; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                SplitShot("665-neo-split-bands", "Split", new[] { 0, 2, 1, 2330, 5340, 8257, 500, 589, 100 },
+                    "Neo Split in Bands mode with four bands at 100 Hz, 800 Hz and 6 kHz and the steeper slope: the mode tabs, the frequency strip with the three crossover handles and the four bands drawn on it, the Bands and Slope choices and the three crossover knobs, and four meters on the right, each labelled with the band its output carries (Out 1 Low to Out 4 High).");
+                SplitShot("666-neo-split-transient", "Split 2", new[] { 1, 2, 0, 2594, 5663, 8257, 700, 589, 100 },
+                    "Neo Split in Transient / Body mode: Sensitivity, Transient length and Body smoothing, and the four meters; Out 1 is labelled Transient, Out 2 Body, Out 3 and 4 are shown as unused.");
+                SplitShot("667-neo-split-midside", "Split 3", new[] { 2, 2, 0, 2594, 5663, 8257, 500, 589, 100 },
+                    "Neo Split in Mid / Side mode: a note that there is nothing to set, Out 1 labelled Mid and Out 2 Side, and the four meters.");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");

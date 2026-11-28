@@ -9,7 +9,7 @@ Mode       "Mode"          0 2 0     enum Bands Transient_/_Body Mid_/_Side | Wh
     how Chooses what the input is split into: frequency bands, transients and body, or mid and side.
     sound Bands gives each range of the spectrum its own output, Transient and Body separates the hit from what follows it, and Mid and Side separates the centre from the width.
 group Bands
-Bands      "Bands"         0 2 2     int 2 bands                      | How many frequency bands (Bands mode): 2, 3 or 4. The outputs after the last band are silent
+Bands      "Bands"         0 2 2     int 2                            | How many frequency bands (Bands mode): 2, 3 or 4. The outputs after the last band are silent
     how Chooses how many frequency bands the input is split into: 2, 3 or 4.
     sound More bands let more chains work on separate ranges; the bands always add up to the input.
 Slope      "Slope"         0 1 0     enum 24_dB/oct 48_dB/oct         | The steepness of each crossover (Bands mode): Linkwitz–Riley 24 dB/oct, or 48 dB/oct for a narrow overlap. Each band is 6 dB down at its crossover and the bands sum flat

@@ -42,7 +42,6 @@
    "default": 2,
    "kind": "int",
    "a": 2.0,
-   "unit": "bands",
    "description": "How many frequency bands (Bands mode): 2, 3 or 4. The outputs after the last band are silent",
    "how": "Chooses how many frequency bands the input is split into: 2, 3 or 4.",
    "sound": "More bands let more chains work on separate ranges; the bands always add up to the input."
