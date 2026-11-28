@@ -75,6 +75,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Lo-Fi", "NeoLoFiEditor", "neo-lofi-editor", 1041, 241),   // LF2: Amount and Mix over Tone and Output (1000 x 330 with the three knobs in a column)
             ("Neo Chop", "NeoChopEditor", "neo-chop-editor", 898, 546),   // CHP1: the mode row, the mode pages, the sixteen steps and Output (the size is read from the first CI run)
             ("Neo Prism", "NeoPrismEditor", "neo-prism-editor", 754, 658),   // PRI1: the spectrum, the section lights, the section page and Output (the size is read from the first CI run)
+            ("Neo Shift", "NeoShiftEditor", "neo-shift-editor", 558, 652),   // SHF1: the spectrum with the shift, the mode tabs and page, Notes and Output (read from the first CI run)
             ("Neo Space", "NeoSpaceEditor", "neo-space-editor", 964, 251),   // SPC1: Room, the response picture, Tone and Output (the size is read from the first CI run)
             ("Neo Vocoder", "NeoVocoderEditor", "neo-vocoder-editor", 1207, 331),   // VOC1: Carrier, the live bands, Voice and Output
             ("Neo Amp", "NeoAmpEditor", "neo-amp-editor", 1189, 331),   // AMP1: Input, Amp, Cabinet (with its picture), Tuner and Output (size from the Mac gallery shot, 2378 x 662 px at 2x)

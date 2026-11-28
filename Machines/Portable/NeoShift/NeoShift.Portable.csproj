@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Shift, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoShift</NeoFolder>
+    <NeoName>Neo Shift</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+</Project>

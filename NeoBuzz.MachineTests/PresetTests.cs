@@ -110,6 +110,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, (v, x) => ChopRig.PresetRender(v, x)),
             // neo-prism.md: the spectral effect, its song running from beat 0 (the synced sections follow it).
             ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, (v, x) => PrismRig.PresetRender(v, x)),
+            ["Neo Shift"] = (NeoBuzz.Shift.Params.Table, (v, x) => ShiftRig.PresetRender(v, x)),
             ["Neo Space"] = (NeoBuzz.Space.Params.Table, (v, x) => SpaceRig.PresetRender(v, x)),
             // neo-vocoder.md: the synth carrier plays a chord (the Sidechain preset is fed a saw pad), the noise is the modulator.
             ["Neo Vocoder"] = (NeoBuzz.Vocoder.Params.Table, (v, x) => VocoderRig.PresetRender(v, x)),

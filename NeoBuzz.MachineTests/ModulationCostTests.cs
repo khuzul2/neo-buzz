@@ -98,6 +98,7 @@ namespace NeoBuzz.MachineTests
             ["Neo Lo-Fi"] = (NeoBuzz.LoFi.Params.Table, v => { var e = new NeoBuzz.LoFi.LoFiEngine(v); e.SetSampleRate(Measure.Rate); return (l, r, n) => e.Process(l, r, n); }),
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, v => ChopRig.CostCall(v)),
             ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, v => PrismRig.CostCall(v)),
+            ["Neo Shift"] = (NeoBuzz.Shift.Params.Table, v => ShiftRig.CostCall(v)),
             ["Neo Space"] = (NeoBuzz.Space.Params.Table, v => SpaceRig.CostCall(v)),
             ["Neo Vocoder"] = (NeoBuzz.Vocoder.Params.Table, v => VocoderRig.CostCall(v)),
             ["Neo Amp"] = (NeoBuzz.Amp.Params.Table, v => AmpRig.CostCall(v)),

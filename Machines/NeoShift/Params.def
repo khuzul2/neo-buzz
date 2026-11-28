@@ -1,0 +1,92 @@
+# Neo Shift parameters (docs/specs/neo-shift.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position; new parameters are appended. Regenerate: python3 tools/gen-machine-params.py Machines/NeoShift
+namespace NeoBuzz.Shift
+class NeoShiftMachine
+tracks 1
+summary Pitch shifter, frequency shifter and ring modulator in one effect. Pitch moves every partial by the same ratio (-24 to +24 semitones and cents) with a two-tap delay-line shifter (Fast, a Window of 10 to 100 ms sets its latency and smoothness) or a phase-locked phase vocoder (Smooth, 2047 samples of latency) and a stereo detune for doubling. Frequency moves every partial by the same number of hertz (-2000 to +2000 Hz, a single sideband) with a feedback for the rising or falling barber-pole and a Spread that shifts the right side the other way. Ring multiplies the sound by a carrier of 1 Hz to 5 kHz (sine, triangle or square, band-limited) with a Depth from amplitude modulation to full ring. Notes in can set the pitch shift (against a Root) or the carrier. Low and High cut on the wet path, Mix and Amount (0 and Mix 0 are bit-exact dry). Use it for octaves, fifths, doubling, metallic bells, throbbing tremolo and endless rising or falling echoes.
+
+group Mode
+Mode        "Mode"          0 2 0       enum Pitch Frequency Ring                    | What the effect does: pitch shift, frequency shift or ring modulation
+    how Chooses between moving all partials by a ratio, moving all partials by a number of hertz, or multiplying the sound by a carrier.
+    sound Pitch keeps the harmonics in tune, Frequency bends them into bell-like or barber-pole tones, Ring adds the sum and difference of the sound and the carrier.
+group Pitch
+Pitch       "Pitch"         0 48 12     int -24 st signed                            | Pitch shift in semitones, -24 to +24
+    id pitch
+    how Sets the shift in whole semitones.
+    sound Seven up is a fifth above, twelve up an octave, twelve down an octave below.
+Fine        "Fine"          0 200 100   int -100 cents signed                        | Fine pitch shift in cents, added to the semitones
+    id fine
+    how Adds a fine shift in cents (a hundredth of a semitone) to the semitones.
+    sound A few cents against the dry sound make a slow chorus-like beat.
+Quality     "Quality"       0 1 0       enum Fast Smooth                             | Fast: a two-tap delay-line shifter, latency half the Window. Smooth: a phase-locked phase vocoder, 2047 samples of latency
+    id quality
+    how Chooses the delay-line shifter (Fast, short latency, a slight warble on low notes) or the phase vocoder (Smooth, clean on chords and pads, a longer latency).
+    sound Fast is tight and a little rough on low notes, Smooth stays clear on chords and held notes but follows a fast attack a little late.
+Window      "Window"        0 90 30     lin 10 100 ms 0                                 | Fast: the length of the shifter's window, 10 to 100 ms; also its latency (half of it)
+    id window
+    how Sets the window of the Fast shifter; a longer window is smoother on low notes, a shorter one is tighter.
+    sound Short windows add a fast flutter to low notes, long ones smear attacks and add delay.
+Detune      "Stereo detune" 0 50 0      int 0 cents                                  | The left side is shifted down and the right side up by this many cents, for doubling
+    id stereo_detune
+    how Shifts the left channel down and the right channel up by this many cents.
+    sound A few cents widen the sound into a double; more makes it seasick.
+group Frequency
+Shift       "Shift"         0 4000 2000 int -2000 Hz signed                          | Frequency shift in hertz, -2000 to +2000: every partial moves by the same number of hertz
+    id shift
+    how Moves every frequency of the sound up (or down) by the same number of hertz.
+    sound A few hertz make a slow phasing, tens of hertz bend a voice into a metallic one, hundreds make bells.
+ShiftFine   "Shift fine"    0 1000 500  lin -5 5 Hz 2                                | Fine frequency shift in hertz, added to Shift
+    id shift_fine
+    how Adds a fine shift of up to 5 Hz to Shift, in steps of 0.01 Hz.
+    sound Fractions of a hertz give the slowest phasing there is.
+Feedback    "Feedback"      0 1000 500  lin -95 95 % 0                               | Share of the shifted sound fed back in: positive rises, negative falls (-95 to +95 %)
+    id feedback
+    how Feeds the shifted sound back into the shifter, so each repeat moves again.
+    sound Positive values make a rising barber-pole, negative values a falling one; high values ring on.
+Spread      "Spread"        0 1000 0    pct                                          | The right side is shifted the other way by this share of the shift
+    id spread
+    how Shifts the right channel by the opposite amount (100 % = the left and right shifts mirror each other).
+    sound Left rises while the right falls: a wide, swirling stereo image.
+group Ring
+Carrier     "Carrier"       0 6000 4286 freq 1 5000                                  | Carrier frequency, 1 Hz to 5 kHz
+    id carrier
+    how Sets the frequency of the oscillator the sound is multiplied with.
+    sound Below 20 Hz it is a tremolo, in the audio range it adds sum and difference tones: metal, bells, robots.
+Shape       "Shape"         0 2 0       enum Sine Triangle Square                    | The carrier's shape (triangle and square are band-limited)
+    id shape
+    how Chooses the carrier's waveform.
+    sound Sine gives two clean sidebands, triangle and square add more, brighter ones.
+Depth       "Depth"         0 1000 1000 pct                                          | 0 % = amplitude modulation (the sound keeps its own level), 100 % = ring modulation (only the sidebands)
+    id depth
+    how Blends from amplitude modulation (the original stays) to ring modulation (the original is gone).
+    sound At 0 % the sound is only tremolo-ed, at 100 % it is replaced by sum and difference tones.
+group Notes
+Follow      "Follow notes"  0 1 0       switch                                       | Notes set the effect: the pitch shift in Pitch mode (note minus Root), the carrier in Ring mode
+    id follow_notes
+    how Lets the notes sent to this machine set the shift or the carrier.
+    sound Play the machine like an instrument: harmonies from a single voice, or a ring modulator tuned to the keys.
+Root        "Root"          0 127 60    int 0                                        | The note that means no shift (MIDI note, 60 = C4)
+    id root
+    how Sets the note at which Pitch mode does not shift; other notes shift by the distance from it.
+    sound Play a fifth above the root and the sound moves up a fifth.
+group Output
+LowCut      "Low cut"       0 1000 0    freq 10 1000                                 | High-pass on the wet path
+    id low_cut
+    how Removes low frequencies from the shifted sound only.
+    sound Takes the rumble out of a pitch-shifted-down sound.
+HighCut     "High cut"      0 1000 1000 freq 1000 22000                              | Low-pass on the wet path
+    id high_cut
+    how Removes high frequencies from the shifted sound only.
+    sound Takes the fizz and aliasing out of shifted-up and ring-modulated sounds.
+Mix         "Mix"           0 1000 1000 pct                                          | Dry/wet (the dry signal is delayed by the latency)
+    id mix
+    how Blends the processed sound with the dry input.
+    sound Lower values keep the original and lay the effect on top.
+Amount      "Amount"        0 1000 500  lin 0 200 % 0                                | Effect strength: 100 % = the settings as they stand, 0 = clean (bit for bit the input), 200 % = twice the shift, fine shift, detune, feedback and spread
+    id amount
+    how Scales the pitch, the fine shift, the detune, the frequency shift, the feedback, the spread and the ring depth together.
+    sound Turn it down to fade the effect out, up to push the shift twice as far; at 0 the sound is clean.
+Output      "Output"        0 1000 500  db -24 24                                    | Output level of the wet sound
+    id output
+    how Sets the level of the processed sound.
+    sound Pitch shifts and ring modulation change the loudness; trim it here.
