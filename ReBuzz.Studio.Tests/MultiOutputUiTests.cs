@@ -5,6 +5,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -71,12 +72,22 @@ namespace ReBuzz.Studio.Tests
                 var (multi, chain) = Scene(view, wire: false);
                 for (int k = 0; k < 3; k++)
                 {
-                    var from = view.FromCanvas(view.Canvas.OutPortOf(multi, k), window);
-                    var to = view.PointOf(chain[k], window);
+                    // The view may still be settling its pan and zoom after the machines were added (slower on a runner): wait until the points stand still.
+                    Point from = default, to = default, last = new Point(double.NaN, double.NaN);
+                    for (int tries = 0; tries < 50 && from != last; tries++)
+                    {
+                        last = from;
+                        Settle();
+                        Thread.Sleep(20);
+                        from = view.FromCanvas(view.Canvas.OutPortOf(multi, k), window);
+                        to = view.PointOf(chain[k], window);
+                    }
                     window.MouseMove(from);         // the pointer is over the port, and the canvas has seen it, before the button goes down
                     Settle();
                     Drag(window, from, to);
                     Settle();
+                    Assert.That(multi.Outputs.Any(o => o.Destination == chain[k] && o.SourceChannel == k), Is.True,
+                        $"output {k + 1} to {chain[k].Name}: dragged from {from} to {to}; the song has {Wires()}; hover: {view.Canvas.HoverTip}");
                 }
                 Assert.That(multi.Outputs.Where(o => o.Destination.Name != "Master").OrderBy(o => o.SourceChannel).Select(o => (o.SourceChannel, o.Destination.Name)),
                     Is.EqualTo(new[] { (0, chain[0].Name), (1, chain[1].Name), (2, chain[2].Name) }), "each wire starts at the port it was dragged from");
