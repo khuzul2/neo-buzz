@@ -143,7 +143,7 @@ What moving each parameter alone changes, as a role (`suggested_role` in the dra
 | Neo EQ | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 3.7 | 0.802 | hot |
 | Neo Exciter | utility | 0.01 | 58 | 0.0 | 43 ms |  | 21 Hz – 18.8 kHz | 25.7 | 0.527 | hot |
 | Neo Filter | filter or EQ | -12.17 | 14 | 0.0 |  |  | 21 Hz – 1.2 kHz | 4.9 | 0.265 | hot |
-| Neo Follow | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 1.3 | 0.278 | ok |
+| Neo Follow | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.507 | ok |
 | Neo Gate | modulation | 0.0 | 37 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.471 | hot |
 | Neo Imager | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 2.3 | 0.362 | hot |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 |  |  | 21 Hz – 18.8 kHz | 10.1 | 0.516 | ok |
