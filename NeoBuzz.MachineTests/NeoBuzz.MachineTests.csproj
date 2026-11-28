@@ -60,6 +60,8 @@
     <None Remove="Sdk\TutorialTremolo\*.csproj;Sdk\TutorialTremolo\obj\**;Sdk\TutorialTremolo\bin\**" />
     <None Include="Layouts\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Golden\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- SYN1: the pin table version 1 MIDI maps use is compared with the modulator's. -->
+    <Compile Include="..\ReBuzz\Midi\Mapping\LegacyChoicePins.cs" Link="Midi\LegacyChoicePins.cs" />
     <Compile Include="..\TestSupport\AllocationWindow.cs" Link="TestSupport\AllocationWindow.cs" />
     <!-- The throughput guards time a render against a reference workload in the same run (Throughput.cs; machines.md §6). -->
     <Compile Include="..\TestSupport\Throughput.cs" Link="TestSupport\Throughput.cs" />
