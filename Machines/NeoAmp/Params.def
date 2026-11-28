@@ -1,0 +1,83 @@
+# Neo Amp parameters (docs/specs/neo-amp.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoAmp
+namespace NeoBuzz.Amp
+class NeoAmpMachine
+summary Guitar and bass amp for a DI signal: a noise gate, one of eight voicings (clean, bright clean, crunch, classic rock, lead, high gain, bass clean, bass drive) built from one to four triode-like gain stages, a passive Bass-Mid-Treble tone stack worked out from its resistors and capacitors, a power stage with Sag, Presence and Resonance, oversampling with anti-aliasing, six cabinets made by our own code (open 1x12, closed 2x12 and 4x12, bass 1x15, 4x10 and 8x10) or any wave of the song as the cabinet, a mic position and cuts, and a tuner that mutes the output while you tune. Use it to turn a clean guitar or bass line into a played-through-an-amp sound.
+
+group Input
+InputCh    "Input"        0 2 2      enum Left Right Both | Which side of the interface carries the instrument: Left, Right, or both summed
+    how Chooses which channel of the input is the instrument; an interface's DI is often only on one side. Both adds the two sides.
+    sound Pick the side that has the signal; Both is right for a mono signal on both sides.
+Trim       "Trim"         0 1000 500 db -24 24                    | Level into the amp
+    how Raises or lowers the signal going into the amp by up to 24 dB; the meter in the editor shows the level.
+    sound Hotter pickups and louder interfaces need less; more trim pushes the amp harder together with Gain.
+GateThresh "Gate"         0 1000 0   db -80 -20                   | Noise gate threshold; at its lowest the gate is off
+    how Sets the level under which the noise gate shuts, from -80 to -20 dB; the lowest setting is off. It opens at the threshold and closes 6 dB lower.
+    sound The hiss and hum between notes disappear, which matters most with high gain.
+GateRelease "Gate release" 0 1000 589 exp 10 500 ms 0             | How fast the gate closes after the signal falls under the threshold
+    how Sets how long the gate takes to close, from 10 to 500 ms.
+    sound Short values chop notes off tightly, long ones let them fade out naturally.
+group Amp
+Voicing    "Voicing"      0 7 3      enum Clean Bright_clean Crunch Classic_rock Lead High_gain Bass_clean Bass_drive | The amp: one to four gain stages, its tone stack and power stage
+    how Chooses one of eight amps: Clean, Bright clean, Crunch, Classic rock, Lead, High gain, Bass clean or Bass drive. Changing it while playing crossfades over about 30 ms.
+    sound Clean stays open and glassy, Bright clean sparkles, Crunch breaks up when played hard, Classic rock is full and rough, Lead sings with long sustain, High gain is tight and heavy, the two bass amps stay round or growl.
+Gain       "Gain"         0 1000 500 db 0 40                      | Preamp gain between the first two stages
+    how Adds 0 to 40 dB of gain before the later stages, which is how hard they are driven.
+    sound More gain gives more sustain and distortion, and a rougher, more compressed sound.
+Bass       "Bass"         0 1000 500 pct                          | Tone stack: bass knob
+    how Turns the bass knob of the passive tone stack from 0 to 100 % of its rotation (a log-taper pot).
+    sound Higher values make the sound fuller and heavier.
+Mid        "Mid"          0 1000 500 pct                          | Tone stack: mid knob
+    how Turns the mid knob of the tone stack from 0 to 100 %.
+    sound Low values scoop the middle out for a hollow, modern sound, high values bring the mids forward.
+Treble     "Treble"       0 1000 500 pct                          | Tone stack: treble knob
+    how Turns the treble knob of the tone stack from 0 to 100 %.
+    sound Higher values add bite and sparkle.
+Sag        "Sag"          0 1000 300 pct                          | Power supply droop: a slow compressor
+    how Sets how far the power supply voltage droops under load: a slow compression of the power stage.
+    sound Chords bloom and notes swell back after a hard hit; at zero the amp is stiff.
+Presence   "Presence"     0 1000 400 pct                          | Feedback shelf for the highs of the power stage
+    how Raises the highs of the power stage (a high shelf around 3.5 kHz, up to 9 dB), the way less negative feedback does.
+    sound More air and edge on top.
+Resonance  "Resonance"    0 1000 300 pct                          | Feedback shelf for the lows of the power stage
+    how Raises the lows of the power stage (a low shelf, up to 8 dB), the way less negative feedback does.
+    sound More thump and body.
+Master     "Master"       0 1000 600 pct                          | How hard the power stage is driven
+    how Sets how hard the power stage is driven; the level is made up so it mostly changes the character, not the volume.
+    sound Low values stay clean and open, high values add the warm compression and grit of a power amp pushed into saturation.
+Quality    "Quality"      0 2 1      enum 2× 4× 8×                | Oversampling; 4× is the default, 2× is a low-CPU mode that aliases more (about 65 dB down at full gain), 8× is the cleanest
+    how Chooses the oversampling of the whole amp: 2x, 4x or 8x, with anti-aliasing curves.
+    sound Higher settings keep the distortion of high notes clean and free of aliasing but cost more processing power.
+group Cabinet
+Cabinet    "Cabinet"      0 7 3      enum Off Open_1x12 Closed_2x12 Closed_4x12 Bass_1x15 Bass_4x10 Bass_8x10 Wave | The speaker cabinet: six made by our own code, Off, or the song's wave as the cabinet
+    how Chooses the cabinet: Off (the amp direct), open 1x12, closed 2x12, closed 4x12, bass 1x15, 4x10 and 8x10, or Wave, a wave of the song used as the cabinet's impulse response. Changing it while playing crossfades over about 30 ms.
+    sound Open-back cabinets are airy and loose, closed ones tight and focused, bass cabinets go deep; Off is raw and fizzy, and a wave puts the sound into any speaker you have recorded.
+CabWave    "Wave"         0 199 0    int 1 wave                   | The wave slot (1 to 200) used when Cabinet is Wave; the song saves the wave, this only names its slot
+    how Picks the slot of the song's wavetable used as the cabinet's impulse response when Cabinet is Wave, from 1 to 200.
+    sound A short recorded impulse of a speaker or a room gives that speaker; an empty slot falls back to the closed 4x12 and the editor says so.
+MicPos     "Mic position" 0 1000 300 pct                          | Microphone from the centre of the cone (0) to its edge (100 %): brighter to darker
+    how Moves the microphone across the speaker from the centre of the cone to its edge.
+    sound The centre is bright and bitey, the edge is darker and smoother.
+LowCut     "Low cut"      0 1000 0   freq 20 400                  | High-pass after the cabinet; at its lowest it is off
+    how Removes low frequencies after the cabinet, from 20 to 400 Hz; the lowest setting is off.
+    sound Raising it tightens the lows and clears room for the bass guitar.
+HighCut    "High cut"     0 1000 1000 freq 2000 20000             | Low-pass after the cabinet; at its highest it is off
+    how Rolls off the highs after the cabinet, from 2 to 20 kHz; the highest setting is off.
+    sound Lowering it takes the fizz off a distorted sound.
+group Tuner
+Tuner      "Tuner"        0 1 0      switch                       | Shows the note and cents of what you play; mutes the output while on
+    how Switches the tuner on: the editor shows the note, the cents and a needle, and the output is muted so you can tune silently.
+    sound Silence while it is on, with the tuner display in the editor.
+Reference  "Reference"    0 51 25    int 415 Hz                   | Pitch of A4 for the tuner, 415 to 466 Hz
+    how Sets the frequency of A4 that the tuner measures against, from 415 to 466 Hz (440 Hz is standard).
+    sound No change to the sound: it moves what the tuner calls in tune.
+group Output
+Output     "Output"       0 1000 500 db -24 24                    | Level of the amp and cabinet
+    how Sets the level in dB, from -24 to +24.
+    sound It makes the amp louder or quieter without changing its character.
+Mix        "Mix"          0 1000 1000 pct                         | Dry/wet (the dry signal is delayed to match)
+    how Blends the amp with the dry input, delayed to match the amp's latency.
+    sound Full amp at 100 %; lower values keep some of the clean DI under the amp.
+Amount     "Amount"       0 2000 1000 lin 0 200 % 1               | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice the Gain in dB and twice the Master
+    how Scales how hard the amp is driven: Gain in dB and the power stage's drive go with Amount. 0 % is bypass (bit for bit the input), 100 % your settings, 200 % doubles the Gain in dB and the Master drive.
+    sound Turn it down to ease the amp back to clean, up to push it into heavier distortion.

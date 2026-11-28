@@ -1,0 +1,134 @@
+# Neo Amp factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoAmp
+# A preset that does not name a parameter takes its default: Input Both, Trim 0 dB, gate off, Quality 4x, Tuner off, Reference 440 Hz, Output 0 dB,
+# Mix 100 % and Amount 100 %. Every preset names its voicing and its cabinet, so it plays the same whatever was loaded before it.
+machine "Neo Amp"
+
+preset "Clean — Glassy"
+comment "A bright, open clean amp: chiming highs, tight lows and a lively spring in the attack, with no distortion until you dig in hard; made for arpeggios and chords with a lot of ring."
+Voicing = Bright clean
+Gain = 9
+Bass = 38
+Mid = 52
+Treble = 72
+Sag = 15
+Presence = 60
+Resonance = 20
+Master = 35
+Cabinet = Open 1x12
+Mic position = 15
+Low cut = 80
+Output = 4.4
+
+preset "Clean — Warm Jazz"
+comment "A dark, round clean tone: the highs rolled well back, the lows full and the mids soft, like a big closed cabinet turned low; chords sit smooth and warm."
+Voicing = Clean
+Gain = 10
+Bass = 68
+Mid = 55
+Treble = 28
+Sag = 30
+Presence = 5
+Resonance = 45
+Master = 45
+Cabinet = Closed 2x12
+Mic position = 60
+High cut = 5500
+Output = 14.5
+
+preset "Crunch — Edge of Breakup"
+comment "A clean amp that just starts to break up: soft chords stay open and picking hard gives a gritty bark; it reacts to how you play and cleans up when you ease off."
+Voicing = Crunch
+Gain = 15
+Bass = 45
+Mid = 62
+Treble = 62
+Sag = 40
+Presence = 45
+Resonance = 25
+Master = 55
+Cabinet = Closed 2x12
+Mic position = 30
+Low cut = 70
+Output = 0.7
+
+preset "Crunch — Classic Rock"
+comment "A full, rough, medium-gain rock amp: thick mids, a rounded top and plenty of sag so power chords breathe and bloom; it is the sound of a loud amp pushed past its comfort."
+Voicing = Classic rock
+Gain = 24
+Bass = 55
+Mid = 68
+Treble = 52
+Sag = 55
+Presence = 40
+Resonance = 40
+Master = 70
+Cabinet = Closed 4x12
+Mic position = 25
+Gate = -70
+Output = -2.3
+
+preset "Lead — Singing Sustain"
+comment "A smooth, compressed lead tone with long sustain: notes bloom and hold, the top is softened so it sings instead of buzzing, and the mids push forward to cut through a band."
+Voicing = Lead
+Gain = 28
+Bass = 42
+Mid = 75
+Treble = 48
+Sag = 50
+Presence = 30
+Resonance = 35
+Master = 62
+Cabinet = Closed 4x12
+Mic position = 40
+Gate = -65
+High cut = 7500
+Output = -2.7
+
+preset "High Gain — Tight Rhythm"
+comment "A tight, heavy rhythm tone: scooped mids, a clipped low end that stays clear when you chug, a sharp top and a noise gate that shuts between notes."
+Voicing = High gain
+Gain = 33
+Bass = 55
+Mid = 25
+Treble = 68
+Sag = 10
+Presence = 60
+Resonance = 55
+Master = 55
+Cabinet = Closed 4x12
+Mic position = 20
+Gate = -55
+Gate release = 60
+Low cut = 90
+Output = -4.7
+
+preset "Bass — Round Clean"
+comment "A deep, round, clean bass: full lows from a big single speaker, a soft top and a little compression from the power stage so every note sits at an even level."
+Voicing = Bass clean
+Gain = 9
+Bass = 62
+Mid = 48
+Treble = 38
+Sag = 30
+Presence = 15
+Resonance = 60
+Master = 45
+Cabinet = Bass 1x15
+Mic position = 40
+High cut = 6500
+Output = 7.9
+
+preset "Bass — Growl"
+comment "An overdriven bass with a rough, vocal growl: the lows stay solid under a snarling upper midrange, from a stack of small speakers that make it bark."
+Voicing = Bass drive
+Gain = 22
+Bass = 50
+Mid = 70
+Treble = 58
+Sag = 40
+Presence = 50
+Resonance = 45
+Master = 65
+Cabinet = Bass 4x10
+Mic position = 20
+Output = -9.2

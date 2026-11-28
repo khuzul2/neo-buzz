@@ -101,6 +101,15 @@
    "use_for": "Evolving pads, leads and basses from morphing wavetable or analog engines with unison and a built-in effects rack.",
    "note_in": true
   },
+  "Neo Amp": {
+   "category": "Distortion",
+   "tags": [
+    "gritty",
+    "warm",
+    "saturation"
+   ],
+   "use_for": "Turn a guitar or bass DI into an amped sound: eight voicings from clean to high gain, tone stack, power sag, cabinets or a song wave as cabinet, noise gate and tuner."
+  },
   "Neo Analyzer": {
    "category": "Utility",
    "tags": [

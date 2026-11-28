@@ -108,6 +108,442 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Amp": {
+   "gear": "Neo Amp",
+   "kind": "effect",
+   "load_seconds": 0.51,
+   "gear_info": {
+    "file": "Effects/Neo Amp.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 24,
+   "track_parameters": 0,
+   "inferred": 24,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 24,
+    "of": 24
+   },
+   "effect": {
+    "gain_db": 3.34,
+    "latency_samples": 66,
+    "latency_ms": 1.5,
+    "tail_seconds": 0.03,
+    "tail_hz": 82.6,
+    "echoes": 0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 60.7,
+    "tilt_db": -32.3,
+    "sine": {
+     "loud": {
+      "gain_db": -3.51,
+      "thd_percent": 108.67,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.09
+     },
+     "quiet": {
+      "gain_db": 13.59,
+      "thd_percent": 69.46,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.14
+     }
+    },
+    "traits": [
+     "distortion",
+     "dynamics",
+     "filter or EQ"
+    ],
+    "response": [
+     [
+      20.6,
+      -26.16
+     ],
+     [
+      23.1,
+      -22.37
+     ],
+     [
+      26.0,
+      -20.69
+     ],
+     [
+      29.1,
+      -18.87
+     ],
+     [
+      32.7,
+      -15.77
+     ],
+     [
+      36.7,
+      -12.68
+     ],
+     [
+      41.2,
+      -11.28
+     ],
+     [
+      46.2,
+      -8.42
+     ],
+     [
+      51.9,
+      -5.9
+     ],
+     [
+      58.3,
+      -3.25
+     ],
+     [
+      65.4,
+      -0.39
+     ],
+     [
+      73.4,
+      1.66
+     ],
+     [
+      82.4,
+      3.59
+     ],
+     [
+      92.5,
+      5.26
+     ],
+     [
+      103.8,
+      4.97
+     ],
+     [
+      116.5,
+      5.01
+     ],
+     [
+      130.8,
+      3.13
+     ],
+     [
+      146.8,
+      2.14
+     ],
+     [
+      164.8,
+      1.81
+     ],
+     [
+      185.0,
+      -0.29
+     ],
+     [
+      207.7,
+      -1.4
+     ],
+     [
+      233.1,
+      -2.39
+     ],
+     [
+      261.6,
+      -3.47
+     ],
+     [
+      293.7,
+      -4.78
+     ],
+     [
+      329.6,
+      -6.1
+     ],
+     [
+      370.0,
+      -6.78
+     ],
+     [
+      415.3,
+      -8.12
+     ],
+     [
+      466.2,
+      -8.64
+     ],
+     [
+      523.3,
+      -9.39
+     ],
+     [
+      587.3,
+      -9.98
+     ],
+     [
+      659.3,
+      -11.18
+     ],
+     [
+      740.0,
+      -11.76
+     ],
+     [
+      830.6,
+      -11.78
+     ],
+     [
+      932.3,
+      -10.57
+     ],
+     [
+      1046.5,
+      -8.91
+     ],
+     [
+      1174.7,
+      -7.38
+     ],
+     [
+      1318.5,
+      -6.0
+     ],
+     [
+      1480.0,
+      -4.2
+     ],
+     [
+      1661.2,
+      -2.52
+     ],
+     [
+      1864.7,
+      -0.72
+     ],
+     [
+      2093.0,
+      1.69
+     ],
+     [
+      2349.3,
+      4.0
+     ],
+     [
+      2637.0,
+      4.88
+     ],
+     [
+      2960.0,
+      4.18
+     ],
+     [
+      3322.4,
+      3.67
+     ],
+     [
+      3729.3,
+      3.24
+     ],
+     [
+      4186.0,
+      1.21
+     ],
+     [
+      4698.6,
+      -2.02
+     ],
+     [
+      5274.0,
+      -6.3
+     ],
+     [
+      5919.9,
+      -12.66
+     ],
+     [
+      6644.9,
+      -14.94
+     ],
+     [
+      7458.6,
+      -15.14
+     ],
+     [
+      8372.0,
+      -17.81
+     ],
+     [
+      9397.3,
+      -22.21
+     ],
+     [
+      10548.1,
+      -27.99
+     ],
+     [
+      11839.8,
+      -35.21
+     ],
+     [
+      13289.8,
+      -44.59
+     ],
+     [
+      14917.2,
+      -54.52
+     ],
+     [
+      16744.0,
+      -70.08
+     ],
+     [
+      18794.5,
+      -70.46
+     ]
+    ],
+    "response_summary": {
+     "level_db": 0.06,
+     "spread_db": 59.78,
+     "centroid_oct": -1.104,
+     "max_db": 5.26,
+     "max_hz": 92.5,
+     "prominence_db": 5.55,
+     "low_corner_hz": 82.4,
+     "high_corner_hz": 130.8,
+     "width_oct": 0.67,
+     "tilt_db": -27.22,
+     "wobble_db": 0.05
+    },
+    "impulse": {
+     "latency_samples": 71,
+     "direct_db": 0.95,
+     "early_db": 7.11,
+     "late_db": -40.49,
+     "t60_s": 0.035,
+     "t60_span_db": 20.0,
+     "ring_s": 0.039,
+     "rings_past_window": false,
+     "echoes": [],
+     "echoes_left": [],
+     "echoes_right": [],
+     "copy_s": 0.008,
+     "late_onset_s": 0.003,
+     "tail_zcr_hz": 32.7,
+     "tail_low_db": -0.14,
+     "balance_db": 0.0
+    },
+    "steps": {
+     "curve": [
+      [
+       -40.86,
+       25.93
+      ],
+      [
+       -34.85,
+       20.22
+      ],
+      [
+       -28.82,
+       14.22
+      ],
+      [
+       -22.79,
+       8.27
+      ],
+      [
+       -16.77,
+       2.28
+      ],
+      [
+       -10.75,
+       -3.73
+      ],
+      [
+       -4.8,
+       -9.55
+      ]
+     ],
+     "compression_db": 29.71,
+     "top_slope": 0.012,
+     "knee_in_db": -34.85,
+     "attack_s": 0.5,
+     "release_s": 0.68,
+     "attack_tau_s": null,
+     "release_tau_s": null
+    },
+    "thd_percent": 191.21
+   },
+   "cpu_ms_per_s": 10.7,
+   "type": "distortion",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -6.36,
+     "growth_db": 0.5,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.22,
+      "growth_db": -0.15,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
+    },
+    "swept_because": [
+     "an effect with Gain, Resonance"
+    ],
+    "renders": 44
+   },
+   "sweeps": {
+    "Voicing": {
+     "max": {
+      "peak_dbfs": 0.23,
+      "growth_db": -0.01,
+      "verdict": "hot",
+      "raw": 7,
+      "text": "Bass drive"
+     }
+    },
+    "Output": {
+     "max": {
+      "peak_dbfs": 17.64,
+      "growth_db": 0.5,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "+24.0 dB"
+     }
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 43.81,
+    "silent_ms_per_s": 0.531,
+    "silent_worst_ms_per_s": 8.269,
+    "windows_ms_per_s": [
+     43.81,
+     8.269,
+     0.523,
+     0.507,
+     0.509,
+     0.514,
+     0.524,
+     0.571,
+     0.544,
+     0.531,
+     0.534
+    ]
+   },
+   "seconds": 78.6,
+   "platform": "linux",
+   "date": "2026-11-27",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Voicing at its maximum (Bass drive): +0.2 dBFS peak; Output at its maximum (+24.0 dB): +17.6 dBFS peak"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Analyzer": {
    "gear": "Neo Analyzer",
    "kind": "effect",
