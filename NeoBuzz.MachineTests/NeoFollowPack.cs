@@ -173,12 +173,12 @@ namespace NeoBuzz.MachineTests
                 // The chain.
                 if (kind == Chain.Pump || kind == Chain.Chop)
                 {
-                    float gain = 1f;
+                    float gain = kind == Chain.Pump ? 1f : 0.7f;
                     for (int i = 0; i < Block; i++)
                     {
                         float d = drums[pos + i], k = kicks[pos + i];
-                        ol[pos + i] = gain * l[i] + (bare ? 0f : kind == Chain.Pump ? 0.7f * k : 0.5f * d);
-                        or[pos + i] = gain * r[i] + (bare ? 0f : kind == Chain.Pump ? 0.7f * k : 0.5f * d);
+                        ol[pos + i] = gain * l[i] + (bare ? 0f : kind == Chain.Pump ? 0.7f * k : 0.25f * d);
+                        or[pos + i] = gain * r[i] + (bare ? 0f : kind == Chain.Pump ? 0.7f * k : 0.25f * d);
                     }
                 }
                 else
