@@ -2464,11 +2464,22 @@ namespace ReBuzz.Studio.Tests
                 });
                 Try("663-neo-follow-editor", () =>
                 {
-                    var poly = Add("Neo Poly", "Follow Poly");
+                    // A Neo Poly playing a clip of short notes goes through Neo Follow to the master: the follower listens to what it passes on, so the meter and the output
+                    // scope show a followed level, and Neo Poly's own F1 cutoff is the target.
+                    var poly = AudioHygieneTests.AddPoly("Follow Poly");
+                    poly.CreateClip("00", 16);
+                    var clip = (ReBuzz.Core.ClipCore)poly.Clips.First();
+                    const int tb = BuzzGUI.Interfaces.ClipEvent.TimeBase;
+                    Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ReBuzz.Core.Session.ClipNote(i * tb, tb / 4, 48 + (i * 5) % 12, 100)).ToArray());
+                    AudioHygieneTests.Arrange(poly, clip);
                     var fol = Add("Neo Follow", "Follow");
+                    var song = Core.SongCore;
+                    var master = song.MachinesList[0];
+                    song.DisconnectMachines(poly.Outputs.First(c => c.Destination == master));
+                    song.ConnectMachines(poly, fol, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                    song.ConnectMachines(fol, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                     void Set(string name, int raw) => fol.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
-                    // Envelope mode on the Auto Wah settings (a fast attack and release, a raised floor, a negative curve) with Neo Poly's F1 cutoff as a target, and drum-like
-                    // bursts played through the machine's Work, as the host calls it, so that the meter and the output scope show a followed level.
+                    // Envelope mode on the Auto Wah settings (a fast attack and release, a raised floor, a negative curve).
                     Set("Attack", 318);      // ~1.5 ms
                     Set("Release", 596);     // ~160 ms
                     Set("Floor", 380);       // -42 dB
@@ -2477,27 +2488,15 @@ namespace ReBuzz.Studio.Tests
                     var mod = ModulationBoard.Of(fol)!;
                     var cutoff = poly.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "F1 cutoff");
                     Assert.That(ReBuzz.Agent.ModulationEdits.Add(Core, mod, poly, cutoff, 0, 70, bipolar: false), Is.Null);
-                    var inst = fol.ManagedMachine!;
-                    var work = inst.GetType().GetMethod("Work")!;
-                    var input = new Buzz.MachineInterface.Sample[256];
-                    var output = new Buzz.MachineInterface.Sample[256];
-                    for (int b = 0; b < 400; b++)
-                    {
-                        double env = System.Math.Exp(-(b % 24) / 5.0);
-                        for (int i = 0; i < 256; i++)
-                        {
-                            float s = (float)(18000 * env * System.Math.Sin(2 * System.Math.PI * 110 * (b * 256 + i) / 44100.0));
-                            input[i] = new Buzz.MachineInterface.Sample(s, s);
-                        }
-                        work.Invoke(inst, new object[] { new[] { output }, new[] { input }, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
-                    }
-                    RunTicks(24);
+                    Core.Playing = true;
+                    RunTicks(30);
                     Core.UiHost.OpenGui(fol, null);
                     var editor = StudioMachineUiHost.GuiWindowOf(fol);
                     Assert.That(editor, Is.Not.Null, "its GUI opened");
                     Dispatcher.UIThread.RunJobs();
                     Wait(200);
-                    Shot(editor!, "663-neo-follow-editor", "Neo Follow in Envelope mode (Listen to Input, Peak, a 1.5 ms attack, a 160 ms release, floor -42 dB, curve -20 %) with a burst pattern played through it: the mode tabs on top, the Envelope controls, Shape and Behaviour, the live meter and the output scope, and Neo Poly's F1 cutoff in the targets list.", "Add Neo Follow, play audio through it, add a target, open its editor");
+                    Shot(editor!, "663-neo-follow-editor", "Neo Follow in Envelope mode (Listen to Input, Peak, a 1.5 ms attack, a 160 ms release, floor -42 dB, curve -20 %) with a Neo Poly clip of short notes played through it: the mode tabs on top, the Envelope controls, Shape and Behaviour, the live meter and the output scope, and Neo Poly's F1 cutoff in the targets list.", "Add Neo Follow, play audio through it, add a target, open its editor");
+                    Core.Playing = false;
                     Core.UiHost.CloseWindows(fol);
                 });
                 Try("654-neo-arp-editor", () =>
