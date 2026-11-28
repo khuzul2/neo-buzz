@@ -71,6 +71,7 @@ NeoBuzz.Tune	0	20	cbee2b088009522f
 NeoBuzz.TutorialTremolo	0	6	ae4ecf4a09593708
 NeoBuzz.Utility	0	11	3eb4171cc6e8a4c2
 NeoBuzz.Verb	0	17	ee4d7f51739f6a7b
+NeoBuzz.Vocoder	0	22	28cc864ec3adc6ca
 NeoBuzz.VoiceToMidi	0	91	9871503cf4670345
 NeoBuzz.Wave	0	83	744dec7ce1d8d67c
 NeoBuzz.Prism	0	27	58a0b9f7dfee3eda

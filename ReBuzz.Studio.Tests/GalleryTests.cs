@@ -2764,6 +2764,59 @@ namespace ReBuzz.Studio.Tests
                     "Neo Space with the preset \"Effect — Reverse Swell\" loaded: Reverse on, so the picture rises to its end, and the Length line on it dims the part that is cut off.");
                 SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 160, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
                     "Neo Space with Room set to Wave and slot 5 empty: the picture shows the hall that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
+                // VOC1: Neo Vocoder's editor with a preset loaded (the values are set before the editor opens), a held chord and a modulator played through the
+                // machine's Work as the host calls it, so that the picture of the bands shows levels. The Sidechain preset has nothing wired: the message shows.
+                void VocoderShot(string id, string machineName, int[] raws, string text, bool notes)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Vocoder", machineName);
+                        string[] names = { "Carrier", "Wave", "Noise blend", "Detune", "Glide", "Synth attack", "Synth decay", "Synth sustain", "Synth release", "Bands", "Low", "High", "Width", "Attack", "Release", "Formant", "Sibilance", "Freeze", "Spread", "Mix", "Amount", "Output" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        var inst = m.ManagedMachine!;
+                        // Without a running engine the host does not tick, so the parameters have not reached the machine's own values yet: set them there too.
+                        var valuesObj = inst.GetType().GetProperty("Values", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        var setValue = valuesObj.GetType().GetMethod("Set", new[] { typeof(int), typeof(int) })!;
+                        for (int k = 0; k < names.Length; k++) setValue.Invoke(valuesObj, new object[] { k, raws[k] });
+                        if (notes) foreach (int key in new[] { 48, 55, 60, 64 }) inst.GetType().GetMethod("MidiNote")!.Invoke(inst, new object[] { 0, key, 100 });
+                        var work = inst.GetType().GetMethod("Work")!;
+                        var output = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]> { new Buzz.MachineInterface.Sample[256] };
+                        var input = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]> { new Buzz.MachineInterface.Sample[256] };
+                        var rng = new System.Random(5);
+                        for (int b = 0; b < 120; b++)
+                        {
+                            for (int i = 0; i < 256; i++)
+                            {
+                                double t = (b * 256 + i) / 48000.0, v = 0;
+                                foreach (double f in new[] { 150.0, 300, 450, 600, 750, 1200, 1800, 2400 }) v += System.Math.Sin(2 * System.Math.PI * f * t) * (3000 / (1 + f / 400));
+                                v += (rng.NextDouble() - 0.5) * 3000 * (1 + System.Math.Sin(t * 9));
+                                input[0][i] = new Buzz.MachineInterface.Sample((float)v, (float)v);
+                            }
+                            lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                        var engineObj = inst.GetType().GetProperty("Engine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        var bankObj = engineObj.GetType().GetProperty("Bank", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(engineObj)!;
+                        int built = (int)bankObj.GetType().GetProperty("BuiltBands")!.GetValue(bankObj)!;
+                        System.Console.WriteLine($"{id}: the engine has {built} bands (the preset says {raws[9] + 8})");
+                        int stored = (int)valuesObj.GetType().GetProperty("Item")!.GetValue(valuesObj, new object[] { 9 })!;
+                        int param = group.Parameters.First(p => p.Name == "Bands").GetValue(0);
+                        Assert.That(built, Is.EqualTo(raws[9] + 8), $"the preset's values reached the engine: the engine has {built} bands, the machine's values hold Bands = {stored}, the parameter holds {param}, the preset says {raws[9]}");
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Vocoder; load a preset; play a chord and a voice into it; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                VocoderShot("665-neo-vocoder-editor", "Vocoder", new[] { 0, 0, 50, 160, 0, 91, 500, 1000, 460, 8, 301, 667, 333, 338, 469, 12, 450, 0, 0, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Robot — Classic 16 Band\" loaded, a chord held and a voice-like modulator playing: the Carrier section (the choice, the synth's tone and envelope), the live picture of the 16 bands (the modulator's level dimmed, the output's in the accent colour) with Bands, Low, High and Width under it, the Voice section and Output with Amount and Mix side by side and the meters.", true);
+                VocoderShot("666-neo-vocoder-choir", "Vocoder 2", new[] { 0, 250, 120, 560, 0, 771, 500, 1000, 826, 16, 204, 723, 400, 773, 773, 12, 150, 0, 1000, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Choir — Wide Chord Pad\" loaded and a chord held: 24 narrower bars in the picture, a longer synth envelope, Spread at 100 %.", true);
+                VocoderShot("667-neo-vocoder-sidechain", "Vocoder 3", new[] { 1, 0, 50, 200, 0, 220, 500, 1000, 450, 16, 255, 774, 333, 338, 498, 12, 400, 0, 300, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Sidechain — Synth Carrier\" and nothing wired into the second input: the output bars stay empty and the picture says \"Wire a carrier into the sidechain\" in the amber warning colour.", false);
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");
