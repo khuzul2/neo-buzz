@@ -222,6 +222,15 @@ A machine's presets are two sets, listed together by the Presets dialog, the par
 - **Songs** store parameter values and machine data, not preset names: a song loads the same whatever presets exist (tested).
 - Code: `BuzzGUI.Common.Presets.PresetStore` / `MachinePresets`; `MachineExtensions.GetPresets`, `IsUserPreset`, `GetPresetGroup`, `SetPreset` (null deletes the user's), `DeleteUserPreset`; the tests are `ReBuzz.Studio.Tests/PresetStoreTests.cs`.
 
+### 3.5 Tempo sync (SYN1)
+
+Every musical timing in a Neo machine is Free (ms or Hz, the machine's own parameter) or Sync, with a division from 8 bars to 1/64 and a Feel of Straight, Dotted (x 3/2), Triplet (x 2/3) or Quintuplet (x 4/5): the same control, the same words and the same order everywhere. Physical times stay in ms or Hz (envelopes, dynamics, drum decays, tape wow, the rotary speaker, Neo Tune's vibrato, Neo Follow's follower times). The SDK page [`docs/sdk/tempo-sync.md`](../sdk/tempo-sync.md) is the how-to; this is the contract.
+
+- **One helper:** `Machines/NeoBuzz.Dsp/TempoSync.cs` reads a list's names and turns division, feel and tempo into beats, seconds, Hz and samples. **One control:** `ParamTempoTime` (`Machines/NeoBuzz.Editor.Avalonia/TempoTime.cs`), decided in the toolkit-free `TimingModel`. **One agent path:** `ValueResolver.ResolveTiming` reads "1/8 dotted" and "1/16 quintuplet".
+- **Old data stays:** lists grow only at their end and Feel gains Quintuplet as its fourth value; a new parameter is appended with a migration step that gives an old song the old sound; a modulator depth stored on a grown list is pinned in `LegacyChoiceSpans.SyncPins` and a version 1 MIDI map in `LegacyChoicePins`. Old inline entries (`1/16T`, `1/8D`) stay in the lists and the picker shows them as their division plus a Feel.
+- **SYN1a (done):** Neo Delay, Neo LFO, Neo Random, Neo Arp, Neo Pulse (gains Timing and Free time), Neo Notes (fixed length and echo), Neo Poly and Neo Wave (both LFOs), Neo Ensemble and Neo Filter.
+- **SYN1b (next):** Dye Essence, Neo Chip, Neo Step, Neo Chop, Neo Prism. **SYN1c:** Neo Keys, Neo Mallet, Neo FM6, Neo Verb, Neo Space and Neo Patch. Neo Learn synths keep their fixed 12 controls, and Neo Scope's time per division is a display.
+
 ## 4. Shared foundation (M0)
 
 **DSP library (`NeoBuzz.Dsp`)**

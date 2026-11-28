@@ -54,20 +54,14 @@ namespace NeoBuzz.Notes
                 Layout.Row(Sw(P.LenOn), Layout.Gap(8), new ParamChoice(ctx, P.LenMode, "Mode", 64)),
                 Layout.Gap(1, 6),
                 Layout.Row(
-                    new ParamDropdown(ctx, P.LenSync, "Fixed timing", 92), Layout.Gap(6),
-                    new ParamDropdown(ctx, P.LenRate, "Rate", 58), Layout.Gap(6),
-                    new ParamDropdown(ctx, P.LenFeel, "Feel", 72), Layout.Gap(6),
-                    new ParamKnob(ctx, P.LenMs, diameter: D), Layout.Gap(8),
+                    ParamTempoTime.Create(ctx, new TempoTimeSpec { Mode = P.LenSync, Division = P.LenRate, Feel = P.LenFeel, Rate = P.LenMs, KnobDiameter = D, MaxSeconds = 4 }), Layout.Gap(8),
                     new ParamKnob(ctx, P.ClampMin, diameter: D), new ParamKnob(ctx, P.ClampMax, diameter: D))));
 
             var echo = S("6  Echo", Layout.Column(
                 Layout.Row(
                     Sw(P.EchoOn), Layout.Gap(8),
                     new ParamKnob(ctx, P.Repeats, diameter: D), Layout.Gap(6),
-                    new ParamDropdown(ctx, P.EchoSync, "Timing", 92), Layout.Gap(6),
-                    new ParamDropdown(ctx, P.EchoRate, "Rate", 58), Layout.Gap(6),
-                    new ParamDropdown(ctx, P.EchoFeel, "Feel", 72), Layout.Gap(6),
-                    new ParamKnob(ctx, P.EchoMs, diameter: D)),
+                    ParamTempoTime.Create(ctx, new TempoTimeSpec { Mode = P.EchoSync, Division = P.EchoRate, Feel = P.EchoFeel, Rate = P.EchoMs, KnobDiameter = D, MaxSeconds = 2 })),
                 Layout.Gap(1, 4),
                 Layout.Row(
                     new ParamKnob(ctx, P.EchoDrop, diameter: D), new ParamKnob(ctx, P.EchoStep, diameter: D), new ParamKnob(ctx, P.EchoLen, diameter: D))));

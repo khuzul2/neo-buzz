@@ -23,13 +23,8 @@ namespace NeoBuzz.RandomMachine
 
         protected override UIElement BuildControls(EditorContext ctx) => Layout.Column(
             new Section("Source", AccentColor, Layout.Row(
-                Layout.Column(
-                    new ParamDropdown(ctx, P.Mode, "Mode", 112),
-                    Layout.Gap(1, 4),
-                    new ParamDropdown(ctx, P.Sync, "Sync", 112),
-                    Layout.Gap(1, 4),
-                    new ParamDropdown(ctx, P.Feel, "Feel", 112)),
-                new ParamKnob(ctx, P.Rate, diameter: 48),
+                new ParamDropdown(ctx, P.Mode, "Mode", 112),
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel, Rate = P.Rate, Hz = true, KnobDiameter = 48 }),
                 new ParamKnob(ctx, P.Prob, diameter: 48),
                 new ParamKnob(ctx, P.Chaos, diameter: 48))),
             new Section("Shape", AccentColor, Layout.Row(

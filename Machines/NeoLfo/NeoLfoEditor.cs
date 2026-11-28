@@ -22,8 +22,8 @@ namespace NeoBuzz.LfoMachine
 
         protected override UIElement BuildControls(EditorContext ctx) => Layout.Row(
             new Section("Wave", AccentColor, Layout.Row(
-                Layout.Column(new ParamDropdown(ctx, P.Shape, "Shape", 112), Layout.Gap(1, 4), new ParamDropdown(ctx, P.Sync, "Sync", 112), Layout.Gap(1, 4), new ParamDropdown(ctx, P.Feel, "Feel", 112)),
-                new ParamKnob(ctx, P.Rate, diameter: 54),
+                new ParamDropdown(ctx, P.Shape, "Shape", 112),
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel, Rate = P.Rate, Hz = true }),
                 new ParamKnob(ctx, P.Phase, diameter: 54))),
             new Section("Behaviour", AccentColor, Layout.Row(
                 new ParamDropdown(ctx, P.Retrigger, "Retrigger", 96),

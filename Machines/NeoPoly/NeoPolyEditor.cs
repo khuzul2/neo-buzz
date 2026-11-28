@@ -48,10 +48,11 @@ namespace NeoBuzz.Poly
             UIElement MakeEnv(string title, int a, int d, int s, int r) => S(title, Layout.Column(
                 Build.Envelope(ctx, a, d, s, r, 4 * 64, 46),
                 Build.Knobs(ctx, 4, D, a, d, s, r)));
-            UIElement MakeLfo(string title, int shape, int rate, int sync, int retrig, int fade) => S(title, Layout.Column(
+            UIElement MakeLfo(string title, int shape, int rate, int sync, int feel, int retrig, int fade) => S(title, Layout.Column(
                 new ParamDropdown(ctx, shape, width: 100),
                 Layout.Row(new ParamKnob(ctx, rate, diameter: D), new ParamKnob(ctx, fade, diameter: D)),
-                Layout.Row(new ParamDropdown(ctx, sync, width: 66), Layout.Gap(4), new ParamChoice(ctx, retrig, "Retrig", 30))));
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = sync, Feel = feel, Rate = rate, Hz = true, KnobInside = false }),
+                new ParamChoice(ctx, retrig, "Retrig", 30)));
 
             var matrix = new Grid();
             for (int c = 0; c < 2; c++)
@@ -108,8 +109,8 @@ namespace NeoBuzz.Poly
             var acidView = Layout.Column(S("Acid", Layout.Column(acidKnobs, Layout.Gap(1, 8), acidLine)), S("Limits", acidLimits));
             bool acidDefault = machine?.Engine.S.Acid ?? false;
             var modEnv = MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR);
-            var lfo1 = MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
-            var lfo2 = MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
+            var lfo1 = MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Feel, P.L1Retrig, P.L1Fade);
+            var lfo2 = MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Feel, P.L2Retrig, P.L2Fade);
 #if AVALONIA
             // ux-overhaul.md P5a: two pages in the studio, Synth (the sound's path) | Modulation (what moves it). The same controls,
             // parameters and order as the classic layout below; only where they sit differs. The classic app keeps its one screen.

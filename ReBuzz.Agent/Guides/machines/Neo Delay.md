@@ -18,8 +18,8 @@ Time changes glide (small ones bend the pitch like tape) or crossfade (large one
 
 | Parameter | Value | Why |
 |---|---|---|
-| Sync | 1/8 | a note value of the song's tempo; Free uses `Time` |
-| Feel | Dotted | the classic dotted eighth; Straight is square, Triplet swings |
+| Sync | 1/8 | a note value of the song's tempo, 1/64 to 8 bars (longer than 10 s clamps); Free uses `Time` |
+| Feel | Dotted | the classic dotted eighth; Straight is square, Triplet swings, Quintuplet skips (x 4/5) |
 | Feedback | 35% | three or four audible repeats; 75 % for long dub tails |
 | Low cut | 250 Hz | each repeat thinner, clear of the voice's body |
 | High cut | 5 kHz | each repeat darker, so the echoes sit behind the dry sound |

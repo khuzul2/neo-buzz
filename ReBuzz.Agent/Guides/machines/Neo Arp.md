@@ -4,7 +4,7 @@ An arpeggiator: it takes the notes you hold and plays them one at a time, in a p
 
 - `Pattern` is the order: Up, Down, Up-down (ends once or twice), Down-up, Converge, Diverge, As played, Random, Random walk, Chord (all notes together on each step) or Steps (your own 16-step row).
 - `Octaves` (1 to 4) repeats the pattern higher, in the order `Octave mode` says; `Repeats` plays each note 1 to 4 times; `Transpose` moves everything ±24 semitones.
-- `Timing` is Song tempo (`Rate` 1/1 down to 1/64, `Feel` straight, dotted or triplet) or Free time (`Free time` 20 to 2000 ms). Steps stay on the song's grid through tempo changes and jumps. `Swing` delays every second step.
+- `Timing` is Song tempo (`Rate` 8 bars down to 1/64, `Feel` straight, dotted, triplet or quintuplet) or Free time (`Free time` 20 to 2000 ms). Steps stay on the song's grid through tempo changes and jumps. `Swing` delays every second step.
 - `Gate` is how long each note lasts as a share of a step (5 to 200 %; over 100 % the notes overlap).
 - The step row: `Step count` (1 to 16), `Step 1` … `Step 16` (Off, On, Tie, Accent) and `Step 1 transpose` … (-12 to +12 st). It shapes the Steps pattern only. A Tie holds the note before it; an Accent is louder in Accent velocity mode.
 - `Velocity` is As played, Fixed (`Fixed velocity`) or Accent (`Accent` lifts the marked steps toward 127). `Humanize time` and `Humanize velocity` add a repeatable looseness.

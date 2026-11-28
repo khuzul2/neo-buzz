@@ -8,7 +8,7 @@ Three modulation effects on one LFO: a multi-voice chorus, a flanger and a phase
 | Flanger | one short delay with feedback | a comb of notches sweeping up and down; with feedback, the jet | drums, hats, leads, risers |
 | Phaser | 2-12 allpass stages around `Centre` | `Stages` / 2 soft notches moving through the spectrum | keys, pads, guitars, stabs |
 
-The LFO runs at `Rate` in Hz or follows the tempo with `Sync`; `Spread` offsets the right channel's LFO (0 degrees moves both alike, 180 opposite). Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id.
+The LFO runs at `Rate` in Hz or follows the tempo with `Sync` (1/64 up to 16 bars) and `Feel` (straight, dotted, triplet or quintuplet); `Spread` offsets the right channel's LFO (0 degrees moves both alike, 180 opposite). Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id.
 
 ## Use it for
 

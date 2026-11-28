@@ -31,7 +31,7 @@ Neo Poly's filters as an effect: the transistor ladder and the state-variable fi
 | Drive | 0 dB | 3-12 dB with resonance thickens; 0 is clean |
 | Env amount | 0 oct | +2 to +4 octaves for auto-wah; negative closes on loud notes |
 | LFO depth | 0 oct | 1-3 octaves around Cutoff for sweeps |
-| LFO sync | Free | a note value (1/4 to 8 bars) locks the sweep to the tempo |
+| LFO sync | Free | a note value (1/64 to 8 bars) locks the sweep to the tempo; `LFO feel` makes it dotted, triplet or quintuplet |
 | Vowel | 0% | Type Vowel only: 0 % A, 25 % E, 50 % I, 75 % O, 100 % U (`Voice` picks Man, Woman or Child) |
 
 `Amount` (default 100 %) scales cutoff distance from open, resonance, drive, envelope and LFO depth: 0 % is the bypassed dry, 200 % exaggerates. `Mix` stays its own dry/wet: below 100 % the dry signal is crossfaded in.

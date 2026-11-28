@@ -98,10 +98,7 @@ namespace NeoBuzz.Arp
                 new ParamDropdown(ctx, P.OctMode, "Octave mode", 90), Layout.Gap(8),
                 new ParamKnob(ctx, P.Octaves, diameter: D), new ParamKnob(ctx, P.Repeats, diameter: D), new ParamKnob(ctx, P.Transpose, diameter: D));
             var rate = Layout.Row(
-                new ParamDropdown(ctx, P.Sync, "Timing", 100), Layout.Gap(8),
-                new ParamDropdown(ctx, P.Rate, "Rate", 70), Layout.Gap(8),
-                new ParamDropdown(ctx, P.Feel, "Feel", 80), Layout.Gap(8),
-                new ParamKnob(ctx, P.FreeMs, diameter: D));
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Mode = P.Sync, Division = P.Rate, Feel = P.Feel, Rate = P.FreeMs, KnobDiameter = D, MaxSeconds = 2 }));
             var stepsSection = Layout.Column(steps, Layout.Gap(1, 4), Layout.Row(new ParamKnob(ctx, P.StepLen, diameter: D)));
 
             var velocity = Layout.Row(

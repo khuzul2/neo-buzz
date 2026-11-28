@@ -488,7 +488,8 @@ namespace NeoBuzz.MachineTests
             // longest time, the most drive; every parameter at each end at once.
             int fbMax = Params.Table[P.Feedback].Max, fbMin = Params.Table[P.Feedback].Min;
             foreach (var d in Params.Table)
-                foreach (int raw in new[] { d.Min, d.Max })
+                // Sync's top is 8 bars (SYN1), which clamps to the 10 s line: the 7 s window of this test sees no decay in it, so "max" keeps Sync at its old top, 2 bars.
+                foreach (int raw in new[] { d.Min, d.Index == P.Sync ? 8 : d.Max })
                 {
                     var changes = new List<(int, int)> { (d.Index, raw) };
                     if (d.Index != P.Feedback) changes.Add((P.Feedback, fbMax));
@@ -506,7 +507,7 @@ namespace NeoBuzz.MachineTests
                                 (P.ModDepth, 1000), (P.ModRate, 1000), (P.Offset, 1500),
                             }).SetName($"Extremes({name})");
                         }
-            yield return new TestCaseData("every parameter at its maximum", Params.Table.Select(d => (d.Index, d.Max)).ToArray()).SetName("Extremes(every parameter at its maximum)");
+            yield return new TestCaseData("every parameter at its maximum", Params.Table.Select(d => (d.Index, d.Index == P.Sync ? 8 : d.Max)).ToArray()).SetName("Extremes(every parameter at its maximum)");
             yield return new TestCaseData("every parameter at its minimum", Params.Table.Select(d => (d.Index, d.Min)).ToArray()).SetName("Extremes(every parameter at its minimum)");
         }
 

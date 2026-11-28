@@ -63,7 +63,9 @@ namespace NeoBuzz.Filter
             };
             ctx.Changed += lfoPicture.InvalidateVisual;
             var lfo = Layout.Column(
-                Layout.Row(new ParamDropdown(ctx, P.LfoSync, "Sync", 84), Layout.Gap(6), new ParamDropdown(ctx, P.LfoShape, "Shape", 112)),
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.LfoSync, Feel = P.LfoFeel, Rate = P.LfoRate, Hz = true, KnobInside = false }),
+                Layout.Gap(1, 4),
+                new ParamDropdown(ctx, P.LfoShape, "Shape", 112),
                 Layout.Gap(1, 4),
                 new ParamChoice(ctx, P.LfoRetrig, "Retrig", 58),
                 Layout.Gap(1, 4),

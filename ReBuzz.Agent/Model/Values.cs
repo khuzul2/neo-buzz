@@ -307,6 +307,93 @@ namespace ReBuzz.Agent.Model
             return ToRaw(p, inBase, dimension);
         }
 
+        // ---- tempo-sync timings (SYN1, docs/sdk/tempo-sync.md) ---------------------------------------------------------------
+
+        /// <summary>
+        /// The Feel parameter that goes with a division parameter of the same machine: the last word of its name (sync, rate) becomes "feel"
+        /// ("LFO1 sync" and "LFO1 feel", "Rate" and "Feel", "Fixed rate" and "Fixed feel"). Null when the machine has none.
+        /// </summary>
+        public static ParamInfo FeelOf(IEnumerable<ParamInfo> all, ParamInfo division)
+        {
+            if (division?.Mapping is not { Kind: MappingKind.Enum, Names: { } names } || !names.Any(n => TimingBeats(n, out _) is double b && b > 0)) return null;
+            string name = division.Name.Trim();
+            int sp = name.LastIndexOf(' ');
+            string last = sp < 0 ? name : name.Substring(sp + 1);
+            if (!(last.Equals("sync", StringComparison.OrdinalIgnoreCase) || last.Equals("rate", StringComparison.OrdinalIgnoreCase))) return null;
+            string want = (sp < 0 ? "" : name.Substring(0, sp + 1)) + "feel";
+            return all.FirstOrDefault(p => p.Name.Equals(want, StringComparison.OrdinalIgnoreCase) && p.Mapping is { Kind: MappingKind.Enum });
+        }
+
+        static readonly string[] FeelWords = { "straight", "dotted", "triplet", "quintuplet" };
+
+        /// <summary>The length in beats a name or text means ("1/8" 0.5, "1 bar" and "1/1" 4, "2 bars" 8); null when it is no division. An inline suffix (1/8T, "1/8 dotted" in a list) is applied.</summary>
+        static double? TimingBeats(string text, out int inlineFeel)
+        {
+            inlineFeel = 0;
+            string t = Normalise(text);
+            if (t.Length == 0 || t == "free") return null;
+            if (t.EndsWith(" dotted")) { inlineFeel = 1; t = t.Substring(0, t.Length - 7); }
+            else if (t.EndsWith(" triplet")) { inlineFeel = 2; t = t.Substring(0, t.Length - 8); }
+            else if (t.Length > 2 && t.Contains('/') && (t[^1] == 'd' || t[^1] == 't')) { inlineFeel = t[^1] == 'd' ? 1 : 2; t = t.Substring(0, t.Length - 1); }
+            double b;
+            int slash = t.IndexOf('/');
+            if (slash > 0)
+            {
+                if (!int.TryParse(t.Substring(0, slash), out int num) || !int.TryParse(t.Substring(slash + 1), out int den) || num != 1 || den < 1) return null;
+                b = 4.0 / den;
+            }
+            else
+            {
+                int sp = t.IndexOf(' ');
+                if (sp <= 0 || !int.TryParse(t.Substring(0, sp), out int n) || n < 1) return null;
+                string unit = t.Substring(sp + 1);
+                if (unit is "bar" or "bars") b = 4.0 * n;
+                else if (unit is "beat" or "beats") b = n;
+                else return null;
+            }
+            return inlineFeel == 1 ? b * 1.5 : inlineFeel == 2 ? b * (2.0 / 3.0) : b;
+        }
+
+        /// <summary>
+        /// A division the way an agent says a timing: "1/8", "1 bar", "2 bars", and with a feel: "1/8 dotted", "1/16 quintuplet", "dotted 1/8", "1 bar triplet",
+        /// "1/8t". The division is matched by its length in beats against the list (so "1 bar" finds "1/1"); the feel, when the machine has a Feel
+        /// parameter (<paramref name="feel"/>), comes back in <paramref name="feelRaw"/> for the caller to write beside it. A text that is one of the
+        /// list's own names ("1/16T" in an older list) is taken as it is, as <see cref="Resolve"/> does; anything else is Resolve's error.
+        /// </summary>
+        public static int ResolveTiming(ParamInfo division, ParamInfo feel, JsonNode input, int current, out int? feelRaw, Mode mode = Mode.Value)
+        {
+            feelRaw = null;
+            string text = input is JsonValue v && v.TryGetValue(out string s) ? s.Trim() : null;
+            if (mode != Mode.Value || text == null || division?.Mapping is not { Kind: MappingKind.Enum, Names: { } names })
+                return Resolve(division, input, current, mode);
+            string t = Normalise(text);
+            for (int i = 0; i < names.Count; i++)
+                if (Normalise(names[i]) == t) return division.Min + i;           // the list's own word, as it is
+            // A feel word first or last ("dotted 1/8", "1/8 dotted"), or a one-letter suffix ("1/8d", "1/8t").
+            int feelIndex = -1;
+            string rest = t;
+            for (int f = 0; f < FeelWords.Length; f++)
+            {
+                if (t.EndsWith(" " + FeelWords[f])) { feelIndex = f; rest = t.Substring(0, t.Length - FeelWords[f].Length - 1); break; }
+                if (t.StartsWith(FeelWords[f] + " ")) { feelIndex = f; rest = t.Substring(FeelWords[f].Length + 1); break; }
+            }
+            if (feelIndex < 0 && TimingBeats(t, out int suffix) is double && suffix != 0) { feelIndex = suffix; rest = t.Substring(0, t.Length - 1); }
+            if (TimingBeats(rest, out int restInline) is not double beats || restInline != 0) return Resolve(division, input, current, mode);
+            int found = -1;
+            for (int i = 0; i < names.Count && found < 0; i++)
+                if (TimingBeats(names[i], out int inl) is double nb && inl == 0 && nb == beats) found = i;
+            if (found < 0) return Resolve(division, input, current, mode);
+            if (feelIndex >= 0)
+            {
+                if (feel?.Mapping is not { Kind: MappingKind.Enum, Names: { } fnames }) throw new ToolError($"{division.Name}: this timing has no feel; give a division such as \"{names[found]}\".");
+                int fi = -1;
+                for (int i = 0; i < fnames.Count; i++) if (Normalise(fnames[i]) == FeelWords[feelIndex]) fi = i;
+                if (fi < 0) throw new ToolError($"{division.Name}: its Feel has no \"{FeelWords[feelIndex]}\". Feels: {string.Join(", ", fnames)}.");
+                feelRaw = feel.Min + fi;
+            }
+            return division.Min + found;
+        }
+
         static bool Fractional(ParamInfo p) => p.Mapping == null || p.Mapping.Kind is MappingKind.Percent or MappingKind.Bipolar;
 
         static int ResolveChoice(ParamInfo p, ParamMapping m, JsonNode input, string text, bool isNumber, double number, int current, Mode mode)

@@ -105,10 +105,11 @@ namespace NeoBuzz.Wave
             UIElement MakeEnv(string title, int a, int d, int s, int r) => S(title, Layout.Column(
                 Build.Envelope(ctx, a, d, s, r, 4 * 64, 46),
                 Build.Knobs(ctx, 4, D, a, d, s, r)));
-            UIElement MakeLfo(string title, int shape, int rate, int sync, int retrig, int fade) => S(title, Layout.Column(
+            UIElement MakeLfo(string title, int shape, int rate, int sync, int feel, int retrig, int fade) => S(title, Layout.Column(
                 new ParamDropdown(ctx, shape, width: 100),
                 Layout.Row(new ParamKnob(ctx, rate, diameter: D), new ParamKnob(ctx, fade, diameter: D)),
-                Layout.Row(new ParamDropdown(ctx, sync, width: 66), Layout.Gap(4), new ParamChoice(ctx, retrig, "Retrig", 30))));
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = sync, Feel = feel, Rate = rate, Hz = true, KnobInside = false }),
+                new ParamChoice(ctx, retrig, "Retrig", 30)));
 
             var matrix = new Grid();
             for (int c = 0; c < 6; c++) matrix.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -134,8 +135,8 @@ namespace NeoBuzz.Wave
                 Layout.Row(MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR),
                            MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
                            MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR)),
-                Layout.Row(MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade),
-                           MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade),
+                Layout.Row(MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Feel, P.L1Retrig, P.L1Fade),
+                           MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Feel, P.L2Retrig, P.L2Fade),
                            S("Modulation matrix", matrix)));
         }
 

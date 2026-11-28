@@ -88,6 +88,7 @@ CI checks that every generated file is up to date (`--all --check` on both gener
 | [tutorial.md](tutorial.md) | Build a tremolo effect step by step: parameters, engine, Mix and Amount, presets, editor, entries, tests. |
 | [params.md](params.md) | The `Params.def` syntax (every map kind, enums, switches, groups, how and sound lines, track parameters, appending) and the `Presets.txt` syntax. |
 | [editor.md](editor.md) | The editor kit: controls, binding, theming, the gallery. |
+| [tempo-sync.md](tempo-sync.md) | Every musical timing: Free, or Sync from 8 bars to 1/64 with a Feel (Straight, Dotted, Triplet, Quintuplet): the parameters, `TempoSync`, the shared control and the agent's words. |
 | [notes.md](notes.md) | How notes reach a machine, how a machine sends them, and the note contract tests. |
 | [state.md](state.md) | Versioned state, migrations, `state-layouts.txt`, and the golden and null tests. |
 | [audio-thread.md](audio-thread.md) | No allocation, no locks, denormals, smoothing, and how each is tested; listening packs and the click detector. |

@@ -5,7 +5,7 @@ A polyphonic analogue-style synth: warm saws and pulses through a resonant ladde
 - Oscillators 1-3: each `shape` morphs sine, triangle, saw, pulse (`O1 PW`; 50 % is a square). Oscillator 2 can hard-sync to 1 (`O2 sync`) and take FM from it (`FM 1 → 2`); oscillator 3 defaults to a sine an octave down. Ring modulation and noise sit in the mixer.
 - Filter 1: ladder 24, ladder 12, state-variable (low-pass, band-pass, high-pass, notch) or Diode 18, with drive, envelope amount (+-6 octaves), key tracking and velocity. Filter 2: state-variable, serial or parallel.
 - Acid: Diode 18 is a three-pole (18 dB per octave) diode ladder that squelches, keeps more bass than the 24 dB ladder as the resonance rises and self-oscillates at the top. `Accent` (with `Accent threshold`, `Accent decay`, `Accent sweep` and `Accent level`) makes hard notes open the filter further, snap shut faster and play louder, and a run of accents swells. `Slide` makes a note that overlaps the one before glide in `Slide time` without retriggering (Mono and Legato voice modes).
-- Amp, filter and mod envelopes, two LFOs, an 8-slot matrix (sources: LFOs, envelopes, velocity, key, wheel, aftertouch; destinations: pitch, shapes, levels, filters, amp, pan).
+- Amp, filter and mod envelopes, two LFOs (`LFO1 sync` Free or 8 bars down to 1/64, with `LFO1 feel` straight, dotted, triplet or quintuplet; the same for LFO 2), an 8-slot matrix (sources: LFOs, envelopes, velocity, key, wheel, aftertouch; destinations: pitch, shapes, levels, filters, amp, pan).
 - Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id. New to subtractive synthesis? Neo Learn Subtractive has 12 controls and the same Explain strip.
 
 ## Use it for

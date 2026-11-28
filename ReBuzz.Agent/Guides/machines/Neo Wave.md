@@ -11,7 +11,7 @@ A wavetable synth: two oscillators read through tables of 64 frames that morph s
 | Harmonics, Organ, Resonant, Digital, Grit | more saw harmonics; drawbars; a resonant sweep; stepped saw; seeded spectra |
 | User | your table, from a WAV |
 
-Warps: Bend+ and Bend- (brighter, vocal), Squeeze (pulse-width movement for any wave), Mirror (hollow), Asym (phase distortion), Window sync (hard-sync sounds), PM from B (oscillator A only). Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id.
+Warps: Bend+ and Bend- (brighter, vocal), Squeeze (pulse-width movement for any wave), Mirror (hollow), Asym (phase distortion), Window sync (hard-sync sounds), PM from B (oscillator A only). `LFO1 sync` and `LFO2 sync` are Free or 8 bars down to 1/64, with `LFO1 feel` and `LFO2 feel` straight, dotted, triplet or quintuplet. Every control has a How and a Sound sentence in `machine_describe`; `param_set` takes the name or the id.
 
 ## Use it for
 

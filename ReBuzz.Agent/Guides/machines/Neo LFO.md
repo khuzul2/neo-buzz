@@ -3,7 +3,7 @@
 A low-frequency oscillator with no audio of its own: it moves up to 8 parameters of other machines in time. At 4 to 6 Hz on a pitch or cutoff it is a vibrato or a wobble; at a tempo length (`Sync`) it is a sweep that lines up with the beat; slow and random it is drift that keeps a pad alive. Each target keeps the value you set (its base) and the LFO swings around it, smoothly, never past the parameter's range or safe range.
 
 - `Shape`: Sine, Triangle, Saw up, Saw down, Square, Smooth random, Sample and hold. `Smooth` rounds the corners (a square becomes a trapezoid).
-- Speed: `Sync` Free uses `Rate` (0.02 to 40 Hz); any other `Sync` (8 bars down to 1/64) locks one cycle to the song's tempo, `Feel` makes it dotted or triplet. While the song plays and `Retrigger` is Free the phase follows the song position, so every render is the same.
+- Speed: `Sync` Free uses `Rate` (0.02 to 40 Hz); any other `Sync` (8 bars down to 1/64) locks one cycle to the song's tempo, `Feel` makes it dotted, triplet or quintuplet. While the song plays and `Retrigger` is Free the phase follows the song position, so every render is the same.
 - `Retrigger` restarts the cycle each Beat, each Bar, or on each Note of the machine it listens to (`modulate(source=…, listen_machine=…)`), so every note gets the same sweep.
 - Per target: `depth` −100 … +100 %, polarity (bi swings both ways around the base, uni only adds), an optional range and a curve. `Write glide` is the least time a target takes to cross its whole range: no write is ever a bigger jump than that allows.
 

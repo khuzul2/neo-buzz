@@ -3,7 +3,7 @@
 A control modulator with no audio of its own: it moves up to 8 parameters of other machines using random steps, probability-gated sample and hold, bounded 1/f-like drift or chaotic Lorenz trajectories. Each target keeps its base value and Neo Random modulates smoothly within the parameter's range and safe range, never recording undo steps.
 
 - `Mode`: `Random` draws uniform steps (or raised-cosine curves as `Smooth` rises); `Sample and hold` gates updates by `Probability`; `Drift` wanders slowly with a bounded 1/f-like spectrum; `Chaos` blends from a calm periodic orbit (`0 %`) into a double-scroll Lorenz attractor (`100 %`).
-- Speed: `Sync` `Free` uses `Rate` (`0.02` to `40 Hz`); synced divisions (`8 bars` down to `1/64` with `Feel` `Straight`, `Dotted` or `Triplet`) lock steps to the song's tempo.
+- Speed: `Sync` `Free` uses `Rate` (`0.02` to `40 Hz`); synced divisions (`8 bars` down to `1/64` with `Feel` `Straight`, `Dotted`, `Triplet` or `Quintuplet`) lock steps to the song's tempo.
 - `Quantise` (`0` = off, `1` to `32`) snaps output onto N evenly spaced levels. `Depth`, signed `Bias` (`−100` to `+100 %`) and `Range` (`Unipolar` or `Bipolar`) shape the output before target slots.
 - `Seed` (`1` to `9999`) repeats bit-for-bit on every playback and render; `0` picks a fresh sequence every time. `Retrigger` (`Beat`, `Bar`, `Note`) restarts the phase and seed (or forces a fresh step at `Seed 0`).
 - New target slots added to Neo Random default to `uni` polarity in the editor and `modulate` tool; pass `polarity="bi"` per target when you want symmetric swing around the target's base.
