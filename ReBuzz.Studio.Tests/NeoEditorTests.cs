@@ -81,7 +81,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 675),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (966 x 605 before)
             ("Neo Chip", "NeoChipEditor", "neo-chip-editor", 886, 496),
-            ("Neo Follow", "NeoFollowEditor", "neo-follow-editor", 760, 700),   // FOL1: the mode tabs, the live meter and the targets (the size is read from the first CI run)
+            ("Neo Follow", "NeoFollowEditor", "neo-follow-editor", 664, 737),   // FOL1: the mode tabs, the Envelope controls and Shape, the live meter and the targets (read from the first CI run)
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -2435,12 +2435,9 @@ namespace ReBuzz.Studio.Tests
 
                 // The engine plays the song for a while: the target moves off its base, within its range.
                 int moved = baseValue;
-                using (var audio = new AudioHygieneTests.AudioThread(1))
-                {
-                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
-                    audio.Read(300);
-                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
-                }
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                Run(1.5);
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 AudioHygieneTests.Pump();
                 moved = cutoff.GetValue(0);
                 Assert.That(moved, Is.GreaterThan(baseValue), "a loud tone opens the cutoff (positive depth) from its base");
