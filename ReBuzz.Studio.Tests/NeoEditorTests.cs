@@ -40,9 +40,9 @@ namespace ReBuzz.Studio.Tests
             ("Neo Grain", "NeoGrainEditor", "neo-grain-editor", 856, 498),   // GRN1: Source and Grain on top, Pitch, Envelope and Output below; measured in CI (GRN1)
             ("Neo Keys", "NeoKeysEditor", "neo-keys-editor", 877, 482),   // KEY1: Model and pickup, Hammer, Decay on top; Preamp, Tremolo and Output below
             ("Neo Chord", "NeoChordEditor", "neo-chord-editor", 1186, 453),   // CHD1: the chord and mode on top, the keyboard, then voicing, velocity and strum (the size the editor draws at)
-            ("Neo Random", "NeoRandomEditor", "neo-random-editor", 650, 791),
+            ("Neo Random", "NeoRandomEditor", "neo-random-editor", 776, 791),   // SYN1: the shared tempo-time control (Timing, Division and Feel) is 126 px wider than the old Sync and Feel pickers (650 before)
             ("Neo Pulse", "NeoPulseEditor", "neo-pulse-editor", 846, 685),   // PUL1: Clock & Probability, 8-lane Euclidean strips, synced Lane 1..8 detail pages
-            ("Neo Notes", "NeoNotesEditor", "neo-notes-editor", 1000, 624),   // NOT1: the keyboard strip on top, then the seven sections in the order they work (the size the editor draws at)
+            ("Neo Notes", "NeoNotesEditor", "neo-notes-editor", 1000, 664),   // NOT1: the keyboard strip on top, then the seven sections in the order they work (the size the editor draws at)
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
@@ -53,13 +53,13 @@ namespace ReBuzz.Studio.Tests
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 367),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before); FX1: Amount and Mix, two 40 px knobs, under its channel switches (679 x 296 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
-            ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
-            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 1069, 343),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (994 x 343 before)
+            ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 1060, 395),   // SYN1: the shared tempo-time control (978 x 338 before)
+            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 1153, 343),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (994 x 343 before)
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1170, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1126, 484),   // P5a: the pads, the selected pad's panel and the mix strip (the classic editor is 1232 x 738)
-            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 880, 620),   // the WPF editor was 802 wide: the Vowel section (EXT1, #190) is 78 px more
+            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 880, 722),   // the WPF editor was 802 wide: the Vowel section (EXT1, #190) is 78 px more
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 341),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (956 x 277 before)
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
@@ -2115,7 +2115,10 @@ namespace ReBuzz.Studio.Tests
         /// <summary>The global parameters the window's knobs, choices and drop-downs are bound to (on any page, shown or not).</summary>
         static SortedSet<string> BoundGlobals(Window window) =>
             new(window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name is "ParamKnob" or "ParamChoice" or "ParamDropdown")
-                .Select(c => (string)Get(Get(Get(c, "Binding"), "Def"), "Name")));
+                .Select(c => (string)Get(Get(Get(c, "Binding"), "Def"), "Name"))
+                // SYN1: a timing's division, Feel and Timing switch are bound by the shared tempo-time control.
+                .Concat(window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "ParamTempoTime")
+                    .SelectMany(c => (IEnumerable<string>)Get(c, "BoundNames"))));
 
         static SortedSet<string> GlobalsOf(IMachine m) =>
             new(m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.Select(p => p.Name));

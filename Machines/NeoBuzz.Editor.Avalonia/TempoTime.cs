@@ -261,6 +261,22 @@ namespace NeoBuzz.Editor
         readonly List<TimingDropdown> all;
 
         public TempoTimeController Controller { get; }
+
+        /// <summary>The names of the parameters this control binds (the division, the Feel and the Timing switch; the rate knob when it is inside): what a test asks to see that every parameter has a control.</summary>
+        public IReadOnlyList<string> BoundNames
+        {
+            get
+            {
+                var t = Controller.Context.Table;
+                var s = Controller.Spec;
+                var r = new List<string> { t[s.Division].Name };
+                if (s.Feel >= 0) r.Add(t[s.Feel].Name);
+                if (s.Mode >= 0) r.Add(t[s.Mode].Name);
+                if (s.Rate >= 0 && s.KnobInside) r.Add(t[s.Rate].Name);
+                return r;
+            }
+        }
+
         public TimingDropdown Mode { get; }
         public TimingDropdown Division { get; }
         public TimingDropdown Feel { get; }
