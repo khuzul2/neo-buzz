@@ -1331,6 +1331,36 @@ namespace ReBuzz.Studio.Tests
                     }
                 });
 
+                Try("068-clip-note-columns", () =>
+                {
+                    // CU6b (notes.md section 9): a chord clip with two note+velocity column pairs, a note and velocity pair for each voice of the chord.
+                    var lead = (MachineCore)Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead");
+                    lead.CreateClip("Chords", 16);
+                    var chords = lead.Clips.First(p => p.Name == "Chords");
+                    ClipEvent N(int row, int rows, int midi, int vel) => new ClipEvent(row * 240, 0x90 | (midi << 8) | (vel << 16), rows * 240);
+                    ReBuzz.Core.Session.SessionLayout.EnsureMidiColumn(chords).SetEvents(new[]
+                    {
+                        N(0, 4, 57, 100), N(0, 4, 64, 90), N(4, 4, 55, 100), N(4, 4, 62, 85), N(8, 4, 53, 100), N(8, 4, 60, 80), N(12, 4, 55, 110), N(12, 4, 59, 95),
+                    }, true);
+                    try
+                    {
+                        ClipView.Edit(chords);
+                        Wait(200);
+                        Studio.Host.Core.SongCore.ActionStack.Do(new BuzzGUI.Common.Actions.ClipActions.NoteColumnsAction(chords, null, 2));
+                        dynamic v = ClipView.Page.EditorControl;
+                        ((Control)v.TrackerGrid.Body).Focus();
+                        Settle();
+                        Shot(window, "068-clip-note-columns", "Clip: a chord clip with two note+velocity column pairs (CU6b): each chord is one note on each pair, a pair added with Alt++ or Add Note Column in the grid's menu, taken off with Alt+- (never while it would hide a note), saved with the clip and one undo step each.", "Right click a column header, then Add Note Column; or Alt++ in the Tracker.");
+                    }
+                    finally
+                    {
+                        var other = lead.Clips.FirstOrDefault(p => p != chords);
+                        if (other != null) { ClipView.Edit(other); Wait(100); }
+                        lead.DeleteClip(chords);
+                        Settle();
+                    }
+                });
+
                 Try("067-clip-lanes", () =>
                 {
                     // T2: two parameter columns of Lead's clip with their envelope lanes open, on a clip with steps and ramps written through the store.

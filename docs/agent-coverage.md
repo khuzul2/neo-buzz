@@ -228,7 +228,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | note_wires | 3 | 1 | yes |
 | notes_read | 8 | 2 | yes |
 | notes_transform | 4 | 5 | no |
-| notes_write | 26 | 9 | yes |
+| notes_write | 26 | 10 | yes |
 | panel_set | 1 | 3 | yes |
 | param_get | 18 | 26 | yes |
 | param_lock | 1 | 2 | yes |

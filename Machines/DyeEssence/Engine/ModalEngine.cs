@@ -314,6 +314,14 @@ namespace NeoBuzz.DyeEssence
             // The mallet's force on the body is a half-sine pulse of unit area; the modes are driven by its first difference (a velocity), so the
             // body does not swell with the load while the pulse lasts. mLen is the pulse's length plus the one sample the difference adds.
             if (mAge[no] == 0) mLen[no] = Math.Max(2, (int)(0.008 * PortableMath.Exp(-3.6889 * force) * vr)) + 1;
+            if (mAge[no] == 0 && exc == (int)ModalExciter.Morph && mWM[no] > 0f)
+            {
+                // The pulse spans a whole number of the lowest mode's cycles (from the second on): the mode sits on a lobe of the pulse's spectrum, never in a null,
+                // so the level does not swing as the velocity moves the contact time past one (notes.md section 8, CU6b).
+                double t0 = inc0 * mRatio[sb];
+                double cycles = t0 * (mLen[no] - 1);
+                if (t0 > 1e-6 && cycles >= 1.25) mLen[no] = Math.Max(2, (int)((0.5 * (Math.Round(cycles) + cycles)) / t0 + 0.5)) + 1;
+            }
             mEnvUp[no] = (float)(1.0 / (vr * (0.02 + 0.25 * (1f - force) * (1f - force))));
             mEnvDown[no] = (float)(1.0 / (vr * 0.03));
             // The excitation's reach along the body: 0 at an end (every mode, bright) … 100 % at the middle (even modes of a string vanish).
@@ -363,7 +371,7 @@ namespace NeoBuzz.DyeEssence
                         mVer[k] = mVersion[o];
                         bool needG = fresh || exc == (int)ModalExciter.Continuous || exc == (int)ModalExciter.Struck && mAge[no] < mLen[no]
                             || exc == (int)ModalExciter.Morph && (wB > 0f || wM > 0f && mAge[no] < mLen[no]);
-                        double e2 = 0, e2m = 0, e2me = 0, e2p = 0, e2b = 0;
+                        double e2 = 0, e2m = 0, e2me = 0, e2mw = 0, e2mew = 0, e2p = 0, e2b = 0;
                         for (int j = 0; j < lim; j++)
                         {
                             float turns = (float)(inc * mRatio[sb + j]);
@@ -393,16 +401,26 @@ namespace NeoBuzz.DyeEssence
                                     double x = turns * (mLen[no] - 1);
                                     double den = 1.0 - 4.0 * x * x;
                                     SinCosTurns((float)(x * 0.5), out _, out float cx);
-                                    float mag = Math.Abs(den) < 1e-3 ? 0.7854f : MathF.Abs(cx) / (float)Math.Abs(den);
+                                    float lobe = Math.Abs(den) < 1e-3 ? 0.7854f : MathF.Abs(cx) / (float)Math.Abs(den);
+                                    // The pulse's response at this mode, exactly (the sampled pulse, the mode's own decay): a mode on one of the pulse's nulls is not silent,
+                                    // and the null's depth is what it is, so the levelling below can follow it as far as it is true.
+                                    float mag = (float)MalletResponse(turns, -sigma / vr, mLen[no] - 1);
                                     SinCosTurns(turns * 0.5f, out float sh, out _);
                                     float dsin = Math.Max(2f * MathF.Abs(sh), 1e-4f);
                                     float inv = imp ? 1f : 1f / mRatio[sb + j];
                                     mT[j] = wgt * mag * inv;
                                     mU[j] = wgt * inv / dsin;
-                                    e2m += (double)mT[j] * mT[j];
+                                    double heard = (double)mT[j] * mF[j];      // as the band's edge fades it
+                                    e2m += heard * heard;
                                     // The pulse's envelope (no nulls): the decay of a ringing mode fills a null in, so a sum that fell into nulls would be levelled up too far.
-                                    double env = (Math.Abs(den) < 1e-3 ? 0.7854 : 1.0 / Math.Abs(den)) * wgt * inv;
+                                    double env = (x < 1.0 ? lobe : 1.0 / (4.0 * x * x - 1.0)) * wgt * inv;      // under x = 1 the spectrum itself (no null there, and 1/(1-4x^2) blows up at 1/2), above it the lobes' peaks
+                                    env *= mF[j];
                                     e2me += env * env;
+                                    // What the ear takes as the level is the first 0.3 s: a mode that dies fast counts for less. The same sums over that window, for the levelling below.
+                                    double decay = 2.0 * sigma * MalletLevelWindow;
+                                    double share = decay > 1e-6 ? (1.0 - PortableMath.Exp(-decay)) / decay : 1.0;
+                                    e2mw += heard * heard * share;
+                                    e2mew += env * env * share;
                                 }
                                 if (wP > 0f && fresh)
                                 {
@@ -452,8 +470,13 @@ namespace NeoBuzz.DyeEssence
                         {
                             // Each exciter is levelled as it is alone (the mallet and the pluck 0.99; the bow lower than Dye's own bow, so the crossfade keeps one loudness), then shared out.
                             // (A mallet whose pulse has a null at the lowest modes would be levelled up by 20 dB: the floor is a share of the no-null energy.)
-                            float normM = e2m > 1e-18 ? 0.99f / MathF.Sqrt((float)Math.Max(e2m, MalletNullFloor * e2me)) : 0f;
-                            float normP = e2p > 1e-18 ? 0.99f / MathF.Sqrt((float)e2p) : 0f;
+                            // The level of the first 0.3 s, not the energy of the first sample: a null that falls on the modes that ring on is a dip of the level, and the dip moves with the velocity
+                            // (the contact time) and the pitch. It is levelled up as far as the floor allows, so the level rises with the velocity without a wobble (notes.md section 8, CU6b).
+                            float dyn = (float)PortableMath.Exp(MorphDynamics * PortableMath.Log(0.6 + 0.8 * noteVel[note]));      // a harder key is louder as well as brighter (the mallet's and the pick's: the bow's level follows its force already)
+                            float normM = e2m > 1e-18 && e2mew > 1e-18
+                                ? dyn * MalletLevel / MathF.Sqrt((float)e2me) * MathF.Sqrt((float)(e2mew / Math.Max(e2mw, MalletNullFloor * e2mew)))
+                                : 0f;
+                            float normP = e2p > 1e-18 ? dyn * 0.99f / MathF.Sqrt((float)e2p) : 0f;
                             float normB = e2b > 1e-18 ? BowLevel / MathF.Sqrt((float)e2b) : 0f;
                             for (int j = 0; j < lim; j++)
                             {
@@ -461,7 +484,21 @@ namespace NeoBuzz.DyeEssence
                                 mGB[pb + j] = wB > 0f ? wB * mB[j] * normB * mFB[j] : 0f;
                             }
                             if (fresh && wP > 0f)
-                                for (int j = 0; j < lim; j++) { mY[pb + j] = wP * mP[j] * normP * mF[j]; mX[pb + j] = 0f; }
+                            {
+                                // With the mallet in the blend, the pluck starts in the mallet's own phase (a ring that began at the pulse's centre): the two add, whatever the contact time,
+                                // so a null of the blend does not move with the velocity and the level rises with it.
+                                double centre = wM > 0f ? 0.5 * (mLen[no] - 1) : 0.0;
+                                for (int j = 0; j < lim; j++)
+                                {
+                                    float a = wP * mP[j] * normP * mF[j];
+                                    if (centre > 0.0)
+                                    {
+                                        SinCosTurns((float)(mTh[pb + j] * 0.15915494 * centre % 1.0), out float sn, out float cs);
+                                        mX[pb + j] = a * cs; mY[pb + j] = -a * sn;
+                                    }
+                                    else { mY[pb + j] = a; mX[pb + j] = 0f; }
+                                }
+                            }
                         }
                         else if (needG)
                         {
@@ -629,10 +666,36 @@ namespace NeoBuzz.DyeEssence
             return !Vector128.EqualsAll(x, zero) || !Vector128.EqualsAll(y, zero);
         }
 
+        /// <summary>
+        /// The size of the response of a mode to the mallet's pulse, relative to the pulse's own area (1 at the lowest frequencies): the pulse is
+        /// <paramref name="pulse"/> samples of a half sine (sin(pi (n + 1/2) / pulse)), the mode turns <paramref name="turns"/> of a cycle a sample and
+        /// loses <paramref name="logR"/> (negative) in log amplitude a sample. Its z transform is sum sin(t (n + 1/2)) z^n = (1 + z^N)(1 + z) sin(t/2) / (1 - 2 z cos t + z^2)
+        /// with t = pi / N, which is what the first difference of the pulse (the engine's drive) leaves in the mode after it.
+        /// </summary>
+        static double MalletResponse(double turns, double logR, int pulse)
+        {
+            if (pulse < 2) return 1.0;
+            double w = 2.0 * Math.PI * turns, r = PortableMath.Exp(logR);
+            double t = Math.PI / pulse, ct = PortableMath.Cos(t), sh = PortableMath.Sin(0.5 * t);
+            double zr = r * PortableMath.Cos(w), zi = r * PortableMath.Sin(w);
+            double rn = PortableMath.Exp(logR * pulse), wn = w * pulse;
+            double nr = 1.0 + rn * PortableMath.Cos(wn), ni = rn * PortableMath.Sin(wn);               // 1 + z^N
+            double dr = 1.0 - 2.0 * ct * zr + (zr * zr - zi * zi), di = -2.0 * ct * zi + 2.0 * zr * zi; // 1 - 2 z cos t + z^2
+            double den = Math.Sqrt(dr * dr + di * di);
+            double a = Math.Sqrt(nr * nr + ni * ni), b = Math.Sqrt((1.0 + zr) * (1.0 + zr) + zi * zi);
+            if (den < 1e-9 * (a * b + 1e-30)) return 1.0;
+            return sh * sh * a * b / den;
+        }
+
         /// <summary>The morph's bow level (Dye's own bow is 0.7 rms; the morph's stands lower so its loudest 50 ms matches the mallet's and the pluck's).</summary>
         const float BowLevel = 0.45f;
-        /// <summary>The share of the no-null pulse energy the morph's mallet levelling never goes below (a quarter in amplitude is 1/16, an eighth in energy is what a few nulls cost).</summary>
-        const double MalletNullFloor = 0.12;
+        /// <summary>The share of the no-null pulse energy the morph's mallet levelling never goes below (0.05 in energy: at most 13 dB of levelling up for a null).</summary>
+        const double MalletNullFloor = 0.05;
+        const float MalletLevel = 0.757f;
+        /// <summary>How much louder a harder key is, beyond the Vel -> amp curve: the level goes as (0.6 + 0.8 velocity) to this power (the contact force's own factor).</summary>
+        const double MorphDynamics = 0.6;
+        /// <summary>The window (s) over which the mallet's level is taken as the ear takes it.</summary>
+        const double MalletLevelWindow = 0.05;
 
         /// <summary>The morph's voice: the modes' sum into the accumulators with two drives (the mallet's pulse through <see cref="mG"/>, the bow's noise through <see cref="mGB"/>). Whether anything still rings.</summary>
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]

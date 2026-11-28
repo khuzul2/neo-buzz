@@ -76,7 +76,7 @@ namespace ReBuzz.AgentTests
             ["clip_delete"] = new[] { "machine", "clip" },
             ["clip_rename"] = new[] { "machine", "clip", "new_name" },
             ["clip_duplicate"] = new[] { "machine", "clip", "new_name" },
-            ["notes_write"] = new[] { "machine", "clip", "notes", "mode", "range_start", "range_end", "input", "apply_pitch_offset" },
+            ["notes_write"] = new[] { "machine", "clip", "notes", "mode", "range_start", "range_end", "input", "apply_pitch_offset", "columns" },
             ["notes_read"] = new[] { "machine", "clip", "range_start", "range_end", "input", "apply_pitch_offset" },
             ["arrangement_get"] = new[] { "from", "to" },
             ["arrangement_place"] = new[] { "machine", "clip", "at", "repeat_every_beats", "times" },

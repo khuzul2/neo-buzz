@@ -14,7 +14,7 @@
         <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
         <Parameter Name="Release" Group="1" Index="9" Track="0" Value="447" />
         <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
-        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="681" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="704" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -34,7 +34,7 @@
         <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
         <Parameter Name="Release" Group="1" Index="9" Track="0" Value="539" />
         <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
-        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="638" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="615" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -74,7 +74,7 @@
         <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
         <Parameter Name="Release" Group="1" Index="9" Track="0" Value="721" />
         <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="200" />
-        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="365" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="377" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -134,7 +134,7 @@
         <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
         <Parameter Name="Release" Group="1" Index="9" Track="0" Value="485" />
         <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
-        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="640" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="650" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -154,7 +154,7 @@
         <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
         <Parameter Name="Release" Group="1" Index="9" Track="0" Value="606" />
         <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="150" />
-        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="417" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="394" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -174,7 +174,7 @@
         <Parameter Name="Sustain" Group="1" Index="8" Track="0" Value="1000" />
         <Parameter Name="Release" Group="1" Index="9" Track="0" Value="668" />
         <Parameter Name="Unison / Spread" Group="1" Index="10" Track="0" Value="0" />
-        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="488" />
+        <Parameter Name="Output" Group="1" Index="11" Track="0" Value="525" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

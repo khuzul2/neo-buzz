@@ -567,6 +567,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 new[] { "8 (note column)", "Play cursor row (all tracks)" },
                 new[] { "Insert/Delete", "Insert/Delete row" },
                 new[] { "Ctrl+Shift+Insert/Delete", "Insert/Delete column" },
+                new[] { "Alt++ / Alt+-", "Add / remove a note column (chords): a note+velocity pair of the Notes lanes" },
                 new[] { "Ctrl+R", "Randomize" },
                 new[] { "Ctrl+I", "Interpolate" },
                 new[] { "Ctrl+Shift+I", "Interpolate logarithmic" },
@@ -644,6 +645,9 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
             var menu = new ContextMenu();
             menu.Items.Add(edit);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Add Note Column", c.AddNoteColumnCommand, "Alt++"));
+            menu.Items.Add(Item("Remove Note Column", c.RemoveNoteColumnCommand, "Alt+-"));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Select All", c.SelectAllCommand, mod + "+A"));
             menu.Items.Add(Item("Unselect", c.UnselectCommand, mod + "+U"));

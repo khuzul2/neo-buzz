@@ -11027,7 +11027,7 @@
     "file": "Generators/Neo Sampler.NET.dll",
     "managed": true,
     "min_tracks": 1,
-    "max_tracks": 16,
+    "max_tracks": 32,
     "note_parameter": "Note",
     "takes_midi": true
    },

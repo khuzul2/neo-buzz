@@ -180,8 +180,6 @@ namespace NeoExport
                 // Neo FM6's Init patch has velocity sensitivity 0 (its presets set it): give operator 1 the full 7 first
                 bool fm6 = info.Name == "Neo FM6"; int sensId = fm6 ? Array.FindIndex(table, t => t.Name == "Op1 vel sens") : -1;
                 var pre = new List<(int, Ev)>(); if (fm6) pre.Add((0, new Ev { Time = 0, Kind = 0, A = sensId, V = 7 }));
-                // Neo Learn Physical: the mallet pulse has spectral nulls, so its level is not monotone in velocity; 127 must still beat 30
-                bool notMono = info.Name == "Neo Learn Physical"; double minSpan = notMono ? 1.0 : 6.0;
                 var lv = new double[4]; int[] vels = { 30, 60, 90, 127 };
                 for (int k = 0; k < 4; k++)
                 {
@@ -190,7 +188,7 @@ namespace NeoExport
                 }
                 double dbSpan = 20 * Math.Log10(lv[3] / Math.Max(lv[0], 1e-9));
                 Console.WriteLine($"     chord peaks at velocity 30/60/90/127: {lv[0]:F4} {lv[1]:F4} {lv[2]:F4} {lv[3]:F4} ({dbSpan:F1} dB from 30 to 127)");
-                Check(lv[0] > 1e-5 && dbSpan >= minSpan, notMono ? "a four-note chord is louder at velocity 127 than at 30 (not monotone in between)" : "a four-note chord is 6 dB or more louder at velocity 127 than at 30");
+                Check(lv[0] > 1e-5 && dbSpan >= 6.0, "a four-note chord is 6 dB or more louder at velocity 127 than at 30");
                 var many = new List<(int, Ev)>(pre); foreach (int key in sixteen) many.Add((0, new Ev { Time = 0, Kind = 1, A = key, V = 0.7 }));
                 var mr = Render(fac, d, &pr, oL, oR, many, Win);
                 Check(Peak(mr.peak) > 1e-5 && double.IsFinite(Peak(mr.peak)) && Peak(mr.peak) < 16, "sixteen notes at once sound and stay finite");

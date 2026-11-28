@@ -2,7 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoSampler
 namespace NeoBuzz.Sampler
 class NeoSamplerMachine
-tracks 16
+tracks 32
 track Sample   "Sample"     1 254                | Tracker mode: the wave this note plays (1-200 the song's wavetable, 201 and up the built-ins; the Neo Sampler's Mode must be Tracker); empty: the note plays the zones as in Instrument mode
 track Offset   "Offset"     0 32767              | Tracker mode: where in the wave this note starts, in the wave's frames, the low part (frames = Offset + 32768 x Offset hi); empty: from the start
 track OffsetHi "Offset hi"  0 254                | Tracker mode: the high part of the start offset, in steps of 32768 frames (up to 8.3 million frames); empty: 0

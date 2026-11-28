@@ -339,7 +339,7 @@ namespace NeoBuzz.Sampler
     internal static class Params
     {
         /// <summary>Tracks with Note and Velocity (0 for effects).</summary>
-        public const int Tracks = 16;
+        public const int Tracks = 32;
 
         public static readonly ParamDef[] Table =
         {

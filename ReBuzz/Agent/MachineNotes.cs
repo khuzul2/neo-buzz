@@ -8,6 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
+using BuzzGUI.Common;
+using BuzzGUI.Common.Actions.ClipActions;
 using BuzzGUI.Common.Actions.MachineActions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Mcp;
@@ -70,6 +73,57 @@ namespace ReBuzz.Agent
             ClipNote Note(NoteEvent n) => new ClipNote(n.Time, n.Duration, n.Pitch, n.Velocity, n.Channel, n.Sample, n.Offset, n.Tune, n.Slide, n.Fine);
             string refused = source.Edit(removed.Select(Sent).Select(Note).ToList(), added.Select(Sent).Select(Note).ToList());
             if (refused != null) throw new ToolError(refused);
+        }
+
+        // ---------------------------------------------------------------- the tracker's note columns (CU6b, chords)
+
+        /// <summary>The clip's Notes lane laid out as the tracker lays it out: a note on the lowest column pair free at its time (rows from the lane's Grid, else 4 a beat).</summary>
+        public static NoteLanes Lanes(IClip p)
+        {
+            var events = NoteColumnsAction.FindColumn(p)?.GetEvents(int.MinValue, int.MaxValue).Select(e => new LaneEvent(e.Time, e.Value, e.Duration)) ?? Enumerable.Empty<LaneEvent>();
+            int rpb = 4;
+            foreach (var c in p.Columns)
+                if (c.Metadata.TryGetValue(ClipMeta.Grid, out var grid) && ClipGrid.TryParse(grid, out int g, out _) && g > 0) { rpb = g; break; }
+            return new NoteLanes(events, RowGrid.Beats(new[] { rpb }), Math.Max(1, p.Length) * ClipEvent.TimeBase);
+        }
+
+        /// <summary>The note+velocity column pairs the tracker shows for a clip: how many it shows, the count stored with the clip (absent: none), how many its notes need.</summary>
+        public static JsonObject ColumnsOf(IClip p)
+        {
+            var lanes = Lanes(p);
+            int? stored = NoteColumnsAction.StoredOf(p);
+            var o = new JsonObject { ["shown"] = NoteColumns.Shown(stored, lanes.Voices, lanes.NoteCount > 0), ["needed"] = lanes.Voices };
+            if (stored is int s) o["stored"] = s;
+            return o;
+        }
+
+        /// <summary>Gives each note of a MIDI-route read the column pair (from 1) the tracker shows it in. <paramref name="json"/> holds the notes in the order of <paramref name="notes"/>.</summary>
+        public static void AddColumns(JsonArray json, IReadOnlyList<NoteEvent> notes, IClip p, NoteInput input)
+        {
+            if (input.Tracks || json.Count != notes.Count) return;
+            var lanes = Lanes(p);
+            var at = new Dictionary<(int, int), int>();
+            foreach (var c in lanes.Cells)
+                if (!c.IsOff) at[(lanes.Events[c.Source].Time, lanes.Events[c.Source].Midi)] = c.Voice + 1;
+            for (int i = 0; i < notes.Count; i++)
+                if (at.TryGetValue((notes[i].Time, notes[i].Pitch + input.Offset), out int column)) json[i]!.AsObject()["column"] = column;
+        }
+
+        /// <summary>
+        /// Sets the count of column pairs the tracker shows for the clip, one undo step; refused (with the reason) while it would hide a note.
+        /// Null when done.
+        /// </summary>
+        public static string SetColumns(ReBuzzCore core, IClip p, int count)
+        {
+            if (count < 1 || count > NoteColumns.Max) return $"columns is 1 to {NoteColumns.Max}.";
+            var lanes = Lanes(p);
+            if (count < lanes.Voices)
+                return $"{lanes.NotesBeyond(count)} note{(lanes.NotesBeyond(count) == 1 ? "" : "s")} would not be shown; keep at least {lanes.Voices} columns.";
+            int? stored = NoteColumnsAction.StoredOf(p);
+            if (stored == count) return null;
+            core.SongCore.ActionStack.Do(new NoteColumnsAction(p, stored, count));
+            core.SetModifiedFlag();
+            return null;
         }
 
         /// <summary>Whether the machine plays a sample per note now (its notes then carry a sample, an offset and a tune).</summary>
