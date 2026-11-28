@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Tine — Classic Ballad">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="248" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="280" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="620" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="738" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="665" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="360" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="550" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="821" />
+      </Parameters>
+      <Attributes />
+      <Comment>A soft hammer on a tine with a tone bar beside it and the pickup a little away: a round, bell-like electric piano that sings for five seconds, with a gentle bark only when you lean on the keys.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tine — Bark Drive">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="582" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="800" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="575" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="880" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="340" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="654" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="501" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="380" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="433" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="460" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="683" />
+      </Parameters>
+      <Attributes />
+      <Comment>A hard hammer and the pickup right at the tine, into a driven preamp: the notes bark and growl when played hard, then clean up as they die away.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tine — Stereo Tremolo">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="207" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="220" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="720" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="773" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="757" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="60" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="530" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="691" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="780" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="1000" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="839" />
+      </Parameters>
+      <Attributes />
+      <Comment>A clean, warm tine with the tremolo on and fully panned: the whole sound swings between left and right four and a half times a second.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Reed — Soul Keys">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="624" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="600" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="900" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="420" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="380" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="452" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="300" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="267" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="700" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="760" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="400" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="300" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="771" />
+      </Parameters>
+      <Attributes />
+      <Comment>A steel reed read by the electrostatic pickup: short, woody and slightly buzzy with a quick decay, a touch of warm drive and a light tremolo, for chords with a little grease.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="String — Funky Pluck">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="721" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="620" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="240" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="1" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="484" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="193" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="420" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="167" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="610" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="706" />
+      </Parameters>
+      <Attributes />
+      <Comment>A struck string read by the bridge pickup only: a thin, snappy, twangy pluck with a loud hammer click and a damper that cuts the note the moment the key goes up.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="String — Muted Staccato">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="624" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="440" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="80" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="583" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="107" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="520" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="233" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="530" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="803" />
+      </Parameters>
+      <Attributes />
+      <Comment>The string with its mute on and both pickups together: short, dry, percussive chops with a hard click and no ring, made for sixteenth-note chords.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tine — Glass Bells">
+    <Preset Machine="Neo Keys">
+      <Parameters>
+        <Parameter Name="Model" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Hardness" Group="1" Index="1" Track="0" Value="770" />
+        <Parameter Name="Touch" Group="1" Index="2" Track="0" Value="250" />
+        <Parameter Name="Velocity curve" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Pickup" Group="1" Index="4" Track="0" Value="40" />
+        <Parameter Name="Bar and body" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Pickup select" Group="1" Index="6" Track="0" Value="2" />
+        <Parameter Name="Decay" Group="1" Index="7" Track="0" Value="849" />
+        <Parameter Name="Release" Group="1" Index="8" Track="0" Value="854" />
+        <Parameter Name="Mute" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Key noise" Group="1" Index="10" Track="0" Value="60" />
+        <Parameter Name="Drive" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="12" Track="0" Value="660" />
+        <Parameter Name="Tremolo rate" Group="1" Index="13" Track="0" Value="600" />
+        <Parameter Name="Tremolo depth" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Auto-pan" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Volume" Group="1" Index="16" Track="0" Value="707" />
+      </Parameters>
+      <Attributes />
+      <Comment>A hard hammer on a tine far from the pickup with the tone bar full up: a pure, glassy, bell-like tone with no bark that rings for nine seconds, for slow, shimmering chords.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

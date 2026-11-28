@@ -136,6 +136,12 @@ namespace ReBuzz.Host
             registry.Write("SampleRate", audio.Rate ?? 0, PortAudioDriver.Section);
         }
 
+        /// <summary>Presets (docs/specs/machines.md §3.4): the user's live in the settings folder (the registry file's); the factory ones in Gear are never written.</summary>
+        static void UsePresetFolder(JsonRegistry registry)
+        {
+            if (registry?.FilePath != null) BuzzGUI.Common.Presets.PresetStore.RootFolder = Path.GetDirectoryName(Path.GetFullPath(registry.FilePath));
+        }
+
         /// <summary>
         /// What BuzzGUIStartup.PreInit does for ReBuzz.exe, minus its settings window: unobserved
         /// task exceptions are logged, and machines' dependencies resolve from the gear folders
@@ -172,6 +178,7 @@ namespace ReBuzz.Host
             string buzzPath = Global.BuzzPath;
 
             PreInit(buzzPath, log);
+            UsePresetFolder(registry);
             var core = new ReBuzzCore(
                 Global.GeneralSettings,
                 engineSettings,

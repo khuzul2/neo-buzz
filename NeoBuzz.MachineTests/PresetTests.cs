@@ -34,6 +34,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Mallet"] = (NeoBuzz.Mallet.Params.Table, (v, x) => RenderMallet(v, x)),
             // neo-grain.md: the granular synth; its presets read built-in sources, so the render needs no song.
             ["Neo Grain"] = (NeoBuzz.Grain.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Grain.GrainEngine(v), (e, l, r, n) => ((NeoBuzz.Grain.GrainEngine)e).Process(l, r, n), x.Length)),
+            // neo-keys.md: the electric keys; the chord held for two thirds of the take.
+            ["Neo Keys"] = (NeoBuzz.Keys.Params.Table, (v, x) => RenderKeys(v, x)),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
             ["Neo FM6"] = (NeoBuzz.Fm6.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Fm6.FmEngine(v), (e, l, r, n) => ((NeoBuzz.Fm6.FmEngine)e).Process(l, r, n), x.Length)),
@@ -134,6 +136,8 @@ namespace NeoBuzz.MachineTests
                 }
                 return y;
             }),
+            // neo-notes.md: Neo Notes makes no audio (notes in, changed notes out); its presets only change which notes it sends.
+            ["Neo Notes"] = (NeoBuzz.Notes.Params.Table, (v, x) => x),
         };
 
         /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>
@@ -162,7 +166,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Grain", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Neo Chip", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Organ", "Neo Mallet", "Neo Keys", "Neo Grain", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Neo Chip", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -329,6 +333,28 @@ namespace NeoBuzz.MachineTests
         static float[] RenderMallet(ParamValues v, float[] x)
         {
             var engine = new NeoBuzz.Mallet.MalletEngine(v);
+            engine.SetSampleRate((float)Measure.Rate);
+            var y = new float[x.Length];
+            var l = new float[256];
+            var r = new float[256];
+            int[] chord = NotesOverride ?? new[] { 48, 52, 55, 59 };
+            for (int k = 0; k < chord.Length; k++) engine.NoteOn(k, chord[k], 0.8f);
+            for (int pos = 0; pos < x.Length; pos += 256)
+            {
+                if (pos <= x.Length * 2 / 3 && pos + 256 > x.Length * 2 / 3)
+                    for (int k = 0; k < chord.Length; k++) engine.NoteOff(k);
+                int n = Math.Min(256, x.Length - pos);
+                for (int i = 0; i < n; i++) { l[i] = r[i] = 0f; }
+                engine.Process(l, r, n);
+                for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
+            }
+            return y;
+        }
+
+        /// <summary>Neo Keys: the chord held for two thirds of the take (<paramref name="x"/> only gives the length: it is an instrument).</summary>
+        static float[] RenderKeys(ParamValues v, float[] x)
+        {
+            var engine = new NeoBuzz.Keys.KeysEngine(v);
             engine.SetSampleRate((float)Measure.Rate);
             var y = new float[x.Length];
             var l = new float[256];

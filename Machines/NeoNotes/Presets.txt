@@ -1,0 +1,71 @@
+# Neo Notes factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoNotes
+machine "Neo Notes"
+
+preset "Scale — Minor Snap"
+comment "Every note is moved into C natural minor, the nearest scale note (a tie goes down): a major tune turns minor, its third, sixth and seventh falling a semitone."
+ScaleOn = On
+Key = C
+Scale = Natural minor
+ScaleMode = Nearest
+
+preset "Spread — Octave Cascade"
+comment "Each note falls by 0, 1, 2 then 3 octaves and starts again, over an octave of transpose: a tumbling, scattered line across the keyboard."
+TransOn = On
+Trans = 12
+SpreadOn = On
+SpreadRange = 3
+SpreadPat = Down cycle
+
+preset "Echo — Dotted Eighth Echo"
+comment "Four repeats a dotted eighth apart at the song's tempo, each 25 % quieter and half as long as the note: the classic lilting echo."
+EchoOn = On
+Repeats = 4
+EchoSync = Song tempo
+EchoRate = 1/8
+EchoFeel = Dotted
+EchoDrop = 25
+EchoStep = 0
+EchoLen = 50
+
+preset "Echo — Rising Fifths"
+comment "Five repeats an eighth apart, each a fifth above the one before and a little quieter: a shimmering climb that runs off the top of the keyboard."
+EchoOn = On
+Repeats = 5
+EchoSync = Song tempo
+EchoRate = 1/8
+EchoFeel = Straight
+EchoDrop = 15
+EchoStep = 7
+EchoLen = 70
+
+preset "Velocity — Hard Hitter"
+comment "The curve pushed fully hard and the quietest note raised to 100: every note, even a soft one, hits loud and bright."
+VelOn = On
+VelCurve = 100
+OutMin = 100
+OutMax = 127
+
+preset "Velocity — Soft Touch"
+comment "The curve pushed fully soft and the loudest note held to 55: every note, even a hard one, comes out gentle and dark."
+VelOn = On
+VelCurve = -100
+OutMin = 1
+OutMax = 55
+
+preset "Length — Staccato"
+comment "Every note lasts a thirty-second note at the song's tempo, however long it was held: short, dry, clipped."
+LenOn = On
+LenMode = Fixed
+LenSync = Song tempo
+LenRate = 1/32
+LenFeel = Straight
+
+preset "Humanize — Loose Player"
+comment "Each hit late by up to 40 ms and 25 % louder or softer at random (seed 3), the velocity a little uneven too: a sloppy, human hand. Keep chords is on: a chord is late as one, its notes only a few ms apart, so it stays a chord."
+HumOn = On
+HumTime = 40
+HumVel = 25
+Seed = 3
+HumChord = On
+VelOn = On
+VelRandom = 20

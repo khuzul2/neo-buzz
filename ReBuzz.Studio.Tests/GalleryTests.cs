@@ -26,6 +26,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using BuzzGUI.Common;
 using BuzzGUI.Common.InterfaceExtensions;
+using BuzzGUI.Common.Presets;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.AudioLibrary.AudioToMidi;
 using ReBuzz.Audio;
@@ -2526,6 +2527,22 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "660-neo-mallet-editor", "Neo Mallet with the Church Bell preset: the Bell model picker and its mode drawing (a line per mode on a log axis, height = gain at the strike position), then Exciter, Decay and damping, Tremolo and Output.", "Add Neo Mallet, load Church Bell, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
+                // KEY1: Neo Keys with the Bark Drive preset's values set before the editor opens: the pickup's curve and its harmonics, the hammer, the damper, the preamp.
+                Try("662-neo-keys-editor", () =>
+                {
+                    var m = Add("Neo Keys", "Keys");
+                    string[] names = { "Model", "Hardness", "Touch", "Velocity curve", "Pickup", "Bar and body", "Pickup select", "Decay", "Release", "Mute", "Key noise", "Drive", "Tone", "Tremolo rate", "Tremolo depth", "Auto-pan", "Volume" };
+                    int[] raws = { 0, 582, 800, 575, 880, 340, 2, 654, 501, 0, 380, 433, 460, 600, 0, 0, 683 };
+                    var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                    for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "662-neo-keys-editor", "Neo Keys with the Bark Drive preset: the Model and pickup section with the pickup's flux curve and the harmonics it makes of a hard note, then Hammer, Decay and damper, Preamp, Tremolo and Output.", "Add Neo Keys, load Bark Drive, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
                 // CU6a: Neo Envelope's editor with the new Velocity depth in its Output section (Note mode, a snappy pluck shape, Velocity at 70 %).
                 Try("661-neo-envelope-editor", () =>
                 {
@@ -2638,6 +2655,31 @@ namespace ReBuzz.Studio.Tests
                     Dispatcher.UIThread.RunJobs();
                     Wait(200);
                     Shot(editor!, "660-neo-chord-editor", "Neo Chord: the chord type and Mode on top (Diatonic, in C major with seventh chords), the keyboard lit with the chord sent for a held G (G7 voiced Drop 2 over a bass G), then Voicing, Velocity and Strum (up over 200 ms).", "Add Neo Chord, set Mode to Diatonic, play a note into it, open its editor");
+                    Core.UiHost.CloseWindows(m);
+                });
+                Try("662-neo-notes-editor", () =>
+                {
+                    var m = Add("Neo Notes", "Notes");
+                    void Set(string name, int raw) => m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Every section on: Natural minor in C (the notes moved to the nearest scale note), Up-down octaves over two octaves, a hard curve, a Clamp length, a dotted eighth
+                    // echo of four repeats and a little humanize. E, G and B are played through the machine's Work, as the host calls it, so that the strip shows what it sent.
+                    Set("Scale", 1); Set("Scale type", 2);
+                    Set("Spread", 1); Set("Range", 2); Set("Pattern", 2);
+                    Set("Velocity", 1); Set("Curve", 800);
+                    Set("Length", 1); Set("Mode", 2);
+                    Set("Echo", 1); Set("Repeats", 4); Set("Echo feel", 1);
+                    Set("Humanize", 1); Set("Humanize time", 12);
+                    var inst = m.ManagedMachine!;
+                    foreach (int note in new[] { 64, 67, 71 }) inst.GetType().GetMethod("MidiNote")!.Invoke(inst, new object[] { 0, note, 100 });
+                    var work = inst.GetType().GetMethod("Work")!;
+                    var output = new Buzz.MachineInterface.Sample[256];
+                    for (int b = 0; b < 40; b++) work.Invoke(inst, new object[] { output, 256, Buzz.MachineInterface.WorkModes.WM_WRITE });
+                    Core.UiHost.OpenGui(m, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(m);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "662-neo-notes-editor", "Neo Notes with every section on (the notes E, G and B held): the keyboard strip with the notes held above and the notes sent below (moved into C minor, spread over octaves), then Transpose, Scale, Spread, Velocity, Length, Echo and Humanize, each with its On switch.", "Add Neo Notes, switch its sections on, play notes into it, open its editor");
                     Core.UiHost.CloseWindows(m);
                 });
                 // CHP1: Neo Chop's editor with a preset loaded (the values are set before the editor opens): the mode row with the stutter lit,
@@ -2777,6 +2819,27 @@ namespace ReBuzz.Studio.Tests
                         ReBuzz.Studio.Parameters.ParameterVisibility.FilePath = null;
                         ReBuzz.Studio.Parameters.ParameterVisibility.Reset();
                         try { System.IO.File.Delete(hiddenFile); } catch (System.IO.IOException) { }
+                    }
+                });
+                Try("498-presets-dialog", () =>
+                {
+                    var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Dye Essence");
+                    var factory = m.GetPresetNames().Where(n => n != "<default>").Take(6).ToList();
+                    m.SetPreset("My bright lead", new Preset(m, false, true) { Comment = "Mine: saved from the Presets dialog." });
+                    m.SetPreset(factory[2], new Preset(m, false, true) { Comment = "My copy of a factory preset; deleting it brings the factory one back." });
+                    var w = new ReBuzz.Studio.Parameters.PresetsWindow(m);
+                    try
+                    {
+                        w.Show();
+                        w.Select("My bright lead");
+                        Settle();
+                        Shot(w, "498-presets-dialog", "The Presets dialog (PRS1): the factory presets from Gear and the user's own from the settings folder, together; the user's are marked User. Delete is for the user's only (a factory preset can't be deleted); a user copy of a factory preset stands in for it until it is deleted.", "Device panel ▸ Presets ▸ Presets…");
+                    }
+                    finally
+                    {
+                        w.Close();
+                        m.SetPreset("My bright lead", null);
+                        m.SetPreset(factory[2], null);
                     }
                 });
                 Try("457-inspector-macros-and-pins", () =>

@@ -6392,6 +6392,125 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Keys": {
+   "gear": "Neo Keys",
+   "kind": "generator",
+   "load_seconds": 0.41,
+   "gear_info": {
+    "file": "Generators/Neo Keys.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 17,
+   "track_parameters": 0,
+   "inferred": 17,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 17,
+    "of": 17
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 1.6,
+    "heard": {
+     "A4": 69.01,
+     "A3": 57.02,
+     "A5": 81.01
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -36.6,
+     "2": -33.9,
+     "4": -30.9,
+     "8": -28.1
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -37.1,
+    "sample_peak_dbfs": -23.51,
+    "true_peak_dbtp": -23.51
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -23.51,
+     "growth_db": -15.6,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -1.01,
+      "growth_db": -36.52,
+      "verdict": "ok"
+     }
+    }
+   },
+   "envelope": {
+    "peak_db": -30.4,
+    "attack_s": 0.005,
+    "final_db": -29.44,
+    "half_s": 0.53,
+    "length_s": 2.0,
+    "length_past_window": true,
+    "release_s": 0.085,
+    "release_past_window": false,
+    "bright_mid_hz": 448.7,
+    "bright_early_hz": 785.2,
+    "bright_late_hz": 440.6,
+    "level_wobble_db": 0.0,
+    "bright_wobble": 0.008,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 24.38,
+    "db_per_doubling": 8.12,
+    "curve": "steeper than linear (velocity squared or a dB curve)",
+    "levels_db": {
+     "16": -51.17,
+     "32": -43.2,
+     "64": -35.44,
+     "127": -26.79
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 4.127,
+    "silent_ms_per_s": 3.412,
+    "silent_worst_ms_per_s": 3.466,
+    "windows_ms_per_s": [
+     4.127,
+     3.215,
+     3.218,
+     3.099,
+     3.012,
+     3.466,
+     3.457,
+     3.452,
+     3.424,
+     3.412,
+     3.261
+    ]
+   },
+   "seconds": 1.6,
+   "platform": "linux",
+   "date": "2026-11-27",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Learn Additive": {
    "gear": "Neo Learn Additive",
    "kind": "generator",
@@ -14792,6 +14911,39 @@
    "hot": [],
    "notes_profiler": [
     "a note machine (notes in, chords out): it makes no audio, so there is no audio test; written by hand from the manifest, not by the profiler"
+   ],
+   "generated": false,
+   "health": "ok"
+  },
+  "Neo Notes": {
+   "gear": "Neo Notes",
+   "kind": "generator",
+   "no_output": true,
+   "load_seconds": 0.3,
+   "gear_info": {
+    "file": "Generators/Neo Notes.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 37,
+   "track_parameters": 0,
+   "inferred": 37,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 37,
+    "of": 37
+   },
+   "type": "control",
+   "seconds": 0.0,
+   "platform": "linux",
+   "date": "2026-11-27",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "a note machine (notes in, changed notes out): it makes no audio, so there is no audio test; written by hand from the manifest, not by the profiler"
    ],
    "generated": false,
    "health": "ok"

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Notes, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoNotes</NeoFolder>
+    <NeoName>Neo Notes</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+  <ItemGroup>
+    <!-- The scale table is Neo Chord's (docs/specs/neo-notes.md §3): shared as source, not copied. -->
+    <Compile Include="$(M)NeoChord\Engine\ChordTheory.cs" Link="Shared\Chord\ChordTheory.cs" />
+  </ItemGroup>
+</Project>
