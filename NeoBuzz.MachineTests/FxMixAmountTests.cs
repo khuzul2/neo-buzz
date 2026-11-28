@@ -86,13 +86,13 @@ namespace NeoBuzz.MachineTests
                 Make = v => { var e = new NeoBuzz.Eq.EqEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => x.Latency); },
                 Active = v => { Set(v, "B2Gain", 6); Set(v, "B3Gain", -5); Set(v, "B5Gain", 5); },
                 Variants = new (string, Action<ParamValues>)[] { ("linear phase", v => SetRaw(v, "Phase", 1)) } },
-            new Case { Name = "Neo Ensemble", Table = NeoBuzz.Ensemble.Params.Table, OwnMix = true, PeakLimit = 6,
+            new Case { Name = "Neo Ensemble", Table = NeoBuzz.Ensemble.Params.Table, OwnMix = true, PeakLimit = 6, AfterAmount = 1,   // SYN1: the Feel, appended
                 Make = v => { var e = new NeoBuzz.Ensemble.EnsembleEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => x.Latency); },
                 Active = v => { Set(v, "Depth", 0.5); Set(v, "Feedback", 40); } },
             new Case { Name = "Neo Exciter", Table = NeoBuzz.Exciter.Params.Table, PeakLimit = 6,
                 Make = v => { var e = new NeoBuzz.Exciter.ExciterEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => NeoBuzz.Exciter.ExciterEngine.Latency); },
                 Active = v => { Set(v, "Amount4", 0.6); Set(v, "Amount3", 0.3); Set(v, "Drive", 12); } },
-            new Case { Name = "Neo Filter", Table = NeoBuzz.Filter.Params.Table, OwnMix = true, PeakLimit = 12, AfterAmount = 3,
+            new Case { Name = "Neo Filter", Table = NeoBuzz.Filter.Params.Table, OwnMix = true, PeakLimit = 12, AfterAmount = 4,   // + the LFO Feel (SYN1)
                 Make = v => { var e = new NeoBuzz.Filter.FilterEngine(v); e.SetSampleRate(Measure.Rate); return R(e, (x, l, r, n) => x.Process(l, r, n), x => x.Latency); },
                 Active = v => { SetRaw(v, "Type", 0); Set(v, "Cutoff", 900); Set(v, "Resonance", 0.7); },
                 // A low-pass filter takes energy out: how much, in dB.
