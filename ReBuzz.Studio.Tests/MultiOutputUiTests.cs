@@ -72,22 +72,26 @@ namespace ReBuzz.Studio.Tests
                 var (multi, chain) = Scene(view, wire: false);
                 for (int k = 0; k < 3; k++)
                 {
-                    // The view may still be settling its pan and zoom after the machines were added (slower on a runner): wait until the points stand still.
-                    Point from = default, to = default, last = new Point(double.NaN, double.NaN);
-                    for (int tries = 0; tries < 50 && from != last; tries++)
+                    // The view may still be settling its pan and zoom after the machines were added (slower on a runner): move the pointer to
+                    // where the dot is now until the canvas itself says it is over that output, then drag from there.
+                    Point from = default, to = default;
+                    string overDot = $"output {k + 1} of 3", hovered = null;
+                    for (int tries = 0; tries < 50; tries++)
                     {
-                        last = from;
                         Settle();
-                        Thread.Sleep(20);
                         from = view.FromCanvas(view.Canvas.OutPortOf(multi, k), window);
                         to = view.PointOf(chain[k], window);
+                        window.MouseMove(from);
+                        Settle();
+                        hovered = view.Canvas.HoverTip;
+                        if (hovered != null && hovered.Contains(overDot)) break;
+                        Thread.Sleep(20);
                     }
-                    window.MouseMove(from);         // the pointer is over the port, and the canvas has seen it, before the button goes down
-                    Settle();
+                    Assert.That(hovered, Does.Contain(overDot), $"the pointer at {from} is over output {k + 1}'s dot");
                     Drag(window, from, to);
                     Settle();
                     Assert.That(multi.Outputs.Any(o => o.Destination == chain[k] && o.SourceChannel == k), Is.True,
-                        $"output {k + 1} to {chain[k].Name}: dragged from {from} to {to}; the song has {Wires()}; hover: {view.Canvas.HoverTip}");
+                        $"output {k + 1} to {chain[k].Name}: dragged from {from} to {to}; the song has {Wires()}; hover: {view.Canvas.HoverTip}; refusal: {view.Canvas.Refusal}");
                 }
                 Assert.That(multi.Outputs.Where(o => o.Destination.Name != "Master").OrderBy(o => o.SourceChannel).Select(o => (o.SourceChannel, o.Destination.Name)),
                     Is.EqualTo(new[] { (0, chain[0].Name), (1, chain[1].Name), (2, chain[2].Name) }), "each wire starts at the port it was dragged from");
