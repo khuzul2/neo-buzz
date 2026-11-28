@@ -73,9 +73,11 @@ namespace ReBuzz.Studio.Tests
                 {
                     var from = view.FromCanvas(view.Canvas.OutPortOf(multi, k), window);
                     var to = view.PointOf(chain[k], window);
+                    window.MouseMove(from);         // the pointer is over the port, and the canvas has seen it, before the button goes down
+                    Settle();
                     Drag(window, from, to);
+                    Settle();
                 }
-                Settle();
                 Assert.That(multi.Outputs.Where(o => o.Destination.Name != "Master").OrderBy(o => o.SourceChannel).Select(o => (o.SourceChannel, o.Destination.Name)),
                     Is.EqualTo(new[] { (0, chain[0].Name), (1, chain[1].Name), (2, chain[2].Name) }), "each wire starts at the port it was dragged from");
 
