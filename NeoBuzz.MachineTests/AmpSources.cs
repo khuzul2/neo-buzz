@@ -93,6 +93,28 @@ namespace NeoBuzz.MachineTests
             for (int i = 0; i < note.Length && at + i < dst.Length; i++) dst[at + i] += note[i] * gain;
         }
 
+        /// <summary>The source each factory preset is judged on (the listening pack's own): chords, a riff or a bass line, peaks at -12 dBFS.</summary>
+        public static float[] ForPreset(string preset, double seconds)
+        {
+            if (preset.StartsWith("Bass")) return Bass(seconds);
+            if (preset.StartsWith("Clean") || preset == "Crunch — Edge of Breakup") return Chords(seconds);
+            return Riff(seconds);
+        }
+
+        /// <summary>The loudest 400 ms RMS of a render, in dBFS (windows every 50 ms).</summary>
+        public static double Loudest400Db(float[] y)
+        {
+            int win = (int)(0.4 * Rate), hop = (int)(0.05 * Rate);
+            double best = 0;
+            for (int at = 0; at + win <= y.Length; at += hop)
+            {
+                double a = 0;
+                for (int i = at; i < at + win; i++) a += y[i] * (double)y[i];
+                best = Math.Max(best, a / win);
+            }
+            return 10 * Math.Log10(best + 1e-24);
+        }
+
         static double Midi(int m) => 440.0 * Math.Pow(2.0, (m - 69) / 12.0);
 
         /// <summary>A guitar line of chords (open power chords and triads with a short strum) of the given length; peaks about −12 dBFS.</summary>

@@ -844,6 +844,33 @@ namespace NeoBuzz.MachineTests
             return acc;
         }
 
+        /// <summary>
+        /// The factory presets are levelled to one loudness on the listening pack's own sources (plucked chords, riff, bass line, peaks at -12 dBFS):
+        /// the loudest 400 ms RMS of each is within 1.5 dB of -18 dBFS and no peak reaches -1 dBFS, so a jump from one preset to the next is not
+        /// a jump in volume.
+        /// </summary>
+        [Test]
+        public void FactoryPresetsAreLevelledToOneLoudnessOnTheirSources()
+        {
+            const double target = -18.0;
+            var problems = new List<string>();
+            var cache = new Dictionary<string, float[]>();
+            foreach (var p in PresetTests.AllPresets().Where(p => p.Machine == "Neo Amp"))
+            {
+                var v = new ParamValues(Params.Table);
+                foreach (var kv in p.Values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                string kind = p.Preset.StartsWith("Bass") ? "bass" : (p.Preset.StartsWith("Clean") || p.Preset == "Crunch — Edge of Breakup") ? "chords" : "riff";
+                if (!cache.TryGetValue(kind, out var x)) cache[kind] = x = AmpSources.ForPreset(p.Preset, 15.0);
+                var y = Run(Engine(v), x);
+                double loud = AmpSources.Loudest400Db(y), peak = Db(Measure.Peak(y, 0, y.Length));
+                double output = v.Value(P.Output);
+                Measure.Report($"Neo Amp level {p.Preset}: loudest 400 ms {loud:0.00} dBFS RMS, peak {peak:0.0} dBFS, Output {output:0.0} dB");
+                if (Math.Abs(loud - target) > 1.5) problems.Add($"{p.Preset} loudest 400 ms RMS {loud:0.0} dBFS");
+                if (peak >= -1.0) problems.Add($"{p.Preset} peak {peak:0.0} dBFS");
+            }
+            Assert.That(problems, Is.Empty, string.Join("; ", problems));
+        }
+
         [Test]
         public void EightPresetsAreClearlyDifferentAndClearlyAudibleOnFullScaleMaterial()
         {
@@ -860,7 +887,8 @@ namespace NeoBuzz.MachineTests
                 double rms = Db(Rms(y, Rate, y.Length - Rate)), peak = Db(Measure.Peak(y, 0, y.Length));
                 Measure.Report($"Neo Amp preset {p.Preset}: {rms:0.0} dB RMS, peak {peak:0.0} dBFS on a riff at -1 dBFS");
                 Assert.That(rms, Is.InRange(-30.0, -6.0), $"{p.Preset} is audible and not too loud");
-                Assert.That(peak, Is.LessThan(0.0), $"{p.Preset} does not clip");
+                // A clean preset levelled for a -12 dBFS DI is loud on a DI at -1 dBFS (the output is float, so nothing clips in the machine): 6 dB of headroom is the bound.
+                Assert.That(peak, Is.LessThan(6.0), $"{p.Preset} stays within 6 dB over full scale");
                 Assert.That(y.All(float.IsFinite), Is.True);
                 renders[p.Preset] = y;
                 shapes[p.Preset] = ThirdOctaves(y);

@@ -71,10 +71,10 @@ namespace NeoBuzz.MachineTests
             log.AppendLine("- **chords**: eight bars of E, A, D and G chords, strummed;");
             log.AppendLine("- **riff**: a single-note riff on the low strings, palm-muted eighths and a few long notes;");
             log.AppendLine("- **bass**: a bass line an octave and more lower.");
-            log.AppendLine("Every file: 48 kHz, 16-bit, mono WAV (the amp and cabinet are mono), the machine at one factory preset with Quality 4x. Click detector (second difference against its local mean, `ClickDetector.Find`) on every file: the clicks of the dry source are not counted.");
+            log.AppendLine("Every file: 48 kHz, 16-bit, mono WAV (the amp and cabinet are mono), the machine at one factory preset with Quality 4x, levelled so that the loudest 400 ms of every file is about -18 dBFS RMS. Click detector (second difference against its local mean, `ClickDetector.Find`) on every file: the clicks of the dry source are not counted.");
             log.AppendLine();
-            log.AppendLine("| File | Preset | Source | What to listen for | Peak | RMS | Clicks |");
-            log.AppendLine("|---|---|---|---|---|---|---|");
+            log.AppendLine("| File | Preset | Source | What to listen for | Peak | RMS | Loudest 400 ms RMS | Clicks |");
+            log.AppendLine("|---|---|---|---|---|---|---|---|");
             int index = 0, clicksTotal = 0;
             foreach (var p in PresetTests.AllPresets().Where(p => p.Machine == "Neo Amp"))
             {
@@ -90,7 +90,7 @@ namespace NeoBuzz.MachineTests
                 for (int i = 0; i < Length; i++) { pk = Math.Max(pk, Math.Abs(y[i])); sq += (double)y[i] * y[i]; }
                 string file = $"{index:00}-{Slug(p.Preset)}.wav";
                 WriteWav(Path.Combine(dir, file), y);
-                log.AppendLine($"| {file} | {p.Preset} | {names[x]} | {Comments.GetValueOrDefault(p.Preset, "")} | {20 * Math.Log10(pk):0.0} dBFS | {10 * Math.Log10(sq / Length):0.0} dBFS | {clicks.Count}{(clicks.Count > 0 ? " at " + string.Join(", ", clicks.Take(6).Select(c => $"{c / (double)Rate:0.000} s")) : "")} |");
+                log.AppendLine($"| {file} | {p.Preset} | {names[x]} | {Comments.GetValueOrDefault(p.Preset, "")} | {20 * Math.Log10(pk):0.0} dBFS | {10 * Math.Log10(sq / Length):0.0} dBFS | {AmpSources.Loudest400Db(y):0.0} dBFS | {clicks.Count}{(clicks.Count > 0 ? " at " + string.Join(", ", clicks.Take(6).Select(c => $"{c / (double)Rate:0.000} s")) : "")} |");
             }
             log.AppendLine();
             log.AppendLine($"Click detector, all files: {clicksTotal} new clicks.");

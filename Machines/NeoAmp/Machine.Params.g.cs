@@ -46,7 +46,7 @@ namespace NeoBuzz.Amp
         [ParameterDecl(Name = "Master", Description = "How hard the power stage is driven", MinValue = 0, MaxValue = 1000, DefValue = 600)]
         public int Master { get => Values[P.Master]; set => Values.Set(P.Master, value); }
 
-        [ParameterDecl(Name = "Quality", Description = "Oversampling", MinValue = 0, MaxValue = 2, DefValue = 1)]
+        [ParameterDecl(Name = "Quality", Description = "Oversampling; 4× is the default, 2× is a low-CPU mode that aliases more (about 65 dB down at full gain), 8× is the cleanest", MinValue = 0, MaxValue = 2, DefValue = 1)]
         public int Quality { get => Values[P.Quality]; set => Values.Set(P.Quality, value); }
 
         [ParameterDecl(Name = "Cabinet", Description = "The speaker cabinet: six made by our own code, Off, or the song's wave as the cabinet", MinValue = 0, MaxValue = 7, DefValue = 3)]

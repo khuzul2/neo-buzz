@@ -17,6 +17,7 @@ Master = 35
 Cabinet = Open 1x12
 Mic position = 15
 Low cut = 80
+Output = 4.4
 
 preset "Clean — Warm Jazz"
 comment "A dark, round clean tone: the highs rolled well back, the lows full and the mids soft, like a big closed cabinet turned low; chords sit smooth and warm."
@@ -32,7 +33,7 @@ Master = 45
 Cabinet = Closed 2x12
 Mic position = 60
 High cut = 5500
-Output = 7
+Output = 14.5
 
 preset "Crunch — Edge of Breakup"
 comment "A clean amp that just starts to break up: soft chords stay open and picking hard gives a gritty bark; it reacts to how you play and cleans up when you ease off."
@@ -48,6 +49,7 @@ Master = 55
 Cabinet = Closed 2x12
 Mic position = 30
 Low cut = 70
+Output = 0.7
 
 preset "Crunch — Classic Rock"
 comment "A full, rough, medium-gain rock amp: thick mids, a rounded top and plenty of sag so power chords breathe and bloom; it is the sound of a loud amp pushed past its comfort."
@@ -63,6 +65,7 @@ Master = 70
 Cabinet = Closed 4x12
 Mic position = 25
 Gate = -70
+Output = -2.3
 
 preset "Lead — Singing Sustain"
 comment "A smooth, compressed lead tone with long sustain: notes bloom and hold, the top is softened so it sings instead of buzzing, and the mids push forward to cut through a band."
@@ -79,6 +82,7 @@ Cabinet = Closed 4x12
 Mic position = 40
 Gate = -65
 High cut = 7500
+Output = -2.7
 
 preset "High Gain — Tight Rhythm"
 comment "A tight, heavy rhythm tone: scooped mids, a clipped low end that stays clear when you chug, a sharp top and a noise gate that shuts between notes."
@@ -96,6 +100,7 @@ Mic position = 20
 Gate = -55
 Gate release = 60
 Low cut = 90
+Output = -4.7
 
 preset "Bass — Round Clean"
 comment "A deep, round, clean bass: full lows from a big single speaker, a soft top and a little compression from the power stage so every note sits at an even level."
@@ -111,7 +116,7 @@ Master = 45
 Cabinet = Bass 1x15
 Mic position = 40
 High cut = 6500
-Output = 2
+Output = 7.9
 
 preset "Bass — Growl"
 comment "An overdriven bass with a rough, vocal growl: the lows stay solid under a snarling upper midrange, from a stack of small speakers that make it bark."
@@ -126,4 +131,4 @@ Resonance = 45
 Master = 65
 Cabinet = Bass 4x10
 Mic position = 20
-Output = -8
+Output = -9.2

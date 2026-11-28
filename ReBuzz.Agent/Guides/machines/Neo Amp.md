@@ -41,7 +41,7 @@ A guitar or bass amp for a DI signal: noise gate, preamp, tone stack, power stag
 - A DI that is too hot overdrives the first stage: lower `Trim`, not `Gain`, when a clean tone breaks up too soon.
 - With `Cabinet` on Wave the song saves the wave, not the machine: the slot must hold a short impulse response (up to 250 ms is used). An empty slot plays the closed 4x12 and the editor says so.
 - High `Gain` raises hiss: use `Gate` (about -60 dB) and a `Gate release` of 60-150 ms for tight rhythm.
-- `Quality` 2x is the cheapest and aliases most on high notes at the highest gain; 4x is the default; 8x is for solo notes at full gain.
+- `Quality` 4x is the default. 2x is a low-CPU mode that aliases more (about 65 dB down on a high note at full gain, against 77 dB at 4x); 8x is the cleanest, for solo notes at full gain.
 - The tuner mutes the sound: switch it off again before you play the part.
 - The latency (what the host compensates) is the oversampler's, 62 samples, at every quality.
 

@@ -45,7 +45,7 @@ Resonance  "Resonance"    0 1000 300 pct                          | Feedback she
 Master     "Master"       0 1000 600 pct                          | How hard the power stage is driven
     how Sets how hard the power stage is driven; the level is made up so it mostly changes the character, not the volume.
     sound Low values stay clean and open, high values add the warm compression and grit of a power amp pushed into saturation.
-Quality    "Quality"      0 2 1      enum 2× 4× 8×                | Oversampling
+Quality    "Quality"      0 2 1      enum 2× 4× 8×                | Oversampling; 4× is the default, 2× is a low-CPU mode that aliases more (about 65 dB down at full gain), 8× is the cleanest
     how Chooses the oversampling of the whole amp: 2x, 4x or 8x, with anti-aliasing curves.
     sound Higher settings keep the distortion of high notes clean and free of aliasing but cost more processing power.
 group Cabinet

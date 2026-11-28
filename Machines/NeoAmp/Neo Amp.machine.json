@@ -231,7 +231,7 @@
     "4×",
     "8×"
    ],
-   "description": "Oversampling",
+   "description": "Oversampling; 4× is the default, 2× is a low-CPU mode that aliases more (about 65 dB down at full gain), 8× is the cleanest",
    "how": "Chooses the oversampling of the whole amp: 2x, 4x or 8x, with anti-aliasing curves.",
    "sound": "Higher settings keep the distortion of high notes clean and free of aliasing but cost more processing power."
   },
