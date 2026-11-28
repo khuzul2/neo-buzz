@@ -324,6 +324,13 @@ namespace NeoBuzz.MachineTests
             var b = PhysNote(new DyeExciterMap(dyeExciter), set, 52, Rate);
             // The morph's bow stands lower than Dye's own (0.45 against 0.7 rms, so the crossfade keeps one loudness): the same noise, scaled.
             if (dyeExciter == 2) for (int i = 0; i < b.Length; i++) b[i] *= 0.45f / 0.7f;
+            // The morph's mallet is levelled by what it rings (and louder for a harder key, notes.md section 8, CU6b): it is Dye's mallet or pick at its own level, so the gain is fitted.
+            if (dyeExciter < 2)
+            {
+                double ab = 0, bb = 1e-30;
+                for (int i = 0; i < a.Length; i++) { ab += (double)a[i] * b[i]; bb += (double)b[i] * b[i]; }
+                for (int i = 0; i < b.Length; i++) b[i] *= (float)(ab / bb);
+            }
             double diff = DiffDb(a, b);
             Measure.Report($"Neo Learn Physical, {name}: morph vs Dye's own exciter, difference {diff:F1} dB");
             Assert.That(Measure.Rms(a, 0, Rate), Is.GreaterThan(0.003), "it sounds");

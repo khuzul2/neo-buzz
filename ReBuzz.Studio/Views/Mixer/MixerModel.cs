@@ -50,6 +50,12 @@ namespace ReBuzz.Studio.Views.Mixer
         public IReadOnlyList<string> MemberIds { get; init; } = Array.Empty<string>();
 
         public string ParentId { get; init; }
+
+        /// <summary>
+        /// Fork (docs/specs/multi-output.md): an <see cref="StripKind.Output"/> strip's wire: the extra output of a machine with several that is wired
+        /// somewhere. The strip's fader, pan, mute and solo are the wire's own; <see cref="Machine"/> is the wire's source (its colour, its selection).
+        /// </summary>
+        public IMachineConnection Wire { get; init; }
     }
 
     internal sealed class MixerModel
@@ -101,6 +107,31 @@ namespace ReBuzz.Studio.Views.Mixer
 
             int CountTracks(TrackEntry e) => e.Kind == TrackKind.Track ? 1 : e.Members.Sum(CountTracks);
 
+            // Fork (docs/specs/multi-output.md): the extra outputs of the machines of a strip that are wired somewhere, a strip each, right after it.
+            var returnSet = new HashSet<IMachine>(ReturnsOf(core));
+            void EmitOutputs(StripSpec of)
+            {
+                var machines = new List<IMachine>();
+                if (of.Machine != null) machines.Add(of.Machine);
+                machines.AddRange(of.Inserts.Where(m => m != null && !machines.Contains(m)));
+                foreach (var m in machines)
+                {
+                    var wires = SessionMixer.ExtraOutputs(doc, m, returnSet);
+                    foreach (var wire in wires)
+                    {
+                        string output = m.GetChannelName(false, wire.SourceChannel);
+                        if (string.IsNullOrWhiteSpace(output)) output = "Output " + (wire.SourceChannel + 1);
+                        bool shared = wires.Count(w => w.SourceChannel == wire.SourceChannel) > 1;
+                        strips.Add(new StripSpec
+                        {
+                            Kind = StripKind.Output, Id = "output:" + m.Name + ">" + wire.Destination.Name, Machine = m, Wire = wire,
+                            Name = m.Name + " · " + output, Depth = of.Depth, ParentId = of.Id,
+                            Subtitle = (shared ? "output → " + wire.Destination.Name : "output " + (wire.SourceChannel + 1)) + " of " + m.OutputChannelCount,
+                        });
+                    }
+                }
+            }
+
             void Emit(TrackEntry e)
             {
                 if (!seen.Add(e)) return;
@@ -116,6 +147,7 @@ namespace ReBuzz.Studio.Views.Mixer
                         Inserts = e.Machines.Select(M).Where(m => m != null).ToList(),
                         MemberIds = e.Members.Select(x => x.Id).ToList(), ParentId = e.Parent?.Id,
                     });
+                    EmitOutputs(strips[^1]);
                     return;
                 }
                 if (e.Kind == TrackKind.Track)
@@ -126,6 +158,7 @@ namespace ReBuzz.Studio.Views.Mixer
                         Subtitle = e.Parent != null ? "track · in " + e.Parent.Name : "track",
                         Inserts = e.Machines.Skip(1).Select(M).Where(m => m != null).ToList(), ParentId = e.Parent?.Id,
                     });
+                    EmitOutputs(strips[^1]);
                 }
             }
 
@@ -143,6 +176,7 @@ namespace ReBuzz.Studio.Views.Mixer
                     Subtitle = "return " + ReturnLetter(r),
                     Inserts = (entry?.Machines.Select(M).Where(m => m != null).ToList() as IReadOnlyList<IMachine>) ?? new[] { returns[r] },
                 });
+                EmitOutputs(strips[^1]);
             }
 
             var master = song.Machines.FirstOrDefault(m => m.DLL?.Info?.Type == MachineType.Master);

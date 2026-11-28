@@ -3,7 +3,7 @@
 A teaching physical-modelling synth: one Dye Essence patch driven by 12 controls, so every control does something you can hear and the Explain strip says what. A bank of 32 resonating modes is excited by a mallet, a pick or a bow; the material, the body shape, how hard it is played, the damping and the size are the whole sound.
 
 - `Material` walks wood, nylon, glass, metal: stiffness, ring time and how fast the highs die. `Exciter Mode` crossfades mallet (0 %), pick (50 %) and bow or breath (100 %, sounding while the key is held).
-- `Strike / Pressure` is how hard: harder is brighter. `Geometry` blends the mode spacing from a string through an open tube and a bar to a plate.
+- `Strike / Pressure` is how hard: harder is brighter. Note velocity does the same per note, and the level rises with every step of velocity. `Geometry` blends the mode spacing from a string through an open tube and a bar to a plate.
 - `Damping` shortens the ring and mutes the upper modes first. `Body Size` moves the resonance: small is thin and bright, large is deep and dark.
 - Each control has a How and a Sound sentence: `machine_describe` returns them with the id, and `param_set` takes the name or the id. 16 notes; no limiter.
 

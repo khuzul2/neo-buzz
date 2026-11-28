@@ -748,6 +748,13 @@ namespace ReBuzz.MachineManagement
                 GetMachineWorkInstance(machine);
         }
 
+        /// <summary>Fork (docs/specs/multi-output.md): the machine's output buffers made now, by the thread that changes a wire (see <see cref="MachineWorkInstance.PrepareOutputs"/>).</summary>
+        internal void PrepareOutputs(MachineCore machine)
+        {
+            if (machine != null && managedMachines.ContainsKey(machine))
+                GetMachineWorkInstance(machine).PrepareOutputs();
+        }
+
         internal MachineWorkInstance GetMachineWorkInstance(MachineCore machine)
         {
             if (workInstances.TryGetValue(machine, out MachineWorkInstance wi))

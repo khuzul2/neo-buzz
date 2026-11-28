@@ -1,6 +1,6 @@
 #nullable disable
 // Neo Sampler (docs/specs/machines.md §5): plays the song's waves (wavetable slots) and built-in
-// samples in 16 zones; Kit mode makes it a drum machine. 16 tracks of Note and Velocity, plus MIDI.
+// samples in 16 zones; Kit mode makes it a drum machine. 32 tracks of Note and Velocity, plus MIDI.
 // (docs/specs/mcp-server.md §12.5).
 // DSP in Engine/, the wavetable's waves in through WaveSource.cs, parameters generated from
 // Params.def, editor in NeoSamplerEditor.cs.
@@ -16,7 +16,7 @@ using NeoBuzz.Machine;
 
 namespace NeoBuzz.Sampler
 {
-    [MachineDecl(Name = "Neo Sampler", ShortName = "Sampler", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
+    [MachineDecl(Name = "Neo Sampler", ShortName = "Sampler", Author = "neo-buzz", MaxTracks = 32, InputCount = 0, OutputCount = 1)]
     public partial class NeoSamplerMachine : NeoSynthBase, IBuzzMachine, IDisposable, INoteSampleProvider
     {
         readonly float[] left = new float[SamplerEngine.MaxBlock], right = new float[SamplerEngine.MaxBlock];
@@ -319,7 +319,7 @@ namespace NeoBuzz.Sampler
                         "a loop with crossfade, gate or one-shot, reverse and a choke group; a slot's layers split the " +
                         "keys by root or alternate round robin. Kit mode puts zone n on key Kit base + n − 1 as a " +
                         "one-shot drum. Amp and filter envelopes, velocity to level and filter, pitch bend, 32 voices. " +
-                        "16 tracks (Note, Velocity) and MIDI.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Sampler"),
+                        "32 tracks (Note, Velocity) and MIDI.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Sampler"),
                 },
             },
         };

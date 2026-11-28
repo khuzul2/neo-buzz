@@ -212,15 +212,18 @@ namespace ReBuzz.Agent
                         Opt("offset", Integer("With a sample: where in it the note starts, in the sample's frames", 0, 8000000)),
                         Opt("tune", Integer("With a sample: tune in cents, 100 = a semitone", -2400, 2400)),
                         Opt("slide", Boolean("Slide flag: the note glides into its pitch from the note before it. Neo Poly glides at its Slide time, whatever its Slide mode but Never; other machines play it as a plain note. notes_read gives it back as true")),
+                        Opt("column", Integer("The Tracker note column pair notes_read gave the note (from 1): read-only, so a read can be written back unchanged; a note shows on the lowest pair free at its time", 1, BuzzGUI.Common.NoteColumns.Max)),
                         Opt("name", String("The pitch's name, as notes_read and theory give it (pitch decides)")),
                         Opt("midi_channel", Integer("MIDI channel 1–16, as notes_read gives it (written notes use channel 1)", 1, 16))), "The notes")),
                     Opt("mode", String("add (default), replace or replace_range", "add", "replace", "replace_range")),
                     Opt("range_start", Position("replace_range: from here (in the clip)")),
                     Opt("range_end", Position("replace_range: to here (exclusive)")),
                     Opt("input", String(MachineNotes.InputHelp, "midi", "tracks")),
-                    Opt("apply_pitch_offset", Boolean(MachineNotes.OffsetHelp))),
+                    Opt("apply_pitch_offset", Boolean(MachineNotes.OffsetHelp)),
+                    Opt("columns", Integer($"MIDI input: how many note column pairs the Tracker shows for the clip, 1–{BuzzGUI.Common.NoteColumns.Max} (chords: a chord of three notes sits across three pairs); saved with the clip, one undo step; refused while it would hide a note", 1, BuzzGUI.Common.NoteColumns.Max))),
                 Output = Object(null,
                     Opt("input", String("midi or tracks: how the machine gets them")),
+                    Opt("note_columns", Object("MIDI input: the Tracker's note column pairs for this clip", Req("shown", Integer("Pairs shown")), Opt("stored", Integer("The count saved with the clip")), Req("needed", Integer("Pairs the notes need at once")))),
                     Opt("pitch_offset", Integer("Semitones added on the way to the machine (its manifest's)")),
                     Req("written", Integer("Notes written")),
                     Req("removed", Integer("Notes cleared first")),
@@ -263,6 +266,11 @@ namespace ReBuzz.Agent
                         if (unique.Count < added.Count) problems.Add($"{added.Count - unique.Count} note(s) were already there and weren't doubled.");
                         problems.AddRange(NoteList.Clashes(existing.Except(removed).Concat(unique).OrderBy(n => n.Time).ToList(), tpb));
                         if (removed.Count > 0 || unique.Count > 0) MachineNotes.Replace(core, p, input, removed, unique, problems);
+                        if (c.Int("columns") is int columns)
+                        {
+                            if (input.Tracks) problems.Add("columns: this machine takes its notes in its tracks, a voice per track; the Tracker's note columns are for notes as MIDI.");
+                            else if (MachineNotes.SetColumns(core, p, columns) is string why) problems.Add("columns: " + why);
+                        }
                         var now = MachineNotes.Read(p, input);
                         if (now.Count > 0 && SongModel.Placements(core, p).Count == 0)
                             problems.Add($"\"{p.Name}\" isn't placed in the arrangement yet, so the song doesn't play it: arrangement_place(machine=\"{m.Name}\", clip=\"{p.Name}\", at=…).");
@@ -277,6 +285,7 @@ namespace ReBuzz.Agent
                             ["total"] = now.Count,
                             ["polyphony"] = NoteList.Polyphony(now),
                             ["summary"] = NoteList.Summary(now, tpb),
+                            ["note_columns"] = input.Tracks ? null : MachineNotes.ColumnsOf(p),
                             ["problems"] = new JsonArray(problems.Select(x => (JsonNode)x).ToArray()),
                         };
                     }, c.Cancellation);
@@ -303,7 +312,9 @@ namespace ReBuzz.Agent
                 Output = Object(null,
                     Opt("input", String("midi or tracks: where they were read")),
                     Opt("pitch_offset", Integer("Semitones taken off (the machine's manifest's)")),
-                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127")), Opt("sample", Integer("Tracker mode: the sample's number")), Opt("offset", Integer("Frames into the sample")), Opt("tune", Integer("Cents")), Opt("slide", Boolean("The note glides into its pitch (Slide flag)"))), "Notes")),
+                    Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127")), Opt("sample", Integer("Tracker mode: the sample's number")), Opt("offset", Integer("Frames into the sample")), Opt("tune", Integer("Cents")), Opt("slide", Boolean("The note glides into its pitch (Slide flag)")),
+                        Opt("column", Integer("MIDI input: the note column pair of the Tracker the note shows in (from 1; a note sits on the lowest pair free at its time)"))), "Notes")),
+                    Opt("note_columns", Object("MIDI input: the Tracker's note column pairs for this clip", Req("shown", Integer("Pairs shown")), Opt("stored", Integer("The count saved with the clip (absent: as many as the notes need and one free)")), Req("needed", Integer("Pairs the notes need at once")))),
                     Req("length_beats", Number("The clip's length"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -325,7 +336,8 @@ namespace ReBuzz.Agent
                             int to = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_end"], bpb, "range_end", "the clip start"), tpb);
                             notes = notes.Where(n => n.Time < to).ToList();
                         }
-                        return new JsonObject
+                        var json = new JsonArray(notes.Select(n => (JsonNode)NoteList.ToJson(n, tpb)).ToArray());
+                        var read = new JsonObject
                         {
                             ["machine"] = m.Name,
                             ["clip"] = p.Name,
@@ -333,8 +345,15 @@ namespace ReBuzz.Agent
                             ["input"] = input.Mode,
                             ["pitch_offset"] = input.Offset,
                             ["summary"] = NoteList.Summary(notes, tpb),
-                            ["notes"] = new JsonArray(notes.Select(n => (JsonNode)NoteList.ToJson(n, tpb)).ToArray()),
+                            ["notes"] = json,
                         };
+                        if (!input.Tracks)
+                        {
+                            // CU6b: the column pair of the tracker each note shows in, and how many pairs the clip shows.
+                            MachineNotes.AddColumns(json, notes, p, input);
+                            read["note_columns"] = MachineNotes.ColumnsOf(p);
+                        }
+                        return read;
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]} \"{r["clip"]}\" ({r["length_beats"]} beats): {r["summary"]}." + InputText(r), r);
                 },

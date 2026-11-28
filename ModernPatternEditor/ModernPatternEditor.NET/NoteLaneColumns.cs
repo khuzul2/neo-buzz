@@ -9,6 +9,7 @@
 
 using BuzzGUI.Common;
 using BuzzGUI.Common.Actions;
+using BuzzGUI.Common.Actions.ClipActions;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using WDE.ModernPatternEditor.ColumnRenderer;
@@ -43,6 +44,7 @@ namespace WDE.ModernPatternEditor
             this.vm = vm;
             this.clip = clip;
             clip.ColumnAdded += OnColumnAdded;
+            NoteColumnsAction.Changed += OnColumnsChanged;
             Attach(FindColumn(clip));
         }
 
@@ -51,6 +53,7 @@ namespace WDE.ModernPatternEditor
         public void Dispose()
         {
             clip.ColumnAdded -= OnColumnAdded;
+            NoteColumnsAction.Changed -= OnColumnsChanged;
             Attach(null);
         }
 
@@ -83,6 +86,14 @@ namespace WDE.ModernPatternEditor
                 Attach(c);
                 OnEventsChanged(null, true);
             }
+        }
+
+        /// <summary>The count of note columns of a clip changed (a click, the shortcut, an undo, the agent): this clip's lanes are laid out again.</summary>
+        void OnColumnsChanged(IClip changed)
+        {
+            if (!ReferenceEquals(changed, clip) && !(changed?.Machine?.Name == clip.Machine?.Name && changed?.Name == clip.Name)) return;
+            Attach(FindColumn(clip));
+            OnEventsChanged(null, true);
         }
 
         void OnEventsChanged(IEnumerable<ClipEvent> events, bool set)
@@ -119,11 +130,28 @@ namespace WDE.ModernPatternEditor
             }
         }
 
-        /// <summary>Whether the lanes are shown: the column holds notes, or the user asked for them.</summary>
-        public bool Visible => Forced || Lanes.NoteCount > 0;
+        /// <summary>Whether the lanes are shown: the column holds notes, or the user asked for them (the toolbar's Notes, or a count of note columns).</summary>
+        public bool Visible => Forced || StoredColumns != null || Lanes.NoteCount > 0;
 
-        /// <summary>The voices shown: those the notes need and a free one to type the next note in (none when the lanes are hidden).</summary>
-        public int ShownVoices => Visible ? Math.Min(Lanes.Voices + 1, 32) : 0;
+        /// <summary>The count of note+velocity column pairs stored with the clip's Notes lane (CU6b), or null: the clip shows as many as its notes need and a free one.</summary>
+        public int? StoredColumns => NoteColumns.Stored(column?.Metadata);
+
+        /// <summary>The voices (note+velocity column pairs) shown: the stored count, never fewer than the notes need; else those the notes need and a free one to type the next note in (none when the lanes are hidden).</summary>
+        public int ShownVoices => NoteColumns.Shown(StoredColumns, Lanes.Voices, Forced || Lanes.NoteCount > 0);
+
+        /// <summary>+ on the column header's menu: one more note+velocity pair, as one step of the song's history. Null when done, else why not.</summary>
+        public string AddColumn() => SetColumns(NoteColumns.Add(ShownVoices, out int count), count);
+
+        /// <summary>- on the column header's menu: one pair fewer, refused while it would hide a note. Null when done, else why not.</summary>
+        public string RemoveColumn() => SetColumns(NoteColumns.Remove(ShownVoices, Lanes, out int count), count);
+
+        string SetColumns(string refused, int count)
+        {
+            if (refused != null) return refused;
+            clip.Machine.Graph.Do(new NoteColumnsAction(clip, StoredColumns, count));
+            vm.Editor.SetModifiedFlag();
+            return null;
+        }
 
         /// <summary>One edit of the lanes as a step of the song's history; null when done (or nothing to do), else why not.</summary>
         public string Apply(NoteLaneEdit edit)

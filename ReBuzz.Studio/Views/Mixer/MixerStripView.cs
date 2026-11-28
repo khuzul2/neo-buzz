@@ -15,6 +15,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using BuzzGUI.Interfaces;
+using ReBuzz.Agent;
 using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using ReBuzz.Midi.Mapping;
@@ -114,8 +115,8 @@ namespace ReBuzz.Studio.Views.Mixer
         internal Control ColourMark => colourMark;
         internal IReadOnlyList<Button> InsertButtons => insertsPanel?.Children.OfType<Button>().Where(b => b.Tag is IMachine).ToList() ?? new List<Button>();
         internal Button AddEffectButton => insertsPanel?.Children.OfType<Button>().FirstOrDefault(b => b.Tag as string == "+ Effect");
-        internal bool IsOn => Machine == null || !Machine.IsMuted;
-        internal bool IsSoloLit => Machine?.IsSoloed == true;
+        internal bool IsOn => Spec.Wire is MachineConnectionCore wireOn ? !wireOn.Muted : Machine == null || !Machine.IsMuted;
+        internal bool IsSoloLit => Spec.Wire is MachineConnectionCore wireSolo ? wireSolo.Soloed : Machine?.IsSoloed == true;
         // The arm state is looked up over every track: it is kept until the layout says an input or the structure changed (forty strips ask forty times a second).
         bool armKnown, armCached;
         int armAge;
@@ -165,6 +166,7 @@ namespace ReBuzz.Studio.Views.Mixer
             Spec = spec;
             var opts = host.Options;
             bool master = spec.Kind == StripKind.Master;
+            bool output = spec.Kind == StripKind.Output;        // fork (docs/specs/multi-output.md): the strip of an extra output's wire
             bool full = density == MixerDensity.Full, header = density == MixerDensity.Header;
             AutomationProperties.SetName(this, $"{spec.Name} strip");
 
@@ -235,7 +237,7 @@ namespace ReBuzz.Studio.Views.Mixer
             }
 
             // Inserts: the machines of the track in signal order; click opens one in Detail ▸ Device, "+ Effect" puts one after the last.
-            if (full && opts.Inserts)
+            if (full && opts.Inserts && !output)
             {
                 insertsPanel = new StackPanel { Spacing = 3, Margin = new Thickness(8, 4, 8, 6) };
                 insertsPanel.Children.Add(Label("Inserts"));
@@ -267,7 +269,7 @@ namespace ReBuzz.Studio.Views.Mixer
                 ToolTip.SetTip(pan, "Pan: the pan of the machine's output connection(s)\ndrag or wheel · Shift for fine · double-click: centre");
                 AutomationProperties.SetName(pan, $"Pan of {spec.Name}");
                 WirePan();
-                Midi.MidiMap.SetTarget(pan, () => MapTarget.Mixer(MixerControl.Pan, Spec.Id));
+                if (!output) Midi.MidiMap.SetTarget(pan, () => MapTarget.Mixer(MixerControl.Pan, Spec.Id));
                 Row(pan);
             }
             else
@@ -284,10 +286,11 @@ namespace ReBuzz.Studio.Views.Mixer
             };
             ToolTip.SetTip(fader, master
                 ? "Master volume: the Master's Volume parameter, in dB\ndrag or wheel · Shift for fine · double-click: 0 dB"
+                : output ? "Volume: the amp of this output's wire, the same as in the Machine View\ndrag or wheel · Shift for fine · double-click: 0 dB"
                 : "Volume: the amp of the machine's output connection(s), the same as in the Machine View\ndrag or wheel · Shift for fine · double-click: 0 dB");
             AutomationProperties.SetName(fader, $"Volume of {spec.Name}");
             WireFader();
-            Midi.MidiMap.SetTarget(fader, () => master ? MapTarget.Mixer(MixerControl.Master) : MapTarget.Mixer(MixerControl.Volume, Spec.Id));
+            if (!output) Midi.MidiMap.SetTarget(fader, () => master ? MapTarget.Mixer(MixerControl.Master) : MapTarget.Mixer(MixerControl.Volume, Spec.Id));
             meter = new MeterBar { Width = full ? 14 : 11, MinHeight = fader.MinHeight, Margin = new Thickness(6, 0, 0, 0) };
             var faderRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 0) };
             faderRow.Children.Add(fader);
@@ -332,7 +335,7 @@ namespace ReBuzz.Studio.Views.Mixer
                     }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
                     crossRow.Children.Add(crossfader);
                 }
-                else if (spec.Machine != null)
+                else if (spec.Machine != null && !output)
                 {
                     (sideA, sideAText) = Chip("A", "Crossfader side A: the crossfader fades this track out towards B", () => ToggleSide("A"));
                     (sideB, sideBText) = Chip("B", "Crossfader side B: the crossfader fades this track out towards A", () => ToggleSide("B"));
@@ -356,15 +359,18 @@ namespace ReBuzz.Studio.Views.Mixer
                     AutomationProperties.SetName(armButton, $"Arm {spec.Name}");
                     buttons.Children.Add(armButton);
                 }
-                if (full || opts.Cue)
+                if ((full || opts.Cue) && !output)
                 {
                     (cueButton, cueText) = Chip("C", "Cue: also play this to the cue output (Session ⚙ → Cue output)", ToggleCue);
                     buttons.Children.Add(cueButton);
                 }
                 AutomationProperties.SetName(onButton, $"On {spec.Name}");
                 AutomationProperties.SetName(soloButton, $"Solo {spec.Name}");
-                Midi.MidiMap.SetTarget(onButton, () => MapTarget.Mixer(MixerControl.Mute, Spec.Id));
-                Midi.MidiMap.SetTarget(soloButton, () => MapTarget.Mixer(MixerControl.Solo, Spec.Id));
+                if (!output)
+                {
+                    Midi.MidiMap.SetTarget(onButton, () => MapTarget.Mixer(MixerControl.Mute, Spec.Id));
+                    Midi.MidiMap.SetTarget(soloButton, () => MapTarget.Mixer(MixerControl.Solo, Spec.Id));
+                }
             }
             Row(buttons);
             Child = grid;
@@ -550,7 +556,7 @@ namespace ReBuzz.Studio.Views.Mixer
                     else before = MixerEdits.WireSnapshot.Of(new[] { Spec.Machine });
                 }
                 if (Spec.Kind == StripKind.Master) Core.MasterVolume = SessionMixer.MasterGainOf(v);
-                else SessionMixer.SetAmp(Doc, Spec.Machine, SessionMixer.AmpOf(v), Returns);
+                else SetAmpNow(SessionMixer.AmpOf(v));
                 UpdateDbText();
                 if (wheel) End();
             };
@@ -565,9 +571,9 @@ namespace ReBuzz.Studio.Views.Mixer
             {
                 bool wheel = !pan.IsDragging;
                 before ??= MixerEdits.WireSnapshot.Of(new[] { Spec.Machine });
-                SessionMixer.SetPan(Doc, Spec.Machine, SessionMixer.PanValue(v * 2 - 1), Returns);
+                SetPanNow(SessionMixer.PanValue(v * 2 - 1));
                 // The text follows the drag, as the fader's does (not the next refresh).
-                int p = SessionMixer.GetPan(Doc, Spec.Machine, Returns);
+                int p = PanNow();
                 pan.ValueText = p >= 0 && density != MixerDensity.Header ? SessionMixer.FormatPan(p) : "";
                 if (wheel) End();
             };
@@ -604,15 +610,34 @@ namespace ReBuzz.Studio.Views.Mixer
         void ToggleOn()
         {
             if (Machine == null) return;
-            MixerEdits.SetMute(Core, Machine, !Machine.IsMuted);
+            if (Spec.Wire != null) AgentActions.SetWireFlag(Core, Spec.Wire, solo: false, on: IsOn);       // the wire's own mute: On now, so off
+            else MixerEdits.SetMute(Core, Machine, !Machine.IsMuted);
             Refresh();
         }
 
         void ToggleSolo()
         {
             if (Machine == null) return;
-            MixerEdits.SetSolo(Core, Machine, !Machine.IsSoloed);
+            if (Spec.Wire != null) AgentActions.SetWireFlag(Core, Spec.Wire, solo: true, on: !IsSoloLit);
+            else MixerEdits.SetSolo(Core, Machine, !Machine.IsSoloed);
             Refresh();
+        }
+
+        // Fork (docs/specs/multi-output.md): the strip of an extra output reads and writes its wire; the others, their machine's main outputs.
+        int AmpNow() => Spec.Wire != null ? Spec.Wire.Amp : SessionMixer.GetAmp(Doc, Spec.Machine, Returns);
+
+        void SetAmpNow(int amp)
+        {
+            if (Spec.Wire != null) Spec.Wire.Amp = Math.Clamp(amp, 0, SessionMixer.MaxAmp);
+            else SessionMixer.SetAmp(Doc, Spec.Machine, amp, Returns);
+        }
+
+        int PanNow() => Spec.Wire != null ? (Spec.Wire.HasPan ? Spec.Wire.Pan : -1) : SessionMixer.GetPan(Doc, Spec.Machine, Returns);
+
+        void SetPanNow(int value)
+        {
+            if (Spec.Wire != null) { if (Spec.Wire.HasPan) Spec.Wire.Pan = Math.Clamp(value, 0, SessionMixer.MaxPan); }
+            else SessionMixer.SetPan(Doc, Spec.Machine, value, Returns);
         }
 
         void ToggleArm()
@@ -649,7 +674,7 @@ namespace ReBuzz.Studio.Views.Mixer
         {
             if (density == MixerDensity.Header)
             {
-                int a = SessionMixer.GetAmp(Doc, Spec.Machine, Returns);
+                int a = AmpNow();
                 fader.ValueText = a < 0 ? "" : SessionMixer.FormatAmp(a);
                 return;
             }
@@ -660,7 +685,7 @@ namespace ReBuzz.Studio.Views.Mixer
                 dbText.Text = gain <= 0 ? "-inf dB" : SessionMixer.FormatDb(BuzzGUI.Common.Decibel.FromAmplitude(gain)) + " dB";
                 return;
             }
-            int amp = SessionMixer.GetAmp(Doc, Spec.Machine, Returns);
+            int amp = AmpNow();
             dbText.Text = amp < 0 ? "–" : SessionMixer.FormatAmp(amp) + " dB";
         }
 
@@ -687,12 +712,12 @@ namespace ReBuzz.Studio.Views.Mixer
                 SetChip(sideB, sideBText, side == "B", SessionPalette.CrossB);
             }
 
-            int amp = SessionMixer.GetAmp(doc, Spec.Machine, Returns);
+            int amp = AmpNow();
             fader.IsEnabled = amp >= 0;
             if (amp >= 0 && !fader.IsDragging) fader.Value = SessionMixer.FaderOf(amp);
             UpdateDbText();
 
-            int p = SessionMixer.GetPan(doc, Spec.Machine, Returns);
+            int p = PanNow();
             pan.IsEnabled = p >= 0;
             if (p >= 0 && !pan.IsDragging) pan.Value = (SessionMixer.PanOf(p) + 1) / 2;
             pan.ValueText = p >= 0 && density != MixerDensity.Header ? SessionMixer.FormatPan(p) : "";
@@ -710,8 +735,8 @@ namespace ReBuzz.Studio.Views.Mixer
 
             if (onButton != null)
             {
-                SetChip(onButton, onText, Machine?.IsMuted == false, SessionPalette.MeterLow, Machine != null);
-                SetChip(soloButton, soloText, Machine?.IsSoloed == true, SessionPalette.Solo, Machine != null);
+                SetChip(onButton, onText, IsOn, SessionPalette.MeterLow, Machine != null);
+                SetChip(soloButton, soloText, IsSoloLit, SessionPalette.Solo, Machine != null);
             }
             if (armButton != null) SetChip(armButton, armText, IsArmLit, SessionPalette.Record);
             if (cueButton != null)
@@ -742,7 +767,7 @@ namespace ReBuzz.Studio.Views.Mixer
             }
             else
             {
-                var peak = SessionMixer.MainPeak(Doc, Spec.Machine, Returns);
+                var peak = Spec.Wire != null ? SessionMixer.PeakOf(Spec.Wire) : SessionMixer.MainPeak(Doc, Spec.Machine, Returns);
                 l = SessionMixer.MeterLevel(peak.Left);
                 r = SessionMixer.MeterLevel(peak.Right);
             }

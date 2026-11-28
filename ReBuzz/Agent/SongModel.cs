@@ -287,6 +287,10 @@ namespace ReBuzz.Agent
                 ["gear"] = m.DLL?.Name ?? "",
                 ["kind"] = Kind(m),
             };
+            // Fork (docs/specs/multi-output.md): a machine with several outputs lists them, numbered from 1 as inputs are; connect's from_output takes either.
+            if (m.OutputChannelCount > 1)
+                o["output_ports"] = new JsonArray(Enumerable.Range(0, m.OutputChannelCount)
+                    .Select(i => (JsonNode)new JsonObject { ["index"] = i + 1, ["name"] = OutputName(m, i) }).ToArray());
             o["inputs"] = new JsonArray(m.Inputs.Where(c => !((MachineCore)c.Source).Hidden).Select(c => (JsonNode)ConnectionJson(c, from: true)).ToArray());
             o["outputs"] = new JsonArray(m.Outputs.Where(c => !((MachineCore)c.Destination).Hidden).Select(c => (JsonNode)ConnectionJson(c, from: false)).ToArray());
             // NW1 (note-wires.md §7): the note ports, listed only where there are some; an insert says which instrument it sits before.
@@ -328,7 +332,22 @@ namespace ReBuzz.Agent
             if (c.HasPan) o["pan"] = Levels.PanToUnit(c.Pan);
             if (!from && c.DestinationChannel > 0) o["input"] = c.Destination.GetChannelName(true, c.DestinationChannel);
             if (from && c.DestinationChannel > 0) o["input"] = c.Destination.GetChannelName(true, c.DestinationChannel);
+            // Fork (docs/specs/multi-output.md): which output of a several-output source the wire reads.
+            if (c.Source.OutputChannelCount > 1)
+            {
+                o["from_output"] = OutputName(c.Source, c.SourceChannel);
+                o["from_output_index"] = c.SourceChannel + 1;
+                var all = c.SourceChannels.OrderBy(x => x).ToList();
+                if (all.Count > 1) o["from_outputs"] = new JsonArray(all.Select(x => (JsonNode)OutputName(c.Source, x)).ToArray());
+            }
             return o;
+        }
+
+        /// <summary>An output's name as its machine gives it (a Neo machine's declared names), or "Output n" (from 1).</summary>
+        public static string OutputName(IMachine m, int index)
+        {
+            string name = m.GetChannelName(false, index);
+            return string.IsNullOrWhiteSpace(name) ? $"Output {index + 1}" : name;
         }
 
         public static IMachineConnection Connection(MachineCore from, MachineCore to) =>

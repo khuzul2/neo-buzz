@@ -959,6 +959,14 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             base.OnPointerPressed(e);
             var layout = grid.Layout;
             var point = e.GetCurrentPoint(this);
+            // CU6b: a right click on a header opens the note columns' menu (chords).
+            if (layout != null && point.Properties.IsRightButtonPressed)
+            {
+                var menu = NoteColumnMenu.Create(grid.Controller);
+                menu.Open(this);
+                e.Handled = true;
+                return;
+            }
             if (layout == null || !point.Properties.IsLeftButtonPressed) return;
             var p = point.Position;
             double x = p.X + grid.Offset.X;

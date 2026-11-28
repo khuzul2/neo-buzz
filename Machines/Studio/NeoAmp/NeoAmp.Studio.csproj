@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Amp, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoAmp</NeoFolder>
+    <NeoName>Neo Amp</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+</Project>

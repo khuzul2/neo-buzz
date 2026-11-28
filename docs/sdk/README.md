@@ -86,6 +86,7 @@ CI checks that every generated file is up to date (`--all --check` on both gener
 | Page | What it covers |
 |---|---|
 | [tutorial.md](tutorial.md) | Build a tremolo effect step by step: parameters, engine, Mix and Amount, presets, editor, entries, tests. |
+| [outputs.md](outputs.md) | A machine with several outputs: `OutputCount`, `[NeoOutputs]` names, how the studio routes them. |
 | [params.md](params.md) | The `Params.def` syntax (every map kind, enums, switches, groups, how and sound lines, track parameters, appending) and the `Presets.txt` syntax. |
 | [editor.md](editor.md) | The editor kit: controls, binding, theming, the gallery. |
 | [notes.md](notes.md) | How notes reach a machine, how a machine sends them, and the note contract tests. |

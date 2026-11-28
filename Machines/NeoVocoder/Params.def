@@ -1,0 +1,78 @@
+# Neo Vocoder parameters (docs/specs/neo-vocoder.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoVocoder
+namespace NeoBuzz.Vocoder
+class NeoVocoderMachine
+tracks 8
+summary Channel vocoder. The main input is the modulator (a voice, drums, anything); its spectral shape, measured in 8 to 40 log-spaced bands, is imposed on a carrier: the machine's own 8-voice synth (saw and pulse with a noise blend, detune, glide and an envelope) played by notes and chords, white noise, or any machine wired into the sidechain (input 2). Each band is a 4th-order band-pass on the modulator and on the carrier; attack and release followers, a formant shift of plus or minus 12 semitones, the modulator's highs passed through for clear consonants, a freeze of the band levels, a stereo spread of odd and even bands, Mix and Amount. Zero latency. Use it for robot and choir voices, talking pads, rhythmic textures from a drum loop and any sound made to speak.
+
+group Carrier
+Carrier     "Carrier"        0 2 0       enum Synth Sidechain Noise                         | What the bands are cut from: the synth (played by notes), the sidechain input (input 2), or noise
+    how Chooses the carrier: the built-in synth played by notes, any machine wired into the sidechain (input 2), or white noise.
+    sound Synth gives a pitched robot or choir, the sidechain makes any sound speak, noise gives a whisper.
+Wave        "Wave"           0 1000 0    pct                                                | Synth waveform: 0 % saw, 100 % pulse (square)
+    how Blends the synth's oscillators from a saw (all harmonics) to a pulse (odd harmonics).
+    sound A saw is bright and buzzy and clearest as speech, a pulse is hollow and reedy.
+Noise       "Noise blend"    0 1000 50   pct                                                | Synth: noise mixed into the tone, 0 to 100 %
+    how Crossfades the synth's tone toward noise that follows each note's envelope.
+    sound A little noise makes the consonants breathy; all of it is a whispered chord.
+Detune      "Detune"         0 1000 200  lin 0 50 cents 1                                   | Synth: the two oscillators of each voice are detuned by this much (and spread left and right)
+    how Detunes the two oscillators of every voice apart by this many cents and spreads them across the stereo field.
+    sound More detune makes a wider, chorused carrier; zero is one steady, centred tone.
+Glide       "Glide"          0 1000 0    pow 0 1000 2 ms 0                                  | Synth: time for a new note to glide from the last one; 0 is off
+    how Sets how long a note takes to slide from the previous pitch to its own.
+    sound Glide makes the voice swoop between notes like a singer or a talk box.
+SynAttack   "Synth attack"   0 1000 220  exp 1 2000 ms 0                                   | Synth amplitude envelope: attack
+    how Sets how long each synth note takes to rise to full level.
+    sound Short attacks make a spoken, percussive voice; long ones swell in like a pad.
+SynDecay    "Synth decay"    0 1000 500  exp 5 5000 ms 0                                    | Synth amplitude envelope: decay to the sustain level
+    how Sets how long the level takes to fall from the peak to the sustain level.
+    sound It shapes the start of a held note; with sustain at 100 % it does nothing.
+SynSustain  "Synth sustain"  0 1000 1000 pct                                                | Synth amplitude envelope: sustain level while the note is held
+    how Sets the level a held note rests at after the decay.
+    sound At 100 % a held note stays full; lower values make a note die away while it is held.
+SynRelease  "Synth release"  0 1000 450  exp 5 5000 ms 0                                    | Synth amplitude envelope: release after the note ends
+    how Sets how long a note takes to fade out after its key is up.
+    sound Short releases stop with the word; long ones let a chord ring on under the next syllable.
+group Bands
+Bands       "Bands"          0 32 8      int 8                                              | Number of filter bands, 8 to 40
+    how Sets how many band-pass filters cut up the spectrum, from 8 to 40.
+    sound Few bands give the classic robot with little detail; many bands keep more of the words.
+Low         "Low"            0 1000 301  exp 50 500 Hz 0                                    | Centre of the lowest band, 50 to 500 Hz
+    how Sets the centre frequency of the lowest band, from 50 to 500 Hz.
+    sound Lower values keep more body of the voice; higher values drop the lows out.
+High        "High"           0 1000 667  exp 2000 16000 Hz 0                                | Centre of the highest band, 2 to 16 kHz
+    how Sets the centre frequency of the highest band, from 2 to 16 kHz.
+    sound Higher values keep more air and clarity in the consonants; lower values are darker.
+Width       "Width"          0 1000 333  lin 50 200 % 0                                     | Bandwidth of each band as a share of the spacing between bands (Q follows)
+    how Sets how wide each band is against the gap to its neighbour: 100 % makes neighbours meet at their half-power points.
+    sound Narrow bands are more articulate but thinner; wide bands are smoother and blur the words a little.
+group Followers
+Attack      "Attack"         0 1000 338  exp 0.5 100 ms 1                                   | Band level follower: time to rise from 10 to 90 % of a step
+    how Sets how quickly each band's level follows the modulator when it gets louder.
+    sound Fast attacks keep consonants sharp; slow attacks soften and smear them.
+Release     "Release"        0 1000 469  exp 5 1000 ms 0                                    | Band level follower: time to fall from 90 to 10 % of a step
+    how Sets how slowly each band's level lets go when the modulator gets quieter.
+    sound Short releases are crisp and rhythmic, long ones run the syllables together into a wash.
+group Voice
+Formant     "Formant"        0 24 12     int -12 st signed                                  | Formant shift: the carrier's bands move this many semitones against the modulator's
+    how Moves the carrier's bands up or down by up to 12 semitones against the modulator's bands, without changing the carrier's pitch.
+    sound Down is a bigger, darker voice, up is a smaller, brighter one.
+Sibilance   "Sibilance"      0 1000 350  pct                                                | The modulator's highs above about 5 kHz, passed straight through, 0 to 100 %
+    how Mixes in the modulator's own sound above about 5 kHz, unchanged, from 0 to 100 %.
+    sound It keeps s, t and f clear, because a pitched carrier cannot make them.
+Freeze      "Freeze"         0 1 0       switch                                             | Holds the band levels where they are
+    how Holds every band's level at its current value while on.
+    sound The carrier keeps the vowel that was spoken when you switched it on, as a held drone.
+Spread      "Spread"         0 1000 0    pct                                                | Odd bands to the left, even bands to the right, 0 to 100 %
+    how Moves the odd-numbered bands toward the left and the even-numbered bands toward the right, from 0 to 100 %.
+    sound At 100 % the voice opens into a wide, shimmering stereo image.
+group Output
+Mix         "Mix"            0 1000 1000 pct                                                | Dry/wet (the vocoder has no latency, so the dry signal is not delayed)
+    how Blends the vocoded sound with the unprocessed modulator.
+    sound Lower values keep the original voice in front and lay the carrier under it.
+Amount      "Amount"         0 2000 1000 lin 0 200 % 0                                      | Effect strength: 100 % = the settings as shown, 0 % = bypass (bit for bit the input), 200 % = twice the formant shift, sibilance and spread (held to their limits)
+    how Scales the formant shift, the sibilance and the spread together. 0 % is bypass, 100 % your settings, 200 % doubles all three up to their limits.
+    sound Turn it down to bring the plain vocoder back and then the dry voice, up to push the effect further.
+Output      "Output"         0 1000 500  db -24 24                                          | Level of the vocoded sound
+    how Sets the level of the vocoded sound in dB, from -24 to +24.
+    sound It makes the vocoder louder or quieter without changing the sound.

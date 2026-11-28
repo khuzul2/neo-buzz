@@ -108,6 +108,14 @@ namespace ReBuzz.Core.Actions.GraphActions
             SaveConnections(machineCore, machineInfo);
         }
 
+        /// <summary>The channels a wire had that the new machine also has, or the first when none of them exist there.</summary>
+        static List<int> KeepChannels(IEnumerable<int> channels, int count)
+        {
+            var kept = channels.Where(c => c >= 0 && c < Math.Max(1, count)).Distinct().ToList();
+            if (kept.Count == 0) kept.Add(0);
+            return kept;
+        }
+
         private void SaveConnections(MachineCore machine, MachineInfoRef machineData)
         {
             foreach (var connection in machine.AllOutputs)
@@ -278,14 +286,16 @@ namespace ReBuzz.Core.Actions.GraphActions
                 foreach (var cma in machineInfo.connections.Where(c => c.Destination == machineInfo.Name))
                 {
                     var src = buzz.Song.Machines.FirstOrDefault(m => m.Name == cma.Source);
-                    new ConnectMachinesAction(buzz, src, machine, new List<int> { 0 }, new List<int> { 0 }, cma.Amp, cma.Pan, dispatcher, engineSettings).Do();
+                    // Fork (docs/specs/multi-output.md): the input it was on, if the new machine has one there, else the first.
+                    new ConnectMachinesAction(buzz, src, machine, cma.SourceChannels, KeepChannels(cma.DestinationChannels, machine.InputChannelCount), cma.Amp, cma.Pan, dispatcher, engineSettings).Do();
                 }
 
                 // reconnect outputs
                 foreach (var cma in machineInfo.connections.Where(c => c.Source == machineInfo.Name))
                 {
                     var dst = buzz.Song.Machines.FirstOrDefault(m => m.Name == cma.Destination);
-                    new ConnectMachinesAction(buzz, machine, dst, new List<int> { 0 }, new List<int> { 0 }, cma.Amp, cma.Pan, dispatcher, engineSettings).Do();
+                    // Fork (docs/specs/multi-output.md): each wire stays on the output of the same index, or on output 1 when the new machine has fewer.
+                    new ConnectMachinesAction(buzz, machine, dst, KeepChannels(cma.SourceChannels, machine.OutputChannelCount), cma.DestinationChannels, cma.Amp, cma.Pan, dispatcher, engineSettings).Do();
                 }
             }
         }

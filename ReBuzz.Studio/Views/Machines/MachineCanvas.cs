@@ -52,12 +52,14 @@ namespace ReBuzz.Studio.Views.Machines
         Vector moveDelta;
         IMachineConnection insertInto;
         IMachine connectFrom, connectTo;
+        int connectOutput;      // fork (docs/specs/multi-output.md): the output (0-based) the wire being dragged leaves from
         Point connectPoint;
         Rect band;
         HashSet<IMachine> bandBase = new HashSet<IMachine>();
         IMachine hover;
         bool hoverDelete;
         IMachine hoverPort, connectRefused;     // P3d: the machine whose port dot the pointer is on; the invalid target of a connect drag
+        int hoverPortOutput;                    // fork (docs/specs/multi-output.md): which of its output dots, when the pointer is on one
         string connectWhy;
 
         public MachineCanvas(ReBuzzCore core)
@@ -201,25 +203,55 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>P3d: the machine whose port dot the pointer is on (tests).</summary>
         public IMachine PortHover => hoverPort;
 
-        /// <summary>P3d: a dot is drawn on a machine that is hovered or selected, and on every input while a wire is being dragged.</summary>
+        /// <summary>P3d: a dot is drawn on a machine that is hovered or selected, and on every input while a wire is being dragged. A machine with several outputs always shows them: they are what a wire is dragged from.</summary>
         bool PortShown(IMachine m, bool input) =>
-            hover == m || selected.Contains(m) || (drag == Drag.Connect && input);
+            hover == m || selected.Contains(m) || (drag == Drag.Connect && input) || (!input && OutputsOf(m) > 1);
+
+        /// <summary>Fork (docs/specs/multi-output.md): how many output ports a machine draws (0 when it has no audio output).</summary>
+        static int OutputsOf(IMachine m) => HasOutput(m) ? Math.Max(1, m.OutputChannelCount) : 0;
+
+        /// <summary>The name of one of a machine's outputs, as its tooltip gives it.</summary>
+        static string OutputNameOf(IMachine m, int index)
+        {
+            string name = m.GetChannelName(false, index);
+            return string.IsNullOrWhiteSpace(name) ? "Output " + (index + 1) : name;
+        }
 
         static bool HasOutput(IMachine m) => !m.IsControlMachine && m.DLL.Info.Type is MachineType.Generator or MachineType.Effect;
 
         static bool HasInput(IMachine m) => !m.IsControlMachine && m.DLL.Info.Type is MachineType.Effect or MachineType.Master;
 
         /// <summary>The canvas point of a machine's port dot (tests).</summary>
-        public Point OutPortOf(IMachine m) => MachineGeometry.OutPort(BoxOf(m));
+        public Point OutPortOf(IMachine m) => MachineGeometry.OutPort(BoxOf(m), 0, OutputsOf(m));
+
+        /// <summary>The canvas point of one of a machine's output dots, 0-based (tests): a machine with one output has it in the middle of the edge.</summary>
+        public Point OutPortOf(IMachine m, int output) => MachineGeometry.OutPort(BoxOf(m), output, OutputsOf(m));
 
         public Point InPortOf(IMachine m) => MachineGeometry.InPort(BoxOf(m));
 
         /// <summary>The machine whose output dot is at the point (a dot is found when the pointer arrives at it, and then drawn), or null.</summary>
-        IMachine OutPortAt(Point p)
+        IMachine OutPortAt(Point p) => OutPortAt(p, out _);
+
+        /// <summary>Fork (docs/specs/multi-output.md): as <see cref="OutPortAt(Point)"/>, with which of the machine's output dots it is (the nearest, 0-based).</summary>
+        IMachine OutPortAt(Point p, out int output)
         {
+            output = 0;
             var list = Ordered();
             for (int i = list.Count - 1; i >= 0; i--)
-                if (HasOutput(list[i]) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(list[i])), p)) return list[i];
+            {
+                int count = OutputsOf(list[i]);
+                if (count == 0) continue;
+                var box = BoxOf(list[i]);
+                double best = double.MaxValue;
+                int hit = -1;
+                for (int k = 0; k < count; k++)
+                {
+                    var port = MachineGeometry.OutPort(box, k, count);
+                    double d = (p.X - port.X) * (p.X - port.X) + (p.Y - port.Y) * (p.Y - port.Y);
+                    if (MachineGeometry.Near(port, p) && d < best) { best = d; hit = k; }
+                }
+                if (hit >= 0) { output = hit; return list[i]; }
+            }
             return null;
         }
 
@@ -699,7 +731,13 @@ namespace ReBuzz.Studio.Views.Machines
             }
         }
 
-        public WireShape WireOf(IMachineConnection c) => MachineGeometry.Wire(BoxOf(c.Source), BoxOf(c.Destination));
+        public WireShape WireOf(IMachineConnection c)
+        {
+            // Fork (docs/specs/multi-output.md): a wire from one of several outputs starts at that output's port.
+            int count = OutputsOf(c.Source);
+            Point? from = count > 1 ? MachineGeometry.OutPort(BoxOf(c.Source), Math.Min(c.SourceChannel, count - 1), count) : null;
+            return MachineGeometry.Wire(BoxOf(c.Source), BoxOf(c.Destination), from);
+        }
 
         public IMachineConnection WireAt(Point logical) => Wires.LastOrDefault(c => MachineGeometry.HitsArrow(WireOf(c), logical));
 
@@ -899,8 +937,10 @@ namespace ReBuzz.Studio.Views.Machines
                     // The wire being made (Connection with no destination yet): half opacity, to the pointer or the target.
                     var src = BoxOf(connectFrom);
                     var dst = connectTo != null ? BoxOf(connectTo) : new Rect(connectPoint.X, connectPoint.Y, 1, 1);
+                    int count = OutputsOf(connectFrom);
+                    Point? port = count > 1 ? MachineGeometry.OutPort(src, Math.Min(connectOutput, count - 1), count) : null;
                     using (ctx.PushOpacity(0.5))
-                        DrawWire(ctx, MachineGeometry.Wire(src, dst), colours, line, arrow: false);
+                        DrawWire(ctx, MachineGeometry.Wire(src, dst, port), colours, line, arrow: false);
                 }
 
                 foreach (var m in machines)
@@ -1030,8 +1070,14 @@ namespace ReBuzz.Studio.Views.Machines
                 bool refused = m == connectRefused;
                 if (HasOutput(m) && PortShown(m, false))
                 {
-                    bool hot = hoverPort == m && MachineGeometry.Near(MachineGeometry.OutPort(box), lastLogical) || (drag == Drag.Connect && connectFrom == m);
-                    ctx.DrawEllipse(accent, new Pen(ring, 1.5), MachineGeometry.OutPort(box), hot ? r + 2 : r, hot ? r + 2 : r);
+                    int outputs = OutputsOf(m);
+                    for (int k = 0; k < outputs; k++)
+                    {
+                        // Fork (docs/specs/multi-output.md): one dot per output; the one being pointed at or dragged from is the lit one.
+                        var at = MachineGeometry.OutPort(box, k, outputs);
+                        bool hot = hoverPort == m && hoverPortOutput == k && MachineGeometry.Near(at, lastLogical) || (drag == Drag.Connect && connectFrom == m && connectOutput == k);
+                        ctx.DrawEllipse(accent, new Pen(ring, 1.5), at, hot ? r + 2 : r, hot ? r + 2 : r);
+                    }
                 }
                 if (ModulationBoard.Of(m) != null)
                 {
@@ -1043,7 +1089,7 @@ namespace ReBuzz.Studio.Views.Machines
                 if (HasInput(m) && PortShown(m, true))
                 {
                     bool valid = drag == Drag.Connect && m != connectFrom && core.SongCore.CanConnectMachines(connectFrom, m);
-                    bool hot = (hoverPort == m && !MachineGeometry.Near(MachineGeometry.OutPort(box), lastLogical)) || m == connectTo;
+                    bool hot = (hoverPort == m && !OverOutputDot(m)) || m == connectTo;
                     var pen = new Pen(refused ? bad : valid || !(drag == Drag.Connect) ? accent : ring, hot || refused ? 3 : 2);
                     ctx.DrawEllipse(PortFill, pen, MachineGeometry.InPort(box), hot ? r + 2 : r, hot ? r + 2 : r);
                 }
@@ -1326,7 +1372,8 @@ namespace ReBuzz.Studio.Views.Machines
             var kind = pt.Properties.PointerUpdateKind;
             var mods = e.KeyModifiers;
             if (drag == Drag.None && NotePointerPressed(p, kind, mods, e)) { e.Handled = true; Refusal = null; return; }
-            var outPort = pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed && mods == KeyModifiers.None ? OutPortAt(p) : null;
+            int outIndex = 0;
+            var outPort = pt.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed && mods == KeyModifiers.None ? OutPortAt(p, out outIndex) : null;
             var machine = MachineAt(p) ?? outPort ?? InPortAt(p);
             var wire = machine == null ? WireAt(p) : null;
             e.Handled = true;
@@ -1378,8 +1425,8 @@ namespace ReBuzz.Studio.Views.Machines
 
             if (outPort != null)
             {
-                // P3d: a drag from the output dot connects, as Shift-drag does from anywhere on the box.
-                BeginConnect(outPort, p, e);
+                // P3d: a drag from the output dot connects, as Shift-drag does from anywhere on the box (from output 1).
+                BeginConnect(outPort, p, e, outIndex);
                 return;
             }
 
@@ -1489,17 +1536,18 @@ namespace ReBuzz.Studio.Views.Machines
                     ScrollTo(panStart - (view - dragLast));
                     break;
                 default:
-                    var port = OutPortAt(p) ?? InPortAt(p);
+                    var port = OutPortAt(p, out int portOutput) ?? InPortAt(p);
                     var m = port ?? MachineAt(p);
                     bool overDelete = port == null && m != null && MachineGeometry.DeleteButton(BoxOf(m)).Contains(p);
                     var mod = m == null ? ModAt(p) : null;
                     bool noteChanged = NoteHover(p);
-                    if (m != hover || overDelete != hoverDelete || port != hoverPort || mod != hoverMod || noteChanged)
+                    if (m != hover || overDelete != hoverDelete || port != hoverPort || portOutput != hoverPortOutput || mod != hoverMod || noteChanged)
                     {
                         hoverMod = mod;
                         hover = m;
                         hoverDelete = overDelete;
                         hoverPort = port;
+                        hoverPortOutput = portOutput;
                         UpdateTip();
                         InvalidateVisual();
                     }
@@ -1515,8 +1563,10 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>The tip the canvas shows now (tests).</summary>
         public string HoverTip => NoteTip() ?? (hoverPort != null
-            ? (HasOutput(hoverPort) && MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(hoverPort)), lastLogical)
-                ? "Output of " + hoverPort.Name + ": drag to another machine's input to connect (Shift-drag from the box does the same)"
+            ? (HasOutput(hoverPort) && OverOutputDot(hoverPort)
+                ? OutputsOf(hoverPort) > 1
+                    ? $"{OutputNameOf(hoverPort, hoverPortOutput)}, output {hoverPortOutput + 1} of {OutputsOf(hoverPort)} of {hoverPort.Name}: drag to another machine's input to connect (Shift-drag from the box uses output 1)"
+                    : "Output of " + hoverPort.Name + ": drag to another machine's input to connect (Shift-drag from the box does the same)"
                 : "Input of " + hoverPort.Name + ": drop a wire from another machine's output here")
             : hoverMod != null
             ? $"{hoverMod.Source.Name} moves {hoverMod.Target.Name}: {hoverMod.Label} (dashed wire: a modulation, not a signal)"
@@ -1685,11 +1735,21 @@ namespace ReBuzz.Studio.Views.Machines
             InvalidateVisual();
         }
 
-        void BeginConnect(IMachine machine, Point p, PointerPressedEventArgs e)
+        /// <summary>Whether the pointer is on one of the machine's output dots (not its input dot or its box).</summary>
+        bool OverOutputDot(IMachine m)
+        {
+            int count = OutputsOf(m);
+            for (int k = 0; k < count; k++)
+                if (MachineGeometry.Near(MachineGeometry.OutPort(BoxOf(m), k, count), lastLogical)) return true;
+            return false;
+        }
+
+        void BeginConnect(IMachine machine, Point p, PointerPressedEventArgs e, int output = 0)
         {
             FocusMachine(machine);
             drag = Drag.Connect;
             connectFrom = machine;
+            connectOutput = Math.Clamp(output, 0, Math.Max(0, OutputsOf(machine) - 1));
             connectTo = null;
             connectPoint = p;
             e.Pointer.Capture(this);
@@ -1794,11 +1854,13 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 var from = connectFrom;
                 var to = connectTo;
+                int output = connectOutput;
+                connectOutput = 0;
                 var refused = connectRefused;
                 string why = connectWhy;
                 connectFrom = connectTo = connectRefused = null;
                 connectWhy = null;
-                if (commit && to != null) MachineEdits.Connect(core, from, to);
+                if (commit && to != null) MachineEdits.Connect(core, from, to, output);
                 else if (commit && refused != null && why != null)
                 {
                     // P3d: a refused drop says why, on the canvas, for two seconds; the song is untouched.

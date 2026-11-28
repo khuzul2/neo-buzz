@@ -67,6 +67,8 @@ namespace ReBuzz.Core
                 : 0; // Get the lowest channel or default to 0 if none are selected
             sourceChannel = lowest;
             SourceChannelArray = sourceChannels.ToArray();
+            // Fork (docs/specs/multi-output.md): the output this wire now reads has its buffer before the audio thread asks for it.
+            (Source as MachineCore)?.PrepareMultiIo();
             PropertyChanged.Raise(this, "SourceChannel");
             PropertyChanged.Raise(this, "SourceChannels");
         }
@@ -240,6 +242,41 @@ namespace ReBuzz.Core
             DoTap(sampleBuffer, nSamples, stereo, buzz.GetSongTime());
         }
 
+        // Fork (docs/specs/multi-output.md): a wire's own mute and solo, for the mixer's strip of an extra output. Solo silences the other
+        // wires of the same source machine (the way a generator's solo silences the other generators). The UI thread sets Muted and Soloed
+        // and RefreshSilence works out which wires are silenced; the audio thread reads that one flag and fades to it over the block.
+        bool muted, soloed;
+        int silenced;
+        float gateLast = 1f;
+
+        /// <summary>This wire's own mute (the mixer's strip of an extra output).</summary>
+        public bool Muted => muted;
+
+        /// <summary>This wire's own solo: the source's other wires are silent while one is soloed.</summary>
+        public bool Soloed => soloed;
+
+        /// <summary>Whether the engine is silencing this wire now (muted, or another wire of its source is soloed and this one is not).</summary>
+        public bool Silenced => Volatile.Read(ref silenced) != 0;
+
+        /// <summary>Sets the wire's mute or solo (UI thread); the source's wires' silence follows.</summary>
+        public void SetFlag(bool solo, bool on)
+        {
+            if (solo) soloed = on; else muted = on;
+            RefreshSilence(Source);
+            PropertyChanged.Raise(this, solo ? "Soloed" : "Muted");
+        }
+
+        /// <summary>Works out which of a machine's output wires are silenced by wire mutes and solos.</summary>
+        internal static void RefreshSilence(IMachine source)
+        {
+            if (source == null) return;
+            bool any = false;
+            foreach (var o in source.Outputs) if (o is MachineConnectionCore c && c.soloed) any = true;
+            foreach (var o in source.Outputs)
+                if (o is MachineConnectionCore c)
+                    Volatile.Write(ref c.silenced, c.muted || (any && !c.soloed) ? 1 : 0);
+        }
+
         float ampStart;
         float ampCurrent;
         float ampStep;
@@ -259,6 +296,11 @@ namespace ReBuzz.Core
                 ampCurrent = RampValue(rampPos) / 0x4000 * clipGain;
                 if (rampPos >= rampLength) { rampLength = 0; interpolatorAmp.Value = rampTo; }
             }
+            // Fork (docs/specs/multi-output.md): a wire's own mute fades over the block (the factors are exactly 1 while it isn't muted).
+            float gate = Volatile.Read(ref silenced) != 0 ? 0f : 1f;
+            ampStart *= gateLast;
+            ampCurrent *= gate;
+            gateLast = gate;
             // Fork: ramp from the block's start amp to its end amp. Upstream had the difference
             // the wrong way round, so during an amp change each block ramped away from the target
             // and the next one jumped back: a click per block while a fader moves

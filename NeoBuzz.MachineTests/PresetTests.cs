@@ -110,7 +110,12 @@ namespace NeoBuzz.MachineTests
             ["Neo Chop"] = (NeoBuzz.Chop.Params.Table, (v, x) => ChopRig.PresetRender(v, x)),
             // neo-prism.md: the spectral effect, its song running from beat 0 (the synced sections follow it).
             ["Neo Prism"] = (NeoBuzz.Prism.Params.Table, (v, x) => PrismRig.PresetRender(v, x)),
+            ["Neo Shift"] = (NeoBuzz.Shift.Params.Table, (v, x) => ShiftRig.PresetRender(v, x)),
             ["Neo Space"] = (NeoBuzz.Space.Params.Table, (v, x) => SpaceRig.PresetRender(v, x)),
+            // neo-vocoder.md: the synth carrier plays a chord (the Sidechain preset is fed a saw pad), the noise is the modulator.
+            ["Neo Vocoder"] = (NeoBuzz.Vocoder.Params.Table, (v, x) => VocoderRig.PresetRender(v, x)),
+            // neo-amp.md: the amp, the cabinet and the tuner (the cabinet is made before the first block, as the machine's Busy does).
+            ["Neo Amp"] = (NeoBuzz.Amp.Params.Table, (v, x) => AmpRig.PresetRender(v, x)),
             // neo-tune.md: the pitch corrector.
             ["Neo Tune"] = (NeoBuzz.Tune.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Tune.TuneEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
@@ -122,6 +127,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Chip"] = (NeoBuzz.Chip.Params.Table, (v, x) => RenderChip(v, x.Length)),
             // neo-chord.md: Neo Chord makes no audio (notes in, chords out); its presets only change which notes it sends.
             ["Neo Chord"] = (NeoBuzz.Chord.Params.Table, (v, x) => x),
+            // neo-follow.md: Neo Follow passes its input through unchanged (it only makes a control signal); its presets are driven through the engine by NeoFollowTests.
+            ["Neo Follow"] = (NeoBuzz.FollowMachine.Params.Table, (v, x) => x),
             // neo-random.md: Neo Random is a control modulator; drive RandomEngine per 64-sample block and scale x cleanly inside [0.35, 1.0].
             ["Neo Random"] = (NeoBuzz.RandomMachine.Params.Table, (v, x) =>
             {
@@ -506,7 +513,9 @@ namespace NeoBuzz.MachineTests
                 TestContext.Out.WriteLine($"{machine} / {name}: {db:+0.0;−0.0} dB, peak {Measure.Db(peak):+0.0;−0.0} dBFS");
                 Assert.That(double.IsFinite(peak), Is.True, name);
                 Assert.That(db, Is.InRange(-24.0, 12.0), $"{machine} / {name}");
-                Assert.That(peak, Is.LessThan(1.5), $"{machine} / {name}: clips");
+                // Neo Amp is levelled on plucked DI sources (loudest 400 ms at -18 dBFS RMS, FactoryPresetsAreLevelledToOneLoudnessOnTheirSources); the
+                // clean presets are a lot hotter on dense pink noise, whose peaks are not a guitar's: 8 dB over full scale (float output) is the bound.
+                Assert.That(peak, Is.LessThan(machine == "Neo Amp" ? 2.5 : 1.5), $"{machine} / {name}: clips");
             }
         }
     }

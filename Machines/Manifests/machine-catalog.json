@@ -101,6 +101,15 @@
    "use_for": "Evolving pads, leads and basses from morphing wavetable or analog engines with unison and a built-in effects rack.",
    "note_in": true
   },
+  "Neo Amp": {
+   "category": "Distortion",
+   "tags": [
+    "gritty",
+    "warm",
+    "saturation"
+   ],
+   "use_for": "Turn a guitar or bass DI into an amped sound: eight voicings from clean to high gain, tone stack, power sag, cabinets or a song wave as cabinet, noise gate and tuner."
+  },
   "Neo Analyzer": {
    "category": "Utility",
    "tags": [
@@ -481,6 +490,16 @@
    "use_for": "Eight-lane Euclidean and probability rhythm generator on note wires: 1 to 32 steps, accents, ratchets, dividers, swing, fill and seeded humanize for drums or synths.",
    "note_out": true
   },
+  "Neo Follow": {
+   "category": "Control",
+   "tags": [
+    "envelope",
+    "modulation",
+    "sidechain",
+    "automation"
+   ],
+   "use_for": "Open, duck or bend any parameter from the audio: the level (envelope follower), the pitch or the hits of a track or a sidechain, up to 8 targets, with the audio passing through unchanged."
+  },
   "Neo Random": {
    "category": "Control",
    "tags": [
@@ -770,6 +789,17 @@
    "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times.",
    "note_in": true
   },
+  "Neo Shift": {
+   "category": "Modulation",
+   "tags": [
+    "pitch-shift",
+    "modulation",
+    "notes",
+    "gritty"
+   ],
+   "use_for": "Shift the pitch by semitones (fast or smooth, with stereo detune), shift every frequency by hertz for barber-pole and bell tones, or ring-modulate; notes can set the shift or the carrier.",
+   "note_in": true
+  },
   "Neo Chop": {
    "category": "Modulation",
    "tags": [
@@ -790,6 +820,17 @@
     "stereo-width"
    ],
    "use_for": "Convolution reverb with zero latency: nine rooms of our own or any wave of the song as the room, with pre-delay, length, low and high cut, width and reverse. Best on a send at 100% wet."
+  },
+  "Neo Vocoder": {
+   "category": "Modulation",
+   "tags": [
+    "vocal",
+    "sidechain",
+    "pad",
+    "notes"
+   ],
+   "use_for": "Channel vocoder, 8 to 40 bands: a voice or drum loop speaks through its own synth played by chords, noise or a machine in the sidechain; formant shift, freeze, spread.",
+   "note_in": true
   }
  }
 }

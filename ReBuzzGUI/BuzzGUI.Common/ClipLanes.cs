@@ -27,6 +27,8 @@ namespace BuzzGUI.Common
         public const string Mute = "Mute";
         /// <summary>"1": the tracker shows this column's vertical envelope lane (T2). View state kept with the lane, like Grid and Mute; absent means closed.</summary>
         public const string Lane = "Lane";
+        /// <summary>The number of note+velocity column pairs the tracker shows for the clip's Notes lane (chords, CU6b); kept with the Notes lane like Grid and Mute. Absent means as many as the notes need and one free.</summary>
+        public const string NoteColumns = BuzzGUI.Common.NoteColumns.Key;
     }
 
     /// <summary>The cause tags of the migration log (clips.md §5.6): what opening a .nbl of format 1 or 2 changed or dropped.</summary>

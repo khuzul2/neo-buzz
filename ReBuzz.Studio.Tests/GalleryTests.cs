@@ -1331,6 +1331,36 @@ namespace ReBuzz.Studio.Tests
                     }
                 });
 
+                Try("068-clip-note-columns", () =>
+                {
+                    // CU6b (notes.md section 9): a chord clip with two note+velocity column pairs, a note and velocity pair for each voice of the chord.
+                    var lead = (MachineCore)Studio.Host.Core.Song.Machines.First(m => m.Name == "Lead");
+                    lead.CreateClip("Chords", 16);
+                    var chords = lead.Clips.First(p => p.Name == "Chords");
+                    ClipEvent N(int row, int rows, int midi, int vel) => new ClipEvent(row * 240, 0x90 | (midi << 8) | (vel << 16), rows * 240);
+                    ReBuzz.Core.Session.SessionLayout.EnsureMidiColumn(chords).SetEvents(new[]
+                    {
+                        N(0, 4, 57, 100), N(0, 4, 64, 90), N(4, 4, 55, 100), N(4, 4, 62, 85), N(8, 4, 53, 100), N(8, 4, 60, 80), N(12, 4, 55, 110), N(12, 4, 59, 95),
+                    }, true);
+                    try
+                    {
+                        ClipView.Edit(chords);
+                        Wait(200);
+                        Studio.Host.Core.SongCore.ActionStack.Do(new BuzzGUI.Common.Actions.ClipActions.NoteColumnsAction(chords, null, 2));
+                        dynamic v = ClipView.Page.EditorControl;
+                        ((Control)v.TrackerGrid.Body).Focus();
+                        Settle();
+                        Shot(window, "068-clip-note-columns", "Clip: a chord clip with two note+velocity column pairs (CU6b): each chord is one note on each pair, a pair added with Alt++ or Add Note Column in the grid's menu, taken off with Alt+- (never while it would hide a note), saved with the clip and one undo step each.", "Right click a column header, then Add Note Column; or Alt++ in the Tracker.");
+                    }
+                    finally
+                    {
+                        var other = lead.Clips.FirstOrDefault(p => p != chords);
+                        if (other != null) { ClipView.Edit(other); Wait(100); }
+                        lead.DeleteClip(chords);
+                        Settle();
+                    }
+                });
+
                 Try("067-clip-lanes", () =>
                 {
                     // T2: two parameter columns of Lead's clip with their envelope lanes open, on a clip with steps and ramps written through the store.
@@ -2462,6 +2492,43 @@ namespace ReBuzz.Studio.Tests
                     Shot(editor!, "651-neo-random-editor", "Neo Random: Source (Mode Chaos, Sync, Feel, Rate, Probability, Chaos), Shape (Range, Smooth, Depth, Bias, Quantise) and Behaviour (Retrigger, Seed, Write glide) beside the live Output scope and Retrigger picker, above the Targets table with Neo Poly's F1 cutoff assigned.", "Add Neo Random, load Lorenz swirl, assign a target, open its editor");
                     Core.UiHost.CloseWindows(rnd);
                 });
+                Try("663-neo-follow-editor", () =>
+                {
+                    // A Neo Poly playing a clip of short notes goes through Neo Follow to the master: the follower listens to what it passes on, so the meter and the output
+                    // scope show a followed level, and Neo Poly's own F1 cutoff is the target.
+                    var poly = AudioHygieneTests.AddPoly("Follow Poly");
+                    poly.CreateClip("00", 16);
+                    var clip = (ReBuzz.Core.ClipCore)poly.Clips.First();
+                    const int tb = BuzzGUI.Interfaces.ClipEvent.TimeBase;
+                    Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ReBuzz.Core.Session.ClipNote(i * tb, tb / 4, 48 + (i * 5) % 12, 100)).ToArray());
+                    AudioHygieneTests.Arrange(poly, clip);
+                    var fol = Add("Neo Follow", "Follow");
+                    var song = Core.SongCore;
+                    var master = song.MachinesList[0];
+                    song.DisconnectMachines(poly.Outputs.First(c => c.Destination == master));
+                    song.ConnectMachines(poly, fol, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                    song.ConnectMachines(fol, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                    void Set(string name, int raw) => fol.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == name).SetValue(0, raw);
+                    // Envelope mode on the Auto Wah settings (a fast attack and release, a raised floor, a negative curve).
+                    Set("Attack", 318);      // ~1.5 ms
+                    Set("Release", 596);     // ~160 ms
+                    Set("Floor", 380);       // -42 dB
+                    Set("Curve", 400);       // -20 %
+                    Set("Write glide", 301); // ~8 ms
+                    var mod = ModulationBoard.Of(fol)!;
+                    var cutoff = poly.ParameterGroups.First(g => g.Type == ParameterGroupType.Global).Parameters.First(p => p.Name == "F1 cutoff");
+                    Assert.That(ReBuzz.Agent.ModulationEdits.Add(Core, mod, poly, cutoff, 0, 70, bipolar: false), Is.Null);
+                    Core.Playing = true;
+                    RunTicks(30);
+                    Core.UiHost.OpenGui(fol, null);
+                    var editor = StudioMachineUiHost.GuiWindowOf(fol);
+                    Assert.That(editor, Is.Not.Null, "its GUI opened");
+                    Dispatcher.UIThread.RunJobs();
+                    Wait(200);
+                    Shot(editor!, "663-neo-follow-editor", "Neo Follow in Envelope mode (Listen to Input, Peak, a 1.5 ms attack, a 160 ms release, floor -42 dB, curve -20 %) with a Neo Poly clip of short notes played through it: the mode tabs on top, the Envelope controls, Shape and Behaviour, the live meter and the output scope, and Neo Poly's F1 cutoff in the targets list.", "Add Neo Follow, play audio through it, add a target, open its editor");
+                    Core.Playing = false;
+                    Core.UiHost.CloseWindows(fol);
+                });
                 Try("654-neo-arp-editor", () =>
                 {
                     var m = Add("Neo Arp", "Arp");
@@ -2728,6 +2795,31 @@ namespace ReBuzz.Studio.Tests
                     "Neo Prism with the preset \"Pitch — Octave Up Shimmer\" loaded: the spectrum (in and out) with the delay's time curve over it, the five section lights (Pitch and Delay lit), the section page below, and Output with FFT size, Amount, Mix and the meters.");
                 PrismShot("663-neo-prism-scramble", "Prism 2", new[] { 0, 24, 100, 0, 1, 700, 6, 2, 565, 7, 0, 0, 2, 3, 1000, 0, 354, 0, 0, 224, 447, 0, 404, 300, 2, 1000, 500 },
                     "Neo Prism with the preset \"Scramble — Bin Shuffle Glitch\" loaded: the Scramble light on and its page (synced to an eighth note).");
+                // SHF1: Neo Shift's editor with a preset loaded (the values are set before the editor opens): the spectrum with the picture of the shift
+                // (the input's line moved, or the carrier), the mode tabs with the mode's page, Follow notes and Root, and Output.
+                void ShiftShot(string id, string machineName, int[] raws, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Shift", machineName);
+                        string[] names = { "Mode", "Pitch", "Fine", "Quality", "Window", "Stereo detune", "Shift", "Shift fine", "Feedback", "Spread", "Carrier", "Shape", "Depth", "Follow notes", "Root", "Low cut", "High cut", "Mix", "Amount", "Output" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Shift; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                ShiftShot("670-neo-shift-pitch", "Shift", new[] { 0, 12, 100, 0, 50, 0, 2000, 500, 500, 0, 4286, 0, 1000, 0, 60, 239, 1000, 1000, 500, 500 },
+                    "Neo Shift with the preset \"Pitch — Octave Down\" loaded: the spectrum (in and out) with the input's line moved an octave down over it, the Pitch tab selected (Pitch, Fine, Stereo detune, Quality, Window), Follow notes and Root, and Output with the cuts, Amount, Mix and the meters.");
+                ShiftShot("671-neo-shift-frequency", "Shift 2", new[] { 1, 12, 100, 0, 30, 0, 2045, 500, 921, 0, 4286, 0, 1000, 0, 60, 0, 673, 700, 500, 500 },
+                    "Neo Shift with the preset \"Frequency — Rising Barber Pole\" loaded: the Frequency tab (Shift, Shift fine, Feedback, Spread) and the input's line moved 45 Hz up.");
+                ShiftShot("672-neo-shift-ring", "Shift 3", new[] { 2, 12, 100, 0, 30, 0, 2000, 500, 500, 0, 4410, 0, 1000, 0, 60, 0, 804, 1000, 500, 500 },
+                    "Neo Shift with the preset \"Ring — Metal Bell\" loaded: the Ring tab (Carrier, Shape, Depth) and the carrier's marker line on the spectrum at 523 Hz.");
                 // SPC1: Neo Space's editor with a preset loaded: the room, the picture of the response with the pre-delay and the trim drawn on it,
                 // the tone and the output. The response is made in the background: the shot waits for it (Busy), then plays a few blocks.
                 void SpaceShot(string id, string machineName, int[] raws, string text)
@@ -2764,6 +2856,103 @@ namespace ReBuzz.Studio.Tests
                     "Neo Space with the preset \"Effect — Reverse Swell\" loaded: Reverse on, so the picture rises to its end, and the Length line on it dims the part that is cut off.");
                 SpaceShot("664-neo-space-missing-wave", "Space 3", new[] { 9, 4, 160, 1000, 0, 1000, 1000, 0, 300, 1000, 500 },
                     "Neo Space with Room set to Wave and slot 5 empty: the picture shows the hall that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
+                // VOC1: Neo Vocoder's editor with a preset loaded (the values are set before the editor opens), a held chord and a modulator played through the
+                // machine's Work as the host calls it, so that the picture of the bands shows levels. The Sidechain preset has nothing wired: the message shows.
+                void VocoderShot(string id, string machineName, int[] raws, string text, bool notes)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Vocoder", machineName);
+                        string[] names = { "Carrier", "Wave", "Noise blend", "Detune", "Glide", "Synth attack", "Synth decay", "Synth sustain", "Synth release", "Bands", "Low", "High", "Width", "Attack", "Release", "Formant", "Sibilance", "Freeze", "Spread", "Mix", "Amount", "Output" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        var inst = m.ManagedMachine!;
+                        // Without a running engine the host does not tick, so the parameters have not reached the machine's own values yet: set them there too.
+                        var valuesObj = inst.GetType().GetProperty("Values", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        var setValue = valuesObj.GetType().GetMethod("Set", new[] { typeof(int), typeof(int) })!;
+                        for (int k = 0; k < names.Length; k++) setValue.Invoke(valuesObj, new object[] { k, raws[k] });
+                        if (notes) foreach (int key in new[] { 48, 55, 60, 64 }) inst.GetType().GetMethod("MidiNote")!.Invoke(inst, new object[] { 0, key, 100 });
+                        var work = inst.GetType().GetMethod("Work")!;
+                        var output = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]> { new Buzz.MachineInterface.Sample[256] };
+                        var input = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]> { new Buzz.MachineInterface.Sample[256] };
+                        var rng = new System.Random(5);
+                        for (int b = 0; b < 120; b++)
+                        {
+                            for (int i = 0; i < 256; i++)
+                            {
+                                double t = (b * 256 + i) / 48000.0, v = 0;
+                                foreach (double f in new[] { 150.0, 300, 450, 600, 750, 1200, 1800, 2400 }) v += System.Math.Sin(2 * System.Math.PI * f * t) * (3000 / (1 + f / 400));
+                                v += (rng.NextDouble() - 0.5) * 3000 * (1 + System.Math.Sin(t * 9));
+                                input[0][i] = new Buzz.MachineInterface.Sample((float)v, (float)v);
+                            }
+                            lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                        var engineObj = inst.GetType().GetProperty("Engine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        var bankObj = engineObj.GetType().GetProperty("Bank", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(engineObj)!;
+                        int built = (int)bankObj.GetType().GetProperty("BuiltBands")!.GetValue(bankObj)!;
+                        System.Console.WriteLine($"{id}: the engine has {built} bands (the preset says {raws[9] + 8})");
+                        int stored = (int)valuesObj.GetType().GetProperty("Item")!.GetValue(valuesObj, new object[] { 9 })!;
+                        int param = group.Parameters.First(p => p.Name == "Bands").GetValue(0);
+                        Assert.That(built, Is.EqualTo(raws[9] + 8), $"the preset's values reached the engine: the engine has {built} bands, the machine's values hold Bands = {stored}, the parameter holds {param}, the preset says {raws[9]}");
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Vocoder; load a preset; play a chord and a voice into it; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                VocoderShot("665-neo-vocoder-editor", "Vocoder", new[] { 0, 0, 50, 160, 0, 91, 500, 1000, 460, 8, 301, 667, 333, 338, 469, 12, 450, 0, 0, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Robot — Classic 16 Band\" loaded, a chord held and a voice-like modulator playing: the Carrier section (the choice, the synth's tone and envelope), the live picture of the 16 bands (the modulator's level dimmed, the output's in the accent colour) with Bands, Low, High and Width under it, the Voice section and Output with Amount and Mix side by side and the meters.", true);
+                VocoderShot("666-neo-vocoder-choir", "Vocoder 2", new[] { 0, 250, 120, 560, 0, 771, 500, 1000, 826, 16, 204, 723, 400, 773, 773, 12, 150, 0, 1000, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Choir — Wide Chord Pad\" loaded and a chord held: 24 narrower bars in the picture, a longer synth envelope, Spread at 100 %.", true);
+                VocoderShot("667-neo-vocoder-sidechain", "Vocoder 3", new[] { 1, 0, 50, 200, 0, 220, 500, 1000, 450, 16, 255, 774, 333, 338, 498, 12, 400, 0, 300, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Sidechain — Synth Carrier\" and nothing wired into the second input: the output bars stay empty and the picture says \"Wire a carrier into the sidechain\" in the amber warning colour.", false);
+                // AMP1: Neo Amp's editor with a preset loaded: the amp's knobs, the cabinet's picture with the mic and the cuts drawn on it, the tuner
+                // and the output. The cabinet is made in the background: the shot waits for it (Busy), then plays blocks of a steady tone (the tuner needs a
+                // tenth of a second of it).
+                void AmpShot(string id, string machineName, int[] raws, double hz, string text)
+                {
+                    Try(id, () =>
+                    {
+                        var m = Add("Neo Amp", machineName);
+                        string[] names = { "Input", "Trim", "Gate", "Gate release", "Voicing", "Gain", "Bass", "Mid", "Treble", "Sag", "Presence", "Resonance", "Master", "Quality", "Cabinet", "Wave", "Mic position", "Low cut", "High cut", "Tuner", "Reference", "Output", "Mix", "Amount" };
+                        string[] props = { "InputCh", "Trim", "GateThresh", "GateRelease", "Voicing", "Gain", "Bass", "Mid", "Treble", "Sag", "Presence", "Resonance", "Master", "Quality", "Cabinet", "CabWave", "MicPos", "LowCut", "HighCut", "Tuner", "Reference", "Output", "Mix", "Amount" };
+                        var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
+                        for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
+                        var inst = m.ManagedMachine!;
+                        // (the host hands the values to the machine at the song's tick; the shot does not tick, so they are set on it directly)
+                        for (int k = 0; k < props.Length; k++) inst.GetType().GetProperty(props[k])!.SetValue(inst, raws[k]);
+                        var busy = inst.GetType().GetProperty("Busy")!;
+                        var work = inst.GetType().GetMethod("Work")!;
+                        var output = new Buzz.MachineInterface.Sample[256];
+                        var input = new Buzz.MachineInterface.Sample[256];
+                        for (int tries = 0; tries < 400 && (bool)busy.GetValue(inst)!; tries++) System.Threading.Thread.Sleep(10);
+                        for (int b = 0; b < 40; b++)
+                        {
+                            for (int i = 0; i < 256; i++)
+                            {
+                                float s = (float)(System.Math.Sin(2 * System.Math.PI * hz * (b * 256 + i) / 48000.0) * 6000);
+                                input[i] = new Buzz.MachineInterface.Sample(s, s);
+                            }
+                            lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                        }
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Amp; load a preset; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                AmpShot("665-neo-amp-editor", "Amp", new[] { 2, 500, 167, 589, 3, 600, 550, 680, 520, 550, 400, 400, 700, 1, 3, 0, 250, 0, 1000, 0, 25, 500, 1000, 1000 }, 196.0,
+                    "Neo Amp with the preset \"Crunch — Classic Rock\" loaded: the Input section (channel, Trim, Gate and its release, the level meter), the Amp section (voicing, Quality, Gain and the tone stack knobs, Sag, Presence, Resonance and Master), the Cabinet section (the closed 4x12's response with the mic position and cuts drawn on it, Wave, Mic position and the two cuts), the Tuner section (off: the display says so) and Output with Amount and Mix side by side.");
+                AmpShot("666-neo-amp-tuner", "Amp 2", new[] { 2, 500, 417, 458, 5, 825, 550, 250, 680, 100, 600, 550, 550, 1, 3, 0, 200, 502, 1000, 1, 25, 500, 1000, 1000 }, 110.0,
+                    "Neo Amp with the preset \"High Gain — Tight Rhythm\" and the Tuner on, listening to a steady 110 Hz tone: the display shows A2 with its cents and a needle on the scale, the cabinet picture has the low cut drawn on it, and the output is muted.");
+                AmpShot("667-neo-amp-missing-wave", "Amp 3", new[] { 2, 500, 0, 589, 3, 600, 550, 680, 520, 550, 400, 400, 700, 1, 7, 4, 250, 0, 1000, 0, 25, 500, 1000, 1000 }, 196.0,
+                    "Neo Amp with Cabinet set to Wave and slot 5 empty: the picture shows the closed 4x12 that plays instead, in its colour, and the line in the amber warning colour says that Wave 5 is not in the song.");
                 Try("456-device-list-mode", () =>
                 {
                     var m = Core.SongCore.MachinesList.First(x => x.Name == "Gallery Neo Poly");

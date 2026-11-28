@@ -22,6 +22,7 @@ using NeoBuzz.Editor;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Audio;
 using ReBuzz.Core;
+using ReBuzz.Core.Session;
 using ReBuzz.Studio.Platform;
 using NeoBuzz.TestSupport;
 
@@ -74,12 +75,16 @@ namespace ReBuzz.Studio.Tests
             ("Neo Lo-Fi", "NeoLoFiEditor", "neo-lofi-editor", 1041, 241),   // LF2: Amount and Mix over Tone and Output (1000 x 330 with the three knobs in a column)
             ("Neo Chop", "NeoChopEditor", "neo-chop-editor", 898, 546),   // CHP1: the mode row, the mode pages, the sixteen steps and Output (the size is read from the first CI run)
             ("Neo Prism", "NeoPrismEditor", "neo-prism-editor", 754, 658),   // PRI1: the spectrum, the section lights, the section page and Output (the size is read from the first CI run)
+            ("Neo Shift", "NeoShiftEditor", "neo-shift-editor", 558, 652),   // SHF1: the spectrum with the shift, the mode tabs and page, Notes and Output (read from the first CI run)
             ("Neo Space", "NeoSpaceEditor", "neo-space-editor", 964, 251),   // SPC1: Room, the response picture, Tone and Output (the size is read from the first CI run)
+            ("Neo Vocoder", "NeoVocoderEditor", "neo-vocoder-editor", 1207, 331),   // VOC1: Carrier, the live bands, Voice and Output
+            ("Neo Amp", "NeoAmpEditor", "neo-amp-editor", 1189, 331),   // AMP1: Input, Amp, Cabinet (with its picture), Tuner and Output (size from the Mac gallery shot, 2378 x 662 px at 2x)
             ("Neo Tune", "NeoTuneEditor", "neo-tune-editor", 1364, 381),   // FX1: Amount and Mix, two 40 px knobs, in its Engine column (1364 x 341 before)
             ("Neo Audio to MIDI", "NeoAudioToMidiEditor", "neo-audio-to-midi-editor", 936, 883),   // the live roll, key, melody, drums with the Calibrate panel
             ("Neo Dither", "NeoDitherEditor", "neo-dither-editor", 667, 277),
             ("Neo Strip", "NeoStripEditor", "neo-strip-editor", 966, 675),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (966 x 605 before)
             ("Neo Chip", "NeoChipEditor", "neo-chip-editor", 886, 496),
+            ("Neo Follow", "NeoFollowEditor", "neo-follow-editor", 664, 737),   // FOL1: the mode tabs, the Envelope controls and Shape, the live meter and the targets (read from the first CI run)
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -2348,6 +2353,127 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(m);
+            }
+        }
+        // ------------------------------------------------------------------ Neo Follow (FOL1, #199)
+
+        /// <summary>Runs the machine's Work as the host calls it: one block of <paramref name="input"/> (and <paramref name="key"/>) in, the output out.</summary>
+        static void WorkOnce(object instance, Buzz.MachineInterface.Sample[] output, Buzz.MachineInterface.Sample[] input, Buzz.MachineInterface.Sample[] key)
+        {
+            var work = instance.GetType().GetMethod("Work")!;
+            work.Invoke(instance, new object[] { new[] { output }, new[] { input, key }, output.Length, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+        }
+
+        [AvaloniaTest]
+        public void NeoFollowPassesTheAudioThroughBitIdenticalInEveryMode()
+        {
+            AudioHygieneTests.NewSong();
+            var m = Add("Neo Follow", "Follow Pass");
+            try
+            {
+                var rng = new Random(199);
+                var input = new Buzz.MachineInterface.Sample[256];
+                var key = new Buzz.MachineInterface.Sample[256];
+                var output = new Buzz.MachineInterface.Sample[256];
+                foreach (int listen in new[] { 0, 1 })
+                    foreach (int mode in new[] { 0, 1, 2 })
+                    {
+                        Global(m, "Listen to").SetValue(0, listen);
+                        Global(m, "Mode").SetValue(0, mode);
+                        for (int block = 0; block < 60; block++)
+                        {
+                            for (int i = 0; i < 256; i++)
+                            {
+                                double s = 12000 * Math.Sin(2 * Math.PI * 220 * (block * 256 + i) / 44100.0) + rng.Next(-3000, 3000);
+                                input[i] = new Buzz.MachineInterface.Sample((float)s, (float)(-0.7 * s));
+                                key[i] = new Buzz.MachineInterface.Sample(rng.Next(-20000, 20000), rng.Next(-20000, 20000));
+                                output[i] = new Buzz.MachineInterface.Sample(float.NaN, float.NaN);
+                            }
+                            WorkOnce(m.ManagedMachine, output, input, key);
+                            for (int i = 0; i < 256; i++)
+                            {
+                                Assert.That(BitConverter.SingleToInt32Bits(output[i].L), Is.EqualTo(BitConverter.SingleToInt32Bits(input[i].L)), $"listen {listen}, mode {mode}, block {block}, left {i}");
+                                Assert.That(BitConverter.SingleToInt32Bits(output[i].R), Is.EqualTo(BitConverter.SingleToInt32Bits(input[i].R)), $"listen {listen}, mode {mode}, block {block}, right {i}");
+                            }
+                        }
+                    }
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoFollowWritesItsTargetsAndASongKeepsThemLikeNeoRandomsAreKept()
+        {
+            AudioHygieneTests.NewSong();
+            string path = TestTemp.Path("neo-follow-targets-" + Guid.NewGuid().ToString("N") + ".nbl");
+            try
+            {
+                // A Neo Poly playing a clip, through Neo Follow, into a Neo Filter: the follower listens to what it passes on.
+                var poly = AudioHygieneTests.AddPoly("Follow Poly");
+                poly.CreateClip("00", 16);
+                var clip = (ClipCore)poly.Clips.First();
+                Core.SessionLayout.EditNotes(clip, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * ClipEvent.TimeBase, ClipEvent.TimeBase / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+                AudioHygieneTests.Arrange(poly, clip);
+                var filter = AudioHygieneTests.InsertFilter(poly, "Follow Filter");
+                var follow = Add("Neo Follow", "Follow Mod");
+                var song = Core.SongCore;
+                song.DisconnectMachines(poly.Outputs.First(c => c.Destination == filter));
+                song.ConnectMachines(poly, follow, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                song.ConnectMachines(follow, filter, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var mod = ModulationBoard.Of(follow)!;
+                Assert.That(mod, Is.Not.Null, "Neo Follow is a modulator");
+                var cutoff = Global(filter, "Cutoff");
+                var reso = Global(filter, "Resonance");
+                int baseValue = (cutoff.MinValue + cutoff.MaxValue) / 3;
+                cutoff.SetValue(1 << 16, baseValue);
+                Global(follow, "Mode").SetValue(0, 0);
+                Global(follow, "Attack").SetValue(0, 300);
+                Global(follow, "Floor").SetValue(0, 0);          // -80 dB: any sound counts
+                Global(follow, "Write glide").SetValue(0, 100);
+                Assert.That(mod.SetTarget(-1, filter, cutoff, 0, new ModulationInfo { Depth = 80, Bipolar = false, Curve = 0 }, out _), Is.Null);
+                Assert.That(mod.SetTarget(-1, filter, reso, 0, new ModulationInfo { Depth = -40, Bipolar = true, RangeMin = reso.MinValue, RangeMax = reso.MaxValue / 2 }, out _), Is.Null);
+
+                // The engine plays the song for a while: the target moves off its base, within its range.
+                int moved = baseValue;
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                Run(1.5);
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                AudioHygieneTests.Pump();
+                moved = cutoff.GetValue(0);
+                Assert.That(moved, Is.GreaterThan(baseValue), "a loud tone opens the cutoff (positive depth) from its base");
+                Assert.That(moved, Is.LessThanOrEqualTo(cutoff.MaxValue));
+                Assert.That(mod.Targets.Select(x => x.Base).First(), Is.EqualTo(baseValue), "the modulator keeps the base");
+
+                Core.SaveSongCopy(path);
+                Core.Modified = false;
+                ReBuzz.Studio.Shell.Dialogs.Responder = (mm, c, b) => UserAnswer.No;
+                Core.OpenSongFile(path);
+                AudioHygieneTests.Pump();
+                var opened = Core.SongCore.MachinesList.Single(x => x.Name == "Follow Mod");
+                var again = ModulationBoard.Of(opened)!;
+                Assert.That(again, Is.Not.SameAs(mod), "the song was opened");
+                int wait = Environment.TickCount + 6000;
+                while (Environment.TickCount < wait && again.Targets.Count != 2) { AudioHygieneTests.Pump(); Thread.Sleep(20); }
+                var targets = again.Targets;
+                Assert.That(targets.Count, Is.EqualTo(2), "both targets are back");
+                Assert.That(targets[0].Param, Is.EqualTo("Cutoff"));
+                Assert.That(targets[0].Depth, Is.EqualTo(80));
+                Assert.That(targets[0].Bipolar, Is.False);
+                Assert.That(targets[1].Param, Is.EqualTo("Resonance"));
+                Assert.That(targets[1].Depth, Is.EqualTo(-40));
+                Assert.That(targets[1].RangeMax, Is.EqualTo(reso.MaxValue / 2));
+                Assert.That(Global(opened, "Mode").GetValue(0), Is.EqualTo(0));
+                Assert.That(Global(opened, "Attack").GetValue(0), Is.EqualTo(300), "the settings came back too");
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                ReBuzz.Studio.Shell.Dialogs.Responder = null;
+                try { File.Delete(path); } catch (IOException) { }
+                AudioHygieneTests.NewSong();
             }
         }
     }

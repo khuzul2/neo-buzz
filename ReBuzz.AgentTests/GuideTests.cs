@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         internal static readonly string[] Topics = { "workflow", "concepts", "composition", "genres", "sound-design", "synth-recipes", "fm-recipes", "mixing", "mixing-dynamics", "mastering", "mastering-chain", "dye-essence-in-depth", "dye-essence-analysis", "dye-essence-effects", "neo-eq-in-depth", "build-a-synth", "app-control", "midi-mapping", "note-wires", "live-performance", "dye-sound-design", "teaching", "performance", "recipes", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Audio", "Neo Chip", "Neo Chord", "Neo Chop", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Grain", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Keys", "Neo Lo-Fi", "Neo Low End", "Neo Macro", "Neo Mallet", "Neo Multiband", "Neo Organ", "Neo Poly", "Neo Pulse", "Neo Random", "Neo Prism", "Neo Sampler", "Neo Scope", "Neo Space", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch", "Neo Arp", "Neo Notes" };
+        static readonly string[] NeoGear = { "Neo Amp", "Neo Analyzer", "Neo Audio", "Neo Chip", "Neo Chord", "Neo Chop", "Neo Clipper", "Neo Comp", "Neo De-esser", "Neo Delay", "Neo Drive", "Neo Dither", "Neo Drums", "Neo Envelope", "Neo EQ", "Neo Ensemble", "Neo Exciter", "Neo Filter", "Neo FM6", "Neo Gate", "Neo Grain", "Neo Imager", "Neo Limiter", "Neo LFO", "Neo Keys", "Neo Lo-Fi", "Neo Low End", "Neo Macro", "Neo Mallet", "Neo Multiband", "Neo Organ", "Neo Poly", "Neo Pulse", "Neo Random", "Neo Prism", "Neo Sampler", "Neo Scope", "Neo Shift", "Neo Space", "Neo Spectral", "Neo Step", "Neo Tune", "Neo Strip", "Neo Tape", "Neo Transient", "Neo Utility", "Neo Voice to MIDI", "Neo Audio to MIDI", "Neo Verb", "Neo Vocoder", "Neo Wave", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive", "Neo Learn Granular", "Neo Learn Physical", "Neo Learn String", "Neo Learn Formant", "Neo Learn Wavefolder", "Neo Learn Phase Distortion", "Neo Learn Vector", "Neo Learn Sampler", "Neo Learn Spectral", "Neo Patch", "Neo Arp", "Neo Notes", "Neo Follow" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -58,7 +58,7 @@ namespace ReBuzz.AgentTests
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
             ["machine_remove"] = new[] { "machines", "keep_chain" },
             ["machine_set"] = new[] { "machine", "rename", "mute", "reset", "solo", "bypass", "tracks", "colour" },
-            ["connect"] = new[] { "from", "to", "gain_db", "pan", "input" },
+            ["connect"] = new[] { "from", "to", "gain_db", "pan", "input", "from_output" },
             ["disconnect"] = new[] { "from", "to" },
             ["connection_set"] = new[] { "changes" },
             ["machine_describe"] = new[] { "machine", "group", "value_table", "table_points" },
@@ -76,7 +76,7 @@ namespace ReBuzz.AgentTests
             ["clip_delete"] = new[] { "machine", "clip" },
             ["clip_rename"] = new[] { "machine", "clip", "new_name" },
             ["clip_duplicate"] = new[] { "machine", "clip", "new_name" },
-            ["notes_write"] = new[] { "machine", "clip", "notes", "mode", "range_start", "range_end", "input", "apply_pitch_offset" },
+            ["notes_write"] = new[] { "machine", "clip", "notes", "mode", "range_start", "range_end", "input", "apply_pitch_offset", "columns" },
             ["notes_read"] = new[] { "machine", "clip", "range_start", "range_end", "input", "apply_pitch_offset" },
             ["arrangement_get"] = new[] { "from", "to" },
             ["arrangement_place"] = new[] { "machine", "clip", "at", "repeat_every_beats", "times" },

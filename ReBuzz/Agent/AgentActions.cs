@@ -80,6 +80,43 @@ namespace ReBuzz.Agent
             Do(core, new DelegateAction(() => Set(amp, pan), () => Set(oldAmp, oldPan)));
         }
 
+        /// <summary>
+        /// Fork (docs/specs/multi-output.md): which of the source machine's outputs a wire reads (0-based), as one undo step. The wire is found by its
+        /// machines' names when the step runs, so undo and redo work after machines are deleted and made again.
+        /// </summary>
+        public static void SetConnectionOutput(ReBuzzCore core, IMachineConnection c, int output)
+        {
+            string from = c.Source.Name, to = c.Destination.Name;
+            var was = c.SourceChannels.ToArray();
+            if (was.Length == 1 && was[0] == output) return;
+            void Set(int[] outputs)
+            {
+                var conn = Find(core, from)?.Outputs.FirstOrDefault(x => x.Destination.Name == to) as MachineConnectionCore;
+                if (conn == null) return;
+                lock (ReBuzzCore.AudioLock)
+                {
+                    conn.SetSourceChannel(outputs[0], true);       // first the new ones are added, so the wire never reads nothing
+                    foreach (int old in conn.SourceChannels.ToArray())
+                        if (Array.IndexOf(outputs, old) < 0) conn.SetSourceChannel(old, false);
+                    foreach (int o in outputs) conn.SetSourceChannel(o, true);
+                }
+            }
+            Do(core, new DelegateAction(() => Set(new[] { output }), () => Set(was), "Wire output"));
+        }
+
+        /// <summary>Fork (docs/specs/multi-output.md): a wire's own mute or solo (the mixer's strip of an extra output), one undo step.</summary>
+        public static void SetWireFlag(ReBuzzCore core, IMachineConnection c, bool solo, bool on)
+        {
+            string from = c.Source.Name, to = c.Destination.Name;
+            bool old = c is MachineConnectionCore mc && (solo ? mc.Soloed : mc.Muted);
+            if (old == on) return;
+            void Set(bool v)
+            {
+                if (Find(core, from)?.Outputs.FirstOrDefault(x => x.Destination.Name == to) is MachineConnectionCore conn) conn.SetFlag(solo, v);
+            }
+            Do(core, new DelegateAction(() => Set(on), () => Set(old), solo ? "Wire solo" : "Wire mute"));
+        }
+
         public enum Flag { Mute, Solo, Bypass }
 
         public static void SetFlag(ReBuzzCore core, MachineCore m, Flag flag, bool on)

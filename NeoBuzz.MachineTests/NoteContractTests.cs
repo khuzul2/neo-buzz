@@ -124,6 +124,13 @@ namespace NeoBuzz.MachineTests
                 var e = new NeoBuzz.Drums.DrumsEngine(v); e.SetSampleRate(Rate);
                 return Of(e.Process, e, () => e.ActiveHits, () => e.ActiveHits);
             }, Pitch = 36, Chord = new[] { 36, 38, 39, 41 }, Sixteen = 12, Sixteen16 = new[] { 35, 38, 39, 37, 42, 46, 41, 45, 48, 56, 49, 51, 36, 40, 43, 47 }, Max = 0, NoNoteOff = "drums are one-shots: a note's end changes nothing" },
+            new Row { Name = "Neo Vocoder (the synth carrier, noise as the modulator; 8 voices)", Make = () =>
+            {
+                var v = new ParamValues(NeoBuzz.Vocoder.Params.Table);
+                var e = new NeoBuzz.Vocoder.VocoderEngine(v); e.SetSampleRate(Rate);
+                var noise = new Rng(21);
+                return Of((l, r, n) => { for (int i = 0; i < n; i++) l[i] = r[i] = 0.3f * noise.NextBipolar(); e.Process(l, r, null, null, n); return true; }, e, () => e.HeldNotes, () => e.ActiveVoices);
+            }, Sixteen = 8, Max = 8 },
             new Row { Name = "Neo Patch (the default patch)", Make = () =>
             {
                 var v = new ParamValues(NeoBuzz.Patch.Params.Table);
@@ -147,8 +154,7 @@ namespace NeoBuzz.MachineTests
             Learn("Neo Learn Wavetable", NeoBuzz.LearnWt.Params.Table, () => new WavetableMap(NeoBuzz.LearnWt.Params.Table)),
             Learn("Neo Learn Additive", NeoBuzz.LearnAdd.Params.Table, () => new AdditiveMap(NeoBuzz.LearnAdd.Params.Table)),
             Learn("Neo Learn Granular", NeoBuzz.LearnGrain.Params.Table, () => new GranularMap(NeoBuzz.LearnGrain.Params.Table)),
-            Learn("Neo Learn Physical", NeoBuzz.LearnPhys.Params.Table, () => new PhysicalMap(NeoBuzz.LearnPhys.Params.Table),
-                notMonotone: "FINDING (notes.md G11): the mallet's contact pulse has spectral nulls that move with velocity, so the level wobbles by up to 17 dB between neighbouring velocities (127 is still 18 dB over 30)"),
+            Learn("Neo Learn Physical", NeoBuzz.LearnPhys.Params.Table, () => new PhysicalMap(NeoBuzz.LearnPhys.Params.Table)),
             Learn("Neo Learn String", NeoBuzz.LearnString.Params.Table, () => new StringMap(NeoBuzz.LearnString.Params.Table)),
             Learn("Neo Learn Formant", NeoBuzz.LearnFormant.Params.Table, () => new FormantMap(NeoBuzz.LearnFormant.Params.Table)),
             Learn("Neo Learn Wavefolder", NeoBuzz.LearnFold.Params.Table, () => new WavefolderMap(NeoBuzz.LearnFold.Params.Table)),

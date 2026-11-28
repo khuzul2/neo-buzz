@@ -24,6 +24,7 @@ NeoBuzz.Exciter	0	15	ae9270c82c60d418
 NeoBuzz.Filter	0	18	44306d9ce552e128
 NeoBuzz.Filter	1	22	7bc4e0474f037f95
 NeoBuzz.Fm6	0	172	82815f73f6dd7eb2
+NeoBuzz.FollowMachine	0	23	7a38453e70ac63f0
 NeoBuzz.Gate	0	15	04189a5ccf665c32
 NeoBuzz.Grain	0	20	330320474c0bc614
 NeoBuzz.Imager	0	14	17e3f5ad19d4a511
@@ -71,6 +72,9 @@ NeoBuzz.Tune	0	20	cbee2b088009522f
 NeoBuzz.TutorialTremolo	0	6	ae4ecf4a09593708
 NeoBuzz.Utility	0	11	3eb4171cc6e8a4c2
 NeoBuzz.Verb	0	17	ee4d7f51739f6a7b
+NeoBuzz.Vocoder	0	22	28cc864ec3adc6ca
 NeoBuzz.VoiceToMidi	0	91	9871503cf4670345
 NeoBuzz.Wave	0	83	744dec7ce1d8d67c
 NeoBuzz.Prism	0	27	58a0b9f7dfee3eda
+NeoBuzz.Amp	0	24	8e04116658fae65e
+NeoBuzz.Shift	0	20	6bc2b97b22133d0b

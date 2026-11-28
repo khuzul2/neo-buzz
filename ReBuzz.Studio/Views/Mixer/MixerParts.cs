@@ -15,7 +15,7 @@ namespace ReBuzz.Studio.Views.Mixer
 {
     using Control = Avalonia.Controls.Control;
 
-    internal enum StripKind { Track, Group, Return, Master }
+    internal enum StripKind { Track, Group, Return, Master, Output }
 
     /// <summary>How much of a strip shows: Full (every part), Compact (name, fader, meter, pan, On, Solo, Arm) or Header (the parts laid out sideways, for a track header).</summary>
     internal enum MixerDensity { Full, Compact, Header }
