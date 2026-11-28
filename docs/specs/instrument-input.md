@@ -19,7 +19,7 @@ A generator can take audio when it declares an input. This is the host side: the
 ## The agent
 
 - `connect` into such a generator works, with `gain_db` and `pan`. For any other generator it says "NAME is a generator and takes no audio input. Connect into an effect or Master."
-- `machine_list` and `machine_describe` give `audio_inputs` (the number of inputs) for a generator that takes audio and nothing for one that does not; `gear_list` gives it for the gear. The `machine_list` text says "(takes audio: 1 input)".
+- `machine_list`, `machine_describe` and `machine_add` give `audio_inputs` (the number of inputs) for a song's generator that takes audio and nothing for one that does not. The `machine_list` text says "(takes audio: 1 input)".
 - Every edit is one undo step.
 
 ## Gates (tests)

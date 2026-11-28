@@ -51,9 +51,6 @@ namespace ReBuzz.ManagedMachine
         public MachineParameter[] globalParameters;
         public MachineParameter[] trackParameters;
         internal MachineDecl machineInfo;
-
-        /// <summary>Fork (instrument-input.md): how many audio inputs a generator of this gear takes (0: none, as every other generator).</summary>
-        public int AudioInputs => WorkFunctionType == WorkFunctionTypes.GeneratorBlockMultiIn ? machineInfo.InputCount : 0;
         internal ConstructorInfo constructor;
         private readonly IUiDispatcher dispatcher;
 

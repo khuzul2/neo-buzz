@@ -6,12 +6,15 @@ using System;
 using System.IO;
 using System.Linq;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Views;
+using NUnit.Framework;
 using ReBuzz.Studio.Views.Machines;
 using static ReBuzz.Studio.Tests.MachineViewTests;
 
