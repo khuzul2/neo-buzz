@@ -37,3 +37,6 @@ NeoArp/	pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Patte
 NeoArp/	Pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
 Neo Arp	pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
 Neo Arp	Pattern	Neo Arp's arpeggio patterns (Up, Down, Random ...) and its Pattern parameter, not clips
+NeoNotes/	Pattern	Neo Notes's Spread pattern parameter (octave shift patterns), not a clip
+NeoNotes/	pattern	Neo Notes's Spread pattern parameter (octave shift patterns), not a clip
+Neo Notes	Pattern	Neo Notes's Spread pattern parameter (octave shift patterns), not a clip

@@ -1,8 +1,9 @@
 // Fork (docs/specs/studio-mvp.md S2): the parameter window's "Presets…" dialog, ported from the
 // WPF PresetsWindow and ParameterWindowVM's preset editor: the machine's presets (its .prs.xml
-// beside it in Gear, as BuzzGUI.Common's MachineExtensions read and write it) with a comment each;
-// a name and Add (or Update, for an existing name) saves the machine's state now; Delete removes
-// the selected one; Import… merges .prs.xml / .prs files in.
+// factory ones from Gear, read-only, and the user's own from the settings folder's Presets, as BuzzGUI.Common's
+// MachineExtensions list them together, the user's marked "User") with a comment each; a name and Add (or Update, for
+// one of the user's; Save copy, for a factory one) saves the machine's state now as a user preset; Delete removes
+// the selected user preset (a factory preset it stood in for comes back); Import… merges .prs.xml / .prs files in.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +54,14 @@ namespace ReBuzz.Studio.Parameters
             Place(new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 8, 8), Children = { add, delete, import } }, 1, 1);
             Content = grid;
 
+            list.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((name, _) =>
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                row.Children.Add(new TextBlock { Text = name });
+                if (name != null && machine.IsUserPreset(name))
+                    row.Children.Add(new TextBlock { Text = "User", Opacity = 0.6, FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
+                return row;
+            });
             list.SelectionChanged += (s, e) => Select(list.SelectedItem as string);
             nameBox.TextChanged += (s, e) => UpdateButtons();
             add.Click += (s, e) => Add();
@@ -83,9 +92,9 @@ namespace ReBuzz.Studio.Parameters
         void UpdateButtons()
         {
             string n = nameBox.Text?.Trim() ?? "";
-            add.Content = machine.GetPresetNames().Contains(n) ? "Update" : "Add";
+            add.Content = machine.IsUserPreset(n) ? "Update" : machine.GetPresetNames().Contains(n) ? "Save copy" : "Add";
             add.IsEnabled = n.Length > 0;
-            delete.IsEnabled = list.SelectedItem is string;
+            delete.IsEnabled = list.SelectedItem is string sel && machine.IsUserPreset(sel);
         }
 
         /// <summary>A preset selected: its name and comment fill the boxes (PresetEditorSelectedValue).</summary>
@@ -114,8 +123,8 @@ namespace ReBuzz.Studio.Parameters
 
         public void Delete()
         {
-            if (list.SelectedItem is not string n) return;
-            machine.SetPreset(n, null);
+            if (list.SelectedItem is not string n || !machine.IsUserPreset(n)) return;   // a factory preset can't be deleted
+            machine.DeleteUserPreset(n);
             PresetsChanged?.Invoke();
             nameBox.Text = "";
             comment.Text = "";
