@@ -1,0 +1,77 @@
+# Neo Looper parameters (docs/specs/neo-looper.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoLooper
+namespace NeoBuzz.Looper
+class NeoLooperMachine
+summary Live looper synced to the song, made for a MIDI controller: one Record trigger steps empty, recording, playing, overdubbing, playing; Stop, Play, Undo, Redo, Clear and Multiply (x2, x3, x4) are their own triggers. In Sync starts and stops wait for the next bar or beat and the first take is rounded to whole bars at the song tempo; in Free the first take sets the length. Feedback on overdub, input monitor, Reverse, Half speed, a crossfade at the loop point and at every punch, undo levels, and the loop's audio is saved with the song. Use it to build a loop live from a pad or footswitch.
+
+group Triggers
+Record   "Record"   0 1 0 switch | Trigger: Empty to Recording to Playing to Overdubbing to Playing (a pad or footswitch sends it)
+    how Each press steps the one-button cycle: start recording, close the take and play, overdub, back to play.
+    sound In Sync each step waits for the next bar or beat.
+Stop     "Stop"     0 1 0 switch | Trigger: stop the loop (it is kept)
+    how Stops playback at the next bar (Sync) or now (Free); the loop stays in memory.
+    sound The loop ends with a short fade.
+Play     "Play"     0 1 0 switch | Trigger: play a stopped loop from its start
+    how Starts a stopped loop from its beginning at the next bar (Sync) or now (Free).
+    sound The loop comes back in time with the song.
+Undo     "Undo"     0 1 0 switch | Trigger: take back the last overdub, multiply or clear
+    how Goes back one level of the undo history at once.
+    sound The loop returns to how it was before the last pass.
+Redo     "Redo"     0 1 0 switch | Trigger: bring back what Undo took away
+    how Goes forward one level after an Undo, until you overdub or multiply again.
+    sound The pass you took back returns.
+Clear    "Clear"    0 1 0 switch | Trigger: empty the loop (Undo brings it back)
+    how Empties the loop; the old loop is kept as an undo level.
+    sound Silence from the loop.
+Multiply "Multiply" 0 1 0 switch | Trigger: make the loop 2, 3 or 4 times as long, repeating its content
+    how The loop becomes Multiply by times as long at its next start; its content repeats, so overdubs can vary over the longer cycle.
+    sound The same phrase, now with room to change over a longer cycle.
+group Timing
+Sync     "Sync"     0 1 1 enum Free Sync | Sync: starts and stops wait for the next bar or beat and the first take is whole bars; Free: the first take sets the length
+    how Chooses whether the loop follows the song's bars or your own timing.
+    sound Sync keeps the loop on the beat; Free lets you record any length.
+Quantise "Quantise" 0 1 0 enum Bar Beat | Sync: what starts and stops wait for
+    how Chooses the next bar or the next beat as the landing point in Sync.
+    sound Beat lets you drop in sooner, bar keeps the phrase whole.
+MultiplyBy "Multiply by" 0 2 0 enum x2 x3 x4 | How many times as long Multiply makes the loop
+    how Sets the factor of the Multiply trigger.
+    sound A longer cycle that repeats the take until you overdub.
+Pedal    "Pedal"    0 1 0 enum Press Press_and_release | Which change of a trigger fires: the press only, or the press and the release too (a latching footswitch)
+    how Chooses whether a trigger parameter fires on 0 to 1 only, or on every change.
+    sound Use the second for a footswitch that stays down.
+group Loop
+Feedback "Feedback" 0 1000 1000 pct | How much of the old loop stays at each overdub pass (100 % keeps everything)
+    how Scales the existing loop while an overdub pass records over it.
+    sound Lower values let old layers fade away.
+Monitor  "Monitor"  0 1 1 switch | The input is heard while looping
+    how Passes the input to the output beside the loop.
+    sound Off, you hear only the loop.
+Reverse  "Reverse"  0 1 0 switch | Play the loop backwards
+    how Reads the loop from the end to the start.
+    sound The phrase runs backwards.
+HalfSpeed "Half speed" 0 1 0 switch | Play at half speed, an octave down, exactly twice as long
+    how Reads the loop at half speed.
+    sound An octave lower and twice as slow; an overdub made now returns an octave higher at normal speed.
+Crossfade "Crossfade" 0 1000 458 exp 1 50 ms 1 | The fade at the loop point and at every punch in and out
+    how Sets the length of the crossfade that hides every edit.
+    sound Short is tight, long is soft.
+LoopLevel "Loop level" 0 600 600 db -60 0 inf | Level of the loop in the output
+    how Sets the playback level of the loop.
+    sound Lower to tuck the loop under what you play.
+group Memory
+MaxLoop  "Max loop" 0 3 1 enum 15_s 30_s 60_s 120_s | The longest loop: memory is allocated for it (changes only while the loop is empty)
+    how Sets the longest loop the machine can hold, which sets its memory.
+    sound Longer loops use more memory and make bigger songs.
+UndoLevels "Undo levels" 0 7 3 int 1 | How many overdub passes can be taken back (1 to 8; changes only while the loop is empty)
+    how Sets the undo history depth; each level needs one more loop buffer.
+    sound More levels use more memory.
+group Output
+Mix      "Mix"      0 1000 1000 pct | Dry/wet (the effect has no latency, so the dry signal is not delayed)
+    how Blends the looper with the unprocessed sound.
+    sound Lower values keep more of the live input.
+Amount   "Amount"   0 2000 1000 lin 0 200 % 1 | Effect strength: scales the loop's level against the input; 100 % = the settings as shown, 0 % = bypass (bit for bit the input)
+    how Scales the loop's level: 0 % is bypass, 100 % your settings, 200 % twice the loop level.
+    sound Turn it down to bring the loop in, up to push it forward.
+reading state_code | Looper state: 0 empty, 1 recording, 2 playing, 3 overdubbing, 4 stopped
+reading loop_seconds s | Length of the loop in seconds
+reading undo_depth | Undo levels available

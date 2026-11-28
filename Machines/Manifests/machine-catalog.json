@@ -770,6 +770,15 @@
    "use_for": "Spectral effects on a track: freeze a chord, wash a pad, shuffle the bins into glitches, shift the pitch by semitones with formants kept, or echo low and high frequencies at different times.",
    "note_in": true
   },
+  "Neo Looper": {
+   "category": "Modulation",
+   "tags": [
+    "tempo-sync",
+    "rhythmic",
+    "tape"
+   ],
+   "use_for": "Build a loop live from a MIDI pad or footswitch: record, overdub, multiply and undo, in time with the song's bars, with feedback, reverse and half speed."
+  },
   "Neo Chop": {
    "category": "Modulation",
    "tags": [

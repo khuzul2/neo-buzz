@@ -1,0 +1,64 @@
+machine "Neo Looper"
+
+preset "Bar — Bar Looper"
+comment "The everyday looper: starts and stops land on the bar, the first take is whole bars, overdubs stack up and nothing fades."
+Sync = Sync
+Quantise = Bar
+Feedback = 100
+Monitor = On
+Crossfade = 6
+Loop level = 0
+
+preset "Beat — Beat Catcher"
+comment "Drops in on the next beat instead of the next bar, with a tight 3 ms crossfade, for catching a phrase quickly."
+Sync = Sync
+Quantise = Beat
+Feedback = 100
+Monitor = On
+Crossfade = 3
+Loop level = 0
+
+preset "Layers — Fading Layers"
+comment "Every overdub pass lets the older layers fall to 70 %, so the loop keeps moving instead of piling up."
+Feedback = 70
+Monitor = On
+Crossfade = 8
+Loop level = -1
+
+preset "Stack — Endless Stack"
+comment "Everything is kept and Multiply makes the loop four times as long, with eight levels of undo, for long evolving builds."
+Feedback = 100
+Multiply by = x4
+Undo levels = 8
+Max loop = 60 s
+Monitor = On
+
+preset "Sketch — Free Sketch"
+comment "No grid: the first take sets the length exactly, with a soft 20 ms crossfade, for sketching a phrase out of time."
+Sync = Free
+Feedback = 100
+Crossfade = 20
+Monitor = On
+
+preset "Octave — Octave Down Wash"
+comment "The loop plays an octave down and twice as slow, 85 % kept at each pass, and you hear only the loop."
+Half speed = On
+Feedback = 85
+Monitor = Off
+Crossfade = 12
+Loop level = -2
+
+preset "Tape — Backwards Tape"
+comment "The loop runs backwards, 90 % kept at each pass, with a long crossfade so the turns are soft."
+Reverse = On
+Feedback = 90
+Crossfade = 12
+Monitor = On
+Loop level = -2
+
+preset "Bed — Slow Decay Bed"
+comment "A quiet bed under what you play: only 40 % of the old loop survives each pass, and the loop sits 3 dB down."
+Feedback = 40
+Loop level = -3
+Crossfade = 10
+Monitor = On
