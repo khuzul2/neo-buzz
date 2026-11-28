@@ -2733,6 +2733,10 @@ namespace ReBuzz.Studio.Tests
                         var group = m.ParameterGroups.First(g => g.Type == ParameterGroupType.Global);
                         for (int k = 0; k < names.Length; k++) group.Parameters.First(p => p.Name == names[k]).SetValue(0, raws[k]);
                         var inst = m.ManagedMachine!;
+                        // Without a running engine the host does not tick, so the parameters have not reached the machine's own values yet: set them there too.
+                        var valuesObj = inst.GetType().GetProperty("Values", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        var setValue = valuesObj.GetType().GetMethod("Set", new[] { typeof(int), typeof(int) })!;
+                        for (int k = 0; k < names.Length; k++) setValue.Invoke(valuesObj, new object[] { k, raws[k] });
                         if (notes) foreach (int key in new[] { 48, 55, 60, 64 }) inst.GetType().GetMethod("MidiNote")!.Invoke(inst, new object[] { 0, key, 100 });
                         var work = inst.GetType().GetMethod("Work")!;
                         var output = new System.Collections.Generic.List<Buzz.MachineInterface.Sample[]> { new Buzz.MachineInterface.Sample[256] };
@@ -2753,7 +2757,6 @@ namespace ReBuzz.Studio.Tests
                         var bankObj = engineObj.GetType().GetProperty("Bank", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(engineObj)!;
                         int built = (int)bankObj.GetType().GetProperty("BuiltBands")!.GetValue(bankObj)!;
                         System.Console.WriteLine($"{id}: the engine has {built} bands (the preset says {raws[9] + 8})");
-                        var valuesObj = inst.GetType().GetProperty("Values", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
                         int stored = (int)valuesObj.GetType().GetProperty("Item")!.GetValue(valuesObj, new object[] { 9 })!;
                         int param = group.Parameters.First(p => p.Name == "Bands").GetValue(0);
                         Assert.That(built, Is.EqualTo(raws[9] + 8), $"the preset's values reached the engine: the engine has {built} bands, the machine's values hold Bands = {stored}, the parameter holds {param}, the preset says {raws[9]}");
