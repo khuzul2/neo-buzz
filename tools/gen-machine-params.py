@@ -22,6 +22,10 @@ Params.def lines:
   notekey 36 "Kick" [Group]        optional: a key that makes a sound, with its name (and group): the manifest's note_map, the piano
   notekey 48 60 [Group]            roll's key names and Fold: playable (docs/specs/daw-modes.md §8.9); a second number makes a range of
                                    unnamed keys. For a machine with a fixed map and no code for it
+  timing Sync feel=Feel rate=Rate [mode=Timing] [unit=hz]
+                                   optional: a musical timing (docs/sdk/tempo-sync.md): the parameter that holds its division (8 bars to
+                                   1/64, Free as an entry, or with mode=Id a Song tempo / Free time switch), its Feel, and the knob of
+                                   the free value (unit=hz for a rate, else a time). The manifest's timings: the agent sets "1/8 dotted"
   group Shape                      group shown in the editor for the following parameters
   reading key unit | what           optional: a value the machine measures (its public Readings, machine_readings)
   Id  "Name"  min max def  kind args...  | description
@@ -73,7 +77,7 @@ def num(x):
 
 
 def parse(path):
-    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': [], 'track_params': [], 'note_map': []}
+    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': [], 'track_params': [], 'note_map': [], 'timings': []}
     group = ''
     with open(path, encoding='utf-8') as f:
         for lineno, line in enumerate(f, 1):
@@ -91,6 +95,13 @@ def parse(path):
                 continue
             if line.lstrip().startswith('summary '):
                 spec['summary'] = line.strip()[len('summary '):].strip()
+                continue
+            if line.lstrip().startswith('timing '):
+                toks = shlex.split(line, comments=True)[1:]
+                kv = dict(t.split('=', 1) for t in toks[1:] if '=' in t)
+                if not toks or '=' in toks[0] or set(kv) - {'feel', 'mode', 'rate', 'unit'} or kv.get('unit', 'time') not in ('hz', 'time'):
+                    sys.exit(f'{path}:{lineno}: expected timing DivisionId [feel=Id] [mode=Id] [rate=Id] [unit=hz|time]')
+                spec['timings'].append({'division': toks[0], **kv, 'line': lineno})
                 continue
             if line.lstrip().startswith('import '):
                 head, _, what = line.strip()[len('import '):].partition('|')
@@ -166,6 +177,11 @@ def parse(path):
     for p in spec['params']:
         if p.get('how') and p['desc'] == p['name']:
             p['desc'] = p['how']
+    by_id = {p['id']: p['name'] for p in spec['params']}
+    for t in spec['timings']:
+        for key in ('division', 'feel', 'mode', 'rate'):
+            if key in t and t[key] not in by_id:
+                sys.exit(f"{path}:{t['line']}: timing {key} {t[key]} is not a parameter of this machine")
     ids = [p.get('pubid', p['id']) for p in spec['params']]
     names = [p['name'] for p in spec['params']]
     for seq, what in ((ids, 'id'), (names, 'name')):
@@ -389,6 +405,13 @@ def write_manifest(folder, spec, rel):
     }
     if spec['imports']:
         doc['imports'] = spec['imports']
+    if spec['timings']:
+        by_id = {p['id']: p['name'] for p in spec['params']}
+        doc['timings'] = [{'division': by_id[t['division']],
+                           **({'feel': by_id[t['feel']]} if 'feel' in t else {}),
+                           **({'mode': by_id[t['mode']]} if 'mode' in t else {}),
+                           **({'rate': by_id[t['rate']]} if 'rate' in t else {}),
+                           'unit': t.get('unit', 'time')} for t in spec['timings']]
     if spec['note_map']:
         doc['note_map'] = spec['note_map']
     mc.apply(doc)

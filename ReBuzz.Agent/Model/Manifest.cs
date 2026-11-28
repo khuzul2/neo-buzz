@@ -25,6 +25,24 @@ using System.Text.Json.Nodes;
 
 namespace ReBuzz.Agent.Model
 {
+    /// <summary>
+    /// One musical timing a machine has (SYN1, docs/sdk/tempo-sync.md): the parameter that holds its division (a list of 8 bars to 1/64, with
+    /// "Free" as an entry or a separate <see cref="Mode"/> switch), its Feel, and the free value. Names are the parameters' names as the manifest
+    /// lists them. The agent sets "1/8 dotted" as a division and a feel through these.
+    /// </summary>
+    public sealed class ManifestTiming
+    {
+        public required string Division { get; init; }
+        /// <summary>The Straight / Dotted / Triplet / Quintuplet parameter; empty: the timing has none.</summary>
+        public string Feel { get; init; } = "";
+        /// <summary>The Song tempo / Free time switch of a timing whose division list holds divisions only; empty: Free is an entry of the list.</summary>
+        public string Mode { get; init; } = "";
+        /// <summary>The knob that sets the free value (Hz or ms); empty: none.</summary>
+        public string Rate { get; init; } = "";
+        /// <summary>"hz" for a rate (an LFO), "time" for a length.</summary>
+        public string Unit { get; init; } = "time";
+    }
+
     public sealed class ManifestParameter
     {
         public int Index { get; init; }
@@ -306,6 +324,8 @@ namespace ReBuzz.Agent.Model
         /// <summary>Track parameters described in full (drafts); generated manifests list only their names.</summary>
         public IReadOnlyList<ManifestParameter> TrackParameters { get; init; } = Array.Empty<ManifestParameter>();
         public IReadOnlyList<ManifestImport> Imports { get; init; } = Array.Empty<ManifestImport>();
+        /// <summary>The musical timings the machine has (division, Feel, Timing switch, free value): what a phrase such as "1/8 dotted" is set through. Empty: none.</summary>
+        public IReadOnlyList<ManifestTiming> Timings { get; init; } = Array.Empty<ManifestTiming>();
         /// <summary>"draft" for a profiled manifest nobody has curated yet; empty for generated and curated ones.</summary>
         public string Status { get; init; } = "";
         public bool IsDraft => Status == "draft";
@@ -421,6 +441,14 @@ namespace ReBuzz.Agent.Model
                 Health = health,
                 Quirks = Strings(root["quirks"]),
                 Evidence = Strings(root["evidence"]),
+                Timings = (root["timings"] as JsonArray)?.OfType<JsonObject>().Where(t => (string)t["division"] is { Length: > 0 }).Select(t => new ManifestTiming
+                {
+                    Division = (string)t["division"],
+                    Feel = (string)t["feel"] ?? "",
+                    Mode = (string)t["mode"] ?? "",
+                    Rate = (string)t["rate"] ?? "",
+                    Unit = (string)t["unit"] ?? "time",
+                }).ToList() ?? new List<ManifestTiming>(),
                 Imports = (root["imports"] as JsonArray)?.OfType<JsonObject>().Select(i => new ManifestImport
                 {
                     Kind = (string)i["kind"] ?? "",

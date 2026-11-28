@@ -1,6 +1,8 @@
 // SYN1 (docs/sdk/tempo-sync.md): the agent says a timing the way a person does: "1/8 dotted", "1/16 quintuplet", "1 bar triplet".
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using NUnit.Framework;
@@ -79,19 +81,31 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
-        public void TheFeelOfADivisionIsFoundByItsName()
+        public void TheManifestsNameEachTimingsFeelSwitchAndKnob()
         {
-            var all = new[] { LfoSync, LfoFeel, ArpRate, ArpFeel };
-            Assert.That(V.FeelOf(new[] { LfoSync, LfoFeel }, LfoSync), Is.SameAs(LfoFeel));
-            Assert.That(V.FeelOf(new[] { ArpRate, ArpFeel }, ArpRate), Is.SameAs(ArpFeel));
-            var l1 = Enum("LFO1 sync", 0, "Free", "1/32", "1/16T", "1/16"); var f1 = Enum("LFO1 feel", 1, "Straight", "Dotted", "Triplet", "Quintuplet");
-            var l2 = Enum("LFO2 sync", 2, "Free", "1/32", "1/16T", "1/16"); var f2 = Enum("LFO2 feel", 3, "Straight", "Dotted", "Triplet", "Quintuplet");
-            var set = new[] { l1, f1, l2, f2 };
-            Assert.That(V.FeelOf(set, l1), Is.SameAs(f1));
-            Assert.That(V.FeelOf(set, l2), Is.SameAs(f2));
-            var shape = Enum("Shape", 9, "Sine", "Triangle");
-            Assert.That(V.FeelOf(set.Append(shape), shape), Is.Null, "not a timing");
-            Assert.That(V.FeelOf(new[] { LfoSync }, LfoSync), Is.Null, "no Feel on the machine");
+            string root = AppContext.BaseDirectory;
+            while (root != null && !Directory.Exists(Path.Combine(root, "Machines", "NeoLfo"))) root = Path.GetDirectoryName(root);
+            Assert.That(root, Is.Not.Null, "the repository");
+            var want = new Dictionary<string, int>
+            {
+                ["NeoDelay"] = 1, ["NeoLfo"] = 1, ["NeoRandom"] = 1, ["NeoArp"] = 1, ["NeoPulse"] = 1, ["NeoNotes"] = 2,
+                ["NeoPoly"] = 2, ["NeoWave"] = 2, ["NeoEnsemble"] = 1, ["NeoFilter"] = 1,
+            };
+            foreach (var (folder, count) in want)
+            {
+                var manifest = MachineManifest.Load(Directory.GetFiles(Path.Combine(root!, "Machines", folder), "*.machine.json").Single())!;
+                Assert.That(manifest.Timings, Has.Count.EqualTo(count), folder);
+                var names = manifest.Parameters.Select(p => p.Name).ToHashSet();
+                foreach (var t in manifest.Timings)
+                {
+                    Assert.That(names, Does.Contain(t.Division), folder);
+                    Assert.That(names, Does.Contain(t.Feel), folder + ": " + t.Division + " has a Feel");
+                    Assert.That(names, Does.Contain(t.Rate), folder + ": " + t.Division + " has a free knob");
+                    if (t.Mode.Length > 0) Assert.That(names, Does.Contain(t.Mode), folder);
+                    var feel = manifest.Parameters.Single(p => p.Name == t.Feel);
+                    Assert.That(feel.Mapping.Names, Is.EqualTo(new[] { "Straight", "Dotted", "Triplet", "Quintuplet" }), folder + ": the Feel's words");
+                }
+            }
         }
     }
 }

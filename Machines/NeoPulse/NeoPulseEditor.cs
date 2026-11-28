@@ -333,7 +333,7 @@ namespace NeoBuzz.Pulse
 
             // Global Clock & Probability row.
             var clockRow = Layout.Row(
-                ParamTempoTime.Create(ctx, new TempoTimeSpec { Mode = P.Sync, Division = P.Rate, Feel = P.Feel, Rate = P.FreeMs, KnobDiameter = D, MaxSeconds = 2 }),
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Mode = P.Sync, Division = P.Rate, Feel = P.Feel, Rate = P.FreeMs, KnobDiameter = D, Wide = true, MaxSeconds = 2 }),
                 Layout.Gap(12),
                 new ParamKnob(ctx, P.Swing, "Swing", D),
                 new ParamKnob(ctx, P.Fill, "Fill", D),

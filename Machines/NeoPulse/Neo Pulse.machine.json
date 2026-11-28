@@ -1945,5 +1945,14 @@
    "how": "Sets the step length in milliseconds, from 20 to 2000, when Timing is Free time.",
    "sound": "Short times run a fast, tempo-independent rhythm; long ones a slow, spacious one."
   }
+ ],
+ "timings": [
+  {
+   "division": "Rate",
+   "feel": "Feel",
+   "mode": "Timing",
+   "rate": "Free time",
+   "unit": "time"
+  }
  ]
 }

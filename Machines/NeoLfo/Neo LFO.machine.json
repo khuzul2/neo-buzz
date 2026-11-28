@@ -163,5 +163,13 @@
    "how": "Limits how fast a target may move: it takes at least this long to cross its whole range.",
    "sound": "A short glide keeps fast modulation clean; a long one smooths it into a slow drift and blunts fast waves."
   }
+ ],
+ "timings": [
+  {
+   "division": "Sync",
+   "feel": "Feel",
+   "rate": "Rate",
+   "unit": "hz"
+  }
  ]
 }

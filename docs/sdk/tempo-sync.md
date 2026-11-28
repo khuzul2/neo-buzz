@@ -48,7 +48,7 @@ double samples = TempoSync.Samples(beats, bpm, sampleRate);
 
 ## The editor: `ParamTempoTime`
 
-One control in the editor kit (`Machines/NeoBuzz.Editor.Avalonia/TempoTime.cs`): the rate knob, a Free / Sync switch, the division picker (longest first), the Feel picker and a readout ("1/8 dotted = 375 ms at 120 BPM").
+One control in the editor kit (`Machines/NeoBuzz.Editor.Avalonia/TempoTime.cs`): the Rate (or Time) knob, a segmented Free | Sync switch under it (the style of Neo Filter's Retrig buttons) and one compact Feel picker beside or under it, greyed in Free. In Free the knob reads Hz or ms; in Sync the same knob steps through the divisions, longest first, and reads e.g. "1/8 dotted"; the tooltip has the time ("1/8 dotted = 375 ms at 120 BPM"). The division choices never include "Free". `Wide = true` puts the switch and the Feel on one line (the rest of the editor decides which fits); `KnobDiameter` sizes the knob.
 
 ```csharp
 // Shape A (Free is an entry of the Sync list):
@@ -57,12 +57,12 @@ ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel,
 ParamTempoTime.Create(ctx, new TempoTimeSpec { Mode = P.Sync, Division = P.Rate, Feel = P.Feel, Rate = P.FreeMs, MaxSeconds = 2 });
 ```
 
-- `Hz = true` for a rate in Hz (an LFO), otherwise the synced and free values read as times. `MaxSeconds` is the longest time the machine runs (0: none). `KnobInside = false` keeps the editor's own knob where it was and only reads its value.
+- `Hz = true` for a rate in Hz (an LFO), otherwise the synced and free values read as times. `MaxSeconds` is the longest time the machine runs (0: none). `RateLabel` names the knob.
 - What it shows and writes is decided in `Machines/NeoBuzz.Editor/Core/TimingModel.cs`, with no window, and tested there: an old inline entry (`1/16T`) reads as 1/16 + Triplet, picking another division keeps that Feel, setting a Feel first turns the entry into its plain division so the two never multiply, and picking Sync goes back to the last division.
 
 ## The agent
 
-`ValueResolver.ResolveTiming` (`ReBuzz.Agent/Model/Values.cs`) reads a timing the way a person says it: `1/8 dotted`, `1/16 quintuplet`, `1 bar triplet`, `dotted 1/8`, `1/8t`. The division is matched by its length in beats (so `1 bar` finds `1/1`), the Feel comes back beside it for the caller to write, and a list's own words (`1/16T`, `Free`, `raw:3`, a number) work as before. `ValueResolver.FeelOf` finds the Feel that goes with a division parameter by its name (`LFO1 sync` and `LFO1 feel`, `Rate` and `Feel`).
+`ValueResolver.ResolveTiming` (`ReBuzz.Agent/Model/Values.cs`) reads a timing the way a person says it: `1/8 dotted`, `1/16 quintuplet`, `1 bar triplet`, `dotted 1/8`, `1/8t`. The division is matched by its length in beats (so `1 bar` finds `1/1`), the Feel comes back beside it for the caller to write, and a list's own words (`1/16T`, `Free`, `raw:3`, a number) work as before. `ParamTools` `param_set` uses it through the machine manifest's `timings` field: `Params.def` names each timing with a `timing <division> feel=<Feel> [mode=<switch>] rate=<time> [unit=hz]` line, `tools/gen-machine-params.py` writes `timings` into the `.machine.json` (parameter names), and `param_set` of the division writes the Feel and, for a Free time with a Song tempo switch, puts the switch on Song tempo. No name convention is used.
 
 ## Tests to write for a machine with a timing
 

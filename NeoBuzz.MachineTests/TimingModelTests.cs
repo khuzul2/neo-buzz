@@ -130,5 +130,35 @@ namespace NeoBuzz.MachineTests
             Assert.That(d.Readout(10, 0, 0, 120, ""), Does.Contain("clamped to 10.0 s"));
             Assert.That(Lfo().Fits(Lfo().Divisions.First(), 0, 40), Is.True, "no longest time: always fits");
         }
+
+        [Test]
+        public void TheKnobStepsThroughTheDivisionsLongToShortAndReadsThemWithTheirFeel()
+        {
+            var m = Lfo();
+            Assert.That(m.Steps.Select(e => TempoSync.Label(e.DivisionBeats, 0)).ToArray(),
+                Is.EqualTo(new[] { "8 bars", "4 bars", "2 bars", "1 bar", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64" }));
+            Assert.That(Filter().Steps[0].Beats, Is.EqualTo(64), "a 16-bar entry an older list kept comes first");
+            for (int step = 0; step < m.Steps.Count; step++)
+            {
+                var w = m.PickStep(0, 0, step, 120);
+                Assert.That(m.StepOf(w.Division.Value, 0), Is.EqualTo(step), "the step the knob wrote is the step it shows");
+            }
+            int eighth = m.PickStep(0, 0, 6, 120).Division.Value;
+            Assert.That(m.KnobText(eighth, 0, 0, 120), Is.EqualTo("1/8"));
+            Assert.That(m.KnobText(eighth, 1, 0, 120), Is.EqualTo("1/8 dotted"));
+            Assert.That(m.KnobText(eighth, 3, 0, 120), Is.EqualTo("1/8 quintuplet"));
+            Assert.That(m.PickStep(0, 0, -5, 120).Division, Is.EqualTo(m.PickStep(0, 0, 0, 120).Division), "the ends hold");
+            Assert.That(m.PickStep(0, 0, 99, 120).Division, Is.EqualTo(m.PickStep(0, 0, 9, 120).Division));
+        }
+
+        [Test]
+        public void TheKnobPassesOverADivisionTheMachineCannotRunAtThisTempo()
+        {
+            var d = Delay();
+            var w = d.PickStep(0, 0, 0, 120);   // 8 bars would be 16 s against a 10 s line
+            Assert.That(d.StepOf(w.Division.Value, 0), Is.GreaterThan(0), "the next shorter division that fits");
+            Assert.That(d.Fits(d.Steps[d.StepOf(w.Division.Value, 0)], 0, 120), Is.True);
+            Assert.That(d.PickStep(0, 0, 0, 200).Division, Is.Not.EqualTo(w.Division), "at 200 BPM 8 bars fits");
+        }
     }
 }

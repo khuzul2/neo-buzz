@@ -137,6 +137,57 @@ namespace NeoBuzz.Editor
             return new TimingWrite(plain != idx ? division.Min + plain : (int?)null, newFeelRaw, null);
         }
 
+        // ---- the knob in Sync -----------------------------------------------------------------------------------------------
+
+        /// <summary>The divisions the knob steps through in Sync, longest first by length (a 16-bar entry an older list kept comes first, so it stays reachable).</summary>
+        public IReadOnlyList<SyncEntry> Steps
+        {
+            get
+            {
+                if (steps == null)
+                {
+                    var l = new List<SyncEntry>(picker);
+                    l.Sort((x, y) => y.Beats.CompareTo(x.Beats));
+                    steps = l;
+                }
+                return steps;
+            }
+        }
+
+        List<SyncEntry> steps;
+
+        /// <summary>Where the stored division sits among <see cref="Steps"/> (0 when it is none of them).</summary>
+        public int StepOf(int divisionRaw, int feelRaw)
+        {
+            var e = Shown(divisionRaw, feelRaw, out _);
+            for (int i = 0; i < Steps.Count; i++) if (Steps[i].Index == e.Index) return i;
+            return 0;
+        }
+
+        /// <summary>
+        /// The knob moved to step <paramref name="step"/>. A division that cannot fit the machine's longest time at this tempo is passed over for
+        /// the next shorter one that does (the picker greys those out); the Feel an old inline entry had is kept, as picking a division does.
+        /// </summary>
+        public TimingWrite PickStep(int divisionRaw, int feelRaw, int step, double bpm)
+        {
+            int n = Steps.Count;
+            if (n == 0) return new TimingWrite(null, null, null);
+            int i = Math.Clamp(step, 0, n - 1);
+            int f = feel != null ? feelRaw - feel.Min : 0;
+            while (i < n - 1 && !Fits(Steps[i], f, bpm)) i++;
+            var w = PickDivision(divisionRaw, feelRaw, Steps[i]);
+            return w;
+        }
+
+        /// <summary>What the knob reads in Sync: "1/8 dotted", "2 bars", with "(clamped)" after a division the machine cannot run at this tempo.</summary>
+        public string KnobText(int divisionRaw, int feelRaw, int modeRaw, double bpm)
+        {
+            var e = Shown(divisionRaw, feelRaw, out int shownFeel);
+            int f = feel != null ? feelRaw - feel.Min : 0;
+            string t = TempoSync.Label(e.DivisionBeats, f != 0 ? f : shownFeel);
+            return Clamped(divisionRaw, feelRaw, modeRaw, bpm) ? t + " (clamped)" : t;
+        }
+
         // ---- time --------------------------------------------------------------------------------------------------------
 
         /// <summary>The length in beats of the stored pair (inline feel included, then the Feel parameter); 0 when Free.</summary>

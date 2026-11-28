@@ -40,7 +40,7 @@ namespace NeoBuzz.Delay
             var time = Layout.Column(
                 new ParamChoice(ctx, P.Mode, vertical: true, cellWidth: 80),
                 Layout.Gap(1, 6),
-                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel, Rate = P.Time, KnobDiameter = 52, MaxSeconds = DelayDesign.MaxSeconds }),
+                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel, Rate = P.Time, KnobDiameter = 52, Wide = true, MaxSeconds = DelayDesign.MaxSeconds }),
                 new ParamKnob(ctx, P.Offset));
 
             var echoes = new GraphView(330, 214, (g, r) => DrawEchoes(g, r, ctx, machine), animate: true)

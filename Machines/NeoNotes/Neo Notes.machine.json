@@ -670,5 +670,21 @@
    "how": "Notes that start together are delayed together: the chord gets one random delay up to Humanize time, and each note adds its own 0 to 8 ms (never more than Humanize time); lengths are kept.",
    "sound": "On keeps a chord tight while the whole hand is still loose; Off smears a chord's notes by up to Humanize time."
   }
+ ],
+ "timings": [
+  {
+   "division": "Fixed rate",
+   "feel": "Fixed feel",
+   "mode": "Fixed timing",
+   "rate": "Fixed time",
+   "unit": "time"
+  },
+  {
+   "division": "Echo rate",
+   "feel": "Echo feel",
+   "mode": "Echo timing",
+   "rate": "Echo time",
+   "unit": "time"
+  }
  ]
 }

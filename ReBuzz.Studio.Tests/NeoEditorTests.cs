@@ -40,9 +40,9 @@ namespace ReBuzz.Studio.Tests
             ("Neo Grain", "NeoGrainEditor", "neo-grain-editor", 856, 498),   // GRN1: Source and Grain on top, Pitch, Envelope and Output below; measured in CI (GRN1)
             ("Neo Keys", "NeoKeysEditor", "neo-keys-editor", 877, 482),   // KEY1: Model and pickup, Hammer, Decay on top; Preamp, Tremolo and Output below
             ("Neo Chord", "NeoChordEditor", "neo-chord-editor", 1186, 453),   // CHD1: the chord and mode on top, the keyboard, then voicing, velocity and strum (the size the editor draws at)
-            ("Neo Random", "NeoRandomEditor", "neo-random-editor", 776, 791),   // SYN1: the shared tempo-time control (Timing, Division and Feel) is 126 px wider than the old Sync and Feel pickers (650 before)
+            ("Neo Random", "NeoRandomEditor", "neo-random-editor", 650, 791),
             ("Neo Pulse", "NeoPulseEditor", "neo-pulse-editor", 846, 685),   // PUL1: Clock & Probability, 8-lane Euclidean strips, synced Lane 1..8 detail pages
-            ("Neo Notes", "NeoNotesEditor", "neo-notes-editor", 1000, 664),   // NOT1: the keyboard strip on top, then the seven sections in the order they work (the size the editor draws at)
+            ("Neo Notes", "NeoNotesEditor", "neo-notes-editor", 1000, 660),   // SYN1: +38 px for the tempo-time control (624 before); NOT1: the keyboard strip on top, then the seven sections in the order they work (the size the editor draws at)
             ("Neo Poly", "NeoPolyEditor", "neo-poly-editor", 963, 875),   // P5a: two pages in the studio; AC1: the Accent and Slide row adds 68; AC3: the Full | Acid switch and the four limits add 104
             ("Neo Wave", "NeoWaveEditor", "neo-wave-editor", 994, 1006),
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 725),   // P5a: an operator overview with one operator open (the classic editor shows all six: 1276 x 946)
@@ -53,13 +53,13 @@ namespace ReBuzz.Studio.Tests
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 367),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before); FX1: Amount and Mix, two 40 px knobs, under its channel switches (679 x 296 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
-            ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 1060, 395),   // SYN1: the shared tempo-time control (978 x 338 before)
-            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 1153, 343),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (994 x 343 before)
+            ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 1040, 338),   // SYN1: the tempo-time control; this build draws the old editor 1032 wide (978 in the WPF table)
+            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 1069, 343),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (994 x 343 before)
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1170, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1126, 484),   // P5a: the pads, the selected pad's panel and the mix strip (the classic editor is 1232 x 738)
-            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 880, 722),   // the WPF editor was 802 wide: the Vowel section (EXT1, #190) is 78 px more
+            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 880, 620),   // the WPF editor was 802 wide: the Vowel section (EXT1, #190) is 78 px more
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 532),
             ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 341),   // FX1: Amount and Mix, two 40 px knobs, in its Output section (956 x 277 before)
             ("Neo Transient", "NeoTransientEditor", "neo-transient-editor", 1020, 311),
@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Tests
         /// </summary>
         static void UiTick(Window window)
         {
-            var editor = window.GetVisualDescendants().OfType<Control>().First(c => c.GetType().BaseType?.Name == "NeoEditor");
+            var editor = window.GetVisualDescendants().OfType<Control>().First(c => c.GetType().BaseType?.Name == "NeoEditor" || c.GetType().BaseType?.BaseType?.Name == "NeoEditor");
             Assert.That((bool)Get(editor, "IsPolling"), Is.True, "the editor looks at its parameters every UI tick");
             editor.GetType().GetMethod("PollNow", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)!.Invoke(editor, null);
             Dispatcher.UIThread.RunJobs();
@@ -408,6 +408,63 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(m);
+            }
+        }
+
+        // SYN1 (docs/sdk/tempo-sync.md): param_set takes "1/8 dotted" for a timing's division, sets its Feel (and puts a Free time on Song
+        // tempo) through the manifest's timings, and the editor's tempo-time knob shows it.
+        [AvaloniaTest]
+        public void AnAgentSetsADivisionWithItsFeelThroughParamSetAndTheKnobShowsIt()
+        {
+            JsonObject Set(string machine, params (string Param, string Value)[] changes) => CallAgent("param_set", new JsonObject
+            {
+                ["machine"] = machine,
+                ["changes"] = new JsonArray(changes.Select(c => (JsonNode)new JsonObject { ["param"] = c.Param, ["value"] = c.Value }).ToArray()),
+            });
+            int Raw(IMachine m, string name) => Global(m, name).GetValue(0);
+            string Text(IMachine m, string name) { var p = Global(m, name); return p.DescribeValue(p.GetValue(0)); }
+
+            // Free is an entry of the division list (Neo LFO): "1/8 dotted" is the division 1/8 and the Feel Dotted.
+            var lfo = Add("Neo LFO", "Syn Lfo");
+            var arp = Add("Neo Arp", "Syn Arp");
+            var filter = Add("Neo Filter", "Syn Filter");
+            try
+            {
+                var window = OpenEditor(lfo);
+                var knob = Find(window, "TimingKnob", "Rate");
+                Set("Syn Lfo", ("Sync", "1/8 dotted"));
+                Assert.That(Text(lfo, "Sync"), Is.EqualTo("1/8"));
+                Assert.That(Text(lfo, "Feel"), Is.EqualTo("Dotted"));
+                UiTick(window);
+                Assert.That(Get(knob, "ValueText"), Is.EqualTo("1/8 dotted"), "the knob reads what the agent set");
+                Set("Syn Lfo", ("Sync", "1/16 quintuplet"));
+                Assert.That((Text(lfo, "Sync"), Text(lfo, "Feel")), Is.EqualTo(("1/16", "Quintuplet")));
+                Set("Syn Lfo", ("Sync", "1 bar triplet"));
+                Assert.That((Text(lfo, "Sync"), Text(lfo, "Feel")), Is.EqualTo(("1 bar", "Triplet")));
+                Set("Syn Lfo", ("Sync", "1/4"));
+                Assert.That(Text(lfo, "Sync"), Is.EqualTo("1/4"));
+                Assert.That(Text(lfo, "Feel"), Is.EqualTo("Triplet"), "a plain division leaves the Feel as it is");
+                Set("Syn Lfo", ("Sync", "Free"));
+                Assert.That(Raw(lfo, "Sync"), Is.EqualTo(0));
+                Assert.That(() => Set("Syn Lfo", ("Sync", "1/8 sextuplet")), Throws.Exception, "a feel the machine does not have is refused");
+
+                // A separate Timing switch (Neo Arp): a division puts it on Song tempo, a Free time machine too.
+                Set("Syn Arp", ("Timing", "Free time"));
+                Assert.That(Raw(arp, "Timing"), Is.EqualTo(1));
+                Set("Syn Arp", ("Rate", "1/16 triplet"));
+                Assert.That((Text(arp, "Rate"), Text(arp, "Feel"), Raw(arp, "Timing")), Is.EqualTo(("1/16", "Triplet", 0)), "the division, its Feel and Song tempo");
+                Set("Syn Arp", ("Rate", "2 bars"));
+                Assert.That(Text(arp, "Rate"), Is.EqualTo("2 bars"), "the appended divisions are named too");
+
+                // "1/16 triplet" is the plain 1/16 with the Feel (Neo Filter).
+                Set("Syn Filter", ("LFO sync", "1/16 triplet"));
+                Assert.That((Text(filter, "LFO sync"), Text(filter, "LFO feel")), Is.EqualTo(("1/16", "Triplet")));
+                Set("Syn Filter", ("LFO sync", "1/8d"));
+                Assert.That(Text(filter, "LFO sync"), Is.EqualTo("1/8D"), "the list's own word is taken as it is (the old inline entry, the same song as before)");
+            }
+            finally
+            {
+                Remove(lfo, arp, filter);
             }
         }
 
@@ -2260,7 +2317,7 @@ namespace ReBuzz.Studio.Tests
                 int Shown() => (int)Get(pages, "Selected");
                 pages.GetType().GetProperty("Selected")!.SetValue(pages, 0);   // the page shown last comes back; start on Synth
                 Dispatcher.UIThread.RunJobs();
-                IEnumerable<string> Visible() => Controls(window, "ParamKnob").Where(k => k.IsEffectivelyVisible).Select(k => AutomationProperties.GetName(k));
+                IEnumerable<string> Visible() => Controls(window, "ParamKnob").Concat(Controls(window, "TimingKnob")).Where(k => k.IsEffectivelyVisible).Select(k => AutomationProperties.GetName(k));
 
                 Assert.That(Visible(), Does.Contain("F1 cutoff").And.Not.Contain("amount"), "the Synth page: the filter, not the matrix's amounts");
                 Studio.Screenshot(window, "neo-poly-p5a-synth");

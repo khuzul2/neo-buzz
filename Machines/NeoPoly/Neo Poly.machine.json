@@ -1959,5 +1959,19 @@
    "how": "Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.",
    "sound": "Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat."
   }
+ ],
+ "timings": [
+  {
+   "division": "LFO1 sync",
+   "feel": "LFO1 feel",
+   "rate": "LFO1 rate",
+   "unit": "hz"
+  },
+  {
+   "division": "LFO2 sync",
+   "feel": "LFO2 feel",
+   "rate": "LFO2 rate",
+   "unit": "hz"
+  }
  ]
 }

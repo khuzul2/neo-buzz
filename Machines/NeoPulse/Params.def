@@ -2,6 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoPulse
 namespace NeoBuzz.Pulse
 class NeoPulseMachine
+timing Rate feel=Feel mode=Sync rate=FreeMs
 summary Eight-lane Euclidean and probability rhythm generator on note wires: each lane builds a Euclidean step ring (1 to 32 steps, pulses, rotation), a second Euclidean accent ring, per-hit chance, ratchets (1 to 4 repeats with ratchet chance), gate, divider (1x to 4x), note, velocity, accent velocity, MIDI channel and mute. Global clock rate (1/1 to 1/64, straight, dotted or triplet), swing, fill chance, humanize time and velocity, and a repeatable seed (0 = Free). It makes no sound itself: wire it on a note wire to Neo Drums, any synth or another note target. Use it for driving drum kits, polyrhythms, odd-meter grooves, ratcheting hats and polymetric synth lines.
 
 group Clock

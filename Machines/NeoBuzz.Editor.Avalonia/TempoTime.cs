@@ -1,7 +1,8 @@
-// Fork (docs/sdk/tempo-sync.md, SYN1): the one tempo-time control every Neo editor shows for a musical timing. A rate or time knob (Free:
-// ms or Hz), a Free / Sync switch, a division picker (8 bars to 1/64, longest first, whatever the stored order) and a Feel picker
-// (Straight, Dotted, Triplet, Quintuplet), with a readout ("1/8 dotted = 375 ms at 120 BPM"). What it shows and writes is the toolkit-free
-// TimingModel (Core/TimingModel.cs); this file draws it and routes the input, as the kit's other controls do.
+// Fork (docs/sdk/tempo-sync.md, SYN1): the one tempo-time control every Neo editor shows for a musical timing. It is the rate or time knob,
+// a Free | Sync switch under it and one compact Feel picker (Straight, Dotted, Triplet, Quintuplet). In Free the knob reads Hz or ms as it
+// always did; in Sync the same knob steps through the divisions from long to short (8 bars to 1/64) and reads the division with its feel
+// ("1/8 dotted"). What it shows and writes is the toolkit-free TimingModel (Core/TimingModel.cs); this file draws it and routes the
+// input, as the kit's other controls do.
 
 using System;
 using System.Collections.Generic;
@@ -32,8 +33,8 @@ namespace NeoBuzz.Editor
         /// <summary>The label over the knob when it differs from the parameter's name.</summary>
         public string RateLabel;
         public double KnobDiameter = 54;
-        /// <summary>The knob is part of the control (false: the editor keeps its own knob where it was; the control only reads its value).</summary>
-        public bool KnobInside = true;
+        /// <summary>The Free | Sync switch and the Feel side by side under the knob (one line, 164 px wide) instead of one above the other (two lines, 88 px wide).</summary>
+        public bool Wide;
     }
 
     /// <summary>One entry of a picker's menu.</summary>
@@ -66,13 +67,15 @@ namespace NeoBuzz.Editor
             division = ctx.Bind(spec.Division, v => { Remember(); changed(v); });
             if (spec.Feel >= 0) feel = ctx.Bind(spec.Feel, changed);
             if (spec.Mode >= 0) mode = ctx.Bind(spec.Mode, v => { Remember(); changed(v); });
-            if (spec.Rate >= 0) rate = ctx.Bind(spec.Rate, changed);
+            rate = ctx.Bind(spec.Rate, changed);
             Remember();
         }
 
         public TimingModel Model { get; }
         public TempoTimeSpec Spec => spec;
         public EditorContext Context => ctx;
+        /// <summary>The free rate or time parameter (what the knob is in Free).</summary>
+        public ParamBinding Rate => rate;
 
         public int DivisionRaw => division.Value;
         public int FeelRaw => feel?.Value ?? 0;
@@ -85,11 +88,6 @@ namespace NeoBuzz.Editor
             if (!Model.IsFree(division.Value, mode?.Value ?? 0)) lastDivision = division.Value;
         }
 
-        // Free: the rate knob under it already says its value, so the line stays empty (no second copy of the same number).
-        public string FreeText => "";
-
-        public string Readout() => Model.Readout(DivisionRaw, FeelRaw, ModeRaw, Tempo, FreeText);
-
         public void Apply(TimingWrite w)
         {
             if (w.Division is int d) division.Set(d);
@@ -97,27 +95,18 @@ namespace NeoBuzz.Editor
             if (w.Mode is int m && mode != null) mode.Set(m);
         }
 
-        /// <summary>The Free / Sync switch's two entries.</summary>
-        public IEnumerable<TimingItem> ModeItems()
-        {
-            bool free = IsFree;
-            yield return new TimingItem("Free", true, free, () => Apply(Model.PickFree()));
-            yield return new TimingItem("Sync", true, !free, () => Apply(Model.PickSync(DivisionRaw, lastDivision)));
-        }
+        public void PickFree() => Apply(Model.PickFree());
+        public void PickSync() => Apply(Model.PickSync(DivisionRaw, lastDivision));
 
-        /// <summary>The divisions, longest first; one that cannot fit the machine's longest time at this tempo is greyed out.</summary>
-        public IEnumerable<TimingItem> DivisionItems()
-        {
-            var shown = Model.Shown(DivisionRaw, FeelRaw, out _);
-            bool free = IsFree;
-            double bpm = Tempo;
-            foreach (var e in Model.Divisions)
-            {
-                var entry = e;
-                bool fits = Model.Fits(entry, Model.HasFeel ? FeelRaw : 0, bpm);
-                yield return new TimingItem(TempoSync.Label(entry.DivisionBeats, 0), fits, !free && shown.Index == entry.Index, () => Apply(Model.PickDivision(DivisionRaw, FeelRaw, entry)));
-            }
-        }
+        /// <summary>The knob moved in Sync: to step <paramref name="step"/> of the divisions, long to short.</summary>
+        public void PickStep(int step) => Apply(Model.PickStep(DivisionRaw, FeelRaw, step, Tempo));
+
+        public int Step => Model.StepOf(DivisionRaw, FeelRaw);
+
+        /// <summary>What the time comes to at the song's tempo ("1/8 dotted = 352 ms at 128 BPM"); the knob's tooltip in Sync.</summary>
+        public string Readout() => Model.Readout(DivisionRaw, FeelRaw, ModeRaw, Tempo, "");
+
+        public string KnobText => Model.KnobText(DivisionRaw, FeelRaw, ModeRaw, Tempo);
 
         public IEnumerable<TimingItem> FeelItems()
         {
@@ -130,14 +119,149 @@ namespace NeoBuzz.Editor
             }
         }
 
-        public string DivisionText => Model.DivisionText(DivisionRaw, FeelRaw, ModeRaw);
         public string FeelText => Model.FeelNames[Math.Clamp(Model.ShownFeel(DivisionRaw, FeelRaw), 0, Model.FeelNames.Length - 1)];
-        public string ModeText => IsFree ? "Free" : "Sync";
+    }
+
+    /// <summary>
+    /// The rate or time knob of a timing. In Free it is the machine's own parameter knob (Hz or ms); in Sync it steps through the divisions
+    /// from long to short and reads the division with its feel.
+    /// </summary>
+    internal sealed class TimingKnob : Knob
+    {
+        readonly TempoTimeController c;
+
+        public TimingKnob(EditorContext ctx, TempoTimeController controller, double diameter, string label)
+            : base(ctx.Accent, diameter)
+        {
+            c = controller;
+            var def = c.Rate.Def;
+            Label = label ?? def.Name;
+            Origin = ParamMapping.ArcOrigin(def);
+            Default = c.Rate.Normalized(def.Default);
+            UserChanged += t =>
+            {
+                if (c.IsFree) c.Rate.Set(c.Rate.RawFromNormalized(t));
+                else c.PickStep((int)Math.Round(t * Math.Max(1, c.Model.Steps.Count - 1)));
+            };
+            BindModulation(ctx.Machine, c.Rate.Parameter, c.Rate.Track, c.Rate.Normalized);
+            int index = c.Spec.Rate;
+            if (ctx.Explain is { } explain)
+                Phase += ph =>
+                {
+                    switch (ph)
+                    {
+                        case KnobPhase.Enter: explain.Hover(index); break;
+                        case KnobPhase.Leave: explain.Unhover(index); break;
+                        case KnobPhase.Touch: explain.BeginDrag(index); break;
+                        case KnobPhase.Release: explain.EndDrag(index); break;
+                    }
+                };
+            Show();
+        }
+
+        /// <summary>Shows what the timing is now (the free value, or the division); called when any of its parameters or the tempo change.</summary>
+        public void Show()
+        {
+            var def = c.Rate.Def;
+            if (c.IsFree)
+            {
+                Steps = def.Max - def.Min;
+                Value = c.Rate.Normalized(c.Rate.Value);
+                ValueText = def.Describe(c.Rate.Value);
+                ToolTip = def.Description;
+            }
+            else
+            {
+                int n = c.Model.Steps.Count;
+                Steps = Math.Max(1, n - 1);
+                Value = n > 1 ? c.Step / (double)(n - 1) : 0;
+                ValueText = c.KnobText;
+                ToolTip = c.Readout() + ". Turn to step through the divisions, long to short.";
+            }
+            Refresh();
+        }
+    }
+
+    /// <summary>The Free | Sync switch, in the house style of the choice buttons (a row of two, the lit one in the accent).</summary>
+    internal sealed class TimingSwitch : NeoElement
+    {
+        const double Row = 22;
+        readonly TempoTimeController c;
+        readonly AvaloniaCanvas canvas;
+        readonly EditGesture gesture;
+        readonly NeoColor accent;
+        int hover = -1;
+
+        public TimingSwitch(TempoTimeController controller, NeoColor accent, double width)
+        {
+            c = controller;
+            this.accent = accent;
+            Width = width;
+            Height = Row;
+            canvas = new AvaloniaCanvas(this);
+            gesture = new EditGesture(this);
+            Cursor = Cursors.Hand;
+            ToolTip = "Free runs on the knob's own value; Sync locks to the song's tempo";
+            AutomationProperties.SetName(this, "Timing");
+        }
+
+        /// <summary>0 when Free is lit, 1 when Sync is (for tests).</summary>
+        public int Selected => c.IsFree ? 0 : 1;
+
+        double CellWidth => (Bounds.Width > 0 ? Bounds.Width : Width) / 2;
+
+        /// <summary>The middle of a button (for tests).</summary>
+        public Point CellCentre(int i) => new Point(CellWidth * i + CellWidth / 2, Row / 2);
+
+        int CellAt(MouseEventArgs e)
+        {
+            var p = e.GetPosition(this);
+            return p.X < 0 || p.X >= CellWidth * 2 || p.Y < 0 || p.Y > Row ? -1 : (int)(p.X / CellWidth);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            int h = CellAt(e);
+            if (h != hover) { hover = h; InvalidateVisual(); }
+        }
+
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            hover = -1;
+            InvalidateVisual();
+        }
+
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            int i = CellAt(e);
+            if (i < 0) return;
+            gesture.Begin();
+            if (i == 0) c.PickFree(); else c.PickSync();
+            gesture.End();
+            e.Handled = true;
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            var cv = (INeoCanvas)canvas.On(dc);
+            double cw = CellWidth;
+            string[] names = { "Free", "Sync" };
+            int selected = Selected;
+            var accentFill = accent.WithAlpha(0x38);
+            for (int i = 0; i < 2; i++)
+            {
+                var r = new NeoRect(i * cw, 0, cw - 2, Row);
+                bool on = i == selected;
+                cv.Rect(r, on ? accentFill : i == hover ? Palette.Track : Palette.Panel, new NeoStroke(on ? accent : Palette.PanelEdge, 1), 3);
+                cv.Text(names[i], r.X + r.Width / 2, r.Y + (r.Height - 15) / 2, 11, on ? accent : Palette.Text, on, NeoAlign.Center);
+            }
+        }
     }
 
     /// <summary>A compact drop-down over a list a callback makes (the picker's content follows the tempo and the other values).</summary>
     internal sealed class TimingDropdown : NeoElement
     {
+        const double CompactHeight = 22;
         readonly string label;
         readonly Func<string> text;
         readonly Func<IEnumerable<TimingItem>> items;
@@ -150,7 +274,7 @@ namespace NeoBuzz.Editor
         {
             this.label = label; this.text = text; this.items = items; this.active = active; this.accent = accent;
             Width = width;
-            Height = DropdownFace.Height;
+            Height = CompactHeight;
             canvas = new AvaloniaCanvas(this);
             gesture = new EditGesture(this);
             ToolTip = tip;
@@ -196,101 +320,89 @@ namespace NeoBuzz.Editor
             e.Handled = true;
         }
 
-        protected override void OnRender(DrawingContext dc) =>
-            DropdownFace.Draw(canvas.On(dc), Bounds.Width > 0 ? Bounds.Width : Width, label, text(), accent);
-    }
-
-    /// <summary>The line under the control: what the timing comes to at the song's tempo (it follows the tempo while shown).</summary>
-    internal sealed class TimingReadout : NeoElement
-    {
-        readonly Func<string> text;
-        readonly AvaloniaCanvas canvas;
-        readonly DispatcherTimer timer;
-
-        public TimingReadout(double width, Func<string> text)
+        protected override void OnRender(DrawingContext dc)
         {
-            this.text = text;
-            Width = width;
-            Height = 16;
-            canvas = new AvaloniaCanvas(this);
-            timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            timer.Tick += (s, e) => { if (IsEffectivelyVisible) InvalidateVisual(); };
-            Loaded += (s, e) => timer.Start();
-            Unloaded += (s, e) => timer.Stop();
+            var cv = (INeoCanvas)canvas.On(dc);
+            double w = Bounds.Width > 0 ? Bounds.Width : Width;
+            cv.Rect(new NeoRect(0, 0, w, CompactHeight), Palette.Background, new NeoStroke(Palette.PanelEdge, 1), 3);
+            cv.Text(text(), 6, 3, 11.5, Palette.Text, maxWidth: Math.Max(10, w - 22));
+            cv.Text("▾", w - 14, 3, 11, accent);
         }
-
-        /// <summary>What it says now (for tests).</summary>
-        public string Text => text();
-
-        protected override void OnRender(DrawingContext dc) =>
-            ((INeoCanvas)canvas.On(dc)).Text(text(), 1, 1, 10, Palette.DimText, maxWidth: Math.Max(10, (Bounds.Width > 0 ? Bounds.Width : Width) - 2));
     }
 
     /// <summary>The control itself: build it with <see cref="Create"/> where an editor shows a timing.</summary>
     internal sealed class ParamTempoTime : StackPanel
     {
+        const double MinWidth = 88, WideWidth = 164, SwitchWidth = 72;
+        readonly DispatcherTimer timer;
+        double shownTempo = double.NaN;
+
         public ParamTempoTime(EditorContext ctx, TempoTimeSpec spec)
         {
             Orientation = Avalonia.Layout.Orientation.Vertical;
-            var parts = new List<TimingDropdown>();
-            ParamKnob knob = null;
-            Action<int> changed = _ => Refresh();
-            Controller = new TempoTimeController(ctx, spec, changed);
+            Controller = new TempoTimeController(ctx, spec, _ => Refresh());
             var c = Controller;
-            var accent = ctx.Accent;
-            Mode = new TimingDropdown("Timing", 66, accent, () => c.ModeText, c.ModeItems, () => true, "Free runs on the knob's own time; Sync locks to the song's tempo");
-            Division = new TimingDropdown("Division", 106, accent, () => c.DivisionText, c.DivisionItems, () => !c.IsFree, "The length of one cycle or step at the song's tempo, from 8 bars to 1/64");
-            parts.Add(Mode); parts.Add(Division);
+            Knob = new TimingKnob(ctx, c, spec.KnobDiameter, spec.RateLabel);
+            bool wide = spec.Wide && spec.Feel >= 0;
+            double w = Math.Max(wide ? WideWidth : MinWidth, Knob.Width);
+            Knob.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center;
+            Switch = new TimingSwitch(c, ctx.Accent, wide ? SwitchWidth : w);
+            Children.Add(Knob);
+            Children.Add(Layout.Gap(1, 2));
             if (spec.Feel >= 0)
             {
-                Feel = new TimingDropdown("Feel", 176, accent, () => c.FeelText, c.FeelItems, () => !c.IsFree, "Straight, dotted (x 3/2), triplet (x 2/3) or quintuplet (x 4/5)");
-                parts.Add(Feel);
+                Feel = new TimingDropdown("Feel", wide ? w - SwitchWidth - 6 : w - 2, ctx.Accent, () => c.FeelText, c.FeelItems, () => !c.IsFree, "Straight, dotted (x 3/2), triplet (x 2/3) or quintuplet (x 4/5); in Sync");
+                if (wide)
+                {
+                    var line = Layout.Row(Switch, Layout.Gap(4), Feel);
+                    line.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center;
+                    Children.Add(line);
+                }
+                else
+                {
+                    Children.Add(Switch);
+                    Children.Add(Layout.Gap(1, 3));
+                    Children.Add(Feel);
+                }
             }
-            if (spec.Rate >= 0 && spec.KnobInside) knob = new ParamKnob(ctx, spec.Rate, spec.RateLabel, spec.KnobDiameter);
-            Knob = knob;
-            Readout = new TimingReadout((knob != null ? spec.KnobDiameter + 6 : 0) + 176, c.Readout);
-            var right = Feel != null
-                ? Layout.Column(Layout.Row(Mode, Layout.Gap(4), Division), Layout.Gap(1, 2), Feel)
-                : Layout.Row(Mode, Layout.Gap(4), Division);
-            Children.Add(Layout.Row(knob, Layout.Gap(knob != null ? 6 : 0), right));
-            Children.Add(Readout);
-            all = parts;
+            else Children.Add(Switch);
+            Width = w;
+            timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            timer.Tick += (s, e) => { if (IsEffectivelyVisible && c.Tempo != shownTempo) Refresh(); };
+            AttachedToVisualTree += (s, e) => timer.Start();
+            DetachedFromVisualTree += (s, e) => timer.Stop();
             Refresh();
         }
 
-        readonly List<TimingDropdown> all;
-
         public TempoTimeController Controller { get; }
 
-        /// <summary>The names of the parameters this control binds (the division, the Feel and the Timing switch; the rate knob when it is inside): what a test asks to see that every parameter has a control.</summary>
+        /// <summary>The names of the parameters this control binds (the division, the Feel, the Timing switch and the rate knob): what a test asks to see that every parameter has a control.</summary>
         public IReadOnlyList<string> BoundNames
         {
             get
             {
                 var t = Controller.Context.Table;
                 var s = Controller.Spec;
-                var r = new List<string> { t[s.Division].Name };
+                var r = new List<string> { t[s.Division].Name, t[s.Rate].Name };
                 if (s.Feel >= 0) r.Add(t[s.Feel].Name);
                 if (s.Mode >= 0) r.Add(t[s.Mode].Name);
-                if (s.Rate >= 0 && s.KnobInside) r.Add(t[s.Rate].Name);
                 return r;
             }
         }
 
-        public TimingDropdown Mode { get; }
-        public TimingDropdown Division { get; }
+        public TimingKnob Knob { get; }
+        public TimingSwitch Switch { get; }
         public TimingDropdown Feel { get; }
-        public ParamKnob Knob { get; }
-        public TimingReadout Readout { get; }
 
         void Refresh()
         {
-            foreach (var d in all) d.Refresh();
-            if (Knob != null) Knob.Opacity = Controller.IsFree ? 1 : 0.45;
-            Readout?.InvalidateVisual();
+            shownTempo = Controller.Tempo;
+            Knob.Show();
+            Switch.InvalidateVisual();
+            Feel?.Refresh();
         }
 
-        /// <summary>The control for a timing: knob, Free / Sync, division, Feel and readout.</summary>
+        /// <summary>The control for a timing: the knob, the Free | Sync switch under it and the Feel.</summary>
         public static ParamTempoTime Create(EditorContext ctx, TempoTimeSpec spec) => new ParamTempoTime(ctx, spec);
     }
 }

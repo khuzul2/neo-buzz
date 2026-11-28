@@ -250,13 +250,30 @@ namespace ReBuzz.Agent
                             var earlier = plan.LastOrDefault(x => x.P == p && x.Track == track);
                             int current = earlier.P != null ? earlier.Raw : p.Parameter.GetValue(track);
                             int raw;
-                            try { raw = ValueResolver.Resolve(p.Info, ch[forms[0]], current, mode); }
+                            // SYN1 (docs/sdk/tempo-sync.md): a timing's division takes "1/8 dotted", "1 bar triplet", "1/16 quintuplet"; the manifest's
+                            // timings say which parameter is its Feel and which its Song tempo / Free time switch.
+                            var timing = SongModel.Manifest(m)?.Timings.FirstOrDefault(t => t.Division.Trim() == p.Name.Trim());
+                            AgentParam feelParam = timing is { Feel.Length: > 0 } ? all.FirstOrDefault(x => x.Name.Trim() == timing.Feel.Trim() && !x.IsTrack) : null;
+                            AgentParam modeParam = timing is { Mode.Length: > 0 } ? all.FirstOrDefault(x => x.Name.Trim() == timing.Mode.Trim() && !x.IsTrack) : null;
+                            int? feelRaw = null;
+                            try
+                            {
+                                raw = timing != null
+                                    ? ValueResolver.ResolveTiming(p.Info, feelParam?.Info, ch[forms[0]], current, out feelRaw, mode)
+                                    : ValueResolver.Resolve(p.Info, ch[forms[0]], current, mode);
+                            }
                             catch (ToolError e) { throw new ToolError($"{at}: {e.Message}"); }
                             // machine-safety.md §3.4: outside the safe range only when the agent says so.
                             string refusal = SafeRange.Refusal(p.Info, raw);
                             if (refusal != null && !allowUnsafe) throw new ToolError($"{at}: {refusal}");
                             plan.Add((p, track, raw, p.Info.Describe(p.Parameter.GetValue(track)),
                                       refusal != null ? $"outside its safe range, {p.Info.SafeRange.Text(p.Info.Describe)}: {p.Info.SafeRange.Reason}" : null));
+                            // A division with a feel sets the Feel too; a division of a timing that has a Song tempo / Free time switch puts it on Song tempo.
+                            if (feelRaw is int fr && feelParam != null)
+                                plan.Add((feelParam, 0, fr, feelParam.Info.Describe(feelParam.Parameter.GetValue(0)), null));
+                            if (modeParam != null && forms[0] == "value" && timing != null && p.Info.Describe(raw) is { } shown && !shown.Equals("Free", StringComparison.OrdinalIgnoreCase)
+                                && modeParam.Parameter.GetValue(0) != modeParam.Info.Min && !plan.Any(x => x.P == modeParam))
+                                plan.Add((modeParam, 0, modeParam.Info.Min, modeParam.Info.Describe(modeParam.Parameter.GetValue(0)), null));
                         }
                         foreach (var (p, track, raw, _, _) in plan) AgentActions.SetParameter(core, m, p.Parameter, track, raw);
                         bool draft = SongModel.Manifest(m)?.IsDraft == true;

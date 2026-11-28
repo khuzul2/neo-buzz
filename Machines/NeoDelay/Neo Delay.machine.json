@@ -316,5 +316,13 @@
    "how": "Scales the echoes: the feedback (within its own limit) and the wet level. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
    "sound": "Turn it down for fewer, quieter repeats, up for more of them and a wetter sound."
   }
+ ],
+ "timings": [
+  {
+   "division": "Sync",
+   "feel": "Feel",
+   "rate": "Time",
+   "unit": "time"
+  }
  ]
 }

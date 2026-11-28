@@ -2,6 +2,7 @@
 # Regenerate: python3 tools/gen-machine-params.py Machines/NeoRandom
 namespace NeoBuzz.RandomMachine
 class NeoRandomMachine
+timing Sync feel=Feel rate=Rate unit=hz
 summary A control modulator that moves other machines' parameters with random steps, sample-and-hold, 1/f-like drift or chaotic Lorenz trajectories: up to 8 targets (any parameter of any machine), each with its own depth, polarity, range and curve, written smoothly and never as an undo step. Free rate in Hz or tempo-synced from 8 bars to 1/64 (straight, dotted or triplet), probability, chaos amount, smoothing, depth, signed bias, unipolar or bipolar range, quantisation, reproducible seeds and beat, bar or note retriggering. Use it for evolving filter movement, glitchy stepped modulation, subtle humanisation and deterministic chaotic sweeps on any machine.
 
 group Source

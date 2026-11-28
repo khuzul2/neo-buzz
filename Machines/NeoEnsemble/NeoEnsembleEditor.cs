@@ -47,8 +47,7 @@ namespace NeoBuzz.Ensemble
                 Layout.Row(new ParamKnob(ctx, P.Voices), new ParamKnob(ctx, P.Stages)));
 
             var lfo = Layout.Column(
-                Layout.Row(new ParamKnob(ctx, P.Rate, diameter: 56), new ParamKnob(ctx, P.Depth, diameter: 56)),
-                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel, Rate = P.Rate, Hz = true, KnobInside = false }),
+                Layout.Row(ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.Sync, Feel = P.Feel, Rate = P.Rate, Hz = true, KnobDiameter = 56 }), new ParamKnob(ctx, P.Depth, diameter: 56)),
                 Layout.Gap(1, 4),
                 Layout.Row(new ParamChoice(ctx, P.Shape, cellWidth: 52)),
                 new ParamKnob(ctx, P.Spread));

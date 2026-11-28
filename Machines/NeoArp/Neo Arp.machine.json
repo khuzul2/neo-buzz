@@ -901,5 +901,14 @@
    "how": "Moves the note step 16 plays by this many semitones, up or down, in the Steps pattern.",
    "sound": "Steps moved up or down make a melodic line, a leap or an octave jump, out of the held notes."
   }
+ ],
+ "timings": [
+  {
+   "division": "Rate",
+   "feel": "Feel",
+   "mode": "Timing",
+   "rate": "Free time",
+   "unit": "time"
+  }
  ]
 }

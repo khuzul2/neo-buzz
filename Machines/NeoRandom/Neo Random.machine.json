@@ -245,5 +245,13 @@
    "how": "Limits how fast each target parameter may move so writes never step faster than this full-range travel time.",
    "sound": "Short glides keep stepped jumps snappy and click-free while long glides turn sudden jumps into slow sweeps."
   }
+ ],
+ "timings": [
+  {
+   "division": "Sync",
+   "feel": "Feel",
+   "rate": "Rate",
+   "unit": "hz"
+  }
  ]
 }

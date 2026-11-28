@@ -57,20 +57,18 @@ namespace NeoBuzz.Filter
                 Layout.Gap(4),
                 new Meter("Envelope", () => (float)(machine?.Engine.EnvelopeLevel ?? 0), AccentColor, 196));
 
-            var lfoPicture = new GraphView(172, 64, (g, r) => DrawLfo(g, r, ctx, machine), animate: true)
+            var lfoPicture = new GraphView(172, 36, (g, r) => DrawLfo(g, r, ctx, machine), animate: true)
             {
                 ToolTip = "One cycle of the LFO and where each channel is in it (left, and right in blue)",
             };
             ctx.Changed += lfoPicture.InvalidateVisual;
             var lfo = Layout.Column(
-                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.LfoSync, Feel = P.LfoFeel, Rate = P.LfoRate, Hz = true, KnobInside = false }),
-                Layout.Gap(1, 4),
                 new ParamDropdown(ctx, P.LfoShape, "Shape", 112),
                 Layout.Gap(1, 4),
                 new ParamChoice(ctx, P.LfoRetrig, "Retrig", 58),
                 Layout.Gap(1, 4),
                 lfoPicture,
-                Layout.Row(new ParamKnob(ctx, P.LfoRate, "Rate"), new ParamKnob(ctx, P.LfoDepth, "Depth"), new ParamKnob(ctx, P.LfoSpread, "Spread"), new ParamKnob(ctx, P.LfoPhase, "Phase")));
+                Layout.Row(ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = P.LfoSync, Feel = P.LfoFeel, Rate = P.LfoRate, Hz = true, RateLabel = "Rate" }), new ParamKnob(ctx, P.LfoDepth, "Depth"), new ParamKnob(ctx, P.LfoSpread, "Spread"), new ParamKnob(ctx, P.LfoPhase, "Phase")));
 
             var vowelPicture = new GraphView(172, 44, (g, r) => DrawVowel(g, r, ctx, machine), animate: true)
             {

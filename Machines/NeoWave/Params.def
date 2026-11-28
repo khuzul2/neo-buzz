@@ -2,6 +2,8 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoWave
 namespace NeoBuzz.Wave
 class NeoWaveMachine
+timing L1Sync feel=L1Feel rate=L1Rate unit=hz
+timing L2Sync feel=L2Feel rate=L2Rate unit=hz
 tracks 16
 summary Wavetable synth: two table oscillators with warps, sub and noise, a filter, three envelopes, two LFOs and a mod matrix; loads WAV wavetables. Use it for evolving pads, digital leads and modern basses.
 import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes the "User" table (A table or B table = User).

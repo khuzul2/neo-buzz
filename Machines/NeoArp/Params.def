@@ -2,6 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoArp
 namespace NeoBuzz.Arp
 class NeoArpMachine
+timing Rate feel=Feel mode=Sync rate=FreeMs
 summary An arpeggiator that works on note wires: it takes the notes you hold (or a chord from another note machine) and sends them on one at a time, in time with the song. Twelve patterns (up, down, up-down, converge, diverge, as played, random, random walk, a whole chord, or your own 16-step row with ties, accents and a transpose per step), a rate from 1/1 to 1/64 with dotted and triplet or a free time in milliseconds, swing, gate, one to four octaves, repeats, velocity, humanize and a latch. It makes no sound itself: put it before a synth as a note insert, or on a note wire to any machine that takes notes. Use it for arpeggios, rhythmic chord stabs, basslines and sequenced leads.
 
 group Pattern

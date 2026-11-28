@@ -107,8 +107,7 @@ namespace NeoBuzz.Wave
                 Build.Knobs(ctx, 4, D, a, d, s, r)));
             UIElement MakeLfo(string title, int shape, int rate, int sync, int feel, int retrig, int fade) => S(title, Layout.Column(
                 new ParamDropdown(ctx, shape, width: 100),
-                Layout.Row(new ParamKnob(ctx, rate, diameter: D), new ParamKnob(ctx, fade, diameter: D)),
-                ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = sync, Feel = feel, Rate = rate, Hz = true, KnobInside = false }),
+                Layout.Row(ParamTempoTime.Create(ctx, new TempoTimeSpec { Division = sync, Feel = feel, Rate = rate, Hz = true, KnobDiameter = D }), new ParamKnob(ctx, fade, diameter: D)),
                 new ParamChoice(ctx, retrig, "Retrig", 30)));
 
             var matrix = new Grid();

@@ -309,21 +309,6 @@ namespace ReBuzz.Agent.Model
 
         // ---- tempo-sync timings (SYN1, docs/sdk/tempo-sync.md) ---------------------------------------------------------------
 
-        /// <summary>
-        /// The Feel parameter that goes with a division parameter of the same machine: the last word of its name (sync, rate) becomes "feel"
-        /// ("LFO1 sync" and "LFO1 feel", "Rate" and "Feel", "Fixed rate" and "Fixed feel"). Null when the machine has none.
-        /// </summary>
-        public static ParamInfo FeelOf(IEnumerable<ParamInfo> all, ParamInfo division)
-        {
-            if (division?.Mapping is not { Kind: MappingKind.Enum, Names: { } names } || !names.Any(n => TimingBeats(n, out _) is double b && b > 0)) return null;
-            string name = division.Name.Trim();
-            int sp = name.LastIndexOf(' ');
-            string last = sp < 0 ? name : name.Substring(sp + 1);
-            if (!(last.Equals("sync", StringComparison.OrdinalIgnoreCase) || last.Equals("rate", StringComparison.OrdinalIgnoreCase))) return null;
-            string want = (sp < 0 ? "" : name.Substring(0, sp + 1)) + "feel";
-            return all.FirstOrDefault(p => p.Name.Equals(want, StringComparison.OrdinalIgnoreCase) && p.Mapping is { Kind: MappingKind.Enum });
-        }
-
         static readonly string[] FeelWords = { "straight", "dotted", "triplet", "quintuplet" };
 
         /// <summary>The length in beats a name or text means ("1/8" 0.5, "1 bar" and "1/1" 4, "2 bars" 8); null when it is no division. An inline suffix (1/8T, "1/8 dotted" in a list) is applied.</summary>

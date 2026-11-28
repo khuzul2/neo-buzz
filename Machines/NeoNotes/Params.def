@@ -2,6 +2,8 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoNotes
 namespace NeoBuzz.Notes
 class NeoNotesMachine
+timing LenRate feel=LenFeel mode=LenSync rate=LenMs
+timing EchoRate feel=EchoFeel mode=EchoSync rate=EchoMs
 summary A note effect: notes in, changed notes out, as a note insert before an instrument or a stage on a note wire (it makes no sound itself). Seven sections, each with its own On switch and applied in this order: Transpose (plus or minus 48 semitones); Scale (a key and one of ten scales, with the notes outside it moved to the nearest, the next one up or down, or dropped); Spread (each note moved by whole octaves in a cycle, up and down, or at random); Velocity (a soft-to-hard curve, an output range, a fixed value and a random change); Length (as played, a fixed length at the song's tempo or in milliseconds, or a minimum and maximum); Echo (up to 16 repeats at the song's tempo or in milliseconds, each quieter, shifted in pitch and shorter); Humanize (a random delay, a random velocity change, seeded). Every note it sends ends: when its source ends, by its length, or when the song stops. Use it to keep a part in key, fatten a line across octaves, shape how hard and how long every note plays, add rhythmic echoes to a lead, and loosen a machine-made part.
 
 group Transpose

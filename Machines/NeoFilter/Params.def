@@ -2,6 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoFilter
 namespace NeoBuzz.Filter
 class NeoFilterMachine
+timing LfoSync feel=LfoFeel rate=LfoRate unit=hz
 summary Stereo resonant filter effect with Neo Poly's filters: the ladder (low-pass 24 or 12 dB/oct) and the state-variable filter (low-pass, band-pass, high-pass, notch, peak; 12 or 24 dB/oct), cutoff in Hz, resonance as Q up to self-oscillation that stays bounded, drive (soft saturation, oversampled), an envelope follower (attack, release, sensitivity, ± octaves) and an LFO (free or synced to the tempo, seven shapes, stereo phase, locked to the song or restarted by the input) both moving the cutoff, dry/wet mix and output. A Vowel type makes it a formant filter: three resonances at the frequencies of a spoken vowel (A, E, I, O, U morphed, Man, Woman or Child; Peterson and Barney's averages), moved by the envelope and the LFO. Zero latency; at Mix 0 % it passes the input bit for bit. Use it for filter sweeps, auto-wah, talking synths and choir pads, dub high-pass and low-pass moves, resonant tones and tempo-synced movement.
 
 group Filter

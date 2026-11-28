@@ -1653,5 +1653,19 @@
    ],
    "description": "A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes the \"User\" table (A table or B table = User)."
   }
+ ],
+ "timings": [
+  {
+   "division": "LFO1 sync",
+   "feel": "LFO1 feel",
+   "rate": "LFO1 rate",
+   "unit": "hz"
+  },
+  {
+   "division": "LFO2 sync",
+   "feel": "LFO2 feel",
+   "rate": "LFO2 rate",
+   "unit": "hz"
+  }
  ]
 }

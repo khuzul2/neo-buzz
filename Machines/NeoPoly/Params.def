@@ -2,6 +2,8 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoPoly
 namespace NeoBuzz.Poly
 class NeoPolyMachine
+timing L1Sync feel=L1Feel rate=L1Rate unit=hz
+timing L2Sync feel=L2Feel rate=L2Rate unit=hz
 tracks 16
 summary Virtual analog polysynth: three oscillators, two filters (ladder and SVF), amp, filter and mod envelopes, two LFOs and a mod matrix. Use it for pads, basses, leads, plucks, brass and keys, and for acid lines (Diode 18 filter, accent and slide).
 
