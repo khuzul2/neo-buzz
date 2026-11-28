@@ -87,7 +87,7 @@ namespace NeoBuzz.Vocoder
             double low = ctx.Value(P.Low), high = ctx.Value(P.High);
             g.Text($"{low:0} Hz", plot.Left, r.Bottom - 15, 10, Palette.DimText);
             g.Text($"{high / 1000.0:0.#} kHz", plot.Right - 44, r.Bottom - 15, 10, Palette.DimText);
-            if (machine != null && machine.Engine.NeedsWire) g.Text(VocoderEngine.WireMessage, r.X + 120, r.Y + 3, 11, WarnColor);
+            if (machine != null && machine.Engine.NeedsWire) g.Text(VocoderEngine.WireMessage, r.X + 150, r.Y + 3, 11, WarnColor);
         }
     }
 }
