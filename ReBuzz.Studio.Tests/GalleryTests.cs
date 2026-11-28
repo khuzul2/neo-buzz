@@ -2753,7 +2753,10 @@ namespace ReBuzz.Studio.Tests
                         var bankObj = engineObj.GetType().GetProperty("Bank", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(engineObj)!;
                         int built = (int)bankObj.GetType().GetProperty("BuiltBands")!.GetValue(bankObj)!;
                         System.Console.WriteLine($"{id}: the engine has {built} bands (the preset says {raws[9] + 8})");
-                        Assert.That(built, Is.EqualTo(raws[9] + 8), "the preset's values reached the engine");
+                        var valuesObj = inst.GetType().GetProperty("Values", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        int stored = (int)valuesObj.GetType().GetProperty("Item")!.GetValue(valuesObj, new object[] { 9 })!;
+                        int param = group.Parameters.First(p => p.Name == "Bands").GetValue(0);
+                        Assert.That(built, Is.EqualTo(raws[9] + 8), $"the preset's values reached the engine: the engine has {built} bands, the machine's values hold Bands = {stored}, the parameter holds {param}, the preset says {raws[9]}");
                         Core.UiHost.OpenGui(m, null);
                         var editor = StudioMachineUiHost.GuiWindowOf(m);
                         Assert.That(editor, Is.Not.Null, "its GUI opened");
