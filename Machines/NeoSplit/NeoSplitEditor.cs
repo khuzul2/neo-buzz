@@ -59,7 +59,7 @@ namespace NeoBuzz.Split
             var transientPage = Layout.Column(
                 Layout.Row(new ParamKnob(ctx, P.Sensitivity, diameter: 52), new ParamKnob(ctx, P.Length, diameter: 52), new ParamKnob(ctx, P.Smoothing, diameter: 52)),
                 Layout.Gap(1, 6),
-                Note(520, 54, "Out 1 carries the onsets, Out 2 what follows them; added together they are the input, 2 ms later (the lookahead, reported to the host).",
+                Note(520, 74, "Out 1 carries the onsets, Out 2 what follows them; added together they are the input, 2 ms later (the lookahead, reported to the host).",
                     "Sensitivity: how easily a rise counts as a hit. Length: how long a hit lasts. Smoothing: how slowly the body returns."));
 
             // Mid and Side.
