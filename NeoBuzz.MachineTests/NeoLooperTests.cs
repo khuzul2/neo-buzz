@@ -209,6 +209,41 @@ namespace NeoBuzz.MachineTests
             }
         }
 
+        // ---------------------------------------------------------------- clicks
+
+        static (float[] L, float[] R)[] sources;
+        static (float[] L, float[] R)[] Sources
+        {
+            get
+            {
+                if (sources == null)
+                {
+                    int len = 96000 * 8;
+                    sources = new[] { LooperRig.DrumsSource(len), LooperRig.ChordSource(len) };
+                }
+                return sources;
+            }
+        }
+
+        [TestCase(0, "Neo Drums loop")]
+        [TestCase(1, "Neo Poly pad")]
+        public void NoClickAtTheLoopPointOrAnyPunchInOrOut(int source, string what)
+        {
+            var (sl, sr) = Sources[source];
+            foreach (var (name, script) in new[] { ("the performance", LooperRig.Script()), ("every edit", LooperRig.EditScript()) })
+                foreach (bool monitor in new[] { false, true })
+                {
+                    var v = LooperRig.Fresh(x => LooperRig.Switch(x, P.Monitor, monitor));
+                    var e = LooperRig.Engine(v);
+                    var (ol, or) = LooperRig.Render(e, v, sl, sr, Plan(120), 256, script);
+                    var dry = ClickDetector.Find(sl);
+                    var clicks = ClickDetector.Find(ol);
+                    var clicksR = ClickDetector.Find(or);
+                    Assert.That(clicks.Count - dry.Count, Is.LessThanOrEqualTo(0), $"{what}, {name}, monitor {monitor}: clicks at {string.Join(",", clicks)} (the source alone has {dry.Count})");
+                    Assert.That(clicksR.Count, Is.LessThanOrEqualTo(clicks.Count + dry.Count + 1), $"{what}, {name}, monitor {monitor}: right");
+                }
+        }
+
         // ---------------------------------------------------------------- amount, mix, memory
 
         [TestCase(P.Amount)]
@@ -320,6 +355,21 @@ namespace NeoBuzz.MachineTests
             for (int i = 0; i < oa.Length; i++)
                 if (BitConverter.SingleToInt32Bits(oa[i]) != BitConverter.SingleToInt32Bits(ob[i])) Assert.Fail($"sample {i}");
             Assert.That(oa.Max(Math.Abs), Is.GreaterThan(0.01f), "the loop is audible");
+        }
+
+        [TestCase(0, "Neo Drums loop")]
+        [TestCase(1, "Neo Poly pad")]
+        public void TheLoopCostsAboutAThirdOfAMegabyteASecondInTheSong(int source, string what)
+        {
+            var (l, r) = Sources[source];
+            int n = Rate * 4;                                       // a 4 s loop: 2 bars at 120 BPM
+            var saved = LooperCodec.Encode(l.AsSpan(Rate, n).ToArray(), r.AsSpan(Rate, n).ToArray(), n, Rate, 8);
+            var ser = new XmlSerializer(typeof(LooperSaved));
+            using var w = new StringWriter();
+            ser.Serialize(w, saved);
+            double mb = w.ToString().Length / 1e6;
+            TestContext.Out.WriteLine($"{what}: a 4 s stereo loop is {mb:0.00} MB of machine state ({mb / 4:0.00} MB a second; raw float32 is {n * 8 / 1e6:0.00} MB)");
+            Assert.That(mb / 4, Is.LessThan(0.5), what);
         }
 
         [Test]

@@ -21,6 +21,7 @@ namespace NeoBuzz.Looper
         int barCheck, beatsPerBar = 4;
         LooperSaved saved = new LooperSaved();
         int savedRevision = -1;
+        bool armed;
 
         public NeoLooperMachine(IBuzzMachineHost host) : base(host, Params.Table)
         {
@@ -28,6 +29,7 @@ namespace NeoBuzz.Looper
             Engine.SetSampleRate(SampleRate);
             rate = SampleRate;
             Engine.StartWorker();
+            armed = false;
         }
 
         internal LooperEngine Engine { get; }
@@ -68,6 +70,7 @@ namespace NeoBuzz.Looper
                 rate = SampleRate;
                 Engine.SetSampleRate(rate);
             }
+            if (!armed) { armed = true; Engine.ArmTriggers(); }
             bool hasInput = (mode & WorkModes.WM_READ) != 0 && input != null && HasSignal(input, n);
             if (!hasInput)
             {

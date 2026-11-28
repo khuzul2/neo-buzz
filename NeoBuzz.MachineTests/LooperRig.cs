@@ -75,6 +75,61 @@ namespace NeoBuzz.MachineTests
             return (ol, or);
         }
 
+        /// <summary>
+        /// The performance the listening pack and the click tests play, at 120 BPM (a bar is 96,000 samples), every press as a pad sends it, the way a player would: just before the bar line.
+        /// Bar 0 record, bar 1 the loop plays (one bar), bar 2 overdub, bar 3 multiply x2 (at bar 4), bar 4 undo and redo of it, bar 5 an overdub over both bars, bar 6 undo and redo,
+        /// bar 7 stop. Eight bars, 16 s.
+        /// </summary>
+        public static List<Trig> Script(int bar = 96000) => new List<Trig>
+        {
+            new Trig(0, P.Record), new Trig(1 * bar - 1000, P.Record),
+            new Trig(2 * bar - 1000, P.Record), new Trig(3 * bar - 1000, P.Record),
+            new Trig(3 * bar + 1000, P.Multiply),
+            new Trig(4 * bar + 20000, P.Undo), new Trig(4 * bar + 50000, P.Redo),
+            new Trig(5 * bar - 1000, P.Record), new Trig(6 * bar - 1000, P.Record),
+            new Trig(6 * bar + 20000, P.Undo), new Trig(6 * bar + 50000, P.Redo),
+            new Trig(7 * bar - 1000, P.Stop),
+        };
+
+        /// <summary>Every kind of edit once more, with Clear and Play: for the click tests. Eight bars.</summary>
+        public static List<Trig> EditScript(int bar = 96000) => new List<Trig>
+        {
+            new Trig(0, P.Record), new Trig(2 * bar - 1000, P.Record),                  // a two-bar take
+            new Trig(3 * bar - 1000, P.Record), new Trig(4 * bar - 1000, P.Record),     // overdub one bar
+            new Trig(4 * bar + 1000, P.Stop), new Trig(5 * bar + 1000, P.Play),         // stop at bar 5, play at bar 6
+            new Trig(6 * bar + 30000, P.Clear), new Trig(6 * bar + 60000, P.Undo),      // clear and bring it back
+            new Trig(7 * bar - 1000, P.Multiply),
+        };
+
+        /// <summary>The preset tests' one second of noise: the performance of <see cref="Script"/> (8 bars, the noise played over and over) and the second after bar 5 comes back (left channel).</summary>
+        public static float[] PresetRender(ParamValues v, float[] x)
+        {
+            int bar = 96000, len = bar * 8;
+            var l = new float[len];
+            for (int i = 0; i < len; i++) l[i] = x[i % x.Length];
+            var e = Engine(v);
+            var (ol, _) = Render(e, v, l, (float[])l.Clone(), ChopRig.Constant(120), 256, Script(bar));
+            var y = new float[x.Length];
+            Array.Copy(ol, 5 * bar + 4096, y, 0, y.Length);
+            return y;
+        }
+
+        /// <summary>The audio call of the modulation-cost guard: the song runs on, and a trigger pulses now and then.</summary>
+        public static Action<float[], float[], int> CostCall(ParamValues v)
+        {
+            var e = Engine(v);
+            double spb = ChopRig.Spb(120), beat = 0;
+            int block = 0;
+            return (l, r, n) =>
+            {
+                v.Set(P.Record, block % 700 == 3 || block % 700 == 300 || block % 700 == 330 ? 1 : 0);
+                e.SetTransport(true, beat, spb, 4);
+                e.Process(l, r, n);
+                beat += n / spb;
+                block++;
+            };
+        }
+
         public static float[] Constant(int length, float value)
         {
             var x = new float[length];

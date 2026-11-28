@@ -84,3 +84,4 @@ NeoBuzz.VoiceToMidi	0	91	9871503cf4670345
 NeoBuzz.Wave	0	83	744dec7ce1d8d67c
 NeoBuzz.Wave	1	85	4b9ff63f4793cff7
 NeoBuzz.Prism	0	27	58a0b9f7dfee3eda
+NeoBuzz.Looper	0	21	ea7172d108f62019

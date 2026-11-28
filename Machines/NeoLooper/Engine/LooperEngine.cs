@@ -100,7 +100,7 @@ namespace NeoBuzz.Looper
 
         // ---- triggers ----
         readonly int[] lastRaw = new int[7];
-        bool rawKnown;
+        bool rawKnown = true;     // the parameters start at 0, so a trigger that is set before the first block fires
         struct Pending { public LooperCmd Cmd; public double Beat; public bool Immediate; }
         readonly Pending[] queue = new Pending[16];
         int queueN;
@@ -194,7 +194,7 @@ namespace NeoBuzz.Looper
             fx.Reset();
             ClearAll();
             haveLast = false;
-            rawKnown = false;
+            ArmTriggers();
         }
 
         /// <summary>Starts the worker that makes a new pool when Max loop or Undo levels change (the machine calls it once).</summary>
@@ -298,6 +298,43 @@ namespace NeoBuzz.Looper
             return true;
         }
 
+        // ---------------------------------------------------------------------------------------------------------- what the editor shows
+
+        public int BeatsPerBar => tBeatsPerBar;
+        public double Rate => sr;
+        /// <summary>The trigger waiting for its bar or beat (None when nothing waits).</summary>
+        public LooperCmd Queued => queueN > 0 ? queue[0].Cmd : LooperCmd.None;
+        /// <summary>The undo levels held (the editor draws them behind the loop).</summary>
+        public int UndoLevelsHeld => undoN;
+
+        /// <summary>The loop's peaks in <paramref name="columns"/> columns (0 = the playing loop, 1 = the newest undo level, 2 = the one before): false when there is none.</summary>
+        public bool Wave(int which, int columns, float[] min, float[] max)
+        {
+            var p = pool;
+            int b, n;
+            if (which == 0) { b = live; n = frames; }
+            else if (which <= undoN) { b = undoBuf[undoN - which]; n = undoFrames[undoN - which]; }
+            else return false;
+            if (b < 0 || n <= 0 || p == null) return false;
+            bool pend = which == 0 && copyPending;
+            int src = copySrc, srcN = copySrcFrames;
+            for (int c = 0; c < columns; c++)
+            {
+                int from = (int)((long)c * n / columns), to = (int)((long)(c + 1) * n / columns);
+                if (to <= from) to = from + 1;
+                float lo = 0f, hi = 0f;
+                for (int i = from; i < to && i < n; i++)
+                {
+                    float x = pend && p.Have[i] == 0 ? p.L[src][i % srcN] : p.L[b][i];
+                    if (x < lo) lo = x;
+                    if (x > hi) hi = x;
+                }
+                min[c] = lo;
+                max[c] = hi;
+            }
+            return true;
+        }
+
         /// <summary>A loop from a song, for the next block (the loader thread). The machine starts Stopped with the loop ready.</summary>
         public void Load(float[] l, float[] r, int count, double beats)
         {
@@ -363,12 +400,18 @@ namespace NeoBuzz.Looper
             for (int i = 0; i < TriggerIndex.Length; i++)
             {
                 int now = v[TriggerIndex[i]];
-                if (!rawKnown) { lastRaw[i] = now; continue; }
                 int was = lastRaw[i];
                 lastRaw[i] = now;
                 if (now == was) continue;
                 if (now > was || pedalBoth) Enqueue(TriggerCmd[i]);
             }
+            rawKnown = true;
+        }
+
+        /// <summary>Takes the triggers' present values as the resting state (the machine calls it before its first block, so a value a song saved does not fire).</summary>
+        public void ArmTriggers()
+        {
+            for (int i = 0; i < TriggerIndex.Length; i++) lastRaw[i] = v[TriggerIndex[i]];
             rawKnown = true;
         }
 
@@ -764,8 +807,8 @@ namespace NeoBuzz.Looper
 
         void DoMultiply()
         {
-            if (state != LooperState.Playing && state != LooperState.Overdubbing && state != LooperState.Stopped) return;
-            if (state == LooperState.Overdubbing) EndPassNow();
+            // Not while a pass is recording: close it first (its fade is not cut short).
+            if (state != LooperState.Playing && state != LooperState.Stopped) return;
             long len = (long)frames * mulBy;
             if (len > pool.Frames) return;       // does not fit the limit
             FinishCopy();
@@ -778,13 +821,6 @@ namespace NeoBuzz.Looper
             head.Buf = b;
             head.Frames = frames;
             Revision++;
-        }
-
-        void EndPassNow()
-        {
-            punchingOut = false;
-            rampCount = 0;
-            state = LooperState.Playing;
         }
 
         // ---------------------------------------------------------------------------------------------------------- the sample loop
