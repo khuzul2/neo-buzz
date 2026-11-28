@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Bands — Two-Way Bass and Top">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="2917" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="589" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment>Two outputs split at 150 Hz: Out 1 is the bass, Out 2 everything above it; wire them to two chains to keep the lows mono and dry while the top gets width, saturation or reverb. Out 3 and 4 are silent.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bands — Three-Way Mix">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="3656" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="6990" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="589" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment>Three outputs split at 250 Hz and 2.5 kHz: Out 1 the low end, Out 2 the body and presence of the mids, Out 3 the highs; a different chain for each, as in a three-way speaker. Out 4 is silent.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bands — Four-Way Master">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="2330" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5340" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="589" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment>Four outputs split at 100 Hz, 800 Hz and 6 kHz: Out 1 the sub and bass, Out 2 the low mids, Out 3 the high mids, Out 4 the air; the starting point for multiband work on a mix with a chain on each output.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bands — Sub Under 60 Hz">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="1590" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="589" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment>Two outputs split at 60 Hz with the steepest slope, 48 dB/oct: Out 1 holds only the sub, Out 2 everything above it with almost no overlap; for a chain that works on the sub alone (mono, a saturator, a compressor) without touching the bass line.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Transient — Sharp Hits">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="850" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="411" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Only the sharpest hits go to Out 1, cut short at 10 ms so that it holds the click of a kick or a snare; Out 2 holds the rest, the body and the tail, without the click. A gate or a short reverb on Out 1, a compressor on Out 2.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Transient — Soft Attacks">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="900" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="823" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="200" />
+      </Parameters>
+      <Attributes />
+      <Comment>A sensitive detector with a long transient, 50 ms: Out 1 takes every swell and attack, the whole front of a note, including soft ones such as strings, plucks and ghost notes; Out 2 holds what is left, the sustained part.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Transient — Long Body">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="692" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A medium split, a 30 ms transient, with a very slow return of the body, 100 ms: Out 1 is the hit, but the start of the tail stays with it and the body on Out 2 fades in slowly, so a chain on Out 2 never hears a hard cut; a long tail to compress or fill.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mid / Side — Mid and Side">
+    <Preset Machine="Neo Split">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Bands" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="3" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="4" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="5" Track="0" Value="8257" />
+        <Parameter Name="Sensitivity" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Transient length" Group="1" Index="7" Track="0" Value="589" />
+        <Parameter Name="Body smoothing" Group="1" Index="8" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment>Out 1 is the mid, the centre of the stereo picture on both sides; Out 2 is the side, what differs between left and right; added together they are left and right again. Wire a chain on each to treat the centre and the width apart. Out 3 and 4 are silent.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

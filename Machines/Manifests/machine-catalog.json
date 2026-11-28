@@ -767,6 +767,15 @@
     "stereo-width"
    ],
    "use_for": "Convolution reverb with zero latency: nine rooms of our own or any wave of the song as the room, with pre-delay, length, low and high cut, width and reverse. Best on a send at 100% wet."
+  },
+  "Neo Split": {
+   "category": "Utility",
+   "tags": [
+    "routing",
+    "multiband",
+    "stereo-width"
+   ],
+   "use_for": "One input, four outputs that add up to it: frequency bands, transients and body, or mid and side, each output to its own chain for parallel processing."
   }
  }
 }

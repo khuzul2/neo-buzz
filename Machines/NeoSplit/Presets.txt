@@ -1,0 +1,61 @@
+# Neo Split factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoSplit
+# A preset that does not name a parameter takes its default: Bands mode, 4 bands, 24 dB/oct, crossovers at 120 Hz, 1 kHz and 6 kHz, Transient and Body at 50 %
+# sensitivity, 20 ms and 10 ms smoothing. Every preset names the mode, so it splits the same whatever was loaded before it. The outputs are Out 1 to Out 4:
+# each comment says what they carry.
+machine "Neo Split"
+
+preset "Bands — Two-Way Bass and Top"
+comment "Two outputs split at 150 Hz: Out 1 is the bass, Out 2 everything above it; wire them to two chains to keep the lows mono and dry while the top gets width, saturation or reverb. Out 3 and 4 are silent."
+Mode = Bands
+Bands = 2
+Slope = 24 dB/oct
+Crossover 1 = 150
+
+preset "Bands — Three-Way Mix"
+comment "Three outputs split at 250 Hz and 2.5 kHz: Out 1 the low end, Out 2 the body and presence of the mids, Out 3 the highs; a different chain for each, as in a three-way speaker. Out 4 is silent."
+Mode = Bands
+Bands = 3
+Slope = 24 dB/oct
+Crossover 1 = 250
+Crossover 2 = 2500
+
+preset "Bands — Four-Way Master"
+comment "Four outputs split at 100 Hz, 800 Hz and 6 kHz: Out 1 the sub and bass, Out 2 the low mids, Out 3 the high mids, Out 4 the air; the starting point for multiband work on a mix with a chain on each output."
+Mode = Bands
+Bands = 4
+Slope = 24 dB/oct
+Crossover 1 = 100
+Crossover 2 = 800
+Crossover 3 = 6000
+
+preset "Bands — Sub Under 60 Hz"
+comment "Two outputs split at 60 Hz with the steepest slope, 48 dB/oct: Out 1 holds only the sub, Out 2 everything above it with almost no overlap; for a chain that works on the sub alone (mono, a saturator, a compressor) without touching the bass line."
+Mode = Bands
+Bands = 2
+Slope = 48 dB/oct
+Crossover 1 = 60
+
+preset "Transient — Sharp Hits"
+comment "Only the sharpest hits go to Out 1, cut short at 10 ms so that it holds the click of a kick or a snare; Out 2 holds the rest, the body and the tail, without the click. A gate or a short reverb on Out 1, a compressor on Out 2."
+Mode = Transient / Body
+Sensitivity = 85
+Transient length = 10
+Body smoothing = 0
+
+preset "Transient — Soft Attacks"
+comment "A sensitive detector with a long transient, 50 ms: Out 1 takes every swell and attack, the whole front of a note, including soft ones such as strings, plucks and ghost notes; Out 2 holds what is left, the sustained part."
+Mode = Transient / Body
+Sensitivity = 90
+Transient length = 50
+Body smoothing = 20
+
+preset "Transient — Long Body"
+comment "A medium split, a 30 ms transient, with a very slow return of the body, 100 ms: Out 1 is the hit, but the start of the tail stays with it and the body on Out 2 fades in slowly, so a chain on Out 2 never hears a hard cut; a long tail to compress or fill."
+Mode = Transient / Body
+Sensitivity = 70
+Transient length = 30
+Body smoothing = 100
+
+preset "Mid / Side — Mid and Side"
+comment "Out 1 is the mid, the centre of the stereo picture on both sides; Out 2 is the side, what differs between left and right; added together they are left and right again. Wire a chain on each to treat the centre and the width apart. Out 3 and 4 are silent."
+Mode = Mid / Side

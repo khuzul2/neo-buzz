@@ -1,0 +1,41 @@
+# Neo Split parameters (docs/specs/neo-split.md). The order changes only with a version (machines.md §3.2): songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoSplit
+namespace NeoBuzz.Split
+class NeoSplitMachine
+summary Splits one stereo input into four outputs that add up to the input, each wired to its own chain. Bands: two, three or four frequency bands on Linkwitz–Riley crossovers (24 or 48 dB/oct) whose bands sum flat; Transient and Body: the onsets on output 1 and what is left on output 2, found by two followers of the level with a 2 ms lookahead; Mid and Side: the centre on output 1 and the difference on output 2, so that the two add up to left and right. It only routes: there is no Mix or Amount, and the outputs summed are the input (Bands: flat in level, the phase turned by the crossovers' allpass). Use it for parallel processing: a different chain for the lows and the highs, the hits and the tails, or the middle and the sides.
+
+group Mode
+Mode       "Mode"          0 2 0     enum Bands Transient_/_Body Mid_/_Side | What is split: frequency bands, the transients and the body, or mid and side (the outputs are named Out 1 to Out 4; what each carries depends on the mode)
+    how Chooses what the input is split into: frequency bands, transients and body, or mid and side.
+    sound Bands gives each range of the spectrum its own output, Transient and Body separates the hit from what follows it, and Mid and Side separates the centre from the width.
+group Bands
+Bands      "Bands"         0 2 2     int 2 bands                      | How many frequency bands (Bands mode): 2, 3 or 4. The outputs after the last band are silent
+    how Chooses how many frequency bands the input is split into: 2, 3 or 4.
+    sound More bands let more chains work on separate ranges; the bands always add up to the input.
+Slope      "Slope"         0 1 0     enum 24_dB/oct 48_dB/oct         | The steepness of each crossover (Bands mode): Linkwitz–Riley 24 dB/oct, or 48 dB/oct for a narrow overlap. Each band is 6 dB down at its crossover and the bands sum flat
+    how Chooses how sharply each crossover separates the bands: 24 or 48 dB per octave.
+    sound 24 dB/oct is the classic, gentle overlap; 48 dB/oct keeps the bands apart, which suits treating a band hard, at a little more ringing near the crossover.
+Xo1        "Crossover 1"   0 10000 2594 freq 20 20000                 | Between the first and the second band (never closer than a third of an octave to the next crossover)
+    how Sets the frequency between the first and second band, from 20 Hz to 20 kHz.
+    sound It decides how much of the low end the first output gets.
+Xo2        "Crossover 2"   0 10000 5663 freq 20 20000                 | Between the second and the third band (kept at least a third of an octave above Crossover 1)
+    how Sets the frequency between the second and third band.
+    sound It moves the boundary between the lower and upper midrange.
+Xo3        "Crossover 3"   0 10000 8257 freq 20 20000                 | Between the third and the fourth band (kept at least a third of an octave above Crossover 2)
+    how Sets the frequency between the third and fourth band.
+    sound It decides where the top band begins.
+group Transient
+Sensitivity "Sensitivity"  0 1000 500 pct                            | Transient and Body mode: how easily a rise in level counts as a transient (0 % only the sharpest hits, 100 % every swell)
+    how Sets how large a rise in level must be to count as a transient.
+    sound Low values send only the hardest hits to Out 1; high values send smaller attacks and swells too.
+Length     "Transient length" 0 1000 589 exp 2 100 ms 1               | Transient and Body mode: how long after an onset the sound still counts as the transient (the detector's followers: 2 to 100 ms)
+    how Sets how long a hit's attack lasts, from 2 to 100 ms.
+    sound Short values keep only the click of a hit on Out 1; long values carry the first part of the note with it.
+Smoothing  "Body smoothing" 0 1000 100 lin 0 100 ms 0                 | Transient and Body mode: how slowly the body comes back after a transient (the transient's weight falls over this time; 0 is at once)
+    how Sets how slowly the body returns after a transient, from 0 to 100 ms.
+    sound Short values give a clean cut between transient and body; long values leave the start of the tail with the transient and make the body fade in.
+reading out1_db       dB      | Peak level of output 1 over the last block, in dBFS (−120 when silent)
+reading out2_db       dB      | Peak level of output 2
+reading out3_db       dB      | Peak level of output 3
+reading out4_db       dB      | Peak level of output 4
+reading latency_samples samples | The delay of every output: 0 in Bands and Mid and Side, the 2 ms lookahead in Transient and Body (reported to NeoBuzz Live)
