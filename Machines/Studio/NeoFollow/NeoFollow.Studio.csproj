@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Follow, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoFollow</NeoFolder>
+    <NeoName>Neo Follow</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <!-- The canvas modulators' editor template (shared by all Neo modulators). -->
+    <Compile Include="$(M)NeoModulator\*Editor.cs" Link="Shared\Modulator\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

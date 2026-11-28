@@ -481,6 +481,16 @@
    "use_for": "Eight-lane Euclidean and probability rhythm generator on note wires: 1 to 32 steps, accents, ratchets, dividers, swing, fill and seeded humanize for drums or synths.",
    "note_out": true
   },
+  "Neo Follow": {
+   "category": "Control",
+   "tags": [
+    "envelope",
+    "modulation",
+    "sidechain",
+    "automation"
+   ],
+   "use_for": "Open, duck or bend any parameter from the audio: the level (envelope follower), the pitch or the hits of a track or a sidechain, up to 8 targets, with the audio passing through unchanged."
+  },
   "Neo Random": {
    "category": "Control",
    "tags": [

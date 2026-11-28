@@ -1,0 +1,121 @@
+# Neo Follow factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoFollow
+# A preset that does not name a parameter takes its default (Input, Envelope, Peak, 10 ms attack, 200 ms release, Floor -60 dB, Ceiling -6 dB, Depth 100 %, Bias 0 %, Unipolar, Write glide 30 ms).
+# Each is made to drive a target that has Depth +100 % (a rise opens it); the ducking ones say where a negative depth is meant.
+machine "Neo Follow"
+
+preset "Envelope — Auto Wah"
+comment "Drums on the track open a filter's cutoff on every hit and let it fall back in a sixth of a second: the classic auto-wah."
+Listen to = Input
+Mode = Envelope
+Detector = Peak
+Attack = 1.5
+Release = 120
+Floor = -28
+Ceiling = -6
+Curve = -20
+Smooth = 0
+Invert = Off
+Depth = 100
+Bias = 0
+Range = Unipolar
+Write glide = 0.008
+
+preset "Envelope — Pump"
+comment "A kick on the sidechain pushes the control up for a third of a second: give a pad's volume a negative depth and the pad ducks on every kick."
+Listen to = Sidechain
+Mode = Envelope
+Detector = Peak
+Attack = 6
+Release = 380
+Floor = -30
+Ceiling = -4
+Curve = 25
+Smooth = 8
+Depth = 100
+Range = Unipolar
+Write glide = 0.02
+
+preset "Envelope — Slow Swell"
+comment "A slow RMS follower that swells with the loudness of a section over a long time and takes seconds to fall back: a filter or a reverb send that breathes with the music."
+Listen to = Input
+Mode = Envelope
+Detector = RMS
+Attack = 450
+Release = 2500
+Floor = -50
+Ceiling = -22
+Curve = 0
+Smooth = 120
+Depth = 85
+Range = Unipolar
+Write glide = 0.08
+
+preset "Envelope — Drive by Level"
+comment "The louder the playing, the more the target is pushed: an RMS follower with a quick attack and an eased-in curve that only the loud parts reach, for a drive amount or a distortion mix."
+Listen to = Input
+Mode = Envelope
+Detector = RMS
+Attack = 25
+Release = 250
+Floor = -30
+Ceiling = -14
+Curve = 40
+Smooth = 20
+Depth = 100
+Range = Unipolar
+Write glide = 0.02
+
+preset "Pitch — Filter Follows the Melody"
+comment "A melody opens a filter as it climbs: C3 is closed, C6 is open, and the cutoff slides between notes in about a tenth of a second."
+Listen to = Input
+Mode = Pitch
+Pitch range = Voice
+Low note = 48
+High note = 84
+Confidence = 75
+Pitch glide = 60
+Smooth = 10
+Depth = 100
+Range = Unipolar
+Write glide = 0.02
+
+preset "Pitch — Brighter When Higher"
+comment "A narrow two-octave span (G3 to G5) swings a target both ways around its set value with the pitch: higher notes brighter, lower notes darker, quick to follow."
+Listen to = Input
+Mode = Pitch
+Pitch range = Voice
+Low note = 55
+High note = 79
+Confidence = 60
+Pitch glide = 15
+Smooth = 0
+Depth = 95
+Bias = 0
+Range = Bipolar
+Write glide = 0.01
+
+preset "Onset — Hit Flash"
+comment "Every hit throws the control to full, scaled by how hard it was, and it falls away in a fifth of a second: each hit flashes a filter open."
+Listen to = Input
+Mode = Onset
+Sensitivity = 55
+Decay = 220
+Hold = 0
+Dynamic = On
+Smooth = 0
+Depth = 100
+Range = Unipolar
+Write glide = 0.004
+
+preset "Onset — Chop Gate"
+comment "Every hit holds the control at full for 110 ms and then drops it in a blink, whatever its strength: a gate that opens a volume or a send on the rhythm it hears."
+Listen to = Input
+Mode = Onset
+Sensitivity = 45
+Decay = 25
+Hold = 110
+Dynamic = Off
+Smooth = 0
+Depth = 100
+Range = Unipolar
+Write glide = 0.003
