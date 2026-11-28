@@ -1,0 +1,109 @@
+# Neo Follow parameters (docs/specs/neo-follow.md). The order changes only with a version (machines.md §3.2): songs and presets store values by position.
+# Regenerate: python3 tools/gen-machine-params.py Machines/NeoFollow
+namespace NeoBuzz.FollowMachine
+class NeoFollowMachine
+summary An audio follower that moves other machines' parameters: it listens to its own input or to a sidechain and turns the level (envelope follower with Peak or RMS detector, attack, release, floor, ceiling and curve), the pitch (low and high note, a confidence threshold and a glide) or the hits (an onset detector that starts a pulse with a decay and a hold) into one control signal, written to up to 8 targets (any parameter of any machine) with their own depth, polarity, range and curve, smoothly and never as an undo step. The audio passes through unchanged. Use it for an auto-wah, sidechain ducking without a compressor, a filter that follows a melody, a flash on every hit or a gate that chops on a rhythm it hears.
+
+group Source
+Listen    "Listen to"   0 1 0    enum Input Sidechain | What it listens to: the audio passing through (input 1) or the signal wired to the second input
+    id listen
+    how Chooses whether the follower hears the audio passing through it or the machine wired to its second (sidechain) input; the audio passing through is never changed.
+    sound Sidechain lets one track move another: a kick wired to the second input ducks the pad this machine sits on.
+Mode      "Mode"        0 2 0    enum Envelope Pitch Onset | Envelope: the level. Pitch: the note it hears. Onset: a pulse at each hit
+    id mode
+    how Chooses what the follower measures: the level, the pitch or the hits of the sound it listens to.
+    sound Envelope opens and closes things with the loudness, Pitch makes a parameter follow the melody and Onset fires a pulse on every hit.
+
+group Envelope
+Detector  "Detector"    0 1 0    enum Peak RMS | Peak: the highest sample. RMS: the average power, closer to loudness
+    id detector
+    how Chooses between the peak level, which answers to every spike, and the RMS level, which averages the power and follows the loudness.
+    sound Peak reacts to each drum hit sharply, while RMS moves smoothly with the body of the sound.
+Attack    "Attack"      0 1000 541 exp 0.1 500 ms 1           | Time constant of the rise when the level goes up
+    id attack
+    how Sets how fast the output rises when the sound gets louder, from 0.1 to 500 ms (the time to cover 63 % of a step).
+    sound Short attacks catch every hit at once while long attacks let the control swell in slowly.
+Release   "Release"     0 1000 622 exp 1 5000 ms 0            | Time constant of the fall when the level goes down
+    id release
+    how Sets how fast the output falls when the sound gets quieter, from 1 ms to 5 s (the time to cover 63 % of a step).
+    sound Short releases make the control flutter with the sound while long releases leave a slow tail after each hit.
+Floor     "Floor"       0 800 200 lin -80 0 dB 1              | The level that gives 0 % (anything quieter stays at 0 %)
+    id floor
+    how Sets the level in dB, from -80 to 0, that maps to the bottom of the control signal.
+    sound Raising the floor makes quiet noise and bleed count for nothing.
+Ceiling   "Ceiling"     0 800 740 lin -80 0 dB 1              | The level that gives 100 % (anything louder stays at 100 %)
+    id ceiling
+    how Sets the level in dB, from -80 to 0, that maps to the top of the control signal; the floor and the ceiling are at least 1 dB apart.
+    sound A low ceiling reaches full depth on soft playing while a high one keeps the control moving on loud peaks.
+Curve     "Curve"       0 1000 500 bip                        | Bends the level to control mapping: + eases in (slow start), - eases out
+    id curve
+    how Bends the straight line from floor to ceiling, from -100 % (fast start) to +100 % (slow start).
+    sound Positive curves ignore the quiet parts and only react to the loud hits while negative curves open at the slightest sound.
+
+group Pitch
+PitchRange "Pitch range" 0 3 3   enum Voice Guitar Bass Full | The lowest and highest pitch it listens for: Voice 70 Hz to 1.1 kHz, Guitar 80 Hz to 1.2 kHz, Bass 38 to 400 Hz, Full 38 Hz to 2 kHz
+    id pitch_range
+    how Chooses the range of pitches the tracker searches; a narrower range answers sooner (Voice about 21 ms, Bass and Full about 40 ms of window).
+    sound Pick the range of the instrument: the right one answers faster and makes fewer octave mistakes.
+Low       "Low note"    0 127 36 int 0                        | The MIDI note that gives 0 % (36 = C2)
+    id low
+    how Sets the note, from 0 to 127 (60 = C4, 36 = C2), at the bottom of the control signal.
+    sound Notes under it keep the control at its lowest.
+High      "High note"   0 127 84 int 0                        | The MIDI note that gives 100 % (84 = C6)
+    id high
+    how Sets the note, from 0 to 127 (60 = C4, 84 = C6), at the top of the control signal; it is at least one semitone above the low note.
+    sound Notes over it keep the control at its highest; a narrow span makes small pitch moves large.
+Confidence "Confidence" 0 1000 800 pct 0                      | How clear the pitch must be to count (under it the output holds)
+    id confidence
+    how Sets how periodic the sound must be, from 0 to 100 %, before its pitch is used; under it the output holds its last value.
+    sound High values ignore noisy or breathy moments and hold the last note, low values follow almost anything.
+PitchGlide "Pitch glide" 0 1000 245 pow 0 500 2 ms 0          | How slowly the output follows a change of pitch
+    id pitch_glide
+    how Smooths the pitch with a time constant from 0 to 500 ms before it is mapped.
+    sound A longer glide turns steps between notes into slides and hides small wobbles.
+
+group Onset
+Sensitivity "Sensitivity" 0 1000 500 pct 0                    | How soft a hit may be and still fire a pulse
+    id sensitivity
+    how Sets the onset threshold: high values fire on soft hits and ghost notes, low values only on hard ones.
+    sound Low sensitivity answers to the kick and snare only while high sensitivity also finds the hats and the soft hits.
+Decay     "Decay"       0 1000 616 exp 5 2000 ms 0            | How long a pulse takes to fall (the time to lose 63 %)
+    id decay
+    how Sets the fall of each pulse after its hold, from 5 ms to 2 s.
+    sound Short decays make a flash on every hit and long decays leave the control open between hits.
+Hold      "Hold"        0 1000 0 pow 0 500 2 ms 0             | How long a pulse stays at full before it falls
+    id hold
+    how Keeps each pulse at its full value for 0 to 500 ms before the decay starts.
+    sound Hold turns the pulse into a short gate that stays open for a set time.
+Dynamic   "Dynamic"     0 1 1    switch                        | On: a harder hit makes a taller pulse. Off: every hit is full
+    id dynamic
+    how Switches whether the height of a pulse follows the level of the hit it came from.
+    sound On keeps the playing's dynamics in the control while off makes every hit open it fully.
+
+group Shape
+Smooth    "Smooth"      0 1000 0 pow 0 1000 2 ms 0            | Smooths the control signal with a time constant (0 = off)
+    id smooth
+    how Smooths the control signal after the mode has made it, with a time constant of 0 to 1000 ms.
+    sound A little smoothing rounds off steps and jitter while a lot makes the control slow and gentle.
+Invert    "Invert"      0 1 0    switch                        | Turns the control signal upside down
+    id invert
+    how Swaps the top and the bottom of the control signal before depth and bias.
+    sound Inverted, a louder sound closes the target: ducking instead of opening.
+Depth     "Depth"       0 1000 1000 pct 0                     | Scales the width of the control signal (0 to 100 %)
+    id depth
+    how Scales how far the control swings before it reaches the target slots; at 0 % the targets stay where they are.
+    sound Low depth gives subtle movement and high depth sweeps the whole span of each target.
+Bias      "Bias"        0 1000 500 bip                        | Shifts the centre or floor of the control signal (-100 % to +100 %)
+    id bias
+    how Offsets the control signal's floor in Unipolar range or its centre in Bipolar range before clamping to 0 to 100 %.
+    sound Positive bias keeps the target higher and negative bias pulls it lower.
+Range     "Range"       0 1 0    enum Unipolar Bipolar         | Unipolar rises from Bias; Bipolar centres symmetrically around 50 % + Bias
+    id range
+    how Selects whether the control signal rises from its floor (Unipolar) or swings around the middle (Bipolar).
+    sound Unipolar opens a target from its set value; Bipolar swings it both ways around that value.
+
+group Behaviour
+Glide     "Write glide" 0 1000 492 time 0.001 1               | Least time a target takes to cross its whole range: no write moves further than this allows
+    id glide
+    how Limits how fast each target parameter may move so writes never step faster than this full-range travel time.
+    sound Short glides keep fast hits snappy and click-free while long glides turn sudden jumps into slow sweeps.

@@ -1,0 +1,251 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Envelope — Auto Wah">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="318" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="562" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="520" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="740" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="400" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="36" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="800" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="245" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="616" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="301" />
+      </Parameters>
+      <Attributes />
+      <Comment>Drums on the track open a filter's cutoff on every hit and let it fall back in a sixth of a second: the classic auto-wah.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Envelope — Pump">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="481" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="697" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="760" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="625" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="36" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="800" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="245" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="616" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="89" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="434" />
+      </Parameters>
+      <Attributes />
+      <Comment>A kick on the sidechain pushes the control up for a third of a second: give a pad's volume a negative depth and the pad ducks on every kick.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Envelope — Slow Swell">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="988" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="919" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="580" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="36" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="800" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="245" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="616" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="346" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="850" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="634" />
+      </Parameters>
+      <Attributes />
+      <Comment>A slow RMS follower that swells with the loudness of a section over a long time and takes seconds to fall back: a filter or a reverb send that breathes with the music.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Envelope — Drive by Level">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="648" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="648" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="500" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="660" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="700" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="36" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="800" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="245" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="616" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="141" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="434" />
+      </Parameters>
+      <Attributes />
+      <Comment>The louder the playing, the more the target is pushed: an RMS follower with a quick attack and an eased-in curve that only the loud parts reach, for a drive amount or a distortion mix.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pitch — Filter Follows the Melody">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="541" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="622" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="740" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="48" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="750" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="346" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="616" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="100" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="434" />
+      </Parameters>
+      <Attributes />
+      <Comment>A melody opens a filter as it climbs: C3 is closed, C6 is open, and the cutoff slides between notes in about a tenth of a second.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Pitch — Brighter When Higher">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="541" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="622" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="740" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="55" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="79" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="173" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="616" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="950" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="1" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="333" />
+      </Parameters>
+      <Attributes />
+      <Comment>A narrow two-octave span (G3 to G5) swings a target both ways around its set value with the pitch: higher notes brighter, lower notes darker, quick to follow.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Onset — Hit Flash">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="541" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="622" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="740" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="36" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="800" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="245" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="550" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="632" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="1" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="201" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every hit throws the control to full, scaled by how hard it was, and it falls away in a fifth of a second: each hit flashes a filter open.</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Onset — Chop Gate">
+    <Preset Machine="Neo Follow">
+      <Parameters>
+        <Parameter Name="Listen to" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Detector" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="541" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="622" />
+        <Parameter Name="Floor" Group="1" Index="5" Track="0" Value="200" />
+        <Parameter Name="Ceiling" Group="1" Index="6" Track="0" Value="740" />
+        <Parameter Name="Curve" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Pitch range" Group="1" Index="8" Track="0" Value="3" />
+        <Parameter Name="Low note" Group="1" Index="9" Track="0" Value="36" />
+        <Parameter Name="High note" Group="1" Index="10" Track="0" Value="84" />
+        <Parameter Name="Confidence" Group="1" Index="11" Track="0" Value="800" />
+        <Parameter Name="Pitch glide" Group="1" Index="12" Track="0" Value="245" />
+        <Parameter Name="Sensitivity" Group="1" Index="13" Track="0" Value="450" />
+        <Parameter Name="Decay" Group="1" Index="14" Track="0" Value="269" />
+        <Parameter Name="Hold" Group="1" Index="15" Track="0" Value="469" />
+        <Parameter Name="Dynamic" Group="1" Index="16" Track="0" Value="0" />
+        <Parameter Name="Smooth" Group="1" Index="17" Track="0" Value="0" />
+        <Parameter Name="Invert" Group="1" Index="18" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="19" Track="0" Value="1000" />
+        <Parameter Name="Bias" Group="1" Index="20" Track="0" Value="500" />
+        <Parameter Name="Range" Group="1" Index="21" Track="0" Value="0" />
+        <Parameter Name="Write glide" Group="1" Index="22" Track="0" Value="159" />
+      </Parameters>
+      <Attributes />
+      <Comment>Every hit holds the control at full for 110 ms and then drops it in a blink, whatever its strength: a gate that opens a volume or a send on the rhythm it hears.</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

@@ -126,6 +126,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Chip"] = (NeoBuzz.Chip.Params.Table, (v, x) => RenderChip(v, x.Length)),
             // neo-chord.md: Neo Chord makes no audio (notes in, chords out); its presets only change which notes it sends.
             ["Neo Chord"] = (NeoBuzz.Chord.Params.Table, (v, x) => x),
+            // neo-follow.md: Neo Follow passes its input through unchanged (it only makes a control signal); its presets are driven through the engine by NeoFollowTests.
+            ["Neo Follow"] = (NeoBuzz.FollowMachine.Params.Table, (v, x) => x),
             // neo-random.md: Neo Random is a control modulator; drive RandomEngine per 64-sample block and scale x cleanly inside [0.35, 1.0].
             ["Neo Random"] = (NeoBuzz.RandomMachine.Params.Table, (v, x) =>
             {
