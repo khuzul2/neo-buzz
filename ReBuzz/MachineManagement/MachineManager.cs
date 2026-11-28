@@ -149,7 +149,8 @@ namespace ReBuzz.MachineManagement
                 machine.OutputChannelCount = managedMachineDLL.machineInfo.OutputCount;
             }
             if (managedMachineDLL.machineInfo.InputCount > 0 && machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO) &&
-                machine.DLL.Info.Type == MachineType.Effect)
+                (machine.DLL.Info.Type == MachineType.Effect ||
+                 managedMachineDLL.WorkFunctionType == ManagedMachineDLL.WorkFunctionTypes.GeneratorBlockMultiIn))     // fork (instrument-input.md): declared, not general
             {
                 machine.InputChannelCount = managedMachineDLL.machineInfo.InputCount;
             }
@@ -183,7 +184,7 @@ namespace ReBuzz.MachineManagement
         internal int GetMachineLatency(MachineCore machine)
         {
             int latency = 0;
-            if (machine.DLL.Info.Type == MachineType.Effect)
+            if (machine.DLL.Info.Type == MachineType.Effect || machine.InputChannelCount > 0)
             {
                 if (managedMachines.ContainsKey(machine))
                 {

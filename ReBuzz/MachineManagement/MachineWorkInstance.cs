@@ -71,7 +71,8 @@ namespace ReBuzz.MachineManagement
                 else if (Machine.IsSeqThru || Machine.MachineDLL.IsMissing ||
                          (Machine.IsBypassed && !(bypassLatent = Machine.BypassLatent(engineSettings.MachineDelayCompensation))))
                 {
-                    Sample[] samples = Machine.GetStereoSamples(nSamples);
+                    // Fork (instrument-input.md): a generator that takes audio, bypassed, is silent as any generator is: its input isn't passed on.
+                    Sample[] samples = Machine.DLL.Info.Type == MachineType.Generator ? silentBuffer : Machine.GetStereoSamples(nSamples);
                     MachineGuard.Check(Machine, samples, nSamples);     // fork (machine-safety.md §3.2): placeholders too
                     Machine.UpdateOutputs(samples, nSamples, false);
 

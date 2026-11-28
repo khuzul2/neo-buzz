@@ -89,6 +89,11 @@
     <!-- The several-output proof machine (TestMachines/MultiOut, docs/specs/multi-output.md), the same way. -->
     <MSBuild Projects="TestMachines\MultiOut\MultiOut.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_MultiOutRestore=true" />
     <MSBuild Projects="TestMachines\MultiOut\MultiOut.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <!-- The audio-into-an-instrument proof machines (TestMachines/InstrumentInput, docs/specs/instrument-input.md), the same way. -->
+    <MSBuild Projects="TestMachines\InstrumentInput\InputTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_InputTestRestore=true" />
+    <MSBuild Projects="TestMachines\InstrumentInput\InputTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <MSBuild Projects="TestMachines\InstrumentInput\NoiseTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_NoiseTestRestore=true" />
+    <MSBuild Projects="TestMachines\InstrumentInput\NoiseTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
   <!-- The versioned state tests' effect with three state versions (docs/specs/machines.md §3.4), in the tests' Gear/Effects the same way. -->

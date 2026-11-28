@@ -393,12 +393,19 @@ namespace ReBuzz.Core
             ActionStack.BeginActionGroup();
         }
 
+        /// <summary>
+        /// Fork (docs/specs/instrument-input.md): whether audio can be wired into the machine. Effects and Master take it; a generator takes it
+        /// only if it declares an input (MachineDecl.Generator with InputCount above 0), so every other generator is as it was.
+        /// </summary>
+        public static bool TakesAudio(IMachine dst) =>
+            dst.DLL.Info.Type != MachineType.Generator || (dst.InputChannelCount > 0 && dst.DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO));
+
         public bool CanConnectMachines(IMachine src, IMachine dst)
         {
             if (src.DLL.Info.Type != MachineType.Master &&
                 !src.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE) &&
                 !dst.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE) &&
-                dst.DLL.Info.Type != MachineType.Generator &&
+                TakesAudio(dst) &&
                 dst.Outputs.FirstOrDefault(o => o.Destination == src) == null &&
                 src.Outputs.FirstOrDefault(o => o.Destination == dst) == null &&
                 !FindDestinationFromSourceConnetions(src, dst) &&

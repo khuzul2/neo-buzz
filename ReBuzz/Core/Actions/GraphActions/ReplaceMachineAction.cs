@@ -213,6 +213,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                         foreach (var cma in machineInfo.connections.Where(c => c.Destination == machineInfo.Name))
                         {
                             var src = buzz.Song.Machines.FirstOrDefault(m => m.Name == cma.Source);
+                            if (!SongCore.TakesAudio(machine)) continue;      // fork (instrument-input.md): a generator that takes no audio gets no wire
                             new ConnectMachinesAction(buzz, src, machine, new List<int> { 0 }, new List<int> { 0 }, cma.Amp, cma.Pan, dispatcher, engineSettings).Do();
                         }
 
@@ -286,6 +287,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                 foreach (var cma in machineInfo.connections.Where(c => c.Destination == machineInfo.Name))
                 {
                     var src = buzz.Song.Machines.FirstOrDefault(m => m.Name == cma.Source);
+                    if (!SongCore.TakesAudio(machine)) continue;      // fork (instrument-input.md): a generator that takes no audio gets no wire
                     // Fork (docs/specs/multi-output.md): the input it was on, if the new machine has one there, else the first.
                     new ConnectMachinesAction(buzz, src, machine, cma.SourceChannels, KeepChannels(cma.DestinationChannels, machine.InputChannelCount), cma.Amp, cma.Pan, dispatcher, engineSettings).Do();
                 }

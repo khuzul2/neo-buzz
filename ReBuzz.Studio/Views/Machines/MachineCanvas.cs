@@ -219,7 +219,11 @@ namespace ReBuzz.Studio.Views.Machines
 
         static bool HasOutput(IMachine m) => !m.IsControlMachine && m.DLL.Info.Type is MachineType.Generator or MachineType.Effect;
 
-        static bool HasInput(IMachine m) => !m.IsControlMachine && m.DLL.Info.Type is MachineType.Effect or MachineType.Master;
+        // Fork (docs/specs/instrument-input.md): a generator that declares an input has its in-port, as an effect has.
+        static bool HasInput(IMachine m) => !m.IsControlMachine && (m.DLL.Info.Type is MachineType.Effect or MachineType.Master || (m.DLL.Info.Type == MachineType.Generator && SongCore.TakesAudio(m)));
+
+        /// <summary>Whether the machine has an in-port: an effect, Master, or a generator that declares an input (tests).</summary>
+        public bool HasInputPort(IMachine m) => HasInput(m);
 
         /// <summary>The canvas point of a machine's port dot (tests).</summary>
         public Point OutPortOf(IMachine m) => MachineGeometry.OutPort(BoxOf(m), 0, OutputsOf(m));

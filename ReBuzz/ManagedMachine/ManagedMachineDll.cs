@@ -20,7 +20,8 @@ namespace ReBuzz.ManagedMachine
             EffectBlock,
             Control,
             EffectBlockMulti,
-            GeneratorBlockMulti
+            GeneratorBlockMulti,
+            GeneratorBlockMultiIn       // fork (instrument-input.md): a generator that takes audio: the effect's multi Work, a generator's type
         }
 
         public Assembly Assembly { get; set; }
@@ -50,6 +51,9 @@ namespace ReBuzz.ManagedMachine
         public MachineParameter[] globalParameters;
         public MachineParameter[] trackParameters;
         internal MachineDecl machineInfo;
+
+        /// <summary>Fork (instrument-input.md): how many audio inputs a generator of this gear takes (0: none, as every other generator).</summary>
+        public int AudioInputs => WorkFunctionType == WorkFunctionTypes.GeneratorBlockMultiIn ? machineInfo.InputCount : 0;
         internal ConstructorInfo constructor;
         private readonly IUiDispatcher dispatcher;
 
@@ -105,6 +109,11 @@ namespace ReBuzz.ManagedMachine
             else if (WorkFunctionType == WorkFunctionTypes.EffectBlockMulti)
             {
                 nmi.Type = MachineType.Effect;
+                nmi.Flags |= MachineInfoFlags.MULTI_IO;
+            }
+            else if (WorkFunctionType == WorkFunctionTypes.GeneratorBlockMultiIn)
+            {
+                nmi.Type = MachineType.Generator;
                 nmi.Flags |= MachineInfoFlags.MULTI_IO;
             }
             else
@@ -188,6 +197,11 @@ namespace ReBuzz.ManagedMachine
             }
             if (parameters.Length == 4 && method.ReturnType == typeof(bool) && parameters[0].ParameterType == typeof(IList<Sample[]>) && parameters[1].ParameterType == typeof(IList<Sample[]>) && parameters[2].ParameterType == typeof(int) && parameters[3].ParameterType == typeof(WorkModes))
             {
+                if (machineInfo.Generator)
+                {
+                    if (machineInfo.InputCount < 1) throw new Exception("a generator that takes audio declares InputCount above 0");
+                    return WorkFunctionTypes.GeneratorBlockMultiIn;
+                }
                 return WorkFunctionTypes.EffectBlockMulti;
             }
             throw new Exception("invalid Work function");
@@ -242,6 +256,12 @@ namespace ReBuzz.ManagedMachine
             {
                 mc.OutputChannelCount = 1;
                 mc.InputChannelCount = 1;
+                mc.HasStereoInput = true;
+                mc.HasStereoOutput = true;
+            }
+            else if (WorkFunctionType == WorkFunctionTypes.GeneratorBlockMultiIn)
+            {
+                // Fork (instrument-input.md): its input count comes from MachineDecl.InputCount (MachineManager), as an effect's multi inputs do.
                 mc.HasStereoInput = true;
                 mc.HasStereoOutput = true;
             }

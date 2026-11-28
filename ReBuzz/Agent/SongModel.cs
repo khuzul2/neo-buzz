@@ -291,6 +291,9 @@ namespace ReBuzz.Agent
             if (m.OutputChannelCount > 1)
                 o["output_ports"] = new JsonArray(Enumerable.Range(0, m.OutputChannelCount)
                     .Select(i => (JsonNode)new JsonObject { ["index"] = i + 1, ["name"] = OutputName(m, i) }).ToArray());
+            // Fork (docs/specs/instrument-input.md): a generator that takes audio says so, and how many inputs it has.
+            if (m.DLL?.Info?.Type == MachineType.Generator && SongCore.TakesAudio(m))
+                o["audio_inputs"] = m.InputChannelCount;
             o["inputs"] = new JsonArray(m.Inputs.Where(c => !((MachineCore)c.Source).Hidden).Select(c => (JsonNode)ConnectionJson(c, from: true)).ToArray());
             o["outputs"] = new JsonArray(m.Outputs.Where(c => !((MachineCore)c.Destination).Hidden).Select(c => (JsonNode)ConnectionJson(c, from: false)).ToArray());
             // NW1 (note-wires.md §7): the note ports, listed only where there are some; an insert says which instrument it sits before.

@@ -108,6 +108,8 @@ namespace ReBuzz.Agent
                             row["exact_units"] = exact;
                             if (manifest != null) row["manifest"] = manifest.Quality;
                             if (dll.Presets?.Count > 0) row["presets"] = dll.Presets.Count;
+                            // Fork (instrument-input.md): a generator that takes audio says how many inputs it has.
+                            if ((dll as MachineDLL)?.ManagedDLL?.AudioInputs is int audioInputs && audioInputs > 0) row["audio_inputs"] = audioInputs;
                             // Fork (plugin-host.md §3.1): a machine that hosts plug-ins lists them; machine_add(plugin=...) picks one.
                             var plugins = PluginNames(core, dll);
                             if (plugins.Count > 0)
@@ -187,6 +189,7 @@ namespace ReBuzz.Agent
                         var outs = m!["outputs"]!.AsArray().Select(o => $"{o!["to"]} ({o["gain_db"]} dB" + (o["from_output"] != null ? $", from {o["from_output"]}" : "") + ")");
                         string notes = m["note_in"] != null || m["note_out"] != null ? " (notes " + (m["note_in"] != null && m["note_out"] != null ? "in/out" : m["note_in"] != null ? "in" : "out") + ")" : "";
                         string ports = m["output_ports"] is JsonArray op ? " (outputs " + string.Join(", ", op.Select(x => x!["name"]!.GetValue<string>())) + ")" : "";
+                        if (m["audio_inputs"] is JsonNode ai) ports += $" (takes audio: {ai} input{(ai.GetValue<int>() == 1 ? "" : "s")})";
                         return $"{m["name"]} [{m["gear"]}]" + ports + notes + (outs.Any() ? " → " + string.Join(", ", outs) : "");
                     });
                     return ToolResult.Ok(string.Join("; ", lines), r);
@@ -469,7 +472,7 @@ namespace ReBuzz.Agent
                         var to = SongModel.Machine(core, c.RequiredString("to"), "to");
                         if (from == to) throw new ToolError("A machine can't connect to itself.");
                         if (SongModel.IsMaster(from)) throw new ToolError("Master is the output; nothing comes out of it to connect.");
-                        if (SongModel.Kind(to) == "generator") throw new ToolError($"{to.Name} is a generator and takes no audio input. Connect into an effect or Master.");
+                        if (SongModel.Kind(to) == "generator" && !SongCore.TakesAudio(to)) throw new ToolError($"{to.Name} is a generator and takes no audio input. Connect into an effect or Master.");
                         if (SongModel.Connection(from, to) != null)
                             throw new ToolError($"{from.Name} already feeds {to.Name}. Change its gain, pan or output with connection_set.");
                         int channel = InputChannel(to, c.String("input"));

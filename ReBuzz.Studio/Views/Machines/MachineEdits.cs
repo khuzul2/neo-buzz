@@ -129,7 +129,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (src == dst) return "A machine can't connect to itself";
             if (src.DLL.Info.Type == MachineType.Master) return "The Master has no output";
             if (src.IsControlMachine || dst.IsControlMachine) return "Control machines work through parameters, not audio wires";
-            if (dst.DLL.Info.Type == MachineType.Generator) return dst.Name + " is an instrument: it has no input";
+            if (!SongCore.TakesAudio(dst)) return dst.Name + " is an instrument: it has no input";
             if (src.Outputs.Any(o => o.Destination == dst)) return "Already connected";
             if (dst.Outputs.Any(o => o.Destination == src)) return dst.Name + " already feeds " + src.Name + ": that would make a loop";
             return core.NoteWires?.CheckAudio(src.Name, dst.Name) ?? "That would make a loop";

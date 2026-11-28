@@ -215,6 +215,7 @@ namespace ReBuzz.ManagedMachine
                     outputBuffer = new Sample[256];
                     break;
                 case ManagedMachineDLL.WorkFunctionTypes.EffectBlockMulti:
+                case ManagedMachineDLL.WorkFunctionTypes.GeneratorBlockMultiIn:      // fork (instrument-input.md): the same call, a generator's type
                     EffectBlockWorkMulti = Delegate.CreateDelegate(typeof(EffectBlockWorkMultiDelegate), machine, method) as EffectBlockWorkMultiDelegate;
                     inputBuffer = new Sample[256];
                     outputBuffer = new Sample[256];
@@ -867,7 +868,7 @@ namespace ReBuzz.ManagedMachine
             {
                 int inCount = value;
                 if (Machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO) &&
-                    Machine.DLL.Info.Type == MachineType.Effect)
+                    (Machine.DLL.Info.Type == MachineType.Effect || Machine.InputChannelCount > 0))     // fork (instrument-input.md): a generator that takes audio
                 {
                     if (inCount < 1)
                     {
