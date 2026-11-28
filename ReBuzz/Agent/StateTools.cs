@@ -65,48 +65,25 @@ namespace ReBuzz.Agent
 
     internal static class StateTools
     {
-        static readonly ConcurrentDictionary<string, (DateTime Written, PresetDictionary Presets)> presetFiles = new(StringComparer.OrdinalIgnoreCase);
-
-        /// <summary>The machine's presets: its gear's .prs.xml and .prs beside the DLL, read without dialogs.</summary>
-        static PresetDictionary Presets(MachineCore m, List<string> problems = null)
+        /// <summary>The machine's presets (docs/specs/machines.md §3.6): the gear's factory presets (read-only) and the user's, read without dialogs.</summary>
+        static MachinePresets Presets(MachineCore m, List<string> problems = null)
         {
-            string dir = Path.GetDirectoryName(m.DLL?.Path ?? "");
-            if (string.IsNullOrEmpty(dir)) return new PresetDictionary();
-            string xml = Path.Combine(dir, m.DLL.Name + ".prs.xml"), prs = Path.Combine(dir, m.DLL.Name + ".prs");
-            DateTime written = new[] { xml, prs }.Where(File.Exists).Select(File.GetLastWriteTimeUtc).DefaultIfEmpty(DateTime.MinValue).Max();
-            if (presetFiles.TryGetValue(xml, out var cached) && cached.Written == written) return cached.Presets;
-            PresetDictionary pd = null;
-            foreach (var file in new[] { xml, prs }.Where(File.Exists))
-            {
-                try
-                {
-                    var loaded = PresetDictionary.Load(m, file);
-                    if (loaded == null) continue;
-                    if (pd == null) pd = loaded;
-                    else pd.Merge(loaded);
-                }
-                catch (Exception e) { problems?.Add($"Couldn't read {Path.GetFileName(file)}: {e.Message}"); }
-            }
-            pd ??= new PresetDictionary();
-            pd.Filename = xml;
-            presetFiles[xml] = (written, pd);
-            return pd;
+            var presets = PresetStore.For(m);
+            if (problems != null) problems.AddRange(presets.Problems);
+            return presets;
         }
 
         /// <summary>
-        /// A gear's preset names from its .prs.xml beside the DLL, without a machine of it (for its
-        /// manual). Binary .prs files need a machine to read, so they show up in preset_list only.
+        /// A gear's preset names (factory and the user's), without a machine of it (for its manual). Binary .prs files need a
+        /// machine to read, so they show up in preset_list only.
         /// </summary>
         internal static IReadOnlyList<string> PresetNames(IMachineDLL dll)
         {
             string dir = Path.GetDirectoryName(dll?.Path ?? "");
             if (string.IsNullOrEmpty(dir)) return System.Array.Empty<string>();
-            string xml = Path.Combine(dir, dll.Name + ".prs.xml");
-            if (!File.Exists(xml)) return System.Array.Empty<string>();
             try
             {
-                return System.Xml.Linq.XDocument.Load(xml).Root?.Elements("Item").Select(e => (string)e.Attribute("Key")).Where(k => !string.IsNullOrEmpty(k)).ToList()
-                       ?? (IReadOnlyList<string>)System.Array.Empty<string>();
+                return PresetStore.For(dir, dll.Name).Names;
             }
             catch (Exception)
             {
@@ -115,31 +92,25 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>A preset's category: the part of its name before " — " (or ": "); empty when it has none. The preset bars group by the same.</summary>
-        internal static string PresetCategory(string name)
-        {
-            int i = name.IndexOf(" — ", StringComparison.Ordinal);
-            if (i < 0) i = name.IndexOf(": ", StringComparison.Ordinal);
-            return i > 0 ? name.Substring(0, i) : "";
-        }
+        internal static string PresetCategory(string name) => PresetStore.GroupOf(name);
 
-        /// <summary>Saves a machine's current sound as a preset of its gear (preset_save, and patch_save_preset for Neo Patch); on the engine's queue.</summary>
+        /// <summary>Saves a machine's current sound as one of the user's presets (preset_save, and patch_save_preset for Neo Patch); on the engine's queue. Writes the user's preset file only, never the gear's.</summary>
         internal static JsonObject SavePreset(MachineCore m, string name, string comment, bool overwrite)
         {
             if (SongModel.IsMaster(m)) throw new ToolError("Master has no presets.");
             if (name.Length == 0 || name == "<default>") throw new ToolError("name: give the preset a name.");
-            var pd = Presets(m);
-            if (pd.ContainsKey(name) && !overwrite)
-                throw new ToolError($"{m.DLL.Name} already has a preset \"{name}\". Pass overwrite=true to replace it, or choose another name.");
+            var presets = Presets(m);
+            if (presets.Contains(name) && !overwrite)
+                throw new ToolError($"{m.DLL.Name} already has a {(presets.IsUser(name) ? "preset" : "factory preset")} \"{name}\". Pass overwrite=true to " +
+                                    (presets.IsUser(name) ? "replace it" : "save your own copy that stands in for it") + ", or choose another name.");
+            bool shadows = !presets.IsUser(name) && presets.IsFactory(name);
             var preset = new Preset(m, false, true) { Comment = comment ?? "" };
-            pd[name] = preset;
-            try { pd.Save(); }
+            try { presets.Save(name, preset); }
             catch (Exception e)
             {
-                pd.Remove(name);
-                throw new ToolError($"Couldn't write {pd.Filename}: {e.Message}. The gear folder may be read-only (install {Product.Name} somewhere writable).");
+                throw new ToolError($"Couldn't write {presets.UserFile}: {e.Message}.");
             }
-            presetFiles.TryRemove(pd.Filename, out var stale);
-            return new JsonObject { ["machine"] = m.Name, ["preset"] = name, ["file"] = pd.Filename };
+            return new JsonObject { ["machine"] = m.Name, ["preset"] = name, ["file"] = presets.UserFile, ["user"] = true, ["shadows"] = shadows };
         }
 
         public static void Register(ToolRegistry tools, AgentHost host)
@@ -151,7 +122,7 @@ namespace ReBuzz.Agent
                 Name = "preset_list",
                 Title = "List presets",
                 Description =
-                    "A machine's presets (its gear's factory presets and ones saved since), with their comments. Filter by text (name or comment) " +
+                    "A machine's presets, with their comments: its gear's factory presets and the user's own (marked user=true; a user preset without a \"Group — \" name is in category User; one with a factory preset's name stands in for it). Filter by text (name or comment) " +
                     "and by category (the part of the name before \" — \": Bass, Pad, Drum…); a long list comes in pages (limit, offset) and the " +
                     "categories with their counts come back with it, so a machine with hundreds of presets is browsed, not dumped. " +
                     "Example: preset_list(machine=\"Pad\", search=\"warm\"), preset_list(machine=\"Dye\", category=\"Bass\", limit=20).",
@@ -160,7 +131,7 @@ namespace ReBuzz.Agent
                     Opt("limit", Integer("At most this many presets (default 60)", 1, 500)),
                     Opt("offset", Integer("Skip this many matches first, to read the next page", 0))),
                 Output = Object(null,
-                    Req("presets", Array(Object(null, Req("name", String("Pass to preset_load")), Opt("comment", String("What it is")), Opt("category", String("Its category"))), "Presets")),
+                    Req("presets", Array(Object(null, Req("name", String("Pass to preset_load")), Opt("comment", String("What it is")), Opt("category", String("Its category")), Opt("user", Boolean("true for the user's own preset"))), "Presets")),
                     Req("total", Integer("How many matched before limit and offset")),
                     Opt("offset", Integer("Where this page started")),
                     Opt("categories", Array(Object(null, Req("name", String("Category")), Req("count", Integer("Matches in it"))), "The matches' categories with their counts (before the category filter)"))),
@@ -173,12 +144,13 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var problems = new List<string>();
-                        var matches = new List<(string Name, string Comment, string Category)>();
-                        foreach (var kv in Presets(m, problems))
+                        var matches = new List<(string Name, string Comment, string Category, bool User)>();
+                        var all = Presets(m, problems);
+                        foreach (var name in all.Names)
                         {
-                            string comment = kv.Value?.Comment ?? "";
-                            if (search != null && !kv.Key.Contains(search, StringComparison.OrdinalIgnoreCase) && !comment.Contains(search, StringComparison.OrdinalIgnoreCase)) continue;
-                            matches.Add((kv.Key, comment, PresetCategory(kv.Key)));
+                            string comment = all[name]?.Comment ?? "";
+                            if (search != null && !name.Contains(search, StringComparison.OrdinalIgnoreCase) && !comment.Contains(search, StringComparison.OrdinalIgnoreCase)) continue;
+                            matches.Add((name, comment, all.GroupOf(name), all.IsUser(name)));
                         }
                         var categories = new JsonArray();
                         foreach (var g in matches.Where(x => x.Category.Length > 0).GroupBy(x => x.Category))
@@ -194,6 +166,7 @@ namespace ReBuzz.Agent
                             var o = new JsonObject { ["name"] = x.Name };
                             if (x.Comment.Length > 0) o["comment"] = x.Comment;
                             if (x.Category.Length > 0) o["category"] = x.Category;
+                            if (x.User) o["user"] = true;
                             list.Add(o);
                         }
                         return new JsonObject
@@ -233,10 +206,11 @@ namespace ReBuzz.Agent
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         string name = c.RequiredString("preset");
                         var pd = Presets(m);
-                        string key = pd.Keys.FirstOrDefault(k => k == name) ?? pd.Keys.FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
+                        var keys = pd.Names;
+                        string key = keys.FirstOrDefault(k => k == name) ?? keys.FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
                         if (key == null)
                         {
-                            var near = Text.Closest(name, pd.Keys);
+                            var near = Text.Closest(name, keys);
                             throw new ToolError($"{m.Name} ({m.DLL.Name}) has no preset \"{name}\"." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") +
                                                 (pd.Count == 0 ? " It has no presets at all." : " preset_list shows them."));
                         }
@@ -263,15 +237,15 @@ namespace ReBuzz.Agent
                 Name = "preset_save",
                 Title = "Save a preset",
                 Description =
-                    "Saves a machine's current sound as a preset of its gear, in the gear's preset file beside the machine (shared by every song). " +
-                    "Won't replace an existing preset unless overwrite is true. Not undoable (it writes a file). " +
+                    "Saves a machine's current sound as one of the user's presets, in the user's preset folder (shared by every song, kept across updates; the gear's factory presets are never written). " +
+                    "Won't replace an existing preset unless overwrite is true; with a factory preset's name it saves the user's own copy that stands in for it (deleting the copy brings the factory preset back). Not undoable (it writes a file). " +
                     "Example: preset_save(machine=\"Bass\", name=\"Agent acid bass\", comment=\"Resonant, short decay\").",
                 Input = Object(null,
                     Req("machine", String("The machine")),
                     Req("name", String("Preset name")),
                     Opt("comment", String("What it sounds like")),
                     Opt("overwrite", Boolean("Replace a preset of that name"))),
-                Output = Object(null, Req("preset", String("Saved")), Req("file", String("The preset file"))),
+                Output = Object(null, Req("preset", String("Saved")), Req("file", String("The user's preset file")), Opt("user", Boolean("Always true: it is the user's preset")), Opt("shadows", Boolean("It stands in for a factory preset of that name"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
                 {

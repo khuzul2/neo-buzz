@@ -64,8 +64,6 @@ namespace BuzzGUI.Common.InterfaceExtensions
             return AllParameters(machine).Select(p => p.Name).Distinct().Count() == AllParameters(machine).Count();
         }
 
-        static readonly Dictionary<string, PresetDictionary> presetDictionaries = new Dictionary<string, PresetDictionary>();
-
         public static string GetDirectory(this IMachine machine)
         {
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Gear");
@@ -78,112 +76,97 @@ namespace BuzzGUI.Common.InterfaceExtensions
             return path;
         }
 
-        public static PresetDictionary GetPresetDictionary(this IMachine machine)
+        /// <summary>
+        /// The machine's presets (docs/specs/machines.md §3.6): the factory ones in Gear (read-only) and the user's in the settings
+        /// folder's Presets, together. Problems reading either are shown once, when the files change.
+        /// </summary>
+        public static MachinePresets GetPresets(this IMachine machine)
         {
-            if (presetDictionaries.ContainsKey(machine.DLL.Name))
-                return presetDictionaries[machine.DLL.Name];
+            var presets = PresetStore.For(machine);
+            ShowProblems(presets);
+            return presets;
+        }
 
-            PresetDictionary pd = null;
+        static readonly HashSet<string> shown = new HashSet<string>();
 
-            var xmlpath = Path.Combine(GetDirectory(machine), machine.DLL.Name + ".prs.xml");
-            if (File.Exists(xmlpath))
+        static void ShowProblems(MachinePresets presets)
+        {
+            foreach (var p in presets.Problems)
             {
-                try
-                {
-                    pd = PresetDictionary.Load(machine, xmlpath);
-                }
-                catch (Exception e)
-                {
-                    PortableMessageBox.Show(string.Format("Couldn't load preset file '{0}' ({1})", xmlpath, e.Message));
-                }
+                lock (shown)
+                    if (!shown.Add(p)) continue;
+                PortableMessageBox.Show(p);
             }
-
-            if (pd == null) pd = new PresetDictionary() { Filename = xmlpath };
-
-            var prspath = Path.Combine(GetDirectory(machine), machine.DLL.Name + ".prs");
-            if (File.Exists(prspath))
-            {
-                try
-                {
-                    var prspd = PresetDictionary.Load(machine, prspath);
-                    if (prspd != null) pd.Merge(prspd);
-                }
-                catch (Exception e)
-                {
-                    PortableMessageBox.Show(string.Format("Couldn't load preset file '{0}' ({1})", prspath, e.Message));
-                }
-            }
-
-            presetDictionaries[machine.DLL.Name] = pd;
-            return pd;
         }
 
         public static IEnumerable<string> GetPresetNames(this IMachine machine)
         {
-            foreach (var x in GetPresetDictionary(machine)) yield return x.Key;
+            return GetPresets(machine).Names;
         }
+
+        /// <summary>Whether the preset is the user's own (a user copy of a factory preset counts).</summary>
+        public static bool IsUserPreset(this IMachine machine, string name) => GetPresets(machine).IsUser(name);
+
+        /// <summary>The group the preset is listed in: the part of its name before " — ", else "User" for the user's own, else "".</summary>
+        public static string GetPresetGroup(this IMachine machine, string name) => GetPresets(machine).GroupOf(name);
 
         public static Preset GetPreset(this IMachine machine, string name)
         {
-            var pd = GetPresetDictionary(machine);
-            if (name == "<default>" || !pd.ContainsKey(name))
+            var presets = GetPresets(machine);
+            if (name == "<default>" || !presets.Contains(name))
                 return new Preset(machine, true, true);
             else
-                return pd[name];
+                return presets[name];
         }
 
+        /// <summary>
+        /// Saves a user preset (null deletes the user's). Only the user's folder is written. A name that is a factory preset's saves a
+        /// user copy that shadows it; deleting that copy brings the factory preset back; a factory preset alone can't be deleted.
+        /// </summary>
         public static void SetPreset(this IMachine machine, string name, Preset preset)
         {
             if (name == "<default>") return;
 
-            var pd = GetPresetDictionary(machine);
-            if (preset != null)
-            {
-                pd[name] = preset;
-            }
-            else
-            {
-                if (pd.ContainsKey(name))
-                    pd.Remove(name);
-            }
-
+            var presets = GetPresets(machine);
             try
             {
-                pd.Save();
+                if (preset != null) presets.Save(name, preset);
+                else presets.Delete(name);
             }
             catch (Exception e)
             {
-                PortableMessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", pd.Filename, e.Message));
+                PortableMessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", presets.UserFile, e.Message));
             }
-
         }
 
+        /// <summary>Deletes the user's preset of that name: false when there is none (a factory preset can't be deleted).</summary>
+        public static bool DeleteUserPreset(this IMachine machine, string name)
+        {
+            try { return GetPresets(machine).Delete(name); }
+            catch (Exception e)
+            {
+                PortableMessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", GetPresets(machine).UserFile, e.Message));
+                return false;
+            }
+        }
+
+        /// <summary>Imports a preset file into the user's presets: the presets the machine doesn't have yet.</summary>
         public static void ImportPresets(this IMachine machine, string filename)
         {
-            var pd = GetPresetDictionary(machine);
+            var presets = GetPresets(machine);
 
             if (File.Exists(filename))
             {
                 try
                 {
-                    var prspd = PresetDictionary.Load(machine, filename);
-                    if (prspd != null) pd.Merge(prspd);
+                    var imported = PresetDictionary.Load(machine, filename);
+                    if (imported != null) presets.Import(imported);
                 }
                 catch (Exception e)
                 {
                     PortableMessageBox.Show(string.Format("Couldn't import preset file '{0}' ({1})", filename, e.Message));
                 }
             }
-
-            try
-            {
-                pd.Save();
-            }
-            catch (Exception e)
-            {
-                PortableMessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", pd.Filename, e.Message));
-            }
-
         }
 
         public static IParameter GetParameter(this IMachine machine, string name)

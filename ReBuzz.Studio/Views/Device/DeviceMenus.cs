@@ -175,7 +175,7 @@ namespace ReBuzz.Studio.Views.Device
             foreach (var name in new[] { DefaultPreset }.Concat(machine.GetPresetNames()))
             {
                 string n = name;
-                items.Add(Item(n, () => { ParameterEdits.ApplyPreset(core, machine, machine.GetPreset(n)); changed?.Invoke(); }));
+                items.Add(Item(machine.IsUserPreset(n) ? n + "  (User)" : n, () => { ParameterEdits.ApplyPreset(core, machine, machine.GetPreset(n)); changed?.Invoke(); }));
             }
             items.Add(new Separator());
             items.Add(Item("_Randomize", () => DeviceFunctions.Run(core, machine, ParameterFunction.Randomize, 0, changed), DeviceFunctions.HasTargets(core, machine)));

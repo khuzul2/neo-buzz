@@ -29,7 +29,7 @@ namespace BuzzGUI.Common.Presets
             if (Path.GetExtension(filename) == ".prs")
                 return new PresetDictionary(machine, filename);
             else if (Path.GetExtension(filename) == ".xml")
-                return LoadXML(machine, filename);
+                return LoadXml(machine.DLL.Name, filename);
 
             return null;
         }
@@ -57,13 +57,14 @@ namespace BuzzGUI.Common.Presets
 
         }
 
-        static PresetDictionary LoadXML(IMachine machine, string filename)
+        /// <summary>A .prs.xml file, read without a machine (its DLL's name fills a preset's Machine when the file leaves it out).</summary>
+        public static PresetDictionary LoadXml(string dllName, string filename)
         {
             var s = new XmlSerializer(typeof(PresetDictionary));
 
-            var r = XmlReader.Create(filename);
-            object o = s.Deserialize(r);
-            r.Close();
+            object o;
+            using (var r = XmlReader.Create(filename))
+                o = s.Deserialize(r);
 
             var pd = o as PresetDictionary;
             if (pd != null)
@@ -73,7 +74,7 @@ namespace BuzzGUI.Common.Presets
                 foreach (var x in pd)
                 {
                     if (x.Value.Machine == null)
-                        x.Value.Machine = machine.DLL.Name;
+                        x.Value.Machine = dllName;
                 }
 
             }
@@ -85,16 +86,31 @@ namespace BuzzGUI.Common.Presets
         public void Save()
         {
             if (Filename == null) return;
+            Save(Filename);
+        }
 
-            var ws = new XmlWriterSettings() { NamespaceHandling = System.Xml.NamespaceHandling.OmitDuplicates, NewLineOnAttributes = false, Indent = true };
-            var w = XmlWriter.Create(Filename, ws);
-
-            var s = new XmlSerializer(GetType());
-            s.Serialize(w, this);
-
-
-            w.Close();
-
+        /// <summary>
+        /// Writes the file atomically (docs/specs/machines.md §3.6): a temp file beside it, then a rename over it, so a crash or a full
+        /// disk leaves the old file whole. Makes the folder when it is missing.
+        /// </summary>
+        public void Save(string path)
+        {
+            string dir = Path.GetDirectoryName(Path.GetFullPath(path));
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            string tmp = path + "." + Guid.NewGuid().ToString("N").Substring(0, 8) + ".tmp";
+            try
+            {
+                var ws = new XmlWriterSettings() { NamespaceHandling = System.Xml.NamespaceHandling.OmitDuplicates, NewLineOnAttributes = false, Indent = true };
+                using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var w = XmlWriter.Create(fs, ws))
+                    new XmlSerializer(GetType()).Serialize(w, this);
+                File.Move(tmp, path, true);
+            }
+            catch
+            {
+                try { File.Delete(tmp); } catch (Exception) { /* the temp file is only litter */ }
+                throw;
+            }
         }
 
         public void Merge(PresetDictionary a)
