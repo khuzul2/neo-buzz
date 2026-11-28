@@ -441,6 +441,11 @@ CASES = [
     fx("space-hall", "Neo Space", "Hall — Large Hall"),
     fx("space-plate", "Neo Space", "Plate — Bright Plate"),
     fx("space-reverse", "Neo Space", "Effect — Reverse Swell"),
+    # Neo Split (docs/specs/neo-split.md): the main output (Out 1) in each mode: the 24 and 48 dB/oct crossovers, the transient detector with its lookahead, the mid.
+    fx("split-bands-low", "Neo Split", "Bands — Four-Way Master"),
+    fx("split-bands-steep", "Neo Split", "Bands — Sub Under 60 Hz"),
+    fx("split-transient", "Neo Split", "Transient — Soft Attacks"),
+    fx("split-mid", "Neo Split", "Mid / Side — Mid and Side"),
     # Neo Tune (docs/specs/neo-tune.md): hard tune and the natural correction (the tracker and the grains are portable maths).
     fx("tune-hard", "Neo Tune", "Lead — Hard effect"),
     fx("tune-natural", "Neo Tune", "Lead — Natural", [("Mix", "70%")]),
