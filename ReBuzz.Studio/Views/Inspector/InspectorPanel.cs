@@ -58,6 +58,7 @@ namespace ReBuzz.Studio.Views.Inspector
         readonly TextBlock heading, subtitle, hint;
         readonly InspectorDevice device;
         readonly NoteChainSection noteChain;   // fork (NW1): the selected machine's note chain and note wires
+        readonly WireOutputsSection wireOutputs;   // fork (docs/specs/multi-output.md): the From output picker of each wire from a several-output machine
         readonly MidiPageSection midiPage;      // fork (MM1): the selected track's MIDI page
         // Fork (docs/specs/neo-audio.md "Inputs and arm"): the Input section of a machine that can be armed.
         readonly StackPanel inputSection = new() { Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
@@ -93,6 +94,8 @@ namespace ReBuzz.Studio.Views.Inspector
         /// <summary>The MIDI page of the selected track (MM1).</summary>
         internal MidiPageSection MidiPage => midiPage;
         internal NoteChainSection NoteChain => noteChain;
+
+        internal WireOutputsSection WireOutputs => wireOutputs;
 
         public InspectorPanel(ReBuzzCore core, IRegistryEx registry, Action<string> showView, SessionView session, SongNotesView notes)
         {
@@ -150,10 +153,11 @@ namespace ReBuzz.Studio.Views.Inspector
             device = new InspectorDevice(core);
             midiPage = new MidiPageSection(core);
             noteChain = new NoteChainSection(core);
+            wireOutputs = new WireOutputsSection(core);
             var top = new StackPanel
             {
                 Margin = new Thickness(12, 0, 12, 8),
-                Children = { heading, subtitle, facts, device, inputSection, noteChain, explain, hint, clipButton, audioButton, notesButton, midiPage },
+                Children = { heading, subtitle, facts, device, inputSection, wireOutputs, noteChain, explain, hint, clipButton, audioButton, notesButton, midiPage },
             };
             DockPanel.SetDock(top, Dock.Top);
             selectionPage = new DockPanel { LastChildFill = true };
@@ -452,6 +456,7 @@ namespace ReBuzz.Studio.Views.Inspector
             device.Show(machine);
             ShowInput(machine);
             noteChain.Show(machine);
+            wireOutputs.Show(machine);
             midiPage.Refresh();
             RefreshExplain(machine);
 

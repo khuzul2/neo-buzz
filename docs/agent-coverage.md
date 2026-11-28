@@ -176,7 +176,7 @@ Guides: how many guides, pages and prompts name the tool. Calls: how many calls 
 | clip_list | 3 | 2 | yes |
 | clip_rename | 0 | 0 | yes |
 | compare | 28 | 12 | yes |
-| connect | 8 | 8 | yes |
+| connect | 8 | 9 | yes |
 | connection_set | 5 | 1 | yes |
 | controller_list | 1 | 1 | yes |
 | controller_profile_set | 1 | 1 | yes |

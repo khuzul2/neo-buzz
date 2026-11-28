@@ -84,7 +84,11 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>The rounded-corner radius the wire ends are clipped by: the border's 0 + half a plug (14) + 1.</summary>
         const double ClipRadius = 8;
 
-        public static WireShape Wire(Rect src, Rect dst)
+        /// <param name="from">
+        /// Fork (docs/specs/multi-output.md): a wire from one of several outputs starts at that output's port on the right edge, not where the
+        /// line between the boxes' centres leaves the box.
+        /// </param>
+        public static WireShape Wire(Rect src, Rect dst, Point? from = null)
         {
             if (src.Intersects(dst)) return default;
             Point sp = src.Center, dp = dst.Center;
@@ -96,6 +100,11 @@ namespace ReBuzz.Studio.Views.Machines
             Clipper.ClipLineByTwoRoundedRects(ref b1, ref b2, dst, src, ClipRadius);
             sp = a1;
             dp = b1;
+            if (from is { } port)
+            {
+                sp = port;
+                dp = Clipper.ClipLineByRoundedRect(dst.Center, port, dst, ClipRadius);
+            }
 
             var mid = new Point(0.5 * (sp.X + dp.X), 0.5 * (sp.Y + dp.Y));
             // The triangle is turned by the angle from (-1, 0) to the wire's normal.
@@ -153,6 +162,13 @@ namespace ReBuzz.Studio.Views.Machines
         public static Point InPort(Rect box) => new Point(box.X, box.Center.Y);
 
         public static Point OutPort(Rect box) => new Point(box.Right, box.Center.Y);
+
+        /// <summary>
+        /// Fork (docs/specs/multi-output.md): output <paramref name="index"/> of <paramref name="count"/> on the right edge: one output sits
+        /// in the middle, as it always did, and several are spread evenly down the edge (the second of three in the middle).
+        /// </summary>
+        public static Point OutPort(Rect box, int index, int count) =>
+            count <= 1 ? OutPort(box) : new Point(box.Right, box.Y + box.Height * (index + 1) / (count + 1));
 
         public static bool Near(Point centre, Point p, double radius = PortHit) =>
             (p.X - centre.X) * (p.X - centre.X) + (p.Y - centre.Y) * (p.Y - centre.Y) <= radius * radius;

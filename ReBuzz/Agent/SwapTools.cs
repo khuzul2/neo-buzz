@@ -1,5 +1,6 @@
 // Agent server (docs/specs/browser.md BR1): machine_swap, the browser's hot-swap.
 
+using System;
 using System.Linq;
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Mcp;
@@ -55,10 +56,28 @@ namespace ReBuzz.Agent
                             throw new ToolError($"{dll.Name} has no plug-in \"{plugin}\". gear_list(search=...) lists plug-ins.");
                         string from = old.DLL.Name;
                         string name = old.Name;
+                        // Fork (docs/specs/multi-output.md): each wire stays on the output of the same index, or on output 1 when the new gear has fewer; say which moved.
+                        var before = old.Outputs.Select(o => (To: o.Destination.Name, Output: o.SourceChannel, Name: SongModel.OutputName(old, o.SourceChannel))).ToList();
                         var now = ReBuzz.Core.MachineEditing.HotSwap(core, old, dll.Name, string.IsNullOrEmpty(plugin) ? null : plugin) ?? throw new ToolError("The swap didn't leave a machine of that name; undo restores the song.");
-                        return new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["clips"] = now.Clips.Count };
+                        var result = new JsonObject { ["machine"] = now.Name, ["from"] = from, ["to"] = dll.Name + (string.IsNullOrEmpty(plugin) ? "" : " " + plugin), ["clips"] = now.Clips.Count };
+                        var moved = new JsonArray();
+                        foreach (var w in before)
+                        {
+                            var wire = now.Outputs.FirstOrDefault(o => o.Destination.Name == w.To);
+                            if (wire == null || wire.SourceChannel == w.Output) continue;
+                            moved.Add(new JsonObject
+                            {
+                                ["to"] = w.To,
+                                ["was_output"] = w.Name,
+                                ["now_output"] = SongModel.OutputName(now, wire.SourceChannel),
+                                ["note"] = $"{now.Name} has {Math.Max(1, now.OutputChannelCount)} output(s), so the wire to {w.To} moved from {w.Name} (output {w.Output + 1}) to output {wire.SourceChannel + 1}",
+                            });
+                        }
+                        if (moved.Count > 0) result["moved_wires"] = moved;
+                        return result;
                     }, c.Cancellation);
-                    return ToolResult.Ok($"Swapped {r["machine"]} from {r["from"]} to {r["to"]}; {r["patterns"]} clips.", r);
+                    string movedText = r["moved_wires"] is JsonArray mw ? " Wires moved: " + string.Join("; ", mw.Select(x => x!["note"]!.GetValue<string>())) + "." : "";
+                    return ToolResult.Ok($"Swapped {r["machine"]} from {r["from"]} to {r["to"]}; {r["clips"]} clips.{movedText}", r);
                 },
             });
         }

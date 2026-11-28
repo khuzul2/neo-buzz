@@ -113,8 +113,24 @@ namespace ReBuzz.Core.Session
         public static IReadOnlyList<IMachineConnection> MainOutputs(SessionDocument doc, IMachine machine, ICollection<IMachine> returns = null)
         {
             if (machine == null) return Array.Empty<IMachineConnection>();
-            var outs = machine.Outputs.Where(o => o.Destination != null && !IsAux(doc, o.Destination, returns)).ToList();
+            var outs = machine.Outputs.Where(o => o.Destination != null && !IsAux(doc, o.Destination, returns) && !IsExtraOutput(o)).ToList();
             return outs;
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/multi-output.md): a wire that leaves only the extra outputs of a machine with several (not output 1). It is not the
+        /// machine's own mix: the mixer gives it a strip of its own, with its own fader, pan, mute and solo.
+        /// </summary>
+        public static bool IsExtraOutput(IMachineConnection wire) =>
+            wire?.Source != null && wire.Source.OutputChannelCount > 1 && !wire.SourceChannels.Contains(0);
+
+        /// <summary>The machine's wires that leave only its extra outputs and go somewhere that isn't a send or the cue, in output order.</summary>
+        public static IReadOnlyList<IMachineConnection> ExtraOutputs(SessionDocument doc, IMachine machine, ICollection<IMachine> returns = null)
+        {
+            if (machine == null || machine.OutputChannelCount <= 1) return Array.Empty<IMachineConnection>();
+            return machine.Outputs
+                .Where(o => o.Destination != null && IsExtraOutput(o) && !IsAux(doc, o.Destination, returns) && !((o.Destination as MachineCore)?.Hidden ?? false))
+                .OrderBy(o => o.SourceChannel).ThenBy(o => o.Destination.Name, StringComparer.Ordinal).ToList();
         }
 
         /// <summary>Volume (connection amp) of the machine, or -1 when it has no main output.</summary>

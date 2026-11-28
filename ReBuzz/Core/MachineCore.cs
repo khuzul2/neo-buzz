@@ -146,6 +146,7 @@ namespace ReBuzz.Core
                     if (input.DestinationChannel >= inputChannelCount)
                         (input as MachineConnectionCore).DestinationChannel = 0;
                 }
+                PrepareMultiIo();
                 PropertyChanged.Raise(this, "InputChannelCount");
             }
         }
@@ -186,6 +187,7 @@ namespace ReBuzz.Core
                             (output as MachineConnectionCore).SourceChannel = 0;
                     }
 
+                    PrepareMultiIo();       // fork (docs/specs/multi-output.md): the new outputs' buffers, not made by the audio thread
                     PropertyChanged.Raise(this, "OutputChannelCount");
                 }
             }
@@ -1269,7 +1271,24 @@ namespace ReBuzz.Core
         internal void AddOutput(MachineConnectionCore mcc)
         {
             this.outputs.Add(mcc);
+            PrepareMultiIo();       // fork (docs/specs/multi-output.md): the output its wire reads has its buffer before the audio thread asks
+        }
 
+        /// <summary>
+        /// Fork (docs/specs/multi-output.md): the buffers a multi-I/O machine's outputs and inputs are worked with, made on the thread that
+        /// connects, loads or changes a wire (the UI or the loader), so the audio thread never allocates the first time a wire uses one.
+        /// Safe to call at any time; does nothing for a machine that isn't a managed multi-I/O one.
+        /// </summary>
+        internal void PrepareMultiIo()
+        {
+            if (graph?.Buzz is not ReBuzzCore buzz || buzz.MachineManager == null) return;
+            if (DLL?.Info == null || !DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO)) return;
+            buzz.MachineManager.PrepareWorkInstance(this);
+            buzz.MachineManager.PrepareOutputs(this);
+            int inputsNeeded = Math.Min(inputChannelCount, multiSamplesInBuffers.Length);
+            for (int i = 0; i < inputsNeeded; i++)
+                if (multiSamplesInBuffers[i] == null)
+                    multiSamplesInBuffers[i] = new Sample[256];
         }
 
         internal void AddInput(MachineConnectionCore mcc)

@@ -184,9 +184,10 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var lines = r["machines"]!.AsArray().Select(m =>
                     {
-                        var outs = m!["outputs"]!.AsArray().Select(o => $"{o!["to"]} ({o["gain_db"]} dB)");
+                        var outs = m!["outputs"]!.AsArray().Select(o => $"{o!["to"]} ({o["gain_db"]} dB" + (o["from_output"] != null ? $", from {o["from_output"]}" : "") + ")");
                         string notes = m["note_in"] != null || m["note_out"] != null ? " (notes " + (m["note_in"] != null && m["note_out"] != null ? "in/out" : m["note_in"] != null ? "in" : "out") + ")" : "";
-                        return $"{m["name"]} [{m["gear"]}]" + notes + (outs.Any() ? " → " + string.Join(", ", outs) : "");
+                        string ports = m["output_ports"] is JsonArray op ? " (outputs " + string.Join(", ", op.Select(x => x!["name"]!.GetValue<string>())) + ")" : "";
+                        return $"{m["name"]} [{m["gear"]}]" + ports + notes + (outs.Any() ? " → " + string.Join(", ", outs) : "");
                     });
                     return ToolResult.Ok(string.Join("; ", lines), r);
                 },
@@ -446,14 +447,16 @@ namespace ReBuzz.Agent
                 Title = "Connect machines",
                 Description =
                     "Connects one machine's output to another's input, with a gain in dB and a pan. Several outputs into one input mix. " +
-                    "input picks a second input by name or number (Neo Comp's \"Sidechain\"). One undo step. " +
-                    "Example: connect(from=\"Pad\", to=\"Room\", gain_db=-8).",
+                    "input picks a second input by name or number (Neo Comp's \"Sidechain\"). from_output picks which output of a machine with several " +
+                    "(machine_describe lists them as output_ports) the wire reads, by name or number from 1; the first is the main one. One undo step. " +
+                    "Example: connect(from=\"Pad\", to=\"Room\", gain_db=-8); connect(from=\"Split\", to=\"Bass chain\", from_output=\"Low\").",
                 Input = Object(null,
                     Req("from", String("Source machine")),
                     Req("to", String("Destination machine")),
                     Opt("gain_db", Db("Gain in dB (default 0; up to +12)")),
                     Opt("pan", Number("Pan from -1 (left) to 1 (right), default 0", -1, 1)),
-                    Opt("input", String("The destination's input by name or number (default its first)"))),
+                    Opt("input", String("The destination's input by name or number (default its first)")),
+                    Opt("from_output", String("The source's output by name or number from 1 (default its first, the main one)"))),
                 Output = Object(null, Req("from", Object(null, Req("name", String("Name")))), Req("to", Object(null, Req("name", String("Name"))))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
@@ -468,11 +471,12 @@ namespace ReBuzz.Agent
                         if (SongModel.IsMaster(from)) throw new ToolError("Master is the output; nothing comes out of it to connect.");
                         if (SongModel.Kind(to) == "generator") throw new ToolError($"{to.Name} is a generator and takes no audio input. Connect into an effect or Master.");
                         if (SongModel.Connection(from, to) != null)
-                            throw new ToolError($"{from.Name} already feeds {to.Name}. Change its gain or pan with connection_set.");
+                            throw new ToolError($"{from.Name} already feeds {to.Name}. Change its gain, pan or output with connection_set.");
                         int channel = InputChannel(to, c.String("input"));
+                        int output = OutputChannel(from, c.String("from_output"));
                         if (!core.SongCore.CanConnectMachines(from, to))
                             throw new ToolError($"{from.Name} can't connect to {to.Name} (it would make a loop, or one of them has no audio there).");
-                        core.SongCore.ConnectMachines(from, to, new[] { 0 }, new[] { channel }, Levels.DbToAmp(gain), Levels.UnitToPan(pan));
+                        core.SongCore.ConnectMachines(from, to, new[] { output }, new[] { channel }, Levels.DbToAmp(gain), Levels.UnitToPan(pan));
                         return new JsonObject { ["from"] = SongModel.MachineJson(core, from), ["to"] = SongModel.MachineJson(core, to) };
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["from"]!["name"]} → {r["to"]!["name"]} at {Levels.Text(gain)}, {Levels.PanText(pan)}.", r);
@@ -515,7 +519,8 @@ namespace ReBuzz.Agent
                     Req("from", String("Source machine")),
                     Req("to", String("Destination machine")),
                     Opt("gain_db", Db("New gain in dB")),
-                    Opt("pan", Number("New pan, -1 … 1", -1, 1))), "Connections to change", 1))),
+                    Opt("pan", Number("New pan, -1 … 1", -1, 1)),
+                    Opt("from_output", String("Move the wire to another output of a several-output source (name, or number from 1)"))), "Connections to change", 1))),
                 Output = Object(null, Req("connections", Array(Object(null, Req("from", String("Source")), Req("to", String("Destination")), Req("gain_db", Number("Gain"))), "As they are now"))),
                 Annotations = ToolAnnotations.WriteIdempotent,
                 Handler = async c =>
@@ -524,6 +529,8 @@ namespace ReBuzz.Agent
                     var r = await host.Engine("connection_set", true, _ =>
                     {
                         var plan = new List<(IMachineConnection Conn, int Amp, int Pan)>();
+                        var outputs = new List<(IMachineConnection Conn, int Output)>();
+                        var levelsOnly = new HashSet<IMachineConnection>();     // wires whose gain or pan the call sets (a call that only moves an output leaves them alone)
                         for (int i = 0; i < changes.Count; i++)
                         {
                             var ch = changes[i]!.AsObject();
@@ -531,7 +538,8 @@ namespace ReBuzz.Agent
                             var to = SongModel.Machine(core, ch["to"]?.GetValue<string>(), $"changes[{i}].to");
                             var conn = SongModel.Connection(from, to)
                                        ?? throw new ToolError($"changes[{i}]: {from.Name} isn't connected to {to.Name}. Use connect first.");
-                            if (ch["gain_db"] == null && ch["pan"] == null) throw new ToolError($"changes[{i}]: give gain_db, pan or both.");
+                            if (ch["gain_db"] == null && ch["pan"] == null && ch["from_output"] == null) throw new ToolError($"changes[{i}]: give gain_db, pan, from_output or a mix.");
+                            if (ch["from_output"] != null) outputs.Add((conn, OutputChannel(from, ch["from_output"]!.GetValue<string>())));
                             int amp = ch["gain_db"] != null ? Levels.DbToAmp(Levels.ParseDb(ch["gain_db"], $"changes[{i}].gain_db")) : conn.Amp;
                             int pan = conn.Pan;
                             if (ch["pan"] != null)
@@ -540,8 +548,10 @@ namespace ReBuzz.Agent
                                 pan = Levels.UnitToPan(ch["pan"]!.GetValue<double>());
                             }
                             plan.Add((conn, amp, pan));
+                            if (ch["gain_db"] != null || ch["pan"] != null) levelsOnly.Add(conn);
                         }
-                        foreach (var (conn, amp, pan) in plan) AgentActions.SetConnection(core, conn, amp, pan);
+                        foreach (var (conn, amp, pan) in plan) if (levelsOnly.Contains(conn)) AgentActions.SetConnection(core, conn, amp, pan);
+                        foreach (var (conn, output) in outputs) AgentActions.SetConnectionOutput(core, conn, output);
                         return new JsonObject
                         {
                             ["connections"] = new JsonArray(plan.Select(p => (JsonNode)new JsonObject
@@ -550,6 +560,7 @@ namespace ReBuzz.Agent
                                 ["to"] = p.Conn.Destination.Name,
                                 ["gain_db"] = Levels.Json(Levels.AmpToDb(p.Conn.Amp)),
                                 ["pan"] = Levels.PanToUnit(p.Conn.Pan),
+                                ["from_output"] = p.Conn.Source.OutputChannelCount > 1 ? SongModel.OutputName(p.Conn.Source, p.Conn.SourceChannel) : null,
                             }).ToArray()),
                         };
                     }, c.Cancellation);
@@ -563,6 +574,22 @@ namespace ReBuzz.Agent
             AnyOf(description, Number("dB, up to +12", null, 12.04), String("Text: \"-6 dB\", or \"-inf\" for silence"));
 
         /// <summary>The destination input channel for "Sidechain", "2" or null (the first).</summary>
+        /// <summary>A source's output by name or number from 1 (null: the first), as a 0-based index; the error says which it has.</summary>
+        static int OutputChannel(MachineCore from, string output)
+        {
+            if (string.IsNullOrWhiteSpace(output)) return 0;
+            int count = Math.Max(1, from.OutputChannelCount);
+            var names = Enumerable.Range(0, count).Select(i => SongModel.OutputName(from, i)).ToList();
+            if (int.TryParse(output, out int n))
+            {
+                if (n < 1 || n > count) throw new ToolError($"{from.Name} has {count} output(s); output {n} doesn't exist. Its outputs: {string.Join(", ", names.Select((x, i) => $"{i + 1} {x}"))}.");
+                return n - 1;
+            }
+            int found = names.FindIndex(x => string.Equals(x, output, StringComparison.OrdinalIgnoreCase));
+            if (found < 0) throw new ToolError($"{from.Name} has no output \"{output}\". Its outputs: {string.Join(", ", names)}.");
+            return found;
+        }
+
         static int InputChannel(MachineCore to, string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return 0;
