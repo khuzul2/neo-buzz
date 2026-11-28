@@ -41,6 +41,13 @@ namespace NeoBuzz.MachineTests
             return (ol, or);
         }
 
+        /// <summary>The modulator fades out over its last 0.3 s (14.7 to 15 s).</summary>
+        static void FadeEnd(float[] l, float[] r)
+        {
+            int fade = Rate * 3 / 10;
+            for (int i = 0; i < fade; i++) { float g = (float)i / fade; l[Length - 1 - i] *= g; r[Length - 1 - i] *= g; }
+        }
+
         static void Normalise(float[] l, float[] r, double db)
         {
             double peak = 1e-9;
@@ -57,23 +64,24 @@ namespace NeoBuzz.MachineTests
             Fill(v, p.Values);
             var h = new LearnHost(new FormantMap(NeoBuzz.LearnFormant.Params.Table), v);
             h.SetSampleRate(Rate);
-            int[] line = { 57, 60, 64, 62, 60, 57, 55, 57, 60, 64, 67, 64, 62, 60, 57, 0, 52, 55, 59, 57, 55, 52, 50, 52, 57, 0, 0, 0 };
+            int[] line = { 57, 60, 64, 62, 60, 57, 55, 57, 60, 64, 67, 64, 62, 60, 57, 55, 52, 55, 59, 57, 55, 52, 50, 52, 55, 57, 60, 57 };
+            // The vowel of every step, as Neo Learn Formant's morph (0 = a, 250 = e, 500 = i, 750 = o, 1000 = u): some held over two steps, so the line talks.
+            int[] vowels = { 0, 0, 250, 250, 500, 750, 750, 1000, 500, 250, 0, 0, 1000, 750, 500, 500, 250, 0, 250, 500, 750, 1000, 1000, 750, 500, 250, 0, 250 };
+            const int Steps = 49;   // 49 x 0.3 s: the line runs to 14.7 s
             double step = Beat / 2;
             var rng = new Rng(77);
             float hp = 0;
             var (l, r) = Run((a, b, n) => h.Process(a, b, n), pos =>
             {
-                for (int s = 0; s < line.Length; s++)
+                for (int s = 0; s < Steps; s++)
                 {
-                    if (line[s] == 0) continue;
-                    if (At(s * step, pos, 256)) h.Engine.NoteOn(s % 8, line[s], 0.85f);
+                    if (At(s * step, pos, 256)) { v.Set(NeoBuzz.LearnFormant.P.VowelMorph, vowels[s % vowels.Length]); h.Engine.NoteOn(s % 8, line[s % line.Length], 0.85f); }
                     if (At(s * step + step * 0.85, pos, 256)) h.Engine.NoteOff(s % 8);
                 }
             });
             // The consonants: 40 ms Hann-windowed noise, differentiated (a high-pass), at the start of each note.
-            for (int s = 0; s < line.Length; s++)
+            for (int s = 0; s < Steps; s++)
             {
-                if (line[s] == 0) continue;
                 int start = (int)(s * step), len = Rate * 40 / 1000;
                 for (int i = 0; i < len && start + i < Length; i++)
                 {
@@ -84,6 +92,7 @@ namespace NeoBuzz.MachineTests
                 }
             }
             Normalise(l, r, -3);
+            FadeEnd(l, r);
             return (l, r);
         }
 
@@ -109,6 +118,7 @@ namespace NeoBuzz.MachineTests
                 }
             });
             Normalise(l, r, -3);
+            FadeEnd(l, r);
             return (l, r);
         }
 
@@ -147,22 +157,39 @@ namespace NeoBuzz.MachineTests
                     for (int i = 0; i < 20; i++) Chord(i * 1.0, 0.9, new[] { 48, 51, 55, 51, 53, 56, 60, 56 }[i % 8]);
                     break;
                 case "Choir — Wide Chord Pad":
-                    Chord(0, 3.6, 48, 55, 60, 63, 67); Chord(4, 3.6, 44, 51, 56, 60, 63); Chord(8, 3.6, 46, 53, 58, 62, 65); Chord(12, 5, 43, 50, 55, 59, 62);
+                    Chord(0, 3.6, 48, 55, 60, 63, 67); Chord(4, 3.6, 44, 51, 56, 60, 63); Chord(8, 3.6, 46, 53, 58, 62, 65); Chord(12, 3.6, 43, 50, 55, 59, 62); Chord(16, 3.5, 48, 55, 60, 63, 67);
                     break;
                 case "Bright — 40 Band Detail":
-                    Chord(0, 7.5, 48, 55, 60, 63, 67, 70); Chord(8, 8, 46, 53, 58, 62, 65, 69);
+                    Chord(0, 7.5, 48, 55, 60, 63, 67, 70); Chord(8, 7.5, 46, 53, 58, 62, 65, 69); Chord(16, 3.5, 48, 55, 60, 63, 67, 70);
                     break;
                 case "Deep — Formant Down":
                     for (int i = 0; i < 20; i++) Chord(i * 1.0, 0.9, new[] { 36, 36, 39, 36, 41, 36, 39, 43 }[i % 8], new[] { 36, 36, 39, 36, 41, 36, 39, 43 }[i % 8] + 7);
                     break;
                 case "Small — Formant Up":
-                    Chord(0, 3.8, 60, 64, 67, 72); Chord(4, 3.8, 57, 60, 64, 69); Chord(8, 3.8, 55, 59, 62, 67); Chord(12, 5, 60, 64, 67, 72);
+                    Chord(0, 3.8, 60, 64, 67, 72); Chord(4, 3.8, 57, 60, 64, 69); Chord(8, 3.8, 55, 59, 62, 67); Chord(12, 3.8, 60, 64, 67, 72); Chord(16, 3.5, 57, 60, 64, 69);
                     break;
                 case "Drone — Frozen Vowel":
                     Chord(0, 20, 36, 43, 48, 51, 55, 60);
                     break;
             }
             return list;
+        }
+
+        [Test]
+        public void TheVoiceLineChangesVowel()
+        {
+            var (l, _) = Voice();
+            var cent = new List<double>();
+            for (int step = 0; step < 6; step++)
+            {
+                int from = (int)(step * Beat / 2) + Rate / 10;
+                var p = VocoderRig.Power(l, from, 8192);
+                double sw = 0, sf = 0;
+                for (int k = 1; k < p.Length; k++) { double f = (double)k * Rate / 4096; if (f > 6000) break; sw += p[k]; sf += p[k] * f; }
+                cent.Add(sf / sw);
+            }
+            TestContext.Out.WriteLine("centroids (steps 0-5, vowels a a e e i o): " + string.Join(" ", cent.Select(c => c.ToString("0"))));
+            Assert.That(cent.Max() - cent.Min(), Is.GreaterThan(150));
         }
 
         static string Slug(string s) =>
@@ -210,19 +237,20 @@ namespace NeoBuzz.MachineTests
             var voice = Voice();
             var drums = Drums();
             var pad = Pad();
-            var onDrums = new HashSet<string> { "Bright — 40 Band Detail", "Sidechain — Synth Carrier" };
+            var onDrums = new HashSet<string> { "Sidechain — Synth Carrier" };
 
             var log = new StringBuilder();
             log.AppendLine("# Neo Vocoder listening pack");
             log.AppendLine();
-            log.AppendLine($"Every file: {Length / Rate} s at {Bpm:0} BPM, 48 kHz, 16-bit stereo WAV. The modulator is heard **dry for the first 3 s**, then through the preset (a 20 ms crossfade). Modulators, both made in code at -3 dBFS peak:");
-            log.AppendLine("- **voice**: a sung vowel line (Neo Learn Formant, \"Choir — Ah Pad\") with a burst of high-passed noise at every note start as the consonant;");
-            log.AppendLine("- **drums**: a Neo Drums loop (\"Classic — Punchy Kit\": kick, snare, closed and open hats).");
+            log.AppendLine($"Every file: {Length / Rate} s at {Bpm:0} BPM, 48 kHz, 16-bit stereo WAV. The modulator is heard **dry for the first 3 s**, then through the preset (a 20 ms crossfade) until the end, about 11.7 s. Modulators, both made in code at -3 dBFS peak:");
+            log.AppendLine("- **voice**: a talking vowel line (Neo Learn Formant, \"Choir — Ah Pad\", its Vowel morph stepped a-e-i-o-u per note, some vowels held over two notes) with a burst of high-passed noise at every note start as the consonant, 14.7 s, fading out over the last 0.3 s;");
+            log.AppendLine("- **drums**: a Neo Drums loop (\"Classic — Punchy Kit\": kick, snare, closed and open hats), used for the Sidechain preset only, faded out over the last 0.3 s.");
             log.AppendLine("Carriers: the machine's own synth playing the chords or the line listed below (Robot, Choir, Bright, Deep, Small, Drone), its noise (Whisper), and a Neo Poly pad (\"Pad — Warm Strings\", a C minor seventh chord) wired into the sidechain (Sidechain). No third-party audio, no speech model. Click detector (second difference against its local mean) on every file: clicks that the dry modulator does not have.");
             log.AppendLine();
-            log.AppendLine("| File | Preset | Modulator | Carrier | What to listen for | Peak | RMS | Clicks |");
-            log.AppendLine("|---|---|---|---|---|---|---|---|");
+            log.AppendLine("| File | Preset | Modulator | Carrier | What to listen for | Peak | RMS | Longest quiet run | Clicks |");
+            log.AppendLine("|---|---|---|---|---|---|---|---|---|");
             int index = 0, clicksTotal = 0;
+            double silentMax = 0;
             foreach (var p in PresetTests.AllPresets().Where(p => p.Machine == "Neo Vocoder"))
             {
                 index++;
@@ -242,6 +270,12 @@ namespace NeoBuzz.MachineTests
                     ol[i] = l[i] * (1 - w) + wl[i] * w;
                     or[i] = r[i] * (1 - w) + wr[i] * w;
                 }
+                // A file that would clip is turned down to -1 dBFS peak (the whole file, the dry part too); the README says which.
+                double top = 0;
+                for (int i = 0; i < Length; i++) top = Math.Max(top, Math.Max(Math.Abs(ol[i]), Math.Abs(or[i])));
+                double limit = Math.Pow(10, -1.0 / 20);
+                double turned = top > limit ? 20 * Math.Log10(limit / top) : 0;
+                if (turned < 0) { float g = (float)(limit / top); for (int i = 0; i < Length; i++) { ol[i] *= g; or[i] *= g; } }
                 var dryClicks = new HashSet<int>(ClickDetector.Find(l).Concat(ClickDetector.Find(r)));
                 var clicks = ClickDetector.Find(ol).Concat(ClickDetector.Find(or)).Where(c => !dryClicks.Any(x => Math.Abs(x - c) < 64)).ToList();
                 clicksTotal += clicks.Count;
@@ -251,13 +285,22 @@ namespace NeoBuzz.MachineTests
                     pk = Math.Max(pk, Math.Max(Math.Abs(ol[i]), Math.Abs(or[i])));
                     sq += 0.5 * ((double)ol[i] * ol[i] + (double)or[i] * or[i]);
                 }
+                // The longest run below -60 dBFS before 14.5 s.
+                int run = 0, longest = 0;
+                for (int i = 0; i < 29 * Rate / 2; i++)
+                {
+                    if (Math.Abs(ol[i]) < 0.001f && Math.Abs(or[i]) < 0.001f) { run++; longest = Math.Max(longest, run); } else run = 0;
+                }
+                double silent = longest / (double)Rate;
+                silentMax = Math.Max(silentMax, silent);
                 string file = $"{index:00}-{Slug(p.Preset)}.wav";
                 WriteWav(Path.Combine(dir, file), ol, or);
                 string carrier = side ? "Neo Poly pad in the sidechain" : v.Choice(P.Carrier) == (int)VocoderCarrier.Noise ? "noise" : "synth, " + string.Join(" ", Notes(p.Preset).Where(n => n.On).Select(n => n.Key).Distinct().Take(8)) + (Notes(p.Preset).Count(n => n.On) > 8 ? " ..." : "");
-                log.AppendLine($"| {file} | {p.Preset} | {(d ? "drums" : "voice")} | {carrier} | {Comments.GetValueOrDefault(p.Preset, "")} | {20 * Math.Log10(pk):0.0} dBFS | {10 * Math.Log10(sq / (Length - DrySamples)):0.0} dBFS | {clicks.Count} |");
+                log.AppendLine($"| {file} | {p.Preset} | {(d ? "drums" : "voice")} | {carrier} | {Comments.GetValueOrDefault(p.Preset, "")} | {20 * Math.Log10(pk):0.0} dBFS | {10 * Math.Log10(sq / (Length - DrySamples)):0.0} dBFS | {silent:0.00} s | {clicks.Count} |{(turned < 0 ? $" turned down {-turned:0.0} dB" : "")}");
             }
             log.AppendLine();
-            log.AppendLine($"Click detector, all files: {clicksTotal} new clicks. Peak and RMS are of the vocoded part (after 3 s).");
+            log.AppendLine($"Click detector, all files: {clicksTotal} new clicks. Peak and RMS are of the vocoded part (after 3 s). A file that would clip is turned down to a -1 dBFS peak, marked in its row.");
+            Assert.That(silentMax, Is.LessThanOrEqualTo(0.3), "no file has more than 0.3 s of silence below -60 dBFS before 14.5 s");
             File.WriteAllText(Path.Combine(dir, "README.md"), log.ToString());
             TestContext.Out.WriteLine(log.ToString());
             Assert.That(clicksTotal, Is.EqualTo(0));
