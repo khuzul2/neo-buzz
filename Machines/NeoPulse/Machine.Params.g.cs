@@ -7,10 +7,10 @@ namespace NeoBuzz.Pulse
 {
     public partial class NeoPulseMachine
     {
-        [ParameterDecl(Name = "Rate", Description = "Base step length at the song tempo", MinValue = 0, MaxValue = 6, DefValue = 4)]
+        [ParameterDecl(Name = "Rate", Description = "Base step length at the song tempo", MinValue = 0, MaxValue = 9, DefValue = 4)]
         public int Rate { get => Values[P.Rate]; set => Values.Set(P.Rate, value); }
 
-        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5x) or triplet (2/3x) step feel", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5x), triplet (2/3x) or quintuplet (4/5x) step feel", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int Feel { get => Values[P.Feel]; set => Values.Set(P.Feel, value); }
 
         [ParameterDecl(Name = "Swing", Description = "Delays every odd step by up to 75 % of a step", MinValue = 0, MaxValue = 75, DefValue = 0)]
@@ -387,5 +387,11 @@ namespace NeoBuzz.Pulse
 
         [ParameterDecl(Name = "L8 mute", Description = "Mutes lane 8 (stops hits and fills)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int L8Mute { get => Values[P.L8Mute]; set => Values.Set(P.L8Mute, value); }
+
+        [ParameterDecl(Name = "Timing", Description = "Whether steps follow the song's tempo or run on a time in milliseconds", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Sync { get => Values[P.Sync]; set => Values.Set(P.Sync, value); }
+
+        [ParameterDecl(Name = "Free time", Description = "The length of a step in milliseconds when Timing is Free time (20 … 2000)", MinValue = 20, MaxValue = 2000, DefValue = 125)]
+        public int FreeMs { get => Values[P.FreeMs]; set => Values.Set(P.FreeMs, value); }
     }
 }

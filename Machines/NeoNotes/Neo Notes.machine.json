@@ -351,7 +351,7 @@
    "name": "Fixed rate",
    "group": "Length",
    "min": 0,
-   "max": 6,
+   "max": 9,
    "default": 3,
    "kind": "enum",
    "choices": [
@@ -361,10 +361,13 @@
     "1/8",
     "1/16",
     "1/32",
-    "1/64"
+    "1/64",
+    "2 bars",
+    "4 bars",
+    "8 bars"
    ],
    "description": "The fixed length at the song's tempo",
-   "how": "Sets the fixed length at the song's tempo, from a whole note to a sixty-fourth.",
+   "how": "Sets the fixed length at the song's tempo, from eight bars to a sixty-fourth.",
    "sound": "Short values are staccato, long ones legato."
   },
   {
@@ -373,16 +376,17 @@
    "name": "Fixed feel",
    "group": "Length",
    "min": 0,
-   "max": 2,
+   "max": 3,
    "default": 0,
    "kind": "enum",
    "choices": [
     "Straight",
     "Dotted",
-    "Triplet"
+    "Triplet",
+    "Quintuplet"
    ],
-   "description": "Straight, dotted (1.5 times as long) or triplet (two thirds as long)",
-   "how": "Makes the fixed length straight, dotted or triplet.",
+   "description": "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long)",
+   "how": "Makes the fixed length straight, dotted, triplet or quintuplet.",
    "sound": "Dotted lengths run on, triplets are shorter and lilt."
   },
   {
@@ -487,7 +491,7 @@
    "name": "Echo rate",
    "group": "Echo",
    "min": 0,
-   "max": 6,
+   "max": 9,
    "default": 3,
    "kind": "enum",
    "choices": [
@@ -497,10 +501,13 @@
     "1/8",
     "1/16",
     "1/32",
-    "1/64"
+    "1/64",
+    "2 bars",
+    "4 bars",
+    "8 bars"
    ],
    "description": "The time between repeats at the song's tempo",
-   "how": "Sets the time between repeats at the song's tempo, from a whole note to a sixty-fourth.",
+   "how": "Sets the time between repeats at the song's tempo, from eight bars to a sixty-fourth.",
    "sound": "Short values make a fast flutter, long ones a slow answer."
   },
   {
@@ -509,16 +516,17 @@
    "name": "Echo feel",
    "group": "Echo",
    "min": 0,
-   "max": 2,
+   "max": 3,
    "default": 0,
    "kind": "enum",
    "choices": [
     "Straight",
     "Dotted",
-    "Triplet"
+    "Triplet",
+    "Quintuplet"
    ],
-   "description": "Straight, dotted (1.5 times as long) or triplet (two thirds as long) spacing",
-   "how": "Makes the repeats straight, dotted or triplet.",
+   "description": "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) spacing",
+   "how": "Makes the repeats straight, dotted, triplet or quintuplet.",
    "sound": "A dotted eighth echo is the classic lilting delay."
   },
   {

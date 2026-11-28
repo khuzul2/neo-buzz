@@ -25,10 +25,10 @@ namespace NeoBuzz.Arp
         [ParameterDecl(Name = "Timing", Description = "Whether steps follow the song's tempo or run on a time in milliseconds", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Sync { get => Values[P.Sync]; set => Values.Set(P.Sync, value); }
 
-        [ParameterDecl(Name = "Rate", Description = "The length of a step at the song's tempo", MinValue = 0, MaxValue = 6, DefValue = 4)]
+        [ParameterDecl(Name = "Rate", Description = "The length of a step at the song's tempo", MinValue = 0, MaxValue = 9, DefValue = 4)]
         public int Rate { get => Values[P.Rate]; set => Values.Set(P.Rate, value); }
 
-        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5 times as long) or triplet (two thirds as long) steps", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) steps", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int Feel { get => Values[P.Feel]; set => Values.Set(P.Feel, value); }
 
         [ParameterDecl(Name = "Free time", Description = "The length of a step in milliseconds when Timing is Free time (20 … 2000)", MinValue = 20, MaxValue = 2000, DefValue = 125)]

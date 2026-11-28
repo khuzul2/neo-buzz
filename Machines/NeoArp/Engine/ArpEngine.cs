@@ -60,7 +60,7 @@ namespace NeoBuzz.Arp
         public const int StepOff = 0, StepOn = 1, StepTie = 2, StepAccent = 3;
 
         /// <summary>Step lengths in beats for the Rate choices: 1/1 … 1/64.</summary>
-        public static readonly double[] RateBeats = { 4, 2, 1, 0.5, 0.25, 0.125, 0.0625 };
+        public static readonly double[] RateBeats = TempoSync.BeatsTable(Params.Table[P.Rate].Names);
 
         readonly ParamValues v;
         int rate = 48000;
@@ -266,8 +266,7 @@ namespace NeoBuzz.Arp
             if (synced)
             {
                 double beats = RateBeats[Math.Clamp(v.Choice(P.Rate), 0, RateBeats.Length - 1)];
-                int feel = v.Choice(P.Feel);
-                stepLen = feel == 1 ? beats * 1.5 : feel == 2 ? beats * 2.0 / 3.0 : beats;
+                stepLen = TempoSync.Beats(beats, v.Choice(P.Feel));
             }
             else stepLen = Math.Clamp(v.Value(P.FreeMs), 20, 2000) * 0.001 * rate;
             swing = Math.Clamp(v.Value(P.Swing), 0, 75) / 100.0;

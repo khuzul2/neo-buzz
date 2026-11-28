@@ -51,7 +51,7 @@ namespace NeoBuzz.Ensemble
         internal static readonly double[] SpanOctaves = { 1, 2, 3 };
 
         /// <summary>Sync's divisions in beats (Free: 0).</summary>
-        internal static readonly double[] SyncBeats = { 0, 0.125, 1.0 / 6, 0.25, 1.0 / 3, 0.5, 2.0 / 3, 1, 2, 4, 8, 16, 32, 64 };
+        internal static readonly double[] SyncBeats = TempoSync.BeatsTable(Params.Table[P.Sync].Names);
 
         internal const double MaxFeedback = 0.99;
         /// <summary>The feedback's saturator: linear up to Knee, then bending smoothly towards Ceiling, never above it.</summary>
@@ -76,7 +76,7 @@ namespace NeoBuzz.Ensemble
                 Mode = mode,
                 Voices = Math.Clamp((int)v.Value(P.Voices), 1, 4),
                 Stages = Math.Clamp((int)v.Value(P.Stages), 2, 12),
-                Rate = sync > 0 ? Math.Max(1, tempo) / 60.0 / SyncBeats[sync] : v.Value(P.Rate),
+                Rate = sync > 0 ? TempoSync.Hz(TempoSync.Beats(SyncBeats[sync], v.Choice(P.Feel)), tempo) : v.Value(P.Rate),
                 Triangle = v.Choice(P.Shape) == (int)EnsembleShape.Triangle ? 1 : 0,
                 DepthOctaves = v.Value(P.Depth) * SpanOctaves[(int)mode],
                 SpreadCycles = v.Value(P.Spread) / 360.0,

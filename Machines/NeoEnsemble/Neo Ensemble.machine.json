@@ -56,7 +56,7 @@
    "name": "Sync",
    "group": "LFO",
    "min": 0,
-   "max": 13,
+   "max": 14,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -73,7 +73,8 @@
     "2 bars",
     "4 bars",
     "8 bars",
-    "16 bars"
+    "16 bars",
+    "1/64"
    ],
    "description": "Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)",
    "how": "Locks one sweep cycle to a note length of the song tempo instead of the Rate knob.",
@@ -263,6 +264,25 @@
    "description": "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral",
    "how": "Scales the wet mix, the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.",
    "sound": "Turn it down for a calmer, subtler movement, up for a deeper, more obvious sweep."
+  },
+  {
+   "index": 15,
+   "id": "Feel",
+   "name": "Feel",
+   "group": "LFO",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Straight",
+    "Dotted",
+    "Triplet",
+    "Quintuplet"
+   ],
+   "description": "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with Sync)",
+   "how": "Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.",
+   "sound": "Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat."
   }
  ]
 }

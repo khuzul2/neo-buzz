@@ -82,16 +82,17 @@
    "name": "Feel",
    "group": "Source",
    "min": 0,
-   "max": 2,
+   "max": 3,
    "default": 0,
    "kind": "enum",
    "choices": [
     "Straight",
     "Dotted",
-    "Triplet"
+    "Triplet",
+    "Quintuplet"
    ],
-   "description": "Straight, dotted (1.5 times longer) or triplet (two thirds as long) when Sync is on",
-   "how": "Stretches a synced step to 1.5 times (dotted) or shrinks it to two thirds (triplet) while Sync is on.",
+   "description": "Straight, dotted (1.5 times longer), triplet (two thirds as long) or quintuplet (four fifths as long) when Sync is on",
+   "how": "Stretches a synced step to 1.5 times (dotted) or shrinks it to two thirds (triplet) or four fifths (quintuplet) while Sync is on.",
    "sound": "Dotted and triplet subdivisions give stepped modulation an off-beat lilt against straight grooves."
   },
   {

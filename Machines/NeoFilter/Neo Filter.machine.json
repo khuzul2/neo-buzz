@@ -188,7 +188,7 @@
    "name": "LFO sync",
    "group": "LFO",
    "min": 0,
-   "max": 18,
+   "max": 19,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -210,7 +210,8 @@
     "2 bars",
     "4 bars",
     "8 bars",
-    "16 bars"
+    "16 bars",
+    "1/64"
    ],
    "description": "One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate",
    "how": "Locks one LFO cycle to a note value of the song's tempo, from 1/32 to 16 bars, or leaves it Free.",
@@ -395,6 +396,25 @@
    "description": "Vowel type only: how much the envelope and the LFO move the vowel rather than the formant frequencies (one octave of their motion is one vowel step, 25 %)",
    "how": "Sets whether the envelope and LFO depth move the vowel itself (100 %) or slide all the formants up and down together as a wah (0 %).",
    "sound": "High values make the sound talk, A to E to I along the modulation; low values sweep the voice like a wah pedal."
+  },
+  {
+   "index": 22,
+   "id": "LfoFeel",
+   "name": "LFO feel",
+   "group": "LFO",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Straight",
+    "Dotted",
+    "Triplet",
+    "Quintuplet"
+   ],
+   "description": "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO sync)",
+   "how": "Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.",
+   "sound": "Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat."
   }
  ]
 }

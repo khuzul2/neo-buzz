@@ -160,7 +160,7 @@ namespace NeoBuzz.Wave
         [ParameterDecl(Name = "LFO1 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int L1Rate { get => Values[P.L1Rate]; set => Values.Set(P.L1Rate, value); }
 
-        [ParameterDecl(Name = "LFO1 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 11, DefValue = 0)]
+        [ParameterDecl(Name = "LFO1 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 13, DefValue = 0)]
         public int L1Sync { get => Values[P.L1Sync]; set => Values.Set(P.L1Sync, value); }
 
         [ParameterDecl(Name = "LFO1 retrig", Description = "Restart with each note (per voice); off: one free LFO", MinValue = 0, MaxValue = 1, DefValue = 1)]
@@ -175,7 +175,7 @@ namespace NeoBuzz.Wave
         [ParameterDecl(Name = "LFO2 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 300)]
         public int L2Rate { get => Values[P.L2Rate]; set => Values.Set(P.L2Rate, value); }
 
-        [ParameterDecl(Name = "LFO2 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 11, DefValue = 0)]
+        [ParameterDecl(Name = "LFO2 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 13, DefValue = 0)]
         public int L2Sync { get => Values[P.L2Sync]; set => Values.Set(P.L2Sync, value); }
 
         [ParameterDecl(Name = "LFO2 retrig", Description = "Restart with each note (per voice); off: one free LFO", MinValue = 0, MaxValue = 1, DefValue = 0)]
@@ -255,6 +255,12 @@ namespace NeoBuzz.Wave
 
         [ParameterDecl(Name = "M8 amount", Description = "Amount", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int M8Amt { get => Values[P.M8Amt]; set => Values.Set(P.M8Amt, value); }
+
+        [ParameterDecl(Name = "LFO1 feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO1 sync)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        public int L1Feel { get => Values[P.L1Feel]; set => Values.Set(P.L1Feel, value); }
+
+        [ParameterDecl(Name = "LFO2 feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO2 sync)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        public int L2Feel { get => Values[P.L2Feel]; set => Values.Set(P.L2Feel, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

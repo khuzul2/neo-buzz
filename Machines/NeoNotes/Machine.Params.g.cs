@@ -64,10 +64,10 @@ namespace NeoBuzz.Notes
         [ParameterDecl(Name = "Fixed timing", Description = "Whether the fixed length follows the song's tempo or is a time in milliseconds", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int LenSync { get => Values[P.LenSync]; set => Values.Set(P.LenSync, value); }
 
-        [ParameterDecl(Name = "Fixed rate", Description = "The fixed length at the song's tempo", MinValue = 0, MaxValue = 6, DefValue = 3)]
+        [ParameterDecl(Name = "Fixed rate", Description = "The fixed length at the song's tempo", MinValue = 0, MaxValue = 9, DefValue = 3)]
         public int LenRate { get => Values[P.LenRate]; set => Values.Set(P.LenRate, value); }
 
-        [ParameterDecl(Name = "Fixed feel", Description = "Straight, dotted (1.5 times as long) or triplet (two thirds as long)", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "Fixed feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long)", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int LenFeel { get => Values[P.LenFeel]; set => Values.Set(P.LenFeel, value); }
 
         [ParameterDecl(Name = "Fixed time", Description = "The fixed length in milliseconds when the timing is Free time (5 to 4000)", MinValue = 5, MaxValue = 4000, DefValue = 250)]
@@ -88,10 +88,10 @@ namespace NeoBuzz.Notes
         [ParameterDecl(Name = "Echo timing", Description = "Whether the time between repeats follows the song's tempo or is in milliseconds", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int EchoSync { get => Values[P.EchoSync]; set => Values.Set(P.EchoSync, value); }
 
-        [ParameterDecl(Name = "Echo rate", Description = "The time between repeats at the song's tempo", MinValue = 0, MaxValue = 6, DefValue = 3)]
+        [ParameterDecl(Name = "Echo rate", Description = "The time between repeats at the song's tempo", MinValue = 0, MaxValue = 9, DefValue = 3)]
         public int EchoRate { get => Values[P.EchoRate]; set => Values.Set(P.EchoRate, value); }
 
-        [ParameterDecl(Name = "Echo feel", Description = "Straight, dotted (1.5 times as long) or triplet (two thirds as long) spacing", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "Echo feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) spacing", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int EchoFeel { get => Values[P.EchoFeel]; set => Values.Set(P.EchoFeel, value); }
 
         [ParameterDecl(Name = "Echo time", Description = "The time between repeats in milliseconds when the timing is Free time (10 to 2000)", MinValue = 10, MaxValue = 2000, DefValue = 250)]

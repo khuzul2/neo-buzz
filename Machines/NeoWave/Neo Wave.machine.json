@@ -856,7 +856,7 @@
    "name": "LFO1 sync",
    "group": "LFO 1",
    "min": 0,
-   "max": 11,
+   "max": 13,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -871,7 +871,9 @@
     "1/2",
     "1 bar",
     "2 bars",
-    "4 bars"
+    "4 bars",
+    "1/64",
+    "8 bars"
    ],
    "description": "Tempo sync (overrides the rate)",
    "how": "Locks LFO 1 to a note length of the song tempo instead of the Rate control.",
@@ -955,7 +957,7 @@
    "name": "LFO2 sync",
    "group": "LFO 2",
    "min": 0,
-   "max": 11,
+   "max": 13,
    "default": 0,
    "kind": "enum",
    "choices": [
@@ -970,7 +972,9 @@
     "1/2",
     "1 bar",
     "2 bars",
-    "4 bars"
+    "4 bars",
+    "1/64",
+    "8 bars"
    ],
    "description": "Tempo sync (overrides the rate)",
    "how": "Locks LFO 2 to a note length of the song tempo instead of the Rate control.",
@@ -1601,6 +1605,44 @@
    "description": "Amount",
    "how": "Sets how strongly slot 8 moves its destination, from minus 100 % to plus 100 %.",
    "sound": "Positive values push the destination up, negative values push it down, and zero does nothing."
+  },
+  {
+   "index": 83,
+   "id": "L1Feel",
+   "name": "LFO1 feel",
+   "group": "LFO",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Straight",
+    "Dotted",
+    "Triplet",
+    "Quintuplet"
+   ],
+   "description": "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO1 sync)",
+   "how": "Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.",
+   "sound": "Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat."
+  },
+  {
+   "index": 84,
+   "id": "L2Feel",
+   "name": "LFO2 feel",
+   "group": "LFO",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Straight",
+    "Dotted",
+    "Triplet",
+    "Quintuplet"
+   ],
+   "description": "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO2 sync)",
+   "how": "Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.",
+   "sound": "Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat."
   }
  ],
  "imports": [

@@ -13,7 +13,7 @@ namespace NeoBuzz.Ensemble
         [ParameterDecl(Name = "Rate", Description = "LFO speed, when Sync is Free", MinValue = 0, MaxValue = 1000, DefValue = 492)]
         public int Rate { get => Values[P.Rate]; set => Values.Set(P.Rate, value); }
 
-        [ParameterDecl(Name = "Sync", Description = "Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)", MinValue = 0, MaxValue = 13, DefValue = 0)]
+        [ParameterDecl(Name = "Sync", Description = "Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)", MinValue = 0, MaxValue = 14, DefValue = 0)]
         public int Sync { get => Values[P.Sync]; set => Values.Set(P.Sync, value); }
 
         [ParameterDecl(Name = "Shape", Description = "LFO waveform", MinValue = 0, MaxValue = 1, DefValue = 0)]
@@ -51,5 +51,8 @@ namespace NeoBuzz.Ensemble
 
         [ParameterDecl(Name = "Amount", Description = "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", MinValue = 0, MaxValue = 2000, DefValue = 1000)]
         public int Amount { get => Values[P.Amount]; set => Values.Set(P.Amount, value); }
+
+        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with Sync)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        public int Feel { get => Values[P.Feel]; set => Values.Set(P.Feel, value); }
     }
 }

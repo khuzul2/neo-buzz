@@ -12,7 +12,7 @@ group LFO
 Rate      "Rate"      0 1000 492  freq 0.02 20                        | LFO speed, when Sync is Free
     how Sets the speed of the sweep from 0.02 to 20 Hz when Sync is Free.
     sound Slow rates give a gentle drift and fast rates a vibrato-like wobble.
-Sync      "Sync"      0 13   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars 8_bars 16_bars | Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)
+Sync      "Sync"      0 14   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars 8_bars 16_bars 1/64 | Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)
     how Locks one sweep cycle to a note length of the song tempo instead of the Rate knob.
     sound Synced sweeps breathe in time with the track.
 Shape     "Shape"     0 1    0    enum Sine Triangle                  | LFO waveform
@@ -54,3 +54,7 @@ group Output
 Amount      "Amount"        0 2000 1000 lin 0 200 % 1                  | Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral
     how Scales the wet mix, the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.
     sound Turn it down for a calmer, subtler movement, up for a deeper, more obvious sweep.
+group LFO
+Feel        "Feel" 0 3 0 enum Straight Dotted Triplet Quintuplet | Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with Sync)
+    how Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.
+    sound Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat.

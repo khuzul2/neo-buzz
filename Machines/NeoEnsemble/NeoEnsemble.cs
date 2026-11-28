@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Ensemble
@@ -15,6 +16,9 @@ namespace NeoBuzz.Ensemble
     [MachineDecl(Name = "Neo Ensemble", ShortName = "Ensemble", Author = "neo-buzz", MaxTracks = 0, InputCount = 1, OutputCount = 1)]
     public partial class NeoEnsembleMachine : NeoMachineBase, IBuzzMachine
     {
+        // State version 1 (SYN1, tempo sync): see EnsembleMigrations.
+        internal override StateMigrations Migrations => EnsembleMigrations.Chain;
+
         readonly float[] left = new float[EnsembleEngine.MaxBlock], right = new float[EnsembleEngine.MaxBlock];
         int rate;
         int quietBlocks;

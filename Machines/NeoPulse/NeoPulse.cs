@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Dsp;
 using NeoBuzz.Machine;
 
 namespace NeoBuzz.Pulse
@@ -15,6 +16,9 @@ namespace NeoBuzz.Pulse
     [MachineDecl(Name = "Neo Pulse", ShortName = "Pulse", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 1)]
     public partial class NeoPulseMachine : NeoMachineBase, IBuzzMachine, INoteCapable
     {
+        // State version 1 (SYN1, tempo sync): see PulseMigrations.
+        internal override StateMigrations Migrations => PulseMigrations.Chain;
+
         readonly PulseEngine engine;
         INoteEmitter emitter;
         int rate;

@@ -44,7 +44,7 @@ namespace NeoBuzz.Wave
         public const int MaxBlock = 256;
         public const int VoiceCount = 32;
         public const int ControlRate = 16;   // at the base rate
-        static readonly double[] SyncBeats = { 0, 0.125, 1.0 / 6, 0.25, 1.0 / 3, 0.5, 2.0 / 3, 1, 2, 4, 8, 16 };
+        static readonly double[] SyncBeats = TempoSync.BeatsTable(Params.Table[P.L1Sync].Names);
         static readonly IirHalfbandDesign Decimator = new IirHalfbandDesign(100, (28.0 - 20.0) / 96);
 
         readonly ParamValues values;
@@ -204,8 +204,8 @@ namespace NeoBuzz.Wave
             Env(s.AmpEnv, P.AmpA, P.AmpD, P.AmpS, P.AmpR);
             Env(s.FltEnv, P.FltA, P.FltD, P.FltS, P.FltR);
             Env(s.ModEnv, P.ModA, P.ModD, P.ModS, P.ModR);
-            DecodeLfo(0, P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
-            DecodeLfo(1, P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
+            DecodeLfo(0, P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade, P.L1Feel);
+            DecodeLfo(1, P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade, P.L2Feel);
             for (int m = 0; m < 8; m++)
             {
                 int b = P.M1Src + 3 * m;
@@ -228,11 +228,11 @@ namespace NeoBuzz.Wave
             e[0] = values.F(a); e[1] = values.F(d); e[2] = values.F(s); e[3] = values.F(r);
         }
 
-        void DecodeLfo(int i, int shape, int rate, int sync, int retrig, int fade)
+        void DecodeLfo(int i, int shape, int rate, int sync, int retrig, int fade, int feel)
         {
             S.LfoShapes[i] = (LfoShape)values.Choice(shape);
             int sy = values.Choice(sync);
-            S.LfoRates[i] = sy > 0 ? (float)(bpm / 60.0 / SyncBeats[sy]) : values.F(rate);
+            S.LfoRates[i] = sy > 0 ? (float)TempoSync.Hz(TempoSync.Beats(SyncBeats[sy], values.Choice(feel)), bpm) : values.F(rate);
             S.LfoRetrigs[i] = values.On(retrig);
             S.LfoFades[i] = values.F(fade);
         }
@@ -251,8 +251,8 @@ namespace NeoBuzz.Wave
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             if (values[P.L1Sync] > 0 || values[P.L2Sync] > 0)
             {
-                DecodeLfo(0, P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade);
-                DecodeLfo(1, P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade);
+                DecodeLfo(0, P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade, P.L1Feel);
+                DecodeLfo(1, P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade, P.L2Feel);
             }
             Update(false);
             int m2 = 2 * n;

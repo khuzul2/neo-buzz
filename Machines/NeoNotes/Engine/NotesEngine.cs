@@ -49,8 +49,8 @@ namespace NeoBuzz.Notes
         const int OutputCapacity = 4096;
 
         // The beats in each Rate choice (1/1 … 1/64), and the Feel factors (Straight, Dotted, Triplet).
-        public static readonly double[] RateBeats = { 4, 2, 1, 0.5, 0.25, 0.125, 0.0625 };
-        public static readonly double[] FeelFactor = { 1, 1.5, 2.0 / 3.0 };
+        public static readonly double[] RateBeats = TempoSync.BeatsTable(Params.Table[P.LenRate].Names);
+        public static readonly double[] FeelFactor = TempoSync.FeelFactors;
 
         const byte TOnMain = 0, TOffMain = 1, TOnVoice = 2, TOffVoice = 3, TRepeat = 4, TPass = 5;
         const long Unknown = long.MinValue;
@@ -657,7 +657,7 @@ namespace NeoBuzz.Notes
         int seed() => (int)v.Value(P.Seed);
 
         /// <summary>The length of a Rate and Feel choice in beats.</summary>
-        public static double Beats(int rate, int feel) => RateBeats[Math.Clamp(rate, 0, RateBeats.Length - 1)] * FeelFactor[Math.Clamp(feel, 0, FeelFactor.Length - 1)];
+        public static double Beats(int rate, int feel) => TempoSync.Beats(RateBeats[Math.Clamp(rate, 0, RateBeats.Length - 1)], Math.Clamp(feel, 0, FeelFactor.Length - 1));
 
         /// <summary>The twelve notes of a key and scale as a bit mask (bit n is the note n semitones above C). Scale 0 is Chromatic, 1 … 9 are Neo Chord's nine scales.</summary>
         public static int ScaleMask(int key, int scale)

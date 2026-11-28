@@ -17,9 +17,9 @@ Sync      "Sync"        0 10 0   enum Free 8_bars 4_bars 2_bars 1_bar 1/2 1/4 1/
     id sync
     how Locks one cycle to a length of the song's tempo, from 8 bars down to 1/64; Free uses Rate in Hz.
     sound Synced movement stays in time with the music and lines up with the beat.
-Feel      "Feel"        0 2 0    enum Straight Dotted Triplet  | Straight, dotted (1.5 times longer) or triplet (two thirds as long) when Sync is on
+Feel      "Feel"        0 3 0    enum Straight Dotted Triplet Quintuplet | Straight, dotted (1.5 times longer), triplet (two thirds as long) or quintuplet (four fifths as long) when Sync is on
     id feel
-    how Stretches a synced cycle to 1.5 times (dotted) or shrinks it to two thirds (triplet); it only counts while Sync is on.
+    how Stretches a synced cycle to 1.5 times (dotted) or shrinks it to two thirds (triplet) or four fifths (quintuplet); it only counts while Sync is on.
     sound Dotted and triplet cycles give the movement a lilting, off-grid pulse against the beat.
 Phase     "Phase"       0 360 0  lin 0 360 ° 0                 | Where in the cycle it starts, and the offset when locked to the song
     id phase

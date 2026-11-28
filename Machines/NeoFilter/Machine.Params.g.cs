@@ -37,7 +37,7 @@ namespace NeoBuzz.Filter
         [ParameterDecl(Name = "LFO rate", Description = "LFO speed when LFO sync is Free", MinValue = 0, MaxValue = 1000, DefValue = 489)]
         public int LfoRate { get => Values[P.LfoRate]; set => Values.Set(P.LfoRate, value); }
 
-        [ParameterDecl(Name = "LFO sync", Description = "One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate", MinValue = 0, MaxValue = 18, DefValue = 0)]
+        [ParameterDecl(Name = "LFO sync", Description = "One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate", MinValue = 0, MaxValue = 19, DefValue = 0)]
         public int LfoSync { get => Values[P.LfoSync]; set => Values.Set(P.LfoSync, value); }
 
         [ParameterDecl(Name = "LFO shape", Description = "LFO waveform (S&H: a random step per cycle; Smooth random: random points joined smoothly)", MinValue = 0, MaxValue = 6, DefValue = 0)]
@@ -72,5 +72,8 @@ namespace NeoBuzz.Filter
 
         [ParameterDecl(Name = "Vowel mod", Description = "Vowel type only: how much the envelope and the LFO move the vowel rather than the formant frequencies (one octave of their motion is one vowel step, 25 %)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int VowelMod { get => Values[P.VowelMod]; set => Values.Set(P.VowelMod, value); }
+
+        [ParameterDecl(Name = "LFO feel", Description = "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO sync)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        public int LfoFeel { get => Values[P.LfoFeel]; set => Values.Set(P.LfoFeel, value); }
     }
 }

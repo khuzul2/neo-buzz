@@ -8,11 +8,11 @@ group Time
 Mode      "Mode"           0 2     0     enum Stereo Ping-pong Cross     | Stereo: each channel echoes on its own side; Ping-pong: the input (mono) enters the left line and the echoes bounce left, right, left; Cross: each side's echo feeds the other side's line, so a left sound's echoes bounce and a centred one stays centred
     how Chooses how the echoes travel: each side on its own, bouncing left and right, or crossing from side to side.
     sound Stereo keeps a wide source wide, Ping-pong throws each echo across the picture, and Cross bounces off-centre sounds while centred ones stay put.
-Sync      "Sync"           0 8     4     enum Free 1/64 1/32 1/16 1/8 1/4 1/2 1_bar 2_bars | The delay as a note value of the song's tempo (Feel makes it dotted or triplet); Free: Time in ms
+Sync      "Sync"           0 10    4     enum Free 1/64 1/32 1/16 1/8 1/4 1/2 1_bar 2_bars 4_bars 8_bars | The delay as a note value of the song's tempo (Feel makes it dotted or triplet); Free: Time in ms
     how Locks the delay time to a note length of the song tempo, or leaves it free in milliseconds.
     sound Synced echoes sit in the groove of the track; Free lets the repeats drift against it for slapback or loose tape echoes.
-Feel      "Feel"           0 2     1     enum Straight Dotted Triplet    | With Sync: the note value straight, dotted (× 1.5) or triplet (× 2/3)
-    how Makes the synced note straight, dotted (one and a half times as long) or a triplet (two thirds as long).
+Feel      "Feel"           0 3     1     enum Straight Dotted Triplet Quintuplet | With Sync: the note value straight, dotted (× 1.5), triplet (× 2/3) or quintuplet (× 4/5)
+    how Makes the synced note straight, dotted (one and a half times as long) a triplet (two thirds as long) or a quintuplet (four fifths as long).
     sound Dotted echoes give a skipping, rolling pattern and triplets a swung one, while straight ones stay square.
 Time      "Time"           0 10000 6959  time 0.001 5                   | The delay when Sync is Free, 1 ms – 5 s
     how Sets the delay from 1 ms to 5 s when Sync is Free.

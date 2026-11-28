@@ -23,7 +23,8 @@ namespace NeoBuzz.Ensemble
         public const int Mix = 12;
         public const int Output = 13;
         public const int Amount = 14;
-        public const int Count = 15;
+        public const int Feel = 15;
+        public const int Count = 16;
     }
 
     internal static class Params
@@ -35,7 +36,7 @@ namespace NeoBuzz.Ensemble
         {
             new ParamDef(P.Mode, "Mode", "Mode", 0, 2, 0, MapKind.Enum, names: new[] { "Chorus", "Flanger", "Phaser" }, group: "Mode", description: "Chorus: 1–4 voices of a modulated delay; Flanger: one short swept delay with feedback (a comb); Phaser: allpass stages swept in frequency", how: "Chooses the effect: a multi-voice chorus, a swept flanger or a phaser.", sound: "Chorus thickens and widens, the flanger sweeps a jet-like comb through the sound, and the phaser adds a softer, vowel-like swirl."),
             new ParamDef(P.Rate, "Rate", "Rate", 0, 1000, 492, MapKind.Freq, a: 0.02, b: 20, group: "LFO", description: "LFO speed, when Sync is Free", how: "Sets the speed of the sweep from 0.02 to 20 Hz when Sync is Free.", sound: "Slow rates give a gentle drift and fast rates a vibrato-like wobble."),
-            new ParamDef(P.Sync, "Sync", "Sync", 0, 13, 0, MapKind.Enum, names: new[] { "Free", "1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars" }, group: "LFO", description: "Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)", how: "Locks one sweep cycle to a note length of the song tempo instead of the Rate knob.", sound: "Synced sweeps breathe in time with the track."),
+            new ParamDef(P.Sync, "Sync", "Sync", 0, 14, 0, MapKind.Enum, names: new[] { "Free", "1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "1/64" }, group: "LFO", description: "Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)", how: "Locks one sweep cycle to a note length of the song tempo instead of the Rate knob.", sound: "Synced sweeps breathe in time with the track."),
             new ParamDef(P.Shape, "Shape", "Shape", 0, 1, 0, MapKind.Enum, names: new[] { "Sine", "Triangle" }, group: "LFO", description: "LFO waveform", how: "Chooses a sine or a triangle for the sweep.", sound: "Sine is smooth and even; triangle moves at a steady speed and sounds slightly more mechanical."),
             new ParamDef(P.Depth, "Depth", "Depth", 0, 1000, 300, MapKind.Percent, group: "LFO", description: "Sweep: at 100 % the delay moves an octave either side of Delay (Chorus), two octaves (Flanger); the phaser's frequency three octaves either side of Centre", how: "Sets how far the sweep moves the delay or the filter frequency, from 0 to 100 %.", sound: "Low depth is a subtle shimmer, and high depth is a dramatic, obvious sweep."),
             new ParamDef(P.Spread, "Spread", "Spread", 0, 180, 90, MapKind.Linear, a: 0, b: 180, unit: "°", digits: 0, group: "LFO", description: "The right channel's LFO phase against the left's: 0° moves both alike, 180° opposite (with several chorus voices, a share of the gap between them: at 180° the right's voices fall halfway between the left's)", how: "Offsets the right channel's sweep against the left, from 0 to 180 degrees.", sound: "At 0 degrees both sides move together; wider values make the movement circle through the stereo picture."),
@@ -48,6 +49,7 @@ namespace NeoBuzz.Ensemble
             new ParamDef(P.Mix, "Mix", "Mix", 0, 1000, 500, MapKind.Percent, group: "Output", description: "Dry against wet: 50 % the deepest comb or notches, 100 % only the wet (vibrato)", how: "Blends the dry sound with the effect from 0 to 100 %.", sound: "Around 50 % gives the deepest notches, while 100 % leaves only the pitch-wobbling wet sound."),
             new ParamDef(P.Output, "Output", "Output", 0, 240, 120, MapKind.Db, a: -12, b: 12, group: "Output", description: "Output gain, −12 … +12 dB in 0.1 dB steps", how: "Sets the output gain, from minus 12 to plus 12 dB.", sound: "Use it to match the level with the dry sound."),
             new ParamDef(P.Amount, "Amount", "Amount", 0, 2000, 1000, MapKind.Linear, a: 0, b: 200, unit: "%", digits: 1, group: "Output", description: "Effect strength: 100 % = the settings as shown, 0 % = bypass (the input, delayed by the latency), 200 % = twice as far from neutral", how: "Scales the wet mix, the modulation depth and the feedback. 0 % is bypass, 100 % your settings, 200 % twice as far from neutral.", sound: "Turn it down for a calmer, subtler movement, up for a deeper, more obvious sweep."),
+            new ParamDef(P.Feel, "Feel", "Feel", 0, 3, 0, MapKind.Enum, names: new[] { "Straight", "Dotted", "Triplet", "Quintuplet" }, group: "LFO", description: "Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with Sync)", how: "Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.", sound: "Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat."),
         };
     }
 }

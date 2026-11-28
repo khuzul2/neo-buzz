@@ -37,7 +37,7 @@ group LFO
 LfoRate   "LFO rate"        0 1000  489   freq 0.01 30                  | LFO speed when LFO sync is Free
     how Sets the LFO's speed, from 0.01 to 30 Hz, when LFO sync is Free.
     sound Slow rates make gentle sweeps over seconds, fast rates make wobbles and tremolo-like movement.
-LfoSync   "LFO sync"        0 18    0     enum Free 1/32 1/16T 1/16 1/16D 1/8T 1/8 1/8D 1/4T 1/4 1/4D 1/2T 1/2 1/2D 1_bar 2_bars 4_bars 8_bars 16_bars | One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate
+LfoSync   "LFO sync"        0 19    0     enum Free 1/32 1/16T 1/16 1/16D 1/8T 1/8 1/8D 1/4T 1/4 1/4D 1/2T 1/2 1/2D 1_bar 2_bars 4_bars 8_bars 16_bars 1/64 | One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate
     how Locks one LFO cycle to a note value of the song's tempo, from 1/32 to 16 bars, or leaves it Free.
     sound The movement stays in time with the music, so sweeps land on the beat.
 LfoShape  "LFO shape"       0 6     0     enum Sine Triangle Saw_up Saw_down Square S&H Smooth_random | LFO waveform (S&H: a random step per cycle; Smooth random: random points joined smoothly)
@@ -76,3 +76,7 @@ Voice     "Voice"           0 2     0     enum Man Woman Child          | Vowel 
 VowelMod  "Vowel mod"       0 1000  1000  pct                           | Vowel type only: how much the envelope and the LFO move the vowel rather than the formant frequencies (one octave of their motion is one vowel step, 25 %)
     how Sets whether the envelope and LFO depth move the vowel itself (100 %) or slide all the formants up and down together as a wah (0 %).
     sound High values make the sound talk, A to E to I along the modulation; low values sweep the voice like a wah pedal.
+group LFO
+LfoFeel     "LFO feel" 0 3 0 enum Straight Dotted Triplet Quintuplet | Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) (with LFO sync)
+    how Stretches a synced cycle to one and a half times (dotted), two thirds (triplet) or four fifths (quintuplet); it only counts while the sync is on.
+    sound Dotted, triplet and quintuplet cycles give the movement an off-grid, lilting pulse against the beat.

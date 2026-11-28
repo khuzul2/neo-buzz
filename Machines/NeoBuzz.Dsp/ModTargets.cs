@@ -15,13 +15,38 @@ namespace NeoBuzz.Dsp
     /// <summary>Choice lists that grew after songs saved modulator depths on them, by machine and parameter name, with their old last choice.</summary>
     internal static class LegacyChoiceSpans
     {
-        /// <summary>Neo Drive's Mode was 0 … 4 before EXT3; Neo Filter's Type was 0 … 6 before EXT1's Vowel. Null for every other parameter.</summary>
-        public static int? OldMax(string machineName, string parameterName) => (machineName, parameterName) switch
+        /// <summary>SYN1 (tempo sync): the Sync, Rate and Feel lists that gained 1/64, bars and Quintuplet at their end, with their old last choice.</summary>
+        public static readonly (string Machine, string Parameter, int OldMax)[] SyncPins =
         {
-            ("Neo Drive", "Mode") => 4,
-            ("Neo Filter", "Type") => 6,
-            _ => null,
+            ("Neo Delay", "Sync", 8),
+            ("Neo Delay", "Feel", 2),
+            ("Neo LFO", "Feel", 2),
+            ("Neo Random", "Feel", 2),
+            ("Neo Arp", "Rate", 6),
+            ("Neo Arp", "Feel", 2),
+            ("Neo Pulse", "Rate", 6),
+            ("Neo Pulse", "Feel", 2),
+            ("Neo Notes", "Fixed rate", 6),
+            ("Neo Notes", "Fixed feel", 2),
+            ("Neo Notes", "Echo rate", 6),
+            ("Neo Notes", "Echo feel", 2),
+            ("Neo Poly", "LFO1 sync", 11),
+            ("Neo Poly", "LFO2 sync", 11),
+            ("Neo Wave", "LFO1 sync", 11),
+            ("Neo Wave", "LFO2 sync", 11),
+            ("Neo Ensemble", "Sync", 13),
+            ("Neo Filter", "LFO sync", 18),
         };
+
+        /// <summary>Neo Drive's Mode was 0 … 4 before EXT3; Neo Filter's Type was 0 … 6 before EXT1's Vowel; the tempo-sync lists of SYN1 are listed below. Null for every other parameter.</summary>
+        public static int? OldMax(string machineName, string parameterName)
+        {
+            if (machineName == "Neo Drive" && parameterName == "Mode") return 4;
+            if (machineName == "Neo Filter" && parameterName == "Type") return 6;
+            foreach (var pin in SyncPins)
+                if (pin.Machine == machineName && pin.Parameter == parameterName) return pin.OldMax;
+            return null;
+        }
     }
 
     /// <summary>One parameter, as the bank sees it (the host's IParameter behind it; fakes in the tests).</summary>

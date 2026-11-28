@@ -135,7 +135,9 @@ namespace NeoBuzz.Pulse
         public const int L8Div = 124;
         public const int L8Ch = 125;
         public const int L8Mute = 126;
-        public const int Count = 127;
+        public const int Sync = 127;
+        public const int FreeMs = 128;
+        public const int Count = 129;
     }
 
     internal static class Params
@@ -145,8 +147,8 @@ namespace NeoBuzz.Pulse
 
         public static readonly ParamDef[] Table =
         {
-            new ParamDef(P.Rate, "rate", "Rate", 0, 6, 4, MapKind.Enum, names: new[] { "1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64" }, group: "Clock", description: "Base step length at the song tempo", how: "Sets the base step length at the song tempo, from a whole note down to a sixty-fourth.", sound: "Shorter steps run faster rhythms across all eight lanes."),
-            new ParamDef(P.Feel, "feel", "Feel", 0, 2, 0, MapKind.Enum, names: new[] { "Straight", "Dotted", "Triplet" }, group: "Clock", description: "Straight, dotted (1.5x) or triplet (2/3x) step feel", how: "Scales the base step length to straight, dotted (one and a half times as long) or triplet (two thirds as long).", sound: "Dotted steps add a syncopated lilt and triplets create a rolling three-against-two feel."),
+            new ParamDef(P.Rate, "rate", "Rate", 0, 9, 4, MapKind.Enum, names: new[] { "1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64", "2 bars", "4 bars", "8 bars" }, group: "Clock", description: "Base step length at the song tempo", how: "Sets the base step length at the song tempo, from eight bars down to a sixty-fourth.", sound: "Shorter steps run faster rhythms across all eight lanes."),
+            new ParamDef(P.Feel, "feel", "Feel", 0, 3, 0, MapKind.Enum, names: new[] { "Straight", "Dotted", "Triplet", "Quintuplet" }, group: "Clock", description: "Straight, dotted (1.5x), triplet (2/3x) or quintuplet (4/5x) step feel", how: "Scales the base step length to straight, dotted (one and a half times as long) triplet (two thirds as long) or quintuplet (four fifths as long).", sound: "Dotted steps add a syncopated lilt and triplets create a rolling three-against-two feel."),
             new ParamDef(P.Swing, "swing", "Swing", 0, 75, 0, MapKind.Int, a: 0, b: 0, unit: "%", group: "Clock", description: "Delays every odd step by up to 75 % of a step", how: "Delays every second step of each lane by a share of its step length, from 0 to 75 %.", sound: "Higher swing turns straight divisions into a loose, shuffled groove."),
             new ParamDef(P.HumTime, "humanize_time", "Humanize time", 0, 20, 0, MapKind.Linear, a: 0, b: 20, unit: "ms", digits: 0, group: "Clock", description: "Random positive timing offset per hit (0 … 20 ms)", how: "Delays each hit by a random offset up to this many milliseconds, repeatable for a fixed seed.", sound: "Small amounts soften rigid grid timing so percussion feels played by hand."),
             new ParamDef(P.HumVel, "humanize_velocity", "Humanize velocity", 0, 30, 0, MapKind.Int, a: 0, b: 0, unit: "%", group: "Clock", description: "Random velocity variation per hit (0 … 30 %)", how: "Varies each hit velocity randomly up or down by up to this percentage, repeatable for a fixed seed.", sound: "Gentle variation stops repeated hits from sounding mechanical."),
@@ -272,6 +274,8 @@ namespace NeoBuzz.Pulse
             new ParamDef(P.L8Div, "L8Div", "L8 divider", 0, 3, 0, MapKind.Enum, names: new[] { "1x", "2x", "3x", "4x" }, group: "Lane 8", description: "Lane 8 clock divider (1x … 4x slower)", how: "Divides the global step rate for lane 8 by 1, 2, 3 or 4 so the lane steps more slowly.", sound: "Slower dividers anchor bass notes and slow accents underneath fast percussion lanes."),
             new ParamDef(P.L8Ch, "L8Ch", "L8 channel", 1, 16, 1, MapKind.Int, a: 0, b: 0, group: "Lane 8", description: "Lane 8 MIDI channel (1 … 16)", how: "Selects the MIDI channel lane 8 tags onto its outgoing note messages, from 1 to 16.", sound: "Useful when wiring to multi-channel instruments or splitting channels across targets."),
             new ParamDef(P.L8Mute, "L8Mute", "L8 mute", 0, 1, 0, MapKind.Switch, group: "Lane 8", description: "Mutes lane 8 (stops hits and fills)", how: "Silences lane 8, immediately releasing any sounding note it owns and blocking both hits and fills.", sound: "Lets you drop individual voices in and out of a rhythm without losing their settings."),
+            new ParamDef(P.Sync, "timing", "Timing", 0, 1, 0, MapKind.Enum, names: new[] { "Song tempo", "Free time" }, group: "Clock", description: "Whether steps follow the song's tempo or run on a time in milliseconds", how: "Chooses between steps locked to the song's tempo and steps of a fixed length in milliseconds.", sound: "Song tempo keeps the rhythm in time with the music; Free time runs at its own speed, whatever the tempo."),
+            new ParamDef(P.FreeMs, "free_ms", "Free time", 20, 2000, 125, MapKind.Linear, a: 20, b: 2000, unit: "ms", digits: 0, group: "Clock", description: "The length of a step in milliseconds when Timing is Free time (20 … 2000)", how: "Sets the step length in milliseconds, from 20 to 2000, when Timing is Free time.", sound: "Short times run a fast, tempo-independent rhythm; long ones a slow, spacious one."),
         };
     }
 }

@@ -16,7 +16,7 @@ namespace NeoBuzz.RandomMachine
         [ParameterDecl(Name = "Sync", Description = "Free: Rate in Hz. Otherwise one step lasts this long at the song's tempo", MinValue = 0, MaxValue = 10, DefValue = 0)]
         public int Sync { get => Values[P.Sync]; set => Values.Set(P.Sync, value); }
 
-        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5 times longer) or triplet (two thirds as long) when Sync is on", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        [ParameterDecl(Name = "Feel", Description = "Straight, dotted (1.5 times longer), triplet (two thirds as long) or quintuplet (four fifths as long) when Sync is on", MinValue = 0, MaxValue = 3, DefValue = 0)]
         public int Feel { get => Values[P.Feel]; set => Values.Set(P.Feel, value); }
 
         [ParameterDecl(Name = "Probability", Description = "Chance that a Sample and hold step picks a new value (0 to 100 %)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]

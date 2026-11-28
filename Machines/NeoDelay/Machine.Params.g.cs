@@ -10,10 +10,10 @@ namespace NeoBuzz.Delay
         [ParameterDecl(Name = "Mode", Description = "Stereo: each channel echoes on its own side; Ping-pong: the input (mono) enters the left line and the echoes bounce left, right, left; Cross: each side's echo feeds the other side's line, so a left sound's echoes bounce and a centred one stays centred", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int Mode { get => Values[P.Mode]; set => Values.Set(P.Mode, value); }
 
-        [ParameterDecl(Name = "Sync", Description = "The delay as a note value of the song's tempo (Feel makes it dotted or triplet); Free: Time in ms", MinValue = 0, MaxValue = 8, DefValue = 4)]
+        [ParameterDecl(Name = "Sync", Description = "The delay as a note value of the song's tempo (Feel makes it dotted or triplet); Free: Time in ms", MinValue = 0, MaxValue = 10, DefValue = 4)]
         public int Sync { get => Values[P.Sync]; set => Values.Set(P.Sync, value); }
 
-        [ParameterDecl(Name = "Feel", Description = "With Sync: the note value straight, dotted (× 1.5) or triplet (× 2/3)", MinValue = 0, MaxValue = 2, DefValue = 1)]
+        [ParameterDecl(Name = "Feel", Description = "With Sync: the note value straight, dotted (× 1.5), triplet (× 2/3) or quintuplet (× 4/5)", MinValue = 0, MaxValue = 3, DefValue = 1)]
         public int Feel { get => Values[P.Feel]; set => Values.Set(P.Feel, value); }
 
         [ParameterDecl(Name = "Time", Description = "The delay when Sync is Free, 1 ms – 5 s", MinValue = 0, MaxValue = 10000, DefValue = 6959)]

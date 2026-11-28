@@ -17,9 +17,9 @@ Sync      "Sync"        0 10 0   enum Free 8_bars 4_bars 2_bars 1_bar 1/2 1/4 1/
     id sync
     how Locks step timing and drift or chaos speed to the song's tempo, from 8 bars down to 1/64.
     sound Synced steps land on the musical grid so random filter jumps and gates lock to the beat.
-Feel      "Feel"        0 2 0    enum Straight Dotted Triplet  | Straight, dotted (1.5 times longer) or triplet (two thirds as long) when Sync is on
+Feel      "Feel"        0 3 0    enum Straight Dotted Triplet Quintuplet | Straight, dotted (1.5 times longer), triplet (two thirds as long) or quintuplet (four fifths as long) when Sync is on
     id feel
-    how Stretches a synced step to 1.5 times (dotted) or shrinks it to two thirds (triplet) while Sync is on.
+    how Stretches a synced step to 1.5 times (dotted) or shrinks it to two thirds (triplet) or four fifths (quintuplet) while Sync is on.
     sound Dotted and triplet subdivisions give stepped modulation an off-beat lilt against straight grooves.
 Prob      "Probability" 0 1000 1000 pct                        | Chance that a Sample and hold step picks a new value (0 to 100 %)
     id prob

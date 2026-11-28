@@ -39,7 +39,7 @@
    "name": "Sync",
    "group": "Time",
    "min": 0,
-   "max": 8,
+   "max": 10,
    "default": 4,
    "kind": "enum",
    "choices": [
@@ -51,7 +51,9 @@
     "1/4",
     "1/2",
     "1 bar",
-    "2 bars"
+    "2 bars",
+    "4 bars",
+    "8 bars"
    ],
    "description": "The delay as a note value of the song's tempo (Feel makes it dotted or triplet); Free: Time in ms",
    "how": "Locks the delay time to a note length of the song tempo, or leaves it free in milliseconds.",
@@ -63,16 +65,17 @@
    "name": "Feel",
    "group": "Time",
    "min": 0,
-   "max": 2,
+   "max": 3,
    "default": 1,
    "kind": "enum",
    "choices": [
     "Straight",
     "Dotted",
-    "Triplet"
+    "Triplet",
+    "Quintuplet"
    ],
-   "description": "With Sync: the note value straight, dotted (× 1.5) or triplet (× 2/3)",
-   "how": "Makes the synced note straight, dotted (one and a half times as long) or a triplet (two thirds as long).",
+   "description": "With Sync: the note value straight, dotted (× 1.5), triplet (× 2/3) or quintuplet (× 4/5)",
+   "how": "Makes the synced note straight, dotted (one and a half times as long) a triplet (two thirds as long) or a quintuplet (four fifths as long).",
    "sound": "Dotted echoes give a skipping, rolling pattern and triplets a swung one, while straight ones stay square."
   },
   {

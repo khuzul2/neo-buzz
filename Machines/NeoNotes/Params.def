@@ -89,13 +89,13 @@ LenSync     "Fixed timing"    0 1 0    enum Song_tempo Free_time              | 
     id fixed_timing
     how Chooses between a fixed length at the song's tempo and one in milliseconds.
     sound Song tempo keeps the length musical when the tempo changes; Free time keeps it the same time.
-LenRate     "Fixed rate"      0 6 3    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64    | The fixed length at the song's tempo
+LenRate     "Fixed rate"      0 9 3    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64 2_bars 4_bars 8_bars | The fixed length at the song's tempo
     id fixed_rate
-    how Sets the fixed length at the song's tempo, from a whole note to a sixty-fourth.
+    how Sets the fixed length at the song's tempo, from eight bars to a sixty-fourth.
     sound Short values are staccato, long ones legato.
-LenFeel     "Fixed feel"      0 2 0    enum Straight Dotted Triplet           | Straight, dotted (1.5 times as long) or triplet (two thirds as long)
+LenFeel     "Fixed feel"      0 3 0    enum Straight Dotted Triplet Quintuplet | Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long)
     id fixed_feel
-    how Makes the fixed length straight, dotted or triplet.
+    how Makes the fixed length straight, dotted, triplet or quintuplet.
     sound Dotted lengths run on, triplets are shorter and lilt.
 LenMs       "Fixed time"      5 4000 250 lin 5 4000 ms 0                      | The fixed length in milliseconds when the timing is Free time (5 to 4000)
     id fixed_time
@@ -123,13 +123,13 @@ EchoSync    "Echo timing"     0 1 0    enum Song_tempo Free_time              | 
     id echo_timing
     how Chooses between repeats at the song's tempo and repeats a fixed time apart.
     sound Song tempo keeps the echo in time with the music; Free time ignores the tempo.
-EchoRate    "Echo rate"       0 6 3    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64    | The time between repeats at the song's tempo
+EchoRate    "Echo rate"       0 9 3    enum 1/1 1/2 1/4 1/8 1/16 1/32 1/64 2_bars 4_bars 8_bars | The time between repeats at the song's tempo
     id echo_rate
-    how Sets the time between repeats at the song's tempo, from a whole note to a sixty-fourth.
+    how Sets the time between repeats at the song's tempo, from eight bars to a sixty-fourth.
     sound Short values make a fast flutter, long ones a slow answer.
-EchoFeel    "Echo feel"       0 2 0    enum Straight Dotted Triplet           | Straight, dotted (1.5 times as long) or triplet (two thirds as long) spacing
+EchoFeel    "Echo feel"       0 3 0    enum Straight Dotted Triplet Quintuplet | Straight, dotted (1.5 times as long), triplet (two thirds as long) or quintuplet (four fifths as long) spacing
     id echo_feel
-    how Makes the repeats straight, dotted or triplet.
+    how Makes the repeats straight, dotted, triplet or quintuplet.
     sound A dotted eighth echo is the classic lilting delay.
 EchoMs      "Echo time"       10 2000 250 lin 10 2000 ms 0                    | The time between repeats in milliseconds when the timing is Free time (10 to 2000)
     id echo_time

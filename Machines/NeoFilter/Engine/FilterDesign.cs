@@ -93,10 +93,7 @@ namespace NeoBuzz.Filter
         internal const double LimitThreshold = 8.0, OscThreshold = 0.25, LimitGain = 10;
 
         /// <summary>LFO sync's note values in beats (a beat is a quarter note; Free: 0).</summary>
-        internal static readonly double[] SyncBeats =
-        {
-            0, 1.0 / 8, 1.0 / 6, 1.0 / 4, 3.0 / 8, 1.0 / 3, 1.0 / 2, 3.0 / 4, 2.0 / 3, 1, 1.5, 4.0 / 3, 2, 3, 4, 8, 16, 32, 64,
-        };
+        internal static readonly double[] SyncBeats = TempoSync.BeatsTable(Params.Table[P.LfoSync].Names);
 
         public static bool IsLadder(FilterType t) => t is FilterType.Ladder24 or FilterType.Ladder12;
 
@@ -108,7 +105,7 @@ namespace NeoBuzz.Filter
         {
             var type = (FilterType)v.Choice(P.Type);
             int sync = Math.Clamp(v.Choice(P.LfoSync), 0, SyncBeats.Length - 1);
-            double beats = SyncBeats[sync];
+            double beats = TempoSync.Beats(SyncBeats[sync], v.Choice(P.LfoFeel));
             double bps = Math.Max(1, tempo) / 60.0;
             return new FilterSetting
             {

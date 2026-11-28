@@ -25,6 +25,9 @@ namespace NeoBuzz.Wave
     [MachineDecl(Name = "Neo Wave", ShortName = "Wave", Author = "neo-buzz", MaxTracks = 16, InputCount = 0, OutputCount = 1)]
     public partial class NeoWaveMachine : NeoSynthBase, IBuzzMachine
     {
+        // State version 1 (SYN1, tempo sync): see WaveMigrations.
+        internal override StateMigrations Migrations => WaveMigrations.Chain;
+
         readonly float[] left = new float[WaveEngine.MaxBlock], right = new float[WaveEngine.MaxBlock];
         int rate;
         NeoWaveState state = new NeoWaveState();

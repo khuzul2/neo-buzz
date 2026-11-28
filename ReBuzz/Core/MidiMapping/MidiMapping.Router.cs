@@ -364,6 +364,11 @@ namespace ReBuzz.Core
                     rawHi = Math.Clamp(rawHi, p.MinValue, p.MaxValue);
                     if (rawHi >= rawLo) { lo = rawLo; hi = rawHi; }
                 }
+                else if (byName.TryGetValue(d.Target.Machine, out var legacyMachine) && LegacyChoicePins.OldMax(legacyMachine.DLL?.Name, p.Name) is int oldMax)
+                {
+                    // Map version 1 (no raw range) on a tempo-sync list that has grown since: held to the old last choice (SYN1).
+                    hi = Math.Max(lo, Math.Min(hi, oldMax));
+                }
                 r.PMin = lo;
                 r.PMax = hi;
                 r.Discrete = MapMath.IsDiscrete(lo, hi);

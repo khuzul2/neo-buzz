@@ -29,7 +29,7 @@ namespace NeoBuzz.Delay
 {
     internal enum DelayMode { Stereo, PingPong, Cross }
 
-    internal enum DelayFeel { Straight, Dotted, Triplet }
+    internal enum DelayFeel { Straight, Dotted, Triplet, Quintuplet }
 
     /// <summary>A setting as the engine runs it once its smoothers have settled.</summary>
     internal struct DelaySetting
@@ -54,11 +54,11 @@ namespace NeoBuzz.Delay
 
     internal static class DelayDesign
     {
-        /// <summary>Sync's note values in beats (a beat is a quarter note; Free: 0).</summary>
-        internal static readonly double[] SyncBeats = { 0, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0 / 2, 1, 2, 4, 8 };
+        /// <summary>Sync's note values in beats (a beat is a quarter note; Free: 0), read from the list's names (TempoSync, SYN1).</summary>
+        internal static readonly double[] SyncBeats = TempoSync.BeatsTable(Params.Table[P.Sync].Names);
 
-        /// <summary>Feel: straight, dotted (× 1.5), triplet (× 2/3).</summary>
-        internal static readonly double[] FeelFactor = { 1, 1.5, 2.0 / 3 };
+        /// <summary>Feel: straight, dotted (× 1.5), triplet (× 2/3), quintuplet (× 4/5).</summary>
+        internal static readonly double[] FeelFactor = TempoSync.FeelFactors;
 
         internal const double MaxFeedback = 0.99;
         /// <summary>The shortest and longest delay a line runs (Time's range, and Offset's room to double it).</summary>
@@ -75,14 +75,14 @@ namespace NeoBuzz.Delay
         internal const double DuckAttack = 0.0005;
 
         /// <summary>A note value in beats.</summary>
-        public static double Beats(int sync, int feel) => SyncBeats[Math.Clamp(sync, 0, SyncBeats.Length - 1)] * FeelFactor[Math.Clamp(feel, 0, 2)];
+        public static double Beats(int sync, int feel) => TempoSync.Beats(SyncBeats[Math.Clamp(sync, 0, SyncBeats.Length - 1)], Math.Clamp(feel, 0, 3));
 
         /// <summary>The setting the parameters ask for, at a tempo (for Sync).</summary>
         public static DelaySetting From(ParamValues v, double tempo, double sampleRate)
         {
             int sync = v.Choice(P.Sync), feel = v.Choice(P.Feel);
             double beats = Beats(sync, feel);
-            double left = sync > 0 ? beats * 60.0 / Math.Max(1, tempo) : v.Value(P.Time);
+            double left = sync > 0 ? TempoSync.Seconds(beats, tempo) : v.Value(P.Time);
             double right = left * (1 + v.Value(P.Offset) / 100);
             bool lowOn = v[P.LowCut] > Params.Table[P.LowCut].Min;
             bool highOpen = v[P.HighCut] >= Params.Table[P.HighCut].Max;
@@ -220,7 +220,7 @@ namespace NeoBuzz.Delay
         {
             if (sync <= 0) return "free";
             string name = Params.Table[P.Sync].Names[sync];
-            return feel == 1 ? name + " dotted" : feel == 2 ? name + " triplet" : name;
+            return feel > 0 && feel < TempoSync.FeelNames.Length ? name + " " + TempoSync.FeelNames[feel].ToLowerInvariant() : name;
         }
     }
 }

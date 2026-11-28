@@ -167,8 +167,8 @@ namespace NeoBuzz.Pulse
         const int KeySpace = 16 * 128; // unique (channel 0..15, note 0..127)
 
         /// <summary>Base step durations in quarter-note beats for Rate 1/1 .. 1/64.</summary>
-        public static readonly double[] RateBeats = { 4.0, 2.0, 1.0, 0.5, 0.25, 0.125, 0.0625 };
-        public static readonly double[] FeelFactors = { 1.0, 1.5, 2.0 / 3.0 };
+        public static readonly double[] RateBeats = TempoSync.BeatsTable(Params.Table[P.Rate].Names);
+        public static readonly double[] FeelFactors = TempoSync.FeelFactors;
         public static readonly int[] Dividers = { 1, 2, 3, 4 };
 
         const ulong PurposeChance = 0x101u;
@@ -284,9 +284,15 @@ namespace NeoBuzz.Pulse
             int rateIdx = Math.Clamp(v.Choice(P.Rate), 0, RateBeats.Length - 1);
             int feelIdx = Math.Clamp(v.Choice(P.Feel), 0, FeelFactors.Length - 1);
             int swingPct = Math.Clamp((int)v.Value(P.Swing), 0, 75);
-            double baseStepBeats = RateBeats[rateIdx] * FeelFactors[feelIdx];
+            // Timing: Song tempo (a division and a feel) or Free time (a step in ms, turned into beats at the tempo of this block).
+            bool freeTime = v.Choice(P.Sync) == 1;
+            double baseStepBeats = freeTime
+                ? Math.Clamp(v.Value(P.FreeMs), 20.0, 2000.0) * 0.001 * sampleRate / spb
+                : TempoSync.Beats(RateBeats[rateIdx], feelIdx);
             double swingFrac = swingPct * 0.01;
-            int globalClockSig = (rateIdx << 10) | (feelIdx << 8) | swingPct;
+            int globalClockSig = freeTime
+                ? (1 << 30) | (swingPct << 20) | (int)Math.Min(0xFFFFF, Math.Round(baseStepBeats * 4096.0))
+                : (rateIdx << 10) | (feelIdx << 8) | swingPct;
 
             double humTimeMs = Math.Clamp(v.Value(P.HumTime), 0.0, 20.0);
             int humVelPct = Math.Clamp((int)v.Value(P.HumVel), 0, 30);

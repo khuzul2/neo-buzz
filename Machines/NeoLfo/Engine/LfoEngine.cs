@@ -12,7 +12,7 @@ namespace NeoBuzz.LfoMachine
     internal sealed class LfoEngine
     {
         /// <summary>The synced lengths in beats (four to the bar): 8 bars … 1/64.</summary>
-        public static readonly double[] SyncBeats = { 0, 32, 16, 8, 4, 2, 1, 0.5, 0.25, 0.125, 0.0625 };
+        public static readonly double[] SyncBeats = TempoSync.BeatsTable(Params.Table[P.Sync].Names);
 
         readonly ParamValues v;
         Rng rng = new Rng(0x1F2E3D4Cu);
@@ -36,8 +36,7 @@ namespace NeoBuzz.LfoMachine
         {
             double b = SyncBeats[Math.Clamp(v.Choice(P.Sync), 0, SyncBeats.Length - 1)];
             if (b <= 0) return 0;
-            int feel = v.Choice(P.Feel);
-            return feel == 1 ? b * 1.5 : feel == 2 ? b * (2.0 / 3.0) : b;
+            return TempoSync.Beats(b, v.Choice(P.Feel));
         }
 
         /// <summary>A note on the listened machine (Retrigger: Note).</summary>
