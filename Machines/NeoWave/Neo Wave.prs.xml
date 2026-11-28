@@ -86,6 +86,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -177,6 +179,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -268,6 +272,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -359,6 +365,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -450,6 +458,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -541,6 +551,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -632,6 +644,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -723,6 +737,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -814,6 +830,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -905,6 +923,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -996,6 +1016,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1087,6 +1109,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1178,6 +1202,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1269,6 +1295,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1360,6 +1388,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1451,6 +1481,8 @@
         <Parameter Name="M8 source" Group="1" Index="80" Track="0" Value="0" />
         <Parameter Name="M8 dest" Group="1" Index="81" Track="0" Value="0" />
         <Parameter Name="M8 amount" Group="1" Index="82" Track="0" Value="500" />
+        <Parameter Name="LFO1 feel" Group="1" Index="83" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="84" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>

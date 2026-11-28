@@ -130,6 +130,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Steady 4/16 kick and backbeat snare under an E(11,16) closed-hat groove with swung open-hat and rim accents.</Comment>
@@ -265,6 +267,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Twelve-step bell timeline E(7,12) on cowbell interlocked with 3/12 kick, 5/12 rim, low tom and hats.</Comment>
@@ -400,6 +404,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Syncopated E(5,16) rim timeline over 3/16 kick, backbeat snare, off-beat claps, dense hats and low tom.</Comment>
@@ -535,6 +541,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="1" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Six polymetric percussion lanes driven by per-hit chance, 15 % fill and subtle timing and velocity humanize.</Comment>
@@ -670,6 +678,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Asymmetric E(5,8) hat and rim propulsion locked against 10-step kick and snare phrases.</Comment>
@@ -805,6 +815,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Swung four-on-the-floor foundation with rapid 2x to 4x ratcheting hi-hat and clap flurries.</Comment>
@@ -940,6 +952,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Interlocking 3, 4 and 5 pulse counts across 10, 12, 15, 16 and 20 step rings with a half-time high tom.</Comment>
@@ -1075,6 +1089,8 @@
         <Parameter Name="L8 divider" Group="1" Index="124" Track="0" Value="0" />
         <Parameter Name="L8 channel" Group="1" Index="125" Track="0" Value="1" />
         <Parameter Name="L8 mute" Group="1" Index="126" Track="0" Value="0" />
+        <Parameter Name="Timing" Group="1" Index="127" Track="0" Value="0" />
+        <Parameter Name="Free time" Group="1" Index="128" Track="0" Value="125" />
       </Parameters>
       <Attributes />
       <Comment>Six minor-pentatonic notes across polymetric step rings and dividers, ready to drive Neo Poly or any synth.</Comment>

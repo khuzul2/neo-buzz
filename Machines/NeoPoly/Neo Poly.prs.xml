@@ -105,6 +105,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -215,6 +217,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -325,6 +329,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -435,6 +441,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -545,6 +553,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -655,6 +665,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -765,6 +777,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -875,6 +889,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -985,6 +1001,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1095,6 +1113,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1205,6 +1225,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1315,6 +1337,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1425,6 +1449,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1535,6 +1561,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1645,6 +1673,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1755,6 +1785,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1865,6 +1897,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -1975,6 +2009,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2085,6 +2121,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2195,6 +2233,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2305,6 +2345,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2415,6 +2457,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2525,6 +2569,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2635,6 +2681,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2745,6 +2793,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2855,6 +2905,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -2965,6 +3017,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3075,6 +3129,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3185,6 +3241,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3295,6 +3353,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3405,6 +3465,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3515,6 +3577,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3625,6 +3689,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3735,6 +3801,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3845,6 +3913,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -3955,6 +4025,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -4065,6 +4137,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Resonant diode bass with accents that bite and slides: play it in a line, hard notes accented.</Comment>
@@ -4175,6 +4249,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>A softer, stretchier acid: longer slides, a rounder filter and a gentle accent.</Comment>
@@ -4285,6 +4361,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Near self-oscillation on a square wave: accents climb and squeal.</Comment>
@@ -4395,6 +4473,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>A dark, heavy acid bass with a sub underneath.</Comment>
@@ -4505,6 +4585,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>Short, snappy acid notes that die away quickly.</Comment>
@@ -4615,6 +4697,8 @@
         <Parameter Name="Sweep limit" Group="1" Index="99" Track="0" Value="500" />
         <Parameter Name="Filter quality" Group="1" Index="100" Track="0" Value="1" />
         <Parameter Name="Soft start" Group="1" Index="101" Track="0" Value="650" />
+        <Parameter Name="LFO1 feel" Group="1" Index="102" Track="0" Value="0" />
+        <Parameter Name="LFO2 feel" Group="1" Index="103" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment>A round, low acid line that stays mostly sub, with a little filter movement.</Comment>
