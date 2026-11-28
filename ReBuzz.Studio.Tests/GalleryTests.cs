@@ -2894,6 +2894,21 @@ namespace ReBuzz.Studio.Tests
                         int stored = (int)valuesObj.GetType().GetProperty("Item")!.GetValue(valuesObj, new object[] { 9 })!;
                         int param = group.Parameters.First(p => p.Name == "Bands").GetValue(0);
                         Assert.That(built, Is.EqualTo(raws[9] + 8), $"the preset's values reached the engine: the engine has {built} bands, the machine's values hold Bands = {stored}, the parameter holds {param}, the preset says {raws[9]}");
+                        Core.UiHost.OpenGui(m, null);
+                        var editor = StudioMachineUiHost.GuiWindowOf(m);
+                        Assert.That(editor, Is.Not.Null, "its GUI opened");
+                        Dispatcher.UIThread.RunJobs();
+                        Wait(200);
+                        Shot(editor!, id, text, "Add Neo Vocoder; load a preset; play a chord and a voice into it; open its editor.");
+                        Core.UiHost.CloseWindows(m);
+                    });
+                }
+                VocoderShot("665-neo-vocoder-editor", "Vocoder", new[] { 0, 0, 50, 160, 0, 91, 500, 1000, 460, 8, 301, 667, 333, 338, 469, 12, 450, 0, 0, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Robot — Classic 16 Band\" loaded, a chord held and a voice-like modulator playing: the Carrier section (the choice, the synth's tone and envelope), the live picture of the 16 bands (the modulator's level dimmed, the output's in the accent colour) with Bands, Low, High and Width under it, the Voice section and Output with Amount and Mix side by side and the meters.", true);
+                VocoderShot("666-neo-vocoder-choir", "Vocoder 2", new[] { 0, 250, 120, 560, 0, 771, 500, 1000, 826, 16, 204, 723, 400, 773, 773, 12, 150, 0, 1000, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Choir — Wide Chord Pad\" loaded and a chord held: 24 narrower bars in the picture, a longer synth envelope, Spread at 100 %.", true);
+                VocoderShot("667-neo-vocoder-sidechain", "Vocoder 3", new[] { 1, 0, 50, 200, 0, 220, 500, 1000, 450, 16, 255, 774, 333, 338, 498, 12, 400, 0, 300, 1000, 1000, 500 },
+                    "Neo Vocoder with the preset \"Sidechain — Synth Carrier\" and nothing wired into the second input: the output bars stay empty and the picture says \"Wire a carrier into the sidechain\" in the amber warning colour.", false);
                 // AMP1: Neo Amp's editor with a preset loaded: the amp's knobs, the cabinet's picture with the mic and the cuts drawn on it, the tuner
                 // and the output. The cabinet is made in the background: the shot waits for it (Busy), then plays blocks of a steady tone (the tuner needs a
                 // tenth of a second of it).
@@ -2928,16 +2943,6 @@ namespace ReBuzz.Studio.Tests
                         Assert.That(editor, Is.Not.Null, "its GUI opened");
                         Dispatcher.UIThread.RunJobs();
                         Wait(200);
-                        Shot(editor!, id, text, "Add Neo Vocoder; load a preset; play a chord and a voice into it; open its editor.");
-                        Core.UiHost.CloseWindows(m);
-                    });
-                }
-                VocoderShot("665-neo-vocoder-editor", "Vocoder", new[] { 0, 0, 50, 160, 0, 91, 500, 1000, 460, 8, 301, 667, 333, 338, 469, 12, 450, 0, 0, 1000, 1000, 500 },
-                    "Neo Vocoder with the preset \"Robot — Classic 16 Band\" loaded, a chord held and a voice-like modulator playing: the Carrier section (the choice, the synth's tone and envelope), the live picture of the 16 bands (the modulator's level dimmed, the output's in the accent colour) with Bands, Low, High and Width under it, the Voice section and Output with Amount and Mix side by side and the meters.", true);
-                VocoderShot("666-neo-vocoder-choir", "Vocoder 2", new[] { 0, 250, 120, 560, 0, 771, 500, 1000, 826, 16, 204, 723, 400, 773, 773, 12, 150, 0, 1000, 1000, 1000, 500 },
-                    "Neo Vocoder with the preset \"Choir — Wide Chord Pad\" loaded and a chord held: 24 narrower bars in the picture, a longer synth envelope, Spread at 100 %.", true);
-                VocoderShot("667-neo-vocoder-sidechain", "Vocoder 3", new[] { 1, 0, 50, 200, 0, 220, 500, 1000, 450, 16, 255, 774, 333, 338, 498, 12, 400, 0, 300, 1000, 1000, 500 },
-                    "Neo Vocoder with the preset \"Sidechain — Synth Carrier\" and nothing wired into the second input: the output bars stay empty and the picture says \"Wire a carrier into the sidechain\" in the amber warning colour.", false);
                         Shot(editor!, id, text, "Add Neo Amp; load a preset; open its editor.");
                         Core.UiHost.CloseWindows(m);
                     });
