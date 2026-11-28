@@ -20,6 +20,7 @@ namespace NeoBuzz.Vocoder
         readonly float[] keyLeft = new float[VocoderEngine.MaxBlock], keyRight = new float[VocoderEngine.MaxBlock];
         int rate;
         int quietBlocks;
+        bool keySeen;
 
         public NeoVocoderMachine(IBuzzMachineHost host) : base(host, Params.Table, Params.Tracks)
         {
@@ -34,6 +35,7 @@ namespace NeoBuzz.Vocoder
         internal override void Restart()
         {
             Engine.Reset();
+            keySeen = false;
             rate = 0;
         }
 
@@ -55,7 +57,9 @@ namespace NeoBuzz.Vocoder
             BeginBlock(Engine);
             bool hasInput = main != null && HasSignal(main, n);
             bool hasKey = key != null && HasSignal(key, n);
-            Engine.SidechainWired = key != null;
+            // The host may hand an unconnected input as a silent buffer, so "wired" is: a signal has arrived on input 2 (since the machine was made or restarted).
+            if (hasKey) keySeen = true;
+            Engine.SidechainWired = keySeen;
             if (!hasInput && !hasKey && Engine.Silent)
             {
                 // The bands and the voices have died away: rest after a few quiet blocks.

@@ -2749,6 +2749,11 @@ namespace ReBuzz.Studio.Tests
                             }
                             lock (ReBuzzCore.AudioLock) work.Invoke(inst, new object[] { output, input, 256, Buzz.MachineInterface.WorkModes.WM_READWRITE });
                         }
+                        var engineObj = inst.GetType().GetProperty("Engine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+                        var bankObj = engineObj.GetType().GetProperty("Bank", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!.GetValue(engineObj)!;
+                        int built = (int)bankObj.GetType().GetProperty("BuiltBands")!.GetValue(bankObj)!;
+                        System.Console.WriteLine($"{id}: the engine has {built} bands (the preset says {raws[9] + 8})");
+                        Assert.That(built, Is.EqualTo(raws[9] + 8), "the preset's values reached the engine");
                         Core.UiHost.OpenGui(m, null);
                         var editor = StudioMachineUiHost.GuiWindowOf(m);
                         Assert.That(editor, Is.Not.Null, "its GUI opened");

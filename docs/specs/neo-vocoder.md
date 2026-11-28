@@ -84,3 +84,4 @@ Dudley (1939), Valimaki and Huovilainen (2007) and Giannoulis et al. (2012) were
 - The composite level depends on `Width`: -3 dB at 150 %, +1 dB at 50 %.
 - The sidechain carrier's per-band levelling takes 150 ms to follow a long drop in the carrier's level; a swell is followed in a few periods.
 - Freeze holds band levels, not the carrier: a frozen vowel changes as the notes do.
+- The machine cannot tell an unconnected second input from a silent one (the host may give a silent buffer for either), so "wired" means that a signal has arrived on it: until then the editor says "Wire a carrier into the sidechain". The output is silent either way, since a silent carrier gives a silent band.
