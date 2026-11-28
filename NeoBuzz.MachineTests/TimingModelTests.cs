@@ -108,12 +108,12 @@ namespace NeoBuzz.MachineTests
         {
             var a = Lfo();
             int eighth = 7;
-            Assert.That(a.Readout(eighth, 1, 0, 120, "2.00 Hz"), Is.EqualTo("1/8 dotted = 1.33 Hz at 120 BPM"));
+            Assert.That(a.Readout(eighth, 1, 0, 120, "2.00 Hz"), Is.EqualTo("1/8 dotted = 2.67 Hz at 120 BPM"));
             Assert.That(a.Readout(0, 0, 0, 120, "2.00 Hz"), Is.EqualTo("2.00 Hz"), "Free: the knob's own value");
             Assert.That(a.Readout(eighth, 3, 0, 100, ""), Does.StartWith("1/8 quintuplet = "));
             var d = Delay();
             int dotted = 1;
-            Assert.That(d.Readout(4, dotted, 0, 128, "x"), Does.StartWith("1/8 dotted = 351.6 ms"), "the editor's own example: 0.3515625 s at 128 BPM");
+            Assert.That(d.Readout(4, dotted, 0, 128, "x"), Does.StartWith("1/8 dotted = 352 ms"), "the editor's own example: 0.3515625 s at 128 BPM");
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace NeoBuzz.MachineTests
             Assert.That(d.Fits(eightBars, 0, 200), Is.True, "9.6 s at 200 BPM");
             Assert.That(d.Fits(eightBars, 3, 200), Is.True, "x 4/5 is shorter");
             Assert.That(d.Clamped(10, 0, 0, 120), Is.True);
-            Assert.That(d.Readout(10, 0, 0, 120, ""), Does.Contain("clamped to 10 s"));
+            Assert.That(d.Readout(10, 0, 0, 120, ""), Does.Contain("clamped to 10.0 s"));
             Assert.That(Lfo().Fits(Lfo().Divisions.First(), 0, 40), Is.True, "no longest time: always fits");
         }
     }

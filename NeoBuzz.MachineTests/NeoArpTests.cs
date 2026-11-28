@@ -639,7 +639,7 @@ namespace NeoBuzz.MachineTests
             var t = Params.Table;
             Assert.That(t.Length, Is.EqualTo(51));
             Assert.That(t[P.Pattern].Names, Is.EqualTo(new[] { "Up", "Down", "Up-down", "Up-down ends twice", "Down-up", "Converge", "Diverge", "As played", "Random", "Random walk", "Chord", "Steps" }));
-            Assert.That(t[P.Rate].Names, Is.EqualTo(new[] { "1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64" }));
+            Assert.That(t[P.Rate].Names, Is.EqualTo(new[] { "1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64", "2 bars", "4 bars", "8 bars" }), "the old seven, then 2, 4 and 8 bars appended (SYN1)");
             Assert.That((t[P.Octaves].Min, t[P.Octaves].Max), Is.EqualTo((1, 4)));
             Assert.That((t[P.Repeats].Min, t[P.Repeats].Max), Is.EqualTo((1, 4)));
             Assert.That((t[P.FreeMs].Min, t[P.FreeMs].Max), Is.EqualTo((20, 2000)));

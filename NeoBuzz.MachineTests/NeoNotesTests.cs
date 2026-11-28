@@ -168,8 +168,8 @@ namespace NeoBuzz.MachineTests
             {
                 foreach (var (ch, note) in held) rig.Off(rig.Pos, note, ch);
                 held.Clear();
-                // Echoes of 16 repeats at 2 s each take 32 s; then a margin.
-                long deadline = rig.Pos + 48000L * 90;
+                // Echoes of 16 repeats at 8 bars each (the longest division, 16 s at 120 BPM) take 256 s; then a margin.
+                long deadline = rig.Pos + 48000L * 600;
                 while ((e.Pending > 0 || e.SoundingPitches > 0) && rig.Pos < deadline) { rig.Run(rig.Pos + 48000); Check(); }
             }
             rig.Run(rig.Pos + 4 * block);

@@ -598,7 +598,7 @@ namespace NeoBuzz.MachineTests
         public void TheAcidParametersAreAppendedWithDefaultsThatChangeNothing()
         {
             var t = Params.Table;
-            Assert.That(t.Length, Is.EqualTo(102));
+            Assert.That(t.Length, Is.EqualTo(104), "102, then the two LFO Feels (SYN1)");
             Assert.That(t[P.F1Type].Max, Is.EqualTo(6));
             Assert.That(t[P.F1Type].Names[6], Is.EqualTo("Diode 18"));
             Assert.That(P.AccentThr, Is.EqualTo(91));
@@ -617,18 +617,20 @@ namespace NeoBuzz.MachineTests
             // Version 0's 91 keys, as the machine's step lists them; its first 91 table entries are the same by key and position.
             var v0 = Params.Table.Take(91).Select(p => p.Id).ToArray();
             var v1 = Params.Table.Take(98).Select(p => p.Id).ToArray();
+            var v2 = Params.Table.Take(102).Select(p => p.Id).ToArray();
             var chain = new StateMigrations(Params.Table).Step(v0, s => { })
-                .Step(v1, s => s.Add("AcidRange", 797).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650));
+                .Step(v1, s => s.Add("AcidRange", 797).Add("AcidSweepMax", 500).Add("AcidQuality", 1).Add("AcidSoft", 650))
+                .Step(v2, s => s.Add("L1Feel", 0).Add("L2Feel", 0));
             Assert.That(chain.Validate(), Is.Empty);
-            Assert.That(chain.Current, Is.EqualTo(2));
+            Assert.That(chain.Current, Is.EqualTo(3));
             var saved = new int[91];
             for (int i = 0; i < 91; i++) saved[i] = Params.Table[i].Default;
             saved[P.F1Type] = 5;
             saved[P.F1Cutoff] = 321;
             var now = chain.MigrateGlobals(0, saved);
-            Assert.That(now.Length, Is.EqualTo(102));
+            Assert.That(now.Length, Is.EqualTo(104));
             for (int i = 0; i < 91; i++) Assert.That(now[i], Is.EqualTo(saved[i]), Params.Table[i].Id);
-            for (int i = 91; i < 102; i++) Assert.That(now[i], Is.EqualTo(Params.Table[i].Default), Params.Table[i].Id);
+            for (int i = 91; i < 104; i++) Assert.That(now[i], Is.EqualTo(Params.Table[i].Default), Params.Table[i].Id);
         }
     }
 }
